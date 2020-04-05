@@ -112,14 +112,12 @@ public class DropAllServlet extends HttpServlet {
             "_drop_table_ COMPONENT_CONFIG _cascade_;\n" +
             "_drop_table_ COMPONENT _cascade_;\n" +
             "_drop_table_ COMPOSITE_ROLE _cascade_;\n" +
-            "_drop_table_ CREDENTIAL_ATTRIBUTE _cascade_;\n" +
             "_drop_table_ CREDENTIAL _cascade_;\n" +
             "_drop_table_ DEFAULT_CLIENT_SCOPE _cascade_;\n" +
             "_drop_table_ EVENT_ENTITY _cascade_;\n" +
             "_drop_table_ EXAMPLE_COMPANY _cascade_;\n" +
             "_drop_table_ FEDERATED_IDENTITY _cascade_;\n" +
             "_drop_table_ FEDERATED_USER _cascade_;\n" +
-            "_drop_table_ FED_CREDENTIAL_ATTRIBUTE _cascade_;\n" +
             "_drop_table_ FED_USER_ATTRIBUTE _cascade_;\n" +
             "_drop_table_ FED_USER_CONSENT _cascade_;\n" +
             "_drop_table_ FED_USER_CONSENT_CL_SCOPE _cascade_;\n" +

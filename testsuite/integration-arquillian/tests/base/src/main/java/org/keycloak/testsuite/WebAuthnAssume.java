@@ -6,10 +6,16 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.remote.BrowserType;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
+import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
+
 public class WebAuthnAssume {
 
     public static final String CHROME_NAME = BrowserType.CHROME;
     public static final int CHROME_MIN_VERSION = 68;
+
+    public static void assumeChrome() {
+        assumeChrome(getCurrentDriver());
+    }
 
     public static void assumeChrome(WebDriver driver) {
         Assume.assumeNotNull(driver);

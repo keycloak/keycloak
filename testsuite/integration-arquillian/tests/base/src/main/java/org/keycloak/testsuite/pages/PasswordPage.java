@@ -13,7 +13,7 @@ import org.openqa.selenium.support.FindBy;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class PasswordPage extends CredentialsComboboxPage {
+public class PasswordPage extends LanguageComboboxAwarePage {
 
     @ArquillianResource
     protected OAuthClient oauth;
@@ -57,11 +57,6 @@ public class PasswordPage extends CredentialsComboboxPage {
     }
 
     public boolean isCurrent(String realm) {
-        // Check the title
-        if (!DroneUtils.getCurrentDriver().getTitle().equals("Log in to " + realm) && !DroneUtils.getCurrentDriver().getTitle().equals("Anmeldung bei " + realm)) {
-            return false;
-        }
-
         // Check there is NO username field
         try {
             driver.findElement(By.id("username"));
@@ -72,6 +67,7 @@ public class PasswordPage extends CredentialsComboboxPage {
 
         // Check there is password field
         try {
+            driver.findElement(By.id("kc-attempted-username"));
             driver.findElement(By.id("password"));
         } catch (NoSuchElementException nfe) {
             return false;

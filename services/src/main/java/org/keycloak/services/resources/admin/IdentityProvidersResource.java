@@ -55,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import org.keycloak.utils.ReservedCharValidator;
 
 /**
  * @resource Identity Providers
@@ -134,6 +135,9 @@ public class IdentityProvidersResource {
         if (!(data.containsKey("providerId") && data.containsKey("fromUrl"))) {
             throw new BadRequestException();
         }
+        
+        ReservedCharValidator.validate((String)data.get("alias"));
+        
         String providerId = data.get("providerId").toString();
         String from = data.get("fromUrl").toString();
         InputStream inputStream = session.getProvider(HttpClientProvider.class).get(from);
@@ -182,8 +186,10 @@ public class IdentityProvidersResource {
     public Response create(IdentityProviderRepresentation representation) {
         this.auth.realm().requireManageIdentityProviders();
 
+        ReservedCharValidator.validate(representation.getAlias());
+        
         try {
-            IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation);
+            IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation, session);
             this.realm.addIdentityProvider(identityProvider);
 
             representation.setInternalId(identityProvider.getInternalId());
@@ -191,6 +197,14 @@ public class IdentityProvidersResource {
                     .representation(StripSecretsUtils.strip(representation)).success();
             
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(representation.getAlias()).build()).build();
+        } catch (IllegalArgumentException e) {
+            String message = e.getMessage();
+            
+            if (message == null) {
+                message = "Invalid request";
+            }
+            
+            return ErrorResponse.error(message, BAD_REQUEST);
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Identity Provider " + representation.getAlias() + " already exists");
         }

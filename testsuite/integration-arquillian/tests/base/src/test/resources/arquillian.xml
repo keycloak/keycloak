@@ -585,6 +585,13 @@
         </configuration>
     </container>
 
+    <container qualifier="auth-server-quarkus" mode="manual" >
+        <configuration>
+            <property name="enabled">${auth.server.quarkus}</property>
+            <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer</property>
+        </configuration>
+    </container>
+
     <!-- PREVIOUS VERSION OF KEYCLOAK FOR MIGRATION TESTS -->
 
     <container qualifier="auth-server-jboss-migration" mode="manual" >

@@ -50,6 +50,11 @@ public class JSObjectBuilder {
         return this;
     }
 
+    public JSObjectBuilder disableCheckLoginIframe() {
+        arguments.put("checkLoginIframe", false);
+        return this;
+    }
+
     public JSObjectBuilder loginRequiredOnLoad() {
         arguments.put("onLoad", "login-required");
         return this;

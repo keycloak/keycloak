@@ -76,7 +76,7 @@ public class SubsystemParsingAllowedClockSkewTestCase extends AbstractSubsystemB
 
     private void setSubsystemXml(String value, String unit) throws IOException {
         try {
-            String template = readResource("keycloak-saml-1.2.xml");
+            String template = readResource("keycloak-saml-1.3.xml");
             if (value != null) {
                 // assign the AllowedClockSkew element using DOM
                 DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -184,16 +184,15 @@ public class SubsystemParsingAllowedClockSkewTestCase extends AbstractSubsystemB
         testSubsystem("30", "invalid-unit");
     }
 
-    // For the moment no expressions allowed as the rest of the subsystem doesn't resolve expressions
-    //@Test
-    //public void testExpression() throws Exception {
-    //    System.setProperty("test.prop.SKEW_TIME", "30");
-    //    System.setProperty("test.prop.SKEW_UNIT", "MILLISECONDS");
-    //    try {
-    //        testSubsystem("${test.prop.SKEW_TIME}", "${test.prop.SKEW_UNIT}", 30, "MILLISECONDS");
-    //    } finally {
-    //        System.clearProperty("test.prop.SKEW_TIME");
-    //        System.clearProperty("test.prop.SKEW_UNIT");
-    //    }
-    //}
+    @Test
+    public void testExpression() throws Exception {
+        System.setProperty("test.prop.SKEW_TIME", "30");
+        System.setProperty("test.prop.SKEW_UNIT", "MILLISECONDS");
+        try {
+            testSubsystem("${test.prop.SKEW_TIME}", "${test.prop.SKEW_UNIT}", 30, "MILLISECONDS");
+        } finally {
+            System.clearProperty("test.prop.SKEW_TIME");
+            System.clearProperty("test.prop.SKEW_UNIT");
+        }
+    }
 }

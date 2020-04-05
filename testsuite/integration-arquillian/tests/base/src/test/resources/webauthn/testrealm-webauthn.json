@@ -26,17 +26,6 @@
     "00000000-0000-0000-0000-000000000000",
     "6d44ba9b-f6ec-2e49-b930-0c8fe920cb73"
   ],
-  "attributes": {
-    "webAuthnPolicyAcceptableAaguids": "00000000-0000-0000-0000-000000000000,6d44ba9b-f6ec-2e49-b930-0c8fe920cb73",
-    "webAuthnPolicyAuthenticatorAttachment": "not specified",
-    "webAuthnPolicyRpEntityName": "keycloak-webauthn-2FA",
-    "webAuthnPolicySignatureAlgorithms": "ES256,RS256,RS1",
-    "webAuthnPolicyUserVerificationRequirement": "not specified",
-    "webAuthnPolicyCreateTimeout": "60",
-    "webAuthnPolicyRequireResidentKey": "not specified",
-    "webAuthnPolicyAttestationConveyancePreference": "not specified",
-    "webAuthnPolicyAvoidSameAuthenticatorRegister": "true"
-  },
   "smtpServer": {
     "from": "auto@keycloak.org",
     "host": "localhost",
@@ -574,7 +563,7 @@
 
   "authenticationFlows": [
     {
-      "alias": "Copy of browser",
+      "alias": "browser-webauthn",
       "description": "browser based authentication",
       "providerId": "basic-flow",
       "topLevel": true,
@@ -604,14 +593,14 @@
         {
           "requirement": "ALTERNATIVE",
           "priority": 30,
-          "flowAlias": "Copy of browser forms",
+          "flowAlias": "browser-webauthn-forms",
           "userSetupAllowed": false,
           "autheticatorFlow": true
         }
       ]
     },
     {
-      "alias": "Copy of browser forms",
+      "alias": "browser-webauthn-forms",
       "description": "Username, password, otp and other auth forms.",
       "providerId": "basic-flow",
       "topLevel": false,
@@ -635,6 +624,59 @@
           "authenticator": "webauthn-authenticator",
           "requirement": "REQUIRED",
           "priority": 21,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        }
+      ]
+    },
+    {
+      "alias": "browser-webauthn-passwordless",
+      "description": "browser based authentication",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "requirement": "ALTERNATIVE",
+          "priority": 30,
+          "flowAlias": "browser-webauthn-passwordless-forms",
+          "userSetupAllowed": false,
+          "autheticatorFlow": true
+        }
+      ]
+    },
+    {
+      "alias": "browser-webauthn-passwordless-forms",
+      "description": "Username, password, otp and other auth forms.",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-username-password-form",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "webauthn-authenticator",
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "autheticatorFlow": false
+        },
+        {
+          "authenticator": "webauthn-authenticator-passwordless",
+          "requirement": "REQUIRED",
+          "priority": 30,
           "userSetupAllowed": false,
           "autheticatorFlow": false
         }
@@ -1083,9 +1125,18 @@
       "defaultAction": true,
       "priority": 51,
       "config": {}
+    },
+    {
+      "alias": "webauthn-register-passwordless",
+      "name": "Webauthn Register Passwordless",
+      "providerId": "webauthn-register-passwordless",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 52,
+      "config": {}
     }
   ],
-  "browserFlow": "Copy of browser",
+  "browserFlow": "browser-webauthn",
 
   "internationalizationEnabled": true,
   "supportedLocales": ["en", "de"],

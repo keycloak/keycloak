@@ -1,29 +1,36 @@
 package org.keycloak.testsuite.error;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.StreamUtil;
+import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.core.Response;
-
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class UncaughtErrorPageTest extends AbstractKeycloakTest {
 
@@ -59,6 +66,43 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
         String responseString = StreamUtil.readString(is, Charset.forName("UTF-8"));
 
         Assert.assertTrue(responseString.contains("An internal server error has occurred"));
+    }
+
+    @Test
+    @UncaughtServerErrorExpected
+    public void uncaughtErrorClientRegistration() throws IOException {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpPost post = new HttpPost(suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/realms/master/clients-registrations/openid-connect").build());
+            post.setEntity(new StringEntity("{ invalid : invalid }"));
+            post.setHeader("Content-Type", "application/json");
+
+            CloseableHttpResponse response = client.execute(post);
+            assertEquals(400, response.getStatusLine().getStatusCode());
+
+            OAuth2ErrorRepresentation error = JsonSerialization.readValue(response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
+            assertEquals("unknown_error", error.getError());
+            assertNull(error.getErrorDescription());
+        }
+    }
+
+    @Test
+    @UncaughtServerErrorExpected
+    public void uncaughtErrorAdmin() throws IOException {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            String accessToken = adminClient.tokenManager().getAccessTokenString();
+
+            HttpPost post = new HttpPost(suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/admin/realms").build());
+            post.setEntity(new StringEntity("{ invalid : invalid }"));
+            post.setHeader("Authorization", "bearer " + accessToken);
+            post.setHeader("Content-Type", "application/json");
+
+            CloseableHttpResponse response = client.execute(post);
+            assertEquals(400, response.getStatusLine().getStatusCode());
+
+            OAuth2ErrorRepresentation error = JsonSerialization.readValue(response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
+            assertEquals("unknown_error", error.getError());
+            assertNull(error.getErrorDescription());
+        }
     }
 
     @Test

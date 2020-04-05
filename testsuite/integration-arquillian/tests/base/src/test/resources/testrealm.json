@@ -146,6 +146,7 @@
       "credentials" : [
         {
           "id" : "first",
+          "userLabel" : "first",
           "type" : "otp",
           "secretData" : "{\"value\":\"DJmQfC73VGFhw7D4QJ8A\"}",
           "credentialData" : "{\"digits\":6,\"counter\":0,\"period\":30,\"algorithm\":\"HmacSHA1\",\"subType\":\"totp\"}"
@@ -472,7 +473,12 @@
         },
         {
           "name": "sample-client-role",
-          "description": "Sample client role"
+          "description": "Sample client role",
+          "attributes": {
+            "sample-client-role-attribute": [
+              "sample-client-role-attribute-value"
+            ]
+          }
         },
         {
           "name": "customer-admin-composite-role",

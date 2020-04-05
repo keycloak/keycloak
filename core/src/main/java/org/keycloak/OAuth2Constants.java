@@ -55,6 +55,8 @@ public interface OAuth2Constants {
 
     String IMPLICIT = "implicit";
 
+    String USERNAME="username";
+
     String PASSWORD = "password";
 
     String CLIENT_CREDENTIALS = "client_credentials";

@@ -17,9 +17,13 @@
 
 package org.keycloak.testsuite.admin;
 
+import org.hamcrest.Matchers;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.dom.saml.v2.metadata.EndpointType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
@@ -32,15 +36,20 @@ import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.broker.OIDCIdentityProviderConfigRep;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.w3c.dom.NodeList;
 
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -59,6 +68,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
@@ -75,6 +85,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_SSL_REQUIRED;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -112,6 +126,17 @@ public class IdentityProviderTest extends AbstractAdminTest {
     }
 
     @Test
+    public void testCreateWithReservedCharacterForAlias() {
+        IdentityProviderRepresentation newIdentityProvider = createRep("ne$&w-identity-provider", "oidc");
+
+        newIdentityProvider.getConfig().put("clientId", "clientId");
+        newIdentityProvider.getConfig().put("clientSecret", "some secret value");
+
+        Response response = realm.identityProviders().create(newIdentityProvider);
+        Assert.assertEquals(400, response.getStatus());
+    }
+    
+    @Test
     public void testCreate() {
         IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
 
@@ -143,6 +168,76 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getConfig().get("clientSecret"));
     }
 
+    @Test
+    @AuthServerContainerExclude(REMOTE)
+    public void failCreateInvalidUrl() throws Exception {
+        try (AutoCloseable c = new RealmAttributeUpdater(realmsResouce().realm("test"))
+                .updateWith(r -> r.setSslRequired(SslRequired.ALL.name()))
+                .update()
+        ) {
+            IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
+
+            newIdentityProvider.getConfig().put("clientId", "clientId");
+            newIdentityProvider.getConfig().put("clientSecret", "some secret value");
+
+            OIDCIdentityProviderConfigRep oidcConfig = new OIDCIdentityProviderConfigRep(newIdentityProvider);
+
+            oidcConfig.setAuthorizationUrl("invalid://test");
+
+            try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
+                assertEquals(AUTH_SERVER_SSL_REQUIRED ? Response.Status.BAD_REQUEST.getStatusCode() :
+                        Response.Status.CREATED.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+                assertEquals("The url [authorization_url] is malformed", error.getErrorMessage());
+            }
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl("http://test");
+
+            try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
+                assertEquals(AUTH_SERVER_SSL_REQUIRED ? Response.Status.BAD_REQUEST.getStatusCode() :
+                        Response.Status.CREATED.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+                assertEquals("The url [token_url] requires secure connections", error.getErrorMessage());
+            }
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl(null);
+            oidcConfig.setJwksUrl("http://test");
+
+            try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
+                assertEquals(AUTH_SERVER_SSL_REQUIRED ? Response.Status.BAD_REQUEST.getStatusCode() :
+                        Response.Status.CREATED.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+                assertEquals("The url [jwks_url] requires secure connections", error.getErrorMessage());
+            }
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl(null);
+            oidcConfig.setJwksUrl(null);
+            oidcConfig.setLogoutUrl("http://test");
+
+            try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
+                assertEquals(AUTH_SERVER_SSL_REQUIRED ? Response.Status.BAD_REQUEST.getStatusCode() :
+                        Response.Status.CREATED.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+                assertEquals("The url [logout_url] requires secure connections", error.getErrorMessage());
+            }
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl(null);
+            oidcConfig.setJwksUrl(null);
+            oidcConfig.setLogoutUrl(null);
+            oidcConfig.setUserInfoUrl("http://test");
+
+            try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
+                assertEquals(AUTH_SERVER_SSL_REQUIRED ? Response.Status.BAD_REQUEST.getStatusCode() :
+                        Response.Status.CREATED.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+                assertEquals("The url [userinfo_url] requires secure connections", error.getErrorMessage());
+            }
+        }
+    }
 
     @Test
     public void testCreateWithBasicAuth() {
@@ -259,6 +354,103 @@ public class IdentityProviderTest extends AbstractAdminTest {
     }
 
     @Test
+    public void failUpdateInvalidUrl() throws Exception {
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(realm)
+                .updateWith(r -> r.setSslRequired(SslRequired.ALL.name()))
+                .update()
+        ) {
+            IdentityProviderRepresentation representation = createRep(UUID.randomUUID().toString(), "oidc");
+
+            representation.getConfig().put("clientId", "clientId");
+            representation.getConfig().put("clientSecret", "some secret value");
+
+            try (Response response = realm.identityProviders().create(representation)) {
+                assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            }
+
+            IdentityProviderResource resource = this.realm.identityProviders().get(representation.getAlias());
+            representation = resource.toRepresentation();
+
+            OIDCIdentityProviderConfigRep oidcConfig = new OIDCIdentityProviderConfigRep(representation);
+
+            oidcConfig.setAuthorizationUrl("invalid://test");
+            try {
+                resource.update(representation);
+                fail("Invalid URL");
+            } catch (Exception e) {
+                assertTrue(e instanceof  ClientErrorException);
+                Response response = ClientErrorException.class.cast(e).getResponse();
+                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
+                assertEquals("The url [authorization_url] is malformed", error.getErrorMessage());
+            }
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl("http://test");
+
+            try {
+                resource.update(representation);
+                fail("Invalid URL");
+            } catch (Exception e) {
+                assertTrue(e instanceof  ClientErrorException);
+                Response response = ClientErrorException.class.cast(e).getResponse();
+                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
+                assertEquals("The url [token_url] requires secure connections", error.getErrorMessage());
+            }
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl(null);
+            oidcConfig.setJwksUrl("http://test");
+            try {
+                resource.update(representation);
+                fail("Invalid URL");
+            } catch (Exception e) {
+                assertTrue(e instanceof  ClientErrorException);
+                Response response = ClientErrorException.class.cast(e).getResponse();
+                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
+                assertEquals("The url [jwks_url] requires secure connections", error.getErrorMessage());
+            }
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl(null);
+            oidcConfig.setJwksUrl(null);
+            oidcConfig.setLogoutUrl("http://test");
+            try {
+                resource.update(representation);
+                fail("Invalid URL");
+            } catch (Exception e) {
+                assertTrue(e instanceof  ClientErrorException);
+                Response response = ClientErrorException.class.cast(e).getResponse();
+                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
+                assertEquals("The url [logout_url] requires secure connections", error.getErrorMessage());
+            }
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl(null);
+            oidcConfig.setJwksUrl(null);
+            oidcConfig.setLogoutUrl(null);
+            oidcConfig.setUserInfoUrl("http://localhost");
+
+            try {
+                resource.update(representation);
+                fail("Invalid URL");
+            } catch (Exception e) {
+                assertTrue(e instanceof  ClientErrorException);
+                Response response = ClientErrorException.class.cast(e).getResponse();
+                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
+                assertEquals("The url [userinfo_url] requires secure connections", error.getErrorMessage());
+            }
+
+            rau.updateWith(r -> r.setSslRequired(SslRequired.EXTERNAL.name())).update();
+            resource.update(representation);
+        }
+    }
+
+    @Test
     public void testRemove() {
         IdentityProviderRepresentation newIdentityProvider = createRep("remove-identity-provider", "saml");
 
@@ -361,12 +553,12 @@ public class IdentityProviderTest extends AbstractAdminTest {
         create(createRep("keycloak-oidc", "keycloak-oidc"));
         provider = realm.identityProviders().get("keycloak-oidc");
         mapperTypes = provider.getMapperTypes();
-        assertMapperTypes(mapperTypes, "keycloak-oidc-role-to-role-idp-mapper", "oidc-user-attribute-idp-mapper", "oidc-role-idp-mapper", "oidc-username-idp-mapper");
+        assertMapperTypes(mapperTypes, "keycloak-oidc-role-to-role-idp-mapper", "oidc-user-attribute-idp-mapper", "oidc-role-idp-mapper", "oidc-username-idp-mapper", "oidc-advanced-role-idp-mapper");
 
         create(createRep("oidc", "oidc"));
         provider = realm.identityProviders().get("oidc");
         mapperTypes = provider.getMapperTypes();
-        assertMapperTypes(mapperTypes, "oidc-user-attribute-idp-mapper", "oidc-role-idp-mapper", "oidc-username-idp-mapper");
+        assertMapperTypes(mapperTypes, "oidc-user-attribute-idp-mapper", "oidc-role-idp-mapper", "oidc-username-idp-mapper", "oidc-advanced-role-idp-mapper");
 
         create(createRep("saml", "saml"));
         provider = realm.identityProviders().get("saml");

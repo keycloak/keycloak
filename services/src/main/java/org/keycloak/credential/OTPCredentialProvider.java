@@ -17,7 +17,9 @@
 package org.keycloak.credential;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.dto.OTPCredentialData;
 import org.keycloak.models.credential.dto.OTPSecretData;
@@ -73,8 +75,8 @@ public class OTPCredentialProvider implements CredentialProvider<OTPCredentialMo
     }
 
     @Override
-    public void deleteCredential(RealmModel realm, UserModel user, String credentialId) {
-        getCredentialStore().removeStoredCredential(realm, user, credentialId);
+    public boolean deleteCredential(RealmModel realm, UserModel user, String credentialId) {
+        return getCredentialStore().removeStoredCredential(realm, user, credentialId);
     }
 
     @Override
@@ -108,6 +110,10 @@ public class OTPCredentialProvider implements CredentialProvider<OTPCredentialMo
         if (challengeResponse == null) {
             return false;
         }
+        if (ObjectUtil.isBlank(credentialInput.getCredentialId())) {
+            logger.debugf("CredentialId is null when validating credential of user %s", user.getUsername());
+            return false;
+        }
 
         CredentialModel credential = getCredentialStore().getStoredCredentialById(realm, user, credentialInput.getCredentialId());
         OTPCredentialModel otpCredentialModel = OTPCredentialModel.createFromCredentialModel(credential);
@@ -133,5 +139,18 @@ public class OTPCredentialProvider implements CredentialProvider<OTPCredentialMo
     @Override
     public String getType() {
         return OTPCredentialModel.TYPE;
+    }
+
+    @Override
+    public CredentialTypeMetadata getCredentialTypeMetadata(CredentialTypeMetadataContext metadataContext) {
+        return CredentialTypeMetadata.builder()
+                .type(getType())
+                .category(CredentialTypeMetadata.Category.TWO_FACTOR)
+                .displayName("otp-display-name")
+                .helpText("otp-help-text")
+                .iconCssClass("kcAuthenticatorOTPClass")
+                .createAction(UserModel.RequiredAction.CONFIGURE_TOTP.toString())
+                .removeable(true)
+                .build(session);
     }
 }

@@ -222,6 +222,15 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         assertEquals(sessionId, token.getSessionState());
 
+        assertNull(token.getNbf());
+        assertEquals(0, token.getNotBefore());
+
+        assertNotNull(token.getIat());
+        assertEquals(token.getIat().intValue(), token.getIssuedAt());
+
+        assertNotNull(token.getExp());
+        assertEquals(token.getExp().intValue(), token.getExpiration());
+
         assertEquals(1, token.getRealmAccess().getRoles().size());
         assertTrue(token.getRealmAccess().isUserInRole("user"));
 
@@ -238,8 +247,6 @@ public class AccessTokenTest extends AbstractKeycloakTest {
     // KEYCLOAK-3692
     @Test
     public void accessTokenWrongCode() throws Exception {
-        oauth.clientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
-        oauth.redirectUri(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/admin/test/console/nosuch.html");
         oauth.openLoginForm();
 
         String actionURI = ActionURIUtils.getActionURIFromPageSource(driver.getPageSource());
@@ -247,9 +254,9 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         oauth.fillLoginForm("test-user@localhost", "password");
 
-        events.expectLogin().client(Constants.ADMIN_CONSOLE_CLIENT_ID).detail(Details.REDIRECT_URI, AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/admin/test/console/nosuch.html").assertEvent();
+        events.expectLogin().assertEvent();
 
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(loginPageCode, null);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(loginPageCode, "password");
 
         assertEquals(400, response.getStatusCode());
         assertNull(response.getRefreshToken());
@@ -264,7 +271,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "invalid");
-        assertEquals(400, response.getStatusCode());
+        assertEquals(401, response.getStatusCode());
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, loginEvent.getSessionId()).error("invalid_client_credentials").clearDetails().user((String) null).session((String) null);
         expectedEvent.assertEvent();
@@ -279,7 +286,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
-        assertEquals(400, response.getStatusCode());
+        assertEquals(401, response.getStatusCode());
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, loginEvent.getSessionId()).error("invalid_client_credentials").clearDetails().user((String) null).session((String) null);
         expectedEvent.assertEvent();

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {KeycloakLoginOptions, KeycloakError} from './keycloak.d';
+import {KeycloakLoginOptions, KeycloakError} from "../../../../../../../../../../adapters/oidc/js/src/main/resources/keycloak";
 
 // keycloak.js downloaded in index.ftl
 declare function Keycloak(config?: string|{}): Keycloak.KeycloakInstance;

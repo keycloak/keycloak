@@ -26,6 +26,7 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.URLUtils;
@@ -154,6 +155,8 @@ public class CookiesPathTest extends AbstractKeycloakTest {
 
     @Test
     public void testOldCookieWithWrongPath() {
+        ContainerAssume.assumeAuthServerSSL();
+
         Cookie wrongCookie = new Cookie(AuthenticationSessionManager.AUTH_SESSION_ID, AUTH_SESSION_VALUE,
                 null, OLD_COOKIE_PATH, null, false, true);
 

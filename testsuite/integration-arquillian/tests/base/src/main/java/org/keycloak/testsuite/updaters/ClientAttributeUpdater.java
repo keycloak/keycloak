@@ -74,6 +74,11 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
         return this;
     }
 
+    public ClientAttributeUpdater setRedirectUris(List<String> values) {
+        this.rep.setRedirectUris(values);
+        return this;
+    }
+
     public ClientAttributeUpdater removeAttribute(String name) {
         this.rep.getAttributes().remove(name);
         return this;
@@ -118,6 +123,11 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
 
     public ClientAttributeUpdater setAdminUrl(String adminUrl) {
         rep.setAdminUrl(adminUrl);
+        return this;
+    }
+
+    public ClientAttributeUpdater addDefaultClientScope(String clientScope) {
+        rep.getDefaultClientScopes().add(clientScope);
         return this;
     }
 }

@@ -75,9 +75,9 @@ public class LogoutTest extends AbstractSamlTest {
     private static final String SP_NAME_QUALIFIER = "spNameQualifier";
     private static final String NAME_QUALIFIER = "nameQualifier";
 
-    private static final String BROKER_SIGN_ON_SERVICE_URL = "http://saml.idp/saml";
-    private static final String BROKER_LOGOUT_SERVICE_URL = "http://saml.idp/SLO/saml";
-    private static final String BROKER_SERVICE_ID = "http://saml.idp/saml";
+    private static final String BROKER_SIGN_ON_SERVICE_URL = "https://saml.idp/saml";
+    private static final String BROKER_LOGOUT_SERVICE_URL = "https://saml.idp/SLO/saml";
+    private static final String BROKER_SERVICE_ID = "https://saml.idp/saml";
 
     private ClientRepresentation salesRep;
     private ClientRepresentation sales2Rep;

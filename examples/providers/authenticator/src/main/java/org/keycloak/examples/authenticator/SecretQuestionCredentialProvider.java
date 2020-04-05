@@ -22,6 +22,8 @@ import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.CredentialTypeMetadata;
+import org.keycloak.credential.CredentialTypeMetadataContext;
 import org.keycloak.credential.UserCredentialStore;
 import org.keycloak.examples.authenticator.credential.SecretQuestionCredentialModel;
 import org.keycloak.models.KeycloakSession;
@@ -85,13 +87,25 @@ public class SecretQuestionCredentialProvider implements CredentialProvider<Secr
     }
 
     @Override
-    public void deleteCredential(RealmModel realm, UserModel user, String credentialId) {
-        getCredentialStore().removeStoredCredential(realm, user, credentialId);
+    public boolean deleteCredential(RealmModel realm, UserModel user, String credentialId) {
+        return getCredentialStore().removeStoredCredential(realm, user, credentialId);
     }
 
     @Override
     public SecretQuestionCredentialModel getCredentialFromModel(CredentialModel model) {
         return SecretQuestionCredentialModel.createFromCredentialModel(model);
+    }
+
+    @Override
+    public CredentialTypeMetadata getCredentialTypeMetadata(CredentialTypeMetadataContext metadataContext) {
+        return CredentialTypeMetadata.builder()
+                .type(getType())
+                .category(CredentialTypeMetadata.Category.TWO_FACTOR)
+                .displayName(SecretQuestionCredentialProviderFactory.PROVIDER_ID)
+                .helpText("secret-question-text")
+                .createAction(SecretQuestionAuthenticatorFactory.PROVIDER_ID)
+                .removeable(false)
+                .build(session);
     }
 
     @Override

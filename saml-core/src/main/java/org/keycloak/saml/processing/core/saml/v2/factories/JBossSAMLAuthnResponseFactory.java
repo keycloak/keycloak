@@ -17,13 +17,8 @@
 package org.keycloak.saml.processing.core.saml.v2.factories;
 
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
-import org.keycloak.dom.saml.v2.assertion.ConditionsType;
 import org.keycloak.dom.saml.v2.assertion.EncryptedAssertionType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
-import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
-import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
-import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
-import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType.RTChoiceType;
 import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
@@ -32,16 +27,12 @@ import org.keycloak.saml.common.PicketLinkLogger;
 import org.keycloak.saml.common.PicketLinkLoggerFactory;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
-import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
-import org.keycloak.saml.processing.core.saml.v2.holders.IDPInfoHolder;
 import org.keycloak.saml.processing.core.saml.v2.holders.IssuerInfoHolder;
-import org.keycloak.saml.processing.core.saml.v2.holders.SPInfoHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.w3c.dom.Element;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 import java.net.URI;
-import java.util.List;
 
 /**
  * Factory for the SAML v2 Authn Response
@@ -93,64 +84,6 @@ public class JBossSAMLAuthnResponseFactory {
         statusType.setStatusCode(topLevelCode);
 
         return statusType;
-    }
-
-    /**
-     * Create a ResponseType
-     *
-     * @param ID id of the response
-     * @param sp holder with the information about the Service Provider
-     * @param idp holder with the information on the Identity Provider
-     * @param issuerInfo holder with information on the issuer
-     *
-     * @return
-     *
-     * @throws ConfigurationException
-     */
-    public static ResponseType createResponseType(String ID, SPInfoHolder sp, IDPInfoHolder idp, IssuerInfoHolder issuerInfo)
-            throws ConfigurationException {
-        String responseDestinationURI = sp.getResponseDestinationURI();
-
-        XMLGregorianCalendar issueInstant = XMLTimeUtil.getIssueInstant();
-
-        // Create an assertion
-        String id = IDGenerator.create("ID_");
-
-        // Create assertion -> subject
-        SubjectType subjectType = new SubjectType();
-
-        // subject -> nameid
-        NameIDType nameIDType = new NameIDType();
-        nameIDType.setFormat(URI.create(idp.getNameIDFormat()));
-        nameIDType.setValue(idp.getNameIDFormatValue());
-
-        SubjectType.STSubType subType = new SubjectType.STSubType();
-        subType.addBaseID(nameIDType);
-        subjectType.setSubType(subType);
-
-        SubjectConfirmationType subjectConfirmation = new SubjectConfirmationType();
-        subjectConfirmation.setMethod(idp.getSubjectConfirmationMethod());
-
-        SubjectConfirmationDataType subjectConfirmationData = new SubjectConfirmationDataType();
-        subjectConfirmationData.setInResponseTo(sp.getRequestID());
-        subjectConfirmationData.setRecipient(responseDestinationURI);
-        //subjectConfirmationData.setNotBefore(issueInstant);
-        subjectConfirmationData.setNotOnOrAfter(issueInstant);
-
-        subjectConfirmation.setSubjectConfirmationData(subjectConfirmationData);
-
-        subjectType.addConfirmation(subjectConfirmation);
-
-        AssertionType assertionType = SAMLAssertionFactory.createAssertion(id, nameIDType, issueInstant, (ConditionsType) null,
-                subjectType, (List<StatementAbstractType>) null);
-
-        ResponseType responseType = createResponseType(ID, issuerInfo, assertionType);
-        // InResponseTo ID
-        responseType.setInResponseTo(sp.getRequestID());
-        // Destination
-        responseType.setDestination(responseDestinationURI);
-
-        return responseType;
     }
 
     /**

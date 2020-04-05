@@ -26,11 +26,15 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.HmacOTP;
+import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.utils.TotpUtils;
 
 import javax.ws.rs.core.UriBuilder;
 import java.util.Collections;
 import java.util.List;
+
+import static org.keycloak.utils.CredentialHelper.createUserStorageCredentialRepresentation;
 
 
 /**
@@ -48,11 +52,19 @@ public class TotpBean {
 
     public TotpBean(KeycloakSession session, RealmModel realm, UserModel user, UriBuilder uriBuilder) {
         this.uriBuilder = uriBuilder;
-        this.enabled = ((OTPCredentialProvider)session.getProvider(CredentialProvider.class, "keycloak-otp")).isConfiguredFor(realm, user);
+        this.enabled = session.userCredentialManager().isConfiguredFor(realm, user, OTPCredentialModel.TYPE);
         if (enabled) {
-            otpCredentials = session.userCredentialManager().getStoredCredentialsByType(realm, user, OTPCredentialModel.TYPE);
+            List<CredentialModel> otpCredentials = session.userCredentialManager().getStoredCredentialsByType(realm, user, OTPCredentialModel.TYPE);
+
+            if (otpCredentials.isEmpty()) {
+                // Credential is configured on userStorage side. Create the "fake" credential similar like we do for the new account console
+                CredentialRepresentation credential = createUserStorageCredentialRepresentation(OTPCredentialModel.TYPE);
+                this.otpCredentials = Collections.singletonList(RepresentationToModel.toModel(credential));
+            } else {
+                this.otpCredentials = otpCredentials;
+            }
         } else {
-            otpCredentials = Collections.EMPTY_LIST;
+            this.otpCredentials = Collections.EMPTY_LIST;
         }
 
         this.realm = realm;

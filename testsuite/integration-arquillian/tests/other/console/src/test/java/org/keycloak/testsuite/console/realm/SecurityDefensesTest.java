@@ -75,7 +75,7 @@ public class SecurityDefensesTest extends AbstractRealmTest {
 
     @Test
     public void maxLoginFailuresTest() throws InterruptedException {
-        final short secondsToWait = 10; // For slower browsers/webdrivers (like IE) we need higher value
+        final short secondsToWait = 30; // For slower browsers/webdrivers (like IE) we need higher value
         final short maxLoginFailures = 2;
 
         bruteForceDetectionPage.form().setProtectionEnabled(true);
@@ -91,11 +91,11 @@ public class SecurityDefensesTest extends AbstractRealmTest {
 
     @Test
     public void quickLoginCheck() throws InterruptedException {
-        final short secondsToWait = 10;
+        final short secondsToWait = 30;
 
         bruteForceDetectionPage.form().setProtectionEnabled(true);
         bruteForceDetectionPage.form().setMaxLoginFailures("100");
-        bruteForceDetectionPage.form().setQuickLoginCheckInput("10000");
+        bruteForceDetectionPage.form().setQuickLoginCheckInput("30000"); // IE is very slow
         bruteForceDetectionPage.form().setMinQuickLoginWaitSelect(BruteForceDetection.TimeSelectValues.SECONDS);
         bruteForceDetectionPage.form().setMinQuickLoginWaitInput(String.valueOf(secondsToWait));
         bruteForceDetectionPage.form().save();
@@ -106,12 +106,12 @@ public class SecurityDefensesTest extends AbstractRealmTest {
 
     @Test
     public void maxWaitLoginFailures() throws InterruptedException {
-        final short secondsToWait = 15;
+        final short secondsToWait = 40;
 
         bruteForceDetectionPage.form().setProtectionEnabled(true);
         bruteForceDetectionPage.form().setMaxLoginFailures("1");
         bruteForceDetectionPage.form().setWaitIncrementSelect(BruteForceDetection.TimeSelectValues.MINUTES);
-        bruteForceDetectionPage.form().setWaitIncrementInput("10");
+        bruteForceDetectionPage.form().setWaitIncrementInput("30");
         bruteForceDetectionPage.form().setMaxWaitSelect(BruteForceDetection.TimeSelectValues.SECONDS);
         bruteForceDetectionPage.form().setMaxWaitInput(String.valueOf(secondsToWait));
         bruteForceDetectionPage.form().save();

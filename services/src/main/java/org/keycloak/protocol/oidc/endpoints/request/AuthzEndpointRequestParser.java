@@ -70,9 +70,7 @@ abstract class AuthzEndpointRequestParser {
         // https://tools.ietf.org/html/rfc7636#section-6.1
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CODE_CHALLENGE_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM);
-
     }
-
 
     public void parseRequest(AuthorizationEndpointRequest request) {
         String clientId = getParameter(OIDCLoginProtocol.CLIENT_ID_PARAM);
@@ -96,6 +94,7 @@ abstract class AuthzEndpointRequestParser {
         request.claims = replaceIfNotNull(request.claims, getParameter(OIDCLoginProtocol.CLAIMS_PARAM));
         request.acr = replaceIfNotNull(request.acr, getParameter(OIDCLoginProtocol.ACR_PARAM));
         request.display = replaceIfNotNull(request.display, getParameter(OAuth2Constants.DISPLAY));
+        request.uiLocales = replaceIfNotNull(request.uiLocales, getParameter(OAuth2Constants.UI_LOCALES_PARAM));
 
         // https://tools.ietf.org/html/rfc7636#section-6.1
         request.codeChallenge = replaceIfNotNull(request.codeChallenge, getParameter(OIDCLoginProtocol.CODE_CHALLENGE_PARAM));
@@ -103,7 +102,6 @@ abstract class AuthzEndpointRequestParser {
 
         extractAdditionalReqParams(request.additionalReqParams);
     }
-
 
     protected void extractAdditionalReqParams(Map<String, String> additionalReqParams) {
         for (String paramName : keySet()) {
@@ -129,7 +127,6 @@ abstract class AuthzEndpointRequestParser {
     protected <T> T replaceIfNotNull(T previousVal, T newVal) {
         return newVal==null ? previousVal : newVal;
     }
-
 
     protected abstract String getParameter(String paramName);
 

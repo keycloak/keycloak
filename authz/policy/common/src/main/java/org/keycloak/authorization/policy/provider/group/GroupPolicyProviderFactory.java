@@ -171,8 +171,9 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
                 group = authorization.getRealm().getGroupById(definition.getId());
             }
 
-            if (group == null) {
-                String path = definition.getPath();
+            String path = definition.getPath();
+            
+            if (group == null && path != null) {
                 String canonicalPath = path.startsWith("/") ? path.substring(1, path.length()) : path;
 
                 if (canonicalPath != null) {

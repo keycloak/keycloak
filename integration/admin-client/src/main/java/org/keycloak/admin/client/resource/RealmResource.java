@@ -27,6 +27,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -208,16 +209,31 @@ public interface RealmResource {
 
     @Path("testLDAPConnection")
     @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @NoCache
+    @Deprecated
     Response testLDAPConnection(@FormParam("action") String action, @FormParam("connectionUrl") String connectionUrl,
                                 @FormParam("bindDn") String bindDn, @FormParam("bindCredential") String bindCredential,
                                 @FormParam("useTruststoreSpi") String useTruststoreSpi, @FormParam("connectionTimeout") String connectionTimeout);
 
-    @Path("testSMTPConnection/{config}")
+    @Path("testLDAPConnection")
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @NoCache
+    Response testLDAPConnection(TestLdapConnectionRepresentation config);
+
+    @Path("testSMTPConnection")
+    @POST
+    @NoCache
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Deprecated
+    Response testSMTPConnection(@FormParam("config") String config);
+
+    @Path("testSMTPConnection")
     @POST
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
-    Response testSMTPConnection(final @PathParam("config") String config) throws Exception;
+    Response testSMTPConnection(Map<String, String> config);
 
     @Path("clear-realm-cache")
     @POST

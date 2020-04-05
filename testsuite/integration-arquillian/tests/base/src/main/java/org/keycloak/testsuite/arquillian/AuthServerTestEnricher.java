@@ -35,6 +35,7 @@ import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.arquillian.test.spi.annotation.SuiteScoped;
 import org.jboss.arquillian.test.spi.event.suite.AfterClass;
+import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 import org.jboss.logging.Logger;
@@ -171,6 +172,13 @@ public class AuthServerTestEnricher {
         int port = AUTH_SERVER_SSL_REQUIRED ? httpsPort : httpPort;
 
         return removeDefaultPorts(String.format("%s://%s:%s", scheme, host, port + clusterPortOffset));
+    }
+
+    public static String getHttpAuthServerContextRoot() {
+        String host = System.getProperty("auth.server.host", "localhost");
+        int httpPort = Integer.parseInt(System.getProperty("auth.server.http.port")); // property must be set
+
+        return removeDefaultPorts(String.format("%s://%s:%s", "http", host, httpPort));
     }
 
     public static String getAuthServerBrowserContextRoot() throws MalformedURLException {
@@ -349,8 +357,7 @@ public class AuthServerTestEnricher {
     public void deployProviders(@Observes(precedence = -1) AfterStart event) throws DeploymentException {
         if (isAuthServerRemote() && currentContainerName.contains("auth-server")) {
             this.testsuiteProvidersArchive = ShrinkWrap.create(ZipImporter.class, "testsuiteProviders.jar")
-                    .importFrom(Maven.resolver()
-                        .loadPomFromFile("pom.xml")
+                    .importFrom(Maven.configureResolverViaPlugin()
                         .resolve("org.keycloak.testsuite:integration-arquillian-testsuite-providers")
                         .withoutTransitivity()
                         .asSingleFile()
@@ -589,8 +596,14 @@ public class AuthServerTestEnricher {
         suiteContext.getServerLogChecker().updateLastCheckedPositionsOfAllFilesToEndOfFile();
     }
 
-    public void startTestClassProvider(@Observes(precedence = 100) BeforeSuite beforeSuite) {
-        new TestClassProvider().start();
+    public void startTestClassProvider(@Observes(precedence = 1) BeforeSuite beforeSuite) {
+        TestClassProvider testClassProvider = new TestClassProvider();
+        testClassProvider.start();
+        suiteContext.setTestClassProvider(testClassProvider);
+    }
+
+    public void stopTestClassProvider(@Observes(precedence = -1) AfterSuite afterSuite) {
+        suiteContext.getTestClassProvider().stop();
     }
 
     private static final Pattern UNEXPECTED_UNCAUGHT_ERROR = Pattern.compile(

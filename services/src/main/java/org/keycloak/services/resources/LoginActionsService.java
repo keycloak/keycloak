@@ -47,6 +47,9 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.exceptions.TokenNotActiveException;
+import org.keycloak.locale.LocaleSelectorProvider;
+import org.keycloak.locale.LocaleSelectorSPI;
+import org.keycloak.locale.LocaleUpdaterProvider;
 import org.keycloak.models.ActionTokenKeyModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
@@ -258,7 +261,21 @@ public class LoginActionsService {
         AuthenticationSessionModel authSession = checks.getAuthenticationSession();
         boolean actionRequest = checks.isActionRequest();
 
+        processLocaleParam(authSession);
+
         return processAuthentication(actionRequest, execution, authSession, null);
+    }
+
+    protected void processLocaleParam(AuthenticationSessionModel authSession) {
+        if (authSession != null && realm.isInternationalizationEnabled()) {
+            String locale = session.getContext().getUri().getQueryParameters().getFirst(LocaleSelectorProvider.KC_LOCALE_PARAM);
+            if (locale != null) {
+                authSession.setAuthNote(LocaleSelectorProvider.USER_REQUEST_LOCALE, locale);
+
+                LocaleUpdaterProvider localeUpdater = session.getProvider(LocaleUpdaterProvider.class);
+                localeUpdater.updateLocaleCookie(locale);
+            }
+        }
     }
 
     protected Response processAuthentication(boolean action, String execution, AuthenticationSessionModel authSession, String errorMessage) {
@@ -356,6 +373,7 @@ public class LoginActionsService {
                                         @QueryParam(Constants.TAB_ID) String tabId) {
         ClientModel client = realm.getClientByClientId(clientId);
         AuthenticationSessionModel authSession = new AuthenticationSessionManager(session).getCurrentAuthenticationSession(realm, client, tabId);
+        processLocaleParam(authSession);
 
         // we allow applications to link to reset credentials without going through OAuth or SAML handshakes
         if (authSession == null && code == null) {
@@ -543,6 +561,8 @@ public class LoginActionsService {
 
                 authSession = handler.startFreshAuthenticationSession(token, tokenContext);
                 tokenContext.setAuthenticationSession(authSession, true);
+
+                processLocaleParam(authSession);
             }
 
             initLoginEvent(authSession);
@@ -678,6 +698,8 @@ public class LoginActionsService {
 
         AuthenticationSessionModel authSession = checks.getAuthenticationSession();
 
+        processLocaleParam(authSession);
+
         AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), clientConnection);
 
         return processRegistration(checks.isActionRequest(), execution, authSession, null);
@@ -738,6 +760,8 @@ public class LoginActionsService {
         event.detail(Details.CODE_ID, code);
         final AuthenticationSessionModel authSession = checks.getAuthenticationSession();
 
+        processLocaleParam(authSession);
+
         String noteKey = firstBrokerLogin ? AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE : PostBrokerLoginConstants.PBL_BROKERED_IDENTITY_CONTEXT;
         SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromAuthenticationSession(authSession, noteKey);
         if (serializedCtx == null) {
@@ -760,7 +784,6 @@ public class LoginActionsService {
 
         event.detail(Details.IDENTITY_PROVIDER, identityProviderAlias)
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, brokerContext.getUsername());
-
 
         AuthenticationProcessor processor = new AuthenticationProcessor() {
 
@@ -956,6 +979,9 @@ public class LoginActionsService {
         }
 
         AuthenticationSessionModel authSession = checks.getAuthenticationSession();
+
+        processLocaleParam(authSession);
+
         if (!checks.isActionRequest()) {
             initLoginEvent(authSession);
             event.event(EventType.CUSTOM_REQUIRED_ACTION);

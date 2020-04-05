@@ -17,7 +17,6 @@
  */
 package org.keycloak.authorization.jpa.store;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.model.Resource;
@@ -26,8 +25,16 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import javax.persistence.*;
-import javax.persistence.criteria.*;
+import javax.persistence.EntityManager;
+import javax.persistence.FlushModeType;
+import javax.persistence.NoResultException;
+import javax.persistence.Query;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Expression;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -41,7 +48,6 @@ public class JPAResourceStore implements ResourceStore {
 
     private final EntityManager entityManager;
     private final AuthorizationProvider provider;
-
 
     public JPAResourceStore(EntityManager entityManager, AuthorizationProvider provider) {
         this.entityManager = entityManager;
@@ -233,9 +239,9 @@ public class JPAResourceStore implements ResourceStore {
                 predicates.add(root.get(name).in(value));
             } else if ("scope".equals(name)) {
                 predicates.add(root.join("scopes").get("id").in(value));
-            } else if ("ownerManagedAccess".equals(name)) {
+            } else if ("ownerManagedAccess".equals(name) && value.length > 0) {
                 predicates.add(builder.equal(root.get(name), Boolean.valueOf(value[0])));
-            } else if ("uri".equals(name)) {
+            } else if ("uri".equals(name) && value.length > 0 && value[0] != null) {
                 predicates.add(builder.lower(root.join("uris")).in(value[0].toLowerCase()));
             } else if ("uri_not_null".equals(name)) {
                 // predicates.add(builder.isNotEmpty(root.get("uris"))); looks like there is a bug in hibernate and this line doesn't work: https://hibernate.atlassian.net/browse/HHH-6686
@@ -244,12 +250,13 @@ public class JPAResourceStore implements ResourceStore {
                 predicates.add(builder.notEqual(urisSize, 0));
             } else if ("owner".equals(name)) {
                 predicates.add(root.get(name).in(value));
-            } else if ("name".equals(name)) {
-                predicates.add(
-                        builder.or(builder.like(root.get(name), "%" + value[0] + "%"),
-                                builder.like(root.get("displayName"), "%" + value[0] + "%")));
-            } else {
-                predicates.add(builder.like(root.get(name), "%" + value[0] + "%"));
+            } else if (!Resource.EXACT_NAME.equals(name)) {
+                if ("name".equals(name) && attributes.containsKey(Resource.EXACT_NAME) && Boolean.valueOf(attributes.get(Resource.EXACT_NAME)[0])
+                        && value.length > 0 && value[0] != null) {
+                    predicates.add(builder.equal(builder.lower(root.get(name)), value[0].toLowerCase()));
+                } else if (value.length > 0 &&  value[0] != null) {
+                    predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
+                }
             }
         });
 
@@ -395,52 +402,4 @@ public class JPAResourceStore implements ResourceStore {
                 .map(entity -> new ResourceAdapter(entity, entityManager, storeFactory))
                 .forEach(consumer);
     }
-
-
-    @Override
-    public List<Resource> findByParent(String resourceServerId, String parent) {
-        List<Resource> list = new LinkedList<>();
-
-        findByParent(parent, resourceServerId, list::add);
-
-        return list;
-    }
-
-    @Override
-    public void findByParent(String resourceServerId, String parent, Consumer<Resource> consumer) {
-        ResourceEntity resourceEntity = entityManager.find(ResourceEntity.class, parent);
-        TypedQuery<String> query = entityManager.createNamedQuery("getResourceIdsByParent", String.class);
-
-        query.setFlushMode(FlushModeType.COMMIT);
-        query.setParameter("parent", resourceEntity);
-        query.setParameter("ownerId", resourceServerId);
-        query.setParameter("serverId", resourceServerId);
-
-        query.getResultList().stream()
-                .map(id -> findById(id, resourceServerId))
-                .forEach(consumer);
-    }
-
-    @Override
-    public List<Resource> findTopLevel(String resourceServerId, int firstResult, int maxResult) {
-        TypedQuery<ResourceEntity> query = entityManager.createNamedQuery("getTopLevelResource", ResourceEntity.class);
-
-        query.setParameter("ownerId", resourceServerId);
-        query.setParameter("serverId", resourceServerId);
-
-        if (firstResult != -1) {
-            query.setFirstResult(firstResult);
-        }
-        if (maxResult != -1) {
-            query.setMaxResults(maxResult);
-        }
-
-        List<ResourceEntity> result = query.getResultList();
-        List<Resource> list = new LinkedList<>();
-        for (ResourceEntity resourceEntity : result) {
-            list.add(new ResourceAdapter(resourceEntity, entityManager, provider.getStoreFactory()));
-        }
-        return list;
-    }
-
 }

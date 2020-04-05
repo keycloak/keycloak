@@ -128,7 +128,7 @@ public class ProtectedResource {
      * @return a {@link ResourceRepresentation}
      */
     public ResourceRepresentation findByName(String name) {
-        List<ResourceRepresentation> representations = find(null, name, null, configuration.getResource(), null, null, false, true, null, null);
+        List<ResourceRepresentation> representations = find(null, name, null, configuration.getResource(), null, null, false, true, true, null, null);
 
         if (representations.isEmpty()) {
             return null;
@@ -145,7 +145,7 @@ public class ProtectedResource {
      * @return a {@link ResourceRepresentation}
      */
     public ResourceRepresentation findByName(String name, String ownerId) {
-        List<ResourceRepresentation> representations = find(null, name, null, ownerId, null, null, false, true,null, null);
+        List<ResourceRepresentation> representations = find(null, name, null, ownerId, null, null, false, true, true, null, null);
 
         if (representations.isEmpty()) {
             return null;
@@ -172,7 +172,7 @@ public class ProtectedResource {
         Callable<String[]> callable = new Callable<String[]>() {
             @Override
             public String[] call() throws Exception {
-                return (String[]) createFindRequest(id, name, uri, owner, type, scope, matchingUri, false, firstResult, maxResult).response().json(String[].class).execute();
+                return (String[]) createFindRequest(id, name, uri, owner, type, scope, matchingUri, false, false, firstResult, maxResult).response().json(String[].class).execute();
             }
         };
         try {
@@ -183,8 +183,8 @@ public class ProtectedResource {
     }
 
     /**
-     * Query the server for any resource with the matching arguments.
-     *
+     * <p>Query the server for any resource with the matching arguments, where queries by name are partial.
+     * 
      * @param id the resource id
      * @param name the resource name
      * @param uri the resource uri
@@ -198,11 +198,31 @@ public class ProtectedResource {
      * @return a list of resource representations or an array of strings representing resource ids, depending on the generic type
      */
     public <R> R find(final String id, final String name, final String uri, final String owner, final String type, final String scope, final boolean matchingUri, final boolean deep, final Integer firstResult, final Integer maxResult) {
+        return find(id, name, uri, owner, type, scope, matchingUri, false, deep, firstResult, maxResult);
+    }
+    
+    /**
+     * Query the server for any resource with the matching arguments.
+     *
+     * @param id the resource id
+     * @param name the resource name
+     * @param uri the resource uri
+     * @param owner the resource owner
+     * @param type the resource type
+     * @param scope the resource scope
+     * @param matchingUri the resource uri. Use this parameter to lookup a resource that best match the given uri
+     * @param exactName if the the {@code name} provided should have a exact match   
+     * @param deep if the result should be a list of resource representations with details about the resource. If false, only ids are returned
+     * @param firstResult the position of the first resource to retrieve
+     * @param maxResult the maximum number of resources to retrieve
+     * @return a list of resource representations or an array of strings representing resource ids, depending on the generic type
+     */
+    public <R> R find(final String id, final String name, final String uri, final String owner, final String type, final String scope, final boolean matchingUri, final boolean exactName, final boolean deep, final Integer firstResult, final Integer maxResult) {
         if (deep) {
             Callable<List<ResourceRepresentation>> callable = new Callable<List<ResourceRepresentation>>() {
                 @Override
                 public List<ResourceRepresentation> call() {
-                    return (List<ResourceRepresentation>) createFindRequest(id, name, uri, owner, type, scope, matchingUri, deep, firstResult, maxResult).response().json(new TypeReference<List<ResourceRepresentation>>() {
+                    return (List<ResourceRepresentation>) createFindRequest(id, name, uri, owner, type, scope, matchingUri, exactName, deep, firstResult, maxResult).response().json(new TypeReference<List<ResourceRepresentation>>() {
                     }).execute();
                 }
             };
@@ -257,7 +277,7 @@ public class ProtectedResource {
      * @param uri the resource uri
      */
     public List<ResourceRepresentation> findByUri(String uri) {
-        return find(null, null, uri, null, null, null, false, true, null, null);
+        return find(null, null, uri, null, null, null, false, false, true, null, null);
     }
 
     /**
@@ -268,10 +288,10 @@ public class ProtectedResource {
      * @return a list of resources
      */
     public List<ResourceRepresentation> findByMatchingUri(String uri) {
-        return find(null, null, uri, null, null, null, true, true,null, null);
+        return find(null, null, uri, null, null, null, true, false, true,null, null);
     }
 
-    private HttpMethod createFindRequest(String id, String name, String uri, String owner, String type, String scope, boolean matchingUri, boolean deep, Integer firstResult, Integer maxResult) {
+    private HttpMethod createFindRequest(String id, String name, String uri, String owner, String type, String scope, boolean matchingUri, boolean exactName, boolean deep, Integer firstResult, Integer maxResult) {
         return http.get(serverConfiguration.getResourceRegistrationEndpoint())
                 .authorizationBearer(pat.call())
                 .param("_id", id)
@@ -281,6 +301,7 @@ public class ProtectedResource {
                 .param("type", type)
                 .param("scope", scope)
                 .param("matchingUri", Boolean.valueOf(matchingUri).toString())
+                .param("exactName", Boolean.valueOf(exactName).toString())
                 .param("deep", Boolean.toString(deep))
                 .param("first", firstResult != null ? firstResult.toString() : null)
                 .param("max", maxResult != null ? maxResult.toString() : Integer.toString(-1));

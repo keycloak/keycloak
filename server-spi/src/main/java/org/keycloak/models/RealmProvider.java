@@ -21,7 +21,6 @@ import org.keycloak.migration.MigrationModel;
 import org.keycloak.provider.Provider;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -35,7 +34,6 @@ public interface RealmProvider extends Provider, ClientProvider {
     RealmModel createRealm(String name);
     RealmModel createRealm(String id, String name);
     RealmModel getRealm(String id);
-
     RealmModel getRealmByName(String name);
 
     void moveGroup(RealmModel realm, GroupModel group, GroupModel toParent);
@@ -47,7 +45,7 @@ public interface RealmProvider extends Provider, ClientProvider {
     Long getClientsCount(RealmModel realm);
 
     Long getGroupsCountByNameContaining(RealmModel realm, String search);
-
+    
     List<GroupModel> getGroupsByRole(RealmModel realm, RoleModel role, int firstResult, int maxResults);
 
     List<GroupModel> getTopLevelGroups(RealmModel realm);
@@ -58,9 +56,19 @@ public interface RealmProvider extends Provider, ClientProvider {
 
     boolean removeGroup(RealmModel realm, GroupModel group);
 
-    GroupModel createGroup(RealmModel realm, String name);
+    default GroupModel createGroup(RealmModel realm, String name) {
+        return createGroup(realm, null, name, null);
+    }
 
-    GroupModel createGroup(RealmModel realm, String id, String name);
+    default GroupModel createGroup(RealmModel realm, String id, String name) {
+        return createGroup(realm, id, name, null);
+    }
+
+    default GroupModel createGroup(RealmModel realm, String name, GroupModel toParent) {
+        return createGroup(realm, null, name, toParent);
+    }
+
+    GroupModel createGroup(RealmModel realm, String id, String name, GroupModel toParent);
 
     void addTopLevelGroup(RealmModel realm, GroupModel subGroup);
 
@@ -72,6 +80,15 @@ public interface RealmProvider extends Provider, ClientProvider {
     RoleModel getRealmRole(RealmModel realm, String name);
 
     Set<RoleModel> getRealmRoles(RealmModel realm);
+
+    Set<RoleModel> getRealmRoles(RealmModel realm, Integer first, Integer max);
+
+    Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client, Integer first, Integer max);
+
+    Set<RoleModel> searchForClientRoles(RealmModel realm, ClientModel client, String search, Integer first,
+            Integer max);
+
+    Set<RoleModel> searchForRoles(RealmModel realm, String search, Integer first, Integer max);
 
     boolean removeRole(RealmModel realm, RoleModel role);
 

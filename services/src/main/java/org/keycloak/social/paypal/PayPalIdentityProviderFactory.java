@@ -40,6 +40,11 @@ public class PayPalIdentityProviderFactory extends AbstractIdentityProviderFacto
     }
 
     @Override
+    public PayPalIdentityProviderConfig createConfig() {
+        return new PayPalIdentityProviderConfig();
+    }
+
+    @Override
     public String getId() {
         return PROVIDER_ID;
     }

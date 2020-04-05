@@ -108,7 +108,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertEquals("test-app", jsonNode.get("client_id").asText());
         assertTrue(jsonNode.has("exp"));
         assertTrue(jsonNode.has("iat"));
-        assertTrue(jsonNode.has("nbf"));
+        assertFalse(jsonNode.has("nbf"));
         assertTrue(jsonNode.has("sub"));
         assertTrue(jsonNode.has("aud"));
         assertTrue(jsonNode.has("iss"));
@@ -121,7 +121,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertEquals("test-app", rep.getClientId());
         assertEquals(jsonNode.get("exp").asInt(), rep.getExpiration());
         assertEquals(jsonNode.get("iat").asInt(), rep.getIssuedAt());
-        assertEquals(jsonNode.get("nbf").asInt(), rep.getNotBefore());
+        assertEquals(jsonNode.get("nbf"), rep.getNbf());
         assertEquals(jsonNode.get("sub").asText(), rep.getSubject());
 
         List<String> audiences = new ArrayList<>();
@@ -163,7 +163,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertEquals("test-app", jsonNode.get("client_id").asText());
         assertTrue(jsonNode.has("exp"));
         assertTrue(jsonNode.has("iat"));
-        assertTrue(jsonNode.has("nbf"));
+        assertFalse(jsonNode.has("nbf"));
         assertTrue(jsonNode.has("sub"));
         assertTrue(jsonNode.has("aud"));
         assertTrue(jsonNode.has("iss"));
@@ -177,7 +177,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertEquals(jsonNode.get("session_state").asText(), rep.getSessionState());
         assertEquals(jsonNode.get("exp").asInt(), rep.getExpiration());
         assertEquals(jsonNode.get("iat").asInt(), rep.getIssuedAt());
-        assertEquals(jsonNode.get("nbf").asInt(), rep.getNotBefore());
+        assertEquals(jsonNode.get("nbf"), rep.getNbf());
         assertEquals(jsonNode.get("iss").asText(), rep.getIssuer());
         assertEquals(jsonNode.get("jti").asText(), rep.getId());
         assertEquals(jsonNode.get("typ").asText(), "Refresh");

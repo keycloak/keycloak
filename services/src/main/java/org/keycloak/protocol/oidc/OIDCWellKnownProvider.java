@@ -117,7 +117,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         List<ClientScopeModel> scopes = realm.getClientScopes();
         List<String> scopeNames = new LinkedList<>();
         for (ClientScopeModel clientScope : scopes) {
-            if (clientScope.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
+            if (OIDCLoginProtocol.LOGIN_PROTOCOL.equals(clientScope.getProtocol())) {
                 scopeNames.add(clientScope.getName());
             }
         }

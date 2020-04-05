@@ -55,6 +55,49 @@ import java.util.stream.Collectors;
  * @version $Revision: 1 $
  */
 public class ModelToRepresentation {
+
+    public static Set<String> REALM_EXCLUDED_ATTRIBUTES = new HashSet<>();
+    static {
+        REALM_EXCLUDED_ATTRIBUTES.add("displayName");
+        REALM_EXCLUDED_ATTRIBUTES.add("displayNameHtml");
+        REALM_EXCLUDED_ATTRIBUTES.add("defaultSignatureAlgorithm");
+        REALM_EXCLUDED_ATTRIBUTES.add("bruteForceProtected");
+        REALM_EXCLUDED_ATTRIBUTES.add("permanentLockout");
+        REALM_EXCLUDED_ATTRIBUTES.add("maxFailureWaitSeconds");
+        REALM_EXCLUDED_ATTRIBUTES.add("waitIncrementSeconds");
+        REALM_EXCLUDED_ATTRIBUTES.add("quickLoginCheckMilliSeconds");
+        REALM_EXCLUDED_ATTRIBUTES.add("minimumQuickLoginWaitSeconds");
+        REALM_EXCLUDED_ATTRIBUTES.add("maxDeltaTimeSeconds");
+        REALM_EXCLUDED_ATTRIBUTES.add("failureFactor");
+        REALM_EXCLUDED_ATTRIBUTES.add("actionTokenGeneratedByAdminLifespan");
+        REALM_EXCLUDED_ATTRIBUTES.add("actionTokenGeneratedByUserLifespan");
+        REALM_EXCLUDED_ATTRIBUTES.add("offlineSessionMaxLifespanEnabled");
+        REALM_EXCLUDED_ATTRIBUTES.add("offlineSessionMaxLifespan");
+
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyRpEntityName");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicySignatureAlgorithms");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyRpId");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAttestationConveyancePreference");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAuthenticatorAttachment");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyRequireResidentKey");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyUserVerificationRequirement");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyCreateTimeout");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAvoidSameAuthenticatorRegister");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAcceptableAaguids");
+
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyRpEntityNamePasswordless");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicySignatureAlgorithmsPasswordless");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyRpIdPasswordless");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAttestationConveyancePreferencePasswordless");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAuthenticatorAttachmentPasswordless");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyRequireResidentKeyPasswordless");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyUserVerificationRequirementPasswordless");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyCreateTimeoutPasswordless");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAvoidSameAuthenticatorRegisterPasswordless");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAcceptableAaguidsPasswordless");
+    }
+
+
     public static void buildGroupPath(StringBuilder sb, GroupModel group) {
         if (group.getParent() != null) {
             buildGroupPath(sb, group.getParent());
@@ -382,6 +425,7 @@ public class ModelToRepresentation {
         rep.setOtpPolicyType(otpPolicy.getType());
         rep.setOtpPolicyLookAheadWindow(otpPolicy.getLookAheadWindow());
         rep.setOtpSupportedApplications(otpPolicy.getSupportedApplications());
+
         WebAuthnPolicy webAuthnPolicy = realm.getWebAuthnPolicy();
         rep.setWebAuthnPolicyRpEntityName(webAuthnPolicy.getRpEntityName());
         rep.setWebAuthnPolicySignatureAlgorithms(webAuthnPolicy.getSignatureAlgorithm());
@@ -393,6 +437,19 @@ public class ModelToRepresentation {
         rep.setWebAuthnPolicyCreateTimeout(webAuthnPolicy.getCreateTimeout());
         rep.setWebAuthnPolicyAvoidSameAuthenticatorRegister(webAuthnPolicy.isAvoidSameAuthenticatorRegister());
         rep.setWebAuthnPolicyAcceptableAaguids(webAuthnPolicy.getAcceptableAaguids());
+
+        webAuthnPolicy = realm.getWebAuthnPolicyPasswordless();
+        rep.setWebAuthnPolicyPasswordlessRpEntityName(webAuthnPolicy.getRpEntityName());
+        rep.setWebAuthnPolicyPasswordlessSignatureAlgorithms(webAuthnPolicy.getSignatureAlgorithm());
+        rep.setWebAuthnPolicyPasswordlessRpId(webAuthnPolicy.getRpId());
+        rep.setWebAuthnPolicyPasswordlessAttestationConveyancePreference(webAuthnPolicy.getAttestationConveyancePreference());
+        rep.setWebAuthnPolicyPasswordlessAuthenticatorAttachment(webAuthnPolicy.getAuthenticatorAttachment());
+        rep.setWebAuthnPolicyPasswordlessRequireResidentKey(webAuthnPolicy.getRequireResidentKey());
+        rep.setWebAuthnPolicyPasswordlessUserVerificationRequirement(webAuthnPolicy.getUserVerificationRequirement());
+        rep.setWebAuthnPolicyPasswordlessCreateTimeout(webAuthnPolicy.getCreateTimeout());
+        rep.setWebAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister(webAuthnPolicy.isAvoidSameAuthenticatorRegister());
+        rep.setWebAuthnPolicyPasswordlessAcceptableAaguids(webAuthnPolicy.getAcceptableAaguids());
+
         if (realm.getBrowserFlow() != null) rep.setBrowserFlow(realm.getBrowserFlow().getAlias());
         if (realm.getRegistrationFlow() != null) rep.setRegistrationFlow(realm.getRegistrationFlow().getAlias());
         if (realm.getDirectGrantFlow() != null) rep.setDirectGrantFlow(realm.getDirectGrantFlow().getAlias());
@@ -445,14 +502,31 @@ public class ModelToRepresentation {
             exportGroups(realm, rep);
         }
 
-        Map<String, String> attributes = realm.getAttributes();
-        rep.setAttributes(attributes);
+        rep.setAttributes(stripRealmAttributesIncludedAsFields(realm.getAttributes()));
 
         if (!internal) {
             rep = StripSecretsUtils.strip(rep);
         }
 
         return rep;
+    }
+
+    public static Map<String, String> stripRealmAttributesIncludedAsFields(Map<String, String> attributes) {
+        Map<String, String> a = new HashMap<>();
+
+        for (Map.Entry<String, String> e : attributes.entrySet()) {
+            if (REALM_EXCLUDED_ATTRIBUTES.contains(e.getKey())) {
+                continue;
+            }
+
+            if (e.getKey().startsWith("_browser_header")) {
+                continue;
+            }
+
+            a.put(e.getKey(), e.getValue());
+        }
+
+        return a;
     }
 
     public static void exportGroups(RealmModel realm, RealmRepresentation rep) {

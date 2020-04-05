@@ -25,6 +25,7 @@ import org.keycloak.representations.idm.UserSessionRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -67,6 +68,19 @@ public interface UserResource {
     List<GroupRepresentation> groups(@QueryParam("search") String search,
                                      @QueryParam("first") Integer firstResult,
                                      @QueryParam("max") Integer maxResults);
+    
+    @Path("groups")
+    @GET
+    List<GroupRepresentation> groups(@QueryParam("first") Integer firstResult,
+                                     @QueryParam("max") Integer maxResults,
+                                     @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation);
+    
+    @Path("groups")
+    @GET
+    List<GroupRepresentation> groups(@QueryParam("search") String search,
+                                     @QueryParam("first") Integer firstResult,
+                                     @QueryParam("max") Integer maxResults,
+                                     @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation);
 
     @Path("groups/{groupId}")
     @PUT
@@ -89,6 +103,18 @@ public interface UserResource {
     @Path("credentials")
     @Produces(MediaType.APPLICATION_JSON)
     List<CredentialRepresentation> credentials();
+
+
+    /**
+     * Return credential types, which are provided by the user storage where user is stored. Returned values can contain for example "password", "otp" etc.
+     * This will always return empty list for "local" users, which are not backed by any user storage
+     *
+     * @return
+     */
+    @GET
+    @Path("configured-user-storage-credential-types")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<String> getConfiguredUserStorageCredentialTypes();
 
     /**
      * Remove a credential for a user
@@ -128,14 +154,14 @@ public interface UserResource {
      * Disables or deletes all credentials for specific types.
      * Type examples "otp", "password"
      *
-     * This endpoint is deprecated as it is not supported to disable credentials, just delete them
+     * This is typically supported just for the users backed by user storage providers. See {@link UserRepresentation#getDisableableCredentialTypes()}
+     * to see what credential types can be disabled for the particular user
      *
      * @param credentialTypes
      */
     @Path("disable-credential-types")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    @Deprecated
     void disableCredentialType(List<String> credentialTypes);
 
     @PUT
@@ -170,6 +196,43 @@ public interface UserResource {
     @PUT
     @Path("execute-actions-email")
     void executeActionsEmail(List<String> actions);
+
+    /**
+     * Sends an email to the user with a link within it.  If they click on the link they will be asked to perform some actions
+     * i.e. reset password, update profile, etc.
+     *
+     * The lifespan decides the number of seconds after which the generated token in the email link expires. The default
+     * value is 12 hours.
+     *
+     * @param actions
+     * @param lifespan
+     */
+    @PUT
+    @Path("execute-actions-email")
+    void executeActionsEmail(List<String> actions, @QueryParam("lifespan") Integer lifespan);
+
+    /**
+     * Sends an email to the user with a link within it.  If they click on the link they will be asked to perform some actions
+     * i.e. reset password, update profile, etc.
+     *
+     * If redirectUri is not null, then you must specify a client id.  This will set the URI you want the flow to link
+     * to after the email link is clicked and actions completed.  If both parameters are null, then no page is linked to
+     * at the end of the flow.
+     *
+     * The lifespan decides the number of seconds after which the generated token in the email link expires. The default
+     * value is 12 hours.
+     *
+     * @param clientId
+     * @param redirectUri
+     * @param lifespan
+     * @param actions
+     */
+    @PUT
+    @Path("execute-actions-email")
+    void executeActionsEmail(@QueryParam("client_id") String clientId,
+                             @QueryParam("redirect_uri") String redirectUri,
+                             @QueryParam("lifespan") Integer lifespan,
+                             List<String> actions);
 
     /**
      * Sends an email to the user with a link within it.  If they click on the link they will be asked to perform some actions

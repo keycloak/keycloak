@@ -417,6 +417,7 @@ public class DefaultAuthenticationFlows {
                 Map<String, String> config = new HashMap<>();
                 config.put("defaultProvider", defaultProvider);
                 configModel.setConfig(config);
+                configModel.setAlias(defaultProvider);
                 configModel = realm.addAuthenticatorConfig(configModel);
 
                 execution.setAuthenticatorConfig(configModel.getId());

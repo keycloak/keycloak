@@ -19,7 +19,9 @@ package org.keycloak.testsuite.console.clients;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.console.page.clients.settings.ClientSettings;
 import org.keycloak.testsuite.util.Timer;
 import org.openqa.selenium.By;
@@ -47,7 +49,7 @@ public class ClientSettingsTest extends AbstractClientTest {
     private ClientSettings clientSettingsPage;
 
     private ClientRepresentation newClient;
-
+    
     @Test
     public void crudOIDCPublic() {
         newClient = createClientRep("oidc-public", OIDC);
@@ -80,6 +82,8 @@ public class ClientSettingsTest extends AbstractClientTest {
         clientSettingsPage.form().setWebOrigins(webOrigins);
         clientSettingsPage.form().save();
         assertAlertSuccess();
+
+        assertFalse(clientSettingsPage.form().isAlwaysDisplayInConsoleVisible());
         
         found = findClientByClientId(newClient.getClientId());
         assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
@@ -90,6 +94,34 @@ public class ClientSettingsTest extends AbstractClientTest {
         assertAlertSuccess();
         found = findClientByClientId(newClient.getClientId());
         assertNull("Deleted client " + newClient.getClientId() + " was found.", found);
+    }
+
+    @Test
+    @EnableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true)
+    public void alwaysDisplayInAccountConsole() {
+        newClient = createClientRep("always-display-in-console", OIDC);
+        createClient(newClient);
+
+        newClient.setRedirectUris(TEST_REDIRECT_URIs);
+        newClient.setAlwaysDisplayInConsole(true);
+
+        assertFalse(clientSettingsPage.form().isAlwaysDisplayInConsole());
+        clientSettingsPage.form().setAlwaysDisplayInConsole(true);
+        clientSettingsPage.form().setRedirectUris(TEST_REDIRECT_URIs);
+        clientSettingsPage.form().save();
+        assertTrue(clientSettingsPage.form().isAlwaysDisplayInConsole());
+
+        ClientRepresentation found = findClientByClientId(newClient.getClientId());
+        assertNotNull("Client " + newClient.getClientId() + " was not found.", found);
+        assertClientSettingsEqual(newClient, found);
+
+        clientSettingsPage.form().setAccessType(BEARER_ONLY);
+        assertFalse(clientSettingsPage.form().isAlwaysDisplayInConsoleVisible());
+        // check if the switch is displayed when change the Client to SAML and bearer-only flag is set to on (bearer-only
+        // is not applicable for SAML but it's technically present in the Client representation and therefore can affect
+        // the visibility of the switch)
+        clientSettingsPage.form().setProtocol(SAML);
+        assertTrue(clientSettingsPage.form().isAlwaysDisplayInConsoleVisible());
     }
 
     @Test

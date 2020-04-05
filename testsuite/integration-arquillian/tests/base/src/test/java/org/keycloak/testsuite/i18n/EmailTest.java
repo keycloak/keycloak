@@ -131,6 +131,9 @@ public class EmailTest extends AbstractI18NTest {
         }
         
         String link = MailUtils.getPasswordResetEmailLink(greenMail.getLastReceivedMessage());
+
+        // Make sure kc_locale added to link doesn't set locale
+        link += "&kc_locale=de";
         
         DroneUtils.getCurrentDriver().navigate().to(link);
         WaitUtils.waitForPageToLoad();

@@ -429,25 +429,12 @@ module.factory('RegisterRequiredAction', function($resource) {
 module.factory('RealmLDAPConnectionTester', function($resource, $httpParamSerializer) {
     return $resource(authUrl + '/admin/realms/:realm/testLDAPConnection', {
         realm : '@realm'
-    }, {
-        save: {
-            method: 'POST',
-            headers : { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-            transformRequest: function (data) {
-                return $httpParamSerializer(data)
-            }
-        }
     });
 });
 
-module.factory('RealmSMTPConnectionTester', function($resource) {
-    return $resource(authUrl + '/admin/realms/:realm/testSMTPConnection/:config', {
-        realm : '@realm',
-        config : '@config'
-    }, {
-        send: {
-            method: 'POST'
-        }
+module.factory('RealmSMTPConnectionTester', function($resource, $httpParamSerializer) {
+    return $resource(authUrl + '/admin/realms/:realm/testSMTPConnection', {
+        realm : '@realm'
     });
 });
 
@@ -652,6 +639,11 @@ module.factory('UserCredentials', function($resource) {
     var credentials = {};
 
     credentials.getCredentials = $resource(authUrl + '/admin/realms/:realm/users/:userId/credentials', {
+        realm : '@realm',
+        userId : '@userId'
+    }).query;
+
+    credentials.getConfiguredUserStorageCredentialTypes = $resource(authUrl + '/admin/realms/:realm/users/:userId/configured-user-storage-credential-types', {
         realm : '@realm',
         userId : '@userId'
     }).query;
@@ -1994,10 +1986,23 @@ module.factory('GroupMembership', function($resource) {
     });
 });
 
+module.factory('RoleList', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/roles', {
+        realm : '@realm'
+    });
+});
+
 module.factory('RoleMembership', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/roles/:role/users', {
         realm : '@realm',
         role : '@role'
+    });
+});
+
+module.factory('ClientRoleList', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/clients/:client/roles', {
+        realm : '@realm',
+        client : '@client'
     });
 });
 

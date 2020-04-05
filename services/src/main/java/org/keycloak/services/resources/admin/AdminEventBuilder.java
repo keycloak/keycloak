@@ -240,7 +240,7 @@ public class AdminEventBuilder {
         if(realm.isAdminEventsDetailsEnabled()) {
             includeRepresentation = true;
         }
-        adminEvent.setTime(Time.toMillis(Time.currentTime()));
+        adminEvent.setTime(Time.currentTimeMillis());
 
         if (store != null) {
             try {

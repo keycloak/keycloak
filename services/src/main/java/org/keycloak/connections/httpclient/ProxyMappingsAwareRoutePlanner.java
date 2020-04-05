@@ -19,10 +19,17 @@ package org.keycloak.connections.httpclient;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.conn.DefaultRoutePlanner;
 import org.apache.http.impl.conn.DefaultSchemePortResolver;
 import org.apache.http.protocol.HttpContext;
 import org.jboss.logging.Logger;
+
+import static org.keycloak.connections.httpclient.ProxyMappings.ProxyMapping;
 
 /**
  * A {@link DefaultRoutePlanner} that determines the proxy to use for a given target hostname by consulting
@@ -45,9 +52,16 @@ public class ProxyMappingsAwareRoutePlanner extends DefaultRoutePlanner {
   @Override
   protected HttpHost determineProxy(HttpHost target, HttpRequest request, HttpContext context) throws HttpException {
 
-    HttpHost proxy = proxyMappings.getProxyFor(target.getHostName());
-    LOG.debugf("Returning proxy=%s for targetHost=%s", proxy, target.getHostName());
-
-    return proxy;
+    String targetHostName = target.getHostName();
+    ProxyMapping proxyMapping = proxyMappings.getProxyFor(targetHostName);
+    LOG.debugf("Returning proxyMapping=%s for targetHost=%s", proxyMapping, targetHostName);
+    UsernamePasswordCredentials proxyCredentials = proxyMapping.getProxyCredentials();
+    HttpHost proxyHost = proxyMapping.getProxyHost();
+    if (proxyCredentials != null) {
+      CredentialsProvider credsProvider = new BasicCredentialsProvider();
+      credsProvider.setCredentials(new AuthScope(proxyHost.getHostName(), proxyHost.getPort()), proxyCredentials);
+      context.setAttribute(HttpClientContext.CREDS_PROVIDER, credsProvider);
+    }
+    return proxyHost;
   }
 }

@@ -29,7 +29,7 @@ import {
   GridItem,
 } from '@patternfly/react-core';
 
-import { InfoAltIcon, CheckIcon, LinkIcon, BuilderImageIcon } from '@patternfly/react-icons';
+import { InfoAltIcon, CheckIcon, BuilderImageIcon } from '@patternfly/react-icons';
 import { ContentPage } from '../ContentPage';
 import { ContinueCancelModal } from '../../widgets/ContinueCancelModal';
 import { AccountServiceClient } from '../../account-service/account.service';
@@ -105,34 +105,43 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
       });
   }
 
+  private elementId(item: string, application: Application): string {
+    return `application-${item}-${application.clientId}`;
+  }
+
   public render(): React.ReactNode {
     return (
       <ContentPage title={Msg.localize('applicationsPageTitle')}>
         <DataList id="applications-list" aria-label={Msg.localize('applicationsPageTitle')}>
           {this.state.applications.map((application: Application, appIndex: number) => {
+            const appUrl: string = application.userConsentRequired ? application.baseUrl : '/auth' + application.baseUrl;
+
             return (
-              <DataListItem key={'application-' + appIndex} aria-labelledby="applications-list" isExpanded={this.state.isRowOpen[appIndex]}>
+              <DataListItem id={this.elementId("client-id", application)} key={'application-' + appIndex} aria-labelledby="applications-list" isExpanded={this.state.isRowOpen[appIndex]}>
                 <DataListItemRow>
                   <DataListToggle
                     onClick={() => this.onToggle(appIndex)}
                     isExpanded={this.state.isRowOpen[appIndex]}
-                    id={'applicationToggle' + appIndex}
-                    aria-controls="expandable"
+                    id={this.elementId('toggle', application)}
+                    aria-controls={this.elementId("expandable", application)}
                   />
                   <DataListItemCells
                     dataListCells={[
-                      <DataListCell width={2} key={'app-' + appIndex}>
+                      <DataListCell id={this.elementId('name', application)} width={2} key={'app-' + appIndex}>
                         <BuilderImageIcon size='sm' /> {application.clientName ? application.clientName : application.clientId}
                       </DataListCell>,
-                      <DataListCell width={2} key={'internal-' + appIndex}>
+                      <DataListCell id={this.elementId('internal', application)} width={2} key={'internal-' + appIndex}>
                         {application.userConsentRequired ? Msg.localize('thirdPartyApp') : Msg.localize('internalApp')}
                         {application.offlineAccess ? ', ' + Msg.localize('offlineAccess') : ''}
                       </DataListCell>,
-                      <DataListCell width={2} key={'status-' + appIndex}>
+                      <DataListCell id={this.elementId('status', application)} width={2} key={'status-' + appIndex}>
                         {application.inUse ? Msg.localize('inUse') : Msg.localize('notInUse')}
                       </DataListCell>,
-                      <DataListCell width={4} key={'baseUrl-' + appIndex}>
-                        <a href={application.userConsentRequired ? application.baseUrl : '/auth' + application.baseUrl} target="_blank"><LinkIcon /> {application.baseUrl}</a>
+                      <DataListCell id={this.elementId('baseurl', application)} width={4} key={'baseUrl-' + appIndex}>
+                        <button className="pf-c-button pf-m-link" type="button" onClick={() => window.open(appUrl)}>
+                          <span className="pf-c-button__icon">
+                            <i className="fas fa-link" aria-hidden="true"></i>
+                          </span>{application.baseUrl}</button>
                       </DataListCell>,
                     ]}
                   />
@@ -140,7 +149,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                 <DataListContent
                   noPadding={false}
                   aria-label={Msg.localize('applicationDetails')}
-                  id="expandable"
+                  id={this.elementId("expandable", application)}
                   isHidden={!this.state.isRowOpen[appIndex]}
                 >
                   <Grid sm={12} md={12} lg={12}>

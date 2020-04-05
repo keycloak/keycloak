@@ -81,6 +81,7 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -283,7 +284,12 @@ public class AuthorizationTokenService {
             RootAuthenticationSessionModel rootAuthSession = keycloakSession.authenticationSessions().getRootAuthenticationSession(realm, userSessionModel.getId());
 
             if (rootAuthSession == null) {
-                rootAuthSession = keycloakSession.authenticationSessions().createRootAuthenticationSession(userSessionModel.getId(), realm);
+                if (userSessionModel.getUser().getServiceAccountClientLink() == null) {
+                    rootAuthSession = keycloakSession.authenticationSessions().createRootAuthenticationSession(userSessionModel.getId(), realm);
+                } else {
+                    // if the user session is associated with a service account
+                    rootAuthSession = new AuthenticationSessionManager(keycloakSession).createAuthenticationSession(realm, false);
+                }
             }
 
             AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(targetClient);
@@ -459,7 +465,7 @@ public class AuthorizationTokenService {
                         requestedResources.add(ownerResource);
                     }
 
-                    if (!identity.isResourceServer()) {
+                    if (!identity.isResourceServer() || !identity.getId().equals(resourceServer.getId())) {
                         List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().findGranted(resourceName, identity.getId(), resourceServer.getId());
                         for (PermissionTicket permissionTicket : tickets) {
                             requestedResources.add(permissionTicket.getResource());

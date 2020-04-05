@@ -134,7 +134,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
             if (clockSkewSec != null) {
                 String keycloakSamlXMLContent = IOUtils.toString(keycloakSAMLConfig.openStream(), Charset.forName("UTF-8"))
-                    .replace("%CLOCK_SKEW%", String.valueOf(clockSkewSec));
+                    .replace("%CLOCK_SKEW%", "${allowed.clock.skew:" + String.valueOf(clockSkewSec) + "}");
                 deployment.addAsWebInfResource(new StringAsset(keycloakSamlXMLContent), "keycloak-saml.xml");
             } else {
                 deployment.addAsWebInfResource(keycloakSAMLConfig, "keycloak-saml.xml");

@@ -91,7 +91,7 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
                         userManagedPermissions.add(policyResult);
                     }
                     if (!resourceGranted) {
-                        resourceGranted = containsResource;
+                        resourceGranted = isGrantingAccessToResource(resource, policy) && containsResource;
                     }
                 } else {
                     if (isResourcePermission(policy)) {
@@ -148,6 +148,25 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
 
             grantPermission(authorizationProvider, permissions, permission, grantedScopes, resourceServer, request, result);
         }
+    }
+
+    /**
+     * Checks if the given {@code policy} is eligible to grant access to a resource. Resources are only granted if policy is 
+     * not a scope-permission or, if so, the resource is a user-owned resource so that permissions can be overridden when 
+     * inheriting policies from a typed/parent resource.
+     * 
+     * @param resource the resource
+     * @param policy the policy that grants access to the resources
+     * @return {@code true} if the resource should be granted 
+     */
+    private boolean isGrantingAccessToResource(Resource resource, Policy policy) {
+        boolean scopePermission = isScopePermission(policy);
+        
+        if (!scopePermission) {
+            return true;
+        }
+        
+        return resource != null && !resource.getOwner().equals(resourceServer.getId());
     }
 
     public Collection<Permission> results() {

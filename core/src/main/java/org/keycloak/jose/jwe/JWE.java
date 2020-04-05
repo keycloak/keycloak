@@ -141,7 +141,7 @@ public class JWE {
             }
 
             if (encryptionProvider == null) {
-                throw new IllegalArgumentException("No provider for enc '" + header.getAlgorithm() + "'");
+                throw new IllegalArgumentException("No provider for enc '" + header.getEncryptionAlgorithm() + "'");
             }
 
             keyStorage.setEncryptionProvider(encryptionProvider);

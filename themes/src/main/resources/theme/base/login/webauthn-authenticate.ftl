@@ -1,9 +1,9 @@
-    <#import "select.ftl" as layout>
-    <@layout.registrationLayout; section>
+    <#import "template.ftl" as layout>
+    <@layout.registrationLayout showAnotherWayIfPresent=false; section>
     <#if section = "title">
      title
     <#elseif section = "header">
-    ${msg("loginTitleHtml", realm.name)}
+        ${kcSanitize(msg("webauthn-login-title"))?no_esc}
     <#elseif section = "form">
 
     <form id="webauth" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
@@ -19,33 +19,9 @@
 
     <#if authenticators??>
         <form id="authn_select" class="${properties.kcFormClass!}">
-            <table class="table table-striped table-bordered">
-                <thead>
-                    <tr>
-                        <th>Use</th>
-                        <th>Authenticator Label</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <#list authenticators.authenticators as authenticator>
-                        <tr>
-                            <td>
-                                <input type="checkbox" name="authn_use_chk" value="${authenticator.credentialId}" checked/>
-                            </td>
-                            <td>
-                                ${authenticator.label}
-                            </td>
-                        </tr>
-                    </#list>
-                </tbody>
-            </table>
-
-            <div class="${properties.kcFormGroupClass!}">
-                <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-                           name="login" id="kc-login" type="button" value="${msg("doLogIn")}" onclick="checkAllowCredentials();"/>
-                </div>
-            </div>
+            <#list authenticators.authenticators as authenticator>
+                <input type="hidden" name="authn_use_chk" value="${authenticator.credentialId}"/>
+            </#list>
         </form>
     </#if>
 
@@ -53,35 +29,37 @@
     <script type="text/javascript" src="${url.resourcesPath}/js/base64url.js"></script>
     <script type="text/javascript">
 
-    window.onload = function doAuhenticateAutomatically() {
-        let isUserIdentified = ${isUserIdentified};
-        if (!isUserIdentified) doAuthenticate([]);
-    }
+        window.onload = () => {
+            let isUserIdentified = ${isUserIdentified};
+            if (!isUserIdentified) {
+                doAuthenticate([]);
+                return;
+            }
+            checkAllowCredentials();
+        };
 
-    function checkAllowCredentials() {
-        let allowCredentials = [];
-        let authn_use = document.forms['authn_select'].authn_use_chk;
-        if (authn_use !== undefined) {
+        function checkAllowCredentials() {
+            let allowCredentials = [];
+            let authn_use = document.forms['authn_select'].authn_use_chk;
 
-            if (authn_use.length === undefined && authn_use.checked) {
-                allowCredentials.push({
-                    id: base64url.decode(authn_use.value, { loose: true }),
-                    type: 'public-key',
-                })
-            } else if (authn_use.length != undefined) {
-                for (var i = 0; i < authn_use.length; i++) {
-                    if (authn_use[i].checked) {
+            if (authn_use !== undefined) {
+                if (authn_use.length === undefined) {
+                    allowCredentials.push({
+                        id: base64url.decode(authn_use.value, {loose: true}),
+                        type: 'public-key',
+                    });
+                } else {
+                    for (let i = 0; i < authn_use.length; i++) {
                         allowCredentials.push({
-                            id: base64url.decode(authn_use[i].value, { loose: true }),
+                            id: base64url.decode(authn_use[i].value, {loose: true}),
                             type: 'public-key',
-                        })
+                        });
                     }
                 }
             }
-
+            doAuthenticate(allowCredentials);
         }
-        doAuthenticate(allowCredentials);
-    }
+
 
     function doAuthenticate(allowCredentials) {
         let challenge = "${challenge}";
@@ -99,7 +77,7 @@
         if (userVerification !== 'not specified') publicKey.userVerification = userVerification;
 
         navigator.credentials.get({publicKey})
-            .then(function(result) {
+            .then((result) => {
                 window.result = result;
 
                 let clientDataJSON = result.response.clientDataJSON;
@@ -115,7 +93,7 @@
                 }
                 $("#webauth").submit();
             })
-            .catch(function(err) {
+            .catch((err) => {
                 $("#error").val(err);
                 $("#webauth").submit();
             })

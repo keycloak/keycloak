@@ -67,10 +67,9 @@ public class SMTPConnectionTest extends AbstractKeycloakTest {
         realm.users().get(user.getId()).update(user);
     }
 
-    private String settings(String host, String port, String from, String auth, String ssl, String starttls,
+    private Map<String, String> settings(String host, String port, String from, String auth, String ssl, String starttls,
                             String username, String password) throws Exception {
-        Map<String, String> config = smtpMap(host, port, from, auth, ssl, starttls, username, password, "", "");
-        return writeValueAsPrettyString(config);
+        return smtpMap(host, port, from, auth, ssl, starttls, username, password, "", "");
     }
 
     private Map<String, String> smtpMap(String host, String port, String from, String auth, String ssl, String starttls,

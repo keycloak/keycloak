@@ -22,6 +22,7 @@ import org.jboss.arquillian.container.impl.client.container.DeploymentExceptionH
 import org.jboss.arquillian.container.impl.client.deployment.ArchiveDeploymentExporter;
 import org.jboss.arquillian.container.impl.context.ContainerContextImpl;
 import org.jboss.arquillian.container.impl.context.DeploymentContextImpl;
+import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.core.spi.LoadableExtension;
 
 import java.util.logging.Logger;
@@ -41,6 +42,8 @@ public class MultipleContainersExtension implements LoadableExtension {
     public void register(ExtensionBuilder builder) {
 
         logger.info("Multiple containers extension registering.");
+
+        builder.service(DeployableContainer.class, KeycloakQuarkusServerDeployableContainer.class);
 
         builder.context(ContainerContextImpl.class).context(DeploymentContextImpl.class);
 

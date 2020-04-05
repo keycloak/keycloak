@@ -39,8 +39,15 @@ public class LoginActions extends LoginBase {
     @FindBy(css = "input[type='submit']")
     private WebElement submitButton;
 
+    @FindBy(css = "button[type='submit']")
+    private WebElement cancelButton;
+
     public void submit() {
         clickLink(submitButton);
+    }
+
+    public void cancel() {
+        clickLink(cancelButton);
     }
 
     @Override

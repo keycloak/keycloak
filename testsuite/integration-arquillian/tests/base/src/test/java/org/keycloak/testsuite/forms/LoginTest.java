@@ -51,6 +51,7 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -416,6 +417,8 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void loginSuccessRealmSigningAlgorithms() throws JWSInputException {
+        ContainerAssume.assumeAuthServerSSL();
+
         loginPage.open();
         loginPage.login("login-test", "password");
 
@@ -798,9 +801,8 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void openLoginFormWithDifferentApplication() throws Exception {
-        // Login form shown after redirect from admin console
-        oauth.clientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
-        oauth.redirectUri(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/admin/test/console");
+        oauth.clientId("root-url-client");
+        oauth.redirectUri("http://localhost:8180/foo/bar/");
         oauth.openLoginForm();
 
         // Login form shown after redirect from app

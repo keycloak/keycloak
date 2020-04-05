@@ -24,7 +24,7 @@
                 </div>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" data-ng-hide="emailAsUsername">
                 <label class="col-md-2 control-label"for="username">{{:: 'username' | translate}} <span class="required" data-ng-show="create">*</span></label>
                 <div class="col-md-6">
                     <!-- Characters >,<,/,\ are forbidden in username -->

@@ -57,7 +57,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
     @Override
     public void updateCredential(RealmModel realm, UserModel user, CredentialModel cred) {
         CredentialEntity entity = em.find(CredentialEntity.class, cred.getId());
-        if (entity == null) return;
+        if (!checkCredentialEntity(entity, user)) return;
         entity.setCreatedDate(cred.getCreatedDate());
         entity.setUserLabel(cred.getUserLabel());
         entity.setType(cred.getType());
@@ -80,7 +80,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
     @Override
     public CredentialModel getStoredCredentialById(RealmModel realm, UserModel user, String id) {
         CredentialEntity entity = em.find(CredentialEntity.class, id);
-        if (entity == null) return null;
+        if (!checkCredentialEntity(entity, user)) return null;
         CredentialModel model = toModel(entity);
         return model;
     }
@@ -161,7 +161,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
 
     CredentialEntity removeCredentialEntity(RealmModel realm, UserModel user, String id) {
         CredentialEntity entity = em.find(CredentialEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
-        if (entity == null) return null;
+        if (!checkCredentialEntity(entity, user)) return null;
 
         int currentPriority = entity.getPriority();
 
@@ -175,6 +175,7 @@ public class JpaUserCredentialStore implements UserCredentialStore {
         }
 
         em.remove(entity);
+        em.flush();
         return entity;
     }
 
@@ -231,6 +232,10 @@ public class JpaUserCredentialStore implements UserCredentialStore {
             }
         }
         return true;
+    }
+
+    private boolean checkCredentialEntity(CredentialEntity entity, UserModel user) {
+        return entity != null && entity.getUser() != null && entity.getUser().getId().equals(user.getId());
     }
 
 }

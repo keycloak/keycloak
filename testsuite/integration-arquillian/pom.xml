@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-testsuite-pom</artifactId>
-        <version>9.0.0-SNAPSHOT</version>
+        <version>9.0.4-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     
@@ -47,15 +47,9 @@
         <wildfly.deprecated.arquillian.wildfly.container>2.1.1.Final</wildfly.deprecated.arquillian.wildfly.container>
 
         <!--component versions-->
-        <!--
-            to update arquillian-core to 1.3.0.Final or higher
-                - see https://issues.jboss.org/browse/ARQ-2181 
-                - update org.keycloak.testsuite.arquillian.containers.KeycloakContainerTestExtension according to 
-                  current version of org.jboss.arquillian.container.test.impl.ContainerTestExtension
-        -->
-        <arquillian-core.version>1.2.1.Final</arquillian-core.version>
+        <arquillian-core.version>1.6.0.Final</arquillian-core.version>
         <!--the version of shrinkwrap_resolver should align with the version in arquillian-bom-->
-        <shrinkwrap-resolver.version>2.2.6</shrinkwrap-resolver.version>
+        <shrinkwrap-resolver.version>3.1.4</shrinkwrap-resolver.version>
         <selenium.version>3.14.0</selenium.version>
         <arquillian-drone.version>2.5.1</arquillian-drone.version>
         <arquillian-graphene.version>2.3.2</arquillian-graphene.version>
@@ -282,18 +276,38 @@
             </plugins>
         </pluginManagement>
 
-        <!-- Just allocate the DB now. It will be released after the tests, so the "release" is declared in the base-tests module -->
         <plugins>
             <plugin>
-                <groupId>org.keycloak</groupId>
-                <artifactId>db-allocator-plugin</artifactId>
-                <inherited>false</inherited>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${version.enforcer.plugin}</version>
                 <executions>
                     <execution>
-                        <id>allocate-db</id>
+                        <id>enforce-maven</id>
                         <goals>
-                            <goal>allocate</goal>
+                            <goal>enforce</goal>
                         </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>3.5.4</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>enforce-maven-for-deploy-phase</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <phase>deploy</phase>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>3.6.0</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -308,6 +322,28 @@
     </modules>
     
     <profiles>
+        <profile>
+            <id>jpa</id>
+            <build>
+                <plugins>
+                    <!-- Just allocate the DB now. It will be released after the tests, so the "release" is declared in the base-tests module -->
+                    <plugin>
+                        <groupId>org.keycloak</groupId>
+                        <artifactId>db-allocator-plugin</artifactId>
+                        <inherited>false</inherited>
+                        <executions>
+                            <execution>
+                                <id>allocate-db</id>
+                                <goals>
+                                    <goal>allocate</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        
         <profile>
             <id>test-70-migration</id>
             <properties>
@@ -581,7 +617,7 @@
             </properties>
         </profile>
         <profile>
-            <id>db-allocator-db-oracle12cR1RAC</id>
+            <id>db-allocator-db-oracleRAC</id>
             <properties>
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
@@ -589,7 +625,7 @@
                 <jdbc.mvn.groupId>com.oracle</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>ojdbc8</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>12.2.0.1</jdbc.mvn.version>
-                <dballocator.type>oracle12cR1RAC</dballocator.type>
+                <dballocator.type>oracle19cRAC</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>

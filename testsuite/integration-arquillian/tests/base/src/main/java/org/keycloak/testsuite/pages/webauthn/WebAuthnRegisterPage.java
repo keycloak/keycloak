@@ -19,168 +19,68 @@ package org.keycloak.testsuite.pages.webauthn;
 
 import org.junit.Assert;
 import org.keycloak.testsuite.pages.AbstractPage;
-import org.keycloak.testsuite.pages.PageUtils;
 import org.openqa.selenium.Alert;
-import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+/**
+ * WebAuthnRegisterPage, which is displayed when WebAuthnRegister required action is triggered. It is useful with Chrome testing API.
+ *
+ * Page will be displayed after successful JS call of "navigator.credentials.create", which will register WebAuthn credential
+ * with the browser
+ */
 public class WebAuthnRegisterPage extends AbstractPage {
 
-    @FindBy(id = "firstName")
-    private WebElement firstNameInput;
+    // Available only with AIA
+    @FindBy(id = "registerWebAuthnAIA")
+    private WebElement registerAIAButton;
 
-    @FindBy(id = "lastName")
-    private WebElement lastNameInput;
+    // Available only with AIA
+    @FindBy(id = "cancelWebAuthnAIA")
+    private WebElement cancelAIAButton;
 
-    @FindBy(id = "email")
-    private WebElement emailInput;
+    public void confirmAIA() {
+        Assert.assertTrue("It only works with AIA", isAIA());
+        registerAIAButton.click();
+    }
 
-    @FindBy(id = "username")
-    private WebElement usernameInput;
+    public void cancelAIA() {
+        Assert.assertTrue("It only works with AIA", isAIA());
+        cancelAIAButton.click();
+    }
 
-    @FindBy(id = "password")
-    private WebElement passwordInput;
-
-    @FindBy(id = "password-confirm")
-    private WebElement passwordConfirmInput;
-
-    @FindBy(css = "input[type=\"submit\"]")
-    private WebElement submitButton;
-
-    @FindBy(className = "alert-error")
-    private WebElement loginErrorMessage;
-
-    @FindBy(className = "instruction")
-    private WebElement loginInstructionMessage;
-
-    @FindBy(linkText = "« Back to Login")
-    private WebElement backToLoginLink;
-
-
-    public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm, String authenticatorLabel) {
-        driver.findElement(By.id("firstName")).clear();
-        if (firstName != null) {
-            driver.findElement(By.id("firstName")).sendKeys(firstName);
-        }
-
-        driver.findElement(By.id("lastName")).clear();
-        if (lastName != null) {
-            driver.findElement(By.id("lastName")).sendKeys(lastName);
-        }
-
-        driver.findElement(By.id("email")).clear();
-        if (email != null) {
-            driver.findElement(By.id("email")).sendKeys(email);
-        }
-
-        driver.findElement(By.id("username")).clear();
-        if (username != null) {
-            driver.findElement(By.id("username")).sendKeys(username);
-        }
-
-        driver.findElement(By.id("password")).clear();
-        if (password != null) {
-            driver.findElement(By.id("password")).sendKeys(password);
-        }
-
-        driver.findElement(By.id("password-confirm")).clear();
-        if (passwordConfirm != null) {
-            driver.findElement(By.id("password-confirm")).sendKeys(passwordConfirm);
-        }
-
-        driver.findElement(By.cssSelector("input[type=\"submit\"]")).click();
-
+    public void registerWebAuthnCredential(String authenticatorLabel) {
         // label edit after registering authenicator by .create()
         WebDriverWait wait = new WebDriverWait(driver, 60);
         Alert promptDialog = wait.until(ExpectedConditions.alertIsPresent());
-        //Alert promptDialog = driver.switchTo().alert();
+
+        Assert.assertEquals("Please input your registered authenticator's label", promptDialog.getText());
+
         promptDialog.sendKeys(authenticatorLabel);
         promptDialog.accept();
     }
 
-    public void registerWithEmailAsUsername(String firstName, String lastName, String email, String password, String passwordConfirm) {
-        driver.findElement(By.id("firstName")).clear();
-        if (firstName != null) {
-            driver.findElement(By.id("firstName")).sendKeys(firstName);
-        }
-
-        driver.findElement(By.id("lastName")).clear();
-        if (lastName != null) {
-            driver.findElement(By.id("lastName")).sendKeys(lastName);
-        }
-
-        driver.findElement(By.id("email")).clear();
-        if (email != null) {
-            driver.findElement(By.id("email")).sendKeys(email);
-        }
-
+    private boolean isAIA() {
         try {
-            driver.findElement(By.id("username")).clear();
-            Assert.fail("Form must be without username field");
+            registerAIAButton.getText();
+            cancelAIAButton.getText();
+            return true;
         } catch (NoSuchElementException e) {
-            // OK
+            return false;
         }
-
-        driver.findElement(By.id("password")).clear();
-        if (password != null) {
-            driver.findElement(By.id("password")).sendKeys(password);
-        }
-
-        driver.findElement(By.id("password-confirm")).clear();
-        if (passwordConfirm != null) {
-            driver.findElement(By.id("password-confirm")).sendKeys(passwordConfirm);
-        }
-        driver.findElement(By.cssSelector("input[type=\"submit\"]")).click();
-    }
-
-    public void clickBackToLogin() {
-        backToLoginLink.click();
-    }
-
-    public String getError() {
-        return loginErrorMessage != null ? loginErrorMessage.getText() : null;
-    }
-
-    public String getInstruction() {
-        try {
-            return loginInstructionMessage != null ? loginInstructionMessage.getText() : null;
-        } catch (NoSuchElementException e){
-            // OK
-        }
-        return null;
-    }
-
-    public String getFirstName() {
-        return driver.findElement(By.id("firstName")).getAttribute("value");
-    }
-
-    public String getLastName() {
-        return driver.findElement(By.id("lastName")).getAttribute("value");
-    }
-
-    public String getEmail() {
-        return driver.findElement(By.id("email")).getAttribute("value");
-    }
-
-    public String getUsername() {
-        return driver.findElement(By.id("username")).getAttribute("value");
-    }
-
-    public String getPassword() {
-        return driver.findElement(By.id("password")).getAttribute("value");
-    }
-
-    public String getPasswordConfirm() {
-        return driver.findElement(By.id("password-confirm")).getAttribute("value");
     }
 
     public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Register");
+        if (isAIA()) {
+            return true;
+        }
+        // Cant verify the page in case that prompt is shown. Prompt is shown immediately when WebAuthnRegisterPage is displayed
+        throw new UnsupportedOperationException();
     }
+
 
     @Override
     public void open() {

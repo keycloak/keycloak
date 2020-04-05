@@ -240,8 +240,29 @@ public interface RealmModel extends RoleContainerModel {
     OTPPolicy getOTPPolicy();
     void setOTPPolicy(OTPPolicy policy);
 
+    /**
+     * @return  WebAuthn policy for 2-factor authentication
+     */
     WebAuthnPolicy getWebAuthnPolicy();
+
+    /**
+     * Set WebAuthn policy for 2-factor authentication
+     *
+     * @param policy
+     */
     void setWebAuthnPolicy(WebAuthnPolicy policy);
+
+    /**
+     *
+     * @return WebAuthn passwordless policy below. This is temporary and will be removed later.
+     */
+    WebAuthnPolicy getWebAuthnPolicyPasswordless();
+
+    /**
+     * Set WebAuthn passwordless policy below. This is temporary and will be removed later.
+     * @param policy
+     */
+    void setWebAuthnPolicyPasswordless(WebAuthnPolicy policy);
 
     RoleModel getRoleById(String id);
 
@@ -450,8 +471,19 @@ public interface RealmModel extends RoleContainerModel {
     String getDefaultLocale();
     void setDefaultLocale(String locale);
 
-    GroupModel createGroup(String name);
-    GroupModel createGroup(String id, String name);
+    default GroupModel createGroup(String name) {
+        return createGroup(null, name, null);
+    };
+
+    default GroupModel createGroup(String id, String name) {
+        return createGroup(id, name, null);
+    };
+
+    default GroupModel createGroup(String name, GroupModel toParent) {
+        return createGroup(null, name, toParent);
+    };
+
+    GroupModel createGroup(String id, String name, GroupModel toParent);
 
     GroupModel getGroupById(String id);
     List<GroupModel> getGroups();

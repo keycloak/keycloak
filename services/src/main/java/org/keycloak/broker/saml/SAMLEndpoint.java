@@ -85,7 +85,9 @@ import java.security.Key;
 import java.security.cert.X509Certificate;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Predicate;
 
+import org.keycloak.protocol.saml.SamlPrincipalType;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
@@ -414,15 +416,24 @@ public class SAMLEndpoint {
                 SubjectType subject = assertion.getSubject();
                 SubjectType.STSubType subType = subject.getSubType();
                 NameIDType subjectNameID = (NameIDType) subType.getBaseID();
+                String principal = getPrincipal(assertion);
+
+                if (principal == null) {
+                    logger.errorf("no principal in assertion; expected: %s", expectedPrincipalType());
+                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                    event.error(Errors.INVALID_SAML_RESPONSE);
+                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
+                }
+
                 //Map<String, String> notes = new HashMap<>();
-                BrokeredIdentityContext identity = new BrokeredIdentityContext(subjectNameID.getValue());
+                BrokeredIdentityContext identity = new BrokeredIdentityContext(principal);
                 identity.getContextData().put(SAML_LOGIN_RESPONSE, responseType);
                 identity.getContextData().put(SAML_ASSERTION, assertion);
                 if (clientId != null && ! clientId.trim().isEmpty()) {
                     identity.getContextData().put(SAML_IDP_INITIATED_CLIENT_ID, clientId);
                 }
 
-                identity.setUsername(subjectNameID.getValue());
+                identity.setUsername(principal);
 
                 //SAML Spec 2.2.2 Format is optional
                 if (subjectNameID.getFormat() != null && subjectNameID.getFormat().toString().equals(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get())) {
@@ -433,7 +444,8 @@ public class SAMLEndpoint {
                     identity.setToken(samlResponse);
                 }
 
-                ConditionsValidator.Builder cvb = new ConditionsValidator.Builder(assertion.getID(), assertion.getConditions(), destinationValidator);
+                ConditionsValidator.Builder cvb = new ConditionsValidator.Builder(assertion.getID(), assertion.getConditions(), destinationValidator)
+                        .clockSkewInMillis(1000 * config.getAllowedClockSkew());
                 try {
                     String issuerURL = getEntityId(session.getContext().getUri(), realm);
                     cvb.addAllowedAudience(URI.create(issuerURL));
@@ -460,19 +472,12 @@ public class SAMLEndpoint {
                     }
                 }
                 if (assertion.getAttributeStatements() != null ) {
-                    for (AttributeStatementType attrStatement : assertion.getAttributeStatements()) {
-                        for (AttributeStatementType.ASTChoiceType choice : attrStatement.getAttributes()) {
-                            AttributeType attribute = choice.getAttribute();
-                            if (X500SAMLProfileConstants.EMAIL.getFriendlyName().equals(attribute.getFriendlyName())
-                                    || X500SAMLProfileConstants.EMAIL.get().equals(attribute.getName())) {
-                                if (!attribute.getAttributeValue().isEmpty()) identity.setEmail(attribute.getAttributeValue().get(0).toString());
-                            }
-                        }
-
-                    }
-
+                    String email = getX500Attribute(assertion, X500SAMLProfileConstants.EMAIL);
+                    if (email != null)
+                        identity.setEmail(email);
                 }
-                String brokerUserId = config.getAlias() + "." + subjectNameID.getValue();
+
+                String brokerUserId = config.getAlias() + "." + principal;
                 identity.setBrokerUserId(brokerUserId);
                 identity.setIdpConfig(config);
                 identity.setIdp(provider);
@@ -502,6 +507,12 @@ public class SAMLEndpoint {
 
         public Response handleSamlResponse(String samlResponse, String relayState, String clientId) {
             SAMLDocumentHolder holder = extractResponseDocument(samlResponse);
+            if (holder == null) {
+                event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                event.detail(Details.REASON, "invalid_saml_document");
+                event.error(Errors.INVALID_SAML_RESPONSE);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
+            }
             StatusResponseType statusResponse = (StatusResponseType)holder.getSamlObject();
             // validate destination
             if (! destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), statusResponse.getDestination())) {
@@ -629,6 +640,61 @@ public class SAMLEndpoint {
             return SamlProtocol.SAML_REDIRECT_BINDING;
         }
 
+    }
+
+    private String getX500Attribute(AssertionType assertion, X500SAMLProfileConstants attribute) {
+        return getFirstMatchingAttribute(assertion, attribute::correspondsTo);
+    }
+
+    private String getAttributeByName(AssertionType assertion, String name) {
+        return getFirstMatchingAttribute(assertion, attribute -> Objects.equals(attribute.getName(), name));
+    }
+
+    private String getAttributeByFriendlyName(AssertionType assertion, String friendlyName) {
+        return getFirstMatchingAttribute(assertion, attribute -> Objects.equals(attribute.getFriendlyName(), friendlyName));
+    }
+
+    private String getPrincipal(AssertionType assertion) {
+
+        SamlPrincipalType principalType = config.getPrincipalType();
+
+        if (principalType == null || principalType.equals(SamlPrincipalType.SUBJECT)) {
+            SubjectType subject = assertion.getSubject();
+            SubjectType.STSubType subType = subject.getSubType();
+            NameIDType subjectNameID = (NameIDType) subType.getBaseID();
+            return subjectNameID.getValue();
+        } else if (principalType.equals(SamlPrincipalType.ATTRIBUTE)) {
+            return getAttributeByName(assertion, config.getPrincipalAttribute());
+        } else {
+            return getAttributeByFriendlyName(assertion, config.getPrincipalAttribute());
+        }
+
+    }
+
+    private String getFirstMatchingAttribute(AssertionType assertion, Predicate<AttributeType> predicate) {
+        return assertion.getAttributeStatements().stream()
+                .map(AttributeStatementType::getAttributes)
+                .flatMap(Collection::stream)
+                .map(AttributeStatementType.ASTChoiceType::getAttribute)
+                .filter(predicate)
+                .map(AttributeType::getAttributeValue)
+                .flatMap(Collection::stream)
+                .findFirst()
+                .map(Object::toString)
+                .orElse(null);
+    }
+
+    private String expectedPrincipalType() {
+        SamlPrincipalType principalType = config.getPrincipalType();
+        switch (principalType) {
+            case SUBJECT:
+                return principalType.name();
+            case ATTRIBUTE:
+            case FRIENDLY_ATTRIBUTE:
+                return String.format("%s(%s)", principalType.name(), config.getPrincipalAttribute());
+            default:
+                return null;
+        }
     }
 
 }

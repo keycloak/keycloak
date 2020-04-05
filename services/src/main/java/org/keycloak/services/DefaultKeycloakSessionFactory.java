@@ -32,6 +32,7 @@ import org.keycloak.provider.ProviderManagerDeployer;
 import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.theme.DefaultThemeManagerFactory;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,6 +50,8 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
     private Map<Class<? extends Provider>, String> provider = new HashMap<>();
     private volatile Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoriesMap = new HashMap<>();
     protected CopyOnWriteArrayList<ProviderEventListener> listeners = new CopyOnWriteArrayList<>();
+
+    private DefaultThemeManagerFactory themeManagerFactory;
 
     // TODO: Likely should be changed to int and use Time.currentTime() to be compatible with all our "time" reps
     protected long serverStartupTimestamp;
@@ -76,28 +79,34 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
         ProviderManager pm = new ProviderManager(KeycloakDeploymentInfo.create().services(), getClass().getClassLoader(), Config.scope().getArray("providers"));
         spis.addAll(pm.loadSpis());
         factoriesMap = loadFactories(pm);
-        for (ProviderManager manager : ProviderManagerRegistry.SINGLETON.getPreBoot()) {
-            Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoryMap = loadFactories(manager);
-            for (Map.Entry<Class<? extends Provider>,  Map<String, ProviderFactory>> entry : factoryMap.entrySet()) {
-                Map<String, ProviderFactory> factories = factoriesMap.get(entry.getKey());
-                if (factories == null) {
-                    factoriesMap.put(entry.getKey(), entry.getValue());
-                } else {
-                    factories.putAll(entry.getValue());
+
+        synchronized (ProviderManagerRegistry.SINGLETON) {
+            for (ProviderManager manager : ProviderManagerRegistry.SINGLETON.getPreBoot()) {
+                Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoryMap = loadFactories(manager);
+                for (Map.Entry<Class<? extends Provider>, Map<String, ProviderFactory>> entry : factoryMap.entrySet()) {
+                    Map<String, ProviderFactory> factories = factoriesMap.get(entry.getKey());
+                    if (factories == null) {
+                        factoriesMap.put(entry.getKey(), entry.getValue());
+                    } else {
+                        factories.putAll(entry.getValue());
+                    }
                 }
             }
-        }
-        checkProvider();
-        for ( Map<String, ProviderFactory> factories : factoriesMap.values()) {
-            for (ProviderFactory factory : factories.values()) {
-                factory.postInit(this);
+            checkProvider();
+            for (Map<String, ProviderFactory> factories : factoriesMap.values()) {
+                for (ProviderFactory factory : factories.values()) {
+                    factory.postInit(this);
+                }
             }
+            // make the session factory ready for hot deployment
+            ProviderManagerRegistry.SINGLETON.setDeployer(this);
         }
-        // make the session factory ready for hot deployment
-        ProviderManagerRegistry.SINGLETON.setDeployer(this);
+
         AdminPermissions.registerListener(this);
 
+        themeManagerFactory = new DefaultThemeManagerFactory();
     }
+
     protected Map<Class<? extends Provider>, Map<String, ProviderFactory>> getFactoriesCopy() {
         Map<Class<? extends Provider>, Map<String, ProviderFactory>> copy = new HashMap<>();
         for (Map.Entry<Class<? extends Provider>, Map<String, ProviderFactory>> entry : factoriesMap.entrySet()) {
@@ -137,6 +146,10 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
         for (ProviderFactory factory : deployed) {
             factory.postInit(this);
         }
+
+        if (pm.getInfo().hasThemes() || pm.getInfo().hasThemeResources()) {
+            themeManagerFactory.clearCache();
+        }
     }
 
     @Override
@@ -160,6 +173,10 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
         for (ProviderFactory factory : undeployed) {
             factory.close();
         }
+    }
+
+    protected DefaultThemeManagerFactory getThemeManagerFactory() {
+        return themeManagerFactory;
     }
 
     protected void checkProvider() {

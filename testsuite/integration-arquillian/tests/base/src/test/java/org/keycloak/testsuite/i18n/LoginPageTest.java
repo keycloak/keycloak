@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.locale.LocaleSelectorProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -41,6 +42,7 @@ import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
+import org.openqa.selenium.Cookie;
 
 /**
  * @author <a href="mailto:gerbermichi@me.com">Michael Gerber</a>
@@ -195,6 +197,49 @@ public class LoginPageTest extends AbstractI18NTest {
 
         // Revert client
         oauth.clientId("test-app");
+    }
+
+    @Test
+    public void languageUserUpdates() {
+        ProfileAssume.assumeCommunity();
+
+        loginPage.open();
+        loginPage.openLanguage("Deutsch");
+
+        Assert.assertEquals("Deutsch", loginPage.getLanguageDropdownText());
+
+        Cookie localeCookie = driver.manage().getCookieNamed(LocaleSelectorProvider.LOCALE_COOKIE);
+        Assert.assertEquals("de", localeCookie.getValue());
+
+        loginPage.login("test-user@localhost", "password");
+
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserRepresentation userRep = user.toRepresentation();
+        Assert.assertEquals("de", userRep.getAttributes().get("locale").get(0));
+
+        appPage.logout();
+
+        loginPage.open();
+
+        Assert.assertEquals("Deutsch", loginPage.getLanguageDropdownText());
+
+        userRep.getAttributes().remove("locale");
+        user.update(userRep);
+
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+
+        // User locale should not be updated due to previous cookie
+        userRep = user.toRepresentation();
+        Assert.assertNull(userRep.getAttributes());
+
+        appPage.logout();
+
+        loginPage.open();
+
+        // Cookie should be removed as last user to login didn't have a locale
+        localeCookie = driver.manage().getCookieNamed(LocaleSelectorProvider.LOCALE_COOKIE);
+        Assert.assertNull(localeCookie);
     }
 
 

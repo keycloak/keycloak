@@ -41,6 +41,7 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
@@ -55,6 +56,7 @@ import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.services.ErrorPage;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
@@ -92,7 +94,6 @@ import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import java.nio.charset.StandardCharsets;
-import java.util.logging.Level;
 
 /**
  * Resource class for the saml connect token service
@@ -151,7 +152,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
             StatusResponseType statusResponse = (StatusResponseType) holder.getSamlObject();
             // validate destination
-            if (! destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), statusResponse.getDestination())) {
+            if (! destinationValidator.validate(this.getExpectedDestinationUri(session), statusResponse.getDestination())) {
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
@@ -288,7 +289,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
-            if (! destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), requestAbstractType.getDestination())) {
+            if (! destinationValidator.validate(this.getExpectedDestinationUri(session), requestAbstractType.getDestination())) {
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
@@ -402,7 +403,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 event.error(Errors.INVALID_SAML_LOGOUT_REQUEST);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
-            if (! destinationValidator.validate(logoutRequest.getDestination(), session.getContext().getUri().getAbsolutePath())) {
+            if (! destinationValidator.validate(this.getExpectedDestinationUri(session), logoutRequest.getDestination())) {
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_LOGOUT_REQUEST);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
@@ -516,6 +517,18 @@ public class SamlService extends AuthorizationEndpointBase {
                 return handleSamlRequest(samlRequest, relayState);
             else
                 return handleSamlResponse(samlResponse, relayState);
+        }
+
+        /**
+         * KEYCLOAK-12616, KEYCLOAK-12944: construct the expected destination URI using the configured base URI.
+         *
+         * @param session a reference to the {@link KeycloakSession}.
+         * @return the constructed {@link URI}.
+         */
+        protected URI getExpectedDestinationUri(final KeycloakSession session) {
+            final String realmName = session.getContext().getRealm().getName();
+            final URI baseUri = session.getContext().getUri().getBaseUri();
+            return Urls.samlRequestEndpoint(baseUri, realmName);
         }
     }
 

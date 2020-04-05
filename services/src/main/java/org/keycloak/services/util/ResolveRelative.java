@@ -22,32 +22,43 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.urls.UrlType;
 
 import javax.ws.rs.core.UriBuilder;
-import java.net.URI;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class ResolveRelative {
+
     public static String resolveRelativeUri(KeycloakSession session, String rootUrl, String url) {
+        String frontendUrl = session.getContext().getUri(UrlType.FRONTEND).getBaseUri().toString();
+        String adminUrl = session.getContext().getUri(UrlType.ADMIN).getBaseUri().toString();
+        return resolveRelativeUri(frontendUrl, adminUrl, rootUrl, url);
+    }
+
+    public static String resolveRelativeUri(String frontendUrl, String adminUrl, String rootUrl, String url) {
         if (url == null || !url.startsWith("/")) {
             return url;
         } else if (rootUrl != null) {
-            return resolveRootUrl(session, rootUrl) + url;
+            return resolveRootUrl(frontendUrl, adminUrl, rootUrl) + url;
         } else {
-            return session.getContext().getUri().getBaseUriBuilder().replacePath(url).build().toString();
+            return UriBuilder.fromUri(frontendUrl).replacePath(url).build().toString();
         }
     }
-
     public static String resolveRootUrl(KeycloakSession session, String rootUrl) {
+        String frontendUrl = session.getContext().getUri(UrlType.FRONTEND).getBaseUri().toString();
+        String adminUrl = session.getContext().getUri(UrlType.ADMIN).getBaseUri().toString();
+        return resolveRootUrl(frontendUrl, adminUrl, rootUrl);
+    }
+
+    public static String resolveRootUrl(String frontendUrl, String adminUrl, String rootUrl) {
         if (rootUrl != null) {
             if (rootUrl.equals(Constants.AUTH_BASE_URL_PROP)) {
-                rootUrl = session.getContext().getUri(UrlType.FRONTEND).getBaseUri().toString();
+                rootUrl = frontendUrl;
                 if (rootUrl.endsWith("/")) {
                     rootUrl = rootUrl.substring(0, rootUrl.length() - 1);
                 }
             } else if (rootUrl.equals(Constants.AUTH_ADMIN_URL_PROP)) {
-                rootUrl = session.getContext().getUri(UrlType.ADMIN).getBaseUri().toString();
+                rootUrl = adminUrl;
                 if (rootUrl.endsWith("/")) {
                     rootUrl = rootUrl.substring(0, rootUrl.length() - 1);
                 }

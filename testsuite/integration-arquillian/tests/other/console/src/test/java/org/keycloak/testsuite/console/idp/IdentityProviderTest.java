@@ -27,6 +27,7 @@ import org.keycloak.testsuite.console.page.idp.IdentityProviders;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 
 /**
@@ -65,7 +66,7 @@ public class IdentityProviderTest extends AbstractConsoleTest {
         assertPasswordIsUnmasked();
         createIdentityProviderPage.form().save();
         assertAlertSuccess();
-        driver.navigate().refresh();
+        refreshPageAndWaitForLoad();
         assertCurrentUrlEquals(identityProviderPage);
 
         assertEyeButtonIsDisabled();
@@ -78,7 +79,7 @@ public class IdentityProviderTest extends AbstractConsoleTest {
         assertPasswordIsUnmasked();
         identityProviderPage.form().save();
         assertAlertSuccess();
-        driver.navigate().refresh();
+        refreshPageAndWaitForLoad();
         assertCurrentUrlEquals(identityProviderPage);
 
         assertEyeButtonIsDisabled();

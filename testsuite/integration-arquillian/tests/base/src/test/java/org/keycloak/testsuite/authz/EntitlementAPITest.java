@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.authz;
 
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -45,7 +46,9 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -58,7 +61,6 @@ import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
 import org.keycloak.authorization.client.util.HttpResponseException;
-import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -87,6 +89,7 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -114,6 +117,9 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     @ArquillianResource
     protected ContainerController controller;
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -233,13 +239,12 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         obj.put("claim-a", "claim-a");
 
         request.setClaimToken(Base64Url.encode(JsonSerialization.writeValueAsBytes(obj)));
+        this.expectedException.expect(AuthorizationDeniedException.class);
+        this.expectedException.expectCause(Matchers.allOf(Matchers.instanceOf(HttpResponseException.class), Matchers.hasProperty("statusCode", Matchers.is(403))));
+        this.expectedException.expectMessage("Public clients are not allowed to send claims");
+        this.expectedException.reportMissingExceptionWithMessage("Should fail, public clients not allowed");
 
-        try {
-            getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization(response.getAccessToken()).authorize(request);
-        } catch (AuthorizationDeniedException expected) {
-            assertEquals(403, HttpResponseException.class.cast(expected.getCause()).getStatusCode());
-            assertTrue(HttpResponseException.class.cast(expected.getCause()).toString().contains("Public clients are not allowed to send claims"));
-        }
+        getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization(response.getAccessToken()).authorize(request);
     }
 
     @Test
@@ -1923,6 +1928,168 @@ public class EntitlementAPITest extends AbstractAuthzTest {
             assertEquals(400, HttpResponseException.class.cast(expected).getStatusCode());
             assertTrue(HttpResponseException.class.cast(expected).toString().contains("unauthorized_client"));
         }
+    }
+
+    @Test
+    public void testDenyScopeNotManagedByScopePolicy() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName(KeycloakModelUtils.generateId());
+        resource.addScope("sensors:view", "sensors:update", "sensors:delete");
+
+        try (Response response = authorization.resources().create(resource)) {
+            resource = response.readEntity(ResourceRepresentation.class);
+        }
+
+        ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
+
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.addResource(resource.getId());
+        permission.addScope("sensors:view");
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().scope().create(permission).close();
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission(resource.getId(), "sensors:view");
+
+        AuthorizationResponse response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        Collection<Permission> permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertEquals(resource.getId(), grantedPermission.getResourceId());
+            assertEquals(1, grantedPermission.getScopes().size());
+            assertThat(grantedPermission.getScopes(), hasItem("sensors:view"));
+        }
+
+        request = new AuthorizationRequest();
+        request.addPermission(resource.getId(), "sensors:update");
+        this.expectedException.expect(AuthorizationDeniedException.class);
+        this.expectedException.expectCause(Matchers.allOf(Matchers.instanceOf(HttpResponseException.class), Matchers.hasProperty("statusCode", Matchers.is(403))));
+        this.expectedException.reportMissingExceptionWithMessage("should fail, session invalidated");
+
+        authzClient.authorization().authorize(request);
+    }
+
+    @Test
+    public void testPermissionsAcrossResourceServers() throws Exception {
+        String rsAId;
+        try (Response response = getRealm().clients().create(ClientBuilder.create().clientId("rs-a").secret("secret").serviceAccount().authorizationServicesEnabled(true).build())) {
+            rsAId = ApiUtil.getCreatedId(response);
+        }
+        String rsBId;
+        try (Response response = getRealm().clients().create(ClientBuilder.create().clientId("rs-b").secret("secret").serviceAccount().authorizationServicesEnabled(true).build())) {
+            rsBId = ApiUtil.getCreatedId(response);
+        }
+        ClientResource rsB = getRealm().clients().get(rsBId);
+
+        rsB.authorization().resources().create(new ResourceRepresentation("Resource A"));
+
+        JSPolicyRepresentation grantPolicy = new JSPolicyRepresentation();
+
+        grantPolicy.setName("Grant Policy");
+        grantPolicy.setCode("$evaluation.grant();");
+
+        rsB.authorization().policies().js().create(grantPolicy);
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("Resource A Permission");
+        permission.addResource("Resource A");
+        permission.addPolicy(grantPolicy.getName());
+
+        rsB.authorization().permissions().resource().create(permission);
+
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        Configuration config = authzClient.getConfiguration();
+
+        config.setResource("rs-a");
+
+        authzClient = AuthzClient.create(config);
+        AccessTokenResponse accessTokenResponse = authzClient.obtainAccessToken();
+        AccessToken accessToken = toAccessToken(accessTokenResponse.getToken());
+
+        config.setResource("rs-b");
+
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission("Resource A");
+
+        AuthorizationResponse response = authzClient.authorization(accessTokenResponse.getToken()).authorize(request);
+
+        assertNotNull(response.getToken());
+        Collection<Permission> permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+        assertEquals("Resource A", permissions.iterator().next().getResourceName());
+    }
+
+    @Test
+    public void testClientToClientPermissionRequest() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Sensors");
+
+        try (Response response = authorization.resources().create(resource)) {
+            response.readEntity(ResourceRepresentation.class);
+        }
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("View Sensor");
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(permission).close();
+
+        ClientRepresentation otherClient = new ClientRepresentation();
+
+        otherClient.setClientId("serviceB");
+        otherClient.setServiceAccountsEnabled(true);
+        otherClient.setSecret("secret");
+        otherClient.setPublicClient(false);
+
+        getRealm().clients().create(otherClient);
+
+        Map<String, Object> credentials = new HashMap<>();
+
+        credentials.put("secret", "secret");
+
+        AuthzClient authzClient = AuthzClient
+                .create(new Configuration(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth",
+                        getRealm().toRepresentation().getRealm(), otherClient.getClientId(),
+                        credentials, getAuthzClient(AUTHZ_CLIENT_CONFIG).getConfiguration().getHttpClient()));
+
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.setAudience(RESOURCE_SERVER_TEST);
+
+        AuthorizationResponse response = authzClient.authorization().authorize(request);
+
+        assertNotNull(response.getToken());
     }
 
     private void testRptRequestWithResourceName(String configFile) {

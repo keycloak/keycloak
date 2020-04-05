@@ -63,7 +63,6 @@ public class JsonFileImport198MigrationTest extends AbstractJsonFileImportMigrat
         testMigrationTo2_2_0();
         testMigrationTo2_3_0();
         testMigrationTo2_5_0();
-        //testMigrationTo2_5_1(); // Offline tokens migration is skipped for JSON
         testMigrationTo3_x();
         testMigrationTo4_x(false, false);
         testMigrationTo5_x();

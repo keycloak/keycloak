@@ -26,7 +26,7 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 /**
@@ -181,6 +181,19 @@ public class UserBuilder {
             representation.setName(group);
             rep.getGroups().add(representation);
         }
+        return this;
+    }
+
+    public UserBuilder federatedLink(String identityProvider, String federatedUserId) {
+        if (rep.getFederatedIdentities() == null) {
+            rep.setFederatedIdentities(new LinkedList<>());
+        }
+        FederatedIdentityRepresentation federatedIdentity = new FederatedIdentityRepresentation();
+        federatedIdentity.setUserId(federatedUserId);
+        federatedIdentity.setUserName(rep.getUsername());
+        federatedIdentity.setIdentityProvider(identityProvider);
+
+        rep.getFederatedIdentities().add(federatedIdentity);
         return this;
     }
 

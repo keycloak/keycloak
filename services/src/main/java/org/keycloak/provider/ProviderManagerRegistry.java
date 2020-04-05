@@ -30,11 +30,11 @@ public class ProviderManagerRegistry {
     protected List<ProviderManager> preBoot = Collections.synchronizedList(new LinkedList<>());
     protected AtomicReference<ProviderManagerDeployer> deployerRef = new AtomicReference<>();
 
-    public void setDeployer(ProviderManagerDeployer deployer) {
+    public synchronized void setDeployer(ProviderManagerDeployer deployer) {
         this.deployerRef.set(deployer);
     }
 
-    public void deploy(ProviderManager pm) {
+    public synchronized void deploy(ProviderManager pm) {
         ProviderManagerDeployer deployer = getDeployer();
         if (deployer == null) {
             preBoot.add(pm);
@@ -44,7 +44,7 @@ public class ProviderManagerRegistry {
 
     }
 
-    public void undeploy(ProviderManager pm) {
+    public synchronized void undeploy(ProviderManager pm) {
         preBoot.remove(pm);
         ProviderManagerDeployer deployer = getDeployer();
         if (deployer != null) {
@@ -52,7 +52,7 @@ public class ProviderManagerRegistry {
         }
     }
 
-    public ProviderManagerDeployer getDeployer() {
+    private ProviderManagerDeployer getDeployer() {
         return deployerRef.get();
     }
 

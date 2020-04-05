@@ -151,6 +151,20 @@
             ]
         },
         {
+            "username": "hashedpassworduser",
+            "createdTimestamp" : "123655",
+            "enabled": true,
+            "credentials": [
+                {
+                    "id": "b0c22f34-f6fb-4165-8fd3-54d3cb4599d1",
+                    "type": "password",
+                    "createdDate": 1576751136227,
+                    "secretData": "{\"value\":\"pass\",\"salt\":\"__SALT__\"}",
+                    "credentialData": "{\"hashIterations\":1234,\"algorithm\":\"pbkdf2-sha256\"}"
+                }
+            ]
+        },
+        {
             "username": "admin",
             "enabled": true,
             "attributes": {

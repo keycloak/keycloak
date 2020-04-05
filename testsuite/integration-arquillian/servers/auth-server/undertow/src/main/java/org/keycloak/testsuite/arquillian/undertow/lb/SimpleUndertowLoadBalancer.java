@@ -19,6 +19,7 @@ package org.keycloak.testsuite.arquillian.undertow.lb;
 
 import java.lang.reflect.Field;
 import java.net.URI;
+import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -45,6 +46,8 @@ import org.keycloak.testsuite.utils.tls.TLSUtils;
 import io.undertow.server.handlers.proxy.RouteIteratorFactory;
 import io.undertow.server.handlers.proxy.RouteIteratorFactory.ParsingCompatibility;
 import io.undertow.server.handlers.proxy.RouteParsingStrategy;
+import org.xnio.OptionMap;
+
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.StringTokenizer;
@@ -107,6 +110,11 @@ public class SimpleUndertowLoadBalancer {
                     .setHandler(proxyHandler)
                     .build();
             undertow.start();
+
+            backendNodes.forEach((route, uri) -> {
+                lb.addHost(uri, route);
+                log.debugf("Added host: %s, route: %s", uri.toString(), route);
+            });
 
             log.infof("#### Loadbalancer started and ready to serve requests on http://%s:%d, https://%s:%d ####", host, httpPort, host, httpsPort);
         } catch (Exception e) {
@@ -187,13 +195,7 @@ public class SimpleUndertowLoadBalancer {
             lb.addSessionCookieName(id);
         }
 
-        backendNodes.forEach((route, uri) -> {
-            lb.addHost(uri, route);
-            log.debugf("Added host: %s, route: %s", uri.toString(), route);
-        });
-
-        ProxyHandler handler = new ProxyHandler(lb, maxTime, ResponseCodeHandler.HANDLE_404);
-        return handler;
+        return new ProxyHandler(lb, maxTime, ResponseCodeHandler.HANDLE_404);
     }
 
 
@@ -263,7 +265,11 @@ public class SimpleUndertowLoadBalancer {
                 log.infof("Route '%s' already present. Skip adding", jvmRoute);
                 return this;
             } else {
-                return super.addHost(host, jvmRoute);
+                try {
+                    return super.addHost(host, jvmRoute, undertow.getXnio().getSslProvider(OptionMap.EMPTY));
+                } catch (GeneralSecurityException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
 

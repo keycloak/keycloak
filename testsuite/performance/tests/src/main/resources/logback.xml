@@ -31,6 +31,10 @@
         <appender-ref ref="CONSOLE_MSG_ONLY" />
     </logger>
 
+    <!--logging for dataset-->
+    <logger name="org.keycloak.performance.dataset" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE_MSG_ONLY" />
+    </logger>
     
     <logger name="ch.qos.logback" level="WARN"/>
 

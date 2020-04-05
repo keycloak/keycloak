@@ -82,18 +82,14 @@ public class LDAPGroupMapper2WaySyncTest extends AbstractLDAPTest {
             removeAllModelGroups(appRealm);
 
             GroupModel group1 = appRealm.createGroup("group1");
-            appRealm.moveGroup(group1, null);
             group1.setSingleAttribute(descriptionAttrName, "group1 - description1");
 
-            GroupModel group11 = appRealm.createGroup("group11");
-            appRealm.moveGroup(group11, group1);
+            GroupModel group11 = appRealm.createGroup("group11", group1);
 
-            GroupModel group12 = appRealm.createGroup("group12");
-            appRealm.moveGroup(group12, group1);
+            GroupModel group12 = appRealm.createGroup("group12", group1);
             group12.setSingleAttribute(descriptionAttrName, "group12 - description12");
 
             GroupModel group2 = appRealm.createGroup("group2");
-            appRealm.moveGroup(group2, null);
 
         });
     }

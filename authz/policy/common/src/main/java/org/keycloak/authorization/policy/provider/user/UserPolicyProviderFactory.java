@@ -196,9 +196,8 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
                             }
 
                             try {
-                                if (users.isEmpty()) {
-                                    policyStore.delete(policy.getId());
-                                } else {
+                                // just update the policy, let the UserSynchronizer to actually remove the policy if necessary
+                                if (!users.isEmpty()) {
                                     policy.putConfig("users", JsonSerialization.writeValueAsString(users));
                                 }
                             } catch (IOException e) {

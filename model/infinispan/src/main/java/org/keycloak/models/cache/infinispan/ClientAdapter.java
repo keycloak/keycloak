@@ -613,6 +613,16 @@ public class ClientAdapter implements ClientModel, CachedObject {
     }
 
     @Override
+    public Set<RoleModel> getRoles(Integer first, Integer max) {
+        return cacheSession.getClientRoles(cachedRealm, this, first, max);
+    }
+
+    @Override
+    public Set<RoleModel> searchForRoles(String search, Integer first, Integer max) {
+        return cacheSession.searchForClientRoles(cachedRealm, this, search, first, max);
+    }
+
+    @Override
     public int getNodeReRegistrationTimeout() {
         if (isUpdated()) return updated.getNodeReRegistrationTimeout();
         return cached.getNodeReRegistrationTimeout();

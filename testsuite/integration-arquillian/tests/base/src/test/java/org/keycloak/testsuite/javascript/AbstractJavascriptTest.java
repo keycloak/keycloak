@@ -3,6 +3,7 @@ package org.keycloak.testsuite.javascript;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -13,6 +14,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
@@ -45,6 +47,7 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
         void apply(T a, U b, V c, W d);
     }
 
+    public static final String NIP_IO_URL = "js-app-127-0-0-1.nip.io";
     public static final String CLIENT_ID = "js-console";
     public static final String REALM_NAME = "test";
     public static final String SPACE_REALM_NAME = "Example realm";
@@ -81,6 +84,10 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
         unauthorizedUser = UserBuilder.create().username("unauthorized").password("password").build();
     }
 
+    @BeforeClass
+    public static void enabledOnlyWithSSL() {
+        ContainerAssume.assumeAuthServerSSL();
+    }
 
     @Before
     public void beforeJavascriptTest() {
@@ -112,7 +119,8 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
                 .client(
                         ClientBuilder.create()
                                 .clientId(CLIENT_ID)
-                                .redirectUris(oauth.SERVER_ROOT + JAVASCRIPT_URL + "/*", oauth.SERVER_ROOT + JAVASCRIPT_ENCODED_SPACE_URL + "/*")
+                                .redirectUris(oauth.SERVER_ROOT.replace("localhost", NIP_IO_URL) + JAVASCRIPT_URL + "/*", oauth.SERVER_ROOT + JAVASCRIPT_ENCODED_SPACE_URL + "/*")
+                                .addWebOrigin(oauth.SERVER_ROOT.replace("localhost", NIP_IO_URL))
                                 .publicClient()
                 )
                 .accessTokenLifespan(30 + TOKEN_LIFESPAN_LEEWAY)

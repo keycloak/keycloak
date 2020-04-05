@@ -25,11 +25,11 @@ import org.jboss.logging.Logger;
 */
 public class ModelVersion {
     private static Logger logger = Logger.getLogger(ModelVersion.class);
+
     int major;
     int minor;
     int micro;
     String qualifier;
-    boolean snapshot;
 
     public ModelVersion(int major, int minor, int micro) {
         this.major = major;
@@ -38,10 +38,7 @@ public class ModelVersion {
     }
 
     public ModelVersion(String version) {
-        if (version.endsWith("-SNAPSHOT") || version.endsWith("-snapshot")) {
-            snapshot = true;
-            version = version.substring(0, version.length() - 9);
-        }
+        version = version.split("-")[0];
 
         String[] split = version.split("\\.");
         try {
@@ -56,6 +53,10 @@ public class ModelVersion {
             }
             if (split.length > 3) {
                 qualifier = split[3];
+
+                if (qualifier.startsWith("redhat")) {
+                    qualifier = null;
+                }
             }
         } catch (NumberFormatException e) {
             logger.warn("failed to parse version: " + version, e);
@@ -76,10 +77,6 @@ public class ModelVersion {
 
     public String getQualifier() {
         return qualifier;
-    }
-
-    public boolean isSnapshot() {
-        return snapshot;
     }
 
     public boolean lessThan(ModelVersion version) {
@@ -109,10 +106,6 @@ public class ModelVersion {
             return true;
         } else if (comp > 0){
             return false;
-        }
-
-        if (snapshot && !version.snapshot) {
-            return true;
         }
 
         return false;

@@ -663,6 +663,16 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     public Set<RoleModel> getRoles() {
         return session.realms().getClientRoles(realm, this);
     }
+    
+    @Override
+    public Set<RoleModel> getRoles(Integer first, Integer max) {
+        return session.realms().getClientRoles(realm, this, first, max);
+    }
+    
+    @Override
+    public Set<RoleModel> searchForRoles(String search, Integer first, Integer max) {
+        return session.realms().searchForClientRoles(realm, this, search, first, max);
+    }
 
     @Override
     public boolean hasScope(RoleModel role) {

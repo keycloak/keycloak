@@ -28,7 +28,6 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.theme.Theme;
-import org.keycloak.theme.ThemeProvider;
 
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.InternalServerErrorException;
@@ -69,6 +68,10 @@ public class AccountLoader {
             AuthenticationManager.AuthResult authResult = new AppAuthManager().authenticateBearerToken(session);
             if (authResult == null) {
                 throw new NotAuthorizedException("Bearer token required");
+            }
+
+            if (authResult.getUser().getServiceAccountClientLink() != null) {
+                throw new NotAuthorizedException("Service accounts are not allowed to access this service");
             }
 
             Auth auth = new Auth(session.getContext().getRealm(), authResult.getToken(), authResult.getUser(), client, authResult.getSession(), false);

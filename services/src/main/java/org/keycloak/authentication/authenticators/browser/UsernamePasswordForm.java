@@ -20,9 +20,6 @@ package org.keycloak.authentication.authenticators.browser;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
-import org.keycloak.authentication.CredentialValidator;
-import org.keycloak.credential.CredentialProvider;
-import org.keycloak.credential.PasswordCredentialProvider;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -30,7 +27,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -39,7 +35,7 @@ import javax.ws.rs.core.Response;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator implements Authenticator, CredentialValidator<PasswordCredentialProvider> {
+public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator implements Authenticator {
     protected static ServicesLogger log = ServicesLogger.LOGGER;
 
     @Override
@@ -108,13 +104,4 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
 
     }
 
-    @Override
-    public PasswordCredentialProvider getCredentialProvider(KeycloakSession session) {
-        return (PasswordCredentialProvider)session.getProvider(CredentialProvider.class, "keycloak-password");
-    }
-
-    @Override
-    protected String getDefaultChallengeMessage(AuthenticationFlowContext context){
-        return Messages.INVALID_USER;
-    }
 }

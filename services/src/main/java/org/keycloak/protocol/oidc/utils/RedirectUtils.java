@@ -84,8 +84,18 @@ public class RedirectUtils {
         KeycloakUriInfo uriInfo = session.getContext().getUri();
         RealmModel realm = session.getContext().getRealm();
 
-        if (redirectUri != null)
-            redirectUri = normalizeUrl(redirectUri);
+        if (redirectUri != null) {
+            try {
+                URI uri = URI.create(redirectUri);
+                redirectUri = uri.normalize().toString();
+            } catch (IllegalArgumentException cause) {
+                logger.debug("Invalid redirect uri", cause);
+                return null;
+            } catch (Exception cause) {
+                logger.debug("Unexpected error when parsing redirect uri", cause);
+                return null;
+            }
+        }
 
         if (redirectUri == null) {
             if (!requireRedirectUri) {
@@ -184,14 +194,5 @@ public class RedirectUtils {
             validRedirect = validRedirect.substring(0, idx);
         }
         return validRedirect;
-    }
-
-    private static String normalizeUrl(String url) {
-        try {
-            URI uri = new URI(url);
-            return uri.normalize().toString();
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Invalid URL syntax: " + e.getMessage());
-        }
     }
 }

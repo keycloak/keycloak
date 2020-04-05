@@ -1,0 +1,10 @@
+{
+  "name": "angular-resource",
+  "version": "1.7.9",
+  "license": "MIT",
+  "main": "./angular-resource.js",
+  "ignore": [],
+  "dependencies": {
+    "angular": "1.7.9"
+  }
+}

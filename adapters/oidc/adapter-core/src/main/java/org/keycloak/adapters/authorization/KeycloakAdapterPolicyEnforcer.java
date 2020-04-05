@@ -33,6 +33,7 @@ import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.resource.PermissionResource;
 import org.keycloak.authorization.client.resource.ProtectionResource;
+import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.common.util.Base64;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
@@ -174,7 +175,7 @@ public class KeycloakAdapterPolicyEnforcer extends AbstractPolicyEnforcer {
         } catch (AuthorizationDeniedException ignore) {
             LOGGER.debug("Authorization denied", ignore);
         } catch (Exception e) {
-            throw new RuntimeException("Unexpected error during authorization request.", e);
+            LOGGER.debug("Authorization failed", e);
         }
 
         return null;

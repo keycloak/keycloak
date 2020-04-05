@@ -17,8 +17,9 @@
 
 package org.keycloak.testsuite.servletauthz;
 
+import javax.servlet.Filter;
 import javax.servlet.FilterChain;
-import javax.servlet.GenericFilter;
+import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -32,10 +33,16 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class TestFilter extends GenericFilter {
+public class TestFilter implements Filter {
+
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+
+    }
+
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
+            throws IOException {
         HttpServletRequest req = (HttpServletRequest) request;
         
         if (req.getRequestURI().endsWith("/body")) {
@@ -46,4 +53,10 @@ public class TestFilter extends GenericFilter {
             writer.flush();
         }
     }
+
+    @Override
+    public void destroy() {
+
+    }
+
 }

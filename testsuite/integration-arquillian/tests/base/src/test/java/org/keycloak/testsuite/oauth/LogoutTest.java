@@ -22,7 +22,9 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.Details;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -46,6 +48,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -108,6 +111,39 @@ public class LogoutTest extends AbstractKeycloakTest {
 
             assertNotNull(testingClient.testApp().getAdminLogoutAction());
         }
+    }
+
+    @Test
+    public void logoutIDTokenHint() {
+        oauth.doLogin("test-user@localhost", "password");
+
+        String sessionId = events.expectLogin().assertEvent().getSessionId();
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        String idToken = tokenResponse.getIdToken();
+
+        events.clear();
+
+        driver.navigate().to(oauth.getLogoutUrl().redirectUri(oauth.APP_AUTH_ROOT).idTokenHint(idToken).build());
+        events.expectLogout(sessionId).detail(Details.REDIRECT_URI, oauth.APP_AUTH_ROOT).assertEvent();
+
+        assertCurrentUrlEquals(oauth.APP_AUTH_ROOT);
+    }
+
+    @Test
+    public void browserLogoutWithAccessToken() {
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        String accessToken = tokenResponse.getAccessToken();
+
+        events.clear();
+
+        driver.navigate().to(oauth.getLogoutUrl().redirectUri(oauth.APP_AUTH_ROOT).idTokenHint(accessToken).build());
+
+        events.expectLogoutError(OAuthErrorException.INVALID_TOKEN).assertEvent();
     }
 
     @Test

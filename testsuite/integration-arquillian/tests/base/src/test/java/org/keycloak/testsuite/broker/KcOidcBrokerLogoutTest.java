@@ -1,22 +1,29 @@
 package org.keycloak.testsuite.broker;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.openqa.selenium.Cookie;
+import org.keycloak.services.util.CookieHelper;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.util.OAuthClient;
 
-import javax.ws.rs.core.Response;
-import java.util.List;
-
+import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getAuthRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 public class KcOidcBrokerLogoutTest extends AbstractBaseBrokerTest {
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
+
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
         return KcOidcBrokerConfiguration.INSTANCE;
@@ -48,14 +55,7 @@ public class KcOidcBrokerLogoutTest extends AbstractBaseBrokerTest {
 
     @Before
     public void addClients() {
-        final List<ClientRepresentation> clients = bc.createProviderClients(suiteContext);
-        final RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
-        for (final ClientRepresentation client : clients) {
-            log.debug("adding client " + client.getClientId() + " to realm " + bc.providerRealmName());
-
-            final Response resp = providerRealm.clients().create(client);
-            resp.close();
-        }
+        addClientsToProviderAndConsumer();
     }
 
     @Test
@@ -76,8 +76,7 @@ public class KcOidcBrokerLogoutTest extends AbstractBaseBrokerTest {
         logoutFromRealm(bc.consumerRealmName(), "kc-oidc-idp");
         driver.navigate().to(getAccountUrl(REALM_PROV_NAME));
 
-        //could be 'keycloak account management' or 'rh-sso account management'
-        waitForPage(driver, " account management", true);
+        waitForAccountManagementTitle();
     }
 
     @Test
@@ -92,15 +91,25 @@ public class KcOidcBrokerLogoutTest extends AbstractBaseBrokerTest {
 
     @Test
     public void logoutAfterBrowserRestart() {
-        logInAsUserInIDPForFirstTime();
-        assertLoggedInAccountManagement();
+        driver.navigate().to(getLoginUrl(bc.consumerRealmName(), "broker-app"));
+        logInWithBroker(bc);
+        updateAccountInformation();
 
-        Cookie identityCookie = driver.manage().getCookieNamed(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
-        String idToken = identityCookie.getValue();
+        // Exchange code from "broker-app" client of "consumer" realm for the tokens
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.realm(bc.consumerRealmName())
+                .clientId("broker-app")
+                .redirectUri(getAuthRoot(suiteContext) + "/auth/realms/" + REALM_CONS_NAME + "/app")
+                .doAccessTokenRequest(code, "broker-app-secret");
+        assertEquals(200, response.getStatusCode());
+
+        String idToken = response.getIdToken();
 
         // simulate browser restart by deleting an identity cookie
-        log.debugf("Deleting %s cookie", AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
+        log.debugf("Deleting %s and %s cookies", AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE,
+                AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE + CookieHelper.LEGACY_COOKIE);
         driver.manage().deleteCookieNamed(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
+        driver.manage().deleteCookieNamed(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE + CookieHelper.LEGACY_COOKIE);
 
         logoutFromRealm(bc.consumerRealmName(), null, idToken);
         driver.navigate().to(getAccountUrl(REALM_PROV_NAME));

@@ -27,6 +27,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
@@ -208,6 +209,13 @@ public class JpaUserFederatedStorageProvider implements
         if (entity == null) return false;
         em.remove(entity);
         return true;
+    }
+
+    @Override 
+    public void preRemove(RealmModel realm, IdentityProviderModel provider) {
+        em.createNamedQuery("deleteBrokerLinkByIdentityProvider")
+                .setParameter("realmId", realm.getId())
+                .setParameter("providerAlias", provider.getAlias());
     }
 
     private BrokerLinkEntity getBrokerLinkEntity(RealmModel realm, String userId, String socialProvider) {
@@ -568,7 +576,7 @@ public class JpaUserFederatedStorageProvider implements
     @Override
     public void updateCredential(RealmModel realm, String userId, CredentialModel cred) {
         FederatedUserCredentialEntity entity = em.find(FederatedUserCredentialEntity.class, cred.getId());
-        if (entity == null) return;
+        if (!checkCredentialEntity(entity, userId)) return;
         createIndex(realm, userId);
         entity.setCreatedDate(cred.getCreatedDate());
         entity.setType(cred.getType());
@@ -605,7 +613,7 @@ public class JpaUserFederatedStorageProvider implements
     @Override
     public boolean removeStoredCredential(RealmModel realm, String userId, String id) {
         FederatedUserCredentialEntity entity = em.find(FederatedUserCredentialEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
-        if (entity == null) return false;
+        if (!checkCredentialEntity(entity, userId)) return false;
 
         int currentPriority = entity.getPriority();
 
@@ -625,9 +633,13 @@ public class JpaUserFederatedStorageProvider implements
     @Override
     public CredentialModel getStoredCredentialById(RealmModel realm, String userId, String id) {
         FederatedUserCredentialEntity entity = em.find(FederatedUserCredentialEntity.class, id);
-        if (entity == null) return null;
+        if (!checkCredentialEntity(entity, userId)) return null;
         CredentialModel model = toModel(entity);
         return model;
+    }
+
+    private boolean checkCredentialEntity(FederatedUserCredentialEntity entity, String userId) {
+        return entity != null && entity.getUserId() != null && entity.getUserId().equals(userId);
     }
 
     protected CredentialModel toModel(FederatedUserCredentialEntity entity) {

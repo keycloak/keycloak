@@ -18,8 +18,28 @@
 package org.keycloak.testsuite.ui.account2;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.Test;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
 import org.keycloak.testsuite.ui.account2.page.ApplicationsPage;
+import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.OAuthClient;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -32,4 +52,72 @@ public class ApplicationsTest extends BaseAccountPageTest {
     protected AbstractLoggedInPage getAccountPage() {
         return applicationsPage;
     }
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        super.addTestRealms(testRealms);
+        RealmRepresentation realm = testRealms.get(0);
+
+        realm.setClients(Arrays.asList(
+                ClientBuilder
+                        .create()
+                        .clientId("always-display-client")
+                        .id(KeycloakModelUtils.generateId())
+                        .name("Always Display Client")
+                        .baseUrl(APP_ROOT + "/always-display-client")
+                        .directAccessGrants()
+                        .secret("secret1")
+                        .alwaysDisplayInConsole(true)
+                        .build(),
+                ClientBuilder
+                        .create()
+                        .clientId("third-party-client")
+                        .id(KeycloakModelUtils.generateId())
+                        .name("Third Party Client")
+                        .baseUrl(APP_ROOT + "/third-party-client")
+                        .directAccessGrants()
+                        .secret("secret1")
+                        .consentRequired(true)
+                        .build()
+        ));
+    }
+
+    @Test
+    public void applicationListTest() throws Exception {
+        List<ApplicationsPage.ClientRepresentation> applications = applicationsPage.getApplications();
+        assertFalse(applications.isEmpty());
+        Map<String, ApplicationsPage.ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
+        assertThat(apps.keySet(), containsInAnyOrder("always-display-client", "account-console"));
+        assertClientRep(apps.get("account-console"), "Account Console", false, true, "/realms/test/account/", false);
+        assertClientRep(apps.get("always-display-client"), "Always Display Client", false, false, "https://localhost:8543/auth/realms/master/app/always-display-client", false);
+    }
+
+    @Test
+    public void toggleApplicationDetailsTest() throws Exception {
+        applicationsPage.toggleApplicationDetails("account-console");
+        List<ApplicationsPage.ClientRepresentation> applications = applicationsPage.getApplications();
+        assertFalse(applications.isEmpty());
+        Map<String, ApplicationsPage.ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
+        assertThat(apps.keySet(), containsInAnyOrder("always-display-client", "account-console"));
+        assertClientRep(apps.get("account-console"), "Account Console", false, true, "/realms/test/account/", true);
+        assertClientRep(apps.get("always-display-client"), "Always Display Client", false, false, "https://localhost:8543/auth/realms/master/app/always-display-client", false);
+
+        applicationsPage.toggleApplicationDetails("account-console");
+        applications = applicationsPage.getApplications();
+        assertFalse(applications.isEmpty());
+        apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
+        assertThat(apps.keySet(), containsInAnyOrder("always-display-client", "account-console"));
+        assertClientRep(apps.get("account-console"), "Account Console", false, true, "/realms/test/account/", false);
+        assertClientRep(apps.get("always-display-client"), "Always Display Client", false, false, "https://localhost:8543/auth/realms/master/app/always-display-client", false);
+    }
+
+    private void assertClientRep(ApplicationsPage.ClientRepresentation clientRep, String name, boolean userConsentRequired, boolean inUse, String baseUrl, boolean applicationDetailsVisible) {
+        assertNotNull(clientRep);
+        assertEquals(name, clientRep.getClientName());
+        assertEquals(userConsentRequired, clientRep.isUserConsentRequired());
+        assertEquals(inUse, clientRep.isInUse());
+        assertEquals(baseUrl, clientRep.getBaseUrl());
+        assertEquals(applicationDetailsVisible, clientRep.isApplicationDetailsVisible());
+    }
+
 }

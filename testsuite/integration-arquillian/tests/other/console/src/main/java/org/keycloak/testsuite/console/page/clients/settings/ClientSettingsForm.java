@@ -33,6 +33,9 @@ public class ClientSettingsForm extends CreateClientForm {
     @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='enabled']]")
     private OnOffSwitch enabledSwitch;
 
+    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='alwaysDisplayInConsole']]")
+    private OnOffSwitch alwaysDisplayInConsole;
+    
     @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='consentRequired']]")
     private OnOffSwitch consentRequiredSwitch;
 
@@ -144,6 +147,18 @@ public class ClientSettingsForm extends CreateClientForm {
 
     public void setEnabled(boolean enabled) {
         enabledSwitch.setOn(enabled);
+    }
+    
+    public boolean isAlwaysDisplayInConsole() {
+        return alwaysDisplayInConsole.isOn();
+    }
+
+    public void setAlwaysDisplayInConsole(boolean enabled) {
+        alwaysDisplayInConsole.setOn(enabled);
+    }
+
+    public boolean isAlwaysDisplayInConsoleVisible() {
+        return alwaysDisplayInConsole.isVisible();
     }
 
     public boolean isConsentRequired() {

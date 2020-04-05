@@ -21,6 +21,7 @@ import org.junit.After;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.events.Details;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -109,4 +110,9 @@ public abstract class AbstractTestRealmKeycloakTest extends AbstractKeycloakTest
         return idToken;
     }
 
+    /** KEYCLOAK-12065 Inherit Client Connection from parent session **/
+    public static KeycloakSession inheritClientConnection(KeycloakSession parentSession, KeycloakSession currentSession) {
+        currentSession.getContext().setConnection(parentSession.getContext().getConnection());
+        return currentSession;
+    }
 }
