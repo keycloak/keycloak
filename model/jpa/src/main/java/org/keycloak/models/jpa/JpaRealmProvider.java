@@ -21,22 +21,8 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModel;
-import org.keycloak.models.ClientInitialAccessModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RealmProvider;
-import org.keycloak.models.RoleContainerModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.jpa.entities.ClientEntity;
-import org.keycloak.models.jpa.entities.ClientInitialAccessEntity;
-import org.keycloak.models.jpa.entities.ClientScopeEntity;
-import org.keycloak.models.jpa.entities.GroupEntity;
-import org.keycloak.models.jpa.entities.RealmEntity;
-import org.keycloak.models.jpa.entities.RoleEntity;
+import org.keycloak.models.*;
+import org.keycloak.models.jpa.entities.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
@@ -45,7 +31,6 @@ import javax.persistence.TypedQuery;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import org.keycloak.models.ModelException;
 
 
 /**
@@ -342,7 +327,7 @@ public class JpaRealmProvider implements RealmProvider {
 
     protected Set<RoleModel> searchForRoles(TypedQuery<RoleEntity> query, RealmModel realm, String search, Integer first, Integer max) {
 
-        query.setParameter("search", "%" + search.trim().toLowerCase() + "%");
+        query.setParameter("search", "%" + search.trim() + "%");
         if(Objects.nonNull(first) && Objects.nonNull(max)
                 && first >= 0 && max >= 0) {
             query= query.setFirstResult(first).setMaxResults(max);
@@ -849,7 +834,7 @@ public class JpaRealmProvider implements RealmProvider {
     public List<GroupModel> getGroupsByParent(RealmModel realm, String parent) {
         GroupEntity groupEntity = em.find(GroupEntity.class, parent);
         List<String> groupIds = em.createNamedQuery("getGroupIdsByParent", String.class)
-                .setParameter("parent", groupEntity).getResultList();
+                .setParameter("parent", groupEntity.getId()).getResultList();
         List<GroupModel> list = new ArrayList<>();
         if (Objects.nonNull(groupIds) && !groupIds.isEmpty()) {
             for (String id : groupIds) {

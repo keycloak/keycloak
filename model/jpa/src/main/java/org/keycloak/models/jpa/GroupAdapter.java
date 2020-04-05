@@ -118,7 +118,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     @Override
     public Long getUserAllCount() {
         TypedQuery<String> query = em.createNamedQuery("getGroupIdsByParent", String.class);
-        query.setParameter("parent", group);
+        query.setParameter("parent", group.getId());
         List<String> ids = query.getResultList();
         Set<GroupModel> set = new HashSet<>();
         Long count = getUserCount(getId());

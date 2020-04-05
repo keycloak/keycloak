@@ -186,25 +186,41 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         }
     }
 
-
     /**
      * This method makes sure that the parent flow's corresponding execution is considered successful if its contained
      * executions are successful.
      * The purpose is for when an execution is validated through an action, to make sure its parent flow can be successful
-     * when re-evaluation the flow tree.
+     * when re-evaluation the flow tree. If the flow is successful, we will recursively check it's parent flow as well
      *
      * @param model An execution model.
+     * @return flowId of the 1st ancestor flow, which is not yet successfully finished and may require some further processing
      */
-    private void checkAndValidateParentFlow(AuthenticationExecutionModel model) {
-        List<AuthenticationExecutionModel> localExecutions = processor.getRealm().getAuthenticationExecutions(model.getParentFlow());
-        AuthenticationExecutionModel parentFlowModel = processor.getRealm().getAuthenticationExecutionByFlowId(model.getParentFlow());
-        if (parentFlowModel != null &&
-                ((model.isRequired() && localExecutions.stream().allMatch(processor::isSuccessful)) ||
-                        (model.isAlternative() && localExecutions.stream().anyMatch(processor::isSuccessful)))) {
-            processor.getAuthenticationSession().setExecutionStatus(parentFlowModel.getId(), AuthenticationSessionModel.ExecutionStatus.SUCCESS);
+    private String checkAndValidateParentFlow(AuthenticationExecutionModel model) {
+        while (true) {
+            List<AuthenticationExecutionModel> localExecutions = processor.getRealm().getAuthenticationExecutions(model.getParentFlow());
+            AuthenticationExecutionModel parentFlowExecutionModel = processor.getRealm().getAuthenticationExecutionByFlowId(model.getParentFlow());
+
+            if (parentFlowExecutionModel != null) {
+                List<AuthenticationExecutionModel> requiredExecutions = new LinkedList<>();
+                List<AuthenticationExecutionModel> alternativeExecutions = new LinkedList<>();
+                fillListsOfExecutions(localExecutions, requiredExecutions, alternativeExecutions);
+
+                // Note: If we evaluate alternative execution, we will also doublecheck that there are not required elements in same subflow
+                if ((model.isRequired() && requiredExecutions.stream().allMatch(processor::isSuccessful)) ||
+                        (model.isAlternative() && alternativeExecutions.stream().anyMatch(processor::isSuccessful) && requiredExecutions.isEmpty())) {
+                    logger.debugf("Flow '%s' successfully finished after children executions success", logExecutionAlias(parentFlowExecutionModel));
+                    processor.getAuthenticationSession().setExecutionStatus(parentFlowExecutionModel.getId(), AuthenticationSessionModel.ExecutionStatus.SUCCESS);
+
+                    // Flow is successfully finished. Recursively check whether it's parent flow is now successful as well
+                    model = parentFlowExecutionModel;
+                } else {
+                    return model.getParentFlow();
+                }
+            } else {
+                return model.getParentFlow();
+            }
         }
     }
-
     @Override
     public Response processFlow() {
         logger.debugf("processFlow: %s", flow.getAlias());

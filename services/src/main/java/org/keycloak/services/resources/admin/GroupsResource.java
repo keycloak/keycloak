@@ -21,10 +21,7 @@ import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.RealmModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -76,6 +73,7 @@ public class GroupsResource {
     public List<GroupRepresentation> getGroups(@QueryParam("search") String search,
                                                @QueryParam("first") Integer firstResult,
                                                @QueryParam("max") Integer maxResults,
+                                               @QueryParam("parent") String parent,
                                                @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         auth.groups().requireList();
 
@@ -87,9 +85,9 @@ public class GroupsResource {
         if (Objects.nonNull(search)) {
             if (search.indexOf(":") != -1) {
                 String[] searchs = search.split(":");
-                results = ModelToRepresentation.searchForGroupByAttribute(realm, searchs[0], searchs[1], firstResult, maxResults, fullRepresentation);
+                results = ModelToRepresentation.searchForGroupByAttribute(realm, searchs[0], searchs[1], firstResult, maxResults, briefRepresentation);
             } else {
-                results = ModelToRepresentation.searchForGroupByName(realm, fullRepresentation, search.trim(), firstResult, maxResults);
+                results = ModelToRepresentation.searchForGroupByName(realm, briefRepresentation, search.trim(), firstResult, maxResults);
             }
         } else if (Objects.nonNull(parent)) {
             results = ModelToRepresentation.toSubGroupsByParent(realm, parent);

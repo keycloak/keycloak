@@ -18,7 +18,9 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
+
 import javax.ws.rs.NotFoundException;
+
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.ObjectUtil;
@@ -66,9 +68,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Base resource for managing users
  *
- * @resource Users
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
+ * @resource Users
  */
 public class UsersResource {
 
@@ -98,7 +100,7 @@ public class UsersResource {
 
     /**
      * Create a new user
-     *
+     * <p>
      * Username must be unique.
      *
      * @param rep
@@ -110,7 +112,7 @@ public class UsersResource {
         auth.users().requireManage();
 
         String username = rep.getUsername();
-        if(realm.isRegistrationEmailAsUsername()) {
+        if (realm.isRegistrationEmailAsUsername()) {
             username = rep.getEmail();
         }
         if (ObjectUtil.isBlank(username)) {
@@ -156,7 +158,7 @@ public class UsersResource {
                 session.getTransactionManager().setRollbackOnly();
             }
             return ErrorResponse.error("Password policy not met", Response.Status.BAD_REQUEST);
-        } catch (ModelException me){
+        } catch (ModelException me) {
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();
             }
@@ -164,6 +166,7 @@ public class UsersResource {
             return ErrorResponse.error("Could not create user", Response.Status.BAD_REQUEST);
         }
     }
+
     /**
      * Get representation of the user
      *
@@ -186,15 +189,15 @@ public class UsersResource {
 
     /**
      * Get users
-     *
+     * <p>
      * Returns a list of users, filtered according to query parameters
      *
-     * @param search A String contained in username, first or last name, or email
+     * @param search     A String contained in username, first or last name, or email
      * @param last
      * @param first
      * @param email
      * @param username
-     * @param first Pagination offset
+     * @param first      Pagination offset
      * @param maxResults Maximum results size (defaults to 100)
      * @return
      */
@@ -206,6 +209,7 @@ public class UsersResource {
                                              @QueryParam("firstName") String first,
                                              @QueryParam("email") String email,
                                              @QueryParam("username") String username,
+                                             @QueryParam("idcard") String idcard,
                                              @QueryParam("first") Integer firstResult,
                                              @QueryParam("max") Integer maxResults,
                                              @QueryParam("briefRepresentation") Boolean briefRepresentation) {
@@ -223,7 +227,7 @@ public class UsersResource {
                 if (userModel != null) {
                     userModels = Arrays.asList(userModel);
                 }
-            } else if (search.indexOf(":") != -1) {
+            } else if (search.indexOf(":") != -1 && search.split(":").length > 1) {
                 String[] searchs = search.split(":");
                 userModels = session.users().searchForUserByUserAttribute(searchs[0], searchs[1], realm);
             } else {

@@ -42,10 +42,8 @@ import java.util.Collection;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="getAllUsersByRealm", query="select u from UserEntity u where u.realmId = :realmId order by u.username"),
-        @NamedQuery(name="getAllUsersByRealmExcludeServiceAccount", query="select u from UserEntity u where u.realmId = :realmId and (u.serviceAccountClientLink is null) order by u.username"),
         @NamedQuery(name="searchForUserCount", query="select count(u) from UserEntity u where u.realmId = :realmId and (u.serviceAccountClientLink is null) and " +
-                "( u.username like :search or concat(coalesce(u.firstName, '', ' ', coalesce(u.lastName, ''))) like :search or u.email like :search )"),
+                "( u.username like :search or u.firstName like :search or u.email like :search or u.idcard like :search)"),
         @NamedQuery(name="getAllUsersByRealm", query="select u from UserEntity u where u.realmId = :realmId order by u.createdTimestamp desc"),
         @NamedQuery(name="getAllUsersByRealmExcludeServiceAccount", query="select u from UserEntity u where u.realmId = :realmId and (u.serviceAccountClientLink is null) order by u.createdTimestamp desc"),
         @NamedQuery(name="searchForUser", query="select u from UserEntity u where u.realmId = :realmId and (u.serviceAccountClientLink is null) and " +

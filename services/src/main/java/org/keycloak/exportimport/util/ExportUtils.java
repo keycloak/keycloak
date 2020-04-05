@@ -55,17 +55,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.representations.idm.ComponentExportRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.FederatedIdentityRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.RolesRepresentation;
-import org.keycloak.representations.idm.ScopeMappingRepresentation;
-import org.keycloak.representations.idm.UserConsentRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.*;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
@@ -286,19 +276,6 @@ public class ExportUtils {
         rep.setComponents(components);
 
         return rep;
-    }
-
-
-    public static List<UserRepresentation> exportUsers(KeycloakSession session, RealmModel realm, ExportOptions options, int first, int max) {
-        List<UserRepresentation> users = new LinkedList<>();
-        if (options.isUsersIncluded()) {
-            List<UserModel> userModels = session.users().getUsers(realm, first, max, true);
-            for (UserModel user : userModels) {
-                UserRepresentation userRep = exportUser(session, realm, user, options);
-                users.add(userRep);
-            }
-        }
-        return users;
     }
 
     public static MultivaluedHashMap<String, ComponentExportRepresentation> exportComponents(RealmModel realm, String parentId) {

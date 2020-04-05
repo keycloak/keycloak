@@ -166,7 +166,7 @@ public class JPAPolicyStore implements PolicyStore {
                 predicates.add(root.joinMap("config").key().in(name.substring("config:".length())));
                 predicates.add(builder.like(root.joinMap("config").value().as(String.class), "%" + value[0] + "%"));
             } else {
-                predicates.add(builder.like(builder.lower(root.get(name)), "%" + value[0].toLowerCase() + "%"));
+                predicates.add(builder.like(root.get(name), "%" + value[0]+ "%"));
             }
         });
 

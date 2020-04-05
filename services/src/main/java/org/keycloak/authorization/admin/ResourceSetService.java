@@ -18,6 +18,7 @@
 package org.keycloak.authorization.admin;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
+import static org.keycloak.models.utils.ModelToRepresentation.toResourceHierarchy;
 import static org.keycloak.models.utils.RepresentationToModel.toModel;
 
 import java.util.ArrayList;
@@ -343,7 +344,7 @@ public class ResourceSetService {
             return Response.ok().build();
         }
         if (id != null || name != null || uri != null || type != null) {
-            return find(id, name, uri, owner, type, scope, matchingUri, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toResourceHierarchy(resource, resourceServer, authorization, deep1));
+            return find(id, name, uri, owner, type, scope, matchingUri,exactName, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toResourceHierarchy(resource, resourceServer, authorization, deep1));
         }
         return find(id, name, uri, owner, type, scope, matchingUri, exactName, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer, authorization, deep1));
     }
