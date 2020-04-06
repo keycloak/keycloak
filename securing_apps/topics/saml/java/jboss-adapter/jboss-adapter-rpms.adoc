@@ -30,13 +30,13 @@ $ sudo subscription-manager repos --enable=jb-eap-{appserver_version}-for-rhel-8
 Install the EAP 7 adapters for SAML using the following command:
 
 ----
-$ sudo yum install eap7-keycloak-saml-adapter-sso7_3
+$ sudo yum install eap7-keycloak-saml-adapter-sso7_4
 ----
 
 or use following one for Red Hat Enterprise Linux 8:
 
 ----
-$ sudo dnf install eap7-keycloak-adapter-sso7_3
+$ sudo dnf install eap7-keycloak-adapter-sso7_4
 ----
 
 NOTE: The default EAP_HOME path for the RPM installation is /opt/rh/eap7/root/usr/share/wildfly.
@@ -73,7 +73,7 @@ $ sudo subscription-manager repos --enable=jb-eap-6-for-rhel-<RHEL_VERSION>-serv
 Install the EAP 6 adapters for SAML using the following command:
 
 ----
-$ sudo yum install keycloak-saml-adapter-sso7_3-eap6
+$ sudo yum install keycloak-saml-adapter-sso7_4-eap6
 ----
 
 NOTE: The default EAP_HOME path for the RPM installation is /opt/rh/eap6/root/usr/share/wildfly.
