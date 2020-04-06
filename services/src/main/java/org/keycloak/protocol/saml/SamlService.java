@@ -307,7 +307,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 } else {
                     redirect = client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE);
                 }
-                if (redirect == null) {
+                if (redirect == null || redirect.trim().isEmpty()) {
                     redirect = client.getManagementUrl();
                 }
 

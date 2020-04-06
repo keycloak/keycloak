@@ -56,10 +56,10 @@ public class SamlSPDescriptorClientInstallation implements ClientInstallationPro
             logoutUrl = client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE);
             binding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get();
         }
-        if (assertionUrl == null || assertionUrl.isEmpty()) assertionUrl = client.getManagementUrl();
-        if (assertionUrl == null || assertionUrl.isEmpty()) assertionUrl = FALLBACK_ERROR_URL_STRING;
-        if (logoutUrl == null || assertionUrl.isEmpty()) logoutUrl = client.getManagementUrl();
-        if (logoutUrl == null || assertionUrl.isEmpty()) logoutUrl = FALLBACK_ERROR_URL_STRING;
+        if (assertionUrl == null || assertionUrl.trim().isEmpty()) assertionUrl = client.getManagementUrl();
+        if (assertionUrl == null || assertionUrl.trim().isEmpty()) assertionUrl = FALLBACK_ERROR_URL_STRING;
+        if (logoutUrl == null || logoutUrl.trim().isEmpty()) logoutUrl = client.getManagementUrl();
+        if (logoutUrl == null || logoutUrl.trim().isEmpty()) logoutUrl = FALLBACK_ERROR_URL_STRING;
         String nameIdFormat = samlClient.getNameIDFormat();
         if (nameIdFormat == null) nameIdFormat = SamlProtocol.SAML_DEFAULT_NAMEID_FORMAT;
         String spCertificate = SPMetadataDescriptor.xmlKeyInfo("        ", null, samlClient.getClientSigningCertificate(), KeyTypes.SIGNING.value(), true);
