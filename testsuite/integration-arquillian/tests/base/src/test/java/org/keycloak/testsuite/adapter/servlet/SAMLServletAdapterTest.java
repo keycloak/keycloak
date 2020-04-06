@@ -816,6 +816,29 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         testSuccessfulAndUnauthorizedLogin(salesPostServletPage, testRealmSAMLPostLoginPage);
     }
 
+    /**
+     * KEYCLOAK-13005: setting the Consumer Service POST Binding URL in the admin console and then deleting it (i.e. erase
+     * the field contents) leads to failure to properly redirect back to the app after a successful login. It happens because
+     * the admin console sets the value of a field that was previously configured to an empty string instead of null, so the
+     * code must verify if the configured URL is not null and non-empty.
+     *
+     * This test verifies the fix for the issue works by mimicking the behavior of the admin console - i.e. setting an empty
+     * string in the {@code saml_assertion_consumer_url_post} attribute. It is expected that in this situation the master
+     * URL is picked and redirection to the app works after a successful login.
+     *
+     * @throws Exception if an error occurs while running the test.
+     */
+    @Test
+    public void salesPostEmptyConsumerPostURL() throws Exception {
+        try (Closeable client = ClientAttributeUpdater.forClient(adminClient, testRealmPage.getAuthRealm(), SalesPostServlet.CLIENT_NAME)
+            .setAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, "")
+            .update()) {
+            testSuccessfulAndUnauthorizedLogin(salesPostServletPage, testRealmSAMLPostLoginPage);
+        } finally {
+            salesPostEncServletPage.logout();
+        }
+    }
+
     @Test
     public void salesPostEncTest() {
         testSuccessfulAndUnauthorizedLogin(salesPostEncServletPage, testRealmSAMLPostLoginPage);
