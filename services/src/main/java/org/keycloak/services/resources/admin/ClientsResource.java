@@ -103,48 +103,56 @@ public class ClientsResource {
                                                  @QueryParam("search") @DefaultValue("false") boolean search,
                                                  @QueryParam("first") Integer firstResult,
                                                  @QueryParam("max") Integer maxResults) {
+        if (firstResult == null) {
+            firstResult = -1;
+        }
+        if (maxResults == null) {
+            maxResults = -1;
+        }
+
         List<ClientRepresentation> rep = new ArrayList<>();
+        boolean canView = auth.clients().canView();
+        List<ClientModel> clientModels;
 
         if (clientId == null || clientId.trim().equals("")) {
-            List<ClientModel> clientModels = realm.getClients(firstResult, maxResults);
+            clientModels = canView ? realm.getClients(firstResult, maxResults) : realm.getClients();
             auth.clients().requireList();
-            boolean view = auth.clients().canView();
-            for (ClientModel clientModel : clientModels) {
-                if (view || auth.clients().canView(clientModel)) {
-                    ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel, session);
-                    rep.add(representation);
-                    representation.setAccess(auth.clients().getAccess(clientModel));
-                } else if (!viewableOnly && auth.clients().canView(clientModel)) {
-                    ClientRepresentation client = new ClientRepresentation();
-                    client.setId(clientModel.getId());
-                    client.setClientId(clientModel.getClientId());
-                    client.setDescription(clientModel.getDescription());
-                    rep.add(client);
-                }
-            }
         } else {
-            List<ClientModel> clientModels = Collections.emptyList();
+            clientModels = Collections.emptyList();
             if(search) {
-                clientModels = realm.searchClientByClientId(clientId, firstResult, maxResults);
+                clientModels = canView ? realm.searchClientByClientId(clientId, firstResult, maxResults) : realm.searchClientByClientId(clientId, -1, -1);
             } else {
                 ClientModel client = realm.getClientByClientId(clientId);
                 if(client != null) {
                     clientModels = Collections.singletonList(client);
                 }
             }
-            if (clientModels != null) {
-                for(ClientModel clientModel : clientModels) {
-                    if (auth.clients().canView(clientModel)) {
-                        ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel, session);
-                        representation.setAccess(auth.clients().getAccess(clientModel));
-                        rep.add(representation);
-                    } else if (!viewableOnly && auth.clients().canView(clientModel)){
-                        ClientRepresentation client = new ClientRepresentation();
-                        client.setId(clientModel.getId());
-                        client.setClientId(clientModel.getClientId());
-                        client.setDescription(clientModel.getDescription());
-                        rep.add(client);
-                    }
+        }
+
+        int idx = 0;
+
+        for(ClientModel clientModel : clientModels) {
+            if (!canView) {
+                if (rep.size() == maxResults) {
+                    return rep;
+                }
+            }
+
+            ClientRepresentation representation = null;
+
+            if (canView || auth.clients().canView(clientModel)) {
+                representation = ModelToRepresentation.toRepresentation(clientModel, session);
+                representation.setAccess(auth.clients().getAccess(clientModel));
+            } else if (!viewableOnly && auth.clients().canView(clientModel)) {
+                representation = new ClientRepresentation();
+                representation.setId(clientModel.getId());
+                representation.setClientId(clientModel.getClientId());
+                representation.setDescription(clientModel.getDescription());
+            }
+
+            if (representation != null) {
+                if (canView || idx++ >= firstResult) {
+                    rep.add(representation);
                 }
             }
         }
