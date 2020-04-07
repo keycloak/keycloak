@@ -4,7 +4,7 @@
 You must have the following installed on your machine and available in your PATH before you continue:
 
 * Java JDK 8
-* Apache Maven 3.1.1 or higher
+* Apache Maven 3.3.3 or higher
 * Git
 
 ifeval::[{project_community}==true]
