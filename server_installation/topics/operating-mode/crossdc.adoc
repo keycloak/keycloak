@@ -85,7 +85,7 @@ The active/passive mode is better for performance. For more information about ho
 
 Details of DB setup are out-of-scope for {project_name}, however many RDBMS vendors like MariaDB and Oracle offer replicated databases and synchronous replication. We test {project_name} with these vendors:
 
-* Oracle Database 12c Release 1 (12.1) RAC
+* Oracle Database 19c RAC
 * Galera 3.12 cluster for MariaDB server version 10.1.19-MariaDB
 
 
