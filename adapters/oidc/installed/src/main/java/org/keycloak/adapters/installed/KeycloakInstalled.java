@@ -25,12 +25,14 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Reader;
+import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.time.temporal.ValueRange;
 import java.util.Deque;
 import java.util.Locale;
 import java.util.Map;
@@ -124,25 +126,33 @@ public class KeycloakInstalled {
         this.locale = locale;
     }
 
-    public void login() throws IOException, ServerRequest.HttpFailure, VerificationException, InterruptedException, OAuthErrorException, URISyntaxException {
+    public void login(int port) throws IOException, ServerRequest.HttpFailure, VerificationException, InterruptedException, OAuthErrorException, URISyntaxException {
         if (isDesktopSupported()) {
-            loginDesktop();
+            loginDesktop(port);
         } else {
             loginManual();
         }
     }
 
-    public void login(PrintStream printer, Reader reader) throws IOException, ServerRequest.HttpFailure, VerificationException, InterruptedException, OAuthErrorException, URISyntaxException {
+    public void login() throws IOException, ServerRequest.HttpFailure, VerificationException, InterruptedException, OAuthErrorException, URISyntaxException {
+        login(0);
+    }
+
+    public void login(PrintStream printer, Reader reader, int port) throws IOException, ServerRequest.HttpFailure, VerificationException, InterruptedException, OAuthErrorException, URISyntaxException {
         if (isDesktopSupported()) {
-            loginDesktop();
+            loginDesktop(port);
         } else {
             loginManual(printer, reader);
         }
     }
 
-    public void logout() throws IOException, InterruptedException, URISyntaxException {
+    public void login(PrintStream printer, Reader reader) throws IOException, ServerRequest.HttpFailure, VerificationException, InterruptedException, OAuthErrorException, URISyntaxException {
+        login(printer, reader, 0);
+    }
+
+    public void logout(int port) throws IOException, InterruptedException, URISyntaxException {
         if (status == Status.LOGGED_DESKTOP) {
-            logoutDesktop();
+            logoutDesktop(port);
         }
 
         tokenString = null;
@@ -156,9 +166,27 @@ public class KeycloakInstalled {
         status = null;
     }
 
-    public void loginDesktop() throws IOException, VerificationException, OAuthErrorException, URISyntaxException, ServerRequest.HttpFailure, InterruptedException {
-        CallbackListener callback = new CallbackListener();
-        callback.start();
+    public void logout() throws IOException, InterruptedException, URISyntaxException {
+        logout(0);
+    }
+
+    public void loginDesktop(int port) throws IOException, VerificationException, OAuthErrorException, URISyntaxException, ServerRequest.HttpFailure, InterruptedException {
+        CallbackListener callback = new CallbackListener(port);
+
+        try {
+            callback.start();
+        } catch (RuntimeException runtimeException) {
+            if (runtimeException.getCause() instanceof BindException) {
+                System.err.println("CallbackListener port " + port + " is already in use. Falling back to auto scan free port.");
+                callback.stop();
+                callback = new CallbackListener(0);
+                callback.start();
+            } else {
+                throw runtimeException;
+            }
+        }
+
+        System.out.println("CallbackListener started on port " + callback.getLocalPort());
 
         String redirectUri = "http://localhost:" + callback.getLocalPort();
         String state = UUID.randomUUID().toString();
@@ -186,6 +214,10 @@ public class KeycloakInstalled {
         processCode(callback.code, redirectUri, pkce);
 
         status = Status.LOGGED_DESKTOP;
+    }
+
+    public void loginDesktop() throws IOException, VerificationException, OAuthErrorException, URISyntaxException, ServerRequest.HttpFailure, InterruptedException {
+        loginDesktop(0);
     }
 
     protected String createAuthUrl(String redirectUri, String state, Pkce pkce) {
@@ -216,9 +248,23 @@ public class KeycloakInstalled {
         return Pkce.generatePkce();
     }
 
-    private void logoutDesktop() throws IOException, URISyntaxException, InterruptedException {
-        CallbackListener callback = new CallbackListener();
-        callback.start();
+    private void logoutDesktop(int port) throws IOException, URISyntaxException, InterruptedException {
+        CallbackListener callback = new CallbackListener(port);
+
+        try {
+            callback.start();
+        } catch (RuntimeException runtimeException) {
+            if (runtimeException.getCause() instanceof BindException) {
+                System.err.println("CallbackListener port " + port + " is already in use. Falling back to auto scan free port.");
+                callback.stop();
+                callback = new CallbackListener(0);
+                callback.start();
+            } else {
+                throw runtimeException;
+            }
+        }
+
+        System.out.println("CallbackListener started on port " + callback.getLocalPort());
 
         String redirectUri = "http://localhost:" + callback.getLocalPort();
 
@@ -618,8 +664,23 @@ public class KeycloakInstalled {
         private String errorDescription;
         private String state;
         private Undertow server;
+        private int port;
 
         private GracefulShutdownHandler gracefulShutdownHandler;
+
+        public CallbackListener() {
+            this(0);
+        }
+
+        public CallbackListener(int port) {
+            ValueRange portRange = ValueRange.of(0, 65535);
+            if (portRange.isValidValue(port)) {
+                this.port = port;
+            } else {
+                System.err.println("CallbackListener port is outside the valid range. Falling back to auto scan free port.");
+                this.port = 0;
+            }
+        }
 
         public void start() {
             PathHandler pathHandler = Handlers.path().addExactPath("/", this);
