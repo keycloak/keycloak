@@ -43,6 +43,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -63,6 +64,8 @@ public class KeycloakOIDCFilter implements Filter {
     public static final String CONFIG_FILE_PARAM = "keycloak.config.file";
 
     public static final String CONFIG_PATH_PARAM = "keycloak.config.path";
+
+    public static final String CONFIG_ID_MAPPER_CLASS = "keycloak.config.idmapperclass";
 
     protected AdapterDeploymentContext deploymentContext;
 
@@ -92,6 +95,21 @@ public class KeycloakOIDCFilter implements Filter {
         String skipPatternDefinition = filterConfig.getInitParameter(SKIP_PATTERN_PARAM);
         if (skipPatternDefinition != null) {
             skipPattern = Pattern.compile(skipPatternDefinition, Pattern.DOTALL);
+        }
+
+        String idMapperClassName = filterConfig.getInitParameter(CONFIG_ID_MAPPER_CLASS);
+        if (idMapperClassName != null) {
+            try {
+                final Class idMapperClass = getClass().getClassLoader().loadClass(idMapperClassName);
+                final Object idMapperInstance = idMapperClass.getDeclaredConstructor().newInstance();
+                if(idMapperInstance instanceof SessionIdMapper) {
+                    this.idMapper = (SessionIdMapper) idMapperInstance;
+                } else {
+                    log.log(Level.WARNING, "SessionIdMapper class {0} is not instance of org.keycloak.adapters.spi.SessionIdMapper", idMapperClassName);
+                }
+            } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                log.log(Level.WARNING, "SessionIdMapper class could not be instanced", e);
+            }
         }
 
         if (definedconfigResolver != null) {
@@ -160,25 +178,7 @@ public class KeycloakOIDCFilter implements Filter {
             return;
         }
 
-        PreAuthActionsHandler preActions = new PreAuthActionsHandler(new UserSessionManagement() {
-            @Override
-            public void logoutAll() {
-                if (idMapper != null) {
-                    idMapper.clear();
-                }
-            }
-
-            @Override
-            public void logoutHttpSessions(List<String> ids) {
-                log.fine("**************** logoutHttpSessions");
-                //System.err.println("**************** logoutHttpSessions");
-                for (String id : ids) {
-                    log.finest("removed idMapper: " + id);
-                    idMapper.removeSession(id);
-                }
-
-            }
-        }, deploymentContext, facade);
+        PreAuthActionsHandler preActions = new PreAuthActionsHandler(new IdMapperUserSessionManagement(), deploymentContext, facade);
 
         if (preActions.handleRequest()) {
             //System.err.println("**************** preActions.handleRequest happened!");
@@ -240,5 +240,25 @@ public class KeycloakOIDCFilter implements Filter {
     @Override
     public void destroy() {
 
+    }
+
+    private class IdMapperUserSessionManagement implements UserSessionManagement {
+        @Override
+        public void logoutAll() {
+            if (idMapper != null) {
+                idMapper.clear();
+            }
+        }
+
+        @Override
+        public void logoutHttpSessions(List<String> ids) {
+            log.fine("**************** logoutHttpSessions");
+            //System.err.println("**************** logoutHttpSessions");
+            for (String id : ids) {
+                log.finest("removed idMapper: " + id);
+                idMapper.removeSession(id);
+            }
+
+        }
     }
 }
