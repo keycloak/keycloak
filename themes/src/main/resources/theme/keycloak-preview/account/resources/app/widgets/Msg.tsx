@@ -19,7 +19,7 @@ import * as React from 'react';
 declare const l18nMsg: {[key: string]: string};
 
 export interface MsgProps {
-    readonly msgKey: string | undefined;
+    readonly msgKey: string;
     readonly params?: string[];
 }
  
@@ -30,14 +30,24 @@ export class Msg extends React.Component<MsgProps> {
     }
     
     public render(): React.ReactNode {
+        if (this.props.children) {
+            return Msg.localizeWithChildren(this.props.msgKey, this.props.children);
+        }
         return (
             <React.Fragment>{Msg.localize(this.props.msgKey, this.props.params)}</React.Fragment>
         );
     }
+
+    private static localizeWithChildren(msgKey: string, children: React.ReactNode): React.ReactNode {
+        const message: string = l18nMsg[this.processKey(msgKey)];
+        const parts = message.split(/\{\{param_\d*}}/);
+        const count = React.Children.count(children);
+        return React.Children.map(children, (child, i) =>
+            [parts[i], child, count === i + 1 ? parts[count] : '']
+        );
+    }
     
-    public static localize(msgKey: string | undefined, params?: string[]): string {
-        if (msgKey === undefined) return '';
-        
+    public static localize(msgKey: string, params?: string[]): string {
         let message: string = l18nMsg[this.processKey(msgKey)];
         if (message === undefined) message = msgKey;
         
@@ -47,7 +57,7 @@ export class Msg extends React.Component<MsgProps> {
                 message = message.replace('{{param_'+ index + '}}', value);
             })
         }
-        
+
         return unescape(message);
     }
 
