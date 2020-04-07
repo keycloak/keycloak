@@ -18,10 +18,10 @@ public class KeycloakOIDCFilterTest {
         @Override
         public String getInitParameter(String s) {
             if (CONFIG_RESOLVER_PARAM.equals(s)) {
-                return "org.keycloak.adapters.servlet.TestConfigResolver";
+                return "org.keycloak.adapters.servlet.helpers.TestConfigResolver";
             }
             if (CONFIG_ID_MAPPER_CLASS.equals(s)) {
-                return "org.keycloak.adapters.servlet.TestIdMapper";
+                return "org.keycloak.adapters.servlet.helpers.TestIdMapper";
             }
             return null;
         }
