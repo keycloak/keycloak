@@ -258,7 +258,9 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
                                     <Title headingLevel={TitleLevel.h3} size='2xl'>
                                         <strong id={`${credContainer.type}-cred-title`}><Msg msgKey={credContainer.displayName}/></strong>
                                     </Title>
-                                    <span id={`${credContainer.type}-cred-help`}><Msg msgKey={credContainer.helptext}/></span>
+                                    <span id={`${credContainer.type}-cred-help`}>
+                                        {credContainer.helptext && <Msg msgKey={credContainer.helptext}/>}
+                                    </span>
                                 </DataListCell>,
 
                             ]}/>
