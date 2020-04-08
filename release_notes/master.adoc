@@ -8,6 +8,6 @@ include::topics/templates/document-attributes-product.adoc[]
 
 = {releasenotes_name}
 
-== {project_name_full} 7.3.0.GA
+== {project_name_full} 7.4.0.GA
 
-include::topics/product/7_3_final.adoc[leveloffset=2]
+include::topics/product/7_4_final.adoc[leveloffset=2]
