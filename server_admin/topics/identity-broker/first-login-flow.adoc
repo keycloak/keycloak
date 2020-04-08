@@ -80,6 +80,7 @@ authenticators according to your needs. For example, you can add the Review Prof
 end users to confirm their profile information. You can also add authentication mechanisms to this flow, forcing a user to verify his credentials. This
 would require a more complex flow, for example setting the "Automatically Set Existing User" and "Password Form" as "Required" in an "Alternative" sub-flow.
 
+[[_disabling_automatic_user_creation]]
 ==== Disabling Automatic User Creation
 The Default first login flow will look up a Keycloak account matching the external identity, and will then offer to link them; if there is no matching Keycloak account, it will automatically create one.
 This default behavior may be unsuitable for some setups, for example, when using read-only LDAP user store (which means all users are pre-created).
