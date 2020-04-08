@@ -412,7 +412,11 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
     public UserModel getUserByEmail(String email, RealmModel realm) {
         UserModel user = localStorage().getUserByEmail(email, realm);
         if (user != null) {
-            return importValidation(realm, user);
+            user = importValidation(realm, user);
+            // Case when email was changed directly in the userStorage and doesn't correspond anymore to the email from local DB
+            if (email.equalsIgnoreCase(user.getEmail())) {
+                return user;
+            }
         }
         for (UserLookupProvider provider : getEnabledStorageProviders(session, realm, UserLookupProvider.class)) {
             user = provider.getUserByEmail(email, realm);

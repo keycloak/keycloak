@@ -22,6 +22,7 @@
     <dependencies>
         <module name="com.fasterxml.jackson.core.jackson-core"/>
         <module name="javax.api"/>
+        <module name="javax.mail.api"/>
         <module name="javax.ws.rs.api"/>
         <module name="javax.servlet.api"/>
         <module name="io.undertow.core"/>
