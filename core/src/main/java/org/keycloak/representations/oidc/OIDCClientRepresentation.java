@@ -125,6 +125,9 @@ public class OIDCClientRepresentation {
     
     private Boolean backchannel_logout_revoke_offline_tokens;
 
+    // OIDC CIBA
+    private String backchannel_token_delivery_mode;
+
     public List<String> getRedirectUris() {
         return redirect_uris;
     }
@@ -487,4 +490,11 @@ public class OIDCClientRepresentation {
         this.tls_client_auth_subject_dn = tls_client_auth_subject_dn;
     }
 
+    public String getBackchannelTokenDeliveryMode() {
+        return backchannel_token_delivery_mode;
+    }
+
+    public void setBackchannelTokenDeliveryMode(String backchannel_token_delivery_mode) {
+        this.backchannel_token_delivery_mode = backchannel_token_delivery_mode;
+    }
 }

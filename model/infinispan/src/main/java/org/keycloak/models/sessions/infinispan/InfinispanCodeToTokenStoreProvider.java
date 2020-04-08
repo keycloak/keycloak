@@ -82,6 +82,24 @@ public class InfinispanCodeToTokenStoreProvider implements CodeToTokenStoreProvi
 
 
     @Override
+    public Map<String, String> get(UUID codeId) {
+        try {
+            BasicCache<UUID, ActionTokenValueEntity> cache = codeCache.get();
+            ActionTokenValueEntity existing = cache.get(codeId);
+            return existing == null ? null : existing.getNotes();
+        } catch (HotRodClientException re) {
+            // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
+            // In case of lock conflict, we don't want to retry anyway as there was likely an attempt to remove the code from different place.
+            if (logger.isDebugEnabled()) {
+                logger.debugf(re, "Failed when getting code %s", codeId);
+            }
+
+            return null;
+        }
+    }
+
+
+    @Override
     public void close() {
 
     }

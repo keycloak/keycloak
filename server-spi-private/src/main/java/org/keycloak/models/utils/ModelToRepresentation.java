@@ -95,6 +95,13 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyCreateTimeoutPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAvoidSameAuthenticatorRegisterPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAcceptableAaguidsPasswordless");
+
+        REALM_EXCLUDED_ATTRIBUTES.add("cibaAuthenticationFlow");
+        REALM_EXCLUDED_ATTRIBUTES.add("cibaBackchannelTokenDeliveryMode");
+        REALM_EXCLUDED_ATTRIBUTES.add("cibaExpiresIn");
+        REALM_EXCLUDED_ATTRIBUTES.add("cibaInterval");
+        REALM_EXCLUDED_ATTRIBUTES.add("cibaAuthRequestedUserHint");
+
     }
 
 
@@ -402,12 +409,19 @@ public class ModelToRepresentation {
         rep.setWebAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister(webAuthnPolicy.isAvoidSameAuthenticatorRegister());
         rep.setWebAuthnPolicyPasswordlessAcceptableAaguids(webAuthnPolicy.getAcceptableAaguids());
 
+        CIBAPolicy cibaPolicy = realm.getCIBAPolicy();
+        rep.setCibaBackchannelTokenDeliveryMode(cibaPolicy.getBackchannelTokenDeliveryMode());
+        rep.setCibaExpiresIn(cibaPolicy.getExpiresIn());
+        rep.setCibaInterval(cibaPolicy.getInterval());
+        rep.setCibaAuthRequestedUserHint(cibaPolicy.getAuthRequestedUserHint());
+
         if (realm.getBrowserFlow() != null) rep.setBrowserFlow(realm.getBrowserFlow().getAlias());
         if (realm.getRegistrationFlow() != null) rep.setRegistrationFlow(realm.getRegistrationFlow().getAlias());
         if (realm.getDirectGrantFlow() != null) rep.setDirectGrantFlow(realm.getDirectGrantFlow().getAlias());
         if (realm.getResetCredentialsFlow() != null) rep.setResetCredentialsFlow(realm.getResetCredentialsFlow().getAlias());
         if (realm.getClientAuthenticationFlow() != null) rep.setClientAuthenticationFlow(realm.getClientAuthenticationFlow().getAlias());
         if (realm.getDockerAuthenticationFlow() != null) rep.setDockerAuthenticationFlow(realm.getDockerAuthenticationFlow().getAlias());
+        if (realm.getCIBAFlow() != null) rep.setCibaFlow(realm.getCIBAFlow().getAlias());
 
         List<String> defaultRoles = realm.getDefaultRolesStream().collect(Collectors.toList());
         if (!defaultRoles.isEmpty()) {

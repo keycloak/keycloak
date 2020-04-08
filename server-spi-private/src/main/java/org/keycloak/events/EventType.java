@@ -131,6 +131,9 @@ public enum EventType {
     TOKEN_EXCHANGE(true),
     TOKEN_EXCHANGE_ERROR(true),
 
+    AUTHREQID_TO_TOKEN(true),
+    AUTHREQID_TO_TOKEN_ERROR(true),
+
     PERMISSION_TOKEN(true),
     PERMISSION_TOKEN_ERROR(false);
 

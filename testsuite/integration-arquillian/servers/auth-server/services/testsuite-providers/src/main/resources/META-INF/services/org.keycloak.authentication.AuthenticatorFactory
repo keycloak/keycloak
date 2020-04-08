@@ -23,3 +23,4 @@ org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory
 org.keycloak.testsuite.forms.UsernameOnlyAuthenticator
 org.keycloak.testsuite.authentication.ConditionalUserAttributeValueFactory
 org.keycloak.testsuite.authentication.SetUserAttributeAuthenticatorFactory
+org.keycloak.testsuite.forms.DummyCIBAAuthenticator

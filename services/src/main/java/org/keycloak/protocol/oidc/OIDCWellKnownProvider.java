@@ -28,6 +28,7 @@ import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.ciba.CIBAConstants;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
@@ -53,7 +54,7 @@ import java.util.List;
  */
 public class OIDCWellKnownProvider implements WellKnownProvider {
 
-    public static final List<String> DEFAULT_GRANT_TYPES_SUPPORTED = list(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT, OAuth2Constants.REFRESH_TOKEN, OAuth2Constants.PASSWORD, OAuth2Constants.CLIENT_CREDENTIALS);
+    public static final List<String> DEFAULT_GRANT_TYPES_SUPPORTED = list(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT, OAuth2Constants.REFRESH_TOKEN, OAuth2Constants.PASSWORD, OAuth2Constants.CLIENT_CREDENTIALS, CIBAConstants.GRANT_TYPE_VALUE);
 
     public static final List<String> DEFAULT_RESPONSE_TYPES_SUPPORTED = list(OAuth2Constants.CODE, OIDCResponseType.NONE, OIDCResponseType.ID_TOKEN, OIDCResponseType.TOKEN, "id_token token", "code id_token", "code token", "code id_token token");
 
@@ -70,6 +71,8 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
     // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
     public static final List<String> DEFAULT_CODE_CHALLENGE_METHODS_SUPPORTED = list(OAuth2Constants.PKCE_METHOD_PLAIN, OAuth2Constants.PKCE_METHOD_S256);
+
+    public static final List<String> DEFAULT_BACKCHANNEL_TOKEN_DELIVERY_MODES_SUPPORTED= list("poll");
 
     private KeycloakSession session;
 
@@ -145,6 +148,10 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
         config.setBackchannelLogoutSupported(true);
         config.setBackchannelLogoutSessionSupported(true);
+
+        config.setBackchannelTokenDeliveryModesSupported(DEFAULT_BACKCHANNEL_TOKEN_DELIVERY_MODES_SUPPORTED);
+        config.setBackchannelAuthenticationEndpoint(backendUriBuilder.clone().path(OIDCLoginProtocolService.class, "backchannelAuthn").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
+        config.setBackchannelUserCodeParameterSupported(false);
 
         return config;
     }

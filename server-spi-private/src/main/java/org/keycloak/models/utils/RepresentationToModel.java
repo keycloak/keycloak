@@ -65,6 +65,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.BrowserSecurityHeaders;
+import org.keycloak.models.CIBAPolicy;
 import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -284,6 +285,28 @@ public class RepresentationToModel {
 
         webAuthnPolicy = getWebAuthnPolicyPasswordless(rep);
         newRealm.setWebAuthnPolicyPasswordless(webAuthnPolicy);
+
+        CIBAPolicy cibaPolicy = new CIBAPolicy();
+
+        String cibaBackchannelTokenDeliveryMode = rep.getCibaBackchannelTokenDeliveryMode();
+        if (cibaBackchannelTokenDeliveryMode == null || cibaBackchannelTokenDeliveryMode.isEmpty())
+            cibaBackchannelTokenDeliveryMode = Constants.DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE;
+        cibaPolicy.setBackchannelTokenDeliveryMode(cibaBackchannelTokenDeliveryMode);
+
+        Integer cibaExpiresIn = rep.getCibaExpiresIn();
+        if (cibaExpiresIn != null) cibaPolicy.setExpiresIn(cibaExpiresIn);
+        else cibaPolicy.setExpiresIn(Constants.DEFAULT_CIBA_POLICY_EXPIRES_IN);
+
+        Integer cibaInterval = rep.getCibaInterval();
+        if (cibaInterval != null) cibaPolicy.setInterval(cibaInterval);
+        else cibaPolicy.setInterval(Constants.DEFAULT_CIBA_POLICY_INTERVAL);
+
+        String cibaAuthRequestedUserHint = rep.getCibaAuthRequestedUserHint();
+        if (cibaAuthRequestedUserHint == null || cibaAuthRequestedUserHint.isEmpty())
+            cibaAuthRequestedUserHint = Constants.DEFAULT_CIBA_POLICY_AUTH_REQUESTED_USER_HINT;
+        cibaPolicy.setAuthRequestedUserHint(cibaAuthRequestedUserHint);
+
+        newRealm.setCIBAPolicy(cibaPolicy);
 
         Map<String, String> mappedFlows = importAuthenticationFlows(newRealm, rep);
         if (rep.getRequiredActions() != null) {
@@ -765,6 +788,11 @@ public class RepresentationToModel {
         } else {
             newRealm.setDirectGrantFlow(newRealm.getFlowByAlias(rep.getDirectGrantFlow()));
         }
+        if (rep.getCibaFlow() == null) {
+            newRealm.setCIBAFlow(newRealm.getFlowByAlias(DefaultAuthenticationFlows.CIBA_FLOW));
+        } else {
+            newRealm.setCIBAFlow(newRealm.getFlowByAlias(rep.getCibaFlow()));
+        }
 
         // reset credentials + client flow needs to be more defensive as they were added later (in 1.5 )
         if (rep.getResetCredentialsFlow() == null) {
@@ -1139,6 +1167,28 @@ public class RepresentationToModel {
         webAuthnPolicy = getWebAuthnPolicyPasswordless(rep);
         realm.setWebAuthnPolicyPasswordless(webAuthnPolicy);
 
+        CIBAPolicy cibaPolicy = new CIBAPolicy();
+
+        String cibaBackchannelTokenDeliveryMode = rep.getCibaBackchannelTokenDeliveryMode();
+        if (cibaBackchannelTokenDeliveryMode == null || cibaBackchannelTokenDeliveryMode.isEmpty())
+            cibaBackchannelTokenDeliveryMode = Constants.DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE;
+        cibaPolicy.setBackchannelTokenDeliveryMode(cibaBackchannelTokenDeliveryMode);
+
+        Integer cibaExpiresIn = rep.getCibaExpiresIn();
+        if (cibaExpiresIn != null) cibaPolicy.setExpiresIn(cibaExpiresIn);
+        else cibaPolicy.setExpiresIn(Constants.DEFAULT_CIBA_POLICY_EXPIRES_IN);
+
+        Integer cibaInterval = rep.getCibaInterval();
+        if (cibaInterval != null) cibaPolicy.setInterval(cibaInterval);
+        else cibaPolicy.setInterval(Constants.DEFAULT_CIBA_POLICY_INTERVAL);
+
+        String cibaAuthRequestedUserHint = rep.getCibaAuthRequestedUserHint();
+        if (cibaAuthRequestedUserHint == null || cibaAuthRequestedUserHint.isEmpty())
+            cibaAuthRequestedUserHint = Constants.DEFAULT_CIBA_POLICY_AUTH_REQUESTED_USER_HINT;
+        cibaPolicy.setAuthRequestedUserHint(cibaAuthRequestedUserHint);
+
+        realm.setCIBAPolicy(cibaPolicy);
+
         if (rep.getSmtpServer() != null) {
             Map<String, String> config = new HashMap(rep.getSmtpServer());
             if (rep.getSmtpServer().containsKey("password") && ComponentRepresentation.SECRET_VALUE.equals(rep.getSmtpServer().get("password"))) {
@@ -1178,6 +1228,9 @@ public class RepresentationToModel {
         }
         if (rep.getDockerAuthenticationFlow() != null) {
             realm.setDockerAuthenticationFlow(realm.getFlowByAlias(rep.getDockerAuthenticationFlow()));
+        }
+        if (rep.getCibaFlow() != null) {
+            realm.setCIBAFlow(realm.getFlowByAlias(rep.getCibaFlow()));
         }
     }
 

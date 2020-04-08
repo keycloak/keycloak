@@ -1,1 +1,2 @@
 org.keycloak.protocol.openshift.OpenShiftTokenReviewEndpointFactory
+org.keycloak.protocol.ciba.decoupledauthn.DecoupledAuthnResultCallbackEndpointFactory

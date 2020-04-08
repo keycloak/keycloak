@@ -29,6 +29,7 @@ import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testsuite.ciba.DecoupledAuthenticationRequest;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.utils.MediaType;
 
@@ -43,6 +44,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -58,14 +60,18 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     private final BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction;
     private final TestApplicationResourceProviderFactory.OIDCClientData oidcClientData;
 
+    private final BlockingQueue<DecoupledAuthenticationRequest> decoupledAuthenticationRequests;
+
     public TestApplicationResourceProvider(KeycloakSession session, BlockingQueue<LogoutAction> adminLogoutActions,
             BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions,
-            BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction, TestApplicationResourceProviderFactory.OIDCClientData oidcClientData) {
+            BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction, TestApplicationResourceProviderFactory.OIDCClientData oidcClientData,
+            BlockingQueue<DecoupledAuthenticationRequest> decoupledAuthenticationRequests) {
         this.session = session;
         this.adminLogoutActions = adminLogoutActions;
         this.adminPushNotBeforeActions = adminPushNotBeforeActions;
         this.adminTestAvailabilityAction = adminTestAvailabilityAction;
         this.oidcClientData = oidcClientData;
+        this.decoupledAuthenticationRequests = decoupledAuthenticationRequests;
     }
 
     @POST
@@ -200,7 +206,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
 
     @Path("/oidc-client-endpoints")
     public TestingOIDCEndpointsApplicationResource getTestingOIDCClientEndpoints() {
-        return new TestingOIDCEndpointsApplicationResource(oidcClientData);
+        return new TestingOIDCEndpointsApplicationResource(oidcClientData, decoupledAuthenticationRequests);
     }
 
     @Override

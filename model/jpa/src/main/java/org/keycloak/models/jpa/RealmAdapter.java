@@ -28,6 +28,8 @@ import org.keycloak.models.jpa.entities.*;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
+import com.google.common.util.concurrent.CycleDetectingLockFactory.Policy;
+
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
@@ -1099,6 +1101,46 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public CIBAPolicy getCIBAPolicy() {
+        CIBAPolicy policy = new CIBAPolicy();
+
+        String backchannelTokenDeliveryMode = getAttribute(RealmAttributes.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE);
+        if (backchannelTokenDeliveryMode == null || backchannelTokenDeliveryMode.isEmpty())
+            backchannelTokenDeliveryMode = Constants.DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE;
+        policy.setBackchannelTokenDeliveryMode(backchannelTokenDeliveryMode);
+
+        String expiresIn = getAttribute(RealmAttributes.CIBA_EXPIRES_IN);
+        if (expiresIn != null) policy.setExpiresIn(Integer.parseInt(expiresIn));
+        else policy.setExpiresIn(Constants.DEFAULT_CIBA_POLICY_EXPIRES_IN);
+
+        String interval = getAttribute(RealmAttributes.CIBA_INTERVAL);
+        if (interval != null) policy.setInterval(Integer.parseInt(interval));
+        else policy.setInterval(Constants.DEFAULT_CIBA_POLICY_INTERVAL);
+
+        String authRequestedUserHint = getAttribute(RealmAttributes.CIBA_AUTH_REQUESTED_USER_HINT);
+        if (authRequestedUserHint == null || authRequestedUserHint.isEmpty())
+            authRequestedUserHint = Constants.DEFAULT_CIBA_POLICY_AUTH_REQUESTED_USER_HINT;
+        policy.setAuthRequestedUserHint(authRequestedUserHint);
+
+        return policy;
+    }
+
+    @Override
+    public void setCIBAPolicy(CIBAPolicy policy) {
+        String backchannelTokenDeliveryMode = policy.getBackchannelTokenDeliveryMode();
+        setAttribute(RealmAttributes.CIBA_BACKCHANNEL_TOKENDELIVERY_MODE, backchannelTokenDeliveryMode);
+
+        int expiresIn = policy.getExpiresIn();
+        setAttribute(RealmAttributes.CIBA_EXPIRES_IN, Integer.toString(expiresIn));
+
+        int interval = policy.getInterval();
+        setAttribute(RealmAttributes.CIBA_INTERVAL, Integer.toString(interval));
+
+        String authRequestedUserHint = policy.getAuthRequestedUserHint();
+        setAttribute(RealmAttributes.CIBA_AUTH_REQUESTED_USER_HINT, authRequestedUserHint);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof RealmModel)) return false;
@@ -1627,6 +1669,18 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     @Override
     public void setDockerAuthenticationFlow(AuthenticationFlowModel flow) {
         realm.setDockerAuthenticationFlow(flow.getId());
+    }
+
+    @Override
+    public AuthenticationFlowModel getCIBAFlow() {
+        String flowId = getAttribute(RealmAttributes.CIBA_AUTHENTICATION_FLOW);
+        if (flowId == null) return null;
+        return getAuthenticationFlowById(flowId);
+    }
+
+    @Override
+    public void setCIBAFlow(AuthenticationFlowModel flow) {
+        setAttribute(RealmAttributes.CIBA_AUTHENTICATION_FLOW, flow.getId());
     }
 
     @Override

@@ -194,6 +194,14 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_TOKENS, val);
     }
 
+    public String getBackchannelTokenDeliveryMode() {
+        return getAttribute(OIDCConfigAttributes.BACKCHANNEL_TOKEN_DELIVERY_MODE);
+    }
+
+    public void setBackchannelTokenDeliveryMode(String backchannelTokenDeliveryMode) {
+        setAttribute(OIDCConfigAttributes.BACKCHANNEL_TOKEN_DELIVERY_MODE, backchannelTokenDeliveryMode);
+    }
+
     private String getAttribute(String attrKey) {
         if (clientModel != null) {
             return clientModel.getAttribute(attrKey);

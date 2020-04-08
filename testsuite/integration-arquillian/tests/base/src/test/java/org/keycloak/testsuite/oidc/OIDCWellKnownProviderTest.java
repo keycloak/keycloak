@@ -28,6 +28,7 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.protocol.ciba.CIBAConstants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory;
@@ -111,6 +112,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             assertEquals(oidcConfig.getUserinfoEndpoint(), OIDCLoginProtocolService.userInfoUrl(UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT)).build("test").toString());
             assertEquals(oidcConfig.getJwksUri(), oauth.getCertsUrl("test"));
 
+
             String registrationUri = UriBuilder
                     .fromUri(OAuthClient.AUTH_SERVER_ROOT)
                     .path(RealmsResource.class)
@@ -162,6 +164,12 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.2
             Assert.assertTrue(oidcConfig.getTlsClientCertificateBoundAccessTokens());
 
+            // CIBA
+            assertEquals(oidcConfig.getBackchannelAuthenticationEndpoint(), oauth.getBackchannelAuthenticationUrl());
+            assertContains(oidcConfig.getGrantTypesSupported(), CIBAConstants.GRANT_TYPE_VALUE);
+            Assert.assertNames(oidcConfig.getBackchannelTokenDeliveryModesSupported(), "poll");
+            Assert.assertFalse(oidcConfig.getBackchannelUserCodeParameterSupported());
+
             Assert.assertTrue(oidcConfig.getBackchannelLogoutSupported());
             Assert.assertTrue(oidcConfig.getBackchannelLogoutSessionSupported());
 
@@ -187,6 +195,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             assertNull(oidcConfig.getRevocationEndpoint());
             Assert.assertNull(oidcConfig.getRevocationEndpointAuthMethodsSupported());
             Assert.assertNull(oidcConfig.getRevocationEndpointAuthSigningAlgValuesSupported());
+
         } finally {
             client.close();
         }

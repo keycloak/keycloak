@@ -51,4 +51,16 @@ public class TestApplicationResourceUrls {
                 .path(TestOIDCEndpointsApplicationResource.class, "getSectorIdentifierRedirectUris");
         return builder.build().toString();
     }
+
+    public static String clientDecoupledAuthenticationRequestUri() {
+        UriBuilder builder = oidcClientEndpoints()
+                .path(TestOIDCEndpointsApplicationResource.class, "requestDecoupledAuthentication");
+        return builder.build().toString();
+    }
+
+    public static String clientDecoupledAuthenticationGetUri() {
+        UriBuilder builder = oidcClientEndpoints()
+                .path(TestOIDCEndpointsApplicationResource.class, "getDecoupledAuthentication");
+        return builder.build().toString();
+    }
 }

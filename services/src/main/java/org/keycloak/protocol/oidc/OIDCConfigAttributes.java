@@ -58,6 +58,8 @@ public final class OIDCConfigAttributes {
     
     public static final String BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_TOKENS = "backchannel.logout.revoke.offline.tokens";
 
+    public static final String BACKCHANNEL_TOKEN_DELIVERY_MODE = "backchannel.token.delivery.mode";
+
     private OIDCConfigAttributes() {
     }
 

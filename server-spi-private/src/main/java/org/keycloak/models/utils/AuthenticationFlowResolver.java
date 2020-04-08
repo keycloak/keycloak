@@ -54,4 +54,18 @@ public class AuthenticationFlowResolver {
         }
         return authSession.getRealm().getDirectGrantFlow();
     }
+
+    public static AuthenticationFlowModel resolveCIBAFlow(AuthenticationSessionModel authSession) {
+        AuthenticationFlowModel flow = null;
+        ClientModel client = authSession.getClient();
+        String clientFlow = client.getAuthenticationFlowBindingOverride(AuthenticationFlowBindings.CIBA_BINDING);
+        if (clientFlow != null) {
+            flow = authSession.getRealm().getAuthenticationFlowById(clientFlow);
+            if (flow == null) {
+                throw new ModelException("Client " + client.getClientId() + " has ciba flow override, but this flow does not exist");
+            }
+            return flow;
+        }
+        return authSession.getRealm().getCIBAFlow();
+    }
 }

@@ -383,6 +383,40 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void testCIBASettings() throws Exception {
+        OIDCClientRepresentation clientRep = null;
+        OIDCClientRepresentation response = null;
+        try {
+            clientRep = createRep();
+            clientRep.setBackchannelTokenDeliveryMode("poll");
+
+            response = reg.oidc().create(clientRep);
+            Assert.assertEquals("poll", response.getBackchannelTokenDeliveryMode());
+
+            // Test Keycloak representation
+            ClientRepresentation kcClient = getClient(response.getClientId());
+            OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+            Assert.assertEquals("poll", config.getBackchannelTokenDeliveryMode());
+
+            // update (ES256 to PS256)
+            clientRep.setBackchannelTokenDeliveryMode("ping");
+            response = reg.oidc().create(clientRep);
+            Assert.assertEquals("ping", response.getBackchannelTokenDeliveryMode());
+
+
+            // keycloak representation
+            kcClient = getClient(response.getClientId());
+            config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+            Assert.assertEquals("ping", config.getBackchannelTokenDeliveryMode());
+
+        } finally {
+            // back to RS256 for other tests
+            clientRep.setBackchannelTokenDeliveryMode("poll");
+            response = reg.oidc().create(clientRep);
+        }
+    }
+
+    @Test
     public void testOIDCEndpointCreateWithSamlClient() throws Exception {
         ClientsResource clientsResource = adminClient.realm(TEST).clients();
         ClientRepresentation samlClient = clientsResource.findByClientId("saml-client").get(0);

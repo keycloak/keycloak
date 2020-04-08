@@ -181,6 +181,11 @@ public class FlowUtil {
         return this;
     }
 
+    public FlowUtil defineAsCIBAFlow() {
+        realm.setCIBAFlow(currentFlow);
+        return this;
+    }
+
     public FlowUtil usesInIdentityProvider(String idpAlias) {
         // Setup new FirstBrokerLogin flow to identity provider
         IdentityProviderModel idp = realm.getIdentityProviderByAlias(idpAlias);

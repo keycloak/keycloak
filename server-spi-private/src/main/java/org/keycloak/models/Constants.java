@@ -105,4 +105,11 @@ public final class Constants {
     public static final Pattern CFG_DELIMITER_PATTERN = Pattern.compile("\\s*" + CFG_DELIMITER + "\\s*");
 
     public static final String OFFLINE_ACCESS_SCOPE_CONSENT_TEXT = "${offlineAccessScopeConsentText}";
+
+    // CIBA policy default value
+    public static final String DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE = "poll";
+    public static final int DEFAULT_CIBA_POLICY_EXPIRES_IN = 120;
+    public static final int DEFAULT_CIBA_POLICY_INTERVAL = 0;
+    public static final String DEFAULT_CIBA_POLICY_AUTH_REQUESTED_USER_HINT = "login_hint";
+
 }

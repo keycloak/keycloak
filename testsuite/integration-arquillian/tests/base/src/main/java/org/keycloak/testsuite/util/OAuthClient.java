@@ -25,6 +25,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.commons.logging.Log;
 import org.apache.http.Header;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -58,6 +59,9 @@ import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ciba.CIBAConstants;
+import org.keycloak.protocol.ciba.decoupledauthn.DecoupledAuthnResultCallbackEndpointFactory;
+import org.keycloak.protocol.ciba.decoupledauthn.DelegateDecoupledAuthenticationProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -67,6 +71,7 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
@@ -688,6 +693,91 @@ public class OAuthClient {
         } 
     }
 
+    public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientSecret, String userid, String bindingMessage) throws Exception {
+        return doBackchannelAuthenticationRequest(this.clientId, clientSecret, userid, bindingMessage);
+    }
+
+    public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String userid, String bindingMessage) throws Exception {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            System.out.println("--- Backchannel Authentication Endpoint = " + getBackchannelAuthenticationUrl());
+            HttpPost post = new HttpPost(getBackchannelAuthenticationUrl());
+
+            String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+            post.setHeader("Authorization", authorization);
+
+            List<NameValuePair> parameters = new LinkedList<>();
+            if (userid != null) parameters.add(new BasicNameValuePair(CIBAConstants.LOGIN_HINT, userid));
+            parameters.add(new BasicNameValuePair(CIBAConstants.BINDING_MESSAGE, bindingMessage));
+            if (scope != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID + " " + scope));
+            } else {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID));
+            }
+
+            UrlEncodedFormEntity formEntity;
+            try {
+                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            post.setEntity(formEntity);
+
+            return new AuthenticationRequestAcknowledgement(client.execute(post));
+        } 
+    }
+
+    public int doDecoupledAuthnCallback(String clientId, String clientSecret, String userid, String decoupledAuthnBindingId, String authResult) throws Exception {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            System.out.println("  Decoupled Authentication Callback Endpoint = " + getDecoupledAuthnCallbackUrl());
+            HttpPost post = new HttpPost(getDecoupledAuthnCallbackUrl());
+
+            String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+            post.setHeader("Authorization", authorization);
+
+            List<NameValuePair> parameters = new LinkedList<>();
+            parameters.add(new BasicNameValuePair(DelegateDecoupledAuthenticationProvider.DECOUPLED_AUTHN_USER_INFO, userid));
+            parameters.add(new BasicNameValuePair(DelegateDecoupledAuthenticationProvider.DECOUPLED_AUTHN_ID, decoupledAuthnBindingId));
+            parameters.add(new BasicNameValuePair(DelegateDecoupledAuthenticationProvider.DECOUPLED_AUTHN_RESULT, authResult));
+
+            UrlEncodedFormEntity formEntity;
+            try {
+                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            post.setEntity(formEntity);
+
+            return client.execute(post).getStatusLine().getStatusCode();
+        } 
+    }
+
+    public AccessTokenResponse doBackchannelAuthenticationTokenRequest(String clientSecret, String authReqId) throws Exception {
+        return doBackchannelAuthenticationTokenRequest(this.clientId, clientSecret, authReqId);
+    }
+
+    public AccessTokenResponse doBackchannelAuthenticationTokenRequest(String clientId, String clientSecret, String authReqId) throws Exception {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpPost post = new HttpPost(getBackchannelAuthenticationTokenRequestUrl());
+
+            String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+            post.setHeader("Authorization", authorization);
+
+            List<NameValuePair> parameters = new LinkedList<>();
+            parameters.add(new BasicNameValuePair(CIBAConstants.GRANT_TYPE, CIBAConstants.GRANT_TYPE_VALUE));
+            parameters.add(new BasicNameValuePair(CIBAConstants.AUTH_REQ_ID, authReqId));
+
+            UrlEncodedFormEntity formEntity;
+            try {
+                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            post.setEntity(formEntity);
+
+            return new AccessTokenResponse(client.execute(post));
+        } 
+    }
+
     // KEYCLOAK-6771 Certificate Bound Token
     public CloseableHttpResponse doLogout(String refreshToken, String clientSecret) {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
@@ -1104,6 +1194,26 @@ public class OAuthClient {
         return b.build(realm).toString();
     }
 
+    public String getBackchannelAuthenticationUrl() {
+        UriBuilder b = OIDCLoginProtocolService.backchannelAuthnUrl(UriBuilder.fromUri(baseUrl));
+        return b.build(realm).toString();
+    }
+
+    public String getDecoupledAuthnCallbackUrl() {
+        String url = AuthServerTestEnricher.getHttpsAuthServerContextRoot()
+                + "/auth/realms/"
+                + realm
+                + "/protocol/openid-connect/ext/"
+                + DecoupledAuthnResultCallbackEndpointFactory.PROVIDER_ID
+                + "/";
+        return url;
+    }
+
+    public String getBackchannelAuthenticationTokenRequestUrl() {
+        UriBuilder b = OIDCLoginProtocolService.tokenUrl(UriBuilder.fromUri(baseUrl));
+        return b.build(realm).toString();
+    }
+
     public OAuthClient baseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
         return this;
@@ -1305,6 +1415,78 @@ public class OAuthClient {
         public String getIdToken() {
             return idToken;
         }
+    }
+
+    public static class AuthenticationRequestAcknowledgement {
+        private int statusCode;
+        private Map<String, String> headers;
+
+        private String authReqId;
+        private int expiresIn;
+        private int interval = -1;
+
+        private String error;
+        private String errorDescription;
+
+        public AuthenticationRequestAcknowledgement(CloseableHttpResponse response) throws Exception {
+            try {
+                statusCode = response.getStatusLine().getStatusCode();
+
+                headers = new HashMap<>();
+
+                for (Header h : response.getAllHeaders()) {
+                    headers.put(h.getName(), h.getValue());
+                }
+
+                Header[] contentTypeHeaders = response.getHeaders("Content-Type");
+                String contentType = (contentTypeHeaders != null && contentTypeHeaders.length > 0) ? contentTypeHeaders[0].getValue() : null;
+                if (!"application/json".equals(contentType)) {
+                    Assert.fail("Invalid content type. Status: " + statusCode + ", contentType: " + contentType);
+                }
+
+                String s = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
+                Map responseJson = JsonSerialization.readValue(s, Map.class);
+                if (statusCode == 200) {
+                    authReqId = (String) responseJson.get("auth_req_id");
+                    expiresIn = (Integer) responseJson.get("expires_in");
+                    if (responseJson.containsKey("interval")) interval = (Integer) responseJson.get("interval");
+                } else {
+                    error = (String) responseJson.get(OAuth2Constants.ERROR);
+                    errorDescription = responseJson.containsKey(OAuth2Constants.ERROR_DESCRIPTION) ? (String) responseJson.get(OAuth2Constants.ERROR_DESCRIPTION) : null;
+                }
+            } finally {
+                response.close();
+            }
+        }
+
+        public int getStatusCode() {
+            return statusCode;
+        }
+
+        public Map<String, String> getHeaders() {
+            return headers;
+        }
+
+        public String getAuthReqId() {
+            return authReqId;
+        }
+
+        public int getExpiresIn() {
+            return expiresIn;
+        }
+
+        public int getInterval() {
+            return interval;
+        }
+
+        public String getError() {
+            return error;
+        }
+
+        public String getErrorDescription() {
+            return errorDescription;
+        }
+
     }
 
     public static class AccessTokenResponse {

@@ -699,6 +699,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public CIBAPolicy getCIBAPolicy() {
+        if (isUpdated()) return updated.getCIBAPolicy();
+        return cached.getCIBAPolicy();
+    }
+
+    @Override
+    public void setCIBAPolicy(CIBAPolicy policy) {
+        getDelegateForUpdate();
+        updated.setCIBAPolicy(policy);
+    }
+
+    @Override
     public RoleModel getRoleById(String id) {
         if (isUpdated()) return updated.getRoleById(id);
         return cacheSession.getRoleById(this, id);
@@ -1233,6 +1245,18 @@ public class RealmAdapter implements CachedRealmModel {
     public void setDockerAuthenticationFlow(final AuthenticationFlowModel flow) {
         getDelegateForUpdate();
         updated.setDockerAuthenticationFlow(flow);
+    }
+
+    @Override
+    public AuthenticationFlowModel getCIBAFlow() {
+        if (isUpdated()) return updated.getCIBAFlow();
+        return cached.getCIBAFlow();
+    }
+
+    @Override
+    public void setCIBAFlow(AuthenticationFlowModel flow) {
+        getDelegateForUpdate();
+        updated.setCIBAFlow(flow);
     }
 
     @Override

@@ -157,6 +157,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates username and password from X509 client certificate received as a part of mutual SSL handshake.");
         addProviderInfo(result, "basic-auth", "Basic Auth Challenge", "Challenge-response authentication using HTTP BASIC scheme.");
         addProviderInfo(result, "basic-auth-otp", "Basic Auth Password+OTP", "Challenge-response authentication using HTTP BASIC scheme.  Password param should contain a combination of password + otp. Realm's OTP policy is used to determine how to parse this. This SHOULD NOT BE USED in conjection with regular basic auth provider.");
+        addProviderInfo(result, "ciba-decoupled", "CIBA Decoupled Authenticator", "Field name for specifying authenticated user by AD sent to Decoupled Authentication Callback Endpoint.");
         addProviderInfo(result, "console-username-password", "Username Password Challenge",
                 "Proprietary challenge protocol for CLI clients that queries for username password");
         addProviderInfo(result, "direct-grant-auth-x509-username", "X509/Validate Username",
@@ -190,6 +191,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(result, "reset-otp", "Reset OTP", "Sets the Configure OTP required action.");
         addProviderInfo(result, "reset-password", "Reset Password", "Sets the Update Password required action if execution is REQUIRED.  " +
                 "Will also set it if execution is OPTIONAL and the password is currently configured for it.");
+        addProviderInfo(result, "testsuite-dummy-ciba", "Testsuite Dummy CIBA", "Testsuite Username authenticator.  Username parameter sets username");
         addProviderInfo(result, "testsuite-dummy-click-through", "Testsuite Dummy Click Thru",
                 "Testsuite Dummy authenticator.  User needs to click through the page to continue.");
         addProviderInfo(result, "testsuite-dummy-passthrough", "Testsuite Dummy Pass Thru",

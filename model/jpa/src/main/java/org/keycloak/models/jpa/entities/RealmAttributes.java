@@ -50,4 +50,9 @@ public interface RealmAttributes {
     String WEBAUTHN_POLICY_AVOID_SAME_AUTHENTICATOR_REGISTER = "webAuthnPolicyAvoidSameAuthenticatorRegister";
     String WEBAUTHN_POLICY_ACCEPTABLE_AAGUIDS = "webAuthnPolicyAcceptableAaguids";
 
+    String CIBA_AUTHENTICATION_FLOW = "cibaAuthenticationFlow";
+    String CIBA_BACKCHANNEL_TOKENDELIVERY_MODE = "cibaBackchannelTokenDeliveryMode";
+    String CIBA_EXPIRES_IN = "cibaExpiresIn";
+    String CIBA_INTERVAL = "cibaInterval";
+    String CIBA_AUTH_REQUESTED_USER_HINT = "cibaAuthRequestedUserHint";
 }

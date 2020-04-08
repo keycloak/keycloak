@@ -220,5 +220,16 @@
             "dir": "target/dependency/vault",
             "enabled": "${keycloak.vault.files-plaintext.provider.enabled:false}"
         }
+    },
+
+    "decoupled-authn": {
+        "provider": "${keycloak.decoupled.authn.provider:delegate-decoupled-authn}",
+        "delegate-decoupled-authn": {
+          "decoupledAuthnRequestUri": "${keycloak.decoupled.auth.request.uri:https://localhost:8543/auth/realms/master/app/oidc-client-endpoints/request-decoupled-authentication}"
+        }
+    },
+
+    "ciba-login-user-resolver": {
+        "provider": "${keycloak.ciba.login.user.resolver:default-ciba-login-user-resolver}"
     }
 }

@@ -33,6 +33,7 @@ import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.ciba.endpoints.BackchannelAuthenticationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LoginStatusIframeEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
@@ -132,6 +133,11 @@ public class OIDCLoginProtocolService {
 
     public static UriBuilder tokenIntrospectionUrl(UriBuilder baseUriBuilder) {
         return tokenUrl(baseUriBuilder).path(TokenEndpoint.class, "introspect");
+    }
+
+    public static UriBuilder backchannelAuthnUrl(UriBuilder baseUriBuilder) {
+        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
+        return uriBuilder.path(OIDCLoginProtocolService.class, "backchannelAuthn");
     }
 
     public static UriBuilder logoutUrl(UriInfo uriInfo) {
@@ -296,6 +302,16 @@ public class OIDCLoginProtocolService {
                     .setAttribute(Constants.SKIP_LINK, true)
                     .setSuccess(Messages.DELEGATION_COMPLETE).createInfoPage();
         }
+    }
+
+    /**
+     * Backchannel Authentication Endpoint
+     */
+    @Path("backchannelAuthn")
+    public Object backchannelAuthn() {
+        BackchannelAuthenticationEndpoint endpoint = new BackchannelAuthenticationEndpoint(realm, event);
+        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
+        return endpoint;
     }
 
     @Path("ext/{extension}")

@@ -69,6 +69,17 @@
             <kc-tooltip>{{:: 'docker-auth.tooltip' | translate}}</kc-tooltip>
         </div>
 
+        <div class="form-group">
+            <label for="ciba" class="col-md-2 control-label">{{:: 'ciba-flow' | translate}}</label>
+            <div class="col-md-2">
+                <div>
+                    <select id="ciba" ng-model="realm.cibaFlow" class="form-control" ng-options="flow.alias as flow.alias for flow in flows">
+                    </select>
+                </div>
+            </div>
+            <kc-tooltip>{{:: 'ciba-flow.tooltip' | translate}}</kc-tooltip>
+        </div>
+
         <div class="form-group" data-ng-show="access.manageRealm">
             <div class="col-md-10 col-md-offset-2">
                 <button kc-save data-ng-disabled="!changed">{{:: 'save' | translate}}</button>

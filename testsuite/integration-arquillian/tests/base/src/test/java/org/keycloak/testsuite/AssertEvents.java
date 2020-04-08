@@ -171,6 +171,16 @@ public class AssertEvents implements TestRule {
         return expect(event).client("account");
     }
 
+    public ExpectedEvent expectAuthReqIdToToken(String codeId, String sessionId) {
+        return expect(EventType.AUTHREQID_TO_TOKEN)
+                .detail(Details.CODE_ID, codeId)
+                .detail(Details.TOKEN_ID, isUUID())
+                .detail(Details.REFRESH_TOKEN_ID, isUUID())
+                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
+                .session(sessionId);
+    }
+
     public ExpectedEvent expect(EventType event) {
         return new ExpectedEvent()
                 .realm(defaultRealmId())
