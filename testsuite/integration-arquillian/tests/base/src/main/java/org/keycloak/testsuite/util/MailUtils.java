@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.util;
 
+import javax.mail.Address;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.internet.MimeMessage;
@@ -43,6 +44,17 @@ public class MailUtils {
 
     public static String getPasswordResetEmailLink(MimeMessage message) throws IOException {
         return getPasswordResetEmailLink(new EmailBody(message));
+    }
+
+    /**
+     *
+     * @param message email message
+     * @return first recipient of the email message
+     * @throws MessagingException
+     */
+    public static String getRecipient(MimeMessage message) throws MessagingException {
+        Address[] recipients = message.getRecipients(MimeMessage.RecipientType.TO);
+        return recipients[0].toString();
     }
 
     public static String getPasswordResetEmailLink(EmailBody body) throws IOException {
