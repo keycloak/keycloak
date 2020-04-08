@@ -30,6 +30,7 @@ import org.keycloak.representations.adapters.action.PushNotBeforeAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
+import org.keycloak.testsuite.ciba.AuthenticationChannelRequest;
 
 import java.security.KeyPair;
 import java.util.List;
@@ -47,11 +48,12 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
     private BlockingQueue<TestAvailabilityAction> testAvailabilityActions = new LinkedBlockingDeque<>();
 
     private final OIDCClientData oidcClientData = new OIDCClientData();
+    private BlockingQueue<AuthenticationChannelRequest> authenticationChannelRequests = new LinkedBlockingDeque();
 
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
         TestApplicationResourceProvider provider = new TestApplicationResourceProvider(session, adminLogoutActions,
-                backChannelLogoutTokens, pushNotBeforeActions, testAvailabilityActions, oidcClientData);
+                backChannelLogoutTokens, pushNotBeforeActions, testAvailabilityActions, oidcClientData, authenticationChannelRequests);
 
         ResteasyProviderFactory.getInstance().injectProperties(provider);
 

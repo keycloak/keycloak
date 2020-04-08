@@ -52,3 +52,4 @@ org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory
 org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthenticatorFactory
 org.keycloak.authentication.authenticators.access.DenyAccessAuthenticatorFactory
 org.keycloak.authentication.authenticators.access.AllowAccessAuthenticatorFactory
+org.keycloak.authentication.authenticators.ciba.AuthenticationChannelAuthenticatorFactory

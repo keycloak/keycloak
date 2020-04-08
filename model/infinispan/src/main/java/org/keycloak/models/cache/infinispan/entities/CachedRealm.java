@@ -23,6 +23,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.CIBAPolicy;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
@@ -108,6 +109,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected OTPPolicy otpPolicy;
     protected WebAuthnPolicy webAuthnPolicy;
     protected WebAuthnPolicy webAuthnPasswordlessPolicy;
+    protected CIBAPolicy cibaPolicy;
 
     protected String loginTheme;
     protected String accountTheme;
@@ -139,6 +141,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected AuthenticationFlowModel resetCredentialsFlow;
     protected AuthenticationFlowModel clientAuthenticationFlow;
     protected AuthenticationFlowModel dockerAuthenticationFlow;
+    protected AuthenticationFlowModel cibaFlow;
 
     protected boolean eventsEnabled;
     protected long eventsExpiration;
@@ -226,6 +229,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         otpPolicy = model.getOTPPolicy();
         webAuthnPolicy = model.getWebAuthnPolicy();
         webAuthnPasswordlessPolicy = model.getWebAuthnPolicyPasswordless();
+        cibaPolicy = model.getCIBAPolicy();
 
         loginTheme = model.getLoginTheme();
         accountTheme = model.getAccountTheme();
@@ -295,6 +299,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         resetCredentialsFlow = model.getResetCredentialsFlow();
         clientAuthenticationFlow = model.getClientAuthenticationFlow();
         dockerAuthenticationFlow = model.getDockerAuthenticationFlow();
+        cibaFlow = model.getCIBAFlow();
 
         model.getComponentsStream().forEach(component ->
             componentsByParentAndType.add(component.getParentId() + component.getProviderType(), component)
@@ -645,6 +650,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return webAuthnPasswordlessPolicy;
     }
 
+    public CIBAPolicy getCIBAPolicy() {
+        return cibaPolicy;
+    }
+
     public AuthenticationFlowModel getBrowserFlow() {
         return browserFlow;
     }
@@ -669,6 +678,9 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return dockerAuthenticationFlow;
     }
 
+    public AuthenticationFlowModel getCIBAFlow() {
+        return cibaFlow;
+    }
     public List<String> getDefaultGroups() {
         return defaultGroups;
     }

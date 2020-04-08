@@ -29,9 +29,11 @@ import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 import org.keycloak.storage.role.RoleStorageProvider;
 import org.keycloak.storage.role.RoleStorageProviderModel;
+import org.keycloak.utils.StringUtil;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -316,6 +318,10 @@ public interface RealmModel extends RoleContainerModel {
      */
     void setWebAuthnPolicyPasswordless(WebAuthnPolicy policy);
 
+    CIBAPolicy getCIBAPolicy();
+
+    void setCIBAPolicy(CIBAPolicy policy);
+
     RoleModel getRoleById(String id);
 
     /**
@@ -434,6 +440,9 @@ public interface RealmModel extends RoleContainerModel {
 
     AuthenticationFlowModel getDockerAuthenticationFlow();
     void setDockerAuthenticationFlow(AuthenticationFlowModel flow);
+
+    AuthenticationFlowModel getCIBAFlow();
+    void setCIBAFlow(AuthenticationFlowModel flow);
 
     /**
      * @deprecated Use {@link #getAuthenticationFlowsStream() getAuthenticationFlowsStream} instead.

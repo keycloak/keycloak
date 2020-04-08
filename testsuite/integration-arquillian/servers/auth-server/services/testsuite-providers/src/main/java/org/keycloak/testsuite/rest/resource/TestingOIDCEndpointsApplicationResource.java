@@ -19,6 +19,8 @@ package org.keycloak.testsuite.rest.resource;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.Consumes;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
@@ -38,18 +40,25 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.ciba.CIBAConstants;
+import org.keycloak.protocol.ciba.channel.HttpAuthenticationChannelProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.testsuite.ciba.AuthenticationChannelRequest;
 import org.keycloak.testsuite.rest.TestApplicationResourceProviderFactory;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
@@ -63,6 +72,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -73,9 +83,12 @@ public class TestingOIDCEndpointsApplicationResource {
     public static final String PUBLIC_KEY = "publicKey";
 
     private final TestApplicationResourceProviderFactory.OIDCClientData clientData;
+    private final BlockingQueue<AuthenticationChannelRequest> authenticationChannelRequests;
 
-    public TestingOIDCEndpointsApplicationResource(TestApplicationResourceProviderFactory.OIDCClientData oidcClientData) {
+    public TestingOIDCEndpointsApplicationResource(TestApplicationResourceProviderFactory.OIDCClientData oidcClientData,
+            BlockingQueue<AuthenticationChannelRequest>  authenticationChannelRequests) {
         this.clientData = oidcClientData;
+        this.authenticationChannelRequests = authenticationChannelRequests;
     }
 
     @GET
@@ -490,6 +503,57 @@ public class TestingOIDCEndpointsApplicationResource {
         public void setAction(String action) {
             this.action = action;
         }
+    }
 
+    @POST
+    @Path("/request-authentication-channel")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public Response requestAuthenticationChannel(final MultivaluedMap<String, String> request) {
+            AuthenticationChannelRequest entry = new AuthenticationChannelRequest();
+
+            // required
+            String authenticationChannelId = request.getFirst(HttpAuthenticationChannelProvider.AUTHENTICATION_CHANNEL_ID);
+            if (authenticationChannelId == null) throw new BadRequestException("missing parameter : " + HttpAuthenticationChannelProvider.AUTHENTICATION_CHANNEL_ID);
+            entry.setAuthenticationChannelId(authenticationChannelId);
+
+            String loginHint = request.getFirst(HttpAuthenticationChannelProvider.AUTHENTICATION_CHANNEL_USER_INFO);
+            if (loginHint == null) throw new BadRequestException("missing parameter : " + HttpAuthenticationChannelProvider.AUTHENTICATION_CHANNEL_USER_INFO);
+            entry.setUserInfo(loginHint);
+
+            if (request.getFirst(HttpAuthenticationChannelProvider.AUTHENTICATION_CHANNEL_IS_CONSENT_REQUIRED) == null)
+                throw new BadRequestException("missing parameter : " + HttpAuthenticationChannelProvider.AUTHENTICATION_CHANNEL_IS_CONSENT_REQUIRED);
+            entry.setConsentRequired(Boolean.valueOf(request.getFirst(HttpAuthenticationChannelProvider.AUTHENTICATION_CHANNEL_IS_CONSENT_REQUIRED)).booleanValue());
+
+            String scope = request.getFirst(CIBAConstants.SCOPE);
+            if (scope == null) throw new BadRequestException("missing parameter : " + CIBAConstants.SCOPE);
+            entry.setScope(request.getFirst(CIBAConstants.SCOPE));
+
+            // optional
+            entry.setDefaultClientScope(request.getFirst(HttpAuthenticationChannelProvider.AUTHENTICATION_CHANNEL_DEFAULT_CLIENT_SCOPE));
+            entry.setBindingMessage(request.getFirst(CIBAConstants.BINDING_MESSAGE));
+            // for testing purpose
+            if (request.getFirst(CIBAConstants.BINDING_MESSAGE).equals("GODOWN")) throw new BadRequestException("intentional error : GODOWN");
+        try {
+            authenticationChannelRequests.put(entry);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return Response.status(Status.CREATED).build();
+    }
+
+    @GET
+    @Path("/get-authentication-channel")
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public AuthenticationChannelRequest getAuthenticationChannel() {
+        AuthenticationChannelRequest request = null;
+        try {
+            request = authenticationChannelRequests.take();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return request;
     }
 }

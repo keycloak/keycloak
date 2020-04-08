@@ -39,6 +39,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -63,6 +64,11 @@ import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
+import org.keycloak.protocol.ciba.CIBAConstants;
+import org.keycloak.protocol.ciba.CIBAErrorCodes;
+import org.keycloak.protocol.ciba.EarlyAccessBlocker;
+import org.keycloak.protocol.ciba.utils.CIBAAuthReqIdParser;
+import org.keycloak.protocol.ciba.utils.EarlyAccessBlockerParser;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -149,7 +155,7 @@ public class TokenEndpoint {
     private Map<String, String> clientAuthAttributes;
 
     private enum Action {
-        AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD, CLIENT_CREDENTIALS, TOKEN_EXCHANGE, PERMISSION, OAUTH2_DEVICE_CODE
+        AUTHORIZATION_CODE, REFRESH_TOKEN, PASSWORD, CLIENT_CREDENTIALS, TOKEN_EXCHANGE, PERMISSION, OAUTH2_DEVICE_CODE, CIBA
     }
 
     // https://tools.ietf.org/html/rfc7636#section-4.2
@@ -231,6 +237,8 @@ public class TokenEndpoint {
                 return permissionGrant();
             case OAUTH2_DEVICE_CODE:
                 return oauth2DeviceCodeToToken();
+            case CIBA:
+                return cibaGrant();
         }
 
         throw new RuntimeException("Unknown action " + action);
@@ -305,6 +313,9 @@ public class TokenEndpoint {
         } else if (grantType.equals(OAuth2Constants.DEVICE_CODE_GRANT_TYPE)) {
             event.event(EventType.OAUTH2_DEVICE_CODE_TO_TOKEN);
             action = Action.OAUTH2_DEVICE_CODE;
+        } else if (grantType.equals(CIBAConstants.GRANT_TYPE_VALUE)) {
+            event.event(EventType.AUTHREQID_TO_TOKEN);
+            action = Action.CIBA;
         } else {
             throw new CorsErrorResponseException(cors, OAuthErrorException.UNSUPPORTED_GRANT_TYPE,
                 "Unsupported " + OIDCLoginProtocol.GRANT_TYPE_PARAM, Response.Status.BAD_REQUEST);
@@ -320,6 +331,175 @@ public class TokenEndpoint {
                     Response.Status.BAD_REQUEST);
             }
         }
+    }
+
+    public Response cibaGrant() {
+        ProfileHelper.requireFeature(Profile.Feature.CIBA);
+
+        String authReqId = formParams.getFirst(CIBAConstants.AUTH_REQ_ID);
+        if (authReqId == null) {
+            event.error(Errors.INVALID_CODE);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Missing parameter: " + CIBAConstants.AUTH_REQ_ID, Response.Status.BAD_REQUEST);
+        }
+        logger.tracev("CIBA Grant :: authReqId = {0}", authReqId);
+
+        // after parsing CIBAAuthReqId, programs are the same as in codeToToken()
+        CIBAAuthReqIdParser.ParseResult parseResult = CIBAAuthReqIdParser.parseAuthReqId(session, authReqId, realm, event);
+
+        if (parseResult.isIllegalAuthReqId()) {
+            // Auth Req ID has not put onto cache, no need to remove Auth Req ID.
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Invalid Auth Req ID", Response.Status.BAD_REQUEST);
+        }
+
+        if (parseResult.isExpiredAuthReqId()) {
+            // https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.11
+            // expired_token
+            throw new CorsErrorResponseException(cors, CIBAErrorCodes.EXPIRED_TOKEN, "Auth Req ID has expired", Response.Status.BAD_REQUEST);
+        }
+
+        // for access throttling
+        if (parseResult.isTooEarlyAccess()) {
+            // https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.11
+            // slow_down
+            resetEarlyAccessBlocker(parseResult.getThrottlingId(), true);
+            throw new CorsErrorResponseException(cors, CIBAErrorCodes.SLOW_DOWN, "Too early to access.", Response.Status.BAD_REQUEST);
+        }
+
+        if (parseResult.isUserNotyetAuthenticated()) {
+            // https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.11
+            // authorization_pending
+            throw new CorsErrorResponseException(cors, CIBAErrorCodes.AUTHORIZATION_PENDING, "The authorization request is still pending as the end-user hasn't yet been authenticated.", Response.Status.BAD_REQUEST);
+        }
+
+        if (parseResult.isExpiredAuthentication()) {
+            throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "authentication timed out", Response.Status.BAD_REQUEST);
+        }
+
+        if (parseResult.isFailedAuthentication()) {
+            throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "authentication failed", Response.Status.BAD_REQUEST);
+        }
+
+        if (parseResult.isCancelledAuthentication()) {
+            throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "authentication cancelled", Response.Status.BAD_REQUEST);
+        }
+
+        if (parseResult.isUnauthorizedAuthentication()) {
+            throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "not authorized", Response.Status.BAD_REQUEST);
+        }
+
+        if (parseResult.isUnknownEventHappendAuthentication()) {
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "unknown authentication result", Response.Status.BAD_REQUEST);
+        }
+
+        if (parseResult.isUserSessionNotFound()) {
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "user session not found", Response.Status.BAD_REQUEST);
+        }
+
+        if (parseResult.isDifferentUserAuthenticated()) {
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "different user autheticated", Response.Status.BAD_REQUEST);
+        }
+
+        if (!parseResult.getClientId().equals(client.getClientId())) {
+            // the client sending this Auth Req ID does not match the client to which keycloak had issued Auth Req ID.
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "unauthorized client", Response.Status.BAD_REQUEST);
+        }
+
+        AuthenticatedClientSessionModel clientSession = parseResult.getClientSession();
+
+        UserSessionModel userSession = clientSession.getUserSession();
+
+        if (userSession == null) {
+            event.error(Errors.USER_SESSION_NOT_FOUND);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "User session not found", Response.Status.BAD_REQUEST);
+        }
+
+        UserModel user = userSession.getUser();
+        if (user == null) {
+            event.error(Errors.USER_NOT_FOUND);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "User not found", Response.Status.BAD_REQUEST);
+        }
+
+        event.user(userSession.getUser());
+
+        if (!user.isEnabled()) {
+            event.error(Errors.USER_DISABLED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "User disabled", Response.Status.BAD_REQUEST);
+        }
+
+        if (!client.getClientId().equals(clientSession.getClient().getClientId())) {
+            event.error(Errors.INVALID_CODE);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Auth error", Response.Status.BAD_REQUEST);
+        }
+
+        if (!AuthenticationManager.isSessionValid(realm, userSession)) {
+            event.error(Errors.USER_SESSION_NOT_FOUND);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Session not active", Response.Status.BAD_REQUEST);
+        }
+
+        updateClientSession(clientSession);
+        updateUserSessionFromClientAuth(userSession);
+
+        // Compute client scopes again from scope parameter. Check if user still has them granted
+        // (but in code-to-token request, it could just theoretically happen that they are not available)
+        String scopeParam = parseResult.getAuthReqIdData().getScope();
+        if (!TokenManager.verifyConsentStillAvailable(session, user, client, TokenManager.getRequestedClientScopes(scopeParam, client))) {
+            event.error(Errors.NOT_ALLOWED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, "Client no longer has requested consent from user", Response.Status.BAD_REQUEST);
+        }
+
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndClientScopes(clientSession, TokenManager.getRequestedClientScopes(scopeParam, client), session);
+
+        AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
+
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSessionCtx)
+                .accessToken(token)
+                .generateRefreshToken();
+
+        // KEYCLOAK-6771 Certificate Bound Token
+        // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
+        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseMtlsHokToken()) {
+            AccessToken.CertConf certConf = MtlsHoKTokenUtil.bindTokenWithClientCertificate(request, session);
+            if (certConf != null) {
+                responseBuilder.getAccessToken().setCertConf(certConf);
+                responseBuilder.getRefreshToken().setCertConf(certConf);
+            } else {
+                event.error(Errors.INVALID_REQUEST);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Client Certification missing for MTLS HoK Token Binding", Response.Status.BAD_REQUEST);
+            }
+        }
+
+        if (TokenUtil.isOIDCRequest(scopeParam)) {
+            responseBuilder.generateIDToken();
+        }
+
+        AccessTokenResponse res = null;
+        try {
+            res = responseBuilder.build();
+        } catch (RuntimeException re) {
+            if ("can not get encryption KEK".equals(re.getMessage())) {
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "can not get encryption KEK", Response.Status.BAD_REQUEST);
+            } else {
+                throw re;
+            }
+        }
+
+        event.success();
+
+        return cors.builder(Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE)).build();
+
+    }
+
+    private void resetEarlyAccessBlocker(String throttlingId, boolean isPenalty) {
+        if (throttlingId == null) return; // access throttling deactivated
+        int interval = realm.getCIBAPolicy().getInterval();
+        if (interval < 1) return;         // access throttling deactivated
+        // limit upper bound
+        int penalty = isPenalty ? CIBAConstants.INTERVAL_PENALTY : 0;
+        interval += penalty;
+        interval = (interval >= CIBAConstants.INTERVAL_UPPERBOUND) ? CIBAConstants.INTERVAL_UPPERBOUND : interval;
+        logger.tracev("CIBA Grant :: Reset access throttling - next token request must be after {0} sec.", interval);
+        EarlyAccessBlocker earlyAccessBlocker = new EarlyAccessBlocker(Time.currentTime() + interval);
+        EarlyAccessBlockerParser.persistEarlyAccessBlocker(session, throttlingId, earlyAccessBlocker, interval);
     }
 
     public Response codeToToken() {

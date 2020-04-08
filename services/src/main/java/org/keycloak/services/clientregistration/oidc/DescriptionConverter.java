@@ -165,6 +165,10 @@ public class DescriptionConverter {
             configWrapper.setBackchannelLogoutRevokeOfflineTokens(clientOIDC.getBackchannelLogoutRevokeOfflineTokens());
         }
 
+        if (clientOIDC.getBackchannelTokenDeliveryMode() != null) {
+            configWrapper.setBackchannelTokenDeliveryMode(clientOIDC.getBackchannelTokenDeliveryMode());
+        }
+
         return client;
     }
 
@@ -269,6 +273,10 @@ public class DescriptionConverter {
         response.setBackchannelLogoutUri(config.getBackchannelLogoutUrl());
         response.setBackchannelLogoutSessionRequired(config.isBackchannelLogoutSessionRequired());
         response.setBackchannelLogoutSessionRequired(config.getBackchannelLogoutRevokeOfflineTokens());
+
+        if (config.getBackchannelTokenDeliveryMode() != null) {
+            response.setBackchannelTokenDeliveryMode(config.getBackchannelTokenDeliveryMode());
+        }
 
         List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(client);
         SubjectType subjectType = foundPairwiseMappers.isEmpty() ? SubjectType.PUBLIC : SubjectType.PAIRWISE;
