@@ -415,7 +415,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         }
     }
 
-    private String getUserModelAttribute() {
+    public String getUserModelAttribute() {
         return mapperModel.getConfig().getFirst(USER_MODEL_ATTRIBUTE);
     }
 
@@ -431,6 +431,9 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         return parseBooleanParameter(mapperModel, READ_ONLY);
     }
 
+    public boolean isAlwaysReadValueFromLdap() {
+        return parseBooleanParameter(mapperModel, ALWAYS_READ_VALUE_FROM_LDAP);
+    }
 
     protected void setPropertyOnUserModel(Property<Object> userModelProperty, UserModel user, String ldapAttrValue) {
         if (ldapAttrValue == null) {

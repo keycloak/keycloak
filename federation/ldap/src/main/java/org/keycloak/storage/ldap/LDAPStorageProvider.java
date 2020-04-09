@@ -35,7 +35,6 @@ import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
-import org.keycloak.credential.CredentialModel;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
 import org.keycloak.models.*;
@@ -58,10 +57,7 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
-import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
-import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
-import org.keycloak.storage.ldap.mappers.LDAPStorageMapperManager;
-import org.keycloak.storage.ldap.mappers.PasswordUpdateCallback;
+import org.keycloak.storage.ldap.mappers.*;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
@@ -237,14 +233,31 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
              for (LDAPObject ldapUser : ldapObjects) {
                  String ldapUsername = LDAPUtils.getUsername(ldapUser, this.ldapIdentityStore.getConfig());
-                 if (session.userLocalStorage().getUserByUsername(ldapUsername, realm) == null) {
+                 UserModel localUser = session.userLocalStorage().getUserByUsername(ldapUsername, realm);
+                 if (localUser == null) {
                      UserModel imported = importUserFromLDAP(session, realm, ldapUser);
                      searchResults.add(imported);
+                 } else if (shouldUserAttributeBeAlwaysReadFromLdap(realm, attrName)) {
+                     searchResults.add(proxy(realm, localUser, ldapUser));
                  }
              }
 
              return searchResults;
          }
+    }
+
+    private boolean shouldUserAttributeBeAlwaysReadFromLdap(RealmModel realm, String userAttributeName) {
+        List<ComponentModel> mapperModels = realm.getComponents(model.getId(), LDAPStorageMapper.class.getName());
+        return mapperModels.stream().anyMatch(mapperModel -> shouldUserAttributeBeAlwaysReadFromLdap(mapperModel, userAttributeName));
+    }
+
+    private boolean shouldUserAttributeBeAlwaysReadFromLdap(ComponentModel mapperModel, String userAttributeName) {
+        LDAPStorageMapper mapper = mapperManager.getMapper(mapperModel);
+        if (UserAttributeLDAPStorageMapper.class.isAssignableFrom(mapper.getClass())) {
+            UserAttributeLDAPStorageMapper userAttributeMapper = (UserAttributeLDAPStorageMapper) mapper;
+            return userAttributeName.equals(userAttributeMapper.getUserModelAttribute()) && userAttributeMapper.isAlwaysReadValueFromLdap();
+        }
+        return false;
     }
 
     public boolean synchronizeRegistrations() {
