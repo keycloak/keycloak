@@ -205,7 +205,7 @@ public class SimpleHttp {
                 ((HttpEntityEnclosingRequestBase) httpRequest).setEntity(getFormEntityFromParameter());
             } else if (entity != null) {
                 if (headers == null || !headers.containsKey("Content-Type")) {
-                    header("Content-Type", "application/json; charset=utf-8;");
+                    header("Content-Type", "application/json; charset=utf-8");
                 }
                 ((HttpEntityEnclosingRequestBase) httpRequest).setEntity(getJsonEntity());
             } else {
