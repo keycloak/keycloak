@@ -39,14 +39,13 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.ErrorPage;
-import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
@@ -55,6 +54,7 @@ import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -1004,7 +1004,6 @@ public class AuthenticationProcessor {
         boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("true");
         String brokerSessionId = authSession.getAuthNote(BROKER_SESSION_ID);
         String brokerUserId = authSession.getAuthNote(BROKER_USER_ID);
-
         if (userSession == null) { // if no authenticator attached a usersession
 
             userSession = session.sessions().getUserSession(realm, authSession.getParentSession().getId());
@@ -1015,13 +1014,15 @@ public class AuthenticationProcessor {
                 userSession.restartSession(realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), authSession.getProtocol()
                         , remember, brokerSessionId, brokerUserId);
             } else {
-                // We have existing userSession even if it wasn't attached to authenticator. Could happen if SSO authentication was ignored (eg. prompt=login) and in some other cases.
-                // We need to handle case when different user was used
-                logger.debugf("No SSO login, but found existing userSession with ID '%s' after finished authentication.", userSession.getId());
                 if (!authSession.getAuthenticatedUser().equals(userSession.getUser())) {
-                    event.detail(Details.EXISTING_USER, userSession.getUser().getId());
-                    event.error(Errors.DIFFERENT_USER_AUTHENTICATED);
-                    throw new ErrorPageException(session, authSession, Response.Status.INTERNAL_SERVER_ERROR, Messages.DIFFERENT_USER_AUTHENTICATED, userSession.getUser().getUsername());
+                    AuthenticationManager.backchannelLogout(session, userSession, true);
+
+                    AuthenticationSessionManager manager = new AuthenticationSessionManager(session);
+                    RootAuthenticationSessionModel rootAuthSession = manager.createAuthenticationSession(realm, true);
+                    AuthenticationSessionModel newAuthSession = rootAuthSession.createAuthenticationSession(authSession.getClient());
+
+                    userSession = session.sessions().createUserSession(newAuthSession.getParentSession().getId(), realm, authSession.getAuthenticatedUser(), username, connection.getRemoteAddr(), authSession.getProtocol()
+                            , remember, brokerSessionId, brokerUserId);
                 }
             }
             userSession.setState(UserSessionModel.State.LOGGED_IN);
