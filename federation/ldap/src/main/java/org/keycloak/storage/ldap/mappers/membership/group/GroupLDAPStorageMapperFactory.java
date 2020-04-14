@@ -55,7 +55,6 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
     protected static final List<String> MEMBERSHIP_TYPES = new LinkedList<>();
     protected static final List<String> MODES = new LinkedList<>();
     protected static final List<String> NO_IMPORT_MODES = new LinkedList<>();
-    protected static final List<String> ROLE_RETRIEVERS;
 
     // TODO: Merge with RoleLDAPFederationMapperFactory as there are lot of similar properties
     static {
@@ -70,7 +69,6 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
         }
         NO_IMPORT_MODES.add(LDAPGroupMapperMode.LDAP_ONLY.toString());
         NO_IMPORT_MODES.add(LDAPGroupMapperMode.READ_ONLY.toString());
-        ROLE_RETRIEVERS = new LinkedList<>(userGroupsStrategies.keySet());
 
         List<ProviderConfigProperty> config = getProps(null);
         configProperties = config;
@@ -81,12 +79,14 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
         String mode = LDAPGroupMapperMode.LDAP_ONLY.toString();
         String membershipUserAttribute = LDAPConstants.UID;
         boolean importEnabled = true;
+        boolean isActiveDirectory = false;
         if (parent != null) {
             LDAPConfig config = new LDAPConfig(parent.getConfig());
             roleObjectClasses = config.isActiveDirectory() ? LDAPConstants.GROUP : LDAPConstants.GROUP_OF_NAMES;
             mode = config.getEditMode() == UserStorageProvider.EditMode.WRITABLE ? LDAPGroupMapperMode.LDAP_ONLY.toString() : LDAPGroupMapperMode.READ_ONLY.toString();
             membershipUserAttribute = config.getUsernameLdapAttribute();
             importEnabled = new UserStorageProviderModel(parent).isImportEnabled();
+            isActiveDirectory = config.isActiveDirectory();
         }
 
         ProviderConfigurationBuilder config = ProviderConfigurationBuilder.create()
@@ -170,13 +170,22 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
                     .add();
 
         }
+
+        List<String> groupRetrievers = new LinkedList<>(userGroupsStrategies.keySet());
+        String groupRetrieversHelpText = "Specify how to retrieve groups of user. LOAD_GROUPS_BY_MEMBER_ATTRIBUTE means that roles of user will be retrieved by sending LDAP query to retrieve all groups where 'member' is our user. " +
+                "GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE means that groups of user will be retrieved from 'memberOf' attribute of our user. Or from the other attribute specified by 'Member-Of LDAP Attribute' . ";
+        if (isActiveDirectory) {
+            groupRetrieversHelpText = groupRetrieversHelpText + "LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY is applicable just in Active Directory and it means that groups of user will be retrieved recursively with usage of LDAP_MATCHING_RULE_IN_CHAIN Ldap extension.";
+        } else {
+            // Option should be available just for the Active Directory
+            groupRetrievers.remove(GroupMapperConfig.LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY);
+        }
+
         config.property().name(GroupMapperConfig.USER_ROLES_RETRIEVE_STRATEGY)
                 .label("User Groups Retrieve Strategy")
-                .helpText("Specify how to retrieve groups of user. LOAD_GROUPS_BY_MEMBER_ATTRIBUTE means that roles of user will be retrieved by sending LDAP query to retrieve all groups where 'member' is our user. " +
-                        "GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE means that groups of user will be retrieved from 'memberOf' attribute of our user. Or from the other attribute specified by 'Member-Of LDAP Attribute' . " +
-                        "LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY is applicable just in Active Directory and it means that groups of user will be retrieved recursively with usage of LDAP_MATCHING_RULE_IN_CHAIN Ldap extension.")
+                .helpText(groupRetrieversHelpText)
                 .type(ProviderConfigProperty.LIST_TYPE)
-                .options(ROLE_RETRIEVERS)
+                .options(groupRetrievers)
                 .defaultValue(GroupMapperConfig.LOAD_GROUPS_BY_MEMBER_ATTRIBUTE)
                 .add()
                 .property().name(GroupMapperConfig.MEMBEROF_LDAP_ATTRIBUTE)

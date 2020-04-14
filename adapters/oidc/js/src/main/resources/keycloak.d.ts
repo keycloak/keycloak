@@ -173,7 +173,7 @@ declare namespace Keycloak {
 		 * If value is `'register'` then user is redirected to registration page,
 		 * otherwise to login page.
 		 */
-		action?: 'register';
+		action?: string;
 
 		/**
 		 * Used just if user is already authenticated. Specifies maximum time since
@@ -432,6 +432,11 @@ declare namespace Keycloak {
 		 * obtain a new access token.
 		 */
 		onTokenExpired?(): void;
+
+		/**
+		 * Called when a AIA has been requested by the application.
+		 */
+		onActionUpdate?(status: 'success'|'cancelled'|'error'): void;
 
 		/**
 		 * Called to initialize the adapter.

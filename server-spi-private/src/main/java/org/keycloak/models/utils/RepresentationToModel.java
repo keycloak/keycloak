@@ -714,6 +714,11 @@ public class RepresentationToModel {
             DefaultAuthenticationFlows.migrateFlows(newRealm);
         } else {
             for (AuthenticatorConfigRepresentation configRep : rep.getAuthenticatorConfig()) {
+                if (configRep.getAlias() == null) {
+                    // this can happen only during import json files from keycloak 3.4.0 and older
+                    throw new IllegalStateException("Provided realm contains authenticator config with null alias. "
+                            + "It should be resolved by adding alias to the authenticator config before exporting the realm.");
+                }
                 AuthenticatorConfigModel model = toModel(configRep);
                 newRealm.addAuthenticatorConfig(model);
             }

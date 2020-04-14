@@ -23,6 +23,7 @@
 
 <div>
     <button onclick="keycloak.login()">Login</button>
+    <button onclick="keycloak.login({ action: 'UPDATE_PASSWORD' })">Update Password</button>
     <button onclick="keycloak.logout()">Logout</button>
     <button onclick="keycloak.register()">Register</button>
     <button onclick="keycloak.accountManagement()">Account</button>
@@ -153,6 +154,17 @@
 
     keycloak.onTokenExpired = function () {
         event('Access token expired.');
+    };
+
+    keycloak.onActionUpdate = function (status) {
+        switch (status) {
+            case 'success':
+                event('Action completed successfully'); break;
+            case 'cancelled':
+                event('Action cancelled by user'); break;
+            case 'error':
+                event('Action failed'); break;
+        }
     };
 
     // Flow can be changed to 'implicit' or 'hybrid', but then client must enable implicit flow in admin console too 

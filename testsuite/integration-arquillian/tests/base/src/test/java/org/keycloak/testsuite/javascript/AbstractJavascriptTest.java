@@ -55,6 +55,7 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
     public static final String JAVASCRIPT_ENCODED_SPACE_URL = "/auth/realms/Example%20realm/testing/javascript";
     public static final String JAVASCRIPT_SPACE_URL = "/auth/realms/Example realm/testing/javascript";
     public static int TOKEN_LIFESPAN_LEEWAY = 3; // seconds
+    public static final String USER_PASSWORD = "password";
 
 
     protected JavascriptExecutor jsExecutor;
@@ -80,8 +81,8 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
     public static final UserRepresentation unauthorizedUser;
 
     static {
-        testUser = UserBuilder.create().username("test-user@localhost").password("password").build();
-        unauthorizedUser = UserBuilder.create().username("unauthorized").password("password").build();
+        testUser = UserBuilder.create().username("test-user@localhost").password(USER_PASSWORD).build();
+        unauthorizedUser = UserBuilder.create().username("unauthorized").password(USER_PASSWORD).build();
     }
 
     @BeforeClass

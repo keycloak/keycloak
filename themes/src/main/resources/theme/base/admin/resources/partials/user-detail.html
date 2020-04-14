@@ -29,7 +29,7 @@
                 <div class="col-md-6">
                     <!-- Characters >,<,/,\ are forbidden in username -->
                     <input class="form-control" type="text" id="username" name="username" data-ng-model="user.username" autofocus
-                    ng-required="!emailAsUsername" ng-pattern="/^[^\<\>\\\/]*$/" data-ng-readonly="!editUsername">
+                           data-ng-required="!emailAsUsername" ng-pattern="/^[^\<\>\\\/]*$/" data-ng-readonly="!editUsername">
                 </div>
             </div>
 
@@ -38,7 +38,7 @@
                 <label class="col-md-2 control-label" for="email">{{:: 'email' | translate}}</label>
 
                 <div class="col-md-6">
-                    <input ng-required="emailAsUsername" class="form-control" type="email" name="email" id="email"
+                    <input data-ng-required="emailAsUsername" class="form-control" type="email" name="email" id="email"
                            data-ng-model="user.email">
                 </div>
             </div>
