@@ -355,6 +355,18 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     public void addClientScope(ClientScopeModel clientScope, boolean defaultScope) {
         if (getClientScopes(defaultScope, false).containsKey(clientScope.getName())) return;
 
+        persist(clientScope, defaultScope);
+    }
+
+    @Override
+    public void addClientScopes(Set<ClientScopeModel> clientScopes, boolean defaultScope) {
+        Map<String, ClientScopeModel> existingClientScopes = getClientScopes(defaultScope, false);
+        clientScopes.stream()
+                .filter(clientScope -> !existingClientScopes.containsKey(clientScope.getName()))
+                .forEach(clientScope -> persist(clientScope, defaultScope));
+    }
+
+    private void persist(ClientScopeModel clientScope, boolean defaultScope) {
         ClientScopeClientMappingEntity entity = new ClientScopeClientMappingEntity();
         entity.setClientScope(ClientScopeAdapter.toClientScopeEntity(clientScope, em));
         entity.setClient(getEntity());
