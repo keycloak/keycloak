@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -169,6 +170,13 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
      * @param defaultScope
      */
     void addClientScope(ClientScopeModel clientScope, boolean defaultScope);
+
+    /**
+     * Add clientScopes with this client. Add as default scopes (if parameter 'defaultScope' is true) or optional scopes (if parameter 'defaultScope' is false)
+     * @param clientScopes
+     * @param defaultScope
+     */
+    void addClientScopes(Set<ClientScopeModel> clientScopes, boolean defaultScope);
 
     void removeClientScope(ClientScopeModel clientScope);
 
