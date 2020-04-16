@@ -79,4 +79,8 @@ Regardless of which identity provider you are creating, you'll see the following
 
 |Post Login Flow
 |Authentication flow that is triggered after the user finishes logging in with the external identity provider.
+
+|Sync Mode
+|Strategy of how to update user information from the idp through mappers: When choosing `legacy`, the current behavior is kept, 
+ `import` will never update user data, while `force` will always update user data when possible. See also the documentation for <<_mappers, Identity Provider Mappers>> for more details.
 |===
