@@ -125,7 +125,7 @@ if the {project_name} server runs on WildFly/JBoss EAP.
 === Key Resolvers
 
 All built-in providers support the configuration of one or more key resolvers. A key resolver essentially implements
-the algorithm or strategy for combining the realm name with the key (as obtained from the `${vault.key}` expression} into
+the algorithm or strategy for combining the realm name with the key (as obtained from the `${vault.key}` expression) into
 the final entry name that will be used to retrieve the secret from the vault. The `keyResolvers` property is used to configure
 the resolvers that are to be used by the provider. The value is a comma-separated list of resolver names. An example of
 configuration for the `files-plaintext` provider follows:
@@ -170,7 +170,7 @@ ifeval::[{project_community}==true]
 The `FACTORY_PROVIDED` resolver provides a hook that can be used to implement a custom resolver by extending the provider
 factory of choice and overriding the `getFactoryResolver` method so it returns the custom resolver. For example, if you want
 to use the `elytron-cs-keystore` provider but none of the built-in resolvers match the format used in your keystore, you
-can extend the `ElytronCSKeystoreProvider and implement the getFactoryResolver method:
+can extend the `ElytronCSKeystoreProvider` and implement the `getFactoryResolver` method:
 
 [source,java]
 ----
