@@ -98,12 +98,16 @@ export class ResourcesTable extends React.Component<ResourcesTableProps, Resourc
     public sharedWithUsersMessage(row: number): React.ReactNode {
         if (!this.hasPermissions(row)) return (<React.Fragment><Msg msgKey='resourceNotShared'/></React.Fragment>);
 
-        // TODO: Not using a parameterized message because I want to use <strong> tag.  Need to figure out a good solution to this.
-        if (this.numOthers(row) > 0) {
-            return (<React.Fragment><Msg msgKey='resourceSharedWith'/> <strong>{this.firstUser(row)}</strong> <Msg msgKey='and'/> <strong>{this.numOthers(row)}</strong> <Msg msgKey='otherUsers'/>.</React.Fragment>)
-        } else {
-            return (<React.Fragment><Msg msgKey='resourceSharedWith'/> <strong>{this.firstUser(row)}</strong>.</React.Fragment>)
-        }
+        return (
+            <React.Fragment>
+                    <Msg msgKey='resourceSharedWith'>
+                        <strong>{this.firstUser(row)}</strong>
+                    </Msg>
+                    {this.numOthers(row) > 0 && <Msg msgKey='and'>
+                        <strong>{this.numOthers(row)}</strong>
+                    </Msg>}.
+            </React.Fragment>
+        );
     }
 
     public render(): React.ReactNode {
