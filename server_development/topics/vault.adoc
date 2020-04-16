@@ -19,7 +19,7 @@ The built-in `files-plaintext` provider is an example of the implementation of t
 ifeval::[{project_community}==true]
 Regarding realm separation, all built-in vault provider factories allow the configuration of one or more key resolvers. Represented
 by the `VaultKeyResolver` interface, a key resolver essentially implements the algorithm or strategy for combining the realm name
-with the key (as obtained from the `${vault.key}` expression} into the final entry name that will be used to retrieve the
+with the key (as obtained from the `${vault.key}` expression) into the final entry name that will be used to retrieve the
 secret from the vault. The code that handles this configuration has been extracted into abstract vault provider and vault
 provider factory classes, so custom implementations that want to offer support for key resolvers may extend these abstract classes
 instead of the implementing SPI interfaces to inherit the ability to configure the key resolvers that should be tried when retrieving a secret.
@@ -55,4 +55,4 @@ Note that since `String` objects are immutable, their content cannot be discarde
 by overriding with random garbage. Even though measures have been taken in the default
 `VaultStringSecret` implementation to prevent internalizing ``String``s, the secrets
 stored in `String` objects would live at least to the next GC round. Thus using
-plain byte and character arrays and buffers is preferrable.
+plain byte and character arrays and buffers is preferable.
