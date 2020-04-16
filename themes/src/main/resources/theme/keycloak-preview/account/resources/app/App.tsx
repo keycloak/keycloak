@@ -39,8 +39,10 @@ declare function isWelcomePage(): boolean;
 declare const locale: string;
 declare const resourceUrl: string;
 
+declare const brandImg: string;
+declare const brandUrl: string;
+
 const pFlyImages = resourceUrl + '/node_modules/@patternfly/patternfly/assets/images/';
-const brandImg = resourceUrl + '/public/logo.svg';
 const avatarImg = pFlyImages + 'img_avatar.svg';
 
 export interface AppProps {};
@@ -65,7 +67,7 @@ export class App extends React.Component<AppProps> {
 
         const Header = (
             <PageHeader
-                logo={<Brand src={brandImg} alt="Logo" className="brand"/>}
+                logo={<a id="brandLink" href={brandUrl}><Brand src={brandImg} alt="Logo" className="brand"/></a>}
                 toolbar={<PageToolbar/>}
                 avatar={<Avatar src={avatarImg} alt="Avatar image" />}
                 showNavToggle

@@ -26,6 +26,18 @@
             var resourceUrl = '${resourceUrl}';
             var isReactLoading = false;
 
+            <#if properties.logo?has_content>
+            var brandImg = resourceUrl + '${properties.logo}';
+            <#else>
+            var brandImg = resourceUrl + '/public/logo.svg';
+            </#if>
+
+            <#if properties.logoUrl?has_content>
+            var brandUrl = '${properties.logoUrl}';
+            <#else>
+            var brandUrl = baseUrl;
+            </#if>
+
             var features = {
                 isRegistrationEmailAsUsername : ${realm.registrationEmailAsUsername?c},
                 isEditUserNameAllowed : ${realm.editUsernameAllowed?c},
@@ -56,7 +68,11 @@
             </#if>
         </script>
 
+        <#if properties.favIcon?has_content>
+        <link rel="icon" href="${resourceUrl}${properties.favIcon}" type="image/x-icon"/>
+        <#else>
         <link rel="icon" href="${resourceUrl}/public/favicon.ico" type="image/x-icon"/>
+        </#if>
 
         <script src="${authUrl}js/keycloak.js"></script>
 
@@ -127,7 +143,11 @@
 
 <div id="spinner_screen" style="display:block; height:100%">
     <div style="width: 320px; height: 328px; text-align: center; position: absolute; top:0;	bottom: 0; left: 0;	right: 0; margin: auto;">
+                <#if properties.logo?has_content>
+                <img src="${resourceUrl}${properties.logo}" alt="Logo" class="brand">
+                <#else>
                 <img src="${resourceUrl}/public/logo.svg" alt="Logo" class="brand">
+                </#if>
                 <p>${msg("loadingMessage")}</p>
                 <div >
                     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="margin: auto; background: rgb(255, 255, 255); display: block; shape-rendering: auto;" width="200px" height="200px" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid">
@@ -144,8 +164,16 @@
     <div class="pf-c-page" id="page-layout-default-nav">
       <header role="banner" class="pf-c-page__header">
         <div class="pf-c-page__header-brand">
-          <a class="pf-c-page__header-brand-link">
+          <#if properties.logoUrl?has_content>
+          <a id="landingLogo" class="pf-c-page__header-brand-link" href="${properties.logoUrl}">
+          <#else>
+          <a id="landingLogo" class="pf-c-page__header-brand-link" href="${baseUrl}">
+          </#if>
+            <#if properties.logo?has_content>
+            <img class="pf-c-brand brand" src="${resourceUrl}${properties.logo}" alt="Logo">
+            <#else>
             <img class="pf-c-brand brand" src="${resourceUrl}/public/logo.svg" alt="Logo">
+            </#if>
           </a>
         </div>
         <div class="pf-c-page__header-tools">
