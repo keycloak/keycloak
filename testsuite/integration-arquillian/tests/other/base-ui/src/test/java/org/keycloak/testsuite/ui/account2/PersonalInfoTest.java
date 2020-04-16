@@ -153,6 +153,12 @@ public class PersonalInfoTest extends BaseAccountPageTest {
         personalInfoPage.navigateTo();
         personalInfoPage.valuesEqual(testUser2);
     }
+    
+    @Test
+    public void clickLogoTest() {
+        personalInfoPage.clickBrandLink();
+        accountWelcomeScreen.assertCurrent();
+    }
 
     private void setEditUsernameAllowed(boolean value) {
         RealmRepresentation realm = testRealmResource().toRepresentation();

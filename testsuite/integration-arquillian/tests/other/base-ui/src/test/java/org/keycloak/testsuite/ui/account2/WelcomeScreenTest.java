@@ -75,6 +75,12 @@ public class WelcomeScreenTest extends AbstractAccountTest {
     }
 
     @Test
+    public void clickLogoTest() {
+        accountWelcomeScreen.clickLogoImage();
+        accountWelcomeScreen.assertCurrent();
+    }
+
+    @Test
     public void accountSecurityTest() {
         // TODO rewrite this! (KEYCLOAK-12105)
 //        // change password link
