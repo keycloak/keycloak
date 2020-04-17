@@ -33,6 +33,8 @@ import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.util.*;
 import javax.mail.internet.MimeMessage;
 
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.not;
 import static org.jgroups.util.Util.assertTrue;
 import static org.junit.Assert.assertEquals;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
@@ -563,6 +565,38 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         } finally {
             configureRealmRegistrationEmailAsUsername(false);
         }
+    }
+
+    @Test
+    public void registerUserDirectLinkToRegisterPage() {
+        // navigate and login to account console
+        accountPage.open();
+        loginPage.assertCurrent();
+        loginPage.login("test-user@localhost", "password");
+
+        accountPage.assertCurrent();
+
+        // capture user's ID
+        String userId = testRealm().users().search("test-user@localhost").get(0).getId();
+        Assert.assertThat(testRealm().users().get(userId).getUserSessions(), not(empty()));
+
+        String accountUrl = driver.getCurrentUrl();
+        String registrationUrl = oauth.getRegistrationUrl() +
+                "?client_id=account&response_type=code&scope=openid+email&redirect_uri=" + accountUrl;
+
+        driver.navigate().to(registrationUrl);
+        registerPage.assertCurrent();
+
+        registerPage.register("firstName", "lastName", "registerUserSuccess2@email", "registerUserSuccess2", "password", "password");
+        accountPage.assertCurrent();
+
+        // the original user's session should be removed
+        Assert.assertThat(testRealm().users().get(userId).getUserSessions(), empty());
+
+
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, getAccountRedirectUrl()).assertEvent();
+        events.expectRegister("registerUserSuccess2", "registerUserSuccess2@email")
+                .client("account").detail(Details.REDIRECT_URI, accountUrl).assertEvent();
     }
 
     protected void configureRealmRegistrationEmailAsUsername(final boolean value) {

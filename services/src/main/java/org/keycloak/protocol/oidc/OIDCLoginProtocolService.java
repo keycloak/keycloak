@@ -138,6 +138,11 @@ public class OIDCLoginProtocolService {
         return uriBuilder.path(OIDCLoginProtocolService.class, "logout");
     }
 
+    public static UriBuilder registrationUrl(UriBuilder baseUriBuilder) {
+        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
+        return uriBuilder.path(OIDCLoginProtocolService.class, "registerPage");
+    }
+
     /**
      * Authorization endpoint
      */

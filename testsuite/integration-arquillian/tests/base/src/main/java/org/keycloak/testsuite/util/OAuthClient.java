@@ -957,6 +957,12 @@ public class OAuthClient {
         return b.build(realm).toString();
     }
 
+    public String getRegistrationUrl() {
+        OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(AUTH_SERVER_ROOT));
+        UriBuilder b = OIDCLoginProtocolService.registrationUrl(UriBuilder.fromUri(baseUrl));
+        return b.build(realm).toString();
+    }
+
     public OAuthClient baseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
         return this;
