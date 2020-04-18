@@ -95,7 +95,7 @@ public class ExportUtils {
         ModelToRepresentation.exportRequiredActions(realm, rep);
 
         // Project/product version
-        rep.setKeycloakVersion(Version.VERSION);
+        rep.setKeycloakVersion(Version.VERSION_KEYCLOAK);
 
         // Client Scopes
         List<ClientScopeModel> clientScopeModels = realm.getClientScopes();
