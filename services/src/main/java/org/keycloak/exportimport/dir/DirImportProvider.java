@@ -25,9 +25,7 @@ import org.keycloak.exportimport.util.ExportImportSessionTask;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -38,6 +36,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.keycloak.services.managers.RealmManager;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -168,13 +167,13 @@ public class DirImportProvider implements ImportProvider {
             }
         }
 
-        // Import authorization last, as authzPolicies can require users already in DB
+        // Import authorization and initialize service accounts last, as they require users already in DB
         KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
 
             @Override
             public void runExportImportTask(KeycloakSession session) throws IOException {
-                RealmModel realm = session.realms().getRealmByName(realmName);
-                RepresentationToModel.importRealmAuthorizationSettings(realmRep, realm, session);
+                RealmManager realmManager = new RealmManager(session);
+                realmManager.setupClientServiceAccountsAndAuthorizationOnImport(realmRep, false);
             }
 
         });
