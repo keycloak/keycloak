@@ -149,6 +149,9 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
         testFullExportImport();
 
+        RealmResource testRealmRealm = adminClient.realm("test-realm");
+        ExportImportUtil.assertDataImportedInRealm(adminClient, testingClient, testRealmRealm.toRepresentation());
+
         // There should be 6 files in target directory (3 realm, 3 user)
         assertEquals(6, new File(targetDirPath).listFiles().length);
     }
@@ -164,6 +167,9 @@ public class ExportImportTest extends AbstractKeycloakTest {
         testingClient.testing().exportImport().setUsersPerFile(5);
 
         testRealmExportImport();
+
+        RealmResource testRealmRealm = adminClient.realm("test-realm");
+        ExportImportUtil.assertDataImportedInRealm(adminClient, testingClient, testRealmRealm.toRepresentation());
 
         // There should be 4 files in target directory (1 realm, 12 users, 5 users per file)
         // (+ additional user service-account-test-app-authz that should not be there ???)

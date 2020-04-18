@@ -230,9 +230,13 @@
             ]
         },
         {
-            "username": "my-service-user",
+            "username": "service-account-otherapp",
             "enabled": true,
-            "serviceAccountClientId": "OtherApp"
+            "serviceAccountClientId": "OtherApp",
+            "realmRoles" : [ "user" ],
+            "applicationRoles": {
+                "OtherApp": [  "otherapp-user", "otherapp-admin" ]
+            }
         }
     ],
     "clients": [
@@ -256,6 +260,7 @@
             "standardFlowEnabled": false,
             "directAccessGrantsEnabled": false,
             "serviceAccountsEnabled": true,
+            "authorizationServicesEnabled" : true,
             "clientAuthenticatorType": "client-jwt",
             "authenticationFlowBindingOverrides": {
                 "browser": "73dcb1e4-2c7c-4494-825d-f2677cbc114c"
@@ -274,7 +279,68 @@
                         "Claim JSON Type" : "String"
                     }
                 }
-            ]
+            ],
+            "authorizationSettings" : {
+                "allowRemoteResourceManagement": true,
+                "policyEnforcementMode": "ENFORCING",
+                "resources": [
+                    {
+                        "name": "Default Resource",
+                        "type": "urn:test:resources:default",
+                        "ownerManagedAccess": false,
+                        "attributes": {},
+                        "uris": [
+                            "/*"
+                        ]
+                    },
+                    {
+                        "name": "test",
+                        "type": "test",
+                        "ownerManagedAccess": true,
+                        "displayName": "test",
+                        "attributes": {},
+                        "uris": [
+                            "/test"
+                        ]
+                    }
+                ],
+                "policies": [
+                    {
+                        "name": "User Policy",
+                        "description": "User policy test",
+                        "type": "user",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "users": "[\"wburke\"]"
+                        }
+                    },
+                    {
+                        "name": "Default Permission",
+                        "description": "A permission that applies to the default resource type",
+                        "type": "resource",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "defaultResourceType": "urn:test:resources:default",
+                            "applyPolicies": "[\"User Policy\"]"
+                        }
+                    },
+                    {
+                        "name": "test-permission",
+                        "description": "test-permission",
+                        "type": "resource",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "resources": "[\"test\"]",
+                            "applyPolicies": "[\"User Policy\"]"
+                        }
+                    }
+                ],
+                "scopes": [],
+                "decisionStrategy": "UNANIMOUS"
+            }
         },
         {
             "clientId": "test-app-authz",

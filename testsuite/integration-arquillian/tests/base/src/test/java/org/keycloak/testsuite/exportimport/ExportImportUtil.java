@@ -122,6 +122,7 @@ public class ExportImportUtil {
         ClientRepresentation application = ApiUtil.findClientByClientId(realmRsc, "Application").toRepresentation();
         ClientRepresentation otherApp = ApiUtil.findClientByClientId(realmRsc, "OtherApp").toRepresentation();
         ClientRepresentation accountApp = ApiUtil.findClientByClientId(realmRsc, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).toRepresentation();
+        ClientRepresentation testAppAuthzApp = ApiUtil.findClientByClientId(realmRsc, "test-app-authz").toRepresentation();
         ClientResource nonExisting = ApiUtil.findClientByClientId(realmRsc, "NonExisting");
         Assert.assertNotNull(application);
         Assert.assertNotNull(otherApp);
@@ -346,7 +347,7 @@ public class ExportImportUtil {
         Assert.assertNull(findMapperByName(applicationMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, "given name"));
         Assert.assertNull(findMapperByName(applicationMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME));
 
-        Assert.assertEquals(4, otherApp.getProtocolMappers().size());
+        Assert.assertEquals(1, otherApp.getProtocolMappers().size());
         List<ProtocolMapperRepresentation> otherAppMappers = otherApp.getProtocolMappers();
         Assert.assertNull(findMapperByName(otherAppMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, "username"));
         ProtocolMapperRepresentation gssCredentialMapper = findMapperByName(otherAppMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME);
@@ -410,12 +411,24 @@ public class ExportImportUtil {
         // Test service accounts
         Assert.assertFalse(application.isServiceAccountsEnabled());
         Assert.assertTrue(otherApp.isServiceAccountsEnabled());
+        Assert.assertTrue(testAppAuthzApp.isServiceAccountsEnabled());
         Assert.assertNull(testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), application.getClientId()));//session.users().getUserByServiceAccountClient(application));
-        UserRepresentation linked = testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), otherApp.getClientId());//session.users().getUserByServiceAccountClient(otherApp);
-        Assert.assertNotNull(linked);
-        Assert.assertEquals("my-service-user", linked.getUsername());
-        
-        assertAuthorizationSettings(realmRsc);
+        UserRepresentation otherAppSA = testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), otherApp.getClientId());//session.users().getUserByServiceAccountClient(otherApp);
+        Assert.assertNotNull(otherAppSA);
+        Assert.assertEquals("service-account-otherapp", otherAppSA.getUsername());
+        UserRepresentation testAppAuthzSA = testingClient.testing().getUserByServiceAccountClient(realm.getRealm(), testAppAuthzApp.getClientId());
+        Assert.assertNotNull(testAppAuthzSA);
+        Assert.assertEquals("service-account-test-app-authz", testAppAuthzSA.getUsername());
+
+        // test service account maintains the roles in OtherApp
+        allRoles = allRoles(realmRsc, otherAppSA);
+        Assert.assertEquals(3, allRoles.size());
+        Assert.assertTrue(containsRole(allRoles, findRealmRole(realmRsc, "user")));
+        Assert.assertTrue(containsRole(allRoles, findClientRole(realmRsc, otherApp.getId(), "otherapp-user")));
+        Assert.assertTrue(containsRole(allRoles, findClientRole(realmRsc, otherApp.getId(), "otherapp-admin")));
+
+        assertAuthorizationSettingsOtherApp(realmRsc);
+        assertAuthorizationSettingsTestAppAuthz(realmRsc);
     }
 
 
@@ -571,7 +584,20 @@ public class ExportImportUtil {
         return false;
     }
 
-    private static void assertAuthorizationSettings(RealmResource realmRsc) {
+    private static void assertAuthorizationSettingsOtherApp(RealmResource realmRsc) {
+        AuthorizationResource authzResource = ApiUtil.findAuthorizationSettings(realmRsc, "OtherApp");
+        Assert.assertNotNull(authzResource);
+
+        List<ResourceRepresentation> resources = authzResource.resources().resources();
+        Assert.assertThat(resources.stream().map(ResourceRepresentation::getName).collect(Collectors.toList()),
+                Matchers.containsInAnyOrder("Default Resource", "test"));
+
+        List<PolicyRepresentation> policies = authzResource.policies().policies();
+        Assert.assertThat(policies.stream().map(PolicyRepresentation::getName).collect(Collectors.toList()),
+                Matchers.containsInAnyOrder("User Policy", "Default Permission", "test-permission"));
+    }
+
+    private static void assertAuthorizationSettingsTestAppAuthz(RealmResource realmRsc) {
         AuthorizationResource authzResource = ApiUtil.findAuthorizationSettings(realmRsc, "test-app-authz");
 
         Assert.assertNotNull(authzResource);
