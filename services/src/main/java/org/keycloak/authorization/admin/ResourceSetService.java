@@ -42,6 +42,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
@@ -130,6 +131,53 @@ public class ResourceSetService {
         }
 
         return toRepresentation(toModel(resource, this.resourceServer, authorization), resourceServer, authorization);
+    }
+
+    public Resource create(ResourceRepresentation resource, Resource parent) {
+        requireManage();
+        StoreFactory storeFactory = this.authorization.getStoreFactory();
+        ResourceOwnerRepresentation owner = resource.getOwner();
+
+        if (owner == null) {
+            owner = new ResourceOwnerRepresentation();
+            owner.setId(resourceServer.getId());
+            resource.setOwner(owner);
+        }
+
+        String ownerId = owner.getId();
+
+        if (ownerId == null) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "You must specify the resource owner.", Status.BAD_REQUEST);
+        }
+
+        Resource existingResource = storeFactory.getResourceStore().findByName(resource.getName(), ownerId, this.resourceServer.getId());
+
+        if (existingResource != null) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Resource with name [" + resource.getName() + "] already exists.", Status.CONFLICT);
+        }
+
+        return toModel(resource, parent, this.resourceServer, authorization);
+    }
+
+
+    @POST
+    @Path("{id}/children")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response createChild(@PathParam("id") String id, ResourceRepresentation resource) {
+        requireManage();
+        StoreFactory storeFactory = this.authorization.getStoreFactory();
+        ResourceStore resourceStore = storeFactory.getResourceStore();
+        Resource parent = resourceStore.findById(id, resourceServer.getId());
+        for (Resource subResource : parent.getSubResources()) {
+            if (subResource.getName().equals(resource.getName())) {
+                throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Resource with name [" + resource.getName() + "] already exists.", Status.CONFLICT);
+            }
+        }
+        Resource child = create(resource, parent);
+        audit(resource, resource.getId(), OperationType.CREATE);
+        return Response.status(Status.CREATED).entity(toRepresentation(child, resourceServer, authorization)).build();
     }
 
     @Path("{id}")
@@ -343,10 +391,40 @@ public class ResourceSetService {
         if (this.resourceServer == null) {
             return Response.ok().build();
         }
+        if (deep == null) {
+            deep = true;
+        }
         if (id != null || name != null || uri != null || type != null) {
             return find(id, name, uri, owner, type, scope, matchingUri,exactName, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toResourceHierarchy(resource, resourceServer, authorization, deep1));
         }
-        return find(id, name, uri, owner, type, scope, matchingUri, exactName, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer, authorization, deep1));
+        return find(deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toResourceHierarchy(resource, resourceServer, authorization, deep1));
+    }
+
+
+    /**
+     *  顶级
+     * @param deep
+     * @param firstResult
+     * @param maxResult
+     * @param toRepresentation
+     * @return
+     */
+    public Response find(Boolean deep,
+                         Integer firstResult,
+                         Integer maxResult,
+                         BiFunction<Resource, Boolean, ?> toRepresentation) {
+
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        List<Resource> resources = storeFactory.getResourceStore().findTopLevel(this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS);
+
+        Boolean finalDeep = deep;
+
+        return Response.ok(
+                resources.stream()
+                        .map(resource -> toRepresentation.apply(resource, finalDeep))
+                        .collect(Collectors.toList()))
+                .build();
+
     }
 
     public Response find(@QueryParam("_id") String id,

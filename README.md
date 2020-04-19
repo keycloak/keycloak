@@ -70,3 +70,10 @@ Before contributing to Keycloak please read our [contributing guidelines](CONTRI
 ## License
 
 * [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+
+## 关于修改
+* 更适合于中文搜索。
+* 用户增加身份证。
+* 验证增加身份证验证。
+* 增加按客户端查询角色绑定的资源。（更适合于国内系统的操作查询习惯）
+* 单位修改为动态加载。

@@ -53,7 +53,7 @@ public class ValidateIdcardFirstName extends AbstractDirectGrantAuthenticator {
         }
 
         //解析用户名格式： 姓名 身份证号
-        if (username.indexOf(" ") != -1 && !IdcardUtil.validateCard(username.split(" ")[1])) {
+        if (username.indexOf(" ") != -1 && (username.split(" ").length > 1)) {
             context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", "Missing parameter: firstname idcard");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
