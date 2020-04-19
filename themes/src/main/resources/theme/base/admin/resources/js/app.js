@@ -2107,9 +2107,28 @@ module.config(function($httpProvider) {
     };
     $httpProvider.defaults.transformRequest.push(spinnerFunction);
 
+    $httpProvider.interceptors.push('contentTypeRequestInterceptor');
     $httpProvider.interceptors.push('spinnerInterceptor');
     $httpProvider.interceptors.push('authInterceptor');
 
+});
+
+module.factory('contentTypeRequestInterceptor', function() {
+
+    return {
+        request: function(requestConfig) {
+            var requestData = requestConfig.data;
+
+            if (requestData && (requestData.indexOf('<') === 0)) {
+                if (!requestConfig.headers) {
+                    requestConfig.headers = {};
+                }
+                requestConfig.headers['Content-Type'] = 'application/xml';
+            }
+
+            return requestConfig;
+        }
+    };
 });
 
 module.factory('spinnerInterceptor', function($q, $window, $rootScope, $location) {
