@@ -114,51 +114,63 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
         if (log.isTraceEnabled()) {
             log.trace("Doing refresh");
         }
-        AccessTokenResponse response = null;
-        try {
-            response = ServerRequest.invokeRefresh(deployment, refreshToken);
-        } catch (IOException e) {
-            log.error("Refresh token failure", e);
-            return false;
-        } catch (ServerRequest.HttpFailure httpFailure) {
-            log.error("Refresh token failure status: " + httpFailure.getStatus() + " " + httpFailure.getError());
-            return false;
-        }
-        if (log.isTraceEnabled()) {
-            log.trace("received refresh response");
-        }
-        String tokenString = response.getToken();
-        AccessToken token = null;
-        try {
-            AdapterTokenVerifier.VerifiedTokens tokens = AdapterTokenVerifier.verifyTokens(tokenString, response.getIdToken(), deployment);
-            token = tokens.getAccessToken();
-            log.debug("Token Verification succeeded!");
-        } catch (VerificationException e) {
-            log.error("failed verification of token");
-            return false;
-        }
-
-        // If the TTL is greater-or-equal to the expire time on the refreshed token, have to abort or go into an infinite refresh loop
-        if (!isTokenTimeToLiveSufficient(token)) {
-            log.error("failed to refresh the token with a longer time-to-live than the minimum");
-            return false;
-        }
-
-        if (response.getNotBeforePolicy() > deployment.getNotBefore()) {
-            deployment.updateNotBefore(response.getNotBeforePolicy());
-        }
-
-        this.token = token;
-        if (response.getRefreshToken() != null) {
-            if (log.isTraceEnabled()) {
-                log.trace("Setup new refresh token to the security context");
+        
+        // block requests if the refresh token herein stored is already being used to refresh the token so that subsequent requests
+        // can use the last refresh token issued by the server. Note that this will only work for deployments using the session store
+        // and, when running in a cluster, sticky sessions must be used.
+        // 
+        synchronized (this) {
+            if (checkActive) {
+                log.trace("Checking whether token has been refreshed in another thread already.");
+                if (isActive() && isTokenTimeToLiveSufficient(this.token)) return true;
             }
-            this.refreshToken = response.getRefreshToken();
+            AccessTokenResponse response;
+            try {
+                response = ServerRequest.invokeRefresh(deployment, refreshToken);
+            } catch (IOException e) {
+                log.error("Refresh token failure", e);
+                return false;
+            } catch (ServerRequest.HttpFailure httpFailure) {
+                log.error("Refresh token failure status: " + httpFailure.getStatus() + " " + httpFailure.getError());
+                return false;
+            }
+            if (log.isTraceEnabled()) {
+                log.trace("received refresh response");
+            }
+            String tokenString = response.getToken();
+            AccessToken token = null;
+            try {
+                AdapterTokenVerifier.VerifiedTokens tokens = AdapterTokenVerifier.verifyTokens(tokenString, response.getIdToken(), deployment);
+                token = tokens.getAccessToken();
+                log.debug("Token Verification succeeded!");
+            } catch (VerificationException e) {
+                log.error("failed verification of token");
+                return false;
+            }
+
+            // If the TTL is greater-or-equal to the expire time on the refreshed token, have to abort or go into an infinite refresh loop
+            if (!isTokenTimeToLiveSufficient(token)) {
+                log.error("failed to refresh the token with a longer time-to-live than the minimum");
+                return false;
+            }
+
+            if (response.getNotBeforePolicy() > deployment.getNotBefore()) {
+                deployment.updateNotBefore(response.getNotBeforePolicy());
+            }
+
+            this.token = token;
+            if (response.getRefreshToken() != null) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Setup new refresh token to the security context");
+                }
+                this.refreshToken = response.getRefreshToken();
+            }
+            this.tokenString = tokenString;
+            if (tokenStore != null) {
+                tokenStore.refreshCallback(this);
+            }
         }
-        this.tokenString = tokenString;
-        if (tokenStore != null) {
-            tokenStore.refreshCallback(this);
-        }
+
         return true;
     }
 

@@ -16,12 +16,18 @@
  */
 package org.keycloak.admin.client.resource;
 
+import java.util.List;
+
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.ComponentTypeRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 /**
@@ -38,4 +44,15 @@ public interface ComponentResource {
 
     @DELETE
     void remove();
+
+    /**
+     * List of subcomponent types that are available to configure for a particular parent component.
+     *
+     * @param subtype fully qualified name of the java class of the provider, which is subtype of this component
+     * @return
+     */
+    @GET
+    @Path("sub-component-types")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<ComponentTypeRepresentation> getSubcomponentConfig(@QueryParam("type") String subtype);
 }

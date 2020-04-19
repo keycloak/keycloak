@@ -17,7 +17,15 @@
 package org.keycloak.testsuite.adapter.servlet;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.apache.http.util.EntityUtils;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -30,6 +38,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.OIDCAuthenticationError;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
@@ -64,6 +73,7 @@ import org.keycloak.testsuite.adapter.page.SecurePortal;
 import org.keycloak.testsuite.adapter.page.SecurePortalRewriteRedirectUri;
 import org.keycloak.testsuite.adapter.page.SecurePortalWithCustomSessionConfig;
 import org.keycloak.testsuite.adapter.page.TokenMinTTLPage;
+import org.keycloak.testsuite.adapter.page.TokenRefreshPage;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
@@ -96,10 +106,14 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -170,6 +184,8 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     private InputPortalNoAccessToken inputPortalNoAccessToken;
     @Page
     private TokenMinTTLPage tokenMinTTLPage;
+    @Page
+    private TokenRefreshPage tokenRefreshPage;
     @Page
     private OAuthGrant oAuthGrantPage;
     @Page
@@ -260,6 +276,11 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     @Deployment(name = TokenMinTTLPage.DEPLOYMENT_NAME)
     protected static WebArchive tokenMinTTLPage() {
         return servletDeployment(TokenMinTTLPage.DEPLOYMENT_NAME, AdapterActionsFilter.class, AbstractShowTokensServlet.class, TokenMinTTLServlet.class, ErrorServlet.class);
+    }
+
+    @Deployment(name = TokenRefreshPage.DEPLOYMENT_NAME)
+    protected static WebArchive tokenRefresh() {
+        return servletDeployment(TokenRefreshPage.DEPLOYMENT_NAME, AdapterActionsFilter.class, AbstractShowTokensServlet.class, TokenMinTTLServlet.class, ErrorServlet.class);
     }
 
     @Deployment(name = BasicAuth.DEPLOYMENT_NAME)
@@ -753,6 +774,58 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
         // Revert times
         setAdapterAndServerTimeOffset(0, tokenMinTTLPage.toString());
+    }
+
+    @Test
+    public void testTokenConcurrentRefresh() {
+        RealmResource demoRealm = adminClient.realm("demo");
+        RealmRepresentation demo = demoRealm.toRepresentation();
+
+        demo.setAccessTokenLifespan(2);
+        demo.setRevokeRefreshToken(true);
+        demo.setRefreshTokenMaxReuse(0);
+
+        demoRealm.update(demo);
+
+        // Login
+        tokenRefreshPage.navigateTo();
+        assertTrue(testRealmLoginPage.form().isUsernamePresent());
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlEquals(tokenRefreshPage);
+
+        // Revert times
+        setAdapterAndServerTimeOffset(5, tokenRefreshPage.toString());
+
+        BasicCookieStore cookieStore = new BasicCookieStore();
+        BasicClientCookie jsessionid = new BasicClientCookie("JSESSIONID", driver.manage().getCookieNamed("JSESSIONID").getValue());
+
+        jsessionid.setDomain("localhost");
+        jsessionid.setPath("/");
+        cookieStore.addCookie(jsessionid);
+
+        ExecutorService executor = Executors.newWorkStealingPool();
+        CompletableFuture future = CompletableFuture.completedFuture(null);
+
+        try {
+            for (int i = 0; i < 5; i++) {
+                future = CompletableFuture.allOf(future, CompletableFuture.runAsync(() -> {
+                    try (CloseableHttpClient client = HttpClientBuilder.create().setDefaultCookieStore(cookieStore)
+                            .build()) {
+                        HttpUriRequest request = new HttpGet(tokenRefreshPage.getInjectedUrl().toString());
+                        try (CloseableHttpResponse httpResponse = client.execute(request)) {
+                            assertTrue("Token not refreshed", EntityUtils.toString(httpResponse.getEntity()).contains("accessToken"));
+                        }
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }, executor));
+            }
+            
+            future.join();
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     // Tests forwarding of parameters like "prompt"

@@ -20,6 +20,7 @@ import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
+import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -76,6 +77,10 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     @Page
     @JavascriptBrowser
     private OAuthGrant oAuthGrantPage;
+
+    @Page
+    @JavascriptBrowser
+    private UpdatePassword updatePasswordPage;
 
     @Override
     protected RealmRepresentation updateRealm(RealmBuilder builder) {
@@ -659,5 +664,37 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .loginForm(testUser, this::assertOnTestAppUrl)
                 .init(defaultArguments(), this::assertSuccessfullyLoggedIn)
                 .executeAsyncScript(refreshWithDeprecatedHandles, assertOutputContains("Success handle"));
+    }
+
+    @Test
+    public void testAIAFromJavascriptAdapterSuccess() {
+        testExecutor.init(defaultArguments(), this::assertInitNotAuth)
+                .login(JSObjectBuilder.create()
+                        .add("action", "UPDATE_PASSWORD")
+                        .build(), this::assertOnLoginPage)
+                .loginForm(testUser);
+
+        updatePasswordPage.updatePasswords(USER_PASSWORD, USER_PASSWORD);
+
+        testExecutor.init(defaultArguments(), (driver1, output, events1) -> {
+            assertSuccessfullyLoggedIn(driver1, output, events1);
+            waitUntilElement(events1).text().contains("AIA status: success");
+        });
+    }
+
+    @Test
+    public void testAIAFromJavascriptAdapterCancelled() {
+        testExecutor.init(defaultArguments(), this::assertInitNotAuth)
+                .login(JSObjectBuilder.create()
+                        .add("action", "UPDATE_PASSWORD")
+                        .build(), this::assertOnLoginPage)
+                .loginForm(testUser);
+
+        updatePasswordPage.cancel();
+
+        testExecutor.init(defaultArguments(), (driver1, output, events1) -> {
+            assertSuccessfullyLoggedIn(driver1, output, events1);
+            waitUntilElement(events1).text().contains("AIA status: cancelled");
+        });
     }
 }

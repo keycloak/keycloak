@@ -323,7 +323,7 @@ public abstract class AbstractUserAdapter implements UserModel {
 
     @Override
     public List<String> getAttribute(String name) {
-        return null;
+        return Collections.emptyList();
     }
 
     @Override

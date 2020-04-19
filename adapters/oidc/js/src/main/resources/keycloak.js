@@ -476,6 +476,10 @@
                 url += '&kc_idp_hint=' + encodeURIComponent(options.idpHint);
             }
 
+            if (options && options.action && options.action != 'register') {
+                url += '&kc_action=' + encodeURIComponent(options.action);
+            }
+
             if (options && options.locale) {
                 url += '&ui_locales=' + encodeURIComponent(options.locale);
             }
@@ -739,6 +743,10 @@
             var prompt = oauth.prompt;
 
             var timeLocal = new Date().getTime();
+
+            if (oauth['kc_action_status']) {
+                kc.onActionUpdate && kc.onActionUpdate(oauth['kc_action_status']);
+            }
 
             if (error) {
                 if (prompt != 'none') {
@@ -1085,13 +1093,13 @@
             var supportedParams;
             switch (kc.flow) {
                 case 'standard':
-                    supportedParams = ['code', 'state', 'session_state'];
+                    supportedParams = ['code', 'state', 'session_state', 'kc_action_status'];
                     break;
                 case 'implicit':
-                    supportedParams = ['access_token', 'token_type', 'id_token', 'state', 'session_state', 'expires_in'];
+                    supportedParams = ['access_token', 'token_type', 'id_token', 'state', 'session_state', 'expires_in', 'kc_action_status'];
                     break;
                 case 'hybrid':
-                    supportedParams = ['access_token', 'id_token', 'code', 'state', 'session_state'];
+                    supportedParams = ['access_token', 'id_token', 'code', 'state', 'session_state', 'kc_action_status'];
                     break;
             }
 

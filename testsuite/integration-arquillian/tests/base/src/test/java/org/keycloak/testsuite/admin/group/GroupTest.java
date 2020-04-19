@@ -38,6 +38,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
@@ -72,6 +73,8 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import static org.keycloak.testsuite.Assert.assertNames;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
+
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -280,6 +283,7 @@ public class GroupTest extends AbstractGroupTest {
 
     @Test
     @UncaughtServerErrorExpected
+    @AuthServerContainerExclude(REMOTE)
     public void doNotAllowSameGroupNameAtTopLevelInDatabase() throws Exception {
         final String id = KeycloakModelUtils.generateId();
         testingClient.server().run(session -> {

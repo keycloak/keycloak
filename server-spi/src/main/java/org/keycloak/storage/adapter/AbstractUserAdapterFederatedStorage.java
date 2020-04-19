@@ -364,7 +364,8 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
 
     @Override
     public List<String> getAttribute(String name) {
-        return getFederatedStorage().getAttributes(realm, this.getId()).get(name);
+        List<String> result = getFederatedStorage().getAttributes(realm, this.getId()).get(name);
+        return (result == null) ? Collections.emptyList() : result;
     }
 
     @Override

@@ -424,6 +424,7 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
     // Configure a conditional authenticator with a condition which change while the flow evaluation
     // In such case, all the required authenticator inside the subflow should be evaluated even if the condition has changed
     @Test
+    @AuthServerContainerExclude(REMOTE)
     public void testConditionalAuthenticatorWithConditionalSubFlowWithChangingConditionWhileFlowEvaluation() {
         try {
             configureBrowserFlowWithConditionalSubFlowWithChangingConditionWhileFlowEvaluation();
