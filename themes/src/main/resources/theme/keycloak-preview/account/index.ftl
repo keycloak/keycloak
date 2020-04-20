@@ -29,7 +29,7 @@
             var features = {
                 isRegistrationEmailAsUsername : ${realm.registrationEmailAsUsername?c},
                 isEditUserNameAllowed : ${realm.editUsernameAllowed?c},
-                isInternationalizationEnabled : false,
+                isInternationalizationEnabled : ${realm.isInternationalizationEnabled()?c},
                 isLinkedAccountsEnabled : ${realm.identityFederationEnabled?c},
                 isEventsEnabled : ${isEventsEnabled?c},
                 isMyResourcesEnabled : ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c},

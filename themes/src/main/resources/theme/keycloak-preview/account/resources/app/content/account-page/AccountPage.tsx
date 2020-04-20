@@ -23,8 +23,10 @@ import { Features } from '../../widgets/features';
 import { Msg } from '../../widgets/Msg';
 import { ContentPage } from '../ContentPage';
 import { ContentAlert } from '../ContentAlert';
+import { LocaleSelector } from '../../widgets/LocaleSelectors';
 
 declare const features: Features;
+declare const locale: string;
 
 interface AccountPageProps {
 }
@@ -34,6 +36,7 @@ interface FormFields {
     readonly firstName?: string;
     readonly lastName?: string;
     readonly email?: string;
+    attributes?: { locale?: [string] };
 }
 
 interface AccountPageState {
@@ -58,7 +61,8 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
             username: '',
             firstName: '',
             lastName: '',
-            email: ''
+            email: '',
+            attributes: {}
         }
     };
 
@@ -73,7 +77,12 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
         AccountServiceClient.Instance.doGet("/")
             .then((response: AxiosResponse<FormFields>) => {
                 this.setState(this.DEFAULT_STATE);
-                this.setState({...{ formFields: response.data }});
+                const formFields = response.data;
+                if (!formFields.attributes || !formFields.attributes.locale) {
+                    formFields.attributes = { locale: [locale] };
+                }
+
+                this.setState({...{ formFields: formFields }});
             });
     }
 
@@ -100,6 +109,9 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
             AccountServiceClient.Instance.doPost("/", { data: reqData })
                 .then(() => { // to use response, say ((response: AxiosResponse<FormFields>) => {
                     ContentAlert.success('accountUpdatedMessage');
+                    if (locale !== this.state.formFields.attributes!.locale![0]) {
+                        window.location.reload();
+                    }
                 });
         } else {
             const formData = new FormData(form);
@@ -187,6 +199,19 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                         >
                         </TextInput>
                     </FormGroup>
+                    {features.isInternationalizationEnabled && <FormGroup 
+                        label={Msg.localize('selectLocale')}
+                        isRequired
+                        fieldId="locale"
+                    >
+                        <LocaleSelector id="locale-selector"
+                            value={fields.attributes!.locale || ''}
+                            onChange={value => this.setState({
+                                errors: this.state.errors,
+                                formFields: { ...this.state.formFields, attributes: { ...this.state.formFields.attributes, locale: [value] }}
+                            })}
+                        />
+                    </FormGroup>}
                     <ActionGroup>
                         <Button
                             type="submit"

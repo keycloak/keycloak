@@ -41,11 +41,6 @@ public class WelcomeScreenHeader extends AbstractHeader {
     @FindBy(id = "landing-mobile-local-toggle")
     private WebElement localeBtnMobile;
 
-    @FindBy(id = "landing-locale-dropdown-list")
-    private WebElement localeDropdown;
-    @FindBy(id = "landingMobileDropdown") // the mobile locale menu is integrated with the generic mobile menu
-    private WebElement localeDropdownMobile;
-
     @FindBy(id = "landingReferrerLink")
     private WebElement referrerLink;
     @FindBy(id = "landingMobileReferrerLink")
@@ -65,16 +60,6 @@ public class WelcomeScreenHeader extends AbstractHeader {
 
     public void assertLoginBtnVisible(boolean expected) {
         assertToolsBtnVisible(expected, isMobileLayout() ? loginBtnMobile : loginBtn);
-    }
-
-    @Override
-    protected WebElement getLocaleBtn() {
-        return isMobileLayout() ? localeBtnMobile : localeBtn;
-    }
-
-    @Override
-    protected WebElement getLocaleDropdown() {
-        return isMobileLayout() ? localeDropdownMobile : localeDropdown;
     }
 
     @Override

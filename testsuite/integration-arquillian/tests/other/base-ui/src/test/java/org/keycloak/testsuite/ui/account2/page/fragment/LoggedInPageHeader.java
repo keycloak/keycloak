@@ -55,16 +55,6 @@ public class LoggedInPageHeader extends AbstractHeader {
     }
 
     @Override
-    protected WebElement getLocaleBtn() {
-        return isMobileLayout() ? localeBtnMobile : localeBtn;
-    }
-
-    @Override
-    protected WebElement getLocaleDropdown() {
-        return isMobileLayout() ? localeDropdownMobile : localeDropdown;
-    }
-
-    @Override
     protected WebElement getLogoutBtn() {
         return isMobileLayout() ? logoutBtnMobile : logoutBtn;
     }
