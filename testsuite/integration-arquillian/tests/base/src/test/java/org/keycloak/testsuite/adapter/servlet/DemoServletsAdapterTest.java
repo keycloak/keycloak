@@ -794,7 +794,6 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlEquals(tokenRefreshPage);
 
-        // Revert times
         setAdapterAndServerTimeOffset(5, tokenRefreshPage.toString());
 
         BasicCookieStore cookieStore = new BasicCookieStore();
@@ -826,6 +825,9 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         } finally {
             executor.shutdownNow();
         }
+
+        // Revert times
+        setAdapterAndServerTimeOffset(0, tokenRefreshPage.toString());
     }
 
     // Tests forwarding of parameters like "prompt"
