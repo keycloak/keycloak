@@ -88,7 +88,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
         attrMapper3.setIdentityProviderMapper(AttributeToRoleMapper.PROVIDER_ID);
         attrMapper3.setConfig(ImmutableMap.<String,String>builder()
                 .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
-                .put(UserAttributeMapper.ATTRIBUTE_FRIENDLY_NAME, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_FRIENDLY_NAME)
+                .put(UserAttributeMapper.ATTRIBUTE_FRIENDLY_NAME, KcSamlBrokerConfiguration.ATTRIBUTE_TO_MAP_FRIENDLY_NAME)
                 .put(ATTRIBUTE_VALUE, ROLE_FRIENDLY_MANAGER)
                 .put("role", ROLE_FRIENDLY_MANAGER)
                 .build());
@@ -216,7 +216,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
 
         UserRepresentation urp = userResourceProv.toRepresentation();
         urp.setAttributes(new HashMap<>());
-        urp.getAttributes().put(AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_FRIENDLY_NAME, Collections.singletonList(ROLE_FRIENDLY_MANAGER));
+        urp.getAttributes().put(KcSamlBrokerConfiguration.ATTRIBUTE_TO_MAP_FRIENDLY_NAME, Collections.singletonList(ROLE_FRIENDLY_MANAGER));
         userResourceProv.update(urp);
         userResourceProv.roles().realmLevel().add(Collections.singletonList(userRole));
         userResourceProv.roles().realmLevel().add(Collections.singletonList(userRoleDotGuide));

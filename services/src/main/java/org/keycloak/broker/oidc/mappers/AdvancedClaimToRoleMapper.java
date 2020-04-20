@@ -38,6 +38,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.keycloak.utils.RegexUtils.valueMatchesRegex;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke, Benjamin Weimer</a>
  * @version $Revision: 1 $
@@ -108,9 +110,9 @@ public class AdvancedClaimToRoleMapper extends AbstractClaimMapper {
     @Override
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
+        RoleModel role = getRoleModel(realm, roleName);
+
         if (hasAllClaimValues(mapperModel, context)) {
-            RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
-            if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
             user.grantRole(role);
         }
     }
@@ -118,9 +120,9 @@ public class AdvancedClaimToRoleMapper extends AbstractClaimMapper {
     @Override
     public void updateBrokeredUserLegacy(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
+        RoleModel role = getRoleModel(realm, roleName);
+
         if (!hasAllClaimValues(mapperModel, context)) {
-            RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
-            if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
             user.deleteRoleMapping(role);
         }
 
@@ -129,17 +131,21 @@ public class AdvancedClaimToRoleMapper extends AbstractClaimMapper {
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
+        RoleModel role = getRoleModel(realm, roleName);
+        if (hasAllClaimValues(mapperModel, context)) {
+            user.grantRole(role);
+        } else {
+            user.deleteRoleMapping(role);
+        }
+    }
+
+    private RoleModel getRoleModel(RealmModel realm, String roleName) {
         RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
         if (role == null) {
             throw new IdentityBrokerException("Unable to find role: " + roleName);
         }
-        if (!hasAllClaimValues(mapperModel, context)) {
-            user.deleteRoleMapping(role);
-        } else {
-            user.grantRole(role);
-        }
+        return role;
     }
-
 
     @Override
     public String getHelpText() {
@@ -148,7 +154,7 @@ public class AdvancedClaimToRoleMapper extends AbstractClaimMapper {
 
     protected boolean hasAllClaimValues(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         Map<String, String> claims = mapperModel.getConfigMap(CLAIM_PROPERTY_NAME);
-        Boolean areClaimValuesRegex = Boolean.valueOf(mapperModel.getConfig().get(ARE_CLAIM_VALUES_REGEX_PROPERTY_NAME));
+        boolean areClaimValuesRegex = Boolean.parseBoolean(mapperModel.getConfig().get(ARE_CLAIM_VALUES_REGEX_PROPERTY_NAME));
 
         for (Map.Entry<String, String> claim : claims.entrySet()) {
             Object value = getClaimValue(context, claim.getKey());
@@ -160,24 +166,5 @@ public class AdvancedClaimToRoleMapper extends AbstractClaimMapper {
         }
 
         return true;
-    }
-
-    public boolean valueMatchesRegex(String regex, Object value) {
-        if (value instanceof List) {
-            List list = (List) value;
-            for (Object val : list) {
-                if (valueMatchesRegex(regex, val)) {
-                    return true;
-                }
-            }
-        } else {
-            if (value != null) {
-                String stringValue = value.toString();
-                if (stringValue != null && stringValue.matches(regex)) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 }

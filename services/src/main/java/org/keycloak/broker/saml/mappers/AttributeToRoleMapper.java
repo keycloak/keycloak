@@ -164,7 +164,7 @@ public class AttributeToRoleMapper extends AbstractIdentityProviderMapper {
 
     @Override
     public String getHelpText() {
-        return "If a claim exists, grant the user the specified realm or application role.";
+        return "If an attribute exists, grant the user the specified realm or application role.";
     }
 
 }

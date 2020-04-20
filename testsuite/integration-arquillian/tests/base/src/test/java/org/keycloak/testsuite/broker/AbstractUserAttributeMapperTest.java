@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.testsuite.broker.KcSamlBrokerConfiguration.ATTRIBUTE_TO_MAP_FRIENDLY_NAME;
 
 import java.util.List;
 import java.util.Map;
@@ -31,7 +32,6 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractIdentityPr
 
     protected static final String MAPPED_ATTRIBUTE_NAME = "mapped-user-attribute";
     protected static final String MAPPED_ATTRIBUTE_FRIENDLY_NAME = "mapped-user-attribute-friendly";
-    protected static final String ATTRIBUTE_TO_MAP_FRIENDLY_NAME = "user-attribute-friendly";
 
     private static final Set<String> PROTECTED_NAMES = ImmutableSet.<String>builder().add("email").add("lastName").add("firstName").build();
     private static final Map<String, String> ATTRIBUTE_NAME_TRANSLATION = ImmutableMap.<String, String>builder()
