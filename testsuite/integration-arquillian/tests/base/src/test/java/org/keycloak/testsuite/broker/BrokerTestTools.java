@@ -114,4 +114,11 @@ public class BrokerTestTools {
                 "/auth/realms/" + childRealm + "/broker/" + idpRealm + "/endpoint");
         adminClient.realm(idpRealm).clients().create(client);
     }
+
+
+    public static void waitForPagePrefix(WebDriver driver, String providerUrlPrefix) {
+        WebDriverWait wait = new WebDriverWait(driver, 5);
+        ExpectedCondition<Boolean> condition = (WebDriver input) -> input.getCurrentUrl().startsWith(providerUrlPrefix);
+        wait.until(condition);
+    }
 }

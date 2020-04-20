@@ -54,6 +54,9 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 
+import static org.keycloak.protocol.saml.SamlSingleSignOnUrlUtils.createSingleSignOnServiceUrl;
+
+
 /**
  * @author Pedro Igor
  */
@@ -76,7 +79,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             UriInfo uriInfo = request.getUriInfo();
             RealmModel realm = request.getRealm();
             String issuerURL = getEntityId(uriInfo, realm);
-            String destinationUrl = getConfig().getSingleSignOnServiceUrl();
+            String destinationUrl = createSingleSignOnServiceUrl(getConfig(), request.getHttpRequest().getUri().getQueryParameters());
             String nameIDPolicyFormat = getConfig().getNameIDPolicyFormat();
 
             if (nameIDPolicyFormat == null) {

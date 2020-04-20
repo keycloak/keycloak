@@ -52,6 +52,7 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final String WANT_ASSERTIONS_SIGNED = "wantAssertionsSigned";
     public static final String WANT_AUTHN_REQUESTS_SIGNED = "wantAuthnRequestsSigned";
     public static final String XML_SIG_KEY_INFO_KEY_NAME_TRANSFORMER = "xmlSigKeyInfoKeyNameTransformer";
+    public static final String PASS_LOGIN_HINT = "loginHint";
 
     public SAMLIdentityProviderConfig() {
     }
@@ -221,6 +222,14 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     public void setBackchannelSupported(boolean backchannel) {
         getConfig().put(BACKCHANNEL_SUPPORTED, String.valueOf(backchannel));
+    }
+
+    public boolean isLoginHint() {
+        return Boolean.valueOf(getConfig().get(PASS_LOGIN_HINT));
+    }
+
+    public void setLoginHint(boolean loginHint) {
+        getConfig().put(PASS_LOGIN_HINT, String.valueOf(loginHint));
     }
 
     /**

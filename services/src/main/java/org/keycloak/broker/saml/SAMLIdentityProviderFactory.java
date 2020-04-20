@@ -124,6 +124,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                     samlIdentityProviderConfig.setPostBindingResponse(postBindingResponse);
                     samlIdentityProviderConfig.setPostBindingAuthnRequest(postBindingResponse);
                     samlIdentityProviderConfig.setPostBindingLogout(postBindingLogout);
+                    samlIdentityProviderConfig.setLoginHint(false);
 
                     List<KeyDescriptorType> keyDescriptor = idpDescriptor.getKeyDescriptor();
                     String defaultCertificate = null;

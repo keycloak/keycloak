@@ -34,6 +34,18 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.*;
 public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
     public static final KcSamlBrokerConfiguration INSTANCE = new KcSamlBrokerConfiguration();
+    public static final KcSamlBrokerConfiguration INSTANCE_PASS_LOGIN_HINT = new KcSamlBrokerConfiguration(true);
+
+    private final boolean passLoginHint;
+
+    KcSamlBrokerConfiguration(boolean passLoginHint) {
+        this.passLoginHint = passLoginHint;
+    }
+
+    KcSamlBrokerConfiguration() {
+        this(false);
+    }
+
 
     @Override
     public RealmRepresentation createProviderRealm() {
@@ -205,6 +217,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         config.put(VALIDATE_SIGNATURE, "false");
         config.put(WANT_AUTHN_REQUESTS_SIGNED, "false");
         config.put(BACKCHANNEL_SUPPORTED, "false");
+        config.put(PASS_LOGIN_HINT, Boolean.toString(this.passLoginHint));
 
         return idp;
     }
