@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.ui.account2;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -121,31 +120,6 @@ public class ReferrerTest extends AbstractAccountTest {
         welcomeScreen.clickPersonalInfoLink();
         loginToAccount();
         testReferrer(personalInfoPage.header(), false);
-    }
-
-    /**
-     * Test that i18n and referrer work well together
-     */
-    @Test
-    @Ignore // TODO remove this once KEYCLOAK-12936 is resolved
-    public void i18nTest() {
-        RealmRepresentation realm = testRealmResource().toRepresentation();
-        configureInternationalizationForRealm(realm);
-        testRealmResource().update(realm);
-        testContext.setTestRealmReps(Collections.emptyList()); // a small hack; we want realm re-import after this test
-
-        welcomeScreen.navigateTo(FAKE_CLIENT_ID, getFakeClientUrl());
-        welcomeScreen.header().assertReferrerLinkVisible(true);
-        welcomeScreen.header().selectLocale(CUSTOM_LOCALE);
-        welcomeScreen.header().assertReferrerLinkVisible(true);
-
-        welcomeScreen.clickPersonalInfoLink();
-        assertEquals(CUSTOM_LOCALE_NAME, loginPage.localeDropdown().getSelected());
-        loginToAccount();
-        personalInfoPage.header().assertReferrerLinkVisible(true);
-        personalInfoPage.header().selectLocale(DEFAULT_LOCALE);
-        assertEquals(DEFAULT_LOCALE_NAME, personalInfoPage.header().getCurrentLocaleName());
-        testReferrer(personalInfoPage.header(), true);
     }
 
     private void testReferrer(AbstractHeader header, boolean expectReferrerVisible) {

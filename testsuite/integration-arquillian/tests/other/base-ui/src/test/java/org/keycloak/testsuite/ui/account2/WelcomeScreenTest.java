@@ -43,7 +43,6 @@ public class WelcomeScreenTest extends AbstractAccountTest {
     public void loginLogoutTest() {
         accountWelcomeScreen.assertCurrent();
         accountWelcomeScreen.header().assertLogoutBtnVisible(false);
-        accountWelcomeScreen.header().assertLocaleVisible(false);
 
         // login
         accountWelcomeScreen.header().clickLoginBtn();

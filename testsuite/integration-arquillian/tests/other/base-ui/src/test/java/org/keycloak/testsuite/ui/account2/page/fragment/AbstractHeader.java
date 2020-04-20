@@ -60,35 +60,7 @@ public abstract class AbstractHeader extends AbstractFragmentWithMobileLayout {
         return getToolsBtnText(getReferrerLink());
     }
 
-    public void selectLocale(String locale) {
-        if (isMobileLayout()) {
-            clickMobileKebab();
-        }
-        getLocaleBtn().click();
-        clickLink(getLocaleDropdown().findElement(By.id(getLocaleElementIdPrefix() + locale)));
-    }
-
-    public String getCurrentLocaleName() {
-        if (!isMobileLayout()) {
-            return getTextFromElement(getLocaleBtn());
-        }
-        else {
-            clickMobileKebab();
-            String ret = getTextFromElement(getLocaleBtn());
-            clickMobileKebab(); // hide the dropdown again
-            return ret;
-        }
-    }
-
-    public void assertLocaleVisible(boolean expected) {
-        assertToolsBtnVisible(expected, getLocaleBtn());
-    }
-
     public abstract void clickMobileKebab();
-
-    protected abstract WebElement getLocaleBtn();
-
-    protected abstract WebElement getLocaleDropdown();
 
     protected abstract WebElement getLogoutBtn ();
 

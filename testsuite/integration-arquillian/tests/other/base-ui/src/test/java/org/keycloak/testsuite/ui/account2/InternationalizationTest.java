@@ -19,12 +19,12 @@ package org.keycloak.testsuite.ui.account2;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.ui.account2.page.PersonalInfoPage;
 import org.keycloak.testsuite.ui.account2.page.WelcomeScreen;
+import org.keycloak.testsuite.util.WaitUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -36,7 +36,6 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-@Ignore // TODO remove this once KEYCLOAK-12936 is resolved
 public class InternationalizationTest extends AbstractAccountTest {
     @Page
     private WelcomeScreen welcomeScreen;
@@ -53,20 +52,6 @@ public class InternationalizationTest extends AbstractAccountTest {
     @Before
     public void beforeI18nTest() {
         assertTestUserLocale(null);
-        assertEquals(DEFAULT_LOCALE_NAME, welcomeScreen.header().getCurrentLocaleName());
-    }
-
-    @Test
-    public void welcomeScreenTest() {
-        welcomeScreen.header().selectLocale(CUSTOM_LOCALE);
-        assertCustomLocaleWelcomeScreen();
-
-        // check if selected locale is preserved
-        welcomeScreen.clickPersonalInfoLink();
-        assertCustomLocaleLoginPage();
-        loginToAccount();
-        assertTestUserLocale(CUSTOM_LOCALE);
-        assertCustomLocalePersonalInfo();
     }
 
     @Test
@@ -74,8 +59,10 @@ public class InternationalizationTest extends AbstractAccountTest {
         personalInfoPage.navigateTo();
         loginToAccount();
         assertTestUserLocale(null);
-        assertEquals(DEFAULT_LOCALE_NAME, personalInfoPage.header().getCurrentLocaleName());
-        personalInfoPage.header().selectLocale(CUSTOM_LOCALE);
+        personalInfoPage.selectLocale(CUSTOM_LOCALE);
+        personalInfoPage.clickSave(false);
+        WaitUtils.waitForPageToLoad();
+
         assertTestUserLocale(CUSTOM_LOCALE);
         assertCustomLocalePersonalInfo();
 
@@ -95,13 +82,11 @@ public class InternationalizationTest extends AbstractAccountTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void userAttributeTest() {
         testUser.setAttributes(singletonMap(UserModel.LOCALE, singletonList(CUSTOM_LOCALE)));
         testUserResource().update(testUser);
 
         welcomeScreen.navigateTo();
-        assertEquals(DEFAULT_LOCALE_NAME, welcomeScreen.header().getCurrentLocaleName());
         welcomeScreen.clickPersonalInfoLink();
         assertEquals(DEFAULT_LOCALE_NAME, loginPage.localeDropdown().getSelected());
         loginToAccount();
@@ -109,14 +94,10 @@ public class InternationalizationTest extends AbstractAccountTest {
     }
 
     private void assertCustomLocaleWelcomeScreen() {
-        welcomeScreen.header().assertLocaleVisible(true);
-        assertEquals(CUSTOM_LOCALE_NAME, welcomeScreen.header().getCurrentLocaleName());
         assertEquals("Vítejte v Keycloaku", welcomeScreen.getWelcomeMessage());
     }
 
     private void assertCustomLocalePersonalInfo() {
-        personalInfoPage.header().assertLocaleVisible(true);
-        assertEquals(CUSTOM_LOCALE_NAME, personalInfoPage.header().getCurrentLocaleName());
         assertEquals("Osobní údaje", personalInfoPage.getPageTitle());
     }
 
@@ -126,7 +107,7 @@ public class InternationalizationTest extends AbstractAccountTest {
 
     private void assertTestUserLocale(String expectedLocale) {
         String actualLocale = null;
-        List <String> userLocales = null;
+        List <String> userLocales;
         Map<String, List<String>> userAttributes = testUserResource().toRepresentation().getAttributes();
 
         if (userAttributes != null) {

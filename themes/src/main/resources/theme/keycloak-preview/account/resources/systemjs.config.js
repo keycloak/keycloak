@@ -105,7 +105,7 @@
               './Expandable': '@empty', //'./Expandable/index.js',
               './Form': './Form/index.js',
               './FormGroup': './FormGroup/index.js',
-              './FormSelect': '@empty', //'./FormSelect/index.js',
+              './FormSelect': './FormSelect/index.js',
               './InputGroup': '@empty', //'./InputGroup/index.js',
               './Label': '@empty', //'./Label/index.js',
               './List': '@empty', //'./List/index.js',

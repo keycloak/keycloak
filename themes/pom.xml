@@ -216,6 +216,10 @@
                     <include>**/node_modules/@patternfly/react-core/dist/umd/components/Form/FormHelperText.js</include>
                     <include>**/node_modules/@patternfly/react-core/dist/umd/components/Form/Form.js</include>
                     <include>**/node_modules/@patternfly/react-core/dist/umd/components/Form/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/FormSelect/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/FormSelect/FormSelect.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/FormSelect/FormSelectOption.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/FormSelect/FormSelectOptionGroup.js</include>
                     <include>**/node_modules/@patternfly/react-core/dist/umd/components/Modal/ModalBoxBody.js</include>
                     <include>**/node_modules/@patternfly/react-core/dist/umd/components/Modal/ModalBoxCloseButton.js</include>
                     <include>**/node_modules/@patternfly/react-core/dist/umd/components/Modal/ModalBoxFooter.js</include>
