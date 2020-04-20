@@ -35,6 +35,7 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.*;
 public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
     public static final KcSamlBrokerConfiguration INSTANCE = new KcSamlBrokerConfiguration();
+    public static final String ATTRIBUTE_TO_MAP_FRIENDLY_NAME = "user-attribute-friendly";
 
     @Override
     public RealmRepresentation createProviderRealm() {
@@ -131,18 +132,29 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         userAttrMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, AttributeStatementHelper.BASIC);
         userAttrMapperConfig.put(AttributeStatementHelper.FRIENDLY_NAME, "");
 
+        ProtocolMapperRepresentation userAttrMapper2 = new ProtocolMapperRepresentation();
+        userAttrMapper2.setName("attribute - name 2");
+        userAttrMapper2.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        userAttrMapper2.setProtocolMapper(UserAttributeStatementMapper.PROVIDER_ID);
+
+        Map<String, String> userAttrMapper2Config = userAttrMapper2.getConfig();
+        userAttrMapper2Config.put(ProtocolMapperUtils.USER_ATTRIBUTE, KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2);
+        userAttrMapper2Config.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2);
+        userAttrMapper2Config.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, AttributeStatementHelper.BASIC);
+        userAttrMapper2Config.put(AttributeStatementHelper.FRIENDLY_NAME, "");
+
         ProtocolMapperRepresentation userFriendlyAttrMapper = new ProtocolMapperRepresentation();
         userFriendlyAttrMapper.setName("attribute - friendly name");
         userFriendlyAttrMapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
         userFriendlyAttrMapper.setProtocolMapper(UserAttributeStatementMapper.PROVIDER_ID);
 
         Map<String, String> userFriendlyAttrMapperConfig = userFriendlyAttrMapper.getConfig();
-        userFriendlyAttrMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_FRIENDLY_NAME);
+        userFriendlyAttrMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, ATTRIBUTE_TO_MAP_FRIENDLY_NAME);
         userFriendlyAttrMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, "urn:oid:1.2.3.4.5.6.7");
         userFriendlyAttrMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, AttributeStatementHelper.BASIC);
-        userFriendlyAttrMapperConfig.put(AttributeStatementHelper.FRIENDLY_NAME, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_FRIENDLY_NAME);
+        userFriendlyAttrMapperConfig.put(AttributeStatementHelper.FRIENDLY_NAME, ATTRIBUTE_TO_MAP_FRIENDLY_NAME);
 
-        client.setProtocolMappers(Arrays.asList(emailMapper, dottedAttrMapper, nestedAttrMapper, userAttrMapper, userFriendlyAttrMapper));
+        client.setProtocolMappers(Arrays.asList(emailMapper, dottedAttrMapper, nestedAttrMapper, userAttrMapper, userAttrMapper2, userFriendlyAttrMapper));
 
         return client;
     }

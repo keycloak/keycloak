@@ -8,6 +8,8 @@ import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
+import static org.keycloak.testsuite.broker.KcSamlBrokerConfiguration.ATTRIBUTE_TO_MAP_FRIENDLY_NAME;
+
 public class SamlUserAttributeMapperTest extends AbstractUserAttributeMapperTest {
 
     @Override
