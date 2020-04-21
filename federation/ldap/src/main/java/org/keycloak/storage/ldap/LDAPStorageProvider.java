@@ -237,27 +237,13 @@ public class LDAPStorageProvider implements UserStorageProvider,
                  if (localUser == null) {
                      UserModel imported = importUserFromLDAP(session, realm, ldapUser);
                      searchResults.add(imported);
-                 } else if (shouldUserAttributeBeAlwaysReadFromLdap(realm, attrName)) {
+                 } else {
                      searchResults.add(proxy(realm, localUser, ldapUser));
                  }
              }
 
              return searchResults;
          }
-    }
-
-    private boolean shouldUserAttributeBeAlwaysReadFromLdap(RealmModel realm, String userAttributeName) {
-        List<ComponentModel> mapperModels = realm.getComponents(model.getId(), LDAPStorageMapper.class.getName());
-        return mapperModels.stream().anyMatch(mapperModel -> shouldUserAttributeBeAlwaysReadFromLdap(mapperModel, userAttributeName));
-    }
-
-    private boolean shouldUserAttributeBeAlwaysReadFromLdap(ComponentModel mapperModel, String userAttributeName) {
-        LDAPStorageMapper mapper = mapperManager.getMapper(mapperModel);
-        if (UserAttributeLDAPStorageMapper.class.isAssignableFrom(mapper.getClass())) {
-            UserAttributeLDAPStorageMapper userAttributeMapper = (UserAttributeLDAPStorageMapper) mapper;
-            return userAttributeName.equals(userAttributeMapper.getUserModelAttribute()) && userAttributeMapper.isAlwaysReadValueFromLdap();
-        }
-        return false;
     }
 
     public boolean synchronizeRegistrations() {
