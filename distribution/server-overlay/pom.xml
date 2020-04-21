@@ -209,13 +209,6 @@
                 <profileExcludes>%regex[(docs/contrib.*)|(docs/examples.*)|(docs/schema.*)]</profileExcludes>
                 <readmeInclude></readmeInclude>
             </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.wildfly</groupId>
-                    <artifactId>wildfly-dist</artifactId>
-                    <type>zip</type>
-                </dependency>
-            </dependencies>
         </profile>
     </profiles>
 
