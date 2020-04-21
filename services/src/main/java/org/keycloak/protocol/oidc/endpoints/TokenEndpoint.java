@@ -63,6 +63,8 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
+import org.keycloak.protocol.oidc.utils.OAuth2Code;
+import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
@@ -100,7 +102,6 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.security.MessageDigest;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -415,7 +416,7 @@ public class TokenEndpoint {
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken();
         }
-        
+
         AccessTokenResponse res = null;
         try {
             res = responseBuilder.build();
@@ -426,7 +427,7 @@ public class TokenEndpoint {
                 throw re;
             }
         }
-        
+
         event.success();
 
         return cors.builder(Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE)).build();
@@ -437,7 +438,7 @@ public class TokenEndpoint {
         if (codeVerifier == null) {
             logger.warnf("PKCE code verifier not specified, authUserId = %s, authUsername = %s", authUserId, authUsername);
             event.error(Errors.CODE_VERIFIER_MISSING);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verifier not specified", Response.Status.BAD_REQUEST); 
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "PKCE code verifier not specified", Response.Status.BAD_REQUEST);
         }
         verifyCodeVerifier(codeVerifier, codeChallenge, codeChallengeMethod, authUserId, authUsername);
     }
@@ -1005,6 +1006,14 @@ public class TokenEndpoint {
 
         UserModel user = this.session.users().getUserByFederatedIdentity(federatedIdentityModel, realm);
 
+        if (user == null && context.getEmail() != null && !realm.isDuplicateEmailsAllowed()
+                && context.getIdpConfig().isTrustEmail()) {
+            user = session.users().getUserByEmail(context.getEmail(), realm);
+            if (user != null) {
+                createFederatedIdentityLink(context, mappers, user);
+            }
+        }
+
         if (user == null) {
 
             logger.debugf("Federated user not found for provider '%s' and broker username '%s'.", providerId, context.getUsername());
@@ -1042,24 +1051,7 @@ public class TokenEndpoint {
             user.setFirstName(context.getFirstName());
             user.setLastName(context.getLastName());
 
-
-            federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
-                    context.getUsername(), context.getToken());
-            session.users().addFederatedIdentity(realm, user, federatedIdentityModel);
-
-            context.getIdp().importNewUser(session, realm, user, context);
-            if (mappers != null) {
-                KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-                for (IdentityProviderMapperModel mapper : mappers) {
-                    IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
-                    target.importNewUser(session, realm, user, mapper, context);
-                }
-            }
-
-            if (context.getIdpConfig().isTrustEmail() && !Validation.isBlank(user.getEmail())) {
-                logger.debugf("Email verified automatically after registration of user '%s' through Identity provider '%s' ", user.getUsername(), context.getIdpConfig().getAlias());
-                user.setEmailVerified(true);
-            }
+            createFederatedIdentityLink(context, mappers, user);
         } else {
             if (!user.isEnabled()) {
                 event.error(Errors.USER_DISABLED);
@@ -1082,6 +1074,26 @@ public class TokenEndpoint {
             }
         }
         return user;
+    }
+
+    private void createFederatedIdentityLink(BrokeredIdentityContext context, Set<IdentityProviderMapperModel> mappers, UserModel user) {
+        FederatedIdentityModel federatedIdentityModel;
+        federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
+                context.getUsername(), context.getToken());
+        session.users().addFederatedIdentity(realm, user, federatedIdentityModel);
+        context.getIdp().importNewUser(session, realm, user, context);
+        if (mappers != null) {
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            for (IdentityProviderMapperModel mapper : mappers) {
+                IdentityProviderMapper target = (IdentityProviderMapper) sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+                target.importNewUser(session, realm, user, mapper, context);
+            }
+        }
+
+        if (context.getIdpConfig().isTrustEmail() && !Validation.isBlank(user.getEmail())) {
+            logger.debugf("Email verified automatically after registration of user '%s' through Identity provider '%s' ", user.getUsername(), context.getIdpConfig().getAlias());
+            user.setEmailVerified(true);
+        }
     }
 
     public Response permissionGrant() {
@@ -1227,5 +1239,5 @@ public class TokenEndpoint {
         String codeVerifierEncoded = Base64Url.encode(digestBytes);
         return codeVerifierEncoded;
     }
- 
+
 }
