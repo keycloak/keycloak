@@ -118,13 +118,6 @@
                 <assemblyFile>assembly.xml</assemblyFile>
                 <profileExcludes>%regex[(docs/contrib.*)|(docs/examples.*)|(docs/schema.*)]</profileExcludes>
             </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.wildfly</groupId>
-                    <artifactId>wildfly-dist</artifactId>
-                    <type>zip</type>
-                </dependency>
-            </dependencies>
             <build>
                 <finalName>${product.name}-${product.filename.version}-eap7-adapter</finalName>
             </build>
