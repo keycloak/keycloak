@@ -237,13 +237,43 @@ public class PermissionResource {
         if (ticket.getId() == null) {
             throw new IllegalArgumentException("Permission ticket must have an id");
         }
-        Callable callable = new Callable() {
+        Callable<Void> callable = new Callable<Void>() {
             @Override
-            public Object call() throws Exception {
-                http.<List>put(serverConfiguration.getPermissionEndpoint()+"/ticket")
+            public Void call() throws Exception {
+                http.<Void>put(serverConfiguration.getPermissionEndpoint()+"/ticket")
                         .json(JsonSerialization.writeValueAsBytes(ticket))
                         .authorizationBearer(pat.call())
-                        .response().json(List.class).execute();
+                        .response()
+                        .execute();
+                return null;
+            }
+        };
+        try {
+            callable.call();
+        } catch (Exception cause) {
+            Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Error updating permission ticket", cause);
+        }
+    }
+
+    /**
+     * Deletes a permission ticket.
+     *
+     * @param ticket the permission ticket
+     */
+    public void delete(final PermissionTicketRepresentation ticket) {
+        if (ticket == null) {
+            throw new IllegalArgumentException("Permission ticket must not be null or empty");
+        }
+        if (ticket.getId() == null) {
+            throw new IllegalArgumentException("Permission ticket must have an id");
+        }
+        Callable<Void> callable = new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                http.<Void>delete(serverConfiguration.getPermissionEndpoint() + "/ticket/" + ticket.getId())
+                        .authorizationBearer(pat.call())
+                        .response()
+                        .execute();
                 return null;
             }
         };
