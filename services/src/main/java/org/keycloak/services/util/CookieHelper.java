@@ -95,6 +95,16 @@ public class CookieHelper {
 
 
     public static Set<String> getCookieValue(String name) {
+        Set<String> ret = getInternalCookieValue(name);
+        if (ret.size() == 0) {
+            String legacy = name + LEGACY_COOKIE;
+            logger.debugv("Couldn't find any cookies with name '{0}', trying '{1}'", name, legacy);
+            ret = getInternalCookieValue(legacy);
+        }
+        return ret;
+    }
+
+    private static Set<String> getInternalCookieValue(String name) {
         HttpHeaders headers = Resteasy.getContextData(HttpHeaders.class);
 
         Set<String> cookiesVal = new HashSet<>();
@@ -134,7 +144,7 @@ public class CookieHelper {
         }
         else {
             String legacy = name + LEGACY_COOKIE;
-            logger.debugv("Couldn't find cookie {0}, trying {0}", name, legacy);
+            logger.debugv("Couldn't find cookie {0}, trying {1}", name, legacy);
             return cookies.get(legacy);
         }
     }
