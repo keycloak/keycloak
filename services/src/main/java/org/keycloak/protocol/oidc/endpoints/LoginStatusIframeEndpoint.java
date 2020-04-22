@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc.endpoints;
 
 import org.keycloak.common.Version;
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -29,7 +30,6 @@ import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.CacheControl;
@@ -63,6 +63,7 @@ public class LoginStatusIframeEndpoint {
         InputStream resource = getClass().getClassLoader().getResourceAsStream("login-status-iframe.html");
         if (resource != null) {
             P3PHelper.addP3PHeader();
+            session.getProvider(SecurityHeadersProvider.class).options().allowAnyFrameAncestor();
             return Response.ok(resource).cacheControl(cacheControl).build();
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();

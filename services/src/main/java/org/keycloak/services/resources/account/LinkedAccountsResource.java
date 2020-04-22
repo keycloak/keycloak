@@ -233,7 +233,7 @@ public class LinkedAccountsResource {
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, link.getUserName())
                 .success();
 
-        return Cors.add(request, Response.ok()).auth().allowedOrigins(auth.getToken()).build();
+        return Cors.add(request, Response.noContent()).auth().allowedOrigins(auth.getToken()).build();
     }
     
     private String checkCommonPreconditions(String providerId) {

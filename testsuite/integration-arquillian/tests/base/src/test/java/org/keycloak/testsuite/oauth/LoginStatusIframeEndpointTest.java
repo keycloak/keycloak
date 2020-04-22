@@ -32,6 +32,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -50,6 +51,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
@@ -128,6 +130,9 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
             assertTrue(s.contains("function getCookie()"));
 
             assertEquals("CP=\"This is not a P3P policy!\"", response.getFirstHeader("P3P").getValue());
+            assertNull(response.getFirstHeader(BrowserSecurityHeaders.X_FRAME_OPTIONS));
+            assertEquals("frame-src 'self'; object-src 'none';", response.getFirstHeader(BrowserSecurityHeaders.CONTENT_SECURITY_POLICY).getValue());
+            assertEquals("none", response.getFirstHeader(BrowserSecurityHeaders.X_ROBOTS_TAG).getValue());
 
             response.close();
 

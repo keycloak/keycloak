@@ -138,7 +138,7 @@ public class AccountRestServiceCorsTest extends AbstractTestRealmKeycloakTest {
             error = t;
         }
 
-        if (result == null || result.getStatus() != 200 || error != null) {
+        if (result == null || (result.getStatus() != 200 && result.getStatus() != 204) || error != null) {
             if (expectAllowed) {
                 throw new AssertionError("Cors request failed: " + WebDriverLogDumper.dumpBrowserLogs(driver));
             } else {
