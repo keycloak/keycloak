@@ -933,9 +933,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertTrue("AuthnRequestsSigned", desc.isAuthnRequestsSigned());
 
         Set<String> expected = new HashSet<>(Arrays.asList(
-                "urn:oasis:names:tc:SAML:2.0:protocol",
-                "urn:oasis:names:tc:SAML:1.1:protocol",
-                "http://schemas.xmlsoap.org/ws/2003/07/secext"));
+                "urn:oasis:names:tc:SAML:2.0:protocol"));
 
         Set<String> actual = new HashSet<>(desc.getProtocolSupportEnumeration());
 

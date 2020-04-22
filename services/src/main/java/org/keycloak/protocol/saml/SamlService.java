@@ -63,6 +63,8 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.utils.MediaType;
 
+import org.w3c.dom.Element;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
@@ -77,7 +79,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.security.PublicKey;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
@@ -656,38 +660,28 @@ public class SamlService extends AuthorizationEndpointBase {
     }
 
     public static String getIDPMetadataDescriptor(UriInfo uriInfo, KeycloakSession session, RealmModel realm) {
-        InputStream is = SamlService.class.getResourceAsStream("/idp-metadata-template.xml");
-        String template;
-        try {
-            template = StreamUtil.readString(is, StandardCharsets.UTF_8);
-        } catch (IOException ex) {
-            logger.error("Cannot generate IdP metadata", ex);
-            return "";
-        }
-        Properties props = new Properties();
-        props.put("idp.entityID", RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString());
-        props.put("idp.sso.HTTP-POST", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
-        props.put("idp.sso.HTTP-Redirect", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
-        props.put("idp.sls.HTTP-POST", RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL).toString());
-        StringBuilder keysString = new StringBuilder();
         Set<KeyWrapper> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
           ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
           : (o1.getStatus() == KeyStatus.PASSIVE ? 1 : -1));
         keys.addAll(session.keys().getKeys(realm, KeyUse.SIG, Algorithm.RS256));
-        for (KeyWrapper key : keys) {
-            addKeyInfo(keysString, key, KeyTypes.SIGNING.value());
-        }
-        props.put("idp.signing.certificates", keysString.toString());
-        return StringPropertyReplacer.replaceProperties(template, props);
-    }
 
-    private static void addKeyInfo(StringBuilder target, KeyWrapper key, String purpose) {
-        if (key == null) {
-            return;
-        }
+        try {
+            List<Element> signingKeys = new ArrayList<Element>();
+            for (KeyWrapper key : keys) {
+                signingKeys.add(IDPMetadataDescriptor.buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate())));
+            }
 
-        target.append(SPMetadataDescriptor.xmlKeyInfo("                        ",
-          key.getKid(), PemUtils.encodeCertificate(key.getCertificate()), purpose, false));
+            return IDPMetadataDescriptor.getIDPDescriptor(
+                RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL),
+                RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL),
+                RealmsResource.protocolUrl(uriInfo).build(realm.getName(), SamlProtocol.LOGIN_PROTOCOL),
+                RealmsResource.realmBaseUrl(uriInfo).build(realm.getName()).toString(),
+                true, 
+                signingKeys, null);
+        } catch (Exception ex) {
+            logger.error("Cannot generate IdP metadata", ex);
+            return "";
+        }
     }
 
     private boolean isClientProtocolCorrect(ClientModel clientModel) {
