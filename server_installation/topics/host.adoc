@@ -47,7 +47,7 @@ To update the `frontendUrl` with jboss-cli use the following command:
 
 [source,bash]
 ----
-/subsystem=keycloak-server/spi=hostname/provider=fixed:write-attribute(name=properties.frontendUrl,value="https://auth.example.com")
+/subsystem=keycloak-server/spi=hostname/provider=default:write-attribute(name=properties.frontendUrl,value="https://auth.example.com")
 ----
 
 If you want all requests to go through the public domain name you can force backend requests to use the frontend URL as
