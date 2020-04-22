@@ -179,7 +179,9 @@ public class RealmTest extends AbstractAdminTest {
         try {
             RealmRepresentation rep2 = adminClient.realm("attributes").toRepresentation();
 
-            assertTrue("Attributes was expected to be empty, but was: " + String.join(", ", rep2.getAttributes().keySet()), rep2.getAttributes().isEmpty());
+            Map<String, String> attributes = rep2.getAttributes();
+            assertTrue("Attributes expected to be present oauth2DeviceCodeLifespan, oauth2DevicePollingInterval, found: " + String.join(", ", attributes.keySet()),
+                attributes.size() == 2 && attributes.containsKey("oauth2DeviceCodeLifespan") && attributes.containsKey("oauth2DevicePollingInterval"));
         } finally {
             adminClient.realm("attributes").remove();
         }
