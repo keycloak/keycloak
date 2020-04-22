@@ -24,9 +24,9 @@ tooltips also describe what configuration information you need to enter. Click `
 
 The mapper will update user information when the user logs in repeatedly according to the `Sync Mode Override`:
 
-* Choose legacy to keep the mapper behavior as in the old {project_name} versions.
-* Choose import to only import data when the user is first created in {project_name} during the first login to {project_name} with a particular identity provider.
-* Choose force to always update user data during every user login.
+* Choose `legacy` to use the behavior in the previous {project_name} version.
+* Choose `import` to import only data from when the user was first created in {project_name} during the first login to {project_name} with a particular identity provider. 
+* Choose `force` to update user data at each user login.
 * Choose `inherit` to use the sync mode configured in the identity provider, all other options will override this sync mode.
 
 For JSON based claims, you can use dot notation for nesting and square brackets to access array fields by index.
