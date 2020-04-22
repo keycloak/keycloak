@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package org.keycloak.saml;
+package org.keycloak.protocol.saml;
 
 import org.keycloak.dom.saml.v2.metadata.EndpointType;
+import org.keycloak.dom.saml.v2.metadata.EntitiesDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
-import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
+import org.keycloak.dom.saml.v2.metadata.IDPSSODescriptorType;
 import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
-import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 
 import java.io.StringWriter;
 import java.net.URI;
@@ -34,24 +34,29 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLMetadataWriter;
+import org.keycloak.saml.common.util.StaxUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.SAML_HTTP_POST_BINDING;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.SAML_SOAP_BINDING;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.XMLDSIG_NSURI;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
 
 /**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SPMetadataDescriptor {
+public class IDPMetadataDescriptor {
 
-    public static String getSPDescriptor(URI binding, URI assertionEndpoint, URI logoutEndpoint,
-        boolean wantAuthnRequestsSigned, boolean wantAssertionsSigned, boolean wantAssertionsEncrypted,
-        String entityId, String nameIDPolicyFormat, List<Element> signingCerts, List<Element> encryptionCerts) 
+    public static String getIDPDescriptor(URI loginPostEndpoint, URI loginRedirectEndpoint, URI logoutEndpoint,
+        String entityId, boolean wantAuthnRequestsSigned, List<Element> signingCerts, List<Element> encryptionCerts) 
         throws XMLStreamException, ProcessingException, ParserConfigurationException
     {
       
@@ -59,13 +64,23 @@ public class SPMetadataDescriptor {
         XMLStreamWriter writer = StaxUtil.getXMLStreamWriter(sw);
         SAMLMetadataWriter metadataWriter = new SAMLMetadataWriter(writer);
 
+        EntitiesDescriptorType entitiesDescriptor = new EntitiesDescriptorType();
+        entitiesDescriptor.setName("urn:keycloak");
+
         EntityDescriptorType entityDescriptor = new EntityDescriptorType(entityId);
 
-        SPSSODescriptorType spSSODescriptor = new SPSSODescriptorType(Arrays.asList(PROTOCOL_NSURI.get()));
-        spSSODescriptor.setAuthnRequestsSigned(wantAuthnRequestsSigned);
-        spSSODescriptor.setWantAssertionsSigned(wantAssertionsSigned);
-        spSSODescriptor.addNameIDFormat(nameIDPolicyFormat);
-        spSSODescriptor.addSingleLogoutService(new EndpointType(binding, logoutEndpoint));
+        IDPSSODescriptorType spIDPDescriptor = new IDPSSODescriptorType(Arrays.asList(PROTOCOL_NSURI.get()));
+        spIDPDescriptor.setWantAuthnRequestsSigned(wantAuthnRequestsSigned);
+        spIDPDescriptor.addNameIDFormat(NAMEID_FORMAT_PERSISTENT.get());
+        spIDPDescriptor.addNameIDFormat(NAMEID_FORMAT_TRANSIENT.get());
+        spIDPDescriptor.addNameIDFormat(NAMEID_FORMAT_UNSPECIFIED.get());
+        spIDPDescriptor.addNameIDFormat(NAMEID_FORMAT_EMAIL.get());
+
+        spIDPDescriptor.addSingleLogoutService(new EndpointType(SAML_HTTP_POST_BINDING.getUri(), logoutEndpoint));
+        spIDPDescriptor.addSingleLogoutService(new EndpointType(SAML_HTTP_REDIRECT_BINDING.getUri(), logoutEndpoint));
+        spIDPDescriptor.addSingleSignOnService(new EndpointType(SAML_HTTP_POST_BINDING.getUri(), loginPostEndpoint));
+        spIDPDescriptor.addSingleSignOnService(new EndpointType(SAML_HTTP_REDIRECT_BINDING.getUri(), loginRedirectEndpoint));
+        spIDPDescriptor.addSingleSignOnService(new EndpointType(SAML_SOAP_BINDING.getUri(), loginPostEndpoint));
 
         if (wantAuthnRequestsSigned && signingCerts != null) {
             for (Element key: signingCerts)
@@ -73,27 +88,15 @@ public class SPMetadataDescriptor {
                 KeyDescriptorType keyDescriptor = new KeyDescriptorType();
                 keyDescriptor.setUse(KeyTypes.SIGNING);
                 keyDescriptor.setKeyInfo(key);
-                spSSODescriptor.addKeyDescriptor(keyDescriptor);
+                spIDPDescriptor.addKeyDescriptor(keyDescriptor);
             }
         }
 
-        if (wantAssertionsEncrypted && encryptionCerts != null) {
-            for (Element key: encryptionCerts)
-            {
-                KeyDescriptorType keyDescriptor = new KeyDescriptorType();
-                keyDescriptor.setUse(KeyTypes.ENCRYPTION);
-                keyDescriptor.setKeyInfo(key);
-                spSSODescriptor.addKeyDescriptor(keyDescriptor);
-            }
-        }
+        entityDescriptor.addChoiceType(new EntityDescriptorType.EDTChoiceType(Arrays.asList(new EntityDescriptorType.EDTDescriptorChoiceType(spIDPDescriptor))));
+      
+        entitiesDescriptor.addEntityDescriptor(entityDescriptor);
 
-        IndexedEndpointType assertionConsumerEndpoint = new IndexedEndpointType(binding, assertionEndpoint);
-        assertionConsumerEndpoint.setIsDefault(true);
-        assertionConsumerEndpoint.setIndex(1);
-        spSSODescriptor.addAssertionConsumerService(assertionConsumerEndpoint);
-
-        entityDescriptor.addChoiceType(new EntityDescriptorType.EDTChoiceType(Arrays.asList(new EntityDescriptorType.EDTDescriptorChoiceType(spSSODescriptor))));
-        metadataWriter.writeEntityDescriptor(entityDescriptor);
+        metadataWriter.writeEntitiesDescriptor(entitiesDescriptor);
 
         return sw.toString();
     }

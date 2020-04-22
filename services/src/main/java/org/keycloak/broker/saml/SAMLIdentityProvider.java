@@ -45,12 +45,17 @@ import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
+import org.w3c.dom.Element;
+
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import java.net.URI;
 import java.security.KeyPair;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -230,53 +235,52 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
     @Override
     public Response export(UriInfo uriInfo, RealmModel realm, String format) {
+        try
+        {
+            URI authnBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri();
 
-        String authnBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get();
-
-        if (getConfig().isPostBindingAuthnRequest()) {
-            authnBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get();
-        }
-
-        String endpoint = uriInfo.getBaseUriBuilder()
-                .path("realms").path(realm.getName())
-                .path("broker")
-                .path(getConfig().getAlias())
-                .path("endpoint")
-                .build().toString();
-
-
-        boolean wantAuthnRequestsSigned = getConfig().isWantAuthnRequestsSigned();
-        boolean wantAssertionsSigned = getConfig().isWantAssertionsSigned();
-        boolean wantAssertionsEncrypted = getConfig().isWantAssertionsEncrypted();
-        String entityId = getEntityId(uriInfo, realm);
-        String nameIDPolicyFormat = getConfig().getNameIDPolicyFormat();
-
-        StringBuilder signingKeysString = new StringBuilder();
-        StringBuilder encryptionKeysString = new StringBuilder();
-        Set<RsaKeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
-          ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
-          : (o1.getStatus() == KeyStatus.PASSIVE ? 1 : -1));
-        keys.addAll(session.keys().getRsaKeys(realm));
-        for (RsaKeyMetadata key : keys) {
-            addKeyInfo(signingKeysString, key, KeyTypes.SIGNING.value());
-
-            if (key.getStatus() == KeyStatus.ACTIVE) {
-                addKeyInfo(encryptionKeysString, key, KeyTypes.ENCRYPTION.value());
+            if (getConfig().isPostBindingAuthnRequest()) {
+                authnBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri();
             }
+
+            URI endpoint = uriInfo.getBaseUriBuilder()
+                    .path("realms").path(realm.getName())
+                    .path("broker")
+                    .path(getConfig().getAlias())
+                    .path("endpoint")
+                    .build();
+
+
+            boolean wantAuthnRequestsSigned = getConfig().isWantAuthnRequestsSigned();
+            boolean wantAssertionsSigned = getConfig().isWantAssertionsSigned();
+            boolean wantAssertionsEncrypted = getConfig().isWantAssertionsEncrypted();
+            String entityId = getEntityId(uriInfo, realm);
+            String nameIDPolicyFormat = getConfig().getNameIDPolicyFormat();
+
+            List<Element> signingKeys = new ArrayList<Element>();
+            List<Element> encryptionKeys = new ArrayList<Element>();
+
+            Set<RsaKeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
+              ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
+              : (o1.getStatus() == KeyStatus.PASSIVE ? 1 : -1));
+            keys.addAll(session.keys().getRsaKeys(realm));
+            for (RsaKeyMetadata key : keys) {
+                if (key == null || key.getCertificate() == null) continue;
+
+                signingKeys.add(SPMetadataDescriptor.buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate())));
+
+                if (key.getStatus() == KeyStatus.ACTIVE)
+                    encryptionKeys.add(SPMetadataDescriptor.buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate())));
+            }
+            String descriptor = SPMetadataDescriptor.getSPDescriptor(authnBinding, endpoint, endpoint,
+              wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted,
+              entityId, nameIDPolicyFormat, signingKeys, encryptionKeys);
+
+            return Response.ok(descriptor, MediaType.APPLICATION_XML_TYPE).build();
+        } catch (Exception e) {
+            logger.warn("Failed to export SAML SP Metadata!", e);
+            throw new RuntimeException(e);
         }
-        String descriptor = SPMetadataDescriptor.getSPDescriptor(authnBinding, endpoint, endpoint,
-          wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted,
-          entityId, nameIDPolicyFormat, signingKeysString.toString(), encryptionKeysString.toString());
-
-        return Response.ok(descriptor, MediaType.APPLICATION_XML_TYPE).build();
-    }
-
-    private static void addKeyInfo(StringBuilder target, RsaKeyMetadata key, String purpose) {
-        if (key == null) {
-            return;
-        }
-
-        target.append(SPMetadataDescriptor.xmlKeyInfo("        ", key.getKid(), PemUtils.encodeCertificate(key.getCertificate()), purpose, true));
     }
 
     public SignatureAlgorithm getSignatureAlgorithm() {
