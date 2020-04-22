@@ -56,7 +56,7 @@ public class TestingExportImportResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response runImport() {
         new ExportImportManager(session).runImport();
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -64,7 +64,7 @@ public class TestingExportImportResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response runExport() {
         new ExportImportManager(session).runExport();
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -157,6 +157,6 @@ public class TestingExportImportResource {
         System.clearProperty(ACTION);
         System.clearProperty(FILE);
 
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 }

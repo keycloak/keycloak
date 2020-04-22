@@ -35,7 +35,7 @@ public class BrowserSecurityHeaders {
 
     public static final String CONTENT_SECURITY_POLICY = "Content-Security-Policy";
 
-    public static final String CONTENT_SECURITY_POLICY_DEFAULT = "frame-src 'self'; frame-ancestors 'self'; object-src 'none';";
+    public static final String CONTENT_SECURITY_POLICY_DEFAULT = ContentSecurityPolicyBuilder.create().build();
 
     public static final String CONTENT_SECURITY_POLICY_KEY = "contentSecurityPolicy";
 
@@ -94,4 +94,52 @@ public class BrowserSecurityHeaders {
         defaultHeaders = Collections.unmodifiableMap(dh);
         headerAttributeMap = Collections.unmodifiableMap(headerMap);
     }
+
+    public static class ContentSecurityPolicyBuilder {
+
+        private String frameSrc = "self";
+        private String frameAncestors = "self";
+        private String objectSrc = "none";
+
+        private boolean first;
+        private StringBuilder sb;
+
+        public static ContentSecurityPolicyBuilder create() {
+            return new ContentSecurityPolicyBuilder();
+        }
+
+        public ContentSecurityPolicyBuilder frameSrc(String frameSrc) {
+            this.frameSrc = frameSrc;
+            return this;
+        }
+
+        public ContentSecurityPolicyBuilder frameAncestors(String frameancestors) {
+            this.frameAncestors = frameancestors;
+            return this;
+        }
+
+        public String build() {
+            sb = new StringBuilder();
+            first = true;
+
+            build("frame-src", frameSrc);
+            build("frame-ancestors", frameAncestors);
+            build("object-src", objectSrc);
+
+            return sb.toString();
+        }
+
+        private void build(String k, String v) {
+            if (v != null) {
+                if (!first) {
+                    sb.append(" ");
+                }
+                first = false;
+
+                sb.append(k).append(" '").append(v).append("';");
+            }
+        }
+
+    }
+
 }

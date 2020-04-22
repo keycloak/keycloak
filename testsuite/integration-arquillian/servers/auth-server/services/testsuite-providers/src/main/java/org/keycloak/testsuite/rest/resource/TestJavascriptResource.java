@@ -1,5 +1,7 @@
 package org.keycloak.testsuite.rest.resource;
 
+import org.keycloak.headers.SecurityHeadersProvider;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.testsuite.rest.TestingResourceProvider;
 
 import javax.ws.rs.GET;
@@ -16,6 +18,12 @@ import java.io.InputStreamReader;
  */
 public class TestJavascriptResource {
 
+    private KeycloakSession session;
+
+    public TestJavascriptResource(KeycloakSession session) {
+        this.session = session;
+    }
+
     @GET
     @Path("/js/keycloak.js")
     @Produces("application/javascript")
@@ -27,6 +35,7 @@ public class TestJavascriptResource {
     @Path("/index.html")
     @Produces(MediaType.TEXT_HTML)
     public String getJavascriptTestingEnvironment() throws IOException {
+        session.getProvider(SecurityHeadersProvider.class).options().skipHeaders();
         return resourceToString("/javascript/index.html");
     }
 

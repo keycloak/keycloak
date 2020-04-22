@@ -29,6 +29,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -157,6 +158,8 @@ public class LogoutEndpoint {
             if (state != null) uriBuilder.queryParam(OIDCLoginProtocol.STATE_PARAM, state);
             return Response.status(302).location(uriBuilder.build()).build();
         } else {
+            // TODO Empty content with ok makes no sense. Should it display a page? Or use noContent?
+            session.getProvider(SecurityHeadersProvider.class).options().allowEmptyContentType();
             return Response.ok().build();
         }
     }

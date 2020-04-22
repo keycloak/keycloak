@@ -157,7 +157,7 @@ public class RealmTest extends AbstractAdminTest {
 
         Assert.assertNames(adminClient.realms().findAll(), "master", AuthRealm.TEST, REALM_NAME);
     }
-    
+
     @Test(expected = BadRequestException.class)
     public void createRealmRejectReservedChar() {
         RealmRepresentation rep = new RealmRepresentation();

@@ -26,7 +26,9 @@ import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
@@ -47,6 +49,7 @@ import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
+import org.keycloak.utils.MediaType;
 
 import java.io.IOException;
 import java.net.URI;
@@ -335,6 +338,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 uriBuilder.queryParam(STATE_PARAM, state);
             return Response.status(302).location(uriBuilder.build()).build();
         } else {
+            // TODO Empty content with ok makes no sense. Should it display a page? Or use noContent?
+            session.getProvider(SecurityHeadersProvider.class).options().allowEmptyContentType();
             return Response.ok().build();
         }
     }

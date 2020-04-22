@@ -137,7 +137,7 @@ public class RealmEntity {
     @Column(name="EMAIL_THEME")
     protected String emailTheme;
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm", fetch = FetchType.EAGER)
     Collection<RealmAttributeEntity> attributes = new ArrayList<>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")

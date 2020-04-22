@@ -395,7 +395,7 @@ public class AccountCredentialResource {
 
         event.client(auth.getClient()).user(auth.getUser()).success();
 
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     public static class PasswordDetails {

@@ -232,9 +232,10 @@ public class GroupPolicyManagementTest extends AbstractPolicyManagementTest {
         
         groups.group(group.getId()).remove();
 
-        GroupPolicyRepresentation policy = getClient().authorization().policies().group().findByName(representation.getName());
-        
-        assertNull(policy);
+        try {
+            getClient().authorization().policies().group().findByName(representation.getName());
+        } catch (NotFoundException e) {
+        }
         
         representation.getGroups().clear();
         representation.addGroupPath("/Group H/Group I/Group K");
@@ -246,7 +247,7 @@ public class GroupPolicyManagementTest extends AbstractPolicyManagementTest {
 
         groups.group(group.getId()).remove();
 
-        policy = getClient().authorization().policies().group().findByName(representation.getName());
+        GroupPolicyRepresentation policy = getClient().authorization().policies().group().findByName(representation.getName());
 
         assertNotNull(policy);
         assertEquals(1, policy.getGroups().size());
