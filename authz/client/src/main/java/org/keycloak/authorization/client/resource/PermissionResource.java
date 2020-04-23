@@ -71,7 +71,7 @@ public class PermissionResource {
     /**
      * Creates a new permission ticket for a set of one or more resource and scope(s).
      *
-     * @param request the {@link PermissionRequest} representing the resource and scope(s) (not {@code null})
+     * @param requests the {@link PermissionRequest} representing the resource and scope(s) (not {@code null})
      * @return a permission response holding a permission ticket with the requested permissions
      */
     public PermissionResponse create(final List<PermissionRequest> requests) {
