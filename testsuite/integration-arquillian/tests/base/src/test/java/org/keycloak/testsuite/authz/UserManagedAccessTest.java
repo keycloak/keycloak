@@ -258,14 +258,13 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
 
         for (PermissionTicketRepresentation ticket : tickets) {
-            getAuthzClient().protection().permission().delete(ticket);
+            getAuthzClient().protection().permission().delete(ticket.getId());
         }
 
         tickets = getAuthzClient().protection().permission().find(resource.getId(), null, null, null, null, null, null, null);
 
         assertEquals(0, tickets.size());
         try {
-
             response = authorize("kolo", "password", resource.getId(), new String[] {"ScopeA", "ScopeB"});
             fail("User should not have access to resource from another user");
         } catch (AuthorizationDeniedException ade) {
@@ -531,7 +530,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         }
 
         for (PermissionTicketRepresentation ticket : permissionTickets) {
-            permissionResource.delete(ticket);
+            permissionResource.delete(ticket.getId());
         }
 
         permissionTickets = permissionResource.findByResource(resource.getId());
@@ -612,7 +611,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
         for (PermissionTicketRepresentation representation : new ArrayList<>(permissionTickets)) {
             if (representation.isGranted()) {
-                permissionResource.delete(representation);
+                permissionResource.delete(representation.getId());
             }
         }
 

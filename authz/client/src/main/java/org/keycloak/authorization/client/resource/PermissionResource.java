@@ -256,21 +256,17 @@ public class PermissionResource {
     }
 
     /**
-     * Deletes a permission ticket.
-     *
-     * @param ticket the permission ticket
+     * Deletes a permission ticket by ID.
+     * @param ticketId the permission ticket ID
      */
-    public void delete(final PermissionTicketRepresentation ticket) {
-        if (ticket == null) {
-            throw new IllegalArgumentException("Permission ticket must not be null or empty");
-        }
-        if (ticket.getId() == null) {
-            throw new IllegalArgumentException("Permission ticket must have an id");
+    public void delete(final String ticketId) {
+        if (ticketId == null || ticketId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Permission ticket ID must not be null or empty");
         }
         Callable<Void> callable = new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                http.<Void>delete(serverConfiguration.getPermissionEndpoint() + "/ticket/" + ticket.getId())
+                http.<Void>delete(serverConfiguration.getPermissionEndpoint() + "/ticket/" + ticketId)
                         .authorizationBearer(pat.call())
                         .response()
                         .execute();
