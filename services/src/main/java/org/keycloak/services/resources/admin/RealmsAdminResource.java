@@ -136,8 +136,17 @@ public class RealmsAdminResource {
         logger.debugv("importRealm: {0}", rep.getRealm());
 
         try {
-            RealmModel realm = realmManager.importRealm(rep);
-            grantPermissionsToRealmCreator(realm);
+            RealmModel realm = realmManager.getRealm(rep.getId());
+            if (realm == null) {
+                realm = realmManager.getRealmByName(rep.getRealm());
+            }
+            if (realm == null) {
+                realm = realmManager.importRealm(rep);
+                grantPermissionsToRealmCreator(realm);
+            }
+            else {
+                logger.debugv("Attempt to import realm that already exists: {0}", realm.getName());
+            }
 
             URI location = AdminRoot.realmsUrl(session.getContext().getUri()).path(realm.getName()).build();
             logger.debugv("imported realm success, sending back: {0}", location.toString());
