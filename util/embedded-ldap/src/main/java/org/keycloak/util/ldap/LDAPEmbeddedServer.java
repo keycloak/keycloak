@@ -33,6 +33,8 @@ import org.apache.directory.server.core.factory.AvlPartitionFactory;
 import org.apache.directory.server.core.factory.DefaultDirectoryServiceFactory;
 import org.apache.directory.server.core.factory.JdbmPartitionFactory;
 import org.apache.directory.server.core.normalization.NormalizationInterceptor;
+import org.apache.directory.server.ldap.ExtendedOperationHandler;
+import org.apache.directory.server.ldap.handlers.extended.StartTlsHandler;
 import org.apache.directory.server.ldap.LdapServer;
 import org.apache.directory.server.ldap.handlers.extended.PwdModifyHandler;
 import org.apache.directory.server.protocol.shared.transport.TcpTransport;
@@ -63,13 +65,17 @@ public class LDAPEmbeddedServer {
     public static final String PROPERTY_LDIF_FILE = "ldap.ldif";
     public static final String PROPERTY_SASL_PRINCIPAL = "ldap.saslPrincipal";
     public static final String PROPERTY_DSF = "ldap.dsf";
+    public static final String PROPERTY_ENABLE_ACCESS_CONTROL = "enableAccessControl";
+    public static final String PROPERTY_ENABLE_ANONYMOUS_ACCESS = "enableAnonymousAccess";
+    public static final String PROPERTY_ENABLE_SSL = "enableSSL";
+    public static final String PROPERTY_ENABLE_STARTTLS = "enableStartTLS";
+    public static final String PROPERTY_SET_CONFIDENTIALITY_REQUIRED = "setConfidentialityRequired";
 
     private static final String DEFAULT_BASE_DN = "dc=keycloak,dc=org";
     private static final String DEFAULT_BIND_HOST = "localhost";
     private static final String DEFAULT_BIND_PORT = "10389";
     private static final String DEFAULT_BIND_LDAPS_PORT = "10636";
     private static final String DEFAULT_LDIF_FILE = "classpath:ldap/default-users.ldif";
-    private static final String PROPERTY_ENABLE_SSL = "enableSSL";
     private static final String PROPERTY_KEYSTORE_FILE = "keystoreFile";
     private static final String PROPERTY_CERTIFICATE_PASSWORD = "certificatePassword";
 
@@ -86,13 +92,24 @@ public class LDAPEmbeddedServer {
     protected String ldifFile;
     protected String ldapSaslPrincipal;
     protected String directoryServiceFactory;
+    protected boolean enableAccessControl = false;
+    protected boolean enableAnonymousAccess = false;
     protected boolean enableSSL = false;
+    protected boolean enableStartTLS = false;
+    protected boolean setConfidentialityRequired = false;
     protected String keystoreFile;
     protected String certPassword;
 
     protected DirectoryService directoryService;
     protected LdapServer ldapServer;
 
+    public int getBindPort() {
+        return bindPort;
+    }
+
+    public int getBindLdapsPort() {
+        return bindLdapsPort;
+    }
 
     public static void main(String[] args) throws Exception {
         Properties defaultProperties = new Properties();
@@ -132,7 +149,11 @@ public class LDAPEmbeddedServer {
         this.ldifFile = readProperty(PROPERTY_LDIF_FILE, DEFAULT_LDIF_FILE);
         this.ldapSaslPrincipal = readProperty(PROPERTY_SASL_PRINCIPAL, null);
         this.directoryServiceFactory = readProperty(PROPERTY_DSF, DEFAULT_DSF);
+        this.enableAccessControl = Boolean.valueOf(readProperty(PROPERTY_ENABLE_ACCESS_CONTROL, "false"));
+        this.enableAnonymousAccess = Boolean.valueOf(readProperty(PROPERTY_ENABLE_ANONYMOUS_ACCESS, "false"));
         this.enableSSL = Boolean.valueOf(readProperty(PROPERTY_ENABLE_SSL, "false"));
+        this.enableStartTLS = Boolean.valueOf(readProperty(PROPERTY_ENABLE_STARTTLS, "false"));
+        this.setConfidentialityRequired = Boolean.valueOf(readProperty(PROPERTY_SET_CONFIDENTIALITY_REQUIRED, "false"));
         this.keystoreFile = readProperty(PROPERTY_KEYSTORE_FILE, null);
         this.certPassword = readProperty(PROPERTY_CERTIFICATE_PASSWORD, null);
     }
@@ -161,15 +182,22 @@ public class LDAPEmbeddedServer {
         log.info("Importing LDIF: " + ldifFile);
         importLdif();
 
-        log.info("Creating LDAP Server");
+        log.info("Creating LDAP server..");
         this.ldapServer = createLdapServer();
     }
 
 
     public void start() throws Exception {
-        log.info("Starting LDAP Server");
+        log.info("Starting LDAP server..");
         ldapServer.start();
-        log.info("LDAP Server started");
+        // Verify the server started properly
+        if (ldapServer.isStarted() && ldapServer.getDirectoryService().isStarted()) {
+            log.info("LDAP server started.");
+        } else if(!ldapServer.isStarted()) {
+            throw new RuntimeException("Failed to start the LDAP server!");
+        } else if (!ldapServer.getDirectoryService().isStarted()) {
+            throw new RuntimeException("Failed to start the directory service for the LDAP server!");
+        }
     }
 
 
@@ -188,8 +216,8 @@ public class LDAPEmbeddedServer {
 
         DefaultDirectoryServiceFactory dsf = new DefaultDirectoryServiceFactory();
         DirectoryService service = dsf.getDirectoryService();
-        service.setAccessControlEnabled(false);
-        service.setAllowAnonymousAccess(false);
+        service.setAccessControlEnabled(enableAccessControl);
+        service.setAllowAnonymousAccess(enableAnonymousAccess);
         service.getChangeLog().setEnabled(false);
 
         dsf.init(dcName + "DS");
@@ -242,16 +270,44 @@ public class LDAPEmbeddedServer {
 
         ldapServer.setServiceName("DefaultLdapServer");
         ldapServer.setSearchBaseDn(this.baseDN);
+        // Tolerate plaintext LDAP connections from clients by default
+        ldapServer.setConfidentialityRequired(this.setConfidentialityRequired);
 
         // Read the transports
         Transport ldap = new TcpTransport(this.bindHost, this.bindPort, 3, 50);
         ldapServer.addTransports( ldap );
-        if (enableSSL) {
-            Transport ldaps = new TcpTransport(this.bindHost, this.bindLdapsPort, 3, 50);
-            ldaps.setEnableSSL(true);
+        if (enableSSL || enableStartTLS) {
             ldapServer.setKeystoreFile(keystoreFile);
             ldapServer.setCertificatePassword(certPassword);
-            ldapServer.addTransports( ldaps );
+            if (enableSSL) {
+                Transport ldaps = new TcpTransport(this.bindHost, this.bindLdapsPort, 3, 50);
+                ldaps.setEnableSSL(true);
+                ldapServer.addTransports( ldaps );
+                if (ldaps.isSSLEnabled()) {
+                    log.info("Enabled SSL support on the LDAP server.");
+                }
+            }
+            if (enableStartTLS) {
+                try {
+                    ldapServer.addExtendedOperationHandler(new StartTlsHandler());
+                } catch (Exception e) {
+                    throw new IllegalStateException("Cannot add the StartTLS extension handler: ", e);
+                }
+                for (ExtendedOperationHandler eoh : ldapServer.getExtendedOperationHandlers()) {
+                    if (eoh.getOid().equals(StartTlsHandler.EXTENSION_OID)) {
+                        log.info("Enabled StartTLS support on the LDAP server.");
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Require the LDAP server to accept only encrypted connections if confidentiality requested
+        if (setConfidentialityRequired) {
+            ldapServer.setConfidentialityRequired(true);
+            if (ldapServer.isConfidentialityRequired()) {
+                log.info("Configured the LDAP server to accepts only requests with a secured connection.");
+            }
         }
 
         // Associate the DS to this LdapServer
@@ -264,8 +320,28 @@ public class LDAPEmbeddedServer {
             throw new IllegalStateException("It wasn't possible to add PwdModifyHandler");
         }
 
-        // Propagate the anonymous flag to the DS
-        directoryService.setAllowAnonymousAccess(false);
+        if (enableAccessControl) {
+            if (enableAnonymousAccess) {
+                throw new IllegalStateException("Illegal to enable both the access control subsystem and the anonymous access at the same time! See: http://directory.apache.org/apacheds/gen-docs/latest/apidocs/src-html/org/apache/directory/server/core/DefaultDirectoryService.html#line.399 for details.");
+            } else {
+                directoryService.setAccessControlEnabled(true);
+                if (directoryService.isAccessControlEnabled()) {
+                    log.info("Enabled basic access control checks on the LDAP server.");
+                }
+            }
+        } else {
+            if (enableAnonymousAccess) {
+                directoryService.setAllowAnonymousAccess(true);
+                // Since per ApacheDS JavaDoc: http://directory.apache.org/apacheds/gen-docs/latest/apidocs/src-html/org/apache/directory/server/core/DefaultDirectoryService.html#line.399
+                // "if the access control subsystem is enabled then access to some entries may not
+                // be allowed even when full anonymous access is enabled", disable the access control
+                // subsystem together with enabling anonymous access to prevent this
+                directoryService.setAccessControlEnabled(false);
+                if (directoryService.isAllowAnonymousAccess() && !directoryService.isAccessControlEnabled()) {
+                    log.info("Enabled anonymous access on the LDAP server.");
+                }
+            }
+        }
 
         return ldapServer;
     }
@@ -299,7 +375,7 @@ public class LDAPEmbeddedServer {
                 try {
                     directoryService.getAdminSession().add(new DefaultEntry(directoryService.getSchemaManager(), ldifEntry.getEntry()));
                 } catch (LdapEntryAlreadyExistsException ignore) {
-                    log.info("Entry " + ldifEntry.getDn() + " already exists. Ignoring");
+                    log.info("Entry " + ldifEntry.getDn() + " already exists. Ignoring.");
                 }
             }
         } finally {
