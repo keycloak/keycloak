@@ -88,7 +88,6 @@ export class PermissionRequest extends React.Component<PermissionRequestProps, P
                 <Modal
                     title={'Permission requests - ' + this.props.resource.name}
                     isLarge={true}
-                    width="45%"
                     isOpen={this.state.isOpen}
                     onClose={this.handleToggleDialog}
                     actions={[

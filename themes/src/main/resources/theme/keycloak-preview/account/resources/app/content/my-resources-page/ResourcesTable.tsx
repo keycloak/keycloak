@@ -39,9 +39,9 @@ import {PermissionRequest} from "./PermissionRequest";
 import {ShareTheResource} from "./ShareTheResource";
 import {Permission, Resource} from "./MyResourcesPage";
 import { Msg } from '../../widgets/Msg';
-import { ContentAlert } from '../ContentAlert';
 import { ResourcesTableState, ResourcesTableProps, AbstractResourcesTable } from './AbstractResourceTable';
 import { EditTheResource } from './EditTheResource';
+import { ContentAlert } from '../ContentAlert';
 
 export interface CollapsibleResourcesTableState extends ResourcesTableState {
     isRowOpen: boolean[];
@@ -74,19 +74,13 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
         );
     }
 
-    public sharedWithUsersMessage(row: number): React.ReactNode {
-        if (!this.hasPermissions(row)) return (<React.Fragment><Msg msgKey='resourceNotShared'/></React.Fragment>);
-
-        return (
-            <React.Fragment>
-                    <Msg msgKey='resourceSharedWith'>
-                        <strong>{this.firstUser(row)}</strong>
-                    </Msg>
-                    {this.numOthers(row) > 0 && <Msg msgKey='and'>
-                        <strong>{this.numOthers(row)}</strong>
-                    </Msg>}.
-            </React.Fragment>
-        );
+    private removeShare(resource: Resource, row: number): void {
+        const permissions = this.state.permissions.get(row)!.map(a => ({ username: a.username, scopes: [] }));
+        AccountServiceClient.Instance.doPut(`/resources/${resource._id}/permissions`, { data: permissions })
+            .then(() => {
+                ContentAlert.success(Msg.localize('shareSuccess'));
+                this.onToggle(row);
+            });
     }
 
     public render(): React.ReactNode {
