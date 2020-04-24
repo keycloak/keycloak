@@ -8,6 +8,21 @@ It is no longer necessary to set promiseType in the JavaScript adapter, and both
 recommended to update applications to use native promise API (`then` and `catch`) as soon as possible, as the legacy API
 (`success` and `error`) will be removed at some point.
 
+==== Duplicated top level groups
+
+Version 9.0.1 fixes a problem which could create duplicated top level groups in the realm. Nevertheless the existence
+of previous duplicated groups makes the upgrade process fail. The {project_name} server can be affected by this issue
+if it is using a H2, MariaDB, MySQL or PostgreSQL database. Before launching the upgrade, check if the server contains
+duplicated top level groups. For example the following SQL query can be executed at database level to list them:
+
+----
+SELECT REALM_ID, NAME, COUNT(*) FROM KEYCLOAK_GROUP WHERE PARENT_GROUP is NULL GROUP BY REALM_ID, NAME HAVING COUNT(*) > 1;
+----
+
+Only one top level group can exist in each realm with the same name. Duplicates should be reviewed and deleted before the
+upgrade. The error in the upgrade contains the message `Change Set META-INF/jpa-changelog-9.0.1.xml::9.0.1-
+KEYCLOAK-12579-add-not-null-constraint::keycloak failed.`
+
 === Migrating to 9.0.0
 
 ===== Improved handling of user locale
