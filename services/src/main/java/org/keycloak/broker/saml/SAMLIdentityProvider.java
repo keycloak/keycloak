@@ -59,6 +59,8 @@ import java.util.TreeSet;
  */
 public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityProviderConfig> {
     protected static final Logger logger = Logger.getLogger(SAMLIdentityProvider.class);
+    private static final String LOGIN_HINT_QUERY_PARAMETER = "login_hint";
+
     private final DestinationValidator destinationValidator;
     public SAMLIdentityProvider(KeycloakSession session, SAMLIdentityProviderConfig config, DestinationValidator destinationValidator) {
         super(session, config);
@@ -91,13 +93,15 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 protocolBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get();
             }
 
+            String loginHint = request.getHttpRequest().getUri().getQueryParameters().getFirst(LOGIN_HINT_QUERY_PARAMETER);
             SAML2AuthnRequestBuilder authnRequestBuilder = new SAML2AuthnRequestBuilder()
                     .assertionConsumerUrl(assertionConsumerServiceUrl)
                     .destination(destinationUrl)
                     .issuer(issuerURL)
                     .forceAuthn(getConfig().isForceAuthn())
                     .protocolBinding(protocolBinding)
-                    .nameIdPolicy(SAML2NameIDPolicyBuilder.format(nameIDPolicyFormat));
+                    .nameIdPolicy(SAML2NameIDPolicyBuilder.format(nameIDPolicyFormat))
+                    .subject(loginHint);
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                     .relayState(request.getState().getEncoded());
             boolean postBinding = getConfig().isPostBindingAuthnRequest();

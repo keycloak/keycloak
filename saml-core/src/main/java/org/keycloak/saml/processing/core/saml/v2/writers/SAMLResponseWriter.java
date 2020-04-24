@@ -162,12 +162,13 @@ public class SAMLResponseWriter extends BaseWriter {
         }
 
         StaxUtil.writeNameSpace(writer, PROTOCOL_PREFIX, JBossSAMLURIConstants.PROTOCOL_NSURI.get());
+        StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, JBossSAMLURIConstants.ASSERTION_NSURI.get());
         StaxUtil.writeDefaultNameSpace(writer, JBossSAMLURIConstants.ASSERTION_NSURI.get());
 
         writeBaseAttributes(response);
 
         NameIDType issuer = response.getIssuer();
-        write(issuer, new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ISSUER.get(), ASSERTION_PREFIX));
+        write(issuer, new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ISSUER.get()));
 
         Element sig = response.getSignature();
         if (sig != null) {

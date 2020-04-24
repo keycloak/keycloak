@@ -79,10 +79,12 @@ public class BaseWriter {
      *
      * @throws org.keycloak.saml.common.exceptions.ProcessingException
      */
-    public void write(NameIDType nameIDType, QName tag) throws ProcessingException {
+    public void write(NameIDType nameIDType, QName tag, boolean writeNamespace) throws ProcessingException {
         StaxUtil.writeStartElement(writer, tag.getPrefix(), tag.getLocalPart(), tag.getNamespaceURI());
 
-        StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, ASSERTION_NSURI.get());
+        if (writeNamespace) {
+            StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, ASSERTION_NSURI.get());
+        }
 
         URI format = nameIDType.getFormat();
         if (format != null) {
@@ -111,6 +113,13 @@ public class BaseWriter {
 
         StaxUtil.writeEndElement(writer);
         StaxUtil.flush(writer);
+    }
+
+    /**
+     * Write {@code NameIDType} to stream without writing a namespace
+     */
+    public void write(NameIDType nameIDType, QName tag) throws ProcessingException {
+        this.write(nameIDType, tag, false);
     }
 
     /**
