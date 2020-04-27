@@ -89,11 +89,11 @@ To experiment in using this console,
 . Start the RH-SSO server with the system properties to enable new Account Console and the new Account REST API:
 
 +
-standalone -Dkeycloak.profile.feature.account_api=enabled -Keycloak.profile.feature.account2=enabled
+standalone -Dkeycloak.profile.feature.account_api=enabled -Dkeycloak.profile.feature.account2=enabled
 +
 . Log into the Admin Console.
 . Select Realm Settings, Themes.
-. Change the Account Theme to *keycloak-preview*.
+. Change the Account Theme to *rhsso-preview*.
 
 When you go to Manage Account, you will see the new Account Console.  Here is a sample screen:
 
