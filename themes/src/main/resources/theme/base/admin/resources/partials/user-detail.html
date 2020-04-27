@@ -121,7 +121,7 @@
                 </div>
             </div>
 
-            <div class="form-group clearfix" data-ng-hide="create || !access.impersonation">
+            <div class="form-group clearfix" data-ng-hide="create || !access.impersonation || !serverInfo.featureEnabled('IMPERSONATION')">
                 <label class="col-md-2 control-label" for="impersonate">{{:: 'impersonate-user' | translate}}</label>
 
                 <div class="col-md-6">
