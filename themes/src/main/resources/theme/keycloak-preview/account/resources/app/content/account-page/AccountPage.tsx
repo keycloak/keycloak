@@ -140,7 +140,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                             fieldId="user-name"
                             helperTextInvalid={this.state.errors.username}
                             isValid={this.state.errors.username === ''}
-                            >
+                        >
                             {this.isEditUserNameAllowed && <this.UsernameInput />}
                             {!this.isEditUserNameAllowed && <this.RestrictedUsernameInput />}
                         </FormGroup>
@@ -157,6 +157,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                             type="email"
                             id="email-address"
                             name="email"
+                            maxLength={254}
                             value={fields.email}
                             onChange={this.handleChange}
                             isValid={this.state.errors.email === ''}
@@ -175,6 +176,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                             type="text"
                             id="first-name"
                             name="firstName"
+                            maxLength={254}
                             value={fields.firstName}
                             onChange={this.handleChange}
                             isValid={this.state.errors.firstName === ''}
@@ -193,6 +195,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                             type="text"
                             id="last-name"
                             name="lastName"
+                            maxLength={254}
                             value={fields.lastName}
                             onChange={this.handleChange}
                             isValid={this.state.errors.lastName === ''}
@@ -240,6 +243,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
             type="text"
             id="user-name"
             name="username"
+            maxLength={254}
             value={this.state.formFields.username}
             onChange={this.handleChange}
             isValid={this.state.errors.username === ''}
