@@ -103,9 +103,7 @@ public class GroupMembershipMapper extends AbstractOIDCProtocolMapper implements
                 membership.add(group.getName());
             }
         }
-        String protocolClaim = mappingModel.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
-
-        token.getOtherClaims().put(protocolClaim, membership);
+        OIDCAttributeMapperHelper.mapClaim(token, mappingModel, membership);
     }
 
     public static ProtocolMapperModel create(String name,
