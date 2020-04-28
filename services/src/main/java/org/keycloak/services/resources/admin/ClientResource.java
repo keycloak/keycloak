@@ -701,6 +701,7 @@ public class ClientResource {
         }
 
         RepresentationToModel.updateClient(rep, client);
+        RepresentationToModel.updateClientProtocolMappers(rep, client);
         updateAuthorizationSettings(rep);
     }
 
