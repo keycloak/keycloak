@@ -546,6 +546,13 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
 
         UserModel federatedUser = this.session.users().getUserByFederatedIdentity(federatedIdentityModel, this.realmModel);
+        boolean shouldMigrateId = false;
+        // try to find the user using legacy ID
+        if (federatedUser == null && context.getLegacyId() != null) {
+            federatedIdentityModel = new FederatedIdentityModel(federatedIdentityModel, context.getLegacyId());
+            federatedUser = this.session.users().getUserByFederatedIdentity(federatedIdentityModel, this.realmModel);
+            shouldMigrateId = true;
+        }
 
         // Check if federatedUser is already authenticated (this means linking social into existing federatedUser account)
         UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authenticationSession);
@@ -608,6 +615,9 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             }
 
             updateFederatedIdentity(context, federatedUser);
+            if (shouldMigrateId) {
+                migrateFederatedIdentityId(context, federatedUser);
+            }
             authenticationSession.setAuthenticatedUser(federatedUser);
 
             return finishOrRedirectToPostBrokerLogin(authenticationSession, context, false, parsedCode.clientSessionCode);
@@ -1004,6 +1014,16 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             }
         }
 
+    }
+
+    private void migrateFederatedIdentityId(BrokeredIdentityContext context, UserModel federatedUser) {
+        FederatedIdentityModel identityModel = this.session.users().getFederatedIdentity(federatedUser, context.getIdpConfig().getAlias(), this.realmModel);
+        FederatedIdentityModel migratedIdentityModel = new FederatedIdentityModel(identityModel, context.getId());
+
+        // since ID is a partial key we need to recreate the identity
+        session.users().removeFederatedIdentity(realmModel, federatedUser, identityModel.getIdentityProvider());
+        session.users().addFederatedIdentity(realmModel, federatedUser, migratedIdentityModel);
+        logger.debugf("Federated user ID was migrated from %s to %s", identityModel.getUserId(), migratedIdentityModel.getUserId());
     }
 
     private void updateToken(BrokeredIdentityContext context, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {

@@ -312,7 +312,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void instagramLogin() throws InterruptedException {
         setTestProvider(INSTAGRAM);
         performLogin();
-        assertUpdateProfile(false, false, true);
+        assertUpdateProfile(true, true, true);
         assertAccount();
     }
 
