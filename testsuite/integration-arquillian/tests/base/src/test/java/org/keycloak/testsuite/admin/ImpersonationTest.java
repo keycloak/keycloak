@@ -64,6 +64,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
+import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -73,6 +74,7 @@ import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -224,6 +226,8 @@ public class ImpersonationTest extends AbstractKeycloakTest {
         // Open the URL again - should be directly redirected to the app due the SSO login
         driver.navigate().to(loginFormUrl);
         appPage.assertCurrent();
+        //KEYCLOAK-12783
+        Assert.assertEquals("/auth/realms/master/app/auth", new URL(DroneUtils.getCurrentDriver().getCurrentUrl()).getPath());
 
         // Remove test client
         ApiUtil.findClientByClientId(realm, "test-app").remove();
