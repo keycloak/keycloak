@@ -34,9 +34,10 @@ public class InstagramIdentityProvider extends AbstractOAuth2IdentityProvider im
 
 	public static final String AUTH_URL = "https://api.instagram.com/oauth/authorize";
 	public static final String TOKEN_URL = "https://api.instagram.com/oauth/access_token";
-	public static final String PROFILE_URL = "https://api.instagram.com/v1/users/self";
-	public static final String DEFAULT_SCOPE = "basic";
-
+	public static final String PROFILE_URL = "https://graph.instagram.com/me";
+	public static final String PROFILE_FIELDS = "id,username";
+	public static final String DEFAULT_SCOPE = "user_profile";
+	
 	public InstagramIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
 		super(session, config);
 		config.setAuthorizationUrl(AUTH_URL);
@@ -46,23 +47,20 @@ public class InstagramIdentityProvider extends AbstractOAuth2IdentityProvider im
 
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 		try {
-			JsonNode raw = SimpleHttp.doGet(PROFILE_URL,session).param("access_token", accessToken).asJson();
+			JsonNode raw = SimpleHttp.doGet(PROFILE_URL,session)
+				.param("access_token", accessToken)
+				.param("fields", PROFILE_FIELDS)
+				.asJson();
 			
 			JsonNode profile = raw.get("data");
 			
 			logger.debug(profile.toString());
 
 			String id = getJsonProperty(profile, "id");
+	  		String username = getJsonProperty(profile, "username");
 
 			BrokeredIdentityContext user = new BrokeredIdentityContext(id);
-
-			String username = getJsonProperty(profile, "username");
-
 			user.setUsername(username);
-
-			String full_name = getJsonProperty(profile, "full_name");
-			
-			user.setName(full_name);
 			user.setIdpConfig(getConfig());
 			user.setIdp(this);
 
