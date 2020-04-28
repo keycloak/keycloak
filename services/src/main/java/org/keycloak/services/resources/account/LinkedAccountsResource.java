@@ -50,6 +50,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.account.AccountLinkUriRepresentation;
@@ -255,7 +256,8 @@ public class LinkedAccountsResource {
     }
     
     private boolean isPasswordSet() {
-        return session.userCredentialManager().isConfiguredFor(realm, user, PasswordCredentialModel.TYPE);
+        return session.userCredentialManager().isConfiguredFor(realm, user, PasswordCredentialModel.TYPE)
+                || session.userCredentialManager().isConfiguredFor(realm, user, WebAuthnCredentialModel.TYPE_PASSWORDLESS);
     }
     
     private boolean isValidProvider(String providerId) {

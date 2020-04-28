@@ -22,6 +22,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
+import org.keycloak.common.Profile;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -29,9 +31,12 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.social.google.GoogleIdentityProviderFactory;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.webauthn.WebAuthnRegisterPage;
 import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
 import org.keycloak.testsuite.ui.account2.page.LinkedAccountsPage;
+import org.keycloak.testsuite.ui.account2.page.SigningInPage;
 import org.keycloak.testsuite.util.ClientBuilder;
 
 import java.util.Collections;
@@ -41,10 +46,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+@EnableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true)
+@EnableFeature(value = Profile.Feature.ACCOUNT_API, skipRestart = true)
+@EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public class LinkedAccountsTest extends BaseAccountPageTest {
     public static final String SOCIAL_IDP_ALIAS = "fake-google-account";
     public static final String SYSTEM_IDP_ALIAS = "kc-to-kc-account";
@@ -64,6 +73,12 @@ public class LinkedAccountsTest extends BaseAccountPageTest {
     @Page
     private LoginPage loginPageWithSocialBtns;
 
+    @Page
+    private SigningInPage signingInPage;
+
+    @Page
+    private WebAuthnRegisterPage webAuthnRegisterPage;
+
     public LinkedAccountsTest() {
         // needs to be done here (setting fields in addTestRealms acts really weird resulting in Homer being null)
         homerUser = createUserRepresentation("hsimpson", "hsimpson@keycloak.org",
@@ -73,6 +88,12 @@ public class LinkedAccountsTest extends BaseAccountPageTest {
     @Override
     protected AbstractLoggedInPage getAccountPage() {
         return linkedAccountsPage;
+    }
+
+    @Override
+    protected void afterAbstractKeycloakTestRealmImport() {
+        super.afterAbstractKeycloakTestRealmImport();
+        configureWebAuthNForRealm();
     }
 
     @Override
@@ -169,6 +190,36 @@ public class LinkedAccountsTest extends BaseAccountPageTest {
         assertProvider(socialIdp, false, true, "");
 
         assertEquals(0, testUserResource().getFederatedIdentity().size());
+    }
+
+    @Test
+    public void unlinkWebAuthnTest() {
+        signingInPage.navigateTo();
+
+        String passwordId = testUserResource().credentials().get(0).getId();
+        testUserResource().removeCredential(passwordId);
+
+        SigningInPage.CredentialType webAuthnPwdlessCredentialType = signingInPage.getCredentialType(WebAuthnCredentialModel.TYPE_PASSWORDLESS);
+        webAuthnPwdlessCredentialType.clickSetUpLink();
+
+        webAuthnRegisterPage.confirmAIA();
+        webAuthnRegisterPage.registerWebAuthnCredential("WebAuthn is convenient");
+        waitForPageToLoad();
+
+        FederatedIdentityRepresentation fid = new FederatedIdentityRepresentation();
+        fid.setIdentityProvider(SOCIAL_IDP_ALIAS);
+        fid.setUserId("Homer lost his ID at Moe's last night");
+        fid.setUserName(homerUser.getUsername());
+        testUserResource().addFederatedIdentity(SOCIAL_IDP_ALIAS, fid);
+
+        assertEquals(1, testUserResource().getFederatedIdentity().size());
+
+        linkedAccountsPage.navigateTo();
+        assertProvider(socialIdp, true, true, homerUser.getUsername());
+
+        socialIdp.clickUnlinkBtn();
+
+        assertProvider(socialIdp, false, true, "");
     }
 
     private void assertProvider(

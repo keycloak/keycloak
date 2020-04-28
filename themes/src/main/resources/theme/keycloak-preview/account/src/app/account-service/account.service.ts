@@ -17,6 +17,7 @@
 
 import {KeycloakService} from '../keycloak-service/keycloak.service';
 import {ContentAlert} from '../content/ContentAlert';
+import { Msg } from '../widgets/Msg';
 
 type ConfigResolve = (config: RequestInit) => void;
 
@@ -94,8 +95,9 @@ export class AccountServiceClient {
         }
 
         if (response != null && response.data != null) {
+            const message = Msg.localize(response.data['errorMessage'] || response.data['error'] || '');
             ContentAlert.danger(
-                `${response.statusText}: ${response.data['errorMessage'] ? response.data['errorMessage'] : ''} ${response.data['error'] ? response.data['error'] : ''}`
+                `${response.statusText}: ${message}`
             );
         } else {
             ContentAlert.danger(response.statusText);
