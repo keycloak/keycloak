@@ -60,10 +60,6 @@ public class SamlProtocolUtils {
      * @throws VerificationException
      */
     public static void verifyDocumentSignature(ClientModel client, Document document) throws VerificationException {
-        SamlClient samlClient = new SamlClient(client);
-        if (!samlClient.requiresClientSignature()) {
-            return;
-        }
         PublicKey publicKey = getSignatureValidationKey(client);
         verifyDocumentSignature(document, new HardcodedKeyLocator(publicKey));
     }

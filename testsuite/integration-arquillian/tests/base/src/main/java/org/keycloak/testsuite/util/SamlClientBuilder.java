@@ -114,7 +114,7 @@ public class SamlClientBuilder {
         return this;
     }
 
-    public SamlClientBuilder assertResponse(Matcher<HttpResponse> matcher) {
+    public SamlClientBuilder assertResponse(Matcher<? super CloseableHttpResponse> matcher) {
         steps.add((client, currentURI, currentResponse, context) -> {
             Assert.assertThat(currentResponse, matcher);
             return null;
@@ -122,7 +122,7 @@ public class SamlClientBuilder {
         return this;
     }
 
-    public SamlClientBuilder assertResponse(Consumer<HttpResponse> consumer) {
+    public SamlClientBuilder assertResponse(Consumer<? super CloseableHttpResponse> consumer) {
         steps.add((client, currentURI, currentResponse, context) -> {
             consumer.accept(currentResponse);
             return null;

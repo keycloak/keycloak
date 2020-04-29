@@ -44,15 +44,23 @@ import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.IdentityProviderCreator;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
+import org.keycloak.testsuite.util.Matchers;
+import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 
+import org.keycloak.testsuite.util.saml.CreateLogoutRequestStepBuilder;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriBuilderException;
 import javax.xml.transform.dom.DOMSource;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -122,6 +130,26 @@ public class LogoutTest extends AbstractSamlTest {
         sessionIndexRef.set(firstAssertionStatement.getSessionIndex());
 
         return null;
+    }
+
+    private SamlClientBuilder logIntoUnsignedSalesAppViaIdp() throws IllegalArgumentException, UriBuilderException {
+        return new SamlClientBuilder()
+          .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
+
+          // Virtually perform login at IdP (return artificial SAML response)
+          .login().idp(SAML_BROKER_ALIAS).build()
+          .processSamlResponse(REDIRECT)
+            .transformObject(this::createAuthnResponse)
+            .targetAttributeSamlResponse()
+            .targetUri(getSamlBrokerUrl(REALM_NAME))
+            .build()
+          .updateProfile().username("a").email("a@b.c").firstName("A").lastName("B").build()
+          .followOneRedirect()
+
+          // Now returning back to the app
+          .processSamlResponse(POST)
+            .transformObject(this::extractNameIdAndSessionIndexAndTerminate)
+            .build();
     }
 
     private SamlClientBuilder prepareLogIntoTwoApps() {
@@ -385,23 +413,7 @@ public class LogoutTest extends AbstractSamlTest {
 
           Closeable idp = new IdentityProviderCreator(realm, addIdentityProvider())
           ) {
-            SAMLDocumentHolder samlResponse = new SamlClientBuilder()
-              .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
-
-              // Virtually perform login at IdP (return artificial SAML response)
-              .login().idp(SAML_BROKER_ALIAS).build()
-              .processSamlResponse(REDIRECT)
-                .transformObject(this::createAuthnResponse)
-                .targetAttributeSamlResponse()
-                .targetUri(getSamlBrokerUrl(REALM_NAME))
-                .build()
-              .updateProfile().username("a").email("a@b.c").firstName("A").lastName("B").build()
-              .followOneRedirect()
-
-              // Now returning back to the app
-              .processSamlResponse(POST)
-                .transformObject(this::extractNameIdAndSessionIndexAndTerminate)
-                .build()
+            SAMLDocumentHolder samlResponse = logIntoUnsignedSalesAppViaIdp()
 
               // ----- Logout phase ------
 
@@ -437,23 +449,7 @@ public class LogoutTest extends AbstractSamlTest {
 
           Closeable idp = new IdentityProviderCreator(realm, addIdentityProvider())
           ) {
-            SAMLDocumentHolder samlResponse = new SamlClientBuilder()
-              .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
-
-              // Virtually perform login at IdP (return artificial SAML response)
-              .login().idp(SAML_BROKER_ALIAS).build()
-              .processSamlResponse(REDIRECT)
-                .transformObject(this::createAuthnResponse)
-                .targetAttributeSamlResponse()
-                .targetUri(getSamlBrokerUrl(REALM_NAME))
-                .build()
-              .updateProfile().username("a").email("a@b.c").firstName("A").lastName("B").build()
-              .followOneRedirect()
-
-              // Now returning back to the app
-              .processSamlResponse(POST)
-                .transformObject(this::extractNameIdAndSessionIndexAndTerminate)
-                .build()
+            SAMLDocumentHolder samlResponse = logIntoUnsignedSalesAppViaIdp()
 
               // ----- Logout phase ------
 
@@ -474,6 +470,99 @@ public class LogoutTest extends AbstractSamlTest {
             assertThat(logoutRequestNameID.getSPProvidedID(), is(SP_PROVIDED_ID));
             assertThat(logoutRequestNameID.getSPNameQualifier(), is(SP_NAME_QUALIFIER));
         }
+    }
+
+    @Test
+    public void testLogoutDestinationOptionalIfUnsignedRedirect() throws IOException {
+        testLogoutDestination(REDIRECT,
+          builder -> builder.transformObject(logoutReq -> { logoutReq.setDestination(null); }),
+          LogoutTest::assertSamlLogoutRequest
+        );
+    }
+
+    @Test
+    public void testLogoutMandatoryDestinationUnsetRedirect() throws IOException {
+        testLogoutDestination(REDIRECT, 
+          builder -> builder
+                       .transformObject(logoutReq -> { logoutReq.setDestination(null); })
+                       .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY),
+          LogoutTest::assertBadRequest
+        );
+    }
+
+    @Test
+    public void testLogoutMandatoryDestinationSetRedirect() throws IOException {
+        testLogoutDestination(REDIRECT, 
+          builder -> builder.signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY),
+          LogoutTest::assertSamlLogoutRequest
+        );
+    }
+
+    @Test
+    public void testLogoutDestinationOptionalIfUnsignedPost() throws IOException {
+        testLogoutDestination(POST,
+          builder -> builder.transformObject(logoutReq -> { logoutReq.setDestination(null); }),
+          LogoutTest::assertSamlLogoutRequest
+        );
+    }
+
+    @Test
+    public void testLogoutMandatoryDestinationUnsetPost() throws IOException {
+        testLogoutDestination(POST,
+          builder -> builder
+                       .transformObject(logoutReq -> { logoutReq.setDestination(null); })
+                       .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY),
+          LogoutTest::assertBadRequest
+        );
+    }
+
+    @Test
+    public void testLogoutMandatoryDestinationSetPost() throws IOException {
+        testLogoutDestination(POST,
+          builder -> builder.signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY),
+          LogoutTest::assertSamlLogoutRequest
+        );
+    }
+
+    private void testLogoutDestination(Binding binding, final Consumer<CreateLogoutRequestStepBuilder> logoutReqUpdater, Consumer<? super CloseableHttpResponse> responseTester) throws IOException {
+        final RealmResource realm = adminClient.realm(REALM_NAME);
+
+        try (
+          Closeable sales = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST)
+            .setFrontchannelLogout(true)
+            .removeAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE)
+            .setAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "http://url")
+            .update();
+
+          Closeable idp = new IdentityProviderCreator(realm, addIdentityProvider())
+          ) {
+            logIntoUnsignedSalesAppViaIdp()
+
+              // ----- Logout phase ------
+
+              // Logout initiated from the app
+              .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, binding)
+                .nameId(nameIdRef::get)
+                .sessionIndex(sessionIndexRef::get)
+                .apply(logoutReqUpdater)
+                .build()
+
+              .doNotFollowRedirects()
+              .assertResponse(responseTester)
+              .execute();
+        }
+    }
+
+    public static void assertSamlLogoutRequest(CloseableHttpResponse response) {
+        try {
+            assertThat(REDIRECT.extractResponse(response).getSamlObject(), isSamlLogoutRequest(BROKER_LOGOUT_SERVICE_URL));
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public static void assertBadRequest(HttpResponse response) {
+        assertThat(response, Matchers.statusCodeIsHC(Status.BAD_REQUEST));
     }
 
 }

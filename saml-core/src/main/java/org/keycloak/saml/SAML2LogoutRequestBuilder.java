@@ -118,7 +118,9 @@ public class SAML2LogoutRequestBuilder implements SamlProtocolExtensionsAwareBui
 
 
         if (assertionExpiration > 0) lort.setNotOnOrAfter(XMLTimeUtil.add(lort.getIssueInstant(), assertionExpiration * 1000));
-        lort.setDestination(URI.create(destination));
+        if (destination != null) {
+            lort.setDestination(URI.create(destination));
+        }
 
         if (! this.extensions.isEmpty()) {
             ExtensionsType extensionsType = new ExtensionsType();
