@@ -48,6 +48,21 @@ Also, you may be affected if your authenticator supported the OPTIONAL execution
 
 Changes exist in the freemarker templates. You may be affected if you have your own theme with custom freemarker templates for login forms or some account forms, especially for the forms related to OTP. We recommend that you review the changes in the Freemarker templates in this version and align your templates according to it.
 
+=== Duplicated top level groups
+
+This release fixes a problem which could create duplicated top level groups in the realm. Nevertheless the existence
+of previous duplicated groups makes the upgrade process fail. The {project_name} server can be affected by this issue
+if it is using an H2, MariaDB, MySQL or PostgreSQL database. Before launching the upgrade, check if the server contains
+duplicated top level groups. For example, the following SQL query can be executed at database level to list them:
+
+----
+SELECT REALM_ID, NAME, COUNT(*) FROM KEYCLOAK_GROUP WHERE PARENT_GROUP is NULL GROUP BY REALM_ID, NAME HAVING COUNT(*) > 1;
+----
+
+Only one top level group can exist in each realm with the same name. Duplicates should be reviewed and deleted before the
+upgrade. The error in the upgrade contains the message `Change Set META-INF/jpa-changelog-9.0.1.xml::9.0.1-
+KEYCLOAK-12579-add-not-null-constraint::keycloak failed.`
+
 === User credentials changes
 
 We added more flexibility around storing user credentials. Among other things, every user can have multiple credentials of the same type, such as multiple OTP credentials. Some changes exist in the database schema in relation to that, however the credentials from the previous version are updated to the new format. Users can still log in with the passwords or OTP credentials defined in the previous version.
