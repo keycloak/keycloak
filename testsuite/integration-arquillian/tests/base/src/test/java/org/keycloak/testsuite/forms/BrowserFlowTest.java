@@ -7,6 +7,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
@@ -23,15 +24,11 @@ import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
-import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -42,11 +39,9 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
-import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.*;
 import org.keycloak.testsuite.authentication.ConditionalUserAttributeValueFactory;
 import org.keycloak.testsuite.authentication.SetUserAttributeAuthenticatorFactory;
-import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -382,6 +377,103 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
             Assert.assertFalse(oneTimeCodePage.isOtpLabelPresent());
             Assert.assertFalse(loginTotpPage.isCurrent());
         } finally {
+            revertFlows("browser - rule");
+        }
+    }
+
+    // Check the ConditionalRoleAuthenticator
+    // Configure a conditional subflow with the required realm role "child-realm-role-1" and an OTP authenticator
+    // "child-realm-role-1" is a realm role included in realm composite role "composite-realm-role-1"
+    // user-with-two-configured-otp has the "composite-realm-role-1" role and should be asked for an OTP code
+    // user-with-one-configured-otp does not have the role. He should not be asked for an OTP code
+    @Test
+    @AuthServerContainerExclude(REMOTE)
+    public void testConditionalRoleAuthenticatorWithRealmRoleIncludedInCompositeRealmRole() {
+
+        // Create composite-realm-role-1
+        String compositeRealmRoleName = "composite-realm-role-1";
+        testRealm().roles().create(RoleBuilder.create().name(compositeRealmRoleName).build());
+
+        // Create child-realm-role-1
+        String childRealmRoleName = "child-realm-role-1";
+        testRealm().roles().create(RoleBuilder.create().name(childRealmRoleName).build());
+
+        // Make child-realm-role-1 a member of composite-realm-role-1
+        testRealm().roles().get(compositeRealmRoleName)
+                .addComposites(Collections.singletonList(testRealm().roles().get(childRealmRoleName).toRepresentation()));
+
+        // Add composite-realm-role-1 to user "user-with-two-configured-otp"
+        UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), "user-with-two-configured-otp");
+        userResource.roles().realmLevel().add(Collections.singletonList(testRealm().roles().get(compositeRealmRoleName).toRepresentation()));
+
+        // A browser flow is configured with an OTPForm for users having the role "child-realm-role-1"
+        configureBrowserFlowOTPNeedsRole(childRealmRoleName);
+
+        try {
+            // user-with-two-configured-otp has been configured with role "composite-realm-role-1".
+            // He should be asked for an OTP code
+            provideUsernamePassword("user-with-two-configured-otp");
+            Assert.assertTrue(oneTimeCodePage.isOtpLabelPresent());
+            loginTotpPage.assertCurrent();
+            loginTotpPage.assertOtpCredentialSelectorAvailability(true);
+
+            // user-with-one-configured-otp doesn't have the role. He should not be asked for an OTP code
+            provideUsernamePassword("user-with-one-configured-otp");
+            Assert.assertFalse(oneTimeCodePage.isOtpLabelPresent());
+            Assert.assertFalse(loginTotpPage.isCurrent());
+        } finally {
+            testRealm().roles().deleteRole(childRealmRoleName);
+            testRealm().roles().deleteRole(compositeRealmRoleName);
+            revertFlows("browser - rule");
+        }
+    }
+
+    // Check the ConditionalRoleAuthenticator
+    // Configure a conditional subflow with the required client role "child-client-role-1" from "test-app" client and an OTP authenticator
+    // "child-client-role-1" is a client role included in composite client role "composite-client-role-1"
+    // user-with-two-configured-otp has the "composite-client-role-1" role and should be asked for an OTP code
+    // user-with-one-configured-otp does not have the role. He should not be asked for an OTP code
+    @Test
+    @AuthServerContainerExclude(REMOTE)
+    public void testConditionalRoleAuthenticatorWithClientRoleIncludedInCompositeClientRole() {
+
+        String clientName = "test-app";
+        ClientRepresentation testClient = testRealm().clients().findByClientId(clientName).get(0);
+
+        // Create composite-client-role-1
+        String compositeClientRoleName = "composite-client-role-1";
+        testRealm().clients().get(testClient.getId()).roles().create(RoleBuilder.create().name(compositeClientRoleName).build());
+
+        // Create child-client-role-1
+        String childClientRoleName = "child-client-role-1";
+        testRealm().clients().get(testClient.getId()).roles().create(RoleBuilder.create().name(childClientRoleName).build());
+
+        // Make child-client-role-1 a member of composite-client-role-1
+        testRealm().clients().get(testClient.getId()).roles().get(compositeClientRoleName)
+                .addComposites(Collections.singletonList(testRealm().clients().get(testClient.getId()).roles().get(childClientRoleName).toRepresentation()));
+
+        // Add composite-client-role-1 to user "user-with-two-configured-otp"
+        UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), "user-with-two-configured-otp") ;
+        userResource.roles().clientLevel(testClient.getId())
+                .add(Collections.singletonList(testRealm().clients().get(testClient.getId()).roles().get(compositeClientRoleName).toRepresentation()));
+
+        // A browser flow is configured with an OTPForm for users having the role "test-app.child-client-role-1"
+        configureBrowserFlowOTPNeedsRole(clientName + "." + childClientRoleName);
+
+        try {
+            // user-with-two-configured-otp has been configured with role "test-app.child-client-role-1". He should be asked for an OTP code
+            provideUsernamePassword("user-with-two-configured-otp");
+            Assert.assertTrue(oneTimeCodePage.isOtpLabelPresent());
+            loginTotpPage.assertCurrent();
+            loginTotpPage.assertOtpCredentialSelectorAvailability(true);
+
+            // user-with-one-configured-otp doesn't have the role. He should not be asked for an OTP code
+            provideUsernamePassword("user-with-one-configured-otp");
+            Assert.assertFalse(oneTimeCodePage.isOtpLabelPresent());
+            Assert.assertFalse(loginTotpPage.isCurrent());
+        } finally {
+            testRealm().clients().get(testClient.getId()).roles().deleteRole(childClientRoleName);
+            testRealm().clients().get(testClient.getId()).roles().deleteRole(compositeClientRoleName);
             revertFlows("browser - rule");
         }
     }
