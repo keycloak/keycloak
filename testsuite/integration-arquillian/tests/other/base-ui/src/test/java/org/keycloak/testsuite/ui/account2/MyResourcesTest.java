@@ -32,9 +32,14 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.singletonList;
+import static org.hamcrest.core.StringEndsWith.endsWith;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
+import static org.keycloak.testsuite.util.WaitUtils.waitForModalFadeIn;
+import static org.keycloak.testsuite.util.WaitUtils.waitForModalFadeOut;
 
 public class MyResourcesTest extends AbstractAccountTest {
     private static final String[] userNames = new String[]{"alice", "jdoe"};
@@ -136,11 +141,14 @@ public class MyResourcesTest extends AbstractAccountTest {
 
         final int row = 2;
         myResourcesPage.clickExpandButton(row);
+        pause(2000);
 
         assertEquals("Resource is shared with alice.", myResourcesPage.getSharedWith(row));
 
         myResourcesPage.clickEditButton(row);
+        waitForModalFadeIn();
         myResourcesPage.removeAllPermissions();
+        waitForModalFadeOut();
 
         assertEquals("This resource is not shared.", myResourcesPage.getSharedWith(row));
     }
@@ -153,13 +161,16 @@ public class MyResourcesTest extends AbstractAccountTest {
 
         final int row = 3;
         myResourcesPage.clickExpandButton(row);
+        pause(2000);
 
         assertEquals("Resource is shared with jdoe.", myResourcesPage.getSharedWith(row));
 
         myResourcesPage.clickShareButton(row);
+        waitForModalFadeIn();
         myResourcesPage.createShare("alice");
+        waitForModalFadeOut();
 
-        assertEquals("Resource is shared with alice and 1 other users.", myResourcesPage.getSharedWith(row));
+        assertThat(myResourcesPage.getSharedWith(row), endsWith("and 1 other users."));
     }
 
     private AuthzClient createAuthzClient(ClientRepresentation client) {

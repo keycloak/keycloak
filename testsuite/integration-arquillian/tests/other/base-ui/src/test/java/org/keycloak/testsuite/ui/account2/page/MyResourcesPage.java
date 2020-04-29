@@ -30,19 +30,17 @@ public class MyResourcesPage extends AbstractLoggedInPage {
     }
 
     public void clickShareButton(int row) {
-        //first row is the header
-        final WebElement webElement = resourcesList.get(row + 1);
+        final WebElement webElement = driver.findElement(By.id("ex-expand" + row));
 
-        //first button is the toggle second is share
-        webElement.findElements(By.tagName("button")).get(1).click();
+        //first button is share
+        webElement.findElements(By.tagName("button")).get(0).click();
     }
 
     public void clickEditButton(int row) {
-        //first row is the header
-        final WebElement webElement = resourcesList.get(row + 1);
+        final WebElement webElement = driver.findElement(By.id("ex-expand" + row));
 
-        //first button is the toggle second is share 3rd is the edit button
-        webElement.findElements(By.tagName("button")).get(2).click();
+        //first button share 2rd is the edit button
+        webElement.findElements(By.tagName("button")).get(1).click();
     }
 
     public void createShare(String userName) {
