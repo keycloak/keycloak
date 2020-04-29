@@ -85,7 +85,7 @@ The option to provide client credentials in the JavaScript adapter was removed. 
 
 * Secure token and logout endpoint were included in Gatekeeper. Thanks to https://github.com/fredbi[fredbi]
 * There was a bug on Gatekeeper which was making cookies to be applied to subdomains. Thanks to https://github.com/daniel-ac-martin[daniel-ac-martin] the issue was fixed
-* Now Gatekeeper provides support to https://www.owasp.org/index.php/SameSite[Same-site cookies]. Thanks to https://github.com/fiji-flo[fiji-flo]
+* Now Gatekeeper provides support to Same-site cookies. Thanks to https://github.com/fiji-flo[fiji-flo]
 
 ifeval::[{project_community}==true]
 == Deploying Scripts to the Server
