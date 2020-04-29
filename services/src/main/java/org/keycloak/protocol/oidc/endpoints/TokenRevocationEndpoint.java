@@ -34,6 +34,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -100,6 +101,7 @@ public class TokenRevocationEndpoint {
 
         event.detail(Details.REVOKED_CLIENT, client.getClientId()).success();
 
+        session.getProvider(SecurityHeadersProvider.class).options().allowEmptyContentType();
         return cors.builder(Response.ok()).build();
     }
 
