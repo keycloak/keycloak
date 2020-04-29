@@ -18,7 +18,9 @@ public class ConditionalRoleAuthenticatorFactory implements ConditionalAuthentic
 
     static {
         commonConfig = Collections.unmodifiableList(ProviderConfigurationBuilder.create()
-            .property().name(CONDITIONAL_USER_ROLE).label("User role").helpText("Role the user should have to execute this flow").type(ProviderConfigProperty.STRING_TYPE).add()
+            .property().name(CONDITIONAL_USER_ROLE).label("User role")
+            .helpText("Role the user should have to execute this flow. To specify an application role the syntax is appname.approle, i.e. myapp.myrole")
+            .type(ProviderConfigProperty.STRING_TYPE).add()
             .build()
         );
     }
