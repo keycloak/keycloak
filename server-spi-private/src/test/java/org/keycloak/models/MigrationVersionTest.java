@@ -119,6 +119,9 @@ public class MigrationVersionTest {
         Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.3.2.GA"), is(equalTo(RHSSO_VERSION_7_3_KEYCLOAK_VERSION)));
         Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.3.10.GA"), is(equalTo(RHSSO_VERSION_7_3_KEYCLOAK_VERSION)));
 
+        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.4.0.GA"), is(equalTo(RHSSO_VERSION_7_4_KEYCLOAK_VERSION)));
+        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.4.15.GA"), is(equalTo(RHSSO_VERSION_7_4_KEYCLOAK_VERSION)));
+
         // check the conversion doesn't change version for keycloak
         Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.0.0"), is(nullValue()));
         Assert.assertThat(convertRHSSOVersionToKeycloakVersion("8.0.0"), is(nullValue()));
