@@ -174,6 +174,7 @@
                     -Dauth.server.db.host=${auth.server.db.host}
                 </property>
                 <property name="javaVmArguments">
+                    ${auth.server.backend1.jvm.debug.args}
                     ${auth.server.memory.settings}
                     -Djava.net.preferIPv4Stack=true
                     ${auth.server.jvm.args.extra}
@@ -201,6 +202,7 @@
                     -Dauth.server.db.host=${auth.server.db.host}
                 </property>
                 <property name="javaVmArguments">
+                    ${auth.server.backend2.jvm.debug.args}
                     ${auth.server.memory.settings}
                     -Djava.net.preferIPv4Stack=true
                     ${auth.server.jvm.args.extra}
@@ -209,6 +211,32 @@
                 <property name="managementPort">${auth.server.backend2.management.port}</property>
                 <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
                 <property name="bindHttpPortOffset">${auth.server.backend2.port.offset}</property>
+            </configuration>
+        </container>
+        <container qualifier="auth-server-legacy" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.jboss.legacy}</property>
+                <property name="adapterImplClass">org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</property>
+                <property name="jbossHome">${auth.server.legacy.home}</property>
+                <property name="serverConfig">standalone-ha.xml</property>
+                <property name="jbossArguments">
+                    -Djboss.as.management.blocking.timeout=${auth.server.jboss.startup.timeout}
+                    -Djboss.socket.binding.port-offset=${auth.server.legacy.port.offset} 
+                    -Djboss.node.name=legacy
+                    -Dauth.server.truststore=${auth.server.truststore}
+                    -Dauth.server.truststore.password=${auth.server.truststore.password}
+                    -Dauth.server.db.host=${auth.server.db.host}
+                </property>
+                <property name="javaVmArguments">
+                    ${auth.server.legacy.jvm.debug.args}
+                    ${auth.server.memory.settings}
+                    -Djava.net.preferIPv4Stack=true
+                    ${auth.server.jvm.args.extra}
+                </property>
+                <property name="outputToConsole">true</property>
+                <property name="managementPort">${auth.server.legacy.management.port}</property>
+                <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
+                <property name="bindHttpPortOffset">${auth.server.legacy.port.offset}</property>
             </configuration>
         </container>
     </group>
