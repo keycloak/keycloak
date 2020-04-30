@@ -318,6 +318,10 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
             ClientModel hardcoded = realm.getClientByClientId("hardcoded-client");
             Assert.assertNotNull(hardcoded);
             Assert.assertFalse(hardcoded instanceof ClientAdapter);
+
+            ClientModel hardcodedById = realm.getClientById(hardcoded.getId());
+            Assert.assertNotNull(hardcodedById);
+            Assert.assertFalse(hardcodedById instanceof ClientAdapter);
         });
     }
 
@@ -329,6 +333,10 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
             ClientModel hardcoded = realm.getClientByClientId("hardcoded-client");
             Assert.assertNotNull(hardcoded);
             Assert.assertTrue(hardcoded instanceof org.keycloak.models.cache.infinispan.ClientAdapter);
+
+            ClientModel hardcodedById = realm.getClientById(hardcoded.getId());
+            Assert.assertNotNull(hardcodedById);
+            Assert.assertTrue(hardcodedById instanceof org.keycloak.models.cache.infinispan.ClientAdapter);
         });
     }
 

@@ -1052,7 +1052,7 @@ public class RealmCacheSession implements CacheRealmProvider {
             managedApplications.put(id, adapter);
             return adapter;
         } else if (invalidations.contains(id)) {
-            return getRealmDelegate().getClientById(id, realm);
+            return getClientDelegate().getClientById(id, realm);
         } else if (managedApplications.containsKey(id)) {
             return managedApplications.get(id);
         }
