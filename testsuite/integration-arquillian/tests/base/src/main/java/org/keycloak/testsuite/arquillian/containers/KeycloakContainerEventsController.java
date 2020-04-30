@@ -40,7 +40,6 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.keycloak.common.Profile;
 import org.keycloak.helpers.DropAllServlet;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.arquillian.annotation.RestartContainer;
@@ -53,14 +52,7 @@ import org.wildfly.extras.creaper.core.online.OnlineOptions;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.Properties;
+import org.jboss.shrinkwrap.api.Archive;
 import org.keycloak.testsuite.util.ContainerAssume;
 
 /**
@@ -250,5 +242,24 @@ public class KeycloakContainerEventsController extends ContainerEventController 
                 adminUserJsonFile.delete();
             }
         }
+    }
+
+    public static void deploy(Archive archive, ContainerInfo containerInfo) throws CommandFailedException, IOException {
+        ManagementClient.online(OnlineOptions
+                .standalone()
+                .hostAndPort("localhost", containerInfo.getContextRoot().getPort() + 1547)
+                .build())
+                .apply(new Deploy.Builder(
+                        archive.as(ZipExporter.class).exportAsInputStream(),
+                        archive.getName(),
+                        true).build());
+    }
+
+    public static void undeploy(Archive archive, ContainerInfo containerInfo) throws CommandFailedException, IOException {
+        ManagementClient.online(OnlineOptions
+                .standalone()
+                .hostAndPort("localhost", containerInfo.getContextRoot().getPort() + 1547)
+                .build())
+                .apply(new Undeploy.Builder(archive.getName()).build());
     }
 }

@@ -54,6 +54,7 @@ nbproject
 # Logs and databases #
 ######################
 *.log
+.attach_pid*
 
 # Maven #
 #########

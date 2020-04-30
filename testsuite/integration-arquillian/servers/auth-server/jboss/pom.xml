@@ -656,6 +656,18 @@
         </profile>
 
         <profile>
+            <id>auth-server-legacy</id>
+            <activation>
+                <property>
+                    <name>auth.server.legacy.version</name>
+                </property>
+            </activation>
+            <modules>
+                <module>legacy</module>
+            </modules>
+        </profile>
+
+        <profile>
             <id>auth-server-wildfly</id>
             <modules>
                 <module>wildfly</module>

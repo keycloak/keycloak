@@ -45,6 +45,7 @@
         <auth.server.cluster>false</auth.server.cluster>
         <auth.server.undertow.cluster>false</auth.server.undertow.cluster>
         <auth.server.jboss.cluster>false</auth.server.jboss.cluster>
+        <auth.server.jboss.legacy>false</auth.server.jboss.legacy>
 
         <auth.server.crossdc>false</auth.server.crossdc>
         <auth.server.undertow.crossdc>false</auth.server.undertow.crossdc>
@@ -578,6 +579,7 @@
                             <auth.server.cluster>${auth.server.cluster}</auth.server.cluster>
                             <auth.server.undertow.cluster>${auth.server.undertow.cluster}</auth.server.undertow.cluster>
                             <auth.server.jboss.cluster>${auth.server.jboss.cluster}</auth.server.jboss.cluster>
+                            <auth.server.jboss.legacy>${auth.server.jboss.legacy}</auth.server.jboss.legacy>
 
                             <!--cache server properties-->
                             <auth.server.crossdc>${auth.server.crossdc}</auth.server.crossdc>
@@ -1192,6 +1194,11 @@
 
                 <auth.server.backend1.home>${containers.home}/auth-server-${auth.server}-backend1</auth.server.backend1.home>
                 <auth.server.backend2.home>${containers.home}/auth-server-${auth.server}-backend2</auth.server.backend2.home>
+                <auth.server.backend1.debug.port>5008</auth.server.backend1.debug.port>
+                <auth.server.backend2.debug.port>5009</auth.server.backend2.debug.port>
+
+                <auth.server.legacy.home>${containers.home}/auth-server-legacy</auth.server.legacy.home>
+                <auth.server.legacy.debug.port>5010</auth.server.legacy.debug.port>
 
                 <auth.server.config.dir>${auth.server.backend1.home}/standalone/configuration</auth.server.config.dir>
 
@@ -1256,6 +1263,8 @@
 
                                     <auth.server.backend1.home>${auth.server.backend1.home}</auth.server.backend1.home>
                                     <auth.server.backend2.home>${auth.server.backend2.home}</auth.server.backend2.home>
+                                    <auth.server.backend1.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${auth.server.debug.suspend},address=${auth.server.host}:${auth.server.backend1.debug.port}</auth.server.backend1.jvm.debug.args>
+                                    <auth.server.backend2.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${auth.server.debug.suspend},address=${auth.server.host}:${auth.server.backend2.debug.port}</auth.server.backend2.jvm.debug.args>
 
                                     <!--100-->
                                     <auth.server.backend1.port.offset>101</auth.server.backend1.port.offset>
@@ -1272,6 +1281,11 @@
                                     <!--10099-->
                                     <auth.server.backend1.management.port.jmx>10100</auth.server.backend1.management.port.jmx>
                                     <auth.server.backend2.management.port.jmx>10101</auth.server.backend2.management.port.jmx>
+
+                                    <auth.server.legacy.home>${auth.server.legacy.home}</auth.server.legacy.home>
+                                    <auth.server.legacy.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${auth.server.debug.suspend},address=${auth.server.host}:${auth.server.legacy.debug.port}</auth.server.legacy.jvm.debug.args>
+                                    <auth.server.legacy.port.offset>600</auth.server.legacy.port.offset>
+                                    <auth.server.legacy.management.port>10590</auth.server.legacy.management.port>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
@@ -1280,6 +1294,47 @@
             </build>
         </profile>
 
+        <profile>
+            <id>auth-server-legacy</id>
+            <activation>
+                <property>
+                    <name>auth.server.legacy.version</name>
+                </property>
+            </activation>
+            <properties>
+                <auth.server.jboss.legacy>true</auth.server.jboss.legacy>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>unpack-auth-server-legacy</id>
+                                    <phase>generate-resources</phase>
+                                    <goals>
+                                        <goal>unpack</goal>
+                                    </goals>
+                                    <configuration>
+                                        <artifactItems>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-servers-auth-server-legacy</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>zip</type>
+                                            </artifactItem>
+                                        </artifactItems>
+                                        <outputDirectory>${containers.home}</outputDirectory>
+                                        <overWriteIfNewer>true</overWriteIfNewer>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
 
         <profile>
             <id>clean-jpa</id>
