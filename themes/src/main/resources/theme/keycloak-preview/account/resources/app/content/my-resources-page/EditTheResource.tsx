@@ -33,7 +33,7 @@ import { EditAltIcon } from '@patternfly/react-icons';
 
 import { Resource, Permission, Scope } from './MyResourcesPage';
 import { Msg } from '../../widgets/Msg';
-import { AccountServiceClient } from '../../account-service/account.service';
+import AccountService, {HttpResponse} from '../../account-service/account.service';
 import { ContentAlert } from '../ContentAlert';
 
 interface EditTheResourceProps {
@@ -74,7 +74,7 @@ export class EditTheResource extends React.Component<EditTheResourceProps, EditT
 
     async deletePermission(permission: Permission, scope: Scope): Promise<void> {
         permission.scopes.splice(permission.scopes.indexOf(scope), 1);
-        await AccountServiceClient.Instance.doPut(`/resources/${this.props.resource._id}/permissions`, {data: [permission]});
+        await AccountService.doPut(`/resources/${this.props.resource._id}/permissions`, {data: [permission]});
         ContentAlert.success(Msg.localize('shareSuccess'));
         this.props.onClose(this.props.resource, this.props.row);
     }

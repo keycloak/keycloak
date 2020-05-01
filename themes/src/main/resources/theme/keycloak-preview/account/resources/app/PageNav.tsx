@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2019 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,19 +19,19 @@ import {withRouter, RouteComponentProps} from 'react-router-dom';
 import {Nav, NavList} from '@patternfly/react-core';
 
 import {makeNavItems, flattenContent, ContentItem, PageDef} from './ContentPages';
- 
+
 declare const content: ContentItem[];
 
 export interface PageNavProps extends RouteComponentProps {}
- 
+
 export interface PageNavState {}
 
 class PageNavigation extends React.Component<PageNavProps, PageNavState> {
-    
+
     public constructor(props: PageNavProps) {
         super(props);
     }
-    
+
     private findActiveItem(): PageDef {
         const currentPath: string = this.props.location.pathname;
         const items: PageDef[] = flattenContent(content);
@@ -45,7 +45,7 @@ class PageNavigation extends React.Component<PageNavProps, PageNavState> {
 
         return firstItem;
     }
-  
+
     public render(): React.ReactNode {
         const activeItem: PageDef = this.findActiveItem();
         return (

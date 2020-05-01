@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2019 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -73,9 +73,8 @@ function loggedInUserName() {
 var loadjs = function (url, loadListener) {
     const script = document.createElement("script");
     script.src = resourceUrl + url;
+    script.type = "module";
     if (loadListener)
         script.addEventListener("load", loadListener);
     document.head.appendChild(script);
 };
-
-

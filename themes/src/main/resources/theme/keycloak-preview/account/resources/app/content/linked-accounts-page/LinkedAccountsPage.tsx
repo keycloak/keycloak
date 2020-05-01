@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2019 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,19 +16,18 @@
 
 import * as React from 'react';
 import {withRouter, RouteComponentProps} from 'react-router-dom';
-import {AxiosResponse} from 'axios';
 
 import {
     Badge,
     Button,
-    DataList, 
+    DataList,
     DataListAction,
-    DataListItemCells, 
+    DataListItemCells,
     DataListCell,
-    DataListItemRow, 
+    DataListItemRow,
     Stack,
     StackItem,
-    Title, 
+    Title,
     TitleLevel,
     DataListItem,
 } from '@patternfly/react-core';
@@ -37,7 +36,7 @@ import {
     BitbucketIcon,
     CubeIcon,
     FacebookIcon,
-    GithubIcon, 
+    GithubIcon,
     GitlabIcon,
     GoogleIcon,
     InstagramIcon,
@@ -51,7 +50,7 @@ import {
     UnlinkIcon
 } from '@patternfly/react-icons';
 
-import {AccountServiceClient} from '../../account-service/account.service';
+import AccountService, {HttpResponse} from '../../account-service/account.service';
 import {Msg} from '../../widgets/Msg';
 import {ContentPage} from '../ContentPage';
 import {createRedirect} from '../../util/RedirectUri';
@@ -77,7 +76,7 @@ interface LinkedAccountsPageState {
  * @author Stan Silvert
  */
 class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, LinkedAccountsPageState> {
-    
+
     public constructor(props: LinkedAccountsPageProps) {
         super(props);
         this.state = {
@@ -89,11 +88,11 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
     }
 
     private getLinkedAccounts(): void {
-        AccountServiceClient.Instance.doGet("/linked-accounts")
-            .then((response: AxiosResponse<LinkedAccount[]>) => {
+        AccountService.doGet<LinkedAccount[]>("/linked-accounts")
+            .then((response: HttpResponse<LinkedAccount[]>) => {
                 console.log({response});
-                const linkedAccounts = response.data.filter((account) => account.connected);
-                const unLinkedAccounts = response.data.filter((account) => !account.connected);
+                const linkedAccounts = response.data!.filter((account) => account.connected);
+                const unLinkedAccounts = response.data!.filter((account) => !account.connected);
                 this.setState({linkedAccounts: linkedAccounts, unLinkedAccounts: unLinkedAccounts});
             });
     }
@@ -101,8 +100,8 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
     private unLinkAccount(account: LinkedAccount): void {
         const url = '/linked-accounts/' + account.providerName;
 
-        AccountServiceClient.Instance.doDelete(url)
-            .then((response: AxiosResponse) => {
+        AccountService.doDelete<void>(url)
+            .then((response: HttpResponse<void>) => {
                 console.log({response});
                 this.getLinkedAccounts();
             });
@@ -113,10 +112,10 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
 
         const redirectUri: string = createRedirect(this.props.location.pathname);
 
-        AccountServiceClient.Instance.doGet(url, { params: {providerId: account.providerName, redirectUri}})
-            .then((response: AxiosResponse<{accountLinkUri: string}>) => {
+        AccountService.doGet<{accountLinkUri: string}>(url, { params: {providerId: account.providerName, redirectUri}})
+            .then((response: HttpResponse<{accountLinkUri: string}>) => {
                 console.log({response});
-                window.location.href = response.data.accountLinkUri;
+                window.location.href = response.data!.accountLinkUri;
             });
     }
 
@@ -141,7 +140,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
                         <DataList id="unlinked-idps" aria-label='foo'>
                             {this.makeRows(this.state.unLinkedAccounts, false)}
                         </DataList>
-                    </StackItem>                    
+                    </StackItem>
                 </Stack>
             </ContentPage>
         );
@@ -173,7 +172,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
 
         return (
             <> {
-        
+
                 accounts.map( (account: LinkedAccount) => (
                     <DataListItem id={`${account.providerAlias}-idp`} key={account.providerName} aria-labelledby="simple-item1">
                         <DataListItemRow key={account.providerName}>
@@ -190,9 +189,9 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
                         </DataListItemRow>
                     </DataListItem>
                 ))
-        
+
             } </>
-        
+
         )
     }
 
@@ -200,7 +199,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
         if (account.social) {
             return (<Badge><Msg msgKey='socialLogin'/></Badge>);
         }
-    
+
         return (<Badge style={{backgroundColor: "green"}} ><Msg msgKey='systemDefined'/></Badge>);
     }
 

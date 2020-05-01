@@ -16,8 +16,6 @@
 
 import * as React from 'react';
 
-import * as moment from 'moment';
-
 import {KeycloakService} from './keycloak-service/keycloak.service';
 
 import {PageNav} from './PageNav';
@@ -60,12 +58,6 @@ export class App extends React.Component<AppProps> {
             this.kcSvc.login();
         }
 
-        // globally set up locale for date formatting
-        moment.locale(locale);
-
-        const username = (
-            <span style={{marginLeft: '10px'}} id="loggedInUser">{loggedInUserName()}</span>
-        );
         const Header = (
             <PageHeader
                 logo={<a id="brandLink" href={brandUrl}><Brand src={brandImg} alt="Logo" className="brand"/></a>}

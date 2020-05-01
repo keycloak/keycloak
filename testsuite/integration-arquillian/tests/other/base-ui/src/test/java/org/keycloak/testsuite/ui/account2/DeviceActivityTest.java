@@ -196,7 +196,7 @@ public class DeviceActivityTest extends BaseAccountPageTest {
 
     @Test
     public void timesTests() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy h:mm a", Locale.ENGLISH);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy, h:mm a", Locale.ENGLISH);
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime nowPlus1 = now.plusMinutes(1);
         String nowStr = now.format(formatter);

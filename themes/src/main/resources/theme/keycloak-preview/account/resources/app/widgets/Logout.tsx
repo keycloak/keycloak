@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2018 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,13 +20,13 @@ import {Msg} from './Msg';
 import {KeycloakService} from '../keycloak-service/keycloak.service';
 
 import {Button, DropdownItem} from '@patternfly/react-core';
- 
+
 declare const baseUrl: string;
 
 function handleLogout(): void {
     KeycloakService.Instance.logout(baseUrl);
 }
-    
+
 interface LogoutProps {}
 export class LogoutButton extends React.Component<LogoutProps> {
     public render(): React.ReactNode {

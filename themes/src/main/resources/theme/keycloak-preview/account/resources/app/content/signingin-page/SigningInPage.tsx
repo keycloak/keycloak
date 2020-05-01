@@ -15,8 +15,6 @@
  */
 
 import * as React from 'react';
-import * as moment from 'moment';
-import {AxiosResponse} from 'axios';
 
 import {withRouter, RouteComponentProps} from 'react-router-dom';
 import {
@@ -34,7 +32,8 @@ import {
     } from '@patternfly/react-core';
 
 import {AIACommand} from '../../util/AIACommand';
-import {AccountServiceClient} from '../../account-service/account.service';
+import TimeUtil from '../../util/TimeUtil';
+import AccountService, {HttpResponse} from '../../account-service/account.service';
 import {ContinueCancelModal} from '../../widgets/ContinueCancelModal';
 import {Features} from '../../widgets/features';
 import {Msg} from '../../widgets/Msg';
@@ -96,11 +95,12 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
     }
 
     private getCredentialContainers(): void {
-        AccountServiceClient.Instance.doGet("/credentials")
-            .then((response: AxiosResponse<CredentialContainer[]>) => {
+        AccountService.doGet("/credentials")
+            .then((response: HttpResponse<CredentialContainer[]>) => {
 
                 const allContainers: CredContainerMap = new Map();
-                response.data.forEach(container => {
+                const containers: CredentialContainer[] = response.data || [];
+                containers.forEach(container => {
                     let categoryMap = allContainers.get(container.category);
                     if (!categoryMap) {
                         categoryMap = new Map();
@@ -115,7 +115,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
     }
 
     private handleRemove = (credentialId: string, userLabel: string) => {
-      AccountServiceClient.Instance.doDelete("/credentials/" + credentialId)
+      AccountService.doDelete("/credentials/" + credentialId)
         .then(() => {
             this.getCredentialContainers();
             ContentAlert.success('successRemovedMessage', [userLabel]);
@@ -200,7 +200,9 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
 
         userCredentials.forEach(credential => {
             if (!credential.userLabel) credential.userLabel = Msg.localize(credential.type);
-            if (credential.hasOwnProperty('createdDate') && credential.createdDate! > 0) credential.strCreatedDate = moment(credential.createdDate).format('LLL');
+            if (credential.hasOwnProperty('createdDate') && credential.createdDate && credential.createdDate! > 0) {
+                credential.strCreatedDate = TimeUtil.format(credential.createdDate as number);
+            }
         });
 
         let updateAIA: AIACommand;

@@ -1,4 +1,4 @@
-/* 
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -10,11 +10,11 @@ import {EmptyState, EmptyStateBody, EmptyStateIcon, Title, TitleLevel} from '@pa
 import { WarningTriangleIcon } from '@patternfly/react-icons';
 import {withRouter, RouteComponentProps} from 'react-router-dom';
 import {Msg} from '../../widgets/Msg';
- 
+
 export interface PageNotFoundProps extends RouteComponentProps {}
- 
+
 class PgNotFound extends React.Component<PageNotFoundProps> {
-    
+
     public constructor(props: PageNotFoundProps) {
         super(props);
     }

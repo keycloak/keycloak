@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2019 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
  */
 
 import * as React from 'react';
- 
+
 import {Dropdown, KebabToggle, Toolbar, ToolbarGroup, ToolbarItem} from '@patternfly/react-core';
 
 import {ReferrerDropdownItem} from './widgets/ReferrerDropdownItem';
@@ -33,18 +33,18 @@ export class PageToolbar extends React.Component<PageToolbarProps, PageToolbarSt
 
     public constructor(props: PageToolbarProps) {
         super(props);
-        
+
         this.state = {
             isKebabDropdownOpen: false,
         };
     }
-    
+
     private onKebabDropdownToggle = (isKebabDropdownOpen: boolean) => {
         this.setState({
             isKebabDropdownOpen
         });
     };
-    
+
     public render(): React.ReactNode {
         const kebabDropdownItems = [];
         if (this.hasReferrer) {
@@ -52,9 +52,9 @@ export class PageToolbar extends React.Component<PageToolbarProps, PageToolbarSt
                 <ReferrerDropdownItem key='referrerDropdownItem'/>
             )
         }
-        
+
         kebabDropdownItems.push(<LogoutDropdownItem key='LogoutDropdownItem'/>);
-        
+
         return (
             <Toolbar>
                 {this.hasReferrer &&
@@ -64,12 +64,12 @@ export class PageToolbar extends React.Component<PageToolbarProps, PageToolbarSt
                         </ToolbarItem>
                     </ToolbarGroup>
                 }
-                    
+
                 <ToolbarGroup key='secondGroup'>
                     <ToolbarItem className="pf-m-icons" key='logout'>
                         <LogoutButton/>
                     </ToolbarItem>
-                    
+
                     <ToolbarItem key='kebab' className="pf-m-mobile">
                         <Dropdown
                             isPlain
