@@ -33,8 +33,6 @@ import java.io.Serializable;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="clientScopeHasRole", query="select m from ClientScopeRoleMappingEntity m where m.clientScope = :clientScope and m.role = :role"),
-        @NamedQuery(name="clientScopeRoleMappingIds", query="select m.role.id from ClientScopeRoleMappingEntity m where m.clientScope = :clientScope"),
         @NamedQuery(name="deleteClientScopeRoleMappingByRole", query="delete from ClientScopeRoleMappingEntity where role = :role"),
         @NamedQuery(name="deleteClientScopeRoleMappingByClientScope", query="delete from ClientScopeRoleMappingEntity where clientScope = :clientScope")
 })
