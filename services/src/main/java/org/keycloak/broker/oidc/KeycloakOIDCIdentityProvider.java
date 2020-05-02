@@ -52,8 +52,6 @@ import java.io.IOException;
  */
 public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
 
-    public static final String VALIDATED_ACCESS_TOKEN = "VALIDATED_ACCESS_TOKEN";
-
     public KeycloakOIDCIdentityProvider(KeycloakSession session, OIDCIdentityProviderConfig config) {
         super(session, config);
     }
@@ -61,13 +59,6 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
     @Override
     public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
         return new KeycloakEndpoint(callback, realm, event);
-    }
-
-    @Override
-    protected void processAccessTokenResponse(BrokeredIdentityContext context, AccessTokenResponse response) {
-        // Don't verify audience on accessToken as it may not be there. It was verified on IDToken already
-        JsonWebToken access = validateToken(response.getToken(), true);
-        context.getContextData().put(VALIDATED_ACCESS_TOKEN, access);
     }
 
     protected class KeycloakEndpoint extends OIDCEndpoint {
