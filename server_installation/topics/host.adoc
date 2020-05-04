@@ -19,7 +19,7 @@ Frontend request do not have to have the same context-path as the Keycloak serve
 on for example `https://auth.example.org` or `https://example.org/keycloak` while internally its URL could be
 `https://10.0.0.10:8080/auth`.
 
-This makes it possible to have user-agents (browsers) send requests to ${project.name} through the public domain name,
+This makes it possible to have user-agents (browsers) send requests to {project_name} through the public domain name,
 while internal clients can use an internal domain name or IP address.
 
 This is reflected in the OpenID Connect Discovery endpoint for example where the `authorization_endpoint` uses the
