@@ -97,7 +97,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
 
         this.handleToggleDialog();
 
-        AccountService.doPut('/resources/' + rscId + '/permissions', {data: permissions})
+        AccountService.doPut(`/resources/${rscId}/permissions`, permissions)
             .then(() => {
                 ContentAlert.success('shareSuccess');
                 this.props.onClose(this.props.resource, this.props.row);
@@ -219,7 +219,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
                                         </GalleryItem>
 
                                 </Gallery>
-                                <ChipGroup>
+                                <ChipGroup withToolbar>
                                     <ChipGroupToolbarItem key='users-selected' categoryName='Share with '>
                                     {this.state.usernames.map((currentChip: string) => (
                                         <Chip key={currentChip} onClick={() => this.handleDeleteUsername(currentChip)}>
@@ -234,7 +234,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
                                 fieldId="permissions-selected"
                             >
                                 {this.state.permissionsSelected.length < 1 && <strong>Select permissions below:</strong>}
-                                <ChipGroup>
+                                <ChipGroup withToolbar>
                                     <ChipGroupToolbarItem key='permissions-selected' categoryName='Grant Permissions '>
                                     {this.state.permissionsSelected.map((currentChip: Scope) => (
                                         <Chip key={currentChip.toString()} onClick={() => this.handleSelectPermission(currentChip)}>
@@ -248,7 +248,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
                                 label=""
                                 fieldId="permissions-not-selected"
                             >
-                                <ChipGroup>
+                                <ChipGroup withToolbar>
                                     <ChipGroupToolbarItem key='permissions-unselected' categoryName='Not Selected '>
                                     {this.state.permissionsUnSelected.map((currentChip: Scope) => (
                                         <Chip key={currentChip.toString()} onClick={() => this.handleSelectPermission(currentChip)}>

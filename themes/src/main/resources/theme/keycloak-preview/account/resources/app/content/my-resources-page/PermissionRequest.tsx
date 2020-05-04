@@ -64,7 +64,7 @@ export class PermissionRequest extends React.Component<PermissionRequestProps, P
             userScopes.push(...scopes);
         }
         try {
-            await AccountService.doPut(`/resources/${id}/permissions`, { data: [{ username: username, scopes: userScopes }] })
+            await AccountService.doPut(`/resources/${id}/permissions`, [{ username: username, scopes: userScopes }] )
             ContentAlert.success(Msg.localize('shareSuccess'));
             this.props.onClose();
         } catch (e) {

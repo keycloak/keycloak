@@ -64,7 +64,7 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
     };
 
     private fetchPermissions(resource: Resource, row: number): void {
-        AccountService.doGet('resources/' + resource._id + '/permissions')
+        AccountService.doGet(`/resources/${resource._id}/permissions`)
           .then((response: HttpResponse<Permission[]>) => {
             const newPermissions: Map<number, Permission[]> = new Map(this.state.permissions);
             newPermissions.set(row, response.data || []);
@@ -75,7 +75,7 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
 
     private removeShare(resource: Resource, row: number): void {
         const permissions = this.state.permissions.get(row)!.map(a => ({ username: a.username, scopes: [] }));
-        AccountService.doPut(`/resources/${resource._id}/permissions`, { data: permissions })
+        AccountService.doPut(`/resources/${resource._id}/permissions`, permissions)
             .then(() => {
                 ContentAlert.success(Msg.localize('shareSuccess'));
                 this.onToggle(row);

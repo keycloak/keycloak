@@ -98,11 +98,12 @@ class AccountServiceClient {
     }
 
     private makeUrl(endpoint: string, config?: RequestInitWithParams): URL {
+        if (endpoint.startsWith('http')) return new URL(endpoint);
         const url = new URL(this.accountUrl + endpoint);
 
         // add request params
         if (config && config.hasOwnProperty('params')) {
-            const params: {[name: string]: string} = config.params as {};
+            const params: {[name: string]: string} = config.params as {} || {};
             Object.keys(params).forEach(key => url.searchParams.append(key, params[key]))
         }
 
