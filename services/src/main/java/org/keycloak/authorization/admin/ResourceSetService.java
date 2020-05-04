@@ -319,7 +319,7 @@ public class ResourceSetService {
         Resource model = storeFactory.getResourceStore().findByName(name, this.resourceServer.getId());
 
         if (model == null) {
-            return Response.status(Status.OK).build();
+            return Response.status(Status.NO_CONTENT).build();
         }
 
         return Response.ok(toRepresentation(model, this.resourceServer, authorization)).build();
