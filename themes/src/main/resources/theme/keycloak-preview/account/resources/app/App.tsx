@@ -40,6 +40,8 @@ declare const resourceUrl: string;
 declare const brandImg: string;
 declare const brandUrl: string;
 
+const pFlyImages = resourceUrl + '/node_modules/@patternfly/react-core/dist/styles/assets/images/';
+const avatarImg = pFlyImages + 'img_avatar.svg';
 
 export interface AppProps {};
 export class App extends React.Component<AppProps> {

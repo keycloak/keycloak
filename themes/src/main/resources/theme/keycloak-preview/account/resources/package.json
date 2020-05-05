@@ -13,16 +13,11 @@
   "author": "Stan Silvert",
   "license": "Apache-2.0",
   "dependencies": {
-    "@patternfly/patternfly": "^2.71.3",
     "@patternfly/react-core": "^3.153.3",
-    "object-keys": "^1.1.1",
-    "punycode": "^2.1.1",
-    "querystring": "^0.2.0",
+    "@patternfly/react-icons": "^3.15.16",
     "react": "npm:@pika/react@^16.13.1",
     "react-dom": "npm:@pika/react-dom@^16.13.1",
-    "react-router-dom": "^4.3.1",
-    "systemjs": "^0.20.17",
-    "systemjs-plugin-babel": "0.0.25"
+    "react-router-dom": "^4.3.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.8.4",
@@ -32,11 +27,9 @@
     "@babel/preset-react": "^7.8.3",
     "@babel/preset-typescript": "^7.8.3",
     "@types/node": "^13.9.8",
-    "@types/parse-link-header": "^1.0.0",
     "@types/react": "^16.9.23",
     "@types/react-dom": "^16.9.5",
     "@types/react-router-dom": "^4.3.1",
-    "@types/systemjs": "^0.20.6",
     "@typescript-eslint/eslint-plugin": "^1.4.2",
     "@typescript-eslint/parser": "^1.4.2",
     "babel-eslint": "^9.0.0",

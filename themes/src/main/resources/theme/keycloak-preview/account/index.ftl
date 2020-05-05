@@ -105,6 +105,8 @@
             </#list>
         </#if>
 
+        <link rel="stylesheet" type="text/css" href="${resourceUrl}/node_modules/@patternfly/react-core/dist/styles/base.css"/>
+        <link rel="stylesheet" type="text/css" href="${resourceUrl}/public/app.css"/>
         <link href="${resourceUrl}/public/layout.css" rel="stylesheet"/>
     </head>
 
