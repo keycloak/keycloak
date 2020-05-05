@@ -112,7 +112,7 @@
             <h3><a href="http://www.keycloak.org"><img src="welcome-content/keycloak-project.png">Keycloak Project <i class="fa fa-angle-right link" aria-hidden="true"></i></a></h3>
           </div>
           <div class="card-pf h-m">
-            <h3><a href="https://lists.jboss.org/mailman/listinfo/keycloak-user"><img src="welcome-content/mail.png">Mailing List <i class="fa fa-angle-right link" aria-hidden="true"></i></a></h3>
+            <h3><a href="https://groups.google.com/forum/#!forum/keycloak-user"><img src="welcome-content/mail.png">Mailing List <i class="fa fa-angle-right link" aria-hidden="true"></i></a></h3>
           </div>
           <div class="card-pf h-m">
             <h3><a href="https://issues.jboss.org/browse/KEYCLOAK"><img src="welcome-content/bug.png">Report an issue <i class="fa fa-angle-right link" aria-hidden="true"></i></a></h3>
