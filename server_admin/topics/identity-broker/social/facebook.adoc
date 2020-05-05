@@ -48,3 +48,7 @@ One config option to note on the `Add identity provider` page for Facebook is th
 This field allows you to manually specify the scopes that users must authorize when authenticating with this provider.
 For a complete list of scopes, please take a look at https://developers.facebook.com/docs/graph-api. By default, {project_name}
 uses the following scopes: `email`.
+
+Another thing to note is that {project_name} sends a profile request to `graph.facebook.com/me?fields=id,name,email,first_name,last_name` by default, and the response only contains the specified fields.
+If you want to fetch additional fields (e.g. birthday) from the Facebook profile then you have to add a corresponding scope as described in a paragraph above and add the field name in `Additional user's profile fields` configuration option field.
+You can discover available field names and corresponding scopes by exploring the https://developers.facebook.com/tools/explorer[Facebook GraphQL API Explorer].
