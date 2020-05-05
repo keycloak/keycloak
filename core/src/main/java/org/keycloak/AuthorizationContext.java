@@ -69,7 +69,7 @@ public class AuthorizationContext {
             }
         }
 
-        if (current != null) {
+        if (current != null && scopeName == null) {
             if (current.getName().equals(resourceName)) {
                 return true;
             }
