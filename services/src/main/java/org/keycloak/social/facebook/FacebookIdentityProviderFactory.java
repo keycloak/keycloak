@@ -36,7 +36,7 @@ public class FacebookIdentityProviderFactory extends AbstractIdentityProviderFac
 
     @Override
     public FacebookIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
-        return new FacebookIdentityProvider(session, new OAuth2IdentityProviderConfig(model));
+        return new FacebookIdentityProvider(session, new FacebookIdentityProviderConfig(model));
     }
 
     @Override
