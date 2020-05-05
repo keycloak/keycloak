@@ -181,8 +181,7 @@ public class SigningInTest extends BaseAccountPageTest {
         passwordCred.clickUpdateBtn();
         updatePasswordPage.assertCurrent();
         updatePasswordPage.updatePasswords(newPwd, newPwd);
-        // TODO uncomment this once KEYCLOAK-12852 is resolved
-        // signingInPage.assertCurrent();
+        signingInPage.assertCurrent();
 
         assertUserCredential(PASSWORD_LABEL, false, passwordCred);
         assertNotEquals(previousCreatedAt, passwordCred.getCreatedAt());
@@ -206,8 +205,7 @@ public class SigningInTest extends BaseAccountPageTest {
             updatePasswordPage.assertCurrent();
             String originalPassword = Users.getPasswordOf(testUser);
             updatePasswordPage.updatePasswords(originalPassword, originalPassword);
-            // TODO uncomment this once KEYCLOAK-12852 is resolved
-            // signingInPage.assertCurrent();
+             signingInPage.assertCurrent();
 
             // Credential set-up now
             assertFalse(passwordCredentialType.isSetUpLinkVisible());
@@ -224,8 +222,7 @@ public class SigningInTest extends BaseAccountPageTest {
         assertFalse(otpCredentialType.isSetUp());
         otpCredentialType.clickSetUpLink();
         otpSetupPage.cancel();
-        // TODO uncomment this once KEYCLOAK-12852 is resolved
-        // signingInPage.assertCurrent();
+         signingInPage.assertCurrent();
         assertFalse(otpCredentialType.isSetUp());
 
         assertEquals("Authenticator Application", otpCredentialType.getTitle());
@@ -351,8 +348,7 @@ public class SigningInTest extends BaseAccountPageTest {
         otpSetupPage.setTotp(code);
         otpSetupPage.setUserLabel(label);
         otpSetupPage.submit();
-        // TODO uncomment this once KEYCLOAK-12852 is resolved
-        // signingInPage.assertCurrent();
+        signingInPage.assertCurrent();
 
         return getNewestUserCredential(otpCredentialType);
     }
@@ -364,8 +360,7 @@ public class SigningInTest extends BaseAccountPageTest {
         webAuthnRegisterPage.confirmAIA();
         webAuthnRegisterPage.registerWebAuthnCredential(label);
         waitForPageToLoad();
-        // TODO uncomment this once KEYCLOAK-12852 is resolved
-        // signingInPage.assertCurrent();
+        signingInPage.assertCurrent();
 
         return getNewestUserCredential(credentialType);
     }

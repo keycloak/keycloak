@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2019 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,7 +31,7 @@ import {
   EmptyStateBody
 } from '@patternfly/react-core';
 import { PassportIcon } from '@patternfly/react-icons';
- 
+
 // Note: This class demonstrates two features of the ContentPages framework:
 // 1) The PageDef is available as a React property.
 // 2) You can add additional custom properties to the PageDef.  In this case,
@@ -52,13 +52,13 @@ interface AppInitiatedActionPageProps extends RouteComponentProps {
  * @author Stan Silvert
  */
 class ApplicationInitiatedActionPage extends React.Component<AppInitiatedActionPageProps> {
-    
+
     public constructor(props: AppInitiatedActionPageProps) {
         super(props);
     }
 
     private handleClick = (): void => {
-        new AIACommand(this.props.pageDef.kcAction, this.props.location.pathname).execute();
+        new AIACommand(this.props.pageDef.kcAction).execute();
     }
 
     public render(): React.ReactNode {
