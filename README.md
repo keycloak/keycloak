@@ -14,7 +14,7 @@ This repository contains the source code for the Keycloak Server, Java adapters 
 
 ## Reporting Security Vulnerabilities
 
-If you've found a security vulnerability, please look at the [instructions on how to properly report it](http://www.keycloak.org/security.html)
+If you've found a security vulnerability, please look at the [instructions on how to properly report it](SECURITY.md)
 
 
 ## Reporting an issue
