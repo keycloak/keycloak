@@ -198,6 +198,11 @@ public class LDAPBinaryAttributesTest extends AbstractLDAPTest {
             }
 
             @Override
+            public String getEmail() {
+                return email;
+            }
+
+            @Override
             public String getFirstName() {
                 return firstName;
             }
@@ -208,13 +213,30 @@ public class LDAPBinaryAttributesTest extends AbstractLDAPTest {
             }
 
             @Override
-            public String getEmail() {
-                return email;
+            public String getFirstAttribute(String name) {
+                if (UserModel.LAST_NAME.equals(name)) {
+                    return lastName;
+                } else if (UserModel.FIRST_NAME.equals(name)) {
+                    return firstName;
+                } else if (UserModel.EMAIL.equals(name)) {
+                    return email;
+                } else if (UserModel.USERNAME.equals(name)) {
+                    return username;
+                }
+                return super.getFirstAttribute(name);
             }
 
             @Override
             public List<String> getAttribute(String name) {
-                if (LDAPConstants.JPEG_PHOTO.equals(name)) {
+                if (UserModel.LAST_NAME.equals(name)) {
+                    return Collections.singletonList(lastName);
+                } else if (UserModel.FIRST_NAME.equals(name)) {
+                    return Collections.singletonList(firstName);
+                } else if (UserModel.EMAIL.equals(name)) {
+                    return Collections.singletonList(email);
+                } else if (UserModel.USERNAME.equals(name)) {
+                    return Collections.singletonList(username);
+                } else if (LDAPConstants.JPEG_PHOTO.equals(name)) {
                     return Arrays.asList(jpegPhoto);
                 } else {
                     return Collections.emptyList();

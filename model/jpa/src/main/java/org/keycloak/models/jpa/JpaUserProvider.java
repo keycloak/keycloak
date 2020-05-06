@@ -50,6 +50,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 
 import javax.persistence.EntityManager;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -852,22 +853,22 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 case UserModel.SEARCH:
                     List<Predicate> orPredicates = new ArrayList();
 
-                    orPredicates.add(builder.like(builder.lower(root.get(UserModel.USERNAME)), "%" + value.toLowerCase() + "%"));
-                    orPredicates.add(builder.like(builder.lower(root.get(UserModel.EMAIL)), "%" + value.toLowerCase() + "%"));
+                    orPredicates.add(builder.like(builder.lower(root.get(USERNAME)), "%" + value.toLowerCase() + "%"));
+                    orPredicates.add(builder.like(builder.lower(root.get(EMAIL)), "%" + value.toLowerCase() + "%"));
                     orPredicates.add(builder.like(
                             builder.lower(builder.concat(builder.concat(
-                                    builder.coalesce(root.get(UserModel.FIRST_NAME), builder.literal("")), " "),
-                                    builder.coalesce(root.get(UserModel.LAST_NAME), builder.literal("")))),
+                                    builder.coalesce(root.get(FIRST_NAME), builder.literal("")), " "),
+                                    builder.coalesce(root.get(LAST_NAME), builder.literal("")))),
                             "%" + value.toLowerCase() + "%"));
 
                     predicates.add(builder.or(orPredicates.toArray(new Predicate[orPredicates.size()])));
 
                     break;
 
-                case UserModel.USERNAME:
-                case UserModel.FIRST_NAME:
-                case UserModel.LAST_NAME:
-                case UserModel.EMAIL:
+                case USERNAME:
+                case FIRST_NAME:
+                case LAST_NAME:
+                case EMAIL:
                     if (Boolean.valueOf(attributes.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()))) {
                         predicates.add(builder.equal(builder.lower(root.get(key)), value.toLowerCase()));           
                     } else {

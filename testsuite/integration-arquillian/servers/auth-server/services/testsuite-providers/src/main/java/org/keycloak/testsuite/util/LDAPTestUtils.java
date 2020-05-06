@@ -77,6 +77,11 @@ public class LDAPTestUtils {
             }
 
             @Override
+            public String getEmail() {
+                return email;
+            }
+
+            @Override
             public String getFirstName() {
                 return firstName;
             }
@@ -87,13 +92,30 @@ public class LDAPTestUtils {
             }
 
             @Override
-            public String getEmail() {
-                return email;
+            public String getFirstAttribute(String name) {
+                if (UserModel.LAST_NAME.equals(name)) {
+                    return lastName;
+                } else if (UserModel.FIRST_NAME.equals(name)) {
+                    return firstName;
+                } else if (UserModel.EMAIL.equals(name)) {
+                    return email;
+                } else if (UserModel.USERNAME.equals(name)) {
+                    return username;
+                }
+                return super.getFirstAttribute(name);
             }
 
             @Override
             public List<String> getAttribute(String name) {
-                if ("postal_code".equals(name) && postalCode != null && postalCode.length > 0) {
+                if (UserModel.LAST_NAME.equals(name)) {
+                    return Collections.singletonList(lastName);
+                } else if (UserModel.FIRST_NAME.equals(name)) {
+                    return Collections.singletonList(firstName);
+                } else if (UserModel.EMAIL.equals(name)) {
+                    return Collections.singletonList(email);
+                } else if (UserModel.USERNAME.equals(name)) {
+                    return Collections.singletonList(username);
+                } else if ("postal_code".equals(name) && postalCode != null && postalCode.length > 0) {
                     return Arrays.asList(postalCode);
                 } else if ("street".equals(name) && street != null) {
                     return Collections.singletonList(street);

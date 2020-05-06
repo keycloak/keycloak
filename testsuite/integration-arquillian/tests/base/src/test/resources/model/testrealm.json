@@ -129,7 +129,7 @@
             "createdTimestamp" : 123654,
             "notBefore": 159,
             "attributes": {
-                "email": "bburke@redhat.com"
+                "old-email": "bburke@redhat.com"
             },
             "credentials": [
                 {

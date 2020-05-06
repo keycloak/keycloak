@@ -60,6 +60,37 @@ public class UserAdapter implements CachedUserModel {
     }
 
     @Override
+    public String getFirstName() {
+        return getFirstAttribute(FIRST_NAME);
+    }
+
+    @Override
+    public void setFirstName(String firstName) {
+        setSingleAttribute(FIRST_NAME, firstName);
+    }
+
+    @Override
+    public String getLastName() {
+        return getFirstAttribute(LAST_NAME);
+    }
+
+    @Override
+    public void setLastName(String lastName) {
+        setSingleAttribute(LAST_NAME, lastName);
+    }
+
+    @Override
+    public String getEmail() {
+        return getFirstAttribute(EMAIL);
+    }
+
+    @Override
+    public void setEmail(String email) {
+        email = email == null ? null : email.toLowerCase();
+        setSingleAttribute(EMAIL, email);
+    }
+
+    @Override
     public UserModel getDelegateForUpdate() {
         if (updated == null) {
             userProviderCache.registerUserInvalidation(realm, cached);
@@ -101,15 +132,13 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public String getUsername() {
-        if (updated != null) return updated.getUsername();
-        return cached.getUsername();
+        return getFirstAttribute(UserModel.USERNAME);
     }
 
     @Override
     public void setUsername(String username) {
-        getDelegateForUpdate();
-        username = KeycloakModelUtils.toLowerCaseSafe(username);
-        updated.setUsername(username);
+        username = username==null ? null : username.toLowerCase();
+        setSingleAttribute(UserModel.USERNAME, username);
     }
 
     @Override
@@ -200,43 +229,6 @@ public class UserAdapter implements CachedUserModel {
     public void removeRequiredAction(String action) {
         getDelegateForUpdate();
         updated.removeRequiredAction(action);
-    }
-
-    @Override
-    public String getFirstName() {
-        if (updated != null) return updated.getFirstName();
-        return cached.getFirstName();
-    }
-
-    @Override
-    public void setFirstName(String firstName) {
-        getDelegateForUpdate();
-        updated.setFirstName(firstName);
-    }
-
-    @Override
-    public String getLastName() {
-        if (updated != null) return updated.getLastName();
-        return cached.getLastName();
-    }
-
-    @Override
-    public void setLastName(String lastName) {
-        getDelegateForUpdate();
-        updated.setLastName(lastName);
-    }
-
-    @Override
-    public String getEmail() {
-        if (updated != null) return updated.getEmail();
-        return cached.getEmail();
-    }
-
-    @Override
-    public void setEmail(String email) {
-        getDelegateForUpdate();
-        email = KeycloakModelUtils.toLowerCaseSafe(email);
-        updated.setEmail(email);
     }
 
     @Override

@@ -95,14 +95,6 @@ public class LDAPLegacyImportTest extends AbstractLDAPTest {
         });
     }
 
-
-    //@Test
-    public void runit() throws Exception {
-        Thread.sleep(10000000);
-
-    }
-
-
     @Test
     public void loginClassic() {
         loginPage.open();
