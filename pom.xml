@@ -41,10 +41,10 @@
 
         <product.build-time>${timestamp}</product.build-time>
 
-        <wildfly.version>19.0.0.Final</wildfly.version>
+        <wildfly.version>19.1.0.Final</wildfly.version>
         <wildfly.build-tools.version>1.2.13.Final</wildfly.build-tools.version>
         <eap.version>7.4.0.CD19-redhat-00001</eap.version>
-        <wildfly.core.version>11.0.0.Final</wildfly.core.version>
+        <wildfly.core.version>11.1.1.Final</wildfly.core.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
         <jboss.as.subsystem.test.version>7.5.22.Final-redhat-1</jboss.as.subsystem.test.version>
@@ -57,11 +57,11 @@
         <apache.mime4j.version>0.6</apache.mime4j.version>
         <jboss.dmr.version>1.5.0.Final</jboss.dmr.version>
         <bouncycastle.version>1.62</bouncycastle.version>
-        <cxf.version>3.3.5</cxf.version>
-        <cxf.jetty.version>3.3.5</cxf.jetty.version>
-        <cxf.jaxrs.version>3.3.5</cxf.jaxrs.version>
-        <cxf.undertow.version>3.3.5</cxf.undertow.version>
-        <dom4j.version>2.1.1</dom4j.version>
+        <cxf.version>3.3.6</cxf.version>
+        <cxf.jetty.version>3.3.6</cxf.jetty.version>
+        <cxf.jaxrs.version>3.3.6</cxf.jaxrs.version>
+        <cxf.undertow.version>3.3.6</cxf.undertow.version>
+        <dom4j.version>2.1.3</dom4j.version>
         <h2.version>1.4.197</h2.version>
         <jakarta.persistence.version>2.2.3</jakarta.persistence.version>
         <hibernate.core.version>5.3.15.Final</hibernate.core.version>
@@ -77,7 +77,7 @@
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
-        <resteasy.version>3.11.0.Final</resteasy.version>
+        <resteasy.version>3.11.2.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20191001.1</owasp.html.sanitizer.version>
         <slf4j-api.version>1.7.22</slf4j-api.version>
@@ -88,9 +88,9 @@
         <sun.xml.ws.version>2.3.1</sun.xml.ws.version>
         <sun.activation.version>1.2.1</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
-        <undertow.version>2.0.30.Final</undertow.version>
-        <elytron.version>1.11.2.Final</elytron.version>
-        <elytron.undertow-server.version>1.7.0.Final</elytron.undertow-server.version>
+        <undertow.version>2.1.0.Final</undertow.version>
+        <elytron.version>1.11.4.Final</elytron.version>
+        <elytron.undertow-server.version>1.7.1.Final</elytron.undertow-server.version>
         <jetty92.version>9.2.4.v20141103</jetty92.version>
         <jetty93.version>9.3.9.v20160517</jetty93.version>
         <jetty94.version>9.4.2.v20170220</jetty94.version>
