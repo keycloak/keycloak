@@ -19,4 +19,6 @@ node_modules
 !content.js
 
 public/app.css
+public/base.css
+public/assets/
 web_modules/
