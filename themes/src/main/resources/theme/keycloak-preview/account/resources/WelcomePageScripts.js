@@ -41,6 +41,33 @@ var toggleReact = function () {
     }
 };
 
+var patternFlyHasLoaded = false;
+var loadPatternFly = function () {
+    if (patternFlyHasLoaded) return;
+    const link = document.createElement("link");
+    link.rel="stylesheet";
+    link.href=resourceUrl + "/node_modules/@patternfly/patternfly/patternfly.min.css";
+    document.head.appendChild(link);
+    patternFlyHasLoaded = true;
+}
+
+function loggedInUserName() {
+    let userName = l18nMsg['unknownUser'];
+    if (keycloak.tokenParsed) {
+        const givenName = keycloak.tokenParsed.given_name;
+        const familyName = keycloak.tokenParsed.family_name;
+        const preferredUsername = keycloak.tokenParsed.preferred_username;
+        if (givenName && familyName) {
+            userName = [givenName, familyName].reduce((acc, value, index) =>
+                acc.replace('{{param_'+ index + '}}', value), l18nMsg['fullName']
+            );
+        } else {
+            userName = (givenName || familyName) || preferredUsername || userName;
+        }
+    }
+    return userName;
+}
+
 var loadjs = function (url, loadListener) {
     const script = document.createElement("script");
     script.src = resourceUrl + url;

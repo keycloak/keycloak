@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "keycloak-preview account management written in React",
   "scripts": {
-    "build": "snowpack && npm run babel",
+    "build": "snowpack && npm run check-types && npm run babel",
     "babel": "babel --source-maps --extensions \".js,.ts,.tsx\" app/ --out-dir app/",
     "babel:watch": "npm run babel -- --watch",
     "check-types": "tsc --noImplicitAny --strictNullChecks --jsx react -p ./",

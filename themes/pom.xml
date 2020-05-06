@@ -111,7 +111,6 @@
                     <exclude>**/.*</exclude>
                     <!-- Remove once rcue stops shipping this file -->
                     <exclude>**/git-Logo.svg</exclude>
-                    <!-- Remove once account2 manual filter list is removed -->
                     <exclude>**/keycloak-preview/account/resources/node_modules/**</exclude>
                 </excludes>
             </resource>
