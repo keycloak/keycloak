@@ -580,7 +580,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         builder.append("var realm = $evaluation.getRealm();");
         builder.append("var attributes = realm.getUserAttributes('jdoe');");
-        builder.append("if (attributes.size() == 2 && attributes.containsKey('a1') && attributes.containsKey('a2') && attributes.get('a1').size() == 2 && attributes.get('a2').get(0).equals('3')) { $evaluation.grant(); }");
+        builder.append("if (attributes.size() == 6 && attributes.containsKey('a1') && attributes.containsKey('a2') && attributes.get('a1').size() == 2 && attributes.get('a2').get(0).equals('3')) { $evaluation.grant(); }");
 
         policyRepresentation.setCode(builder.toString());
 

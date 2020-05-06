@@ -204,7 +204,7 @@ public class ExportImportUtil {
         // Test attributes
         Map<String, List<String>> attrs = wburke.getAttributes();
         Assert.assertEquals(1, attrs.size());
-        List<String> attrVals = attrs.get("email");
+        List<String> attrVals = attrs.get("old-email");
         Assert.assertEquals(1, attrVals.size());
         Assert.assertEquals("bburke@redhat.com", attrVals.get(0));
 

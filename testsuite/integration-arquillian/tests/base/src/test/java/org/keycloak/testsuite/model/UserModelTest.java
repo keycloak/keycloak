@@ -36,6 +36,7 @@ import org.keycloak.testsuite.util.RealmBuilder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -237,7 +238,7 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
 
             List<String> attrVals = user.getAttribute("key1");
             Assert.assertThat(attrVals, hasSize(1));
-            Assert.assertThat(attrVals.get(0), equalTo("value1"));
+            Assert.assertThat(attrVals, contains("value1"));
             Assert.assertThat(user.getFirstAttribute("key1"), equalTo("value1"));
 
             attrVals = user.getAttribute("key2");
@@ -249,7 +250,8 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             Assert.assertThat(user.getFirstAttribute("key3"), nullValue());
 
             Map<String, List<String>> allAttrVals = user.getAttributes();
-            Assert.assertThat(allAttrVals.keySet(), hasSize(2));
+            Assert.assertThat(allAttrVals.keySet(), hasSize(6));
+            Assert.assertThat(allAttrVals.keySet(), containsInAnyOrder(UserModel.USERNAME, UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL, "key1", "key2"));
             Assert.assertThat(allAttrVals.get("key1"), equalTo(user.getAttribute("key1")));
             Assert.assertThat(allAttrVals.get("key2"), equalTo(user.getAttribute("key2")));
 
@@ -298,9 +300,9 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             Map<String, List<String>> allAttrVals = user.getAttributes();
 
             // Ensure same transaction is able to see updated value
-            Assert.assertThat(allAttrVals.keySet(), hasSize(1));
+            Assert.assertThat(allAttrVals.keySet(), hasSize(5));
+            Assert.assertThat(allAttrVals.keySet(), containsInAnyOrder("key1", UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL, UserModel.USERNAME));
             Assert.assertThat(allAttrVals.get("key1"), contains("val2"));
-
         });
     }
 
@@ -316,8 +318,12 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = currentSession.realms().getRealmByName("original");
 
             Map<String, List<String>> expected = new HashMap<>();
-            expected.put("key1", Arrays.asList("value3"));
-            expected.put("key2", Arrays.asList("value2"));
+            expected.put("key1", Collections.singletonList("value3"));
+            expected.put("key2", Collections.singletonList("value2"));
+            expected.put(UserModel.FIRST_NAME, Collections.singletonList(null));
+            expected.put(UserModel.LAST_NAME, Collections.singletonList(null));
+            expected.put(UserModel.EMAIL, Collections.singletonList(null));
+            expected.put(UserModel.USERNAME, Collections.singletonList("user"));
 
             UserModel user = currentSession.users().addUser(realm, "user");
 

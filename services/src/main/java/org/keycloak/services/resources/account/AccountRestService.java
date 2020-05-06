@@ -143,7 +143,14 @@ public class AccountRestService {
         rep.setLastName(user.getLastName());
         rep.setEmail(user.getEmail());
         rep.setEmailVerified(user.isEmailVerified());
-        rep.setAttributes(user.getAttributes());
+        rep.setEmailVerified(user.isEmailVerified());
+        Map<String, List<String>> attributes = user.getAttributes();
+        Map<String, List<String>> copiedAttributes = new HashMap<>(attributes);
+        copiedAttributes.remove(UserModel.FIRST_NAME);
+        copiedAttributes.remove(UserModel.LAST_NAME);
+        copiedAttributes.remove(UserModel.EMAIL);
+        copiedAttributes.remove(UserModel.USERNAME);
+        rep.setAttributes(copiedAttributes);
 
         return Cors.add(request, Response.ok(rep)).auth().allowedOrigins(auth.getToken()).build();
     }

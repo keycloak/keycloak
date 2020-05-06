@@ -114,15 +114,6 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         });
     }
 
-
-
-//    @Test
-//    @Ignore
-//    public void runit() throws Exception {
-//        Thread.sleep(10000000);
-//
-//    }
-
     /**
      * KEYCLOAK-3986
      *

@@ -25,6 +25,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModelDefaultMethods;
 import org.keycloak.models.utils.DefaultRoles;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.storage.ReadOnlyException;
@@ -49,7 +50,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public abstract class AbstractUserAdapter implements UserModel {
+public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
     protected KeycloakSession session;
     protected RealmModel realm;
     protected ComponentModel storageProviderModel;
@@ -313,16 +314,24 @@ public abstract class AbstractUserAdapter implements UserModel {
 
     @Override
     public String getFirstAttribute(String name) {
+        if (name.equals(UserModel.USERNAME)) {
+            return getUsername();
+        }
         return null;
     }
 
     @Override
     public Map<String, List<String>> getAttributes() {
-        return new MultivaluedHashMap<>();
+        MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
+        attributes.add(UserModel.USERNAME, getUsername());
+        return attributes;
     }
 
     @Override
     public List<String> getAttribute(String name) {
+        if (name.equals(UserModel.USERNAME)) {
+            return Collections.singletonList(getUsername());
+        }
         return Collections.emptyList();
     }
 

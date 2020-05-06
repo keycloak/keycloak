@@ -128,7 +128,7 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
         @Override
         public void setUsername(String name) {
             super.setUsername(name);
-            name = name;
+            username = name;
         }
 
         @Override
