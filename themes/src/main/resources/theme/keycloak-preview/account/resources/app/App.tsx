@@ -57,10 +57,14 @@ export class App extends React.Component<AppProps> {
             this.kcSvc.login();
         }
 
+        const username = (
+            <span style={{marginLeft: '10px'}} id="loggedInUser">{loggedInUserName()}</span>
+        );
         const Header = (
             <PageHeader
                 logo={<a id="brandLink" href={brandUrl}><Brand src={brandImg} alt="Logo" className="brand"/></a>}
                 toolbar={<PageToolbar/>}
+                avatar={username}
                 showNavToggle
             />
         );

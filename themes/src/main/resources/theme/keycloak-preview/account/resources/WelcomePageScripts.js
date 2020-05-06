@@ -41,16 +41,6 @@ var toggleReact = function () {
     }
 };
 
-var patternFlyHasLoaded = false;
-var loadPatternFly = function () {
-    if (patternFlyHasLoaded) return;
-    const link = document.createElement("link");
-    link.rel="stylesheet";
-    link.href=resourceUrl + "/node_modules/@patternfly/patternfly/patternfly.min.css";
-    document.head.appendChild(link);
-    patternFlyHasLoaded = true;
-}
-
 function loggedInUserName() {
     let userName = l18nMsg['unknownUser'];
     if (keycloak.tokenParsed) {
