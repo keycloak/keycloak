@@ -161,7 +161,7 @@ public class PolicyService {
         Policy model = storeFactory.getPolicyStore().findByName(name, this.resourceServer.getId());
 
         if (model == null) {
-            throw new NotFoundException();
+            return Response.noContent().build();
         }
 
         return Response.ok(toRepresentation(model, fields, authorization)).build();
