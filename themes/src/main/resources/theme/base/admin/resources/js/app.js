@@ -2119,7 +2119,7 @@ module.factory('contentTypeRequestInterceptor', function() {
         request: function(requestConfig) {
             var requestData = requestConfig.data;
 
-            if (requestData && (requestData.indexOf('<') === 0)) {
+            if (requestData && typeof requestData === "string" && requestData.indexOf('<') === 0) {
                 if (!requestConfig.headers) {
                     requestConfig.headers = {};
                 }
