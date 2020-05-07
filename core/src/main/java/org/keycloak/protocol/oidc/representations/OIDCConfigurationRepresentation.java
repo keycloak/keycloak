@@ -412,4 +412,19 @@ public class OIDCConfigurationRepresentation {
         otherClaims.put(name, value);
     }
 
+    public Boolean getBackchannelLogoutSupported() {
+        return backchannelLogoutSupported;
+    }
+
+    public Boolean getBackchannelLogoutSessionSupported() {
+        return backchannelLogoutSessionSupported;
+    }
+
+    public void setBackchannelLogoutSessionSupported(Boolean backchannelLogoutSessionSupported) {
+        this.backchannelLogoutSessionSupported = backchannelLogoutSessionSupported;
+    }
+
+    public void setBackchannelLogoutSupported(Boolean backchannelLogoutSupported) {
+        this.backchannelLogoutSupported = backchannelLogoutSupported;
+    }
 }
