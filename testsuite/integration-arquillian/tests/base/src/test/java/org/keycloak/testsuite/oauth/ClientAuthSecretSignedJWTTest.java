@@ -33,17 +33,22 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.authentication.JWTClientSecretCredentialsProvider;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -84,6 +89,60 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         testCodeToTokenRequestSuccess(Algorithm.HS512);
     }
 
+    @Test
+    public void testCodeToTokenRequestFailureHS384Enforced() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        final String realmName = "test";
+        final String clientId = "test-app";
+        try {
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(Algorithm.HS384);
+            clientResource.update(clientRep);
+
+            testCodeToTokenRequestSuccess(Algorithm.HS384);
+        } catch (Exception e) {
+            Assert.fail();
+        } finally {
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(null);
+            clientResource.update(clientRep);
+        }
+    }
+
+    @Test
+    public void testCodeToTokenRequestFailureHS512Enforced() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        final String realmName = "test";
+        final String clientId = "test-app";
+        final String clientSecret = "password";
+        try {
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(Algorithm.HS512);
+            clientResource.update(clientRep);
+
+            oauth.clientId(clientId);
+            oauth.doLogin("test-user@localhost", clientSecret);
+            events.expectLogin().client(clientId).assertEvent();
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(clientSecret, 20, Algorithm.HS256));
+            assertEquals(400, response.getStatusCode());
+            assertEquals("invalid_client", response.getError());
+        } catch (Exception e) {
+            Assert.fail();
+        } finally {
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(null);
+            clientResource.update(clientRep);
+        }
+    }
+ 
     private void testCodeToTokenRequestSuccess(String algorithm) throws Exception {
         oauth.clientId("test-app");
         oauth.doLogin("test-user@localhost", "password");
