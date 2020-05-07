@@ -16,7 +16,13 @@
  */
 package org.keycloak.services.managers;
 
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.message.BasicNameValuePair;
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -32,15 +38,19 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.util.ResolveRelative;
 
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -189,6 +199,66 @@ public class ResourceAdminManager {
             }
         } else {
             logger.debugv("Can't logout {0}: no management url", resource.getClientId());
+            return false;
+        }
+    }
+
+    public boolean logoutClientSessionWithBackchannelLogoutUrl(ClientModel resource,
+                                                               AuthenticatedClientSessionModel clientSession) {
+        String backchannelLogoutUrl = getBackchannelLogoutUrl(session, resource);
+
+        if (backchannelLogoutUrl != null) {
+            // Send logout separately to each host (needed for single-sign-out in cluster for non-distributable apps - KEYCLOAK-748)
+            if (backchannelLogoutUrl.contains(CLIENT_SESSION_HOST_PROPERTY)) {
+                String host = clientSession.getNote(AdapterConstants.CLIENT_SESSION_HOST);
+                String currentHostMgmtUrl = backchannelLogoutUrl.replace(CLIENT_SESSION_HOST_PROPERTY, host);
+                return sendBackChannelLogoutRequestToClientUri(resource, clientSession, currentHostMgmtUrl);
+            } else {
+                return sendBackChannelLogoutRequestToClientUri(resource, clientSession,backchannelLogoutUrl);
+            }
+        } else {
+            logger.debugv("Can't logout {0}: no management url", resource.getClientId());
+            return false;
+        }
+    }
+
+    public static String getBackchannelLogoutUrl(KeycloakSession session, ClientModel client) {
+        String backchannelLogoutUrl = OIDCAdvancedConfigWrapper.fromClientModel(client).getBackchannelLogoutUrl();
+        if (backchannelLogoutUrl == null || backchannelLogoutUrl.equals("")) {
+            return null;
+        }
+
+        String absoluteURI = ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), backchannelLogoutUrl);
+        // this is for resolving URI like "http://${jboss.host.name}:8080/..." in order to send request to same machine
+        // and avoid request to LB in cluster environment
+        return StringPropertyReplacer.replaceProperties(absoluteURI);
+    }
+
+    protected Boolean sendBackChannelLogoutRequestToClientUri(ClientModel resource,
+                                                              AuthenticatedClientSessionModel clientSessionModel, String managementUrl) {
+        UserModel user = clientSessionModel.getUserSession().getUser();
+
+        LogoutToken logoutToken = session.tokens().initLogoutToken(resource, user, clientSessionModel);
+        String token = session.tokens().encode(logoutToken);
+        if (logger.isDebugEnabled())
+            logger.debugv("logout resource {0} url: {1} sessionIds: ", resource.getClientId(), managementUrl);
+        try {
+            HttpPost post = new HttpPost(managementUrl);
+            List<NameValuePair> parameters = new LinkedList<>();
+            if (logoutToken != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.LOGOUT_TOKEN, token));
+            }
+            HttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+            UrlEncodedFormEntity formEntity;
+            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            post.setEntity(formEntity);
+            int status = httpClient.execute(post).getStatusLine().getStatusCode();
+
+            boolean success = status == 204 || status == 200;
+            logger.debugf("logout success for %s: %s", managementUrl, success);
+            return success;
+        } catch (IOException e) {
+            ServicesLogger.LOGGER.logoutFailed(e, resource.getClientId());
             return false;
         }
     }

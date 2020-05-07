@@ -1290,6 +1290,14 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
                 $scope.displayOnConsentScreen = false;
             }
         }
+
+        if ($scope.client.attributes["backchannel.logout.session.required"]) {
+            if ($scope.client.attributes["backchannel.logout.session.required"] == "true") {
+                $scope.backchannelLogoutSessionRequired = true;
+            } else {
+                $scope.backchannelLogoutSessionRequired = false;
+            }
+        }
     }
 
     if (!$scope.create) {
@@ -1616,6 +1624,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.clientEdit.attributes["display.on.consent.screen"] = "true";
         } else {
             $scope.clientEdit.attributes["display.on.consent.screen"] = "false";
+        }
+
+        if ($scope.backchannelLogoutSessionRequired == true) {
+            $scope.clientEdit.attributes["backchannel.logout.session.required"] = "true";
+        } else {
+            $scope.clientEdit.attributes["backchannel.logout.session.required"] = "false";
         }
 
         $scope.clientEdit.protocol = $scope.protocol;

@@ -1,9 +1,22 @@
 package org.keycloak.testsuite.broker;
 
+import static org.keycloak.testsuite.broker.BrokerTestConstants.CLIENT_ID;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.CLIENT_SECRET;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_LOGIN;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_PASSWORD;
+import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.ProtocolMapperUtils;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
@@ -20,15 +33,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
-import static org.keycloak.testsuite.broker.BrokerTestTools.*;
+public class OidcBackchannelLogoutBrokerConfiguration implements BrokerConfiguration {
 
-/**
- * @author hmlnarik
- */
-public class KcOidcBrokerConfiguration implements BrokerConfiguration {
-
-    public static final KcOidcBrokerConfiguration INSTANCE = new KcOidcBrokerConfiguration();
+    public static final OidcBackchannelLogoutBrokerConfiguration INSTANCE =
+            new OidcBackchannelLogoutBrokerConfiguration();
 
     protected static final String ATTRIBUTE_TO_MAP_NAME = "user-attribute";
     protected static final String ATTRIBUTE_TO_MAP_NAME_2 = "user-attribute-2";
@@ -62,9 +70,17 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
     @Override
     public List<ClientRepresentation> createProviderClients() {
         ClientRepresentation client = new ClientRepresentation();
+        client.setId(CLIENT_ID);
         client.setClientId(getIDPClientIdInProviderRealm());
         client.setName(CLIENT_ID);
         client.setSecret(CLIENT_SECRET);
+        client.setEnabled(true);
+
+        OIDCAdvancedConfigWrapper oidcAdvancedConfigWrapper =
+                OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
+        oidcAdvancedConfigWrapper.setBackchannelLogoutSessionRequired(true);
+        oidcAdvancedConfigWrapper.setBackchannelLogoutUrl(getConsumerRoot() +
+                "/auth/realms/" + REALM_CONS_NAME + "/protocol/openid-connect/logout-v2/backchannel-logout");
 
         client.setRedirectUris(Collections.singletonList(getConsumerRoot() +
                 "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_OIDC_ALIAS + "/endpoint/*"));
@@ -145,12 +161,15 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         hardcodedJsonClaim.setProtocolMapper(HardcodedClaim.PROVIDER_ID);
 
         Map<String, String> hardcodedJsonClaimMapperConfig = hardcodedJsonClaim.getConfig();
-        hardcodedJsonClaimMapperConfig.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, KcOidcBrokerConfiguration.USER_INFO_CLAIM);
+        hardcodedJsonClaimMapperConfig.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME,
+                OidcBackchannelLogoutBrokerConfiguration.USER_INFO_CLAIM);
         hardcodedJsonClaimMapperConfig.put(OIDCAttributeMapperHelper.JSON_TYPE, "JSON");
         hardcodedJsonClaimMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
-        hardcodedJsonClaimMapperConfig.put(HardcodedClaim.CLAIM_VALUE, "{\"" + HARDOCDED_CLAIM + "\": \"" + HARDOCDED_VALUE + "\"}");
+        hardcodedJsonClaimMapperConfig.put(HardcodedClaim.CLAIM_VALUE,
+                "{\"" + HARDOCDED_CLAIM + "\": \"" + HARDOCDED_VALUE + "\"}");
 
-        client.setProtocolMappers(Arrays.asList(emailMapper, userAttrMapper, userAttrMapper2, nestedAttrMapper, dottedAttrMapper, hardcodedJsonClaim));
+        client.setProtocolMappers(Arrays.asList(emailMapper, userAttrMapper, userAttrMapper2, nestedAttrMapper,
+                dottedAttrMapper, hardcodedJsonClaim));
 
         return Collections.singletonList(client);
     }
@@ -158,17 +177,16 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
     @Override
     public List<ClientRepresentation> createConsumerClients() {
         ClientRepresentation client = new ClientRepresentation();
+        client.setId("broker-app");
         client.setClientId("broker-app");
         client.setName("broker-app");
         client.setSecret("broker-app-secret");
         client.setEnabled(true);
         client.setDirectAccessGrantsEnabled(true);
 
-        client.setRedirectUris(Collections.singletonList(getConsumerRoot() +
-                "/auth/*"));
+        client.setRedirectUris(Collections.singletonList(getConsumerRoot() + "/auth/*"));
 
-        client.setBaseUrl(getConsumerRoot() +
-                "/auth/realms/" + REALM_CONS_NAME + "/app");
+        client.setBaseUrl(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app");
 
         return Collections.singletonList(client);
     }
@@ -183,19 +201,25 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         return idp;
     }
 
-    protected void applyDefaultConfiguration(final Map<String, String> config, IdentityProviderSyncMode syncMode) {
+    protected void applyDefaultConfiguration(final Map<String, String> config,
+            IdentityProviderSyncMode syncMode) {
         config.put(IdentityProviderModel.SYNC_MODE, syncMode.toString());
         config.put("clientId", CLIENT_ID);
         config.put("clientSecret", CLIENT_SECRET);
         config.put("prompt", "login");
-        config.put("authorizationUrl", getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/auth");
-        config.put("tokenUrl", getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/token");
-        config.put("logoutUrl", getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/logout");
-        config.put("userInfoUrl", getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/userinfo");
+        config.put("issuer", getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME);
+        config.put("authorizationUrl",
+                getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/auth");
+        config.put("tokenUrl",
+                getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/token");
+        config.put("logoutUrl",
+                getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/logout");
+        config.put("userInfoUrl",
+                getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/userinfo");
         config.put("defaultScope", "email profile");
         config.put("backchannelSupported", "true");
         config.put(OIDCIdentityProviderConfig.JWKS_URL,
-                getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/certs");
+                getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/certs");
         config.put(OIDCIdentityProviderConfig.USE_JWKS_URL, "true");
         config.put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "true");
     }

@@ -139,6 +139,14 @@ public class DescriptionConverter {
 
         configWrapper.setTokenEndpointAuthSigningAlg(clientOIDC.getTokenEndpointAuthSigningAlg());
 
+        configWrapper.setBackchannelLogoutUrl(clientOIDC.getBackchannelLogoutUri());
+
+        if (clientOIDC.getBackchannelLogoutSessionRequired() == null) {
+            configWrapper.setBackchannelLogoutSessionRequired(true);
+        } else {
+            configWrapper.setBackchannelLogoutSessionRequired(clientOIDC.getBackchannelLogoutSessionRequired());
+        }
+
         return client;
     }
 
@@ -234,6 +242,8 @@ public class DescriptionConverter {
         if (config.getTokenEndpointAuthSigningAlg() != null) {
             response.setTokenEndpointAuthSigningAlg(config.getTokenEndpointAuthSigningAlg());
         }
+        response.setBackchannelLogoutUri(config.getBackchannelLogoutUrl());
+        response.setBackchannelLogoutSessionRequired(config.isBackchannelLogoutSessionRequired());
 
         List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(client);
         SubjectType subjectType = foundPairwiseMappers.isEmpty() ? SubjectType.PUBLIC : SubjectType.PAIRWISE;

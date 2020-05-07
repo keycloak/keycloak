@@ -21,8 +21,13 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.Token;
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
+import org.keycloak.broker.oidc.OIDCIdentityProvider;
+import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.provider.IdentityProvider;
+import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
@@ -32,6 +37,7 @@ import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.migration.migrators.MigrationUtils;
@@ -39,6 +45,7 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -54,32 +61,42 @@ import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
+import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
+import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+
+import static org.keycloak.representations.IDToken.NONCE;
 
 /**
  * Stateless object that creates tokens and manages oauth access codes
@@ -1070,4 +1087,103 @@ public class TokenManager {
             return new NotBeforeCheck(session.users().getNotBeforeOfUser(realmModel, userModel));
         }
     }
+
+    public LogoutTokenValidationCode verifyLogoutToken(KeycloakSession session, RealmModel realm, String encodedLogoutToken) {
+        Optional<LogoutToken> logoutTokenOptional = toLogoutToken(encodedLogoutToken);
+        if (!logoutTokenOptional.isPresent()) {
+            return LogoutTokenValidationCode.DECODE_TOKEN_FAILED;
+        }
+
+        LogoutToken logoutToken = logoutTokenOptional.get();
+        List<OIDCIdentityProvider> identityProviders = getOIDCIdentityProviders(realm, session);
+        if (identityProviders.isEmpty()) {
+            return LogoutTokenValidationCode.COULD_NOT_FIND_IDP;
+        }
+
+        List<OIDCIdentityProvider> validOidcIdentityProviders = validateLogoutTokenAgainstIdpProvider(identityProviders, encodedLogoutToken, logoutToken);
+        if (validOidcIdentityProviders.isEmpty()) {
+            return LogoutTokenValidationCode.TOKEN_VERIFICATION_WITH_IDP_FAILED;
+        }
+
+        if (logoutToken.getSubject() == null && logoutToken.getSid() == null) {
+            return LogoutTokenValidationCode.MISSING_SID_OR_SUBJECT;
+        }
+
+        if (!checkLogoutTokenForEvents(logoutToken)) {
+            return LogoutTokenValidationCode.BACKCHANNEL_LOGOUT_EVENT_MISSING;
+        }
+
+        if (logoutToken.getOtherClaims().get(NONCE) != null) {
+            return LogoutTokenValidationCode.NONCE_CLAIM_IN_TOKEN;
+        }
+
+        if (logoutToken.getId() == null) {
+            return LogoutTokenValidationCode.LOGOUT_TOKEN_ID_MISSING;
+        }
+
+        if (logoutToken.getIat() == null) {
+            return LogoutTokenValidationCode.MISSING_IAT_CLAIM;
+        }
+
+        return LogoutTokenValidationCode.VALIDATION_SUCCESS;
+    }
+
+    public Optional<LogoutToken> toLogoutToken(String encodedLogoutToken) {
+        try {
+            JWSInput jws = new JWSInput(encodedLogoutToken);
+            return Optional.of(jws.readJsonContent(LogoutToken.class));
+        } catch (JWSInputException e) {
+            return Optional.empty();
+        }
+    }
+
+
+    public List<OIDCIdentityProvider> getValidOIDCIdentityProvidersForBackchannelLogout(RealmModel realm, KeycloakSession session, String encodedLogoutToken, LogoutToken logoutToken) {
+        List<OIDCIdentityProvider> identityProviders = getOIDCIdentityProviders(realm, session);
+        return validateLogoutTokenAgainstIdpProvider(identityProviders, encodedLogoutToken, logoutToken);
+    }
+
+
+    public List<OIDCIdentityProvider> validateLogoutTokenAgainstIdpProvider(List<OIDCIdentityProvider> oidcIdps, String encodedLogoutToken, LogoutToken logoutToken) {
+        List<OIDCIdentityProvider> validIdps = new ArrayList<>();
+        for (OIDCIdentityProvider oidcIdp : oidcIdps) {
+            if (oidcIdp.getConfig().getIssuer() != null) {
+                if (oidcIdp.isIssuer(logoutToken.getIssuer(), null)) {
+                    try {
+                        oidcIdp.validateToken(encodedLogoutToken);
+                        validIdps.add(oidcIdp);
+                    } catch (IdentityBrokerException e) {
+                        logger.debugf("LogoutToken verification with identity provider failed", e.getMessage());
+                    }
+                }
+            }
+        }
+        return validIdps;
+    }
+
+    private List<OIDCIdentityProvider> getOIDCIdentityProviders(RealmModel realm, KeycloakSession session) {
+        List<OIDCIdentityProvider> availableProviders = new ArrayList<>();
+        try {
+            for (IdentityProviderModel idpModel : realm.getIdentityProviders()) {
+                IdentityProviderFactory factory = IdentityBrokerService.getIdentityProviderFactory(session, idpModel);
+                IdentityProvider identityProvider = factory.create(session, idpModel);
+                if (identityProvider instanceof OIDCIdentityProvider) {
+                    availableProviders.add(((OIDCIdentityProvider) identityProvider));
+                }
+            }
+        } catch (IdentityBrokerException e) {
+            logger.warnf("LogoutToken verification with identity provider failed", e.getMessage());
+        }
+        return availableProviders;
+    }
+
+    private boolean checkLogoutTokenForEvents(LogoutToken logoutToken) {
+        for (String eventKey : logoutToken.getEvents().keySet()) {
+            if (TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT.equals(eventKey)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

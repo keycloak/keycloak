@@ -166,6 +166,24 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, algName);
     }
 
+    public String getBackchannelLogoutUrl() {
+        return getAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL);
+    }
+
+    public void setBackchannelLogoutUrl(String backchannelLogoutUrl) {
+        setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, backchannelLogoutUrl);
+    }
+
+    public boolean isBackchannelLogoutSessionRequired() {
+        String backchannelLogoutSessionRequired = getAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_SESSION_REQUIRED);
+        return Boolean.parseBoolean(backchannelLogoutSessionRequired);
+    }
+
+    public void setBackchannelLogoutSessionRequired(boolean backchannelLogoutSessionRequired) {
+        String val = String.valueOf(backchannelLogoutSessionRequired);
+        setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_SESSION_REQUIRED, val);
+    }
+
     private String getAttribute(String attrKey) {
         if (clientModel != null) {
             return clientModel.getAttribute(attrKey);

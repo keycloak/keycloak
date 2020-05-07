@@ -168,11 +168,11 @@ public class AuthenticationManager {
         }
     }
 
-    public static void expireUserSessionCookie(KeycloakSession session, UserSessionModel userSession, RealmModel realm, UriInfo uriInfo, HttpHeaders headers, ClientConnection connection) {
+    public static boolean expireUserSessionCookie(KeycloakSession session, UserSessionModel userSession, RealmModel realm, UriInfo uriInfo, HttpHeaders headers, ClientConnection connection) {
         try {
             // check to see if any identity cookie is set with the same session and expire it if necessary
             Cookie cookie = CookieHelper.getCookie(headers.getCookies(), KEYCLOAK_IDENTITY_COOKIE);
-            if (cookie == null) return;
+            if (cookie == null) return true;
             String tokenString = cookie.getValue();
 
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString, AccessToken.class)
@@ -189,9 +189,11 @@ public class AuthenticationManager {
 
             AccessToken token = verifier.verify().getToken();
             UserSessionModel cookieSession = session.sessions().getUserSession(realm, token.getSessionState());
-            if (cookieSession == null || !cookieSession.getId().equals(userSession.getId())) return;
+            if (cookieSession == null || !cookieSession.getId().equals(userSession.getId())) return true;
             expireIdentityCookie(realm, uriInfo, connection);
+            return true;
         } catch (Exception e) {
+            return false;
         }
 
     }
@@ -208,11 +210,11 @@ public class AuthenticationManager {
         );
     }
 
-    public static void backchannelLogout(KeycloakSession session, RealmModel realm,
-                                         UserSessionModel userSession, UriInfo uriInfo,
-                                         ClientConnection connection, HttpHeaders headers,
-                                         boolean logoutBroker) {
-        backchannelLogout(session, realm, userSession, uriInfo, connection, headers, logoutBroker, false);
+    public static boolean backchannelLogout(KeycloakSession session, RealmModel realm,
+                                            UserSessionModel userSession, UriInfo uriInfo,
+                                            ClientConnection connection, HttpHeaders headers,
+                                            boolean logoutBroker) {
+        return backchannelLogout(session, realm, userSession, uriInfo, connection, headers, logoutBroker, false);
     }
 
     /**
@@ -225,27 +227,31 @@ public class AuthenticationManager {
      * @param headers
      * @param logoutBroker
      * @param offlineSession
+     *
+     * @return {@code true} when the logout succeeded, {@code false} otherwise
      */
-    public static void backchannelLogout(KeycloakSession session, RealmModel realm,
-                                         UserSessionModel userSession, UriInfo uriInfo,
-                                         ClientConnection connection, HttpHeaders headers,
-                                         boolean logoutBroker,
-                                         boolean offlineSession) {
-        if (userSession == null) return;
+    public static boolean backchannelLogout(KeycloakSession session, RealmModel realm,
+                                            UserSessionModel userSession, UriInfo uriInfo,
+                                            ClientConnection connection, HttpHeaders headers,
+                                            boolean logoutBroker,
+                                            boolean offlineSession) {
+        if (userSession == null) return true;
         UserModel user = userSession.getUser();
         if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
             userSession.setState(UserSessionModel.State.LOGGING_OUT);
         }
 
         logger.debugv("Logging out: {0} ({1}) offline: {2}", user.getUsername(), userSession.getId(), userSession.isOffline());
-        expireUserSessionCookie(session, userSession, realm, uriInfo, headers, connection);
+        boolean expireUserSessionCookieSucceeded = expireUserSessionCookie(session, userSession, realm, uriInfo, headers, connection);
 
         final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
         AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, asm, userSession, false);
 
+        boolean backchannelLogoutAllSucceeded = false;
+        boolean userSessionOnlyHasLoggedOutClients = false;
         try {
-            backchannelLogoutAll(session, realm, userSession, logoutAuthSession, uriInfo, headers, logoutBroker);
-            checkUserSessionOnlyHasLoggedOutClients(realm, userSession, logoutAuthSession);
+            backchannelLogoutAllSucceeded = backchannelLogoutAll(session, realm, userSession, logoutAuthSession, uriInfo, headers, logoutBroker);
+            userSessionOnlyHasLoggedOutClients = checkUserSessionOnlyHasLoggedOutClients(realm, userSession, logoutAuthSession);
         } finally {
             RootAuthenticationSessionModel rootAuthSession = logoutAuthSession.getParentSession();
             rootAuthSession.removeAuthenticationSessionByTabId(logoutAuthSession.getTabId());
@@ -264,6 +270,8 @@ public class AuthenticationManager {
         } else {
             session.sessions().removeUserSession(realm, userSession);
         }
+
+        return expireUserSessionCookieSucceeded && backchannelLogoutAllSucceeded && userSessionOnlyHasLoggedOutClients;
     }
 
     private static AuthenticationSessionModel createOrJoinLogoutSession(KeycloakSession session, RealmModel realm, final AuthenticationSessionManager asm, UserSessionModel userSession, boolean browserCookie) {
@@ -307,12 +315,17 @@ public class AuthenticationManager {
         return logoutAuthSession;
     }
 
-    private static void backchannelLogoutAll(KeycloakSession session, RealmModel realm,
-      UserSessionModel userSession, AuthenticationSessionModel logoutAuthSession, UriInfo uriInfo,
-      HttpHeaders headers, boolean logoutBroker) {
-        userSession.getAuthenticatedClientSessions().values().forEach(
-          clientSession -> backchannelLogoutClientSession(session, realm, clientSession, logoutAuthSession, uriInfo, headers)
-        );
+    private static boolean backchannelLogoutAll(KeycloakSession session, RealmModel realm,
+                                                UserSessionModel userSession, AuthenticationSessionModel logoutAuthSession, UriInfo uriInfo,
+                                                HttpHeaders headers, boolean logoutBroker) {
+
+        boolean allLogoutsSucceeded = true;
+
+        for (AuthenticatedClientSessionModel clientSession : userSession.getAuthenticatedClientSessions().values()) {
+            boolean logoutSucceeded =
+                    backchannelLogoutClientSession(session, realm, clientSession, logoutAuthSession, uriInfo, headers);
+            allLogoutsSucceeded = allLogoutsSucceeded && logoutSucceeded;
+        }
         if (logoutBroker) {
             String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
             if (brokerId != null) {
@@ -321,9 +334,12 @@ public class AuthenticationManager {
                     identityProvider.backchannelLogout(session, userSession, uriInfo, realm);
                 } catch (Exception e) {
                     logger.warn("Exception at broker backchannel logout for broker " + brokerId, e);
+                    return false;
                 }
             }
         }
+
+        return allLogoutsSucceeded;
     }
 
     /**
@@ -404,7 +420,13 @@ public class AuthenticationManager {
             protocol.setRealm(realm)
                     .setHttpHeaders(headers)
                     .setUriInfo(uriInfo);
-            protocol.backchannelLogout(userSession, clientSession);
+
+            /*
+             * if we want to implement the specification to 100%, we would have to return the return correctly here. But
+             * since the actual session of the client cannot be distinguished from the underlying ones we decided to
+             * leave the value as it is for the first review of the pullrequest.
+             */
+            boolean clientSessionLogout = protocol.backchannelLogout(userSession, clientSession);
 
             setClientLogoutAction(logoutAuthSession, client.getId(), AuthenticationSessionModel.Action.LOGGED_OUT);
 

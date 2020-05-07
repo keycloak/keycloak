@@ -530,7 +530,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
     }
 
-    protected JsonWebToken validateToken(String encodedToken) {
+    public JsonWebToken validateToken(String encodedToken) {
         boolean ignoreAudience = false;
 
         return validateToken(encodedToken, ignoreAudience);
@@ -602,7 +602,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     @Override
     public boolean isIssuer(String issuer, MultivaluedMap<String, String> params) {
         if (!supportsExternalExchange()) return false;
-        String requestedIssuer = params.getFirst(OAuth2Constants.SUBJECT_ISSUER);
+        String requestedIssuer = params == null ? null : params.getFirst(OAuth2Constants.SUBJECT_ISSUER);
         if (requestedIssuer == null) requestedIssuer = issuer;
         if (requestedIssuer.equals(getConfig().getAlias())) return true;
         
