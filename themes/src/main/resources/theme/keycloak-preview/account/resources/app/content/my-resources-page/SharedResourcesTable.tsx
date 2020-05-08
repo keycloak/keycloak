@@ -78,20 +78,22 @@ export class SharedResourcesTable extends AbstractResourcesTable<ResourcesTableS
                                         <a href={resource.client.baseUrl}>{this.getClientName(resource.client)}</a>
                                     </DataListCell>,
                                     <DataListCell key={'permissions-' + row} width={2}>
-                                        <ChipGroup>
+                                        { resource.scopes.length > 0 &&
+                                        <ChipGroup withToolbar>
                                             <ChipGroupToolbarItem key='permissions' categoryName={Msg.localize('permissions')}>
                                                 {
-                                                    resource.scopes.length > 0 && resource.scopes.map(scope => (
+                                                    resource.scopes.map(scope => (
                                                         <Chip key={scope.name} isReadOnly>
                                                             {scope.displayName || scope.name}
                                                         </Chip>
                                                     ))
                                                 }
                                             </ChipGroupToolbarItem>
-                                        </ChipGroup>
+                                        </ChipGroup>}
                                     </DataListCell>,
                                     <DataListCell key={'pending-' + row} width={2}>
                                         {resource.shareRequests.length > 0 &&
+                                        <ChipGroup withToolbar>
                                             <ChipGroupToolbarItem key='permissions' categoryName={Msg.localize('pending')}>
                                                 {
                                                     resource.shareRequests[0].scopes.map(scope => (
@@ -101,6 +103,7 @@ export class SharedResourcesTable extends AbstractResourcesTable<ResourcesTableS
                                                     ))
                                                 }
                                             </ChipGroupToolbarItem>
+                                        </ChipGroup>
                                         }
                                     </DataListCell>
                                 ]}

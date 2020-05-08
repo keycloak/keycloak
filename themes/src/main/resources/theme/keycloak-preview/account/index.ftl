@@ -105,6 +105,8 @@
             </#list>
         </#if>
 
+        <link rel="stylesheet" type="text/css" href="${resourceUrl}/public/base.css"/>
+        <link rel="stylesheet" type="text/css" href="${resourceUrl}/public/app.css"/>
         <link href="${resourceUrl}/public/layout.css" rel="stylesheet"/>
     </head>
 
@@ -128,13 +130,8 @@
                     document.getElementById("landingLoggedInUser").innerHTML = loggedInUserName('${msg("unknownUser")}', '${msg("fullName")}');
                 }
 
-                loadjs("/node_modules/systemjs/dist/system.src.js", function() {
-                    loadjs("/systemjs.config.js", function() {
-                        System.import('${resourceUrl}/Main.js').catch(function (err) {
-                            console.error(err);
-                        });
-                    });
-                });
+                loadjs("/app/Main.js");
+
             }).error(function() {
                 alert('failed to initialize keycloak');
             });

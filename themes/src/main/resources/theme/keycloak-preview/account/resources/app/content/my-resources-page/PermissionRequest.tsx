@@ -17,7 +17,7 @@ import * as React from 'react';
 import { Button, Modal, Text, Badge, DataListItem, DataList, TextVariants, DataListItemRow, DataListItemCells, DataListCell, Chip } from '@patternfly/react-core';
 import { UserCheckIcon } from '@patternfly/react-icons';
 
-import { AccountServiceClient } from '../../account-service/account.service';
+import AccountService, {HttpResponse} from '../../account-service/account.service';
 import { Msg } from '../../widgets/Msg';
 import { ContentAlert } from '../ContentAlert';
 import { Resource, Scope, Permission } from './MyResourcesPage';
@@ -55,13 +55,16 @@ export class PermissionRequest extends React.Component<PermissionRequestProps, P
         const id = this.props.resource._id
         this.handleToggleDialog();
 
-        const permissionsRequest = await AccountServiceClient.Instance.doGet(`/resources/${id}/permissions`);
-        const userScopes = permissionsRequest.data.find((p: Permission) => p.username === username).scopes;
+        const permissionsRequest: HttpResponse<Permission[]> = await AccountService.doGet(`/resources/${id}/permissions`);
+        const permissions: Permission[] = permissionsRequest.data || [];
+
+        // Erik - I had to add the exclamation point.  Can we be sure that the 'find' will not return undefined?
+        const userScopes = permissions.find((p: Permission) => p.username === username)!.scopes;
         if (approve) {
             userScopes.push(...scopes);
         }
         try {
-            await AccountServiceClient.Instance.doPut(`/resources/${id}/permissions`, { data: [{ username: username, scopes: userScopes }] })
+            await AccountService.doPut(`/resources/${id}/permissions`, [{ username: username, scopes: userScopes }] )
             ContentAlert.success(Msg.localize('shareSuccess'));
             this.props.onClose();
         } catch (e) {

@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import * as React from 'react';
-import { AxiosResponse } from 'axios';
 import { ActionGroup, Button, Form, FormGroup, TextInput } from '@patternfly/react-core';
 
-import { AccountServiceClient } from '../../account-service/account.service';
+import AccountService, {HttpResponse} from '../../account-service/account.service';
 import { Features } from '../../widgets/features';
 import { Msg } from '../../widgets/Msg';
 import { ContentPage } from '../ContentPage';
@@ -74,15 +72,15 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
     }
 
     private fetchPersonalInfo(): void {
-        AccountServiceClient.Instance.doGet("/")
-            .then((response: AxiosResponse<FormFields>) => {
+        AccountService.doGet<FormFields>("/")
+            .then((response: HttpResponse<FormFields>) => {
                 this.setState(this.DEFAULT_STATE);
                 const formFields = response.data;
-                if (!formFields.attributes || !formFields.attributes.locale) {
-                    formFields.attributes = { locale: [locale] };
+                if (!formFields!.attributes || !formFields!.attributes.locale) {
+                    formFields!.attributes = { locale: [locale] };
                 }
 
-                this.setState({...{ formFields: formFields }});
+                this.setState({...{ formFields: formFields as FormFields }});
             });
     }
 
@@ -106,8 +104,8 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
         const isValid = form.checkValidity();
         if (isValid) {
             const reqData: FormFields = { ...this.state.formFields };
-            AccountServiceClient.Instance.doPost("/", { data: reqData })
-                .then(() => { // to use response, say ((response: AxiosResponse<FormFields>) => {
+            AccountService.doPost<void>("/", reqData)
+                .then(() => {
                     ContentAlert.success('accountUpdatedMessage');
                     if (locale !== this.state.formFields.attributes!.locale![0]) {
                         window.location.reload();
@@ -202,7 +200,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                         >
                         </TextInput>
                     </FormGroup>
-                    {features.isInternationalizationEnabled && <FormGroup 
+                    {features.isInternationalizationEnabled && <FormGroup
                         label={Msg.localize('selectLocale')}
                         isRequired
                         fieldId="locale"

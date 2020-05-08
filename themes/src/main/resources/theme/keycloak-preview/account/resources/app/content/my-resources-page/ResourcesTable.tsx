@@ -15,7 +15,6 @@
  */
 
 import * as React from 'react';
-import {AxiosResponse} from 'axios';
 
 import {
     DataList,
@@ -34,7 +33,7 @@ import {
 
 import { Remove2Icon } from '@patternfly/react-icons';
 
-import {AccountServiceClient} from '../../account-service/account.service';
+import AccountService, {HttpResponse} from '../../account-service/account.service';
 import {PermissionRequest} from "./PermissionRequest";
 import {ShareTheResource} from "./ShareTheResource";
 import {Permission, Resource} from "./MyResourcesPage";
@@ -65,10 +64,10 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
     };
 
     private fetchPermissions(resource: Resource, row: number): void {
-        AccountServiceClient.Instance.doGet('resources/' + resource._id + '/permissions')
-          .then((response: AxiosResponse<Permission[]>) => {
+        AccountService.doGet(`/resources/${resource._id}/permissions`)
+          .then((response: HttpResponse<Permission[]>) => {
             const newPermissions: Map<number, Permission[]> = new Map(this.state.permissions);
-            newPermissions.set(row, response.data);
+            newPermissions.set(row, response.data || []);
             this.setState({permissions: newPermissions});
           }
         );
@@ -76,7 +75,7 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
 
     private removeShare(resource: Resource, row: number): void {
         const permissions = this.state.permissions.get(row)!.map(a => ({ username: a.username, scopes: [] }));
-        AccountServiceClient.Instance.doPut(`/resources/${resource._id}/permissions`, { data: permissions })
+        AccountService.doPut(`/resources/${resource._id}/permissions`, permissions)
             .then(() => {
                 ContentAlert.success(Msg.localize('shareSuccess'));
                 this.onToggle(row);
@@ -159,8 +158,8 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
                                     <Level gutter='md'>
                                         <LevelItem><span/></LevelItem>
                                         <LevelItem>
-                                            <ShareTheResource resource={resource} 
-                                                              permissions={this.state.permissions.get(row)!} 
+                                            <ShareTheResource resource={resource}
+                                                              permissions={this.state.permissions.get(row)!}
                                                               sharedWithUsersMsg={this.sharedWithUsersMessage(row)}
                                                               onClose={this.fetchPermissions.bind(this)}
                                                               row={row}/>

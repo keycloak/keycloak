@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2018 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
 
 import * as React from 'react';
 
-import {Msg} from '../widgets/Msg';
+import {Msg} from './Msg';
 
 import {ArrowIcon} from '@patternfly/react-icons';
  
@@ -30,7 +30,7 @@ export interface ReferrerLinkProps {
  * @author Stan Silvert ssilvert@redhat.com (C) 2018 Red Hat Inc.
  */
 export class ReferrerLink extends React.Component<ReferrerLinkProps> {
-    
+
     public constructor(props: ReferrerLinkProps) {
         super(props);
     }

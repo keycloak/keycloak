@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2019 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@
 import * as React from 'react';
 import { Modal, Button, ButtonProps } from '@patternfly/react-core';
 import {Msg} from './Msg';
- 
+
 /**
  * For any of these properties that are strings, you can
  * pass in a localization key instead of a static string.
@@ -41,7 +41,7 @@ interface ContinueCancelModalState {
 /**
  * This class renders a button that provides a continue/cancel modal dialog when clicked.  If the user selects 'Continue'
  * then the onContinue function is executed.
- * 
+ *
  * @author Stan Silvert ssilvert@redhat.com (C) 2019 Red Hat Inc.
  */
 export class ContinueCancelModal extends React.Component<ContinueCancelModalProps, ContinueCancelModalState> {
@@ -51,7 +51,7 @@ export class ContinueCancelModal extends React.Component<ContinueCancelModalProp
         modalCancelButtonLabel: 'doCancel',
         isDisabled: false
     };
-    
+
     public constructor(props: ContinueCancelModalProps) {
         super(props);
         this.state = {

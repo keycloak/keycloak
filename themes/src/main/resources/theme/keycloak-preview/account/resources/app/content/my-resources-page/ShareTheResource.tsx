@@ -16,16 +16,16 @@
 
 import * as React from 'react';
 
-import { 
-    Button, 
+import {
+    Button,
     Chip,
     ChipGroup,
     ChipGroupToolbarItem,
-    Form, 
-    FormGroup, 
+    Form,
+    FormGroup,
     Gallery,
     GalleryItem,
-    Modal, 
+    Modal,
     Stack,
     StackItem,
     TextInput
@@ -33,7 +33,7 @@ import {
 
 import { ShareAltIcon } from '@patternfly/react-icons';
 
-import {AccountServiceClient} from '../../account-service/account.service';
+import AccountService, {HttpResponse} from '../../account-service/account.service';
 import { Resource, Permission, Scope } from './MyResourcesPage';
 import { Msg } from '../../widgets/Msg';
 import {ContentAlert} from '../ContentAlert';
@@ -63,7 +63,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
     public constructor(props: ShareTheResourceProps) {
         super(props);
 
-        this.state = { 
+        this.state = {
             isOpen: false,
             permissionsSelected: [],
             permissionsUnSelected: this.props.resource.scopes,
@@ -83,23 +83,23 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
 
     private handleAddPermission = () => {
         const rscId: string = this.props.resource._id;
-        const newPermissions: string[] = []; 
-        
+        const newPermissions: string[] = [];
+
         for (const permission of this.state.permissionsSelected) {
             newPermissions.push(permission.name);
         }
 
         const permissions = [];
-        
+
         for (const username of this.state.usernames) {
             permissions.push({username: username, scopes: newPermissions});
         }
 
         this.handleToggleDialog();
 
-        AccountServiceClient.Instance.doPut('/resources/' + rscId + '/permissions', {data: permissions})
+        AccountService.doPut(`/resources/${rscId}/permissions`, permissions)
             .then(() => {
-                ContentAlert.success(Msg.localize('shareSuccess'));
+                ContentAlert.success('shareSuccess');
                 this.props.onClose(this.props.resource, this.props.row);
             })
     };
@@ -217,9 +217,9 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
                                                 <Msg msgKey="add"/>
                                             </Button>
                                         </GalleryItem>
-                                        
+
                                 </Gallery>
-                                <ChipGroup>
+                                <ChipGroup withToolbar>
                                     <ChipGroupToolbarItem key='users-selected' categoryName='Share with '>
                                     {this.state.usernames.map((currentChip: string) => (
                                         <Chip key={currentChip} onClick={() => this.handleDeleteUsername(currentChip)}>
@@ -234,7 +234,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
                                 fieldId="permissions-selected"
                             >
                                 {this.state.permissionsSelected.length < 1 && <strong>Select permissions below:</strong>}
-                                <ChipGroup>
+                                <ChipGroup withToolbar>
                                     <ChipGroupToolbarItem key='permissions-selected' categoryName='Grant Permissions '>
                                     {this.state.permissionsSelected.map((currentChip: Scope) => (
                                         <Chip key={currentChip.toString()} onClick={() => this.handleSelectPermission(currentChip)}>
@@ -248,7 +248,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
                                 label=""
                                 fieldId="permissions-not-selected"
                             >
-                                <ChipGroup>
+                                <ChipGroup withToolbar>
                                     <ChipGroupToolbarItem key='permissions-unselected' categoryName='Not Selected '>
                                     {this.state.permissionsUnSelected.map((currentChip: Scope) => (
                                         <Chip key={currentChip.toString()} onClick={() => this.handleSelectPermission(currentChip)}>
@@ -264,7 +264,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
                     <StackItem isFilled>
                         {this.props.sharedWithUsersMsg}
                     </StackItem>
-                    
+
                     </Stack>
                 </Modal>
             </React.Fragment>
