@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2019 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@
 import * as React from 'react';
 import {Alert, AlertActionCloseButton} from '@patternfly/react-core';
 import {Msg} from '../widgets/Msg';
- 
+
 interface ContentAlertProps {}
 
 type AlertVariant = 'success' | 'danger' | 'warning' | 'info';
@@ -31,53 +31,53 @@ export class ContentAlert extends React.Component<ContentAlertProps, ContentAler
 
     private constructor(props: ContentAlertProps) {
         super(props);
-        
+
         this.state = {isVisible: false, message: '', variant: 'success'};
         ContentAlert.instance = this;
     }
-    
+
     /**
      * @param message A literal text message or localization key.
      */
     public static success(message: string, params?: string[]): void {
         ContentAlert.instance.postAlert('success', message, params);
     }
-    
+
     /**
      * @param message A literal text message or localization key.
      */
     public static danger(message: string, params?: string[]): void {
         ContentAlert.instance.postAlert('danger', message, params);
     }
-    
+
     /**
      * @param message A literal text message or localization key.
      */
     public static warning(message: string, params?: string[]): void {
         ContentAlert.instance.postAlert('warning', message, params);
     }
-    
+
     /**
      * @param message A literal text message or localization key.
      */
     public static info(message: string, params?: string[]): void {
         ContentAlert.instance.postAlert('info', message, params);
     }
-    
+
     private hideAlert = () => {
         this.setState({isVisible: false});
     }
-    
+
     private postAlert = (variant: AlertVariant, message: string, params?: string[]) => {
-        this.setState({isVisible: true, 
-                       message: Msg.localize(message, params), 
+        this.setState({isVisible: true,
+                       message: Msg.localize(message, params),
                        variant});
-        
+
         if (variant !== 'danger') {
             setTimeout(() => this.setState({isVisible: false}), 5000);
         }
     }
-    
+
     public render(): React.ReactNode {
         return (
             <React.Fragment>

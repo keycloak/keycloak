@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2018 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,19 +16,18 @@
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import {System} from 'systemjs';
 
 import {HashRouter} from 'react-router-dom';
 
-import {App} from './app/App';
-import {ContentItem, ModulePageDef, flattenContent, initGroupAndItemIds, isExpansion, isModulePageDef} from './app/ContentPages';
+import {App} from './App';
+import {ContentItem, ModulePageDef, flattenContent, initGroupAndItemIds, isExpansion, isModulePageDef} from './ContentPages';
 
 declare let isReactLoading: boolean;
 declare function toggleReact(): void;
 
 export interface MainProps {}
 export class Main extends React.Component<MainProps> {
-    
+
     public constructor(props: MainProps) {
         super(props);
     }
@@ -56,7 +55,7 @@ function removeHidden(items: ContentItem[]): ContentItem[] {
 
     for (let item of items) {
         if (item.hidden) continue;
-        
+
         if (isExpansion(item)) {
             visible.push(item);
             item.content = removeHidden(item.content);
@@ -76,7 +75,8 @@ initGroupAndItemIds();
 
 function loadModule(modulePage: ModulePageDef): Promise<ModulePageDef> {
     return new Promise ((resolve, reject) => {
-        System.import(resourceUrl + modulePage.modulePath).then( (module: React.Component) => {
+        console.log('loading: ' + resourceUrl + modulePage.modulePath);
+        import(resourceUrl + modulePage.modulePath).then( (module: React.Component) => {
             modulePage.module = module;
             resolve(modulePage);
         }).catch((error: Error) => {

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2019 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,15 +23,15 @@ import {
 import { Msg } from './Msg';
 
 interface AvailableLocale {
-    locale: string; 
+    locale: string;
     label: string;
 };
 declare const availableLocales: [AvailableLocale];
 
-interface LocaleSelectorProps extends FormSelectProps { }
+interface LocaleSelectorProps extends Omit<FormSelectProps, 'children'> { }
 interface LocaleSelectorState { }
 export class LocaleSelector extends React.Component<LocaleSelectorProps, LocaleSelectorState> {
-    
+
     constructor(props: LocaleSelectorProps) {
         super(props);
     }
@@ -44,7 +44,7 @@ export class LocaleSelector extends React.Component<LocaleSelectorProps, LocaleS
                 onChange={(value, event) => { if (this.props.onChange) this.props.onChange(value, event) }}
                 aria-label={Msg.localize('selectLocale')}
             >
-                {availableLocales.map((locale, index) => 
+                {availableLocales.map((locale, index) =>
                     <FormSelectOption
                         key={index}
                         value={locale.locale}

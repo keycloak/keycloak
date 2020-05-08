@@ -3,31 +3,34 @@
   "version": "1.0.0",
   "description": "keycloak-preview account management written in React",
   "scripts": {
-    "build": "tsc --noImplicitAny --strictNullChecks --jsx react -p ./ && npm run lint",
-    "build:watch": "tsc --noImplicitAny --strictNullChecks --jsx react -p ./ -w",
-    "lint": "eslint --ignore-pattern *.d.ts ./**/*.ts*"
+    "build": "snowpack && npm run check-types && npm run babel",
+    "babel": "babel --source-maps --extensions \".js,.ts,.tsx\" app/ --out-dir app/",
+    "babel:watch": "npm run babel -- --watch",
+    "check-types": "tsc --noImplicitAny --strictNullChecks --jsx react -p ./",
+    "check-types:watch": "npm run check-types -- -w",
+    "lint": "eslint ./app/**/*.ts*"
   },
   "keywords": [],
   "author": "Stan Silvert",
   "license": "Apache-2.0",
   "dependencies": {
-    "@patternfly/patternfly": "^2.26.5",
-    "@patternfly/react-core": "^3.35.0",
-    "@types/node": "^12.7.2",
-    "axios": "^0.19.0",
-    "moment": "^2.22.2",
-    "querystring": "^0.2.0",
-    "react": "^16.8.5",
-    "react-dom": "^16.8.5",
-    "react-router-dom": "^4.3.1",
-    "systemjs": "^0.20.17",
-    "systemjs-plugin-babel": "0.0.25"
+    "@patternfly/react-core": "^3.153.3",
+    "@patternfly/react-icons": "^3.15.16",
+    "react": "npm:@pika/react@^16.13.1",
+    "react-dom": "npm:@pika/react-dom@^16.13.1",
+    "react-router-dom": "^4.3.1"
   },
   "devDependencies": {
-    "@types/react": "^16.8.8",
-    "@types/react-dom": "^16.8.3",
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.8.7",
+    "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/preset-env": "^7.8.7",
+    "@babel/preset-react": "^7.8.3",
+    "@babel/preset-typescript": "^7.8.3",
+    "@types/node": "^13.9.8",
+    "@types/react": "^16.9.23",
+    "@types/react-dom": "^16.9.5",
     "@types/react-router-dom": "^4.3.1",
-    "@types/systemjs": "^0.20.6",
     "@typescript-eslint/eslint-plugin": "^1.4.2",
     "@typescript-eslint/parser": "^1.4.2",
     "babel-eslint": "^9.0.0",
@@ -37,7 +40,10 @@
     "eslint-plugin-import": "^2.16.0",
     "eslint-plugin-jsx-a11y": "^6.2.1",
     "eslint-plugin-react": "^7.12.4",
-    "typescript": "^3.3.3333"
+    "rollup-plugin-copy": "^3.3.0",
+    "rollup-plugin-postcss": "^2.5.0",
+    "snowpack": "^1.7.0",
+    "typescript": "^3.8.3"
   },
   "repository": {}
 }

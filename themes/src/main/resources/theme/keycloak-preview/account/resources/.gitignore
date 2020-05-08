@@ -13,8 +13,12 @@ node_modules
 
 # Don't ignore these
 !keycloak.js
-!systemjs.config.extras.js
-!systemjs.config.js
+!snowpack.config.js
 !.eslintrc.js
 !WelcomePageScripts.js
 !content.js
+
+public/app.css
+public/base.css
+public/assets/
+web_modules/

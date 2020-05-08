@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2018 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +20,7 @@ import {Msg} from '../widgets/Msg';
 
 import {DropdownItem} from '@patternfly/react-core';
 import {ArrowIcon} from '@patternfly/react-icons';
- 
+
 declare const referrerName: string;
 declare const referrerUri: string;
 
@@ -31,13 +31,13 @@ export interface ReferrerDropdownItemProps {
  * @author Stan Silvert ssilvert@redhat.com (C) 2018 Red Hat Inc.
  */
 export class ReferrerDropdownItem extends React.Component<ReferrerDropdownItemProps> {
-    
+
     public constructor(props: ReferrerDropdownItemProps) {
         super(props);
     }
 
     public render(): React.ReactNode {
-        
+
         return (
             <DropdownItem id="referrerMobileLink" href={referrerUri}>
                 <ArrowIcon /> {Msg.localize('backTo', [referrerName])}

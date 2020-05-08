@@ -15,10 +15,9 @@
  */
 
 import * as React from 'react';
-import * as moment from 'moment';
-import {AxiosResponse} from 'axios';
 
-import {AccountServiceClient} from '../../account-service/account.service';
+import AccountService, {HttpResponse} from '../../account-service/account.service';
+import TimeUtil from '../../util/TimeUtil';
 
 import {
   Bullseye,
@@ -104,26 +103,26 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
     }
 
     private signOutAll = () => {
-      AccountServiceClient.Instance.doDelete("/sessions")
+      AccountService.doDelete("/sessions")
         .then( () => {
           KeycloakService.Instance.logout(baseUrl);
         });
     }
 
     private signOutSession = (device: Device, session: Session) => {
-      AccountServiceClient.Instance.doDelete("/sessions/" + session.id)
+      AccountService.doDelete("/sessions/" + session.id)
           .then (() => {
             this.fetchDevices();
-            ContentAlert.success(Msg.localize('signedOutSession', [session.browser, device.os]));
+            ContentAlert.success('signedOutSession', [session.browser, device.os]);
           });
     }
 
     private fetchDevices(): void {
-      AccountServiceClient.Instance.doGet("/sessions/devices")
-          .then((response: AxiosResponse<Device[]>) => {
+      AccountService.doGet<Device[]>("/sessions/devices")
+          .then((response: HttpResponse<Device[]>) => {
             console.log({response});
 
-            let devices: Device[] = this.moveCurrentToTop(response.data);
+            let devices: Device[] = this.moveCurrentToTop(response.data as Device[]);
 
             this.setState({
               devices: devices
@@ -155,7 +154,7 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
     }
 
     private time(time: number): string {
-      return moment(time * 1000).format('LLLL');
+      return TimeUtil.format(time * 1000);
     }
 
     private elementId(item: string, session: Session): string {

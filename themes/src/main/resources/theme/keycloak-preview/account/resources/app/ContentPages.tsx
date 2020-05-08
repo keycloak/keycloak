@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2019 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -70,7 +70,7 @@ function isChildOf(parent: Expansion, child: PageDef): boolean {
         if (isExpansion(item) && isChildOf(item, child)) return true;
         if (parent.groupId === child.groupId) return true;
     }
-    
+
     return false;
 }
 
@@ -91,10 +91,10 @@ function createNavItems(activePage: PageDef, contentParam: ContentItem[], groupN
             const page: PageDef = item as PageDef;
             return <NavItem id={navLinkId}
                             groupId={item.groupId}
-                            itemId={item.itemId} 
-                            key={item.itemId} 
-                            to={'#/app/' + page.path} 
-                            isActive={activePage.itemId === item.itemId} 
+                            itemId={item.itemId}
+                            key={item.itemId}
+                            to={'#/app/' + page.path}
+                            isActive={activePage.itemId === item.itemId}
                             type="button">
                         {Msg.localize(page.label, page.labelParams)}
                     </NavItem>
@@ -112,7 +112,7 @@ export function makeNavItems(activePage: PageDef): React.ReactNode {
 function setIds(contentParam: ContentItem[], groupNum: number): number {
     if (typeof contentParam === 'undefined') return groupNum;
     let expansionGroupNum = groupNum;
-    
+
     for (let i = 0; i < contentParam.length; i++) {
         const item: ContentItem = contentParam[i];
         if (isExpansion(item)) {
@@ -126,7 +126,7 @@ function setIds(contentParam: ContentItem[], groupNum: number): number {
             item.itemId = itemId(groupNum, i);
         }
     };
-    
+
     return expansionGroupNum;
 }
 
@@ -134,7 +134,7 @@ export function initGroupAndItemIds(): void {
     setIds(content, 0);
     console.log({content});
 }
-   
+
 // get rid of Expansions and put all PageDef items into a single array
 export function flattenContent(pageDefs: ContentItem[]): PageDef[] {
     const flat: PageDef[] = [];
@@ -153,7 +153,7 @@ export function flattenContent(pageDefs: ContentItem[]): PageDef[] {
 export function makeRoutes(): React.ReactNode {
     if (typeof content === 'undefined') return (<span/>);
 
-    const pageDefs: PageDef[] = flattenContent(content); 
+    const pageDefs: PageDef[] = flattenContent(content);
 
     const routes: React.ReactElement<Route>[] = pageDefs.map((page: PageDef) => {
         if (isModulePageDef(page)) {

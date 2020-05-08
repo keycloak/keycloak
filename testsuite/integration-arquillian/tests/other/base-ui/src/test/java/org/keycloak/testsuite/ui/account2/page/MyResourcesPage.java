@@ -46,13 +46,13 @@ public class MyResourcesPage extends AbstractLoggedInPage {
     public void createShare(String userName) {
         driver.findElement(By.id("username")).sendKeys(userName);
         driver.findElement(By.id("add")).click();
-        driver.findElement(By.id("remove_pf-random-id-0")).click();
+        driver.findElement(By.id("remove_pf-random-id-1")).click();
         driver.findElement(By.id("done")).click();
     }
 
     public void removeAllPermissions() {
-        driver.findElement(By.id("remove_pf-random-id-0")).click();
         driver.findElement(By.id("remove_pf-random-id-1")).click();
+        driver.findElement(By.id("remove_pf-random-id-2")).click();
         driver.findElement(By.id("done")).click();
     }
 }
