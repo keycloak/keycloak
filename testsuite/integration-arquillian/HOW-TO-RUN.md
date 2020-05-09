@@ -66,6 +66,9 @@ Analogically, there is the same behaviour for JBoss based app server as for auth
 
     -Dapp.server.debug.port=$PORT
     -Dapp.server.debug.suspend=y
+    
+When you are debugging cluster adapter tests (For example OIDCAdapterClusterTest) you may use ports 7901 and 7902 for the app
+server nodes. Tests are usually using 2 cluster adapter nodes.    
 
 ## Testsuite logging
 
