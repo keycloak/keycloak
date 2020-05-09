@@ -18,6 +18,7 @@
 package org.keycloak;
 
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.DelegatingSerializationFilter;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.util.JsonSerialization;
@@ -85,6 +86,8 @@ public class KeycloakSecurityContext implements Serializable {
     }
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        DelegatingSerializationFilter filter = new DelegatingSerializationFilter();
+        filter.setFilter(in, "org.keycloak.KeycloakSecurityContext;!*");
         in.defaultReadObject();
 
         token = parseToken(tokenString, AccessToken.class);
