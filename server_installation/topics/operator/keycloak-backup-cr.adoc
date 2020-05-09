@@ -1,15 +1,28 @@
 
-=== KeycloakBackup Custom Resource
+[[_backup-cr]]
+=== Scheduling database backups
 
-{project_operator} provides automatic backups with manual restore in 3 modes:
+You can use the Operator to schedule automatic backups of the database as defined by custom resources. The custom resource triggers a backup job
+ifeval::[{project_community}==true]
+(or a `CronJob` in the case of Periodic Backups)
+endif::[]
+and reports back its status.
 
-* One time backups to a local Persistent Volume.
-* One time backups to Amazon S3 storage.
-* Periodic backups to Amazon S3 storage.
+ifeval::[{project_community}==true]
+Two options exist to schedule backups:
 
-The Operator uses `KeycloakBackup` Custom Resource (CR) to trigger a backup Job (or a `CronJob` in case of Periodic Backups) and reports back its status. The CR has the following structure:
+* xref:_backups-cr-aws[Backing up to AWS S3 storage]
+* xref:_backups-local-cr[Backing up to local storage]
 
-.`KeycloakBackup` Custom Resource
+If you have AWS S3 storage, you can perform a one-time backup or periodic backups. If you do not have AWS S3 storage, you can back up to local storage.
+
+[[_backups-cr-aws]]
+==== Backing up to AWS S3 storage
+
+You can back up your database to AWS S3 storage one time or periodically. To back up your data periodically, enter a valid `CronJob` into the `schedule`.
+
+For AWS S3 storage, you create a YAML file for the backup custom resource and a YAML file for the AWS secret. The backup custom resource requires a YAML file with the following structure:
+
 ```yaml
 apiVersion: keycloak.org/v1alpha1
 kind: KeycloakBackup
@@ -18,11 +31,13 @@ metadata:
 spec:
   aws:
     # Optional - used only for Periodic Backups.
-    # Follows usual crond syntax (e.g. use "0 1 * * *") to perform the backup every day at 1 AM.
+    # Follows usual crond syntax (for example, use "0 1 * * *" to perform the backup every day at 1 AM.)
     schedule: <Cron Job Schedule>
     # Required - the name of the secret containing the credentials to access the S3 storage
     credentialsSecretName: <A Secret containing S3 credentials>
 ```
+
+The AWS secret requires a YAML file with the following structure:
 
 .AWS S3 `Secret`
 ```yaml
@@ -37,74 +52,148 @@ stringData:
   AWS_SECRET_ACCESS_KEY: <AWS Secret Key>
 ```
 
-IMPORTANT: The above secret name needs to match the one referred in the `KeycloakBackup` Custom Resource.
+.Prerequisites
 
-Once the `KeycloakBackup` Custom Resource is created, {project_operator} will create a corresponding Job to back up the PostgreSQL database. The status of the backup is reported in the `status` field.
-Here's an example:
+* Your Backup custom resource YAML file includes a `credentialsSecretName` that references a `Secret` containing AWS S3 credentials.
 
-.`KeycloakBackup` Status
-```yaml
-Name:         example-keycloakbackup
-Namespace:    keycloak
-Labels:       <none>
-Annotations:  <none>
-API Version:  keycloak.org/v1alpha1
-Kind:         KeycloakBackup
-Metadata:
-  Creation Timestamp:  2019-10-31T08:13:10Z
-  Generation:          1
-  Resource Version:    110940
-  Self Link:           /apis/keycloak.org/v1alpha1/namespaces/keycloak/keycloakbackups/example-keycloakbackup
-  UID:                 0ea2e038-c328-48a0-8d5a-52acbc826577
-Status:
-  Message:
-  Phase:    created
-  Ready:    true
-  Secondary Resources:
-    Job:
-      example-keycloakbackup
-    Persistent Volume Claim:
-      keycloak-backup-example-keycloakbackup
-```
+* Your `KeycloakBackup` custom resource has `aws` sub-properties.
 
-==== Backups to AWS S3
+* You have a YAML file for the AWS S3 Secret that includes a `<Secret Name>` that matches the one identified in the backup custom resource.
 
-In order to create Backups uploaded to S3 storage, you need to create a `KeycloakBackup` Custom Resource with `aws` sub-properties.
+* You have cluster-admin permission or an equivalent level of permissions granted by an administrator.
 
-IMPORTANT: The `credentialsSecretName` field is required and needs to contain a valid reference to a `Secret` containing AWS S3 credentials.
 
-If the `schedule` contains valid `CronJob` schedule definition, the Operator will backup your data periodically.
+.Procedure
 
-==== Backups to a Local Storage
+. Create the secret with credentials: `{create_cmd} -f <secret_for_aws>.yaml`. For example:
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd} -f secret.yaml
+keycloak.keycloak.org/aws_s3_secret created
+----
 
-{project_operator} can also create a backup to a local Persistent Volume. In order to do it, you need to create a `KeycloakBackup` Custom Resource without `aws` sub-properties. Here's an example:
+. Create a backup job: `{create_cmd} -f <backup_crname>.yaml`. For example:
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd} -f aws_one-time-backup.yaml
+keycloak.keycloak.org/aws_s3_backup created
+----
 
+. View a list of backup jobs:
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd_brief} get jobs
+NAME                   COMPLETIONS     DURATION     AGE
+aws_s3_backup    0/1             6s           6s
+----
+
+. View the list of executed backup jobs.
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd_brief} get pods
+NAME                               READY    STATUS       RESTARTS    AGE
+aws_s3_backup-5b4rfdd              0/1      Completed    0           24s
+keycloak-0                         1/1      Running      0           52m
+keycloak-postgresql-c824c6-vv27m   1/1      Running      0           71m
+----
+
+. View the log of your completed backup job:
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd_brief} logs aws_s3_backup-5b4rf
+==> Component data dump completed
+.
+.
+.
+.
+[source,bash,subs=+attributes]
+----
+
+The status of the backup job also appears in the AWS console.
+
+[[_backups-local-cr]]
+==== Backing up to Local Storage
+
+endif::[]
+You can use Operator to create a backup job that performs a one-time backup to a local Persistent Volume.
+
+.Example YAML file for a Backup custom resource
 ```yaml
 apiVersion: keycloak.org/v1alpha1
 kind: KeycloakBackup
 metadata:
-  name: <CR Name>
+  name: test-backup
 ```
 
-{project_operator} will create a new `PersistentVolumeClaim` with the following naming scheme:
+.Prerequisites
 
-  keycloak-backup-<Custom Resource Name>
+* You have a YAML file for this custom resource.
+ifeval::[{project_community}==true]
+Be sure to omit the `aws` sub-properties from this file.
+endif::[]
 
-It is a good practice to create a corresponding `PersistentVolume` for the upcoming backups upfront and use `claimRef` to reserve it only for `PersistentVolumeClaim` created by the Keycloak Operator (see https://docs.okd.io/3.6/dev_guide/persistent_volumes.html#persistent-volumes-volumes-and-claim-prebinding[OKD manual for more details]).
+* You have a `PersistentVolume` with a `claimRef` to reserve it only for a `PersistentVolumeClaim` created by the {project_name} Operator.
 
-==== Automatic Restore
+.Procedure
 
-WARNING: This is not implemented!
+. Create a backup job: `{create_cmd} -f <backup_crname>`. For example:
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd} -f one-time-backup.yaml
+keycloak.keycloak.org/test-backup
+----
++
+The Operator creates a `PersistentVolumeClaim` with the following naming scheme:  `Keycloak-backup-<CR_name>`.
 
-One of the design goals of {project_name} Backups is to maintain one-to-one relationship between
-`KeycloakBackup` object and a physical copy of the data. This relationship is then used to restore the data. All you need to do is to set the `restore` flag in the `KeycloakBackup` to true:
+. View a list of volumes:
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd_brief} get pvc
+NAME                          STATUS   VOLUME
+keycloak-backup-test-backup   Bound    pvc-e242-ew022d5-093q-3134n-41-adff
+keycloak-postresql-claim      Bound    pvc-e242-vs29202-9bcd7-093q-31-zadj
+----
 
-.`KeycloakBackup` with restore
-```yaml
-apiVersion: keycloak.org/v1alpha1
-kind: KeycloakBackup
-metadata:
-  name: <CR Name>
-spec:
-  restore: true
-```
+. View a list of backup jobs:
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd_brief} get jobs
+NAME           COMPLETIONS     DURATION     AGE
+test-backup    0/1             6s           6s
+----
+
+. View the list of executed backup jobs:
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd_brief} get pods
+NAME                               READY    STATUS       RESTARTS    AGE
+test-backup-5b4rf                  0/1      Completed    0           24s
+keycloak-0                         1/1      Running      0           52m
+keycloak-postgresql-c824c6-vv27m   1/1      Running      0           71m
+----
+
+. View the log of your completed backup job:
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd_brief} logs test-backup-5b4rf
+==> Component data dump completed
+.
+.
+.
+.
+----
+
+.Additional resources
+
+* For more details on persistent volumes, see link:https://docs.openshift.com/container-platform/4.4/storage/understanding-persistent-storage.html[Understanding persistent storage].
+

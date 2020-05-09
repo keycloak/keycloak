@@ -50,15 +50,8 @@ image:images/installed-namespace.png[]
 +
 The Operator starts installing.
 
-.Additional resources
+When the Operator installation completes, you are ready to create custom resources to install {project_name}, create realms, and perform other adminstrative tasks.
 
-* When the Operator installation completes, you are ready to create your first custom resource. See xref:_keycloak_cr[{project_name} installation using a custom resource].
-ifeval::[{project_community}==true]
-However, if you want to start tracking all Operator activities before creating custom resources, see the xref:_monitoring-operator[Application Monitoring Operator].
-endif::[]
-
-* For more information on OpenShift Operators, see the link:https://docs.openshift.com/container-platform/4.4/operators/olm-what-operators-are.html[OpenShift Operators guide].
- 
 ifeval::[{project_community}==true]
 
 [[_kubernetes-olm]]
@@ -81,13 +74,20 @@ For a Kubernetes cluster, perform these steps.
 .Operator Install page on Kubernetes
 image:{project_images}/operator-operatorhub-install.png[]
 
-.Additional resources
+When the Operator installation completes, you are ready to create custom resources to install {project_name}, create realms, and perform other adminstrative tasks.
+endif::[]
 
-* When the Operator installation completes, you are ready to create your first custom resource. See xref:_keycloak_cr[{project_name} installation using a custom resource]. However, if you want to start tracking all Operator activities before creating custom resources, see the xref:_monitoring-operator[Application Monitoring Operator].
+.Additional Resources
 
+ifeval::[{project_community}==true]
 * For more information on a Kubernetes installation, see link:https://operatorhub.io/how-to-install-an-operator[How to install an Operator from OperatorHub.io].
 
+* To track what you install and create with the operator, you can now set up a monitoring application. See xref:_monitoring-operator[The Application Monitoring Operator].
 endif::[]
+
+* For more information on OpenShift Operators, see the link:https://docs.openshift.com/container-platform/4.4/operators/olm-what-operators-are.html[OpenShift Operators guide].
+
+* For more information on OpenShift installation, see link:https://access.redhat.com/documentation/en-us/openshift_container_platform/4.4/html/installing/index[Installing and Configuring OpenShift Container Platform clusters].
 
 [[_install_by_command]]
 ==== Installing from the command line
@@ -96,7 +96,7 @@ You can install the {project_operator} from the command line.
 
 .Prerequisites
 
-* You have cluster-admin permission or an equivalent level of permissions granted by an administrator.
+You have cluster-admin permission or an equivalent level of permissions granted by an administrator.
 
 .Procedure
 
@@ -143,12 +143,10 @@ keycloak-operator   1/1     1            1           41s
 
 .Additional resources
 
-* When the Operator installation completes, you are ready to create your first custom resource. See xref:_keycloak_cr[{project_name} installation using a custom resource].
+* To create your first custom resource, see xref:_keycloak_cr[{project_name} installation using a custom resource].
 ifeval::[{project_community}==true]
-However, if you want to start tracking all Operator activities before creating custom resources, see the xref:_monitoring-operator[Application Monitoring Operator].
-
-* For more information on a Kubernetes installation, see link:https://operatorhub.io/how-to-install-an-operator[How to install an Operator from OperatorHub.io].
+* If you want to start tracking all Operator activities before creating custom resources, see the xref:_monitoring-operator[Application Monitoring Operator].
 endif::[]
 
-* For more information on OpenShift Operators, see the link:https://docs.openshift.com/container-platform/4.4/operators/olm-what-operators-are.html[OpenShift Operators guide].
+
 

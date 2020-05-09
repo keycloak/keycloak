@@ -20,6 +20,8 @@
 :operatorRepo_link: https://github.com/keycloak/keycloak-operator
 :application_monitoring_operator: Red Hat Managed Integration (RHMI) Application Monitoring Operator
 :application_monitoring_operator_installation_link: https://github.com/integr8ly/application-monitoring-operator#installation
+:create_cmd: oc create
+:create_cmd_brief: oc
 
 :project_dirref: RHSSO_HOME
 

@@ -1,9 +1,10 @@
 
-=== External database support
+[[_external_database]]
+=== Connecting to an external database
 
-Enabling external Postgresql database support requires creating `keycloak-db-secret` in the following form (note that values are Base64 encoded, see https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes Secrets manual]):
+You can use the Operator to connect to an external PostgreSQL database by modifying the Keycloak custom resource and creating a `keycloak-db-secret` YAML file. Note that values are Base64 encoded.
 
-.`keycloak-db-secret` Secret
+.Example YAML file for `keycloak-db-secret`
 ```yaml
 apiVersion: v1
 kind: Secret
@@ -23,25 +24,25 @@ stringData:
  type: Opaque
 ```
 
-There are two properties specifically responsible for specifying external database hostname or IP address and its port:
+The following properties set the hostname or IP address and port of the database.
 
-* POSTGRES_EXTERNAL_ADDRESS - an IP address (or a Hostname) of the external database. This address needs to be resolvable from the perspective of a Kubernetes cluster.
-* POSTGRES_EXTERNAL_PORT - (Optional) A database port.
+* `POSTGRES_EXTERNAL_ADDRESS` - an IP address or a hostname of the external database.
+ifeval::[{project_community}==true]
+This address needs be resolvable in a Kubernetes cluster.
+endif::[]
+* `POSTGRES_EXTERNAL_PORT` - (Optional) A database port.
 
-The other properties should to be set as follows:
+The other properties work in the same way for a hosted or external database. Set them as follows:
 
 * `POSTGRES_DATABASE` - Database name to be used.
 * `POSTGRES_HOST` - The name of the `Service` used to communicate with a database. Typically `keycloak-postgresql`.
 * `POSTGRES_USERNAME` - Database username
 * `POSTGRES_PASSWORD` - Database password
-* `POSTGRES_SUPERUSER` - Indicates, whether backups should assume running as super user. Typically `true`.
+* `POSTGRES_SUPERUSER` - Indicates, whether backups should run as super user. Typically `true`.
 
-The other properties remain the same for both operating modes (hosted Postgresql and an external one).
+The Keycloak custom resource requires updates to enable external database support. 
 
-The Keycloak Custom Resource also needs to be updated to turn the external database support on.
-Here's an example:
-
-.`Keycloak` Custom Resource with external database support
+.Example YAML file for `Keycloak` custom resource that supports an external database
 ```yaml
 apiVersion: keycloak.org/v1alpha1
 kind: Keycloak
@@ -56,6 +57,83 @@ spec:
   instances: 1
 ```
 
-==== Implementation details
+.Prerequisites
 
-{project_operator} allows you to use an external Postgresql database by modifying `<Keycloak Custom Resource Name>-postgresql` Endpoints object. Typically, this object is maintained by Kubernetes, however it might be used to connect to an external service. See https://docs.openshift.com/container-platform/3.11/dev_guide/integrating_external_services.html[OpenShift manual] for more details.
+* You have a YAML file for `keycloak-db-secret`.
+* You have modified the Keycloak custom resource to set `externalDatabase` to `true`.
+* You have cluster-admin permission or an equivalent level of permissions granted by an administrator.
+
+.Procedure
+
+. Locate the secret for your PostgreSQL database: `{create_cmd_brief} get secret <secret_for_db> -o yaml`. For example:
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd_brief} get secret keycloak-db-secret -o yaml
+apiVersion: v1
+data
+  POSTGRES_DATABASE: cm9vdA==
+  POSTGRES_EXTERNAL_ADDRESS: MTcyLjE3LjAuMw==
+  POSTGRES_EXTERNAL_PORT: NTQzMg==
+----
++
+The `POSTGRES_EXTERNAL_ADDRESS` is in Base64 format.
+
+. Decode the value for the secret: `echo "<encoded_secret>" | base64 -decode`. For example:
++
+[source,bash,subs=+attributes]
+----
+$ echo "MTcyLjE3LjAuMw==" | base64 -decode
+192.0.2.3
+----
+
+. Confirm that the decoded value matches the IP address for your database:
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd_brief} get pods -o wide
+NAME                        READY  STATUS    RESTARTS   AGE   IP
+keycloak-0                  1/1    Running   0          13m   192.0.2.0
+keycloak-postgresql-c8vv27m 1/1    Running   0          24m   192.0.2.3
+----
+
+. Confirm that `keycloak-postgresql` appears in a list of running services:
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd_brief} get svc
+NAME                 TYPE       CLUSTER-IP     EXTERNAL-IP  PORT(S)   AGE
+keycloak             ClusterIP  203.0.113.0    <none>       8443/TCP  27m
+keycloak-discovery   ClusterIP  None           <none>       8080/TCP  27m
+keycloak-postgresql  ClusterIP  203.0.113.1    <none>       5432/TCP  27m
+----
++
+The `keycloak-postgresql` service sends requests to a set of IP addresses in the backend.  These IP addresses are called endpoints.
+
+. View the endpoints used by the `keycloak-postgresql` service to confirm that they use the IP addresses for your database:
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd_brief} get endpoints keycloak-postgresql
+NAME                  ENDPOINTS         AGE
+keycloak-postgresql   192.0.2.3.5432    27m
+----
+
+. Confirm that {project_name} is running with the external database. This example shows that everything is running:
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd_brief} get pods
+NAME                        READY  STATUS    RESTARTS   AGE   IP
+keycloak-0                  1/1    Running   0          26m   192.0.2.0
+keycloak-postgresql-c8vv27m 1/1    Running   0          36m   192.0.2.3
+----
+
+ifeval::[{project_community}==true]
+.Additional Resources
+
+* To back up your database using custom resources, see xref:_backup-cr[Scheduling database backups].
+
+
+* For more information on Base64 encoding, see the https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes Secrets manual].
+endif::[]

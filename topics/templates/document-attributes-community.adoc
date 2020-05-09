@@ -24,6 +24,8 @@ endif::[]
 :operatorRepo_link: https://github.com/keycloak/keycloak-operator
 :application_monitoring_operator: Application Monitoring Operator
 :application_monitoring_operator_installation_link: https://github.com/integr8ly/application-monitoring-operator#installation
+:create_cmd: kubectl apply
+:create_cmd_brief: kubectl
 
 :quickstartRepo_link: https://github.com/keycloak/keycloak-quickstarts
 :quickstartRepo_name: Keycloak Quickstarts Repository

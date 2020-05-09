@@ -1,0 +1,25 @@
+
+[[_command-options]]
+=== Command options for managing custom resources
+
+After you create a custom request, you can edit it or delete using the `{create_cmd_brief}` command.
+
+* To edit a custom request, use this command: `{create_cmd_brief} edit <cr-name>`
+* To delete a custom request, use this command: `{create_cmd_brief} delete <cr-name>`
+
+For example, to edit a realm custom request named `test-realm`, use this command:
+
+[source,bash,subs=+attributes]
+----
+$ {create_cmd_brief} edit test-realm
+----
+
+A window opens where you can make changes. For example, you might change the name `arealm` to `demo-realm`.
+
+.Sample code for a custom resource
+image:images/cr-code.png[]
+
+[NOTE]
+====
+You can update the YAML file and changes appear in the {project_name} admin console, however changes to the admin console do not update the custom resource.
+====

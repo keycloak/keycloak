@@ -1,20 +1,26 @@
 
-=== KeycloakClient Custom Resource
+[[_client-cr]]
+=== Creating a client custom resource
 
-{project_operator} allows application developers to represent Keycloak Clients as Custom Resources:
+You can use the Operator to create clients in {project_name} as defined by a custom resource.  You define the properties of the realm in a YAML file. 
 
-.`KeycloakClient` Custom Resource
+[NOTE]
+====
+You can update the YAML file and changes appear in the {project_name} admin console, however changes to the admin console do not update the custom resource.
+====
+
+.Example YAML file for a Client custom resource
 ```yaml
 apiVersion: keycloak.org/v1alpha1
 kind: KeycloakClient
 metadata:
-  name: <Keycloak Client name>
+  name: example-client
   labels:
     app: sso
 spec:
   realmSelector:
      matchLabels:
-      app: <matching labels for KeycloakRealm Custom Resource>
+      app: <matching labels for KeycloakRealm custom resource>
   client:
     # auto-generated if not supplied
     #id: 123
@@ -24,13 +30,50 @@ spec:
     # other properties of Keycloak Client
 ```
 
-TIP: Note, that `realmSelector` needs to match labels of an existing `KeycloakRealm` Custom Resource.
+.Prerequisites
 
-NOTE: {project_operator} synchronizes all the changes made to the Custom Resource with a running {project_name} instance. No manual changes via Keycloak Admin Console are allowed.
+* You have a YAML file for this custom resource.
 
-Once {project_operator} reconciles the Custom Resource, it reports the status back:
+* You have cluster-admin permission or an equivalent level of permissions granted by an administrator.
 
-.`KeycloakClient` Custom Resource Status
+.Procedure
+
+. Use this command on the YAML file that you created: `{create_cmd} -f <client-name>.yaml`. For example:
++
+[source,bash,subs=+attributes]
+----
+$ {create_cmd} -f initial_client.yaml
+keycloak.keycloak.org/example-client created
+----
+
+. Log into the {project_name} admin console for the related instance of {project_name}.
+
+. Click Clients.
++
+The new client appears in the list of clients.
++
+image:images/clients.png[]
+
+.Results
+After a client is created, the Operator creates a Secret containing the `Client ID` and the client's secret using the following naming pattern: `keycloak-client-secret-<custom resource name>`. For example:
+
+.Client's Secret
+```yaml
+apiVersion: v1
+data:
+  CLIENT_ID: <base64 encoded Client ID>
+  CLIENT_SECRET: <base64 encoded Client Secret>
+kind: Secret
+```
+
+After the Operator processes the custom resource, view the status with this command:
+
+[source,bash,subs=+attributes]
+----
+$ {create_cmd_brief} describe keycloak <cr_name>
+----
+
+.Client custom resource Status
 ```yaml
 Name:         client-secret
 Namespace:    keycloak
@@ -55,13 +98,6 @@ Status:
 Events:  <none>
 ```
 
-Once a Client is created, {project_operator} creates a Secret with, containing both `Client ID` as well as the client's secret using the following naming pattern: `keycloak-client-secret-<Custom Resource name>`. Here's an example:
+.Additional resources
 
-.`KeycloakClient`'s Secret
-```
-apiVersion: v1
-data:
-  CLIENT_ID: <base64 encoded Client ID>
-  CLIENT_SECRET: <base64 encoded Client Secret>
-kind: Secret
-```
+* When the client creation completes, you are ready to xref:_user-cr[create a user custom resource].
