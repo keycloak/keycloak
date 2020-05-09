@@ -17,6 +17,7 @@
 
 package org.keycloak.adapters.servlet;
 
+import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.KeycloakDeployment;
@@ -26,10 +27,14 @@ import org.keycloak.adapters.RequestAuthenticator;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.KeycloakAccount;
 import org.keycloak.adapters.spi.SessionIdMapper;
+import org.keycloak.common.util.DelegatingSerializationFilter;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpSession;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.security.Principal;
 import java.util.Set;
@@ -156,6 +161,17 @@ public class OIDCFilterSessionStore extends FilterSessionStore implements Adapte
         @Override
         public RefreshableKeycloakSecurityContext getKeycloakSecurityContext() {
             return securityContext;
+        }
+
+        private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+            DelegatingSerializationFilter.builder()
+                    .addAllowedClass(OIDCFilterSessionStore.SerializableKeycloakAccount.class)
+                    .addAllowedClass(RefreshableKeycloakSecurityContext.class)
+                    .addAllowedClass(KeycloakSecurityContext.class)
+                    .addAllowedClass(KeycloakPrincipal.class)
+                    .setFilter(in);
+
+            in.defaultReadObject();
         }
     }
 

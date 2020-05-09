@@ -43,6 +43,7 @@ import org.keycloak.testsuite.adapter.AbstractAdapterClusteredTest;
 import org.keycloak.testsuite.adapter.page.SessionPortalDistributable;
 import org.keycloak.testsuite.adapter.servlet.SessionServlet;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
@@ -150,7 +151,7 @@ public class OIDCAdapterClusterTest extends AbstractAdapterClusteredTest {
                     driver.navigate().to(appUrl + "/donotincrease");
                     waitForPageToLoad();
 
-                    return driver.getPageSource().contains("Counter=" + expectedCount);
+                    return driver.getPageSource().contains("Counter=" + expectedCount) && driver.getPageSource().contains("CounterWrapper=" + expectedCount);
                 });
     }
 
@@ -163,7 +164,9 @@ public class OIDCAdapterClusterTest extends AbstractAdapterClusteredTest {
         driver.navigate().to(appUrl);
         waitForPageToLoad();
 
-        assertThat(driver.getPageSource(), containsString("Counter=" + expectedCount));
-        assertThat(driver.getPageSource(), containsString("Node name=" + hostToPointToName));
+        String pageSource = driver.getPageSource();
+        assertThat(pageSource, containsString("Counter=" + expectedCount));
+        assertThat(pageSource, containsString("CounterWrapper=" + expectedCount));
+        assertThat(pageSource, containsString("Node name=" + hostToPointToName));
     }
 }

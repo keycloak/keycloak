@@ -20,13 +20,17 @@ package org.keycloak.adapters.tomcat;
 import org.apache.catalina.Session;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.realm.GenericPrincipal;
+import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.common.util.DelegatingSerializationFilter;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.security.Principal;
 import java.util.Set;
@@ -162,6 +166,17 @@ public class CatalinaSessionTokenStore extends CatalinaAdapterSessionStore imple
         @Override
         public RefreshableKeycloakSecurityContext getKeycloakSecurityContext() {
             return securityContext;
+        }
+
+        private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+            DelegatingSerializationFilter.builder()
+                    .addAllowedClass(CatalinaSessionTokenStore.SerializableKeycloakAccount.class)
+                    .addAllowedClass(RefreshableKeycloakSecurityContext.class)
+                    .addAllowedClass(KeycloakSecurityContext.class)
+                    .addAllowedClass(KeycloakPrincipal.class)
+                    .setFilter(in);
+
+            in.defaultReadObject();
         }
     }
 
