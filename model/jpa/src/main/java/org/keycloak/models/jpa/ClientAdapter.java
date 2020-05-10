@@ -107,6 +107,16 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     }
 
     @Override
+    public boolean isAlwaysDisplayInConsole() {
+        return entity.isAlwaysDisplayInConsole();
+    }
+
+    @Override
+    public void setAlwaysDisplayInConsole(boolean alwaysDisplayInConsole) {
+        entity.setAlwaysDisplayInConsole(alwaysDisplayInConsole);
+    }
+
+    @Override
     public boolean isPublicClient() {
         return entity.isPublicClient();
     }
@@ -652,6 +662,16 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     @Override
     public Set<RoleModel> getRoles() {
         return session.realms().getClientRoles(realm, this);
+    }
+    
+    @Override
+    public Set<RoleModel> getRoles(Integer first, Integer max) {
+        return session.realms().getClientRoles(realm, this, first, max);
+    }
+    
+    @Override
+    public Set<RoleModel> searchForRoles(String search, Integer first, Integer max) {
+        return session.realms().searchForClientRoles(realm, this, search, first, max);
     }
 
     @Override

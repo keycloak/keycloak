@@ -74,7 +74,9 @@ public class AuthorizationResource {
         Callable<AuthorizationResponse> callable = new Callable<AuthorizationResponse>() {
             @Override
             public AuthorizationResponse call() throws Exception {
-                request.setAudience(configuration.getResource());
+                if (request.getAudience() == null) {
+                    request.setAudience(configuration.getResource());
+                }
 
                 HttpMethod<AuthorizationResponse> method = http.<AuthorizationResponse>post(serverConfiguration.getTokenEndpoint());
 

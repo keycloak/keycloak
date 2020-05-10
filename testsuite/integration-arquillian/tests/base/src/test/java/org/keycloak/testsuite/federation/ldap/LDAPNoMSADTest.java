@@ -22,12 +22,15 @@ import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
+import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.testsuite.util.LDAPRule;
@@ -35,6 +38,8 @@ import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
 import java.util.List;
+
+import static org.hamcrest.Matchers.equalToIgnoringCase;
 
 /**
  * Test for special scenarios, which don't work on MSAD (eg. renaming user RDN to "sn=john2" )
@@ -94,12 +99,15 @@ public class LDAPNoMSADTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
             ComponentModel snMapper = null;
 
-            // Create LDAP user with "sn" attribute in RDN like "sn=johnkeycloak2,ou=People,dc=domain,dc=com"
+            // Create LDAP user with "sn" attribute in RDN like "sn=Doe2,ou=People,dc=domain,dc=com"
             LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
-            LDAPObject john2 = LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "johnkeycloak2", "john2", "Doe2", "john2@email.org", null, "4321");
+            LDAPObject john2 = LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "johnkeycloak2", "John2", "Doe2", "john2@email.org", null, "4321");
 
             john2.setRdnAttributeName("sn");
             ldapProvider.getLdapIdentityStore().update(john2);
+
+            // Assert DN was changed
+            Assert.assertEquals("sn=Doe2", john2.getDn().getFirstRdn().toString());
 
             // Remove "sn" mapper
             List<ComponentModel> components = appRealm.getComponents(ctx.getLdapModel().getId(), LDAPStorageMapper.class.getName());
@@ -132,4 +140,66 @@ public class LDAPNoMSADTest extends AbstractLDAPTest {
         testRealm().components().add(snMapperRep);
 
     }
+
+
+    // KEYCLOAK-12842
+    @Test
+    public void testMultivaluedRDN() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            ComponentModel snMapper = null;
+
+            // Create LDAP user with both "uid" and "sn" attribute in RDN. Something like "uid=johnkeycloak3+sn=Doe3,ou=People,dc=domain,dc=com"
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
+            LDAPObject john2 = LDAPTestUtils.addLDAPUser(ldapProvider, appRealm, "johnkeycloak3", "John3", "Doe3", "john3@email.org", null, "4321");
+
+            john2.addRdnAttributeName("sn");
+            ldapProvider.getLdapIdentityStore().update(john2);
+
+            // Assert DN was changed
+            String rdnAttrName = ldapProvider.getLdapIdentityStore().getConfig().getRdnLdapAttribute();
+            Assert.assertEquals(rdnAttrName + "=johnkeycloak3+sn=Doe3", john2.getDn().getFirstRdn().toString());
+        });
+
+        // Update some user attributes not mapped to DN. DN won't be changed
+        String userId = testRealm().users().search("johnkeycloak3").get(0).getId();
+        UserResource user = testRealm().users().get(userId);
+
+        UserRepresentation userRep = user.toRepresentation();
+        assertFirstRDNEndsWith(userRep, "johnkeycloak3", "Doe3");
+        userRep.setEmail("newemail@email.cz");
+        user.update(userRep);
+
+        userRep = user.toRepresentation();
+        Assert.assertEquals("newemail@email.cz", userRep.getEmail());
+        assertFirstRDNEndsWith(userRep, "johnkeycloak3", "Doe3");
+
+        // Update some user attributes mapped to DN. DN will be changed
+        userRep.setLastName("Doe3Changed");
+        user.update(userRep);
+
+        userRep = user.toRepresentation();
+
+        // ApacheDS bug causes that attribute, which was added to DN, is lowercased. Works for other LDAPs (RHDS, OpenLDAP)
+        Assert.assertThat("Doe3Changed", equalToIgnoringCase(userRep.getLastName()));
+        assertFirstRDNEndsWith(userRep, "johnkeycloak3", "Doe3Changed");
+
+        // Remove user
+        user.remove();
+    }
+
+    private void assertFirstRDNEndsWith(UserRepresentation user, String expectedUsernameInDN, String expectedLastNameInDN) {
+        String currentDN = user.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN).get(0);
+        LDAPDn.RDN firstRDN = LDAPDn.fromString(currentDN).getFirstRdn();
+
+        // Order is not guaranteed and can be dependent on LDAP server, so can't test simple string
+        List<String> rdnKeys = firstRDN.getAllKeys();
+        Assert.assertEquals(2, rdnKeys.size());
+        Assert.assertEquals(expectedLastNameInDN, firstRDN.getAttrValue("sn"));
+        rdnKeys.remove("sn");
+        Assert.assertEquals(expectedUsernameInDN, firstRDN.getAttrValue(rdnKeys.get(0)));
+    }
+
+
 }

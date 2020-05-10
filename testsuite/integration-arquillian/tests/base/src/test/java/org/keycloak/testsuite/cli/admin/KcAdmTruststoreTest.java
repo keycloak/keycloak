@@ -13,6 +13,7 @@ import java.io.IOException;
 
 import static org.keycloak.client.admin.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_PATH;
 import static org.keycloak.client.admin.cli.util.OsUtil.EOL;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.cli.KcAdmExec.CMD;
 import static org.keycloak.testsuite.cli.KcAdmExec.execute;
 

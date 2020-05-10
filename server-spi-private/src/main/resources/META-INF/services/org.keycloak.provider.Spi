@@ -78,3 +78,5 @@ org.keycloak.crypto.HashSpi
 org.keycloak.vault.VaultSpi
 org.keycloak.crypto.CekManagementSpi
 org.keycloak.crypto.ContentEncryptionSpi
+org.keycloak.validation.ClientValidationSPI
+org.keycloak.headers.SecurityHeadersSpi

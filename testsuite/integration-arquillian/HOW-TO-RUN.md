@@ -44,7 +44,7 @@ and adapter are all in the same JVM and you can debug them easily. If it is not 
 
 Or slightly longer version (that allows you to specify debugging port as well as wait till you attach the debugger):
 
-    -Dmaven.surefire.debug="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5006 -Xnoagent -Djava.compiler=NONE"
+    -Dmaven.surefire.debug="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5006 -Xnoagent -Djava.compiler=NONE"
 
 
 and you will be able to attach remote debugger to the test. Unfortunately server and adapter are running in different JVMs, so this won't help to debug those.
@@ -147,6 +147,32 @@ run other/adapters/jboss/remote tests:
         -Dauth.server.ssl.required=false \
         -Dapp.server.ssl.required=false
 
+### Running tests against container not produced by the testsuite
+
+For running the testsuite, it is necessary to install/deploy so-called testsuite-providers. The testsuite rely on 
+testsuite-providers in many test scenarios for example for checking fired events, moving in time etc. When using
+keycloak from `integration-arquillian-servers-auth-server-wildfly-*.zip`, it should not be necessary to do any steps 
+because testsuite-providers are already included in this archive. However, when a clean keycloak is used, e.g. 
+openshift image, testsuite-providers jar file is deployed to the container in the beginning of test run. 
+To be able to deploy the jar to the container, arquillian has to have an access to the management port. 
+
+For example, to run testsuite against image in openshift, we need to first forward 9990 port from the running pod.
+```shell script
+oc port-forward "${POD}" 9990:9990
+```
+where ${POD} is a name of the pod
+
+Now just run testsuite against the image in openshift:
+```shell script
+mvn clean install -f testsuite/integration-arquillian/tests/base/pom.xml \
+    -Pauth-server-remote \
+    -Dauth.server.ssl.required=false \
+    -Dauth.server.host="${HOST}" \
+    -Dauth.server.http.port=80 \
+    -Dauth.server.management.host=127.0.0.1 \
+    -Dauth.server.management.port=9990
+```
+where ${HOST} is url of keycloak, for example: `keycloak-keycloak.192.168.42.91.nip.io`.
 
 ## Run adapter tests
 
@@ -347,7 +373,7 @@ Run the test (Update according to your DB connection, versions etc):
 
     mvn -B -f testsuite/integration-arquillian/pom.xml \
       clean install \
-      -Pjpa,auth-server-wildfly,db-mysql,auth-server-migration \
+      -Pjpa,auth-server-wildfly,db-mariadb,auth-server-migration \
       -Dauth.server.jboss.startup.timeout=900 \
       -Dtest=MigrationTest \
       -Dmigration.mode=auto \
@@ -355,10 +381,7 @@ Run the test (Update according to your DB connection, versions etc):
       -Dprevious.product.unpacked.folder.name=keycloak-$OLD_KEYCLOAK_VERSION \
       -Dmigration.import.file.name=migration-realm-$OLD_KEYCLOAK_VERSION.json \
       -Dauth.server.ssl.required=false \
-      -Djdbc.mvn.version.legacy=5.1.38 \
-      -Djdbc.mvn.groupId=mysql \
-      -Djdbc.mvn.artifactId=mysql-connector-java \
-      -Djdbc.mvn.version=8.0.12
+      -Djdbc.mvn.version=2.2.4
 
 
 For the available versions of old keycloak server, you can take a look to [this directory](tests/base/src/test/resources/migration-test) .
@@ -430,6 +453,9 @@ mvn -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml \
     -Pandroid \
     -Dappium.avd=Nexus_5X_API_27
 ```
+**Note:** Some of the tests are covering WebAuthn functionality. Such tests are ignored by default, to ensure that all
+tests in the Base UI testsuite are executed please use `-DchromeArguments=--enable-web-authentication-testing-api` as
+specified in [WebAuthn tests](#webauthn-tests).
 
 ## WebAuthN tests
 The WebAuthN tests, in Keycloak, can be only executed with Chrome browser, because the Chrome has feature _WebAuthenticationTestingApi_,

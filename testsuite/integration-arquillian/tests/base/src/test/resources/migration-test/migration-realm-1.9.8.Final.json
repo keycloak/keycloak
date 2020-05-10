@@ -1769,7 +1769,32 @@
       "account" : [ "manage-account", "view-profile" ]
     },
     "groups" : [ "/migration-test-group" ]
-  } ],
+  },
+  {
+    "id" : "9aa0d4f7-399e-4520-92df-77403d5d2a33",
+    "createdTimestamp" : 1476260593350,
+    "username" : "offline-test-user",
+    "enabled" : true,
+    "totp" : false,
+    "emailVerified" : false,
+    "credentials" : [ {
+      "type" : "password",
+      "hashedSaltedValue" : "D3F6cEj0pNv1UvkPq2XhnH5TTg2BaR2qKQd+vMoT8Pj+cHEGvISbBujjD9+889LIhWUSbQS8nkZH0yEnrTKBAA==",
+      "salt" : "C2vKhAsajS53Xu816IcKIw==",
+      "hashIterations" : 20000,
+      "counter" : 0,
+      "algorithm" : "pbkdf2",
+      "digits" : 0,
+      "period" : 0,
+      "createdDate" : 1582099686822
+    } ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "offline_access" ],
+    "clientRoles" : {
+      "account" : [ "manage-account", "view-profile" ]
+    },
+    "groups" : [ ]
+  }  ],
   "clientScopeMappings" : {
     "realm-management" : [ {
       "client" : "admin-cli",
@@ -2100,7 +2125,7 @@
     "surrogateAuthRequired" : false,
     "enabled" : true,
     "clientAuthenticatorType" : "client-secret",
-    "secret" : "b2c07929-69e3-44c6-8d7f-76939000b3e4",
+    "secret" : "secret",
     "redirectUris" : [ ],
     "webOrigins" : [ ],
     "notBefore" : 0,

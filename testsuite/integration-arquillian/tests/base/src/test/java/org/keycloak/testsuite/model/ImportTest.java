@@ -17,23 +17,32 @@
 
 package org.keycloak.testsuite.model;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.policy.evaluation.Realm;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredCredentialModel;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
-import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.runonserver.RunOnServerException;
+import org.keycloak.util.JsonSerialization;
 
-import java.util.List;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 
@@ -42,43 +51,90 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
  * @version $Revision: 1 $
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ImportTest extends AbstractTestRealmKeycloakTest {
 
     @Test
-    public void demoDelete() throws Exception {
+    public void demoDelete() {
         // was having trouble deleting this realm from admin console
-            removeRealm("demo-delete");
+        removeRealm("demo-delete");
     }
     
 	@Test
-    public void install2() throws Exception {
-            testingClient.server().run(session -> {
-                RealmModel realm = session.realms().getRealmByName("demo");
+    public void install2() {
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("demo");
 
-                Assert.assertEquals(600, realm.getAccessCodeLifespanUserAction());
-                Assert.assertEquals(Constants.DEFAULT_ACCESS_TOKEN_LIFESPAN_FOR_IMPLICIT_FLOW_TIMEOUT, realm.getAccessTokenLifespanForImplicitFlow());
-                Assert.assertEquals(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT, realm.getOfflineSessionIdleTimeout());
-                Assert.assertEquals(1, realm.getRequiredCredentials().size());
-                Assert.assertEquals("password", realm.getRequiredCredentials().get(0).getType());
+            Assert.assertEquals(600, realm.getAccessCodeLifespanUserAction());
+            Assert.assertEquals(Constants.DEFAULT_ACCESS_TOKEN_LIFESPAN_FOR_IMPLICIT_FLOW_TIMEOUT, realm.getAccessTokenLifespanForImplicitFlow());
+            Assert.assertEquals(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT, realm.getOfflineSessionIdleTimeout());
+            Assert.assertEquals(1, realm.getRequiredCredentials().size());
+            Assert.assertEquals("password", realm.getRequiredCredentials().get(0).getType());
+        });
+    }
+
+    // KEYCLOAK-12921 NPE importing realm with no request context
+    @Test
+    public void importWithoutRequestContext() throws IOException {
+        final String realmString = IOUtils.toString(getClass().getResourceAsStream("/model/realm-validation.json"), StandardCharsets.UTF_8);
+
+        testingClient.server().run(session -> {
+            RealmRepresentation testRealm = JsonSerialization.readValue(realmString, RealmRepresentation.class);
+
+            AtomicReference<Throwable> err = new AtomicReference<>();
+
+            // Need a new thread to not get context from thread processing request to run-on-server endpoint
+            Thread t = new Thread(() -> {
+                try {
+                    KeycloakSession ses = session.getKeycloakSessionFactory().create();
+                    ses.getContext().setRealm(session.getContext().getRealm());
+                    ses.getTransactionManager().begin();
+
+                    RealmModel realmModel = new RealmManager(ses).importRealm(testRealm);
+
+                    ses.getTransactionManager().commit();
+                    ses.close();
+
+                    ses = session.getKeycloakSessionFactory().create();
+
+                    ses.getTransactionManager().begin();
+                    session.realms().removeRealm(realmModel.getId());
+                    ses.getTransactionManager().commit();
+
+                    ses.close();
+                } catch (Throwable th) {
+                    err.set(th);
+                }
             });
+
+            synchronized (t) {
+                t.start();
+                try {
+                    t.wait(10000);
+                } catch (InterruptedException e) {
+                    throw new RunOnServerException(e);
+                }
+            }
+
+            if (err.get() != null) {
+                throw new RunOnServerException(err.get());
+            }
+        });
     }
 
-    private static void verifyRequiredCredentials(List<RequiredCredentialModel> requiredCreds, String expectedType) {
+    // KEYCLOAK-12640
+    @Test
+    public void importAuthorizationSettings() throws Exception {
+        RealmRepresentation testRealm = loadJson(getClass().getResourceAsStream("/model/authz-bug.json"), RealmRepresentation.class);
+        adminClient.realms().create(testRealm);
 
-    	Assert.assertEquals(1, requiredCreds.size());
-        Assert.assertEquals(expectedType, requiredCreds.get(0).getType());
-    }
-
-    private static void assertGssProtocolMapper(ProtocolMapperModel gssCredentialMapper) {
-    	
-    	Assert.assertEquals(KerberosConstants.GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME, gssCredentialMapper.getName());
-        Assert.assertEquals( OIDCLoginProtocol.LOGIN_PROTOCOL, gssCredentialMapper.getProtocol());
-        Assert.assertEquals(UserSessionNoteMapper.PROVIDER_ID, gssCredentialMapper.getProtocolMapper());
-        String includeInAccessToken = gssCredentialMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN);
-        String includeInIdToken = gssCredentialMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN);
-        Assert.assertTrue(includeInAccessToken.equalsIgnoreCase("true"));
-        Assert.assertTrue(includeInIdToken == null || Boolean.parseBoolean(includeInIdToken) == false);
-    	
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("authz-bug");
+            AuthorizationProvider authz = session.getProvider(AuthorizationProvider.class);
+            ClientModel client = realm.getClientByClientId("appserver");
+            ResourceServer resourceServer = authz.getStoreFactory().getResourceServerStore().findById(client.getId());
+            Assert.assertEquals("AFFIRMATIVE", resourceServer.getDecisionStrategy().name());
+        });
     }
 
     @Override
@@ -94,4 +150,5 @@ public class ImportTest extends AbstractTestRealmKeycloakTest {
         testRealm.setId("demo");
         adminClient.realms().create(testRealm);
     }
+
 }

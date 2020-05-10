@@ -37,6 +37,7 @@ import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 
 import java.util.Arrays;
@@ -53,10 +54,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
 
     public static void setupRealm(KeycloakSession session){
@@ -254,29 +257,31 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
     @ModelTest
     public void testRemoveUserSessionsByUser(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
-        UserSessionModel[] sessions = createSessions(session);
 
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession kcSession) -> {
+            inheritClientConnection(session, kcSession);
+            createSessions(kcSession);
+        });
         Map<String, Integer> clientSessionsKept = new HashMap<>();
-        for (UserSessionModel s : sessions) {
-            s = session.sessions().getUserSession(realm, s.getId());
+        for (UserSessionModel s : session.sessions().getUserSessions(realm,
+            session.users().getUserByUsername("user2", realm))) {
 
-            if (!s.getUser().getUsername().equals("user1")) {
-                clientSessionsKept.put(s.getId(),  s.getAuthenticatedClientSessions().keySet().size());
-            }
+            clientSessionsKept.put(s.getId(), s.getAuthenticatedClientSessions().keySet().size());
         }
 
-        session.sessions().removeUserSessions(realm, session.users().getUserByUsername("user1", realm));
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession kcSession) -> {
+            kcSession.sessions().removeUserSessions(realm, kcSession.users().getUserByUsername("user1", realm));
+        });
 
         assertTrue(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user1", realm)).isEmpty());
-        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, session.users().getUserByUsername("user2", realm));
+        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm,
+            session.users().getUserByUsername("user2", realm));
 
-        assertSame(userSessions.size(), 0);
-
-        session.getTransactionManager().commit();
-        // Null test removed, it seems that NULL is not a valid state under the new testsuite so we are testing for Size=0
+        assertSame(userSessions.size(), 1);
 
         for (UserSessionModel userSession : userSessions) {
-            Assert.assertEquals((int) clientSessionsKept.get(userSession.getId()), userSession.getAuthenticatedClientSessions().size());
+            Assert.assertEquals((int) clientSessionsKept.get(userSession.getId()),
+                userSession.getAuthenticatedClientSessions().size());
         }
     }
 
@@ -293,11 +298,16 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     @ModelTest
-    public  void testRemoveUserSessionsByRealm(KeycloakSession session) {
+    public void testRemoveUserSessionsByRealm(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
-        UserSessionModel[] sessions = createSessions(session);
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession kcSession) -> {
+            inheritClientConnection(session, kcSession);
+            createSessions(kcSession);
+        });
 
-        session.sessions().removeUserSessions(realm);
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession kcSession) -> {
+            kcSession.sessions().removeUserSessions(realm);
+        });
 
         assertTrue(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user1", realm)).isEmpty());
         assertTrue(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user2", realm)).isEmpty());

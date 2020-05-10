@@ -45,18 +45,13 @@ import javax.naming.ldap.LdapContext;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.PagedResultsControl;
 import javax.naming.ldap.PagedResultsResponseControl;
-import javax.naming.ldap.StartTlsRequest;
 import javax.naming.ldap.StartTlsResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 /**
@@ -237,8 +232,9 @@ public class LDAPOperationManager {
 
     private String findNextDNForFallback(String newDn, int counter) {
         LDAPDn dn = LDAPDn.fromString(newDn);
-        String rdnAttrName = dn.getFirstRdnAttrName();
-        String rdnAttrVal = dn.getFirstRdnAttrValue();
+        LDAPDn.RDN firstRdn = dn.getFirstRdn();
+        String rdnAttrName = firstRdn.getAllKeys().get(0);
+        String rdnAttrVal = firstRdn.getAttrValue(rdnAttrName);
         LDAPDn parentDn = dn.getParentDn();
         parentDn.addFirst(rdnAttrName, rdnAttrVal + counter);
         return parentDn.toString();
@@ -501,20 +497,25 @@ public class LDAPOperationManager {
 
         try {
 
-            Hashtable<Object, Object> env = LDAPContextManager.getConnectionProperties(config);
+            Hashtable<Object, Object> env = LDAPContextManager.getNonAuthConnectionProperties(config);
 
             // Never use connection pool to prevent password caching
             env.put("com.sun.jndi.ldap.connect.pool", "false");
 
             if(!this.config.isStartTls()) {
-                env.put(Context.SECURITY_AUTHENTICATION, this.config.getAuthType());
+                env.put(Context.SECURITY_AUTHENTICATION, "simple");
                 env.put(Context.SECURITY_PRINCIPAL, dn);
                 env.put(Context.SECURITY_CREDENTIALS, password);
             }
 
             authCtx = new InitialLdapContext(env, null);
             if (config.isStartTls()) {
-                tlsResponse = LDAPContextManager.startTLS(authCtx, this.config.getAuthType(), dn, password.toCharArray());
+                tlsResponse = LDAPContextManager.startTLS(authCtx, "simple", dn, password.toCharArray());
+
+                // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
+                if (tlsResponse == null) {
+                    throw new AuthenticationException("Null TLS Response returned from the authentication");
+                }
             }
         } catch (AuthenticationException ae) {
             if (logger.isDebugEnabled()) {
@@ -541,7 +542,6 @@ public class LDAPOperationManager {
                     e.printStackTrace();
                 }
             }
-
         }
     }
 

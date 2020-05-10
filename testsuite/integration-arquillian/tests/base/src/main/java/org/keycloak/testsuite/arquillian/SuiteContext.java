@@ -51,6 +51,8 @@ public final class SuiteContext {
 
     private TextFileChecker serverLogChecker;
 
+    private TestClassProvider testClassProvider;
+
     /**
      * True if the testsuite is running in the adapter backward compatibility testing mode,
      * i.e. if the tests are running against newer auth server
@@ -71,6 +73,14 @@ public final class SuiteContext {
 
     public void setServerLogChecker(TextFileChecker serverLogChecker) {
         this.serverLogChecker = serverLogChecker;
+    }
+
+    public TestClassProvider getTestClassProvider() {
+        return testClassProvider;
+    }
+
+    public void setTestClassProvider(TestClassProvider testClassProvider) {
+        this.testClassProvider = testClassProvider;
     }
 
     public boolean isAdminPasswordUpdated() {

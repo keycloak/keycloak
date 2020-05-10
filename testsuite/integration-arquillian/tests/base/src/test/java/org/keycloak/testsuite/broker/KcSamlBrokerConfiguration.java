@@ -5,6 +5,8 @@
  */
 package org.keycloak.testsuite.broker;
 
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -31,7 +33,6 @@ import static org.keycloak.protocol.saml.SamlProtocol.SAML_IDP_INITIATED_SSO_URL
 import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
 import static org.keycloak.testsuite.broker.BrokerTestTools.*;
 
-
 public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
     public static final KcSamlBrokerConfiguration INSTANCE = new KcSamlBrokerConfiguration();
@@ -52,6 +53,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
         realm.setEnabled(true);
         realm.setRealm(REALM_CONS_NAME);
+        realm.setResetPasswordAllowed(true);
 
         return realm;
     }
@@ -125,8 +127,8 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         userAttrMapper.setProtocolMapper(UserAttributeStatementMapper.PROVIDER_ID);
 
         Map<String, String> userAttrMapperConfig = userAttrMapper.getConfig();
-        userAttrMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_NAME);
-        userAttrMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, AbstractUserAttributeMapperTest.ATTRIBUTE_TO_MAP_NAME);
+        userAttrMapperConfig.put(ProtocolMapperUtils.USER_ATTRIBUTE, KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME);
+        userAttrMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAME, KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME);
         userAttrMapperConfig.put(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, AttributeStatementHelper.BASIC);
         userAttrMapperConfig.put(AttributeStatementHelper.FRIENDLY_NAME, "");
 
@@ -187,7 +189,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
     }
 
     @Override
-    public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext) {
+    public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext, IdentityProviderSyncMode syncMode) {
         IdentityProviderRepresentation idp = createIdentityProvider(IDP_SAML_ALIAS, IDP_SAML_PROVIDER_ID);
 
         idp.setTrustEmail(true);
@@ -196,6 +198,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
 
         Map<String, String> config = idp.getConfig();
 
+        config.put(IdentityProviderModel.SYNC_MODE, syncMode.toString());
         config.put(SINGLE_SIGN_ON_SERVICE_URL, getAuthRoot(suiteContext) + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
         config.put(SINGLE_LOGOUT_SERVICE_URL, getAuthRoot(suiteContext) + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
         config.put(NAME_ID_POLICY_FORMAT, "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress");

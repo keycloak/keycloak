@@ -22,8 +22,10 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenCategory;
+import org.keycloak.TokenVerifier;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.HashProvider;
 import org.keycloak.crypto.SignatureProvider;
@@ -56,6 +58,7 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -74,7 +77,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Stateless object that creates tokens and manages oauth access codes
@@ -161,16 +166,13 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Unmatching clients", "Unmatching clients");
         }
 
-        if (oldToken.getIssuedAt() < client.getNotBefore()) {
+        try {
+            TokenVerifier.createWithoutSignature(oldToken)
+                    .withChecks(NotBeforeCheck.forModel(client), NotBeforeCheck.forModel(session, realm, user))
+                    .verify();
+        } catch (VerificationException e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
         }
-        if (oldToken.getIssuedAt() < realm.getNotBefore()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
-        }
-        if (oldToken.getIssuedAt() < session.users().getNotBeforeOfUser(realm, user)) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
-        }
-
 
         // Setup clientScopes from refresh token to the context
         String oldTokenScope = oldToken.getScope();
@@ -179,9 +181,10 @@ public class TokenManager {
         if (oldTokenScope == null && userSession.isOffline()) {
             logger.debugf("Migrating offline token of user '%s' for client '%s' of realm '%s'", user.getUsername(), client.getClientId(), realm.getName());
             MigrationUtils.migrateOldOfflineToken(session, realm, client, user);
+            oldTokenScope = OAuth2Constants.OFFLINE_ACCESS;
         }
 
-        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, oldTokenScope);
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, oldTokenScope, session);
 
         // Check user didn't revoke granted consent
         if (!verifyConsentStillAvailable(session, user, client, clientSessionCtx.getClientScopes())) {
@@ -207,16 +210,16 @@ public class TokenManager {
      * @throws OAuthErrorException
      */
     public boolean checkTokenValidForIntrospection(KeycloakSession session, RealmModel realm, AccessToken token) throws OAuthErrorException {
-        if (!token.isActive()) {
-            return false;
-        }
-
-        if (token.getIssuedAt() < realm.getNotBefore()) {
-            return false;
-        }
-
         ClientModel client = realm.getClientByClientId(token.getIssuedFor());
-        if (client == null || !client.isEnabled() || token.getIssuedAt() < client.getNotBefore()) {
+        if (client == null || !client.isEnabled()) {
+            return false;
+        }
+
+        try {
+            TokenVerifier.createWithoutSignature(token)
+                    .withChecks(NotBeforeCheck.forModel(client), TokenVerifier.IS_ACTIVE)
+                    .verify();
+        } catch (VerificationException e) {
             return false;
         }
 
@@ -248,9 +251,14 @@ public class TokenManager {
         if (!user.isEnabled()) {
             return false;
         }
-        if (token.getIssuedAt() < session.users().getNotBeforeOfUser(realm, user)) {
+        try {
+            TokenVerifier.createWithoutSignature(token)
+                    .withChecks(NotBeforeCheck.forModel(session ,realm, user))
+                    .verify();
+        } catch (VerificationException e) {
             return false;
         }
+
         if (token.getIssuedAt() + 1 < userSession.getStarted()) {
             return false;
         }
@@ -349,12 +357,12 @@ public class TokenManager {
             }
 
             if (checkExpiration) {
-                if (refreshToken.getExpiration() != 0 && refreshToken.isExpired()) {
-                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Refresh token expired");
-                }
-
-                if (refreshToken.getIssuedAt() < realm.getNotBefore()) {
-                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale refresh token");
+                try {
+                    TokenVerifier.createWithoutSignature(refreshToken)
+                            .withChecks(NotBeforeCheck.forModel(realm), TokenVerifier.IS_ACTIVE)
+                            .verify();
+                } catch (VerificationException e) {
+                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, e.getMessage());
                 }
             }
 
@@ -385,14 +393,12 @@ public class TokenManager {
 
     public IDToken verifyIDToken(KeycloakSession session, RealmModel realm, String encodedIDToken) throws OAuthErrorException {
         IDToken idToken = session.tokens().decode(encodedIDToken, IDToken.class);
-        if (idToken == null) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid IDToken");
-        }
-        if (idToken.isExpired()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "IDToken expired");
-        }
-        if (idToken.getIssuedAt() < realm.getNotBefore()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale IDToken");
+        try {
+            TokenVerifier.createWithoutSignature(idToken)
+                    .withChecks(NotBeforeCheck.forModel(realm), TokenVerifier.IS_ACTIVE)
+                    .verify();
+        } catch (VerificationException e) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, e.getMessage());
         }
         return idToken;
     }
@@ -441,7 +447,7 @@ public class TokenManager {
         // Remove authentication session now
         new AuthenticationSessionManager(session).removeAuthenticationSession(userSession.getRealm(), authSession, true);
 
-        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndClientScopeIds(clientSession, clientScopeIds);
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndClientScopeIds(clientSession, clientScopeIds, session);
         return clientSessionCtx;
     }
 
@@ -470,10 +476,9 @@ public class TokenManager {
             }
             return roleMappings;
         } else {
-            Set<RoleModel> scopeMappings = new HashSet<>();
 
             // 1 - Client roles of this client itself
-            scopeMappings.addAll(client.getRoles());
+            Set<RoleModel> scopeMappings = new HashSet<>(client.getRoles());
 
             // 2 - Role mappings of client itself + default client scopes + optional client scopes requested by scope parameter (if applyScopeParam is true)
             for (ClientScopeModel clientScope : clientScopes) {
@@ -507,8 +512,7 @@ public class TokenManager {
         }
 
         // Add optional client scopes requested by scope parameter
-        String[] scopes = scopeParam.split(" ");
-        Collection<String> scopeParamParts = Arrays.asList(scopes);
+        Collection<String> scopeParamParts = parseScopeParameter(scopeParam);
         Map<String, ClientScopeModel> allOptionalScopes = client.getClientScopes(false, true);
         for (String scopeParamPart : scopeParamParts) {
             ClientScopeModel scope = allOptionalScopes.get(scopeParamPart);
@@ -518,6 +522,39 @@ public class TokenManager {
         }
 
         return clientScopes;
+    }
+    
+    public static boolean isValidScope(String scopes, ClientModel client) {
+        if (scopes == null) {
+            return true;
+        }
+
+        Set<String> clientScopes = getRequestedClientScopes(scopes, client).stream()
+                .filter(obj -> !ClientModel.class.isInstance(obj))
+                .map(ClientScopeModel::getName)
+                .collect(Collectors.toSet());
+        Collection<String> requestedScopes = TokenManager.parseScopeParameter(scopes);
+
+        if (TokenUtil.isOIDCRequest(scopes)) {
+            requestedScopes.remove(OAuth2Constants.SCOPE_OPENID);
+        }
+
+        if (!requestedScopes.isEmpty() && clientScopes.isEmpty()) {
+            return false;
+        }
+
+        for (String requestedScope : requestedScopes) {
+            // we also check dynamic scopes in case the client is from a provider that dynamically provides scopes to their clients
+            if (!clientScopes.contains(requestedScope) && client.getDynamicClientScope(requestedScope) == null) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    public static Collection<String> parseScopeParameter(String scopeParam) {
+        return new HashSet<>(Arrays.asList(scopeParam.split(" ")));
     }
 
     // Check if user still has granted consents to all requested client scopes
@@ -533,7 +570,7 @@ public class TokenManager {
                 continue;
             }
 
-            if (!grantedConsent.getGrantedClientScopes().contains(requestedScope)) {
+            if (grantedConsent == null || !grantedConsent.getGrantedClientScopes().contains(requestedScope)) {
                 logger.debugf("Client '%s' no longer has requested consent from user '%s' for client scope '%s'",
                         client.getClientId(), user.getUsername(), requestedScope.getName());
                 return false;
@@ -650,6 +687,19 @@ public class TokenManager {
             expiration = expiration <= sessionExpires ? expiration : sessionExpires;
         }
 
+        int clientSessionMaxLifespan;
+        String clientSessionMaxLifespanPerClient = client.getAttribute(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN);
+        if (clientSessionMaxLifespanPerClient != null && !clientSessionMaxLifespanPerClient.trim().isEmpty()) {
+            clientSessionMaxLifespan = Integer.parseInt(clientSessionMaxLifespanPerClient);
+        } else {
+            clientSessionMaxLifespan = realm.getClientSessionMaxLifespan();
+        }
+
+        if (clientSessionMaxLifespan > 0) {
+            int clientSessionExpiration = userSession.getStarted() + clientSessionMaxLifespan;
+            return expiration < clientSessionExpiration ? expiration : clientSessionExpiration;
+        }
+
         return expiration;
     }
 
@@ -740,10 +790,41 @@ public class TokenManager {
         }
 
         private int getRefreshExpiration() {
-            int sessionExpires = userSession.getStarted() + (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ?
-                    realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan());
-            int expiration = Time.currentTime() + (userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0 ?
-                    realm.getSsoSessionIdleTimeoutRememberMe() : realm.getSsoSessionIdleTimeout());
+            int sessionExpires = userSession.getStarted()
+                + (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0
+                    ? realm.getSsoSessionMaxLifespanRememberMe()
+                    : realm.getSsoSessionMaxLifespan());
+
+            int clientSessionMaxLifespan;
+            String clientSessionMaxLifespanPerClient = client.getAttribute(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN);
+            if (clientSessionMaxLifespanPerClient != null && !clientSessionMaxLifespanPerClient.trim().isEmpty()) {
+                clientSessionMaxLifespan = Integer.parseInt(clientSessionMaxLifespanPerClient);
+            } else {
+                clientSessionMaxLifespan = realm.getClientSessionMaxLifespan();
+            }
+
+            if (clientSessionMaxLifespan > 0) {
+                int clientSessionMaxExpiration = userSession.getStarted() + clientSessionMaxLifespan;
+                sessionExpires = sessionExpires < clientSessionMaxExpiration ? sessionExpires : clientSessionMaxExpiration;
+            }
+
+            int expiration = Time.currentTime() + (userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0
+                ? realm.getSsoSessionIdleTimeoutRememberMe()
+                : realm.getSsoSessionIdleTimeout());
+
+            int clientSessionIdleTimeout;
+            String clientSessionIdleTimeoutPerClient = client.getAttribute(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT);
+            if (clientSessionIdleTimeoutPerClient != null && !clientSessionIdleTimeoutPerClient.trim().isEmpty()) {
+                clientSessionIdleTimeout = Integer.parseInt(clientSessionIdleTimeoutPerClient);
+            } else {
+                clientSessionIdleTimeout = realm.getClientSessionIdleTimeout();
+            }
+
+            if (clientSessionIdleTimeout > 0) {
+                int clientSessionIdleExpiration = Time.currentTime() + clientSessionIdleTimeout;
+                expiration = expiration < clientSessionIdleExpiration ? expiration : clientSessionIdleExpiration;
+            }
+
             return expiration <= sessionExpires ? expiration : sessionExpires;
         }
 
@@ -882,4 +963,44 @@ public class TokenManager {
         }
     }
 
+    public static class NotBeforeCheck implements TokenVerifier.Predicate<JsonWebToken> {
+
+        private final int notBefore;
+
+        public NotBeforeCheck(int notBefore) {
+            this.notBefore = notBefore;
+        }
+
+        @Override
+        public boolean test(JsonWebToken t) throws VerificationException {
+            if (t.getIssuedAt() < notBefore) {
+                throw new VerificationException("Stale token");
+            }
+
+            return true;
+        }
+
+        public static NotBeforeCheck forModel(ClientModel clientModel) {
+            if (clientModel != null) {
+
+                int notBeforeClient = clientModel.getNotBefore();
+                int notBeforeRealm = clientModel.getRealm().getNotBefore();
+
+                int notBefore = (notBeforeClient == 0 ? notBeforeRealm : (notBeforeRealm == 0 ? notBeforeClient :
+                        Math.min(notBeforeClient, notBeforeRealm)));
+
+                return new NotBeforeCheck(notBefore);
+            }
+
+            return new NotBeforeCheck(0);
+        }
+
+        public static NotBeforeCheck forModel(RealmModel realmModel) {
+            return new NotBeforeCheck(realmModel == null ? 0 : realmModel.getNotBefore());
+        }
+
+        public static NotBeforeCheck forModel(KeycloakSession session, RealmModel realmModel, UserModel userModel) {
+            return new NotBeforeCheck(session.users().getNotBeforeOfUser(realmModel, userModel));
+        }
+    }
 }

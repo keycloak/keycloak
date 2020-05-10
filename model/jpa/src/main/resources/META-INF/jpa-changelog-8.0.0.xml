@@ -167,7 +167,13 @@
 
     </changeSet>
 
-    <changeSet author="keycloak" id="8.0.0-credential-cleanup">
+    <changeSet author="keycloak" id="8.0.0-credential-cleanup-fixed">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <changeSetExecuted id="8.0.0-credential-cleanup" author="keycloak" changeLogFile="META-INF/jpa-changelog-8.0.0.xml"/>
+            </not>
+        </preConditions>
+
         <dropDefaultValue tableName="CREDENTIAL" columnName="COUNTER" />
         <dropDefaultValue tableName="CREDENTIAL" columnName="DIGITS" />
         <dropDefaultValue tableName="CREDENTIAL" columnName="PERIOD" />
@@ -198,7 +204,7 @@
         <dropColumn tableName="FED_USER_CREDENTIAL" columnName="ALGORITHM"/>
 
         <!--credential attributes are now held within the json of secret_data and credential_data (not this it was used in any case)-->
-        <dropTable tableName="FED_CREDENTIAL_ATTRIBUTE "/>
+        <dropTable tableName="FED_CREDENTIAL_ATTRIBUTE"/>
 
     </changeSet>
 

@@ -15,6 +15,5 @@
 # limitations under the License.
 #
 
-org.keycloak.theme.ExtendingThemeManagerFactory
 org.keycloak.theme.JarThemeProviderFactory
 org.keycloak.theme.FolderThemeProviderFactory

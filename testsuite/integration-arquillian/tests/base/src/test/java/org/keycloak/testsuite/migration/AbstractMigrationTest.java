@@ -16,14 +16,20 @@
  */
 package org.keycloak.testsuite.migration;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.hamcrest.Matchers;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
+import org.keycloak.authentication.authenticators.broker.IdpConfirmLinkAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.broker.IdpEmailVerificationAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.broker.IdpReviewProfileAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.broker.IdpUsernamePasswordFormFactory;
+import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.conditional.ConditionalUserConfiguredAuthenticatorFactory;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.PrioritizedComponentModel;
@@ -31,15 +37,15 @@ import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.LDAPConstants;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
@@ -58,16 +64,17 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.migration.MigrationContext;
 import org.keycloak.testsuite.exportimport.ExportImportUtil;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -77,15 +84,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
@@ -129,7 +131,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertNames(migrationRealm.clients().findAll(), expectedClientIds.toArray(new String[expectedClientIds.size()]));
         String id2 = migrationRealm.clients().findByClientId("migration-test-client").get(0).getId();
         assertNames(migrationRealm.clients().get(id2).roles().list(), "migration-test-client-role");
-        assertNames(migrationRealm.users().search("", 0, 5), "migration-test-user");
+        assertNames(migrationRealm.users().search("", 0, 5), "migration-test-user", "offline-test-user");
         assertNames(migrationRealm.groups().groups(), "migration-test-group");
     }
 
@@ -181,10 +183,6 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testLdapKerberosMigration_2_5_0();
         //https://github.com/keycloak/keycloak/pull/3630
         testDuplicateEmailSupport(masterRealm, migrationRealm);
-    }
-
-    protected void testMigrationTo2_5_1() throws Exception {
-        testOfflineTokenLogin();
     }
 
     /**
@@ -276,6 +274,32 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testMigrationTo9_0_0() {
         testAccountConsoleClient(masterRealm);
         testAccountConsoleClient(migrationRealm);
+        testAlwaysDisplayInConsole();
+        testFirstBrokerLoginFlowMigrated(masterRealm);
+        testFirstBrokerLoginFlowMigrated(migrationRealm);
+        testAccountClient(masterRealm);
+        testAccountClient(migrationRealm);
+        testAdminClientPkce(masterRealm);
+        testAdminClientPkce(migrationRealm);
+        testUserLocaleActionAdded(masterRealm);
+        testUserLocaleActionAdded(migrationRealm);
+    }
+
+    private void testAccountClient(RealmResource realm) {
+        ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
+
+        ClientResource accountResource = realm.clients().get(accountClient.getId());
+        RoleRepresentation viewAppRole = accountResource.roles().get(AccountRoles.VIEW_APPLICATIONS).toRepresentation();
+        assertNotNull(viewAppRole);
+        RoleRepresentation viewConsentRole = accountResource.roles().get(AccountRoles.VIEW_CONSENT).toRepresentation();
+        assertNotNull(viewConsentRole);
+        RoleResource manageConsentResource = accountResource.roles().get(AccountRoles.MANAGE_CONSENT);
+        RoleRepresentation manageConsentRole = manageConsentResource.toRepresentation();
+        assertNotNull(manageConsentRole);
+        assertTrue(manageConsentRole.isComposite());
+        Set<RoleRepresentation> composites = manageConsentResource.getRoleComposites();
+        assertEquals(1, composites.size());
+        assertEquals(viewConsentRole.getId(), composites.iterator().next().getId());
     }
 
     private void testAdminClientUrls(RealmResource realm) {
@@ -288,6 +312,11 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertEquals(1, adminConsoleClient.getRedirectUris().size());
         assertEquals("+", adminConsoleClient.getWebOrigins().iterator().next());
         assertEquals(1, adminConsoleClient.getWebOrigins().size());
+    }
+
+    private void testAdminClientPkce(RealmResource realm) {
+        ClientRepresentation adminConsoleClient = realm.clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0);
+        assertEquals("S256", adminConsoleClient.getAttributes().get(OIDCConfigAttributes.PKCE_CODE_CHALLENGE_METHOD));
     }
 
     private void testAccountClientUrls(RealmResource realm) {
@@ -309,6 +338,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertFalse(accountConsoleClient.isFullScopeAllowed());
         assertTrue(accountConsoleClient.isStandardFlowEnabled());
         assertFalse(accountConsoleClient.isDirectAccessGrantsEnabled());
+        assertEquals("S256", accountConsoleClient.getAttributes().get(OIDCConfigAttributes.PKCE_CODE_CHALLENGE_METHOD));
 
         ClientResource clientResource = realm.clients().get(accountConsoleClient.getId());
 
@@ -321,6 +351,59 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         List<ProtocolMapperRepresentation> mappers = clientResource.getProtocolMappers().getMappers();
         assertEquals(1, mappers.size());
         assertEquals("oidc-audience-resolve-mapper", mappers.get(0).getProtocolMapper());
+    }
+
+    private void testFirstBrokerLoginFlowMigrated(RealmResource realm) {
+        log.infof("Test that firstBrokerLogin flow was migrated in new realm '%s'", realm.toRepresentation().getRealm());
+
+        List<AuthenticationExecutionInfoRepresentation> authExecutions = realm.flows().getExecutions(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW);
+
+        testAuthenticationExecution(authExecutions.get(0), null,
+                IdpReviewProfileAuthenticatorFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.REQUIRED, 0, 0);
+
+        testAuthenticationExecution(authExecutions.get(1), true,
+                null, AuthenticationExecutionModel.Requirement.REQUIRED, 0, 1);
+
+        testAuthenticationExecution(authExecutions.get(2), null,
+                IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.ALTERNATIVE, 1, 0);
+
+        testAuthenticationExecution(authExecutions.get(3), true,
+                null, AuthenticationExecutionModel.Requirement.ALTERNATIVE, 1, 1);
+
+        testAuthenticationExecution(authExecutions.get(4), null,
+                IdpConfirmLinkAuthenticatorFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.REQUIRED, 2, 0);
+
+        testAuthenticationExecution(authExecutions.get(5), true,
+                null, AuthenticationExecutionModel.Requirement.REQUIRED, 2, 1);
+
+        testAuthenticationExecution(authExecutions.get(6), null,
+                IdpEmailVerificationAuthenticatorFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.ALTERNATIVE, 3, 0);
+
+        testAuthenticationExecution(authExecutions.get(7), true,
+                null, AuthenticationExecutionModel.Requirement.ALTERNATIVE, 3, 1);
+
+        testAuthenticationExecution(authExecutions.get(8), null,
+                IdpUsernamePasswordFormFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.REQUIRED, 4, 0);
+
+        testAuthenticationExecution(authExecutions.get(9), true,
+                null, AuthenticationExecutionModel.Requirement.CONDITIONAL, 4, 1);
+
+        // There won't be a requirement in the future, so this test would need to change
+        testAuthenticationExecution(authExecutions.get(10), null,
+                ConditionalUserConfiguredAuthenticatorFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.REQUIRED, 5, 0);
+
+        testAuthenticationExecution(authExecutions.get(11), null,
+                OTPFormAuthenticatorFactory.PROVIDER_ID, AuthenticationExecutionModel.Requirement.REQUIRED, 5, 1);
+    }
+
+
+    private void testAuthenticationExecution(AuthenticationExecutionInfoRepresentation execution, Boolean expectedAuthenticationFlow, String expectedProviderId,
+                                             AuthenticationExecutionModel.Requirement expectedRequirement, int expectedLevel, int expectedIndex) {
+        Assert.assertEquals(execution.getAuthenticationFlow(), expectedAuthenticationFlow);
+        Assert.assertEquals(execution.getProviderId(), expectedProviderId);
+        Assert.assertEquals(execution.getRequirement(), expectedRequirement.toString());
+        Assert.assertEquals(execution.getLevel(), expectedLevel);
+        Assert.assertEquals(execution.getIndex(), expectedIndex);
     }
 
     private void testDecisionStrategySetOnResourceServer() {
@@ -567,9 +650,32 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
         oauth.realm(MIGRATION);
         oauth.clientId("migration-test-client");
-        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(oldOfflineToken, "b2c07929-69e3-44c6-8d7f-76939000b3e4");
+        OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(oldOfflineToken, "secret");
+
+        if (response.getError() != null) {
+            String errorMessage = String.format("Error when refreshing offline token. Error: %s, Error details: %s, offline token from previous version: %s",
+            response.getError(), response.getErrorDescription(), oldOfflineToken);
+            log.error(errorMessage);
+            Assert.fail(errorMessage);
+        }
+
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        assertEquals("migration-test-user", accessToken.getPreferredUsername());
+        assertEquals("offline-test-user", accessToken.getPreferredUsername());
+
+        // KEYCLOAK-10029 - Doublecheck that refresh token in the response is also offline token. Doublecheck that it can be used to another successful refresh
+        String newOfflineToken1 = response.getRefreshToken();
+        assertOfflineToken(newOfflineToken1);
+
+        response = oauth.doRefreshTokenRequest(newOfflineToken1, "secret");
+        String newOfflineToken2 = response.getRefreshToken();
+        assertOfflineToken(newOfflineToken2);
+    }
+
+    private void assertOfflineToken(String offlineToken) {
+        RefreshToken offlineTokenParsed = oauth.parseRefreshToken(offlineToken);
+        assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineTokenParsed.getType());
+        assertEquals(0, offlineTokenParsed.getExpiration());
+        assertTrue(TokenUtil.hasScope(offlineTokenParsed.getScope(), OAuth2Constants.OFFLINE_ACCESS));
     }
 
     private void testRealmDefaultClientScopes(RealmResource realm) {
@@ -640,17 +746,15 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
             log.info("Taking required actions from realm: " + realm.toRepresentation().getRealm());
             List<RequiredActionProviderRepresentation> actions = realm.flows().getRequiredActions();
 
-            // Checking if the actions are in alphabetical order
-            List<String> nameList = actions.stream().map(x -> x.getName()).collect(Collectors.toList());
-            log.debug("Obtained required actions: " + nameList);
-            List<String> sortedByName = nameList.stream().sorted().collect(Collectors.toList());
-            log.debug("Manually sorted required actions: " + sortedByName);
-            assertThat(nameList, is(equalTo(sortedByName)));
-
             // Checking the priority
             int priority = 10;
             for (RequiredActionProviderRepresentation action : actions) {
-                assertThat(action.getPriority(), is(equalTo(priority)));
+                if (action.getAlias().equals("update_user_locale")) {
+                    assertEquals(1000, action.getPriority());
+                } else {
+                    assertEquals(priority, action.getPriority());
+                }
+
                 priority += 10;
             }
         }
@@ -668,19 +772,19 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
             String otp = otpGenerator.generateTOTP("dSdmuHLQhkm54oIm0A0S");
 
             // Try invalid password first
-            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("b2c07929-69e3-44c6-8d7f-76939000b3e4",
+            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret",
                     "migration-test-user", "password", otp);
             Assert.assertNull(response.getAccessToken());
             Assert.assertNotNull(response.getError());
 
             // Try invalid OTP then
-            response = oauth.doGrantAccessTokenRequest("b2c07929-69e3-44c6-8d7f-76939000b3e4",
+            response = oauth.doGrantAccessTokenRequest("secret",
                     "migration-test-user", "password2", "invalid");
             Assert.assertNull(response.getAccessToken());
             Assert.assertNotNull(response.getError());
 
             // Try successful login now
-            response = oauth.doGrantAccessTokenRequest("b2c07929-69e3-44c6-8d7f-76939000b3e4",
+            response = oauth.doGrantAccessTokenRequest("secret",
                     "migration-test-user", "password2", otp);
             Assert.assertNull(response.getError());
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
@@ -689,7 +793,6 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
             throw new AssertionError("Failed to login with user 'migration-test-user' after migration", e);
         }
     }
-
 
     protected void testOTPAuthenticatorsMigratedToConditionalFlow() {
         log.info("testing optional authentication executions migrated");
@@ -733,13 +836,24 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         Assert.assertEquals(subflowExecution.getLevel() + 1, childEx2.getLevel());
     }
 
+    protected void testUserLocaleActionAdded(RealmResource realm) {
+        RequiredActionProviderRepresentation rep = realm.flows().getRequiredAction("update_user_locale");
+
+        assertNotNull(rep);
+        assertEquals("update_user_locale", rep.getAlias());
+        assertEquals("update_user_locale", rep.getProviderId());
+        assertEquals("Update User Locale", rep.getName());
+        assertEquals(1000, rep.getPriority());
+        assertTrue(rep.isEnabled());
+        assertFalse(rep.isDefaultAction());
+    }
+
     protected void testMigrationTo2_x() throws Exception {
         testMigrationTo2_0_0();
         testMigrationTo2_1_0();
         testMigrationTo2_2_0();
         testMigrationTo2_3_0();
         testMigrationTo2_5_0();
-        testMigrationTo2_5_1();
     }
 
     protected void testMigrationTo3_x() {
@@ -791,6 +905,12 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
             assertTrue(m.group(1).matches("[\\da-z]{5}"));
         } catch (IOException e) {
             fail(e.getMessage());
+        }
+    }
+
+    protected void testAlwaysDisplayInConsole() {
+        for(ClientRepresentation clientRep : masterRealm.clients().findAll()) {
+            Assert.assertFalse(clientRep.isAlwaysDisplayInConsole());
         }
     }
 }

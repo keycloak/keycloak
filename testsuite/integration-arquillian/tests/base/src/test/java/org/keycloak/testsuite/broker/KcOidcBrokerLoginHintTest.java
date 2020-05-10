@@ -8,11 +8,18 @@ import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDE
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+
+import org.junit.Test;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.updaters.Creator;
+import org.keycloak.testsuite.util.UserBuilder;
 
 public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
 
@@ -20,20 +27,15 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
     protected BrokerConfiguration getBrokerConfiguration() {
         return new KcOidcBrokerConfigurationWithLoginHint();
     }
-
-    @Override
-    protected String getAccountUrl(String realmName) {
-        return BrokerTestTools.getAuthRoot(suiteContext) + "/auth/realms/" + realmName + "/account";
-    }
     
     private class KcOidcBrokerConfigurationWithLoginHint extends KcOidcBrokerConfiguration {
         
         @Override
-        public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext) {
+        public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext, IdentityProviderSyncMode syncMode) {
             IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
 
             Map<String, String> config = idp.getConfig();
-            applyDefaultConfiguration(suiteContext, config);
+            applyDefaultConfiguration(suiteContext, config, syncMode);
             config.put("loginHint", "true");
             return idp;
         }
@@ -85,5 +87,33 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
 
         Assert.assertTrue("There must be user " + bc.getUserLogin() + " in realm " + bc.consumerRealmName(),
                 isUserFound);
+    }
+
+    @Test
+    public void loginHintWithExistingUser() {
+        try (Creator<UserResource> c = Creator.create(adminClient.realm(bc.consumerRealmName()),
+                UserBuilder.create()
+                        .username(bc.getUserLogin())
+                        .password(bc.getUserPassword())
+                        .email(bc.getUserEmail())
+                        .enabled(true)
+                        .build()
+            )) {
+            driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+            waitForPageToLoad();
+            driver.navigate().to(driver.getCurrentUrl() + "&login_hint=" + USER_EMAIL + "&kc_idp_hint=" + IDP_OIDC_ALIAS);
+            waitForPageToLoad();
+
+            loginPage.login(bc.getUserPassword());
+
+            updateAccountInformationPage.assertCurrent();
+            updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
+
+            idpConfirmLinkPage.assertCurrent();
+            idpConfirmLinkPage.clickLinkAccount();
+
+            loginPage.login(bc.getUserPassword());
+            accountPage.isCurrent();
+        }
     }
 }

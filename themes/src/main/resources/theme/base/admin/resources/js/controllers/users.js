@@ -331,6 +331,46 @@ module.controller('UserTabCtrl', function($scope, $location, Dialog, Notificatio
     };
 });
 
+function loadUserStorageLink(realm, user, console, Components, UserStorageOperations, $scope, $location) {
+        if(user.federationLink) {
+            console.log("federationLink is not null. It is " + user.federationLink);
+
+            if ($scope.access.viewRealm) {
+                Components.get({realm: realm.realm, componentId: user.federationLink}, function (link) {
+                    $scope.federationLinkName = link.name;
+                    $scope.federationLink = "#/realms/" + realm.realm + "/user-storage/providers/" + link.providerId + "/" + link.id;
+                });
+            } else {
+                // KEYCLOAK-4328
+                UserStorageOperations.simpleName.get({realm: realm.realm, componentId: user.federationLink}, function (link) {
+                    $scope.federationLinkName = link.name;
+                    $scope.federationLink = $location.absUrl();
+                })
+            }
+
+        } else {
+            console.log("federationLink is null");
+        }
+
+        if(user.origin) {
+            if ($scope.access.viewRealm) {
+                Components.get({realm: realm.realm, componentId: user.origin}, function (link) {
+                    $scope.originName = link.name;
+                    $scope.originLink = "#/realms/" + realm.realm + "/user-storage/providers/" + link.providerId + "/" + link.id;
+                })
+            }
+            else {
+                // KEYCLOAK-4328
+                UserStorageOperations.simpleName.get({realm: realm.realm, componentId: user.origin}, function (link) {
+                    $scope.originName = link.name;
+                    $scope.originLink = $location.absUrl();
+                })
+             }
+        } else {
+            console.log("origin is null");
+        }
+};
+
 module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser, User,
                                              Components,
                                              UserImpersonation, RequiredActions,
@@ -339,6 +379,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
     $scope.realm = realm;
     $scope.create = !user.id;
     $scope.editUsername = $scope.create || $scope.realm.editUsernameAllowed;
+    $scope.emailAsUsername = $scope.realm.registrationEmailAsUsername;
 
     if ($scope.create) {
         $scope.user = { enabled: true, attributes: {} }
@@ -359,42 +400,9 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
                 }
             });
         };
-        if(user.federationLink) {
-            console.log("federationLink is not null. It is " + user.federationLink);
 
-            if ($scope.access.viewRealm) {
-                Components.get({realm: realm.realm, componentId: user.federationLink}, function (link) {
-                    $scope.federationLinkName = link.name;
-                    $scope.federationLink = "#/realms/" + realm.realm + "/user-storage/providers/" + link.providerId + "/" + link.id;
-                });
-            } else {
-                // KEYCLOAK-4328
-                UserStorageOperations.simpleName.get({realm: realm.realm, componentId: user.federationLink}, function (link) {
-                    $scope.federationLinkName = link.name;
-                    $scope.federationLink = $location.absUrl();
-                })
-            }
+        loadUserStorageLink(realm, user, console, Components, UserStorageOperations, $scope, $location);
 
-        } else {
-            console.log("federationLink is null");
-        }
-        if(user.origin) {
-            if ($scope.access.viewRealm) {
-                Components.get({realm: realm.realm, componentId: user.origin}, function (link) {
-                    $scope.originName = link.name;
-                    $scope.originLink = "#/realms/" + realm.realm + "/user-storage/providers/" + link.providerId + "/" + link.id;
-                })
-            }
-            else {
-                // KEYCLOAK-4328
-                UserStorageOperations.simpleName.get({realm: realm.realm, componentId: user.origin}, function (link) {
-                    $scope.originName = link.name;
-                    $scope.originLink = $location.absUrl();
-                })
-             }
-        } else {
-            console.log("origin is null");
-        }
         console.log('realm brute force? ' + realm.bruteForceProtected)
         $scope.temporarilyDisabled = false;
         var isDisabled = function () {
@@ -514,17 +522,22 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
     }
 });
 
-module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, RequiredActions, User, UserExecuteActionsEmail, UserCredentials, Notifications, Dialog, TimeUnit2) {
+module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, $location, RequiredActions, User, UserExecuteActionsEmail,
+                                                  UserCredentials, Notifications, Dialog, TimeUnit2, Components, UserStorageOperations, $modal) {
     console.log('UserCredentialsCtrl');
 
     $scope.hasPassword = false;
 
-    $scope.showData = {};
-
     loadCredentials();
 
-    $scope.keys = function(object) {
-        return object ? Object.keys(object) : [];
+    loadUserStorageLink(realm, user, console, Components, UserStorageOperations, $scope, $location);
+
+    $scope.getUserStorageProviderName = function() {
+        return user.federationLink ? $scope.federationLinkName : $scope.originName;
+    }
+
+    $scope.getUserStorageProviderLink = function() {
+        return user.federationLink ? $scope.federationLink : $scope.originLink;
     }
 
     $scope.updateCredentialLabel = function(credential) {
@@ -611,6 +624,18 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
             });
     }
 
+    $scope.showData = function(credentialData) {
+        $modal.open({
+            templateUrl: resourceUrl + '/partials/modal/user-credential-data.html',
+            controller: 'UserCredentialsDataModalCtrl',
+            resolve: {
+                credentialData: function () {
+                    return credentialData;
+                }
+            }
+        })
+    }
+
     $scope.realm = realm;
     $scope.user = angular.copy(user);
     $scope.temporaryPassword = true;
@@ -646,6 +671,14 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
             });
         }, function(err) {
             Notifications.error("Error while loading user credentials. See console for more information.");
+            console.log(err);
+        });
+
+        UserCredentials.getConfiguredUserStorageCredentialTypes({ realm: realm.realm, userId: user.id }, null, function(userStorageCredentialTypes) {
+            $scope.userStorageCredentialTypes =  userStorageCredentialTypes;
+            $scope.hasPassword = $scope.hasPassword || userStorageCredentialTypes.lastIndexOf("password") > -1;
+        }, function(err) {
+            Notifications.error("Error while loading user storage credentials. See console for more information.");
             console.log(err);
         });
     }
@@ -743,6 +776,14 @@ module.controller('UserCredentialsCtrl', function($scope, realm, user, $route, R
         $scope.pwdChange = false;
         $scope.userChange = false;
     };
+});
+
+module.controller('UserCredentialsDataModalCtrl', function($scope, credentialData) {
+    $scope.credentialData = credentialData;
+
+    $scope.keys = function(object) {
+        return object ? Object.keys(object) : [];
+    }
 });
 
 module.controller('UserFederationCtrl', function($scope, $location, $route, realm, serverInfo, Components, Notifications, Dialog) {
@@ -1634,20 +1675,19 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
     var initConnectionTest = function(testAction, ldapConfig) {
         return {
             action: testAction,
-            realm: $scope.realm.realm,
-            connectionUrl: ldapConfig.connectionUrl,
-            bindDn: ldapConfig.bindDn,
-            bindCredential: ldapConfig.bindCredential,
-            useTruststoreSpi: ldapConfig.useTruststoreSpi,
-            connectionTimeout: ldapConfig.connectionTimeout,
-            startTls: ldapConfig.startTls,
+            connectionUrl: ldapConfig.connectionUrl && ldapConfig.connectionUrl[0],
+            bindDn: ldapConfig.bindDn && ldapConfig.bindDn[0],
+            bindCredential: ldapConfig.bindCredential && ldapConfig.bindCredential[0],
+            useTruststoreSpi: ldapConfig.useTruststoreSpi && ldapConfig.useTruststoreSpi[0],
+            connectionTimeout: ldapConfig.connectionTimeout && ldapConfig.connectionTimeout[0],
+            startTls: ldapConfig.startTls && ldapConfig.startTls[0],
             componentId: instance.id
         };
     };
 
     $scope.testConnection = function() {
         console.log('LDAPCtrl: testConnection');
-        RealmLDAPConnectionTester.save(initConnectionTest("testConnection", $scope.instance.config), function() {
+        RealmLDAPConnectionTester.save({realm: realm.realm}, initConnectionTest("testConnection", $scope.instance.config), function() {
             Notifications.success("LDAP connection successful.");
         }, function() {
             Notifications.error("Error when trying to connect to LDAP. See server.log for details.");
@@ -1656,7 +1696,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
 
     $scope.testAuthentication = function() {
         console.log('LDAPCtrl: testAuthentication');
-        RealmLDAPConnectionTester.save(initConnectionTest("testAuthentication", $scope.instance.config), function() {
+        RealmLDAPConnectionTester.save({realm: realm.realm}, initConnectionTest("testAuthentication", $scope.instance.config), function() {
             Notifications.success("LDAP authentication successful.");
         }, function() {
             Notifications.error("LDAP authentication failed. See server.log for details");

@@ -43,4 +43,8 @@ public class KeycloakSpringConfigResolverWrapper implements KeycloakConfigResolv
     protected void setDelegate(KeycloakConfigResolver delegate) {
         this.delegate = delegate;
     }
+
+    protected KeycloakConfigResolver getDelegate() {
+        return delegate;
+    }
 }

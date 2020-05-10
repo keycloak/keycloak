@@ -28,7 +28,11 @@ public class StackOverflowIdentityProviderConfig extends OAuth2IdentityProviderC
 		super(model);
 	}
 
-	public String getKey() {
+    public StackOverflowIdentityProviderConfig() {
+        
+    }
+
+    public String getKey() {
 		return getConfig().get("key");
 	}
 

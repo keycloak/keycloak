@@ -89,7 +89,7 @@ public class BasicAuthAuthenticatorFactory implements AuthenticatorFactory {
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
     }
 
     @Override

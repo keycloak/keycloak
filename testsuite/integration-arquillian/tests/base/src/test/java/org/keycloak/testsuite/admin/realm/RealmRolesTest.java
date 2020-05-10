@@ -19,6 +19,7 @@ package org.keycloak.testsuite.admin.realm;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -38,6 +39,7 @@ import org.keycloak.testsuite.util.RoleBuilder;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,7 +55,11 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -132,6 +138,12 @@ public class RealmRolesTest extends AbstractAdminTest {
         
     }
 
+    private RoleRepresentation makeRole(String name) {
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName(name);
+        return role;
+    }
+    
     @Test
     public void getRole() {
         RoleRepresentation role = resource.get("role-a").toRepresentation();
@@ -343,5 +355,132 @@ public class RealmRolesTest extends AbstractAdminTest {
 
         assertThat(expectedMembers, containsInAnyOrder("test-role-member", "test-role-member2"));
     }
+    
+    @Test
+    public void testSearchForRoles() {
+        
+        for(int i = 0; i<15; i++) {
+            String roleName = "testrole"+i;
+            RoleRepresentation role = makeRole(roleName);
+            resource.create(role);
+            assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath(roleName), role, ResourceType.REALM_ROLE);          
+        }  
+        
+        String roleNameA = "abcdef";
+        RoleRepresentation roleA = makeRole(roleNameA);
+        resource.create(roleA);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath(roleNameA), roleA, ResourceType.REALM_ROLE);       
+        
+        String roleNameB = "defghi";
+        RoleRepresentation roleB = makeRole(roleNameB);
+        resource.create(roleB);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath(roleNameB), roleB, ResourceType.REALM_ROLE);       
+        
+        List<RoleRepresentation> resultSearch = resource.list("def", -1, -1);
+        assertEquals(2,resultSearch.size());
+        
+        List<RoleRepresentation> resultSearch2 = resource.list("testrole", -1, -1);
+        assertEquals(15,resultSearch2.size());
+        
+        List<RoleRepresentation> resultSearchPagination = resource.list("testrole", 1, 5);
+        assertEquals(5,resultSearchPagination.size());
+    }
+    
+    @Test
+    public void testPaginationRoles() {
+        
+        for(int i = 0; i<15; i++) {
+            String roleName = "role"+i;
+            RoleRepresentation role = makeRole(roleName);
+            resource.create(role);
+            assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath(roleName), role, ResourceType.REALM_ROLE);       
+        }  
+        
+        List<RoleRepresentation> resultSearchPagination = resource.list(1, 5);
+        assertEquals(5,resultSearchPagination.size());
+        
+        List<RoleRepresentation> resultSearchPagination2 = resource.list(5, 5);
+        assertEquals(5,resultSearchPagination2.size());
+        
+        List<RoleRepresentation> resultSearchPagination3 = resource.list(1, 5);
+        assertEquals(5,resultSearchPagination3.size());
+        
+        List<RoleRepresentation> resultSearchPaginationIncoherentParams = resource.list(1, null);
+        assertTrue(resultSearchPaginationIncoherentParams.size() > 15);
+    }
+    
+    @Test
+    public void testPaginationRolesCache() {
+        
+        for(int i = 0; i<5; i++) {
+            String roleName = "paginaterole"+i;
+            RoleRepresentation role = makeRole(roleName);
+            resource.create(role);
+            assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath(roleName), role, ResourceType.REALM_ROLE);       
+        }   
+       
+        List<RoleRepresentation> resultBeforeAddingRoleToTestCache = resource.list(1, 1000);  
+        
+        // after a first call which init the cache, we add a new role to see if the result change
+        
+        RoleRepresentation role = makeRole("anewrole");
+        resource.create(role);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("anewrole"), role, ResourceType.REALM_ROLE);
+        
+        List<RoleRepresentation> resultafterAddingRoleToTestCache = resource.list(1, 1000);
+        
+        assertEquals(resultBeforeAddingRoleToTestCache.size()+1, resultafterAddingRoleToTestCache.size());
+    }
 
+    @Test
+    public void getRolesWithFullRepresentation() {
+        for(int i = 0; i<5; i++) {
+            String roleName = "attributesrole"+i;
+            RoleRepresentation role = makeRole(roleName);
+            
+            Map<String, List<String>> attributes = new HashMap<String, List<String>>();
+            attributes.put("attribute1", Arrays.asList("value1","value2"));
+            role.setAttributes(attributes);
+                    
+            resource.create(role);
+            assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath(roleName), role, ResourceType.REALM_ROLE);   
+            
+            // we have to update the role to set the attributes because
+            // the add role endpoint only care about name and description
+            RoleResource roleToUpdate = resource.get(roleName);
+            role.setId(roleToUpdate.toRepresentation().getId());
+            
+            roleToUpdate.update(role);
+            assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.roleResourcePath(roleName), role, ResourceType.REALM_ROLE);  
+        }
+        
+        List<RoleRepresentation> roles = resource.list("attributesrole", false);
+        assertTrue(roles.get(0).getAttributes().containsKey("attribute1"));
+    }
+
+    @Test
+    public void getRolesWithBriefRepresentation() {
+        for(int i = 0; i<5; i++) {
+            String roleName = "attributesrolebrief"+i;
+            RoleRepresentation role = makeRole(roleName);
+            
+            Map<String, List<String>> attributes = new HashMap<String, List<String>>();
+            attributes.put("attribute1", Arrays.asList("value1","value2"));
+            role.setAttributes(attributes);
+                    
+            resource.create(role);
+            assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath(roleName), role, ResourceType.REALM_ROLE);
+            
+            // we have to update the role to set the attributes because
+            // the add role endpoint only care about name and description
+            RoleResource roleToUpdate = resource.get(roleName);
+            role.setId(roleToUpdate.toRepresentation().getId());
+            
+            roleToUpdate.update(role);
+            assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.roleResourcePath(roleName), role, ResourceType.REALM_ROLE);  
+        }
+        
+        List<RoleRepresentation> roles = resource.list("attributesrolebrief", true);
+        assertNull(roles.get(0).getAttributes());
+    }
 }

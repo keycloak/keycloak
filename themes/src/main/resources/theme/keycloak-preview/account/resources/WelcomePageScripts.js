@@ -53,58 +53,21 @@ var loadPatternFly = function () {
     patternFlyHasLoaded = true;
 }
 
-var toggleLocaleDropdown = function () {
-    var localeDropdownList = document.getElementById("landing-locale-dropdown-list");
-    if (localeDropdownList.hasAttribute("hidden")) {
-        localeDropdownList.removeAttribute("hidden");
-        document.getElementById("landing-locale-dropdown-button").setAttribute("aria-expanded", true);
-    } else {
-        localeDropdownList.setAttribute("hidden", true);
-        document.getElementById("landing-locale-dropdown-button").setAttribute("aria-expanded", false);
-    }
-};
-
-var toggleMobileDropdown = function () {
-    var mobileDropdown = document.getElementById("landingMobileDropdown");
-    var mobileKebab = document.getElementById("landingMobileKebab");
-    var mobileKebabButton = document.getElementById("landingMobileKebabButton");
-    if (mobileDropdown.style.display === 'none') {
-        mobileDropdown.style.display = 'block';
-        mobileKebab.classList.add("pf-m-expanded");
-        mobileKebabButton.setAttribute("aria-expanded", "true");
-    } else {
-        mobileDropdown.style.display = 'none';
-        mobileKebab.classList.remove("pf-m-expanded");
-        mobileKebabButton.setAttribute("aria-expanded", "false");
-    }
-};
-
-var toggleMobileChooseLocale = function() {
-    var mobileLocaleSelectedIcon = document.getElementById("landingMobileLocaleSelectedIcon");
-    var isDropdownClosed = mobileLocaleSelectedIcon.classList.contains("fa-angle-right");
-    var mobileLocaleSeparator = document.getElementById("landingMobileLocaleSeparator");
-    
-    if (isDropdownClosed) {
-        mobileLocaleSelectedIcon.classList.remove("fa-angle-right");
-        mobileLocaleSelectedIcon.classList.add("fa-angle-down");
-        mobileLocaleSeparator.style.display = 'block';
-    } else {
-        mobileLocaleSelectedIcon.classList.add("fa-angle-right");
-        mobileLocaleSelectedIcon.classList.remove("fa-angle-down");
-        mobileLocaleSeparator.style.display = 'none';
-    }
-    
-    for (var i=0; i < availableLocales.length; i++) {
-        if (locale === availableLocales[i].locale) continue; // don't unhide current locale
-        var mobileLocaleSelection = document.getElementById("landing-mobile-locale-" + availableLocales[i].locale);
-        if (isDropdownClosed) {
-            mobileLocaleSelection.style.display= 'inline';
+function loggedInUserName() {
+    let userName = l18nMsg['unknownUser'];
+    if (keycloak.tokenParsed) {
+        const givenName = keycloak.tokenParsed.given_name;
+        const familyName = keycloak.tokenParsed.family_name;
+        const preferredUsername = keycloak.tokenParsed.preferred_username;
+        if (givenName && familyName) {
+            userName = [givenName, familyName].reduce((acc, value, index) =>
+                acc.replace('{{param_'+ index + '}}', value), l18nMsg['fullName']
+            );
         } else {
-            mobileLocaleSelection.style.display= 'none';
+            userName = (givenName || familyName) || preferredUsername || userName;
         }
     }
-    
-    toggleMobileDropdown();
+    return userName;
 }
 
 var loadjs = function (url, loadListener) {

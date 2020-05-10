@@ -238,7 +238,8 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             if (config.isPreserveGroupsInheritance()) {
                 Set<String> subgroupNames = new HashSet<>();
                 for (LDAPDn groupDn : getLDAPSubgroups(ldapGroup)) {
-                    subgroupNames.add(groupDn.getFirstRdnAttrValue());
+                    String subGroupName = groupDn.getFirstRdn().getAttrValue(groupsRdnAttr);
+                    subgroupNames.add(subGroupName);
                 }
 
                 ldapGroupsRep.add(new GroupTreeResolver.Group(groupName, subgroupNames));
@@ -322,12 +323,11 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             updateAttributesOfKCGroup(kcGroup, ldapGroups.get(kcGroup.getName()));
             syncResult.increaseUpdated();
         } else {
-            kcGroup = realm.createGroup(groupTreeEntry.getGroupName());
             if (kcParent == null) {
-                realm.moveGroup(kcGroup, null);
+                kcGroup = realm.createGroup(groupTreeEntry.getGroupName());
                 logger.debugf("Imported top-level group '%s' from LDAP", kcGroup.getName());
             } else {
-                realm.moveGroup(kcGroup, kcParent);
+                kcGroup = realm.createGroup(groupTreeEntry.getGroupName(), kcParent);
                 logger.debugf("Imported group '%s' from LDAP as child of group '%s'", kcGroup.getName(), kcParent.getName());
             }
 
@@ -406,7 +406,6 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
                 kcGroup = realm.createGroup(groupName);
                 updateAttributesOfKCGroup(kcGroup, ldapGroup);
-                realm.moveGroup(kcGroup, null);
             }
 
             // Could theoretically happen on some LDAP servers if 'memberof' style is used and 'memberof' attribute of user references non-existing group
@@ -579,6 +578,11 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
     @Override
     public List<UserModel> getGroupMembers(RealmModel realm, GroupModel kcGroup, int firstResult, int maxResults) {
+        if (config.getMode() == LDAPGroupMapperMode.IMPORT) {
+            // only results from Keycloak should be returned, or imported LDAP and KC items will duplicate
+            return Collections.emptyList();
+        }
+
         // TODO: with ranged search in AD we can improve the search using the specific range (not done for the moment)
         LDAPObject ldapGroup = loadLDAPGroupByName(kcGroup.getName());
         if (ldapGroup == null) {

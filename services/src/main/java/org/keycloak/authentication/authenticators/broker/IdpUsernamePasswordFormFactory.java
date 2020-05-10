@@ -42,7 +42,7 @@ public class IdpUsernamePasswordFormFactory extends UsernamePasswordFormFactory 
 
     @Override
     public String getHelpText() {
-        return "Validates a password from login form. Username is already known from identity provider authentication";
+        return "Validates a password from login form. Username may be already known from identity provider authentication";
     }
 
     @Override

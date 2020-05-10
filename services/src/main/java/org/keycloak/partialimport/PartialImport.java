@@ -38,9 +38,9 @@ public interface PartialImport<T> {
      * @throws ErrorResponseException If the PartialImport can not be performed,
      *                                throw this exception.
      */
-    public void prepare(PartialImportRepresentation rep,
-                         RealmModel realm,
-                         KeycloakSession session) throws ErrorResponseException;
+    void prepare(PartialImportRepresentation rep,
+                 RealmModel realm,
+                 KeycloakSession session) throws ErrorResponseException;
 
     /**
      * Delete resources that will be overwritten.  This is done separately so
@@ -52,7 +52,7 @@ public interface PartialImport<T> {
      * @param realm Realm to be imported into.
      * @param session The KeycloakSession
      */
-    public void removeOverwrites(RealmModel realm, KeycloakSession session);
+    void removeOverwrites(RealmModel realm, KeycloakSession session);
 
     /**
      * Create (or re-create) all the imported resources.
@@ -63,7 +63,7 @@ public interface PartialImport<T> {
      * @return The final results of the PartialImport request.
      * @throws ErrorResponseException if an error was detected trying to doImport a resource.
      */
-    public PartialImportResults doImport(PartialImportRepresentation rep,
-                                         RealmModel realm,
-                                         KeycloakSession session) throws ErrorResponseException;
+    PartialImportResults doImport(PartialImportRepresentation rep,
+                                  RealmModel realm,
+                                  KeycloakSession session) throws ErrorResponseException;
 }

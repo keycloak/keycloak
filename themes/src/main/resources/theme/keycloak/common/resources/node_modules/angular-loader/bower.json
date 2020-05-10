@@ -1,0 +1,10 @@
+{
+  "name": "angular-loader",
+  "version": "1.7.9",
+  "license": "MIT",
+  "main": "./angular-loader.js",
+  "ignore": [],
+  "dependencies": {
+    "angular": "1.7.9"
+  }
+}

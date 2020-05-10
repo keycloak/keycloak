@@ -41,6 +41,11 @@ public class StackoverflowIdentityProviderFactory extends
 	}
 
 	@Override
+	public StackOverflowIdentityProviderConfig createConfig() {
+		return new StackOverflowIdentityProviderConfig();
+	}
+
+	@Override
 	public String getId() {
 		return PROVIDER_ID;
 	}

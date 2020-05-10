@@ -23,14 +23,11 @@ import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import java.util.List;
 import java.util.function.BiConsumer;
 
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2019 Red Hat Inc.
@@ -61,36 +58,9 @@ public abstract class AbstractInitializedBaseBrokerTest extends AbstractBaseBrok
         realm.identityProviders().create(bc.setUpIdentityProvider(suiteContext)).close();
         identityProviderResource = realm.identityProviders().get(bc.getIDPAlias());
 
-        // addClients
-        List<ClientRepresentation> clients = bc.createProviderClients(suiteContext);
-        if (clients != null) {
-            RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
-            for (ClientRepresentation client : clients) {
-                log.debug("adding client " + client.getClientId()+ " to realm " + bc.providerRealmName());
-
-                providerRealm.clients().create(client).close();
-            }
-        }
-
-        clients = bc.createConsumerClients(suiteContext);
-        if (clients != null) {
-            RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
-            for (ClientRepresentation client : clients) {
-                log.debug("adding client " + client.getClientId() + " to realm " + bc.consumerRealmName());
-
-                consumerRealm.clients().create(client).close();
-            }
-        }
+        addClientsToProviderAndConsumer();
 
         testContext.setInitialized(true);
-    }
-
-    protected void logInWithBroker(BrokerConfiguration bc) {
-        log.debug("Clicking social " + bc.getIDPAlias());
-        loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
-        log.debug("Logging in");
-        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
     }
 
     protected void updateExecutions(BiConsumer<AuthenticationExecutionInfoRepresentation, AuthenticationManagementResource> action) {

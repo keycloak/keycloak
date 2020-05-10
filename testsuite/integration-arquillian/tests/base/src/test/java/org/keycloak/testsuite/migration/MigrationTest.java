@@ -20,16 +20,19 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.migration.Migration;
 
 import javax.ws.rs.NotFoundException;
 import java.util.List;
 
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class MigrationTest extends AbstractMigrationTest {
 
     @Override
@@ -56,18 +59,21 @@ public class MigrationTest extends AbstractMigrationTest {
 
     @Test
     @Migration(versionFrom = "4.")
-    public void migration4_xTest() {
+    public void migration4_xTest() throws Exception {
         testMigratedData();
         testMigrationTo5_x();
         testMigrationTo6_x();
         testMigrationTo7_x(true);
         testMigrationTo8_x();
         testMigrationTo9_x();
+
+        // Always test offline-token login during migration test
+        testOfflineTokenLogin();
     }
 
     @Test
     @Migration(versionFrom = "3.")
-    public void migration3_xTest() {
+    public void migration3_xTest() throws Exception {
         testMigratedData();
         testMigrationTo4_x();
         testMigrationTo5_x();
@@ -75,11 +81,14 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigrationTo7_x(true);
         testMigrationTo8_x();
         testMigrationTo9_x();
+
+        // Always test offline-token login during migration test
+        testOfflineTokenLogin();
     }
 
     @Test
     @Migration(versionFrom = "2.")
-    public void migration2_xTest() {
+    public void migration2_xTest() throws Exception {
         testMigratedData();
         testMigrationTo3_x();
         testMigrationTo4_x();
@@ -88,6 +97,9 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigrationTo7_x(true);
         testMigrationTo8_x();
         testMigrationTo9_x();
+
+        // Always test offline-token login during migration test
+        testOfflineTokenLogin();
     }
 
     @Test
@@ -102,6 +114,9 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigrationTo7_x(false);
         testMigrationTo8_x();
         testMigrationTo9_x();
+
+        // Always test offline-token login during migration test
+        testOfflineTokenLogin();
     }
 
 }

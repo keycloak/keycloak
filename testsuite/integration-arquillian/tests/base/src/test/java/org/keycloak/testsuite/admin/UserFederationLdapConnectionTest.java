@@ -19,17 +19,21 @@ package org.keycloak.testsuite.admin;
 
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 import org.keycloak.services.managers.LDAPConnectionTestManager;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.util.LDAPRule;
 
 import javax.ws.rs.core.Response;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @EnableVault
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UserFederationLdapConnectionTest extends AbstractAdminTest {
 
     @ClassRule
@@ -38,50 +42,58 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
     @Test
     public void testLdapConnections1() {
         // Unknown action
-        Response response = realm.testLDAPConnection("unknown", "ldap://localhost:10389", "foo", "bar", "false", null);
+        Response response = realm.testLDAPConnection(new TestLdapConnectionRepresentation("unknown", "ldap://localhost:10389", "foo", "bar", "false", null));
         assertStatus(response, 400);
 
         // Bad host
-        response = realm.testLDAPConnection(LDAPConnectionTestManager.TEST_CONNECTION, "ldap://localhostt:10389", "foo", "bar", "false", null);
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPConnectionTestManager.TEST_CONNECTION, "ldap://localhostt:10389", "foo", "bar", "false", null));
         assertStatus(response, 400);
 
         // Connection success
-        response = realm.testLDAPConnection(LDAPConnectionTestManager.TEST_CONNECTION, "ldap://localhost:10389", "foo", "bar", "false", null);
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPConnectionTestManager.TEST_CONNECTION, "ldap://localhost:10389", "foo", "bar", "false", null));
         assertStatus(response, 204);
 
         // Bad authentication
-        response = realm.testLDAPConnection(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldap://localhost:10389", "foo", "bar", "false", "10000");
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldap://localhost:10389", "foo", "bar", "false", "10000"));
         assertStatus(response, 400);
 
         // Authentication success
-        response = realm.testLDAPConnection(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldap://localhost:10389", "uid=admin,ou=system", "secret", "false", null);
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldap://localhost:10389", "uid=admin,ou=system", "secret", "false", null));
         assertStatus(response, 204);
 
         // Authentication success with bindCredential from Vault
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldap://localhost:10389", "uid=admin,ou=system", "${vault.ldap_bindCredential}", "false", null));
+        assertStatus(response, 204);
+
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldap://localhost:10389", "uid=admin,ou=system", "${vault.ldap_bindCredential}", "false", null));
+        assertStatus(response, 204);
+
+        // Deprecated form based
         response = realm.testLDAPConnection(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldap://localhost:10389", "uid=admin,ou=system", "${vault.ldap_bindCredential}", "false", null);
         assertStatus(response, 204);
+
     }
 
     @Test
     public void testLdapConnectionsSsl() {
 
-        Response response = realm.testLDAPConnection(LDAPConnectionTestManager.TEST_CONNECTION, "ldaps://localhost:10636", "foo", "bar", "false", null);
+        Response response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPConnectionTestManager.TEST_CONNECTION, "ldaps://localhost:10636", "foo", "bar", "false", null));
         assertStatus(response, 204);
 
-        response = realm.testLDAPConnection(LDAPConnectionTestManager.TEST_CONNECTION, "ldaps://localhostt:10636", "foo", "bar", "false", null);
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPConnectionTestManager.TEST_CONNECTION, "ldaps://localhostt:10636", "foo", "bar", "false", null));
         assertStatus(response, 400);
 
-        response = realm.testLDAPConnection(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldaps://localhost:10636", "foo", "bar", "false", null);
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldaps://localhost:10636", "foo", "bar", "false", null));
         assertStatus(response, 400);
 
-        response = realm.testLDAPConnection(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldaps://localhost:10636", "uid=admin,ou=system", "secret", "true", null);
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldaps://localhost:10636", "uid=admin,ou=system", "secret", "true", null));
         assertStatus(response, 204);
 
-        response = realm.testLDAPConnection(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldaps://localhost:10636", "uid=admin,ou=system", "secret", "true", "10000");
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldaps://localhost:10636", "uid=admin,ou=system", "secret", "true", "10000"));
         assertStatus(response, 204);
 
         // Authentication success with bindCredential from Vault
-        response = realm.testLDAPConnection(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldaps://localhost:10636", "uid=admin,ou=system", "${vault.ldap_bindCredential}", "true", null);
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPConnectionTestManager.TEST_AUTHENTICATION, "ldaps://localhost:10636", "uid=admin,ou=system", "${vault.ldap_bindCredential}", "true", null));
         assertStatus(response, 204);
     }
 

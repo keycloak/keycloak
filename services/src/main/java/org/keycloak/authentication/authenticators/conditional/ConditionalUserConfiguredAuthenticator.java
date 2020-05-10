@@ -33,7 +33,7 @@ public class ConditionalUserConfiguredAuthenticator implements ConditionalAuthen
                 AuthenticatorFactory factory = (AuthenticatorFactory) context.getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, e.getAuthenticator());
                 if (factory != null) {
                     Authenticator auth = factory.create(context.getSession());
-                    if (auth != null && auth instanceof ConditionalAuthenticator) {
+                    if (auth instanceof ConditionalAuthenticator) {
                         isConditionalAuthenticator = true;
                     }
                 }

@@ -22,6 +22,17 @@
         var _instance = this;
         this.rpt = null;
 
+        var resolve = function () {};
+        var reject = function () {};
+
+        // detects if browser supports promises
+        if (typeof Promise !== "undefined" && Promise.toString().indexOf("[native code]") !== -1) {
+            this.ready = new Promise(function (res, rej) {
+              resolve = res;
+              reject = rej;
+            });
+        }
+
         this.init = function () {
             var request = new XMLHttpRequest();
 
@@ -30,8 +41,10 @@
                 if (request.readyState == 4) {
                     if (request.status == 200) {
                         _instance.config = JSON.parse(request.responseText);
+                        resolve();
                     } else {
                         console.error('Could not obtain configuration from server.');
+                        reject();
                     }
                 }
             }

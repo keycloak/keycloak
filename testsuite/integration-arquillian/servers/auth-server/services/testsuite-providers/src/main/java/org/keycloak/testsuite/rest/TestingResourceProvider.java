@@ -58,6 +58,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
+import org.keycloak.services.util.CookieHelper;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.components.TestProviderFactory;
@@ -73,6 +74,7 @@ import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
 import org.keycloak.testsuite.runonserver.FetchOnServer;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.runonserver.SerializationUtil;
+import org.keycloak.testsuite.util.FeatureDeployerUtil;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
@@ -138,7 +140,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         session.sessions().removeUserSession(realm, sessionModel);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @POST
@@ -148,7 +150,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         RealmModel realm = getRealmByName(realmName);
 
         session.sessions().removeUserSessions(realm);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -175,7 +177,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         session.authenticationSessions().removeExpired(realm);
         session.realms().removeExpiredClientInitialAccess();
 
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -249,7 +251,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearEventQueue() {
         EventsListenerProvider.clear();
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @POST
@@ -257,7 +259,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearAdminEventQueue() {
         EventsListenerProvider.clearAdminEvents();
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -266,7 +268,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearEventStore() {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clear();
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -275,7 +277,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearEventStore(@QueryParam("realmId") String realmId) {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clear(realmId);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -284,7 +286,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan) {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clear(realmId, olderThan);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     /**
@@ -396,7 +398,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearAdminEventStore() {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clearAdmin();
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -405,7 +407,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearAdminEventStore(@QueryParam("realmId") String realmId) {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clearAdmin(realmId);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -414,7 +416,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearAdminEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan) {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clearAdmin(realmId, olderThan);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     /**
@@ -559,7 +561,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public String getSSOCookieValue() {
         Map<String, Cookie> cookies = request.getHttpHeaders().getCookies();
-        Cookie cookie = cookies.get(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
+        Cookie cookie = CookieHelper.getCookie(cookies, AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
         if (cookie == null) return null;
         return cookie.getValue();
     }
@@ -828,7 +830,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
     @Path("/javascript")
     public TestJavascriptResource getJavascriptResource() {
-        return new TestJavascriptResource();
+        return new TestJavascriptResource(session);
     }
 
     private void setFeatureInProfileFile(File file, Profile.Feature featureProfile, String newState) {
@@ -864,7 +866,9 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         if (Profile.isFeatureEnabled(featureProfile))
-            return Response.ok().build();
+            return Response.noContent().build();
+
+        FeatureDeployerUtil.initBeforeChangeFeature(featureProfile);
 
         System.setProperty("keycloak.profile.feature." + featureProfile.toString().toLowerCase(), "enabled");
 
@@ -876,8 +880,10 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
         Profile.init();
 
+        FeatureDeployerUtil.deployFactoriesAfterFeatureEnabled(featureProfile);
+
         if (Profile.isFeatureEnabled(featureProfile))
-            return Response.ok().build();
+            return Response.noContent().build();
         else
             return Response.status(Response.Status.NOT_FOUND).build();
     }
@@ -896,9 +902,11 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         if (!Profile.isFeatureEnabled(featureProfile))
-            return Response.ok().build();
+            return Response.noContent().build();
 
-        System.getProperties().remove("keycloak.profile.feature." + featureProfile.toString().toLowerCase());
+        FeatureDeployerUtil.initBeforeChangeFeature(featureProfile);
+
+        disableFeatureProperties(featureProfile);
 
         String jbossServerConfigDir = System.getProperty("jboss.server.config.dir");
         // If we are in jboss-based container, we need to write profile.properties file, otherwise the change in system property will disappear after restart
@@ -908,12 +916,25 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
         Profile.init();
 
+        FeatureDeployerUtil.undeployFactoriesAfterFeatureDisabled(featureProfile);
+
         if (!Profile.isFeatureEnabled(featureProfile))
-            return Response.ok().build();
+            return Response.noContent().build();
         else
             return Response.status(Response.Status.NOT_FOUND).build();
     }
 
+    /**
+     * KEYCLOAK-12958
+     */
+    private void disableFeatureProperties(Profile.Feature feature) {
+        Profile.Type type = Profile.getName().equals("product") ? feature.getTypeProduct() : feature.getTypeProject();
+        if (type.equals(Profile.Type.DEFAULT)) {
+            System.setProperty("keycloak.profile.feature." + feature.toString().toLowerCase(), "disabled");
+        } else {
+            System.getProperties().remove("keycloak.profile.feature." + feature.toString().toLowerCase());
+        }
+    }
 
     /**
      * This will send POST request to specified URL with specified form parameters. It's not easily possible to "trick" web driver to send POST

@@ -73,6 +73,12 @@ public class FlowTest extends AbstractAuthenticationTest {
     }
     
     @Test
+    public void testAddFlowWithRestrictedCharInAlias() {
+        Response resp = authMgmtResource.createFlow(newFlow("fo]o", "Browser flow", "basic-flow", true, false));
+        Assert.assertEquals(400, resp.getStatus());
+    }
+    
+    @Test
     public void testAddRemoveFlow() {
 
         // test that built-in flow cannot be deleted

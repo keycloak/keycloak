@@ -30,19 +30,22 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
 
     private static final int LATCH_TIMEOUT_MS = 30000;
@@ -57,126 +60,129 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
         AtomicReference<String> clientDBIdAtomic = new AtomicReference<>();
         AtomicReference<Exception> exceptionHolder = new AtomicReference<>();
 
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionSetup) -> {
+        try {
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionSetup) -> {
 
-            RealmModel realm = sessionSetup.realms().getRealm("test");
-            sessionSetup.users().addUser(realm, "user1").setEmail("user1@localhost");
-            sessionSetup.users().addUser(realm, "user2").setEmail("user2@localhost");
+                RealmModel realm = sessionSetup.realms().getRealm("test");
+                sessionSetup.users().addUser(realm, "user1").setEmail("user1@localhost");
+                sessionSetup.users().addUser(realm, "user2").setEmail("user2@localhost");
 
-            realm = sessionSetup.realms().createRealm("original");
+                realm = sessionSetup.realms().createRealm("original");
 
-            client[0] = sessionSetup.realms().addClient(realm, "client");
-            client[0].setSecret("old");
-        });
-
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session1) -> {
-            String clientDBId = client[0].getId();
-            clientDBIdAtomic.set(clientDBId);
-
-            final KeycloakSessionFactory sessionFactory = session1.getKeycloakSessionFactory();
-
-            final CountDownLatch transactionsCounter = new CountDownLatch(2);
-            final CountDownLatch readLatch = new CountDownLatch(1);
-            final CountDownLatch updateLatch = new CountDownLatch(1);
-
-            Thread thread1 = new Thread(() -> {
-                KeycloakModelUtils.runJobInTransaction(sessionFactory, session11 -> {
-                    try {
-                        KeycloakSession currentSession = session11;
-                        // Wait until transaction in both threads started
-                        transactionsCounter.countDown();
-                        logger.info("transaction1 started");
-                        if (!transactionsCounter.await(LATCH_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
-                            throw new IllegalStateException("Timeout when waiting for transactionsCounter latch in thread1");
-                        }
-
-                        // Read client
-                        RealmModel realm1 = currentSession.realms().getRealmByName("original");
-                        ClientModel client1 = currentSession.realms().getClientByClientId("client", realm1);
-                        logger.info("transaction1: Read client finished");
-                        readLatch.countDown();
-
-                        // Wait until thread2 updates client and commits
-                        if (!updateLatch.await(LATCH_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
-                            throw new IllegalStateException("Timeout when waiting for updateLatch");
-                        }
-
-                        logger.info("transaction1: Going to read client again");
-
-                        client1 = currentSession.realms().getClientByClientId("client", realm1);
-                        logger.info("transaction1: secret: " + client1.getSecret());
-
-                    } catch (Exception e) {
-                        exceptionHolder.set(e);
-                        throw new RuntimeException(e);
-                    }
-                });
+                client[0] = sessionSetup.realms().addClient(realm, "client");
+                client[0].setSecret("old");
             });
 
-            Thread thread2 = new Thread(() -> {
-                KeycloakModelUtils.runJobInTransaction(sessionFactory, session22 -> {
-                    try {
-                        KeycloakSession currentSession = session22;
-                        // Wait until transaction in both threads started
-                        transactionsCounter.countDown();
-                        logger.info("transaction2 started");
-                        if (!transactionsCounter.await(LATCH_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
-                            throw new IllegalStateException("Timeout when waiting for transactionsCounter latch in thread2");
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session1) -> {
+                String clientDBId = client[0].getId();
+                clientDBIdAtomic.set(clientDBId);
+
+                final KeycloakSessionFactory sessionFactory = session1.getKeycloakSessionFactory();
+
+                final CountDownLatch transactionsCounter = new CountDownLatch(2);
+                final CountDownLatch readLatch = new CountDownLatch(1);
+                final CountDownLatch updateLatch = new CountDownLatch(1);
+
+                Thread thread1 = new Thread(() -> {
+                    KeycloakModelUtils.runJobInTransaction(sessionFactory, session11 -> {
+                        try {
+                            KeycloakSession currentSession = session11;
+                            // Wait until transaction in both threads started
+                            transactionsCounter.countDown();
+                            logger.info("transaction1 started");
+                            if (!transactionsCounter.await(LATCH_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+                                throw new IllegalStateException("Timeout when waiting for transactionsCounter latch in thread1");
+                            }
+
+                            // Read client
+                            RealmModel realm1 = currentSession.realms().getRealmByName("original");
+                            ClientModel client1 = currentSession.realms().getClientByClientId("client", realm1);
+                            logger.info("transaction1: Read client finished");
+                            readLatch.countDown();
+
+                            // Wait until thread2 updates client and commits
+                            if (!updateLatch.await(LATCH_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+                                throw new IllegalStateException("Timeout when waiting for updateLatch");
+                            }
+
+                            logger.info("transaction1: Going to read client again");
+
+                            client1 = currentSession.realms().getClientByClientId("client", realm1);
+                            logger.info("transaction1: secret: " + client1.getSecret());
+
+                        } catch (Exception e) {
+                            exceptionHolder.set(e);
+                            throw new RuntimeException(e);
                         }
-
-                        // Wait until reader thread reads the client
-                        if (!readLatch.await(LATCH_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
-                            throw new IllegalStateException("Timeout when waiting for readLatch");
-                        }
-
-                        logger.info("transaction2: Going to update client secret");
-
-                        RealmModel realm12 = currentSession.realms().getRealmByName("original");
-                        ClientModel client12 = currentSession.realms().getClientByClientId("client", realm12);
-                        client12.setSecret("new");
-                    } catch (Exception e) {
-                        exceptionHolder.set(e);
-                        throw new RuntimeException(e);
-                    }
+                    });
                 });
-                logger.info("transaction2: commited");
-                updateLatch.countDown();
+
+                Thread thread2 = new Thread(() -> {
+                    KeycloakModelUtils.runJobInTransaction(sessionFactory, session22 -> {
+                        try {
+                            KeycloakSession currentSession = session22;
+                            // Wait until transaction in both threads started
+                            transactionsCounter.countDown();
+                            logger.info("transaction2 started");
+                            if (!transactionsCounter.await(LATCH_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+                                throw new IllegalStateException("Timeout when waiting for transactionsCounter latch in thread2");
+                            }
+
+                            // Wait until reader thread reads the client
+                            if (!readLatch.await(LATCH_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+                                throw new IllegalStateException("Timeout when waiting for readLatch");
+                            }
+
+                            logger.info("transaction2: Going to update client secret");
+
+                            RealmModel realm12 = currentSession.realms().getRealmByName("original");
+                            ClientModel client12 = currentSession.realms().getClientByClientId("client", realm12);
+                            client12.setSecret("new");
+                        } catch (Exception e) {
+                            exceptionHolder.set(e);
+                            throw new RuntimeException(e);
+                        }
+                    });
+                    logger.info("transaction2: commited");
+                    updateLatch.countDown();
+                });
+
+                thread1.start();
+                thread2.start();
+
+                try {
+                    thread1.join();
+                    thread2.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                if (exceptionHolder.get() != null) {
+                    Assert.fail("Some thread thrown an exception. See the log for the details");
+                }
+
+                logger.info("after thread join");
             });
 
-            thread1.start();
-            thread2.start();
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session2) -> {
+                RealmModel realm = session2.realms().getRealmByName("original");
+                String clientDBId = clientDBIdAtomic.get();
 
-            try {
-                thread1.join();
-                thread2.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+                ClientModel clientFromCache = session2.realms().getClientById(clientDBId, realm);
+                ClientModel clientFromDB = session2.getProvider(RealmProvider.class).getClientById(clientDBId, realm);
 
-            if (exceptionHolder.get() != null) {
-                Assert.fail("Some thread thrown an exception. See the log for the details");
-            }
+                logger.info("SECRET FROM DB : " + clientFromDB.getSecret());
+                logger.info("SECRET FROM CACHE : " + clientFromCache.getSecret());
 
-            logger.info("after thread join");
-        });
+                Assert.assertEquals("new", clientFromDB.getSecret());
+                Assert.assertEquals("new", clientFromCache.getSecret());
 
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session2) -> {
-            RealmModel realm = session2.realms().getRealmByName("original");
-            String clientDBId = clientDBIdAtomic.get();
+                session2.sessions().removeUserSessions(realm);
 
-            ClientModel clientFromCache = session2.realms().getClientById(clientDBId, realm);
-            ClientModel clientFromDB = session2.getProvider(RealmProvider.class).getClientById(clientDBId, realm);
-
-            logger.info("SECRET FROM DB : " + clientFromDB.getSecret());
-            logger.info("SECRET FROM CACHE : " + clientFromCache.getSecret());
-
-            Assert.assertEquals("new", clientFromDB.getSecret());
-            Assert.assertEquals("new", clientFromCache.getSecret());
-
-            session2.sessions().removeUserSessions(realm);
-
-            tearDownRealm(session2, "user1", "user2");
-        });
+            });
+        } finally {
+            tearDownRealm(session, "user1", "user2");
+        }
     }
 
 
@@ -185,80 +191,80 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
     @ModelTest
     public void removeUserAttribute(KeycloakSession session) throws Exception {
 
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionSet) -> {
+        try {
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionSet) -> {
 
-            RealmModel realm = sessionSet.realms().createRealm("original");
+                RealmModel realm = sessionSet.realms().createRealm("original");
 
-            UserModel john = sessionSet.users().addUser(realm, "john");
-            john.setSingleAttribute("foo", "val1");
+                UserModel john = sessionSet.users().addUser(realm, "john");
+                john.setSingleAttribute("foo", "val1");
 
-            UserModel john2 = sessionSet.users().addUser(realm, "john2");
-            john2.setAttribute("foo", Arrays.asList("val1", "val2"));
-        });
+                UserModel john2 = sessionSet.users().addUser(realm, "john2");
+                john2.setAttribute("foo", Arrays.asList("val1", "val2"));
+            });
 
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session2) -> {
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session2) -> {
 
-            final KeycloakSessionFactory sessionFactory = session2.getKeycloakSessionFactory();
+                final KeycloakSessionFactory sessionFactory = session2.getKeycloakSessionFactory();
 
-            AtomicReference<Exception> reference = new AtomicReference<>();
+                AtomicReference<Exception> reference = new AtomicReference<>();
 
-            final CountDownLatch readAttrLatch = new CountDownLatch(2);
+                final CountDownLatch readAttrLatch = new CountDownLatch(2);
 
-            Runnable runnable = () -> {
+                Runnable runnable = () -> {
+                    try {
+                        KeycloakModelUtils.runJobInTransaction(sessionFactory, session1 -> {
+                            try {
+                                // Read user attribute
+                                RealmModel realm = session1.realms().getRealmByName("original");
+                                UserModel john = session1.users().getUserByUsername("john", realm);
+                                String attrVal = john.getFirstAttribute("foo");
+
+                                UserModel john2 = session1.users().getUserByUsername("john2", realm);
+                                String attrVal2 = john2.getFirstAttribute("foo");
+
+                                // Wait until it's read in both threads
+                                readAttrLatch.countDown();
+                                readAttrLatch.await();
+
+                                // KEYCLOAK-3296 : Remove user attribute in both threads
+                                john.removeAttribute("foo");
+
+                                // KEYCLOAK-3494 : Set single attribute in both threads
+                                john2.setSingleAttribute("foo", "bar");
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
+                    } catch (Exception e) {
+                        reference.set(e);
+                        throw new RuntimeException(e);
+                    } finally {
+                        readAttrLatch.countDown();
+                    }
+                };
+
+                Thread thread1 = new Thread(runnable);
+                Thread thread2 = new Thread(runnable);
+
+                thread1.start();
+                thread2.start();
+
                 try {
-                    KeycloakModelUtils.runJobInTransaction(sessionFactory, session1 -> {
-                        try {
-                            // Read user attribute
-                            RealmModel realm = session1.realms().getRealmByName("original");
-                            UserModel john = session1.users().getUserByUsername("john", realm);
-                            String attrVal = john.getFirstAttribute("foo");
-
-                            UserModel john2 = session1.users().getUserByUsername("john2", realm);
-                            String attrVal2 = john2.getFirstAttribute("foo");
-
-                            // Wait until it's read in both threads
-                            readAttrLatch.countDown();
-                            readAttrLatch.await();
-
-                            // KEYCLOAK-3296 : Remove user attribute in both threads
-                            john.removeAttribute("foo");
-
-                            // KEYCLOAK-3494 : Set single attribute in both threads
-                            john2.setSingleAttribute("foo", "bar");
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-                } catch (Exception e) {
-                    reference.set(e);
-                    throw new RuntimeException(e);
-                } finally {
-                    readAttrLatch.countDown();
+                    thread1.join();
+                    thread2.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-            };
 
-            Thread thread1 = new Thread(runnable);
-            Thread thread2 = new Thread(runnable);
-
-            thread1.start();
-            thread2.start();
-
-            try {
-                thread1.join();
-                thread2.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            logger.info("removeUserAttribute: after thread join");
-            if (reference.get() != null) {
-                Assert.fail("Exception happened in some of threads. Details: " + reference.get().getMessage());
-            }
-        });
-
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionTearDown) -> {
-            tearDownRealm(sessionTearDown, "john", "john2");
-        });
+                logger.info("removeUserAttribute: after thread join");
+                if (reference.get() != null) {
+                    Assert.fail("Exception happened in some of threads. Details: " + reference.get().getMessage());
+                }
+            });
+        } finally {
+            tearDownRealm(session, "john", "john2");
+        }
     }
 
     private void tearDownRealm(KeycloakSession session, String user1, String user2) {

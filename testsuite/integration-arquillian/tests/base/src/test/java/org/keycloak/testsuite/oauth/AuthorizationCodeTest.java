@@ -16,13 +16,13 @@
  */
 package org.keycloak.testsuite.oauth;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
@@ -30,6 +30,7 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -38,9 +39,12 @@ import org.openqa.selenium.By;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 /**
@@ -50,6 +54,9 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @Page
+    private ErrorPage errorPage;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -70,7 +77,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
-        Assert.assertTrue(response.isRedirected());
+        assertTrue(response.isRedirected());
         Assert.assertNotNull(response.getCode());
         assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", response.getState());
         Assert.assertNull(response.getError());
@@ -101,10 +108,27 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
-        Assert.assertTrue(response.isRedirected());
+        assertTrue(response.isRedirected());
         Assert.assertNotNull(response.getCode());
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+    }
+
+    @Test
+    public void testInvalidRedirectUri() {
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").addRedirectUris(oauth.getRedirectUri());
+
+        oauth.redirectUri(oauth.getRedirectUri() + "%20test");
+        oauth.openLoginForm();
+
+        assertTrue(errorPage.isCurrent());
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+
+        oauth.redirectUri("ZAP%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%0A");
+        oauth.openLoginForm();
+
+        assertTrue(errorPage.isCurrent());
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
     }
 
     @Test
@@ -113,7 +137,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
-        Assert.assertTrue(response.isRedirected());
+        assertTrue(response.isRedirected());
         Assert.assertNotNull(response.getCode());
         Assert.assertNull(response.getState());
         Assert.assertNull(response.getError());
@@ -128,7 +152,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         driver.navigate().to(b.build().toURL());
 
         OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
-        Assert.assertTrue(errorResponse.isRedirected());
+        assertTrue(errorResponse.isRedirected());
         Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
 
         events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "tokenn").assertEvent();
@@ -197,4 +221,39 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         Assert.assertNull(currentUri.getRawFragment());
     }
 
+    @Test
+    public void authorizationRequestParamsMoreThanOnce() throws IOException {
+        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
+        Map<String, String> extraParams = new HashMap<>();
+
+        oauth.addCustomerParameter(OAuth2Constants.SCOPE, "read_write")
+            .addCustomerParameter(OAuth2Constants.STATE, "abcdefg")
+            .addCustomerParameter(OAuth2Constants.SCOPE, "pop push");
+
+        oauth.openLoginForm();
+
+        assertEquals("invalid_request", oauth.getCurrentQuery().get("error"));
+        assertEquals("duplicated parameter", oauth.getCurrentQuery().get("error_description"));
+
+        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
+    }
+
+    @Test
+    public void authorizationRequestClientParamsMoreThanOnce() throws IOException {
+        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
+
+        oauth.addCustomerParameter(OAuth2Constants.SCOPE, "read_write")
+                .addCustomerParameter(OAuth2Constants.CLIENT_ID, "client2client")
+                .addCustomerParameter(OAuth2Constants.REDIRECT_URI, "https://www.example.com")
+                .addCustomerParameter(OAuth2Constants.STATE, "abcdefg")
+                .addCustomerParameter(OAuth2Constants.SCOPE, "pop push");
+
+        oauth.openLoginForm();
+
+        assertTrue(errorPage.isCurrent());
+        assertEquals("Invalid Request", errorPage.getError());
+
+        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).client((String) null).clearDetails().assertEvent();
+    }
+    
 }

@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.cli;
 
+import java.io.File;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
@@ -49,6 +50,8 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.actions.DummyRequiredActionFactory;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.GreenMailRule;
@@ -61,12 +64,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.junit.Assume;
+import org.junit.BeforeClass;
 
 /**
  * Test that clients can override auth flows
  *
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class KcinitTest extends AbstractTestRealmKeycloakTest {
 
     public static final String KCINIT_CLIENT = "kcinit";
@@ -80,6 +86,11 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+    }
+
+    @BeforeClass
+    public static void kcinitAvailable() {
+        Assume.assumeTrue(new File(KcinitExec.WORK_DIR + File.separator + KcinitExec.CMD).exists());
     }
 
     @Before
@@ -566,8 +577,8 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
             exe.sendLine("password");
             exe.waitForStderr("One Time Password:");
 
-            Pattern p = Pattern.compile("Open the application and enter the key\\s+(.+)\\s+Use the following configuration values");
-            //Pattern p = Pattern.compile("Open the application and enter the key");
+            Pattern p = Pattern.compile("Open the application and enter the key:\\s+(.+)\\s+Use the following configuration values");
+            //Pattern p = Pattern.compile("Open the application and enter the key:");
 
             String stderr = exe.stderrString();
             //System.out.println("***************");

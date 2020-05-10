@@ -37,6 +37,13 @@
                 </div>
                 <kc-tooltip>{{:: 'client.enabled.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="serverInfo.featureEnabled('ACCOUNT2') && !(accessType === 'bearer-only' && protocol === 'openid-connect')">
+                <label class="col-md-2 control-label" for="alwaysDisplayInConsole">{{:: 'alwaysDisplayInConsole' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="clientEdit.alwaysDisplayInConsole" name="alwaysDisplayInConsole" id="alwaysDisplayInConsole" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'alwaysDisplayInConsole.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix block" data-ng-show="client.origin">
                 <label class="col-md-2 control-label">{{:: 'client-origin-link' | translate}}</label>
                 <div class="col-md-6">
@@ -538,6 +545,38 @@
                     </select>
                 </div>
                 <kc-tooltip>{{:: 'saml-assertion-lifespan.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="clientSessionIdleTimeout">{{:: 'client-session-idle' | translate}}</label>
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" min="0"
+                           max="31536000" data-ng-model="clientSessionIdleTimeout.time"
+                           id="clientSessionIdleTimeout" name="clientSessionIdleTimeout"
+                           data-ng-change="updateClientSessionIdleTimeout()"/>
+                    <select class="form-control" name="clientSessionIdleTimeoutUnit" data-ng-model="clientSessionIdleTimeout.unit" data-ng-change="updateClientSessionIdleTimeout()">
+                        <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                        <option value="Hours">{{:: 'hours' | translate}}</option>
+                        <option value="Days">{{:: 'days' | translate}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'client-session-idle.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="clientSessionMaxLifespan">{{:: 'client-session-max' | translate}}</label>
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" min="0"
+                           max="31536000" data-ng-model="clientSessionMaxLifespan.time"
+                           id="clientSessionMaxLifespan" name="clientSessionMaxLifespan"
+                           data-ng-change="updateClientSessionMaxLifespan()"/>
+                    <select class="form-control" name="clientSessionMaxLifespanUnit" data-ng-model="clientSessionMaxLifespan.unit" data-ng-change="updateClientSessionMaxLifespan()">
+                        <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                        <option value="Hours">{{:: 'hours' | translate}}</option>
+                        <option value="Days">{{:: 'days' | translate}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'client-session-max.tooltip' | translate}}</kc-tooltip>
             </div>
 
             <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">

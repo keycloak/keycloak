@@ -208,7 +208,7 @@ public class ServletHttpFacade implements HttpFacade {
         @Override
         public void setCookie(String name, String value, String path, String domain, int maxAge, boolean secure, boolean httpOnly) {
             StringBuffer cookieBuf = new StringBuffer();
-            ServerCookie.appendCookieValue(cookieBuf, 1, name, value, path, domain, null, maxAge, secure, httpOnly);
+            ServerCookie.appendCookieValue(cookieBuf, 1, name, value, path, domain, null, maxAge, secure, httpOnly, null);
             String cookie = cookieBuf.toString();
             response.addHeader("Set-Cookie", cookie);
         }

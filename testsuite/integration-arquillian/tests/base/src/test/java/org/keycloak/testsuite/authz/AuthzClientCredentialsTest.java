@@ -18,6 +18,7 @@ package org.keycloak.testsuite.authz;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -58,6 +59,8 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
@@ -67,6 +70,7 @@ import org.keycloak.testsuite.util.UserBuilder;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class AuthzClientCredentialsTest extends AbstractAuthzTest {
 
     @Override
@@ -224,6 +228,24 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
         userSessions = clients.get(clientRepresentation.getId()).getUserSessions(null, null);
 
         assertEquals(1, userSessions.size());
+    }
+
+    @Test
+    public void testFindByName() {
+        AuthzClient authzClient = getAuthzClient("default-session-keycloak.json");
+        ProtectionResource protection = authzClient.protection();
+        
+        protection.resource().create(new ResourceRepresentation("Admin Resources"));
+        protection.resource().create(new ResourceRepresentation("Resource"));
+
+        ResourceRepresentation resource = authzClient.protection().resource().findByName("Resource");
+        
+        assertEquals("Resource", resource.getName());
+
+        ResourceRepresentation adminResource = authzClient.protection().resource().findByName("Admin Resources");
+
+        assertEquals("Admin Resources", adminResource.getName());
+        assertNotEquals(resource.getId(), adminResource.getId());
     }
 
     private RealmBuilder configureRealm(RealmBuilder builder, ClientBuilder clientBuilder) {

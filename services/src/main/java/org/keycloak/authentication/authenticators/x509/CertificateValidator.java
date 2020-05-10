@@ -18,11 +18,15 @@
 
 package org.keycloak.authentication.authenticators.x509;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.utils.CRLUtils;
 import org.keycloak.common.util.OCSPUtils;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.truststore.TruststoreProvider;
+import org.keycloak.utils.CRLUtils;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -30,37 +34,33 @@ import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
+import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLConnection;
 import java.security.GeneralSecurityException;
+import java.security.cert.CRLException;
 import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CRLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Hashtable;
-import java.util.List;
-import java.util.Set;
 import java.util.LinkedList;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
-import javax.security.auth.x500.X500Principal;
-
-import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
-import org.keycloak.truststore.TruststoreProvider;
 
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>
@@ -136,7 +136,7 @@ public class CertificateValidator {
         }
     }
 
-    public static abstract class OCSPChecker {
+    public abstract static class OCSPChecker {
         /**
          * Requests certificate revocation status using OCSP. The OCSP responder URI
          * is obtained from the certificate's AIA extension.
@@ -147,7 +147,7 @@ public class CertificateValidator {
         public abstract OCSPUtils.OCSPRevocationStatus check(X509Certificate cert, X509Certificate issuerCertificate) throws CertPathValidatorException;
     }
 
-    public static abstract class CRLLoaderImpl {
+    public abstract static class CRLLoaderImpl {
         /**
          * Returns a collection of {@link X509CRL}
          * @return
@@ -465,6 +465,32 @@ public class CertificateValidator {
     }
     public CertificateValidator validateExtendedKeyUsage() throws GeneralSecurityException {
         validateExtendedKeyUsage(_certChain, _extendedKeyUsage);
+        return this;
+    }
+
+    public CertificateValidator validateTimestamps(boolean isValidationEnabled) throws GeneralSecurityException {
+        if (!isValidationEnabled) {
+            return this;
+        }
+        for (int i = 0; i < _certChain.length; i++)
+        {
+            X509Certificate x509Certificate = _certChain[i];
+            if (x509Certificate.getNotBefore().getTime() > Time.currentTimeMillis()) {
+                String serialNumber = x509Certificate.getSerialNumber().toString(16).replaceAll("..(?!$)",
+                  "$0 ");
+                String message =
+                  "certificate with serialnumber '" + serialNumber
+                    + "' is not valid yet: " + x509Certificate.getNotBefore().toString();
+                throw new GeneralSecurityException(message);
+            }
+            if (x509Certificate.getNotAfter().getTime() < Time.currentTimeMillis()) {
+                String serialNumber = x509Certificate.getSerialNumber().toString(16).replaceAll("..(?!$)",
+                  "$0 ");
+                String message = "certificate with serialnumber '" + serialNumber
+                                   + "' has expired on: " + x509Certificate.getNotAfter().toString();
+                throw new GeneralSecurityException(message);
+            }
+        }
         return this;
     }
 

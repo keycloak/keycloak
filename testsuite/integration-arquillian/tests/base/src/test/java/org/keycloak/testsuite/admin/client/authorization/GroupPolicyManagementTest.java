@@ -18,11 +18,13 @@ package org.keycloak.testsuite.admin.client.authorization;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.NotFoundException;
@@ -32,6 +34,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.GroupPoliciesResource;
 import org.keycloak.admin.client.resource.GroupPolicyResource;
+import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.PolicyResource;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -56,7 +59,16 @@ public class GroupPolicyManagementTest extends AbstractPolicyManagementTest {
                     }
                     return GroupBuilder.create().name(name).build();
                 }).collect(Collectors.toList()))
-                .build()).group(GroupBuilder.create().name("Group F").build());
+                .build()).group(GroupBuilder.create().name("Group F").build())
+                .group(GroupBuilder.create().name("Group G").build())
+                .group(GroupBuilder.create().name("Group H")
+                        .subGroups(Arrays.asList("Group I", "Group J").stream().map(name -> {
+                            if ("Group I".equals(name)) {
+                                return GroupBuilder.create().name(name).subGroups(Arrays.asList("Group K", "Group L").stream().map(name1 -> GroupBuilder.create().name(name1).build()).collect(Collectors.toList())).build();
+                            }
+                            return GroupBuilder.create().name(name).build();
+                        }).collect(Collectors.toList()))
+                        .build());
     }
 
     @Test
@@ -199,6 +211,46 @@ public class GroupPolicyManagementTest extends AbstractPolicyManagementTest {
 
             assertTrue(genericConfig.getConfig().get("groups").contains(group.getId()));
         }
+    }
+
+    @Test
+    public void testDeleteGroupAndPolicy() {
+        AuthorizationResource authorization = getClient().authorization();
+        GroupPolicyRepresentation representation = new GroupPolicyRepresentation();
+
+        representation.setName(UUID.randomUUID().toString());
+        representation.setDescription("description");
+        representation.setDecisionStrategy(DecisionStrategy.CONSENSUS);
+        representation.setLogic(Logic.NEGATIVE);
+        representation.setGroupsClaim("groups");
+        representation.addGroupPath("/Group G", true);
+
+        assertCreated(authorization, representation);
+
+        GroupsResource groups = getRealm().groups();
+        GroupRepresentation group = groups.groups("Group G", null, null).get(0);
+        
+        groups.group(group.getId()).remove();
+
+        try {
+            getClient().authorization().policies().group().findByName(representation.getName());
+        } catch (NotFoundException e) {
+        }
+        
+        representation.getGroups().clear();
+        representation.addGroupPath("/Group H/Group I/Group K");
+        representation.addGroupPath("/Group F");
+        
+        assertCreated(authorization, representation);
+
+        group = groups.groups("Group K", null, null).get(0);
+
+        groups.group(group.getId()).remove();
+
+        GroupPolicyRepresentation policy = getClient().authorization().policies().group().findByName(representation.getName());
+
+        assertNotNull(policy);
+        assertEquals(1, policy.getGroups().size());
     }
 
     private void assertCreated(AuthorizationResource authorization, GroupPolicyRepresentation representation) {

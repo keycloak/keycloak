@@ -21,6 +21,8 @@ import java.util.Map;
 
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
@@ -70,7 +72,7 @@ public class KcOidcBrokerPromptNoneRedirectTest extends AbstractInitializedBaseB
 
         /* no need to log in again, the idp should have been able to identify that the user is already logged in and the authenticated user should
            have been established in the consumer realm. Lastly, user must be redirected to the account app as expected. */
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         Assert.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/account"));
         accountUpdateProfilePage.assertCurrent();
 
@@ -215,7 +217,7 @@ public class KcOidcBrokerPromptNoneRedirectTest extends AbstractInitializedBaseB
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         Assert.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/account"));
         accountUpdateProfilePage.assertCurrent();
     }
@@ -226,8 +228,9 @@ public class KcOidcBrokerPromptNoneRedirectTest extends AbstractInitializedBaseB
          * Override the default configuration to unset the {@code prompt} parameter and specify that the IDP accepts forwarded
          * auth requests with {@code prompt=none}.
          */
-        protected void applyDefaultConfiguration(final SuiteContext suiteContext, final Map<String, String> config) {
-            super.applyDefaultConfiguration(suiteContext, config);
+        @Override
+        protected void applyDefaultConfiguration(final SuiteContext suiteContext, final Map<String, String> config, IdentityProviderSyncMode syncMode) {
+            super.applyDefaultConfiguration(suiteContext, config, syncMode);
             config.remove("prompt");
             config.put("acceptsPromptNoneForwardFromClient", "true");
         }

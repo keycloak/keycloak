@@ -19,7 +19,6 @@ package org.keycloak.testsuite.script;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.keycloak.common.Profile.Feature.SCRIPTS;
-import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createScriptMapper;
@@ -103,7 +102,7 @@ public class DeployedScriptMapperTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @EnableFeature(SCRIPTS)
+    @EnableFeature(value = SCRIPTS, skipRestart = true, executeAsLast = false)
     public void testTokenScriptMapping() {
         {
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");

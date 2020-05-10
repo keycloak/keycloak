@@ -72,7 +72,6 @@ export class AccountServiceClient {
         return new Promise((resolve: AxiosResolve, reject: ErrorReject) => {
             this.makeConfig(endpoint, config)
                 .then((config: AxiosRequestConfig) => {
-                    console.log({config});
                     this.axiosRequest(config, resolve, reject);
                 }).catch( (error: AxiosError) => {
                     this.handleError(error);
@@ -100,11 +99,16 @@ export class AccountServiceClient {
             this.kcSvc.login();
         }
         console.log(error);
-        ContentAlert.danger(error.name + ': ' + error.message);
+
+        if (error != null && error.response != null && error.response.data != null && error.response.data.errorMessage) {
+            ContentAlert.danger(error.response.data.errorMessage);
+        } else {
+            ContentAlert.danger(error.name + ': ' + error.message);
+        }
     }
 
     private makeConfig(endpoint: string, config: AxiosRequestConfig = {}): Promise<AxiosRequestConfig> {
-        return new Promise( (resolve: ConfigResolve, reject: ErrorReject) => {
+        return new Promise( (resolve: ConfigResolve) => {
             this.kcSvc.getToken()
                 .then( (token: string) => {
                     resolve( {

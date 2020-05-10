@@ -21,11 +21,16 @@ package org.keycloak.testsuite.admin.client.authorization;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ResourceScopeResource;
+import org.keycloak.admin.client.resource.ResourcesResource;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
+
+import java.util.UUID;
 
 /**
  *
@@ -54,6 +59,41 @@ public class ScopeManagementTest extends AbstractAuthorizationTest {
         scope = scopeResource.toRepresentation();
 
         assertEquals("changed", scope.getName());
+        assertEquals("changed", scope.getIconUri());
+    }
+
+    @Test
+    public void testNotUpdateOnResourceUpdate() {
+        ResourceScopeResource scopeResource = createDefaultScope();
+        ScopeRepresentation scope = scopeResource.toRepresentation();
+
+        scope.setName("changed");
+        scope.setDisplayName("changed");
+        scope.setIconUri("changed");
+
+        scopeResource.update(scope);
+
+        scope = scopeResource.toRepresentation();
+
+        assertEquals("changed", scope.getName());
+        assertEquals("changed", scope.getDisplayName());
+        assertEquals("changed", scope.getIconUri());
+
+        ResourcesResource resources = getClientResource().authorization().resources();
+        ResourceRepresentation resource;
+        
+        try (Response response = resources
+                .create(new ResourceRepresentation(UUID.randomUUID().toString(), scope.getName()))) {
+            resource = response.readEntity(ResourceRepresentation.class);
+        }
+
+        resource.getScopes().iterator().next().setDisplayName(null);
+        resources.resource(resource.getId()).update(resource);
+        
+        scope = scopeResource.toRepresentation();
+
+        assertEquals("changed", scope.getName());
+        assertEquals("changed", scope.getDisplayName());
         assertEquals("changed", scope.getIconUri());
     }
 

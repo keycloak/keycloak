@@ -68,12 +68,7 @@ public final class UIUtils {
     public static void clickLink(WebElement element) {
         WebDriver driver = getCurrentDriver();
 
-        // Sometimes at some weird specific conditions, Firefox fail to click an element
-        // because the element is at the edge of the view and need to be scrolled on "manually" (normally the driver
-        // should do this automatically)
-        if (driver instanceof FirefoxDriver) {
-            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", element);
-        }
+        waitUntilElement(element).is().clickable();
 
         if (driver instanceof SafariDriver && !element.isDisplayed()) { // Safari sometimes thinks an element is not visible
                                                                         // even though it is. In this case we just move the cursor and click.

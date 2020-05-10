@@ -19,6 +19,7 @@ package org.keycloak.storage.ldap.idm.model;
 
 import org.jboss.logging.Logger;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -36,7 +37,9 @@ public class LDAPObject {
 
     private String uuid;
     private LDAPDn dn;
-    private String rdnAttributeName;
+
+    // In most cases, there is single "rdnAttributeName" . Usually "uid" or "cn"
+    private final List<String> rdnAttributeNames = new LinkedList<>();
 
     private final List<String> objectClasses = new LinkedList<>();
 
@@ -88,12 +91,25 @@ public class LDAPObject {
         readOnlyAttributeNames.remove(readOnlyAttribute.toLowerCase());
     }
 
-    public String getRdnAttributeName() {
-        return rdnAttributeName;
+    public List<String> getRdnAttributeNames() {
+        return rdnAttributeNames;
     }
 
+    /**
+     * Useful when single value will be used as the "RDN" attribute. Which will be most of the cases
+     */
     public void setRdnAttributeName(String rdnAttributeName) {
-        this.rdnAttributeName = rdnAttributeName;
+        this.rdnAttributeNames.clear();
+        this.rdnAttributeNames.add(rdnAttributeName);
+    }
+
+    public void setRdnAttributeNames(List<String> rdnAttributeNames) {
+        this.rdnAttributeNames.clear();
+        this.rdnAttributeNames.addAll(rdnAttributeNames);
+    }
+
+    public void addRdnAttributeName(String rdnAttributeName) {
+        this.rdnAttributeNames.add(rdnAttributeName);
     }
 
     public void setSingleAttribute(String attributeName, String attributeValue) {

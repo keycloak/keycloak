@@ -136,10 +136,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
             loginPage.login("test-user@localhost", "password");
 
-            totpPage.assertCurrent();
-            totpPage.cancel();
-
-            assertKcActionStatus("cancelled");
+            assertKcActionStatus("error");
         } finally {
             // Revert the realm setup changes done within the test
             postConfigureRealmForCancelSetupTotpTest();

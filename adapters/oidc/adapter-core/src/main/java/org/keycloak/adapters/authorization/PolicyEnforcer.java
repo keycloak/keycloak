@@ -269,9 +269,11 @@ public class PolicyEnforcer {
 
                         if (!matchingResources.isEmpty()) {
                             Map<String, Map<String, Object>> cipConfig = null;
+                            PolicyEnforcerConfig.EnforcementMode enforcementMode = PolicyEnforcerConfig.EnforcementMode.ENFORCING;
 
                             if (pathConfig != null) {
                                 cipConfig = pathConfig.getClaimInformationPointConfig();
+                                enforcementMode = pathConfig.getEnforcementMode();
                             }
 
                             pathConfig = PathConfig.createPathConfigs(matchingResources.get(0)).iterator().next();
@@ -279,6 +281,8 @@ public class PolicyEnforcer {
                             if (cipConfig != null) {
                                 pathConfig.setClaimInformationPointConfig(cipConfig);
                             }
+                            
+                            pathConfig.setEnforcementMode(enforcementMode);
                         }
                     } catch (Exception cause) {
                         LOGGER.errorf(cause, "Could not lazy load resource with path [" + targetUri + "] from server");

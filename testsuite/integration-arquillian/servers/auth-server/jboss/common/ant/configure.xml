@@ -226,7 +226,7 @@
             </resources>
             <filterset>
                 <filter token="DATABASE" value="${jdbc.mvn.artifactId}"/>
-                <filter token="DRIVER_VERSION" value="${jdbc.mvn.version.legacy}"/>
+                <filter token="DRIVER_VERSION" value="${jdbc.mvn.version}"/>
                 <filter token="DRIVER_TMP_DIR" value="${jdbc.driver.tmp.dir}"/>
                 <filter token="JDBC_URL" value="${keycloak.connectionsJpa.url}"/>
                 <filter token="USER" value="${keycloak.connectionsJpa.user}"/>

@@ -32,11 +32,14 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.oidc.PkceGenerator;
 import org.keycloak.testsuite.runonserver.ServerVersion;
 
 import java.io.IOException;
@@ -48,11 +51,14 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
 
     @Test
@@ -62,9 +68,11 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
         try (CloseableHttpClient client = HttpClients.custom().setDefaultCookieStore(cookieStore).build()) {
             String redirectUri = URLEncoder.encode(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/admin/master/console", "UTF-8");
 
+            PkceGenerator pkce = new PkceGenerator();
+
             HttpGet get = new HttpGet(
                     suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/protocol/openid-connect/auth?response_type=code&client_id=" + Constants.ADMIN_CONSOLE_CLIENT_ID +
-                            "&redirect_uri=" + redirectUri);
+                            "&redirect_uri=" + redirectUri + "&scope=openid&code_challenge_method=S256&code_challenge=" + pkce.getCodeChallenge());
 
             CloseableHttpResponse response = client.execute(get);
             String s = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
@@ -122,6 +130,9 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
             assertTrue(s.contains("function getCookie()"));
 
             assertEquals("CP=\"This is not a P3P policy!\"", response.getFirstHeader("P3P").getValue());
+            assertNull(response.getFirstHeader(BrowserSecurityHeaders.X_FRAME_OPTIONS));
+            assertEquals("frame-src 'self'; object-src 'none';", response.getFirstHeader(BrowserSecurityHeaders.CONTENT_SECURITY_POLICY).getValue());
+            assertEquals("none", response.getFirstHeader(BrowserSecurityHeaders.X_ROBOTS_TAG).getValue());
 
             response.close();
 

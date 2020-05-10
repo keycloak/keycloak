@@ -65,6 +65,9 @@ public final class Constants {
     // it stands for optional parameter not specified in WebAuthn
     public static final String DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED = "not specified";
 
+    // Prefix used for the realm attributes and other places
+    public static final String WEBAUTHN_PASSWORDLESS_PREFIX = "Passwordless";
+
     public static final String VERIFY_EMAIL_KEY = "VERIFY_EMAIL_KEY";
     public static final String VERIFY_EMAIL_CODE = "VERIFY_EMAIL_CODE";
     public static final String EXECUTION = "execution";

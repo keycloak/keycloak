@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers</artifactId>
-        <version>9.0.0-SNAPSHOT</version>
+        <version>11.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -51,25 +51,37 @@
                             <rules>
                                 <requireProperty>
                                     <property>migrated.auth.server.version</property>
-                                    <property>jdbc.mvn.version.legacy</property>
+                                    <message>Property "migrated.auth.server.version" is required for this build. It should be one of supported versions. See base/src/test/resources/migration-test/</message>
+                                </requireProperty>
+                                <requireProperty>
                                     <property>keycloak.connectionsJpa.user</property>
-                                    <property>keycloak.connectionsJpa.url</property>
-                                </requireProperty>
-                                <requireProperty>
-                                    <property>jdbc.mvn.groupId</property>
-                                    <regex>((?!com.h2database).)*</regex>
-                                    <regexMessage>jdbc.mvn.groupId property is not set correctly: ${jdbc.mvn.groupId}. Profile jpa is not supported for default h2 values!</regexMessage>
-                                </requireProperty>
-                                <requireProperty>
-                                    <property>jdbc.mvn.artifactId</property>
-                                    <regex>((?!h2).)*</regex>
-                                    <regexMessage>jdbc.mvn.artifactId property is not set correctly: ${jdbc.mvn.artifactId}. Profile jpa is not supported for default h2 values!</regexMessage>
                                 </requireProperty>
                                 <requireProperty>
                                     <property>keycloak.connectionsJpa.password</property>
                                     <regex>^(?!\s*$).+</regex>
-                                    <regexMessage>keycloak.connectionsJpa.password property cannot be empty string!</regexMessage>
+                                    <regexMessage>"keycloak.connectionsJpa.password" property cannot be empty string!</regexMessage>
                                 </requireProperty>
+                                <requireProperty>
+                                    <property>keycloak.connectionsJpa.url</property>
+                                    <regex>((?!h2).)*</regex>
+                                    <regexMessage>"keycloak.connectionsJpa.url" property is not set correctly: "${keycloak.connectionsJpa.url}". Migration is not supported for default h2 values!</regexMessage>
+                                </requireProperty>
+                                <requireProperty>
+                                    <property>jdbc.mvn.groupId</property>
+                                    <regex>((?!com.h2database).)*</regex>
+                                    <regexMessage>"jdbc.mvn.groupId" property is not set correctly: "${jdbc.mvn.groupId}". Migration is not supported for default h2 values!</regexMessage>
+                                </requireProperty>
+                                <requireProperty>
+                                    <property>jdbc.mvn.artifactId</property>
+                                    <regex>((?!h2).)*</regex>
+                                    <regexMessage>"jdbc.mvn.artifactId" property is not set correctly: "${jdbc.mvn.artifactId}". Migration is not supported for default h2 values!</regexMessage>
+                                </requireProperty>
+                                <requireProperty>
+                                    <property>jdbc.mvn.version</property>
+                                    <regex>((?!${h2.version}).)*</regex>
+                                    <regexMessage>"jdbc.mvn.version" property is not set correctly: "${jdbc.mvn.version}". Migration is not supported for default h2 values!</regexMessage>
+                                </requireProperty>
+
                             </rules>
                         </configuration>
                     </execution>
@@ -108,7 +120,7 @@
                                 <artifactItem>
                                     <groupId>${jdbc.mvn.groupId}</groupId>
                                     <artifactId>${jdbc.mvn.artifactId}</artifactId>
-                                    <version>${jdbc.mvn.version.legacy}</version>
+                                    <version>${jdbc.mvn.version}</version>
                                     <type>jar</type>
                                 </artifactItem>
                             </artifactItems>
@@ -136,7 +148,7 @@
                                     <!-- defined via -Dproperty=value when executing maven command -->
                                     <property name="jdbc.driver.tmp.dir">${jdbc.driver.tmp.dir}</property>
                                     <property name="jdbc.mvn.artifactId">${jdbc.mvn.artifactId}</property>
-                                    <property name="jdbc.mvn.version.legacy">${jdbc.mvn.version.legacy}</property>
+                                    <property name="jdbc.mvn.version">${jdbc.mvn.version}</property>
                                     <property name="keycloak.connectionsJpa.url">${keycloak.connectionsJpa.url}</property>
                                     <property name="keycloak.connectionsJpa.user">${keycloak.connectionsJpa.user}</property>
                                     <property name="keycloak.connectionsJpa.password">${keycloak.connectionsJpa.password}</property>

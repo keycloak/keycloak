@@ -20,6 +20,7 @@ if [ "x$RESOLVED_NAME" = "x" ]; then
     RESOLVED_NAME="$0"
 fi
 
+GREP="grep"
 DIRNAME=`dirname "$RESOLVED_NAME"`
 
 SERVER_OPTS="-Dkeycloak.home.dir=$DIRNAME/../ -Dkeycloak.theme.dir=$DIRNAME/../themes -Djava.util.logging.manager=org.jboss.logmanager.LogManager"

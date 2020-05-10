@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>9.0.0-SNAPSHOT</version>
+        <version>11.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-server-overlay</artifactId>
@@ -83,7 +83,7 @@
             <plugin>
                 <groupId>org.wildfly.build</groupId>
                 <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
-                <version>${build-tools.version}</version>
+                <version>${wildfly.build-tools.version}</version>
                 <executions>
                     <execution>
                         <id>server-provisioning</id>
@@ -192,7 +192,6 @@
                 </property>
             </activation>
             <properties>
-                <build-tools.version>${wildfly.build-tools.version}</build-tools.version>
                 <assemblyFile>assembly.xml</assemblyFile>
                 <readmeInclude>README.txt</readmeInclude>
             </properties>
@@ -206,18 +205,10 @@
                 </property>
             </activation>
             <properties>
-                <build-tools.version>${eap.build-tools.version}</build-tools.version>
                 <assemblyFile>assembly.xml</assemblyFile>
                 <profileExcludes>%regex[(docs/contrib.*)|(docs/examples.*)|(docs/schema.*)]</profileExcludes>
                 <readmeInclude></readmeInclude>
             </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.wildfly</groupId>
-                    <artifactId>wildfly-dist</artifactId>
-                    <type>zip</type>
-                </dependency>
-            </dependencies>
         </profile>
     </profiles>
 

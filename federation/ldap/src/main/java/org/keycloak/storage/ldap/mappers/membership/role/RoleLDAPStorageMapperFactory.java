@@ -54,7 +54,6 @@ public class RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFacto
     protected static final List<String> MEMBERSHIP_TYPES = new LinkedList<>();
     protected static final List<String> MODES = new LinkedList<>();
     protected static final List<String> NO_IMPORT_MODES = new LinkedList<>();
-    protected static final List<String> roleRetrievers;
 
     static {
         userRolesStrategies.put(RoleMapperConfig.LOAD_ROLES_BY_MEMBER_ATTRIBUTE, new UserRolesRetrieveStrategy.LoadRolesByMember());
@@ -70,7 +69,6 @@ public class RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFacto
         }
         NO_IMPORT_MODES.add(LDAPGroupMapperMode.LDAP_ONLY.toString());
         NO_IMPORT_MODES.add(LDAPGroupMapperMode.READ_ONLY.toString());
-        roleRetrievers = new LinkedList<>(userRolesStrategies.keySet());
 
         List<ProviderConfigProperty> config = getProps(null);
         configProperties = config;
@@ -81,13 +79,14 @@ public class RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFacto
         String mode = LDAPGroupMapperMode.LDAP_ONLY.toString();
         String membershipUserAttribute = LDAPConstants.UID;
         boolean importEnabled = true;
+        boolean isActiveDirectory = false;
         if (parent != null) {
             LDAPConfig config = new LDAPConfig(parent.getConfig());
             roleObjectClasses = config.isActiveDirectory() ? LDAPConstants.GROUP : LDAPConstants.GROUP_OF_NAMES;
             mode = config.getEditMode() == UserStorageProvider.EditMode.WRITABLE ? LDAPGroupMapperMode.LDAP_ONLY.toString() : LDAPGroupMapperMode.READ_ONLY.toString();
             membershipUserAttribute = config.getUsernameLdapAttribute();
             importEnabled = new UserStorageProviderModel(parent).isImportEnabled();
-
+            isActiveDirectory = config.isActiveDirectory();
         }
 
         ProviderConfigurationBuilder config = ProviderConfigurationBuilder.create()
@@ -158,11 +157,19 @@ public class RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFacto
 
         }
 
+        List<String> roleRetrievers = new LinkedList<>(userRolesStrategies.keySet());
+        String roleRetrieveHelpText = "Specify how to retrieve roles of user. LOAD_ROLES_BY_MEMBER_ATTRIBUTE means that roles of user will be retrieved by sending LDAP query to retrieve all roles where 'member' is our user. " +
+                "GET_ROLES_FROM_USER_MEMBEROF_ATTRIBUTE means that roles of user will be retrieved from 'memberOf' attribute of our user. Or from the other attribute specified by 'Member-Of LDAP Attribute' . ";
+        if (isActiveDirectory) {
+            roleRetrieveHelpText = roleRetrieveHelpText + "LOAD_ROLES_BY_MEMBER_ATTRIBUTE_RECURSIVELY is applicable just in Active Directory and it means that roles of user will be retrieved recursively with usage of LDAP_MATCHING_RULE_IN_CHAIN Ldap extension.";
+        } else {
+            // Option should be available just for the Active Directory
+            roleRetrievers.remove(RoleMapperConfig.LOAD_ROLES_BY_MEMBER_ATTRIBUTE_RECURSIVELY);
+        }
+
         config.property().name(RoleMapperConfig.USER_ROLES_RETRIEVE_STRATEGY)
                 .label("User Roles Retrieve Strategy")
-                .helpText("Specify how to retrieve roles of user. LOAD_ROLES_BY_MEMBER_ATTRIBUTE means that roles of user will be retrieved by sending LDAP query to retrieve all roles where 'member' is our user. " +
-                        "GET_ROLES_FROM_USER_MEMBEROF_ATTRIBUTE means that roles of user will be retrieved from 'memberOf' attribute of our user. Or from the other attribute specified by 'Member-Of LDAP Attribute' . " +
-                        "LOAD_ROLES_BY_MEMBER_ATTRIBUTE_RECURSIVELY is applicable just in Active Directory and it means that roles of user will be retrieved recursively with usage of LDAP_MATCHING_RULE_IN_CHAIN Ldap extension.")
+                .helpText(roleRetrieveHelpText)
                 .type(ProviderConfigProperty.LIST_TYPE)
                 .options(roleRetrievers)
                 .defaultValue(RoleMapperConfig.LOAD_ROLES_BY_MEMBER_ATTRIBUTE)

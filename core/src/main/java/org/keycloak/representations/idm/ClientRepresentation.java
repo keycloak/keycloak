@@ -36,6 +36,7 @@ public class ClientRepresentation {
     protected String baseUrl;
     protected Boolean surrogateAuthRequired;
     protected Boolean enabled;
+    protected Boolean alwaysDisplayInConsole;
     protected String clientAuthenticatorType;
     protected String secret;
     protected String registrationAccessToken;
@@ -117,6 +118,14 @@ public class ClientRepresentation {
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public Boolean isAlwaysDisplayInConsole() {
+        return alwaysDisplayInConsole;
+    }
+
+    public void setAlwaysDisplayInConsole(Boolean alwaysDisplayInConsole) {
+        this.alwaysDisplayInConsole = alwaysDisplayInConsole;
     }
 
     public Boolean isSurrogateAuthRequired() {

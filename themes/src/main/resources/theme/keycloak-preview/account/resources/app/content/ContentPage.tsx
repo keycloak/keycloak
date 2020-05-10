@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2019 Red Hat, Inc. and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,7 +32,7 @@ interface ContentPageProps {
  * @author Stan Silvert ssilvert@redhat.com (C) 2019 Red Hat Inc.
  */
 export class ContentPage extends React.Component<ContentPageProps> {
-    
+
     public constructor(props: ContentPageProps) {
         super(props);
     }
@@ -44,7 +44,7 @@ export class ContentPage extends React.Component<ContentPageProps> {
                 <section id="page-heading" className="pf-c-page__main-section pf-m-light">
                     <Grid>
                         <GridItem span={11}><Title headingLevel='h1' size='3xl'><strong><Msg msgKey={this.props.title}/></strong></Title></GridItem>
-                        {this.props.onRefresh && 
+                        {this.props.onRefresh &&
                             <GridItem span={1}>
                                 <Tooltip content={<Msg msgKey='refreshPage'/>}><Button id='refresh-page' variant='plain' onClick={this.props.onRefresh}><RedoIcon size='sm'/></Button></Tooltip>
                             </GridItem>
@@ -52,8 +52,8 @@ export class ContentPage extends React.Component<ContentPageProps> {
                         {this.props.introMessage && <GridItem span={12}> <Msg msgKey={this.props.introMessage}/></GridItem>}
                     </Grid>
                 </section>
-                
-                <section className="pf-c-page__main-section">
+
+                <section className="pf-c-page__main-section pf-m-no-padding-mobile">
                     {this.props.children}
                 </section>
             </React.Fragment>

@@ -56,14 +56,14 @@ public class SessionNotOnOrAfterTest extends AbstractSamlTest {
 
         assertThat(authType, notNullValue());
         assertThat(authType.getSessionNotOnOrAfter(), notNullValue());
-        assertThat(authType.getSessionNotOnOrAfter(), is(XMLTimeUtil.add(authType.getAuthnInstant(), ssoMaxLifespan * 1000)));
+        assertThat(authType.getSessionNotOnOrAfter(), is(XMLTimeUtil.add(authType.getAuthnInstant(), ssoMaxLifespan * 1000L)));
 
         // Conditions
         Assert.assertNotNull(resp.getAssertions().get(0).getAssertion().getConditions());
         Assert.assertNotNull(resp.getAssertions().get(0).getAssertion().getConditions());
         ConditionsType condition = resp.getAssertions().get(0).getAssertion().getConditions();
 
-        Assert.assertEquals(XMLTimeUtil.add(condition.getNotBefore(), accessCodeLifespan * 1000), condition.getNotOnOrAfter());
+        Assert.assertEquals(XMLTimeUtil.add(condition.getNotBefore(), accessCodeLifespan * 1000L), condition.getNotOnOrAfter());
 
         // SubjectConfirmation (confirmationData has no NotBefore, using the previous one because it's the same)
         Assert.assertNotNull(resp.getAssertions().get(0).getAssertion().getSubject());
@@ -77,7 +77,7 @@ public class SessionNotOnOrAfterTest extends AbstractSamlTest {
                 .orElse(null);
 
         Assert.assertNotNull(confirmationData);
-        Assert.assertEquals(XMLTimeUtil.add(condition.getNotBefore(), accessTokenLifespan * 1000), confirmationData.getNotOnOrAfter());
+        Assert.assertEquals(XMLTimeUtil.add(condition.getNotBefore(), accessTokenLifespan * 1000L), confirmationData.getNotOnOrAfter());
 
         return null;
     }
@@ -95,8 +95,27 @@ public class SessionNotOnOrAfterTest extends AbstractSamlTest {
                     .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post").build()
                     .login().user(bburkeUser).build()
                     .processSamlResponse(SamlClient.Binding.POST)
-                        .transformObject(r -> checkSessionNotOnOrAfter(r, SSO_MAX_LIFESPAN, ACCESS_CODE_LIFESPAN, ACCESS_TOKEN_LIFESPAN))
+                        .transformObject(r -> { checkSessionNotOnOrAfter(r, SSO_MAX_LIFESPAN, ACCESS_CODE_LIFESPAN, ACCESS_TOKEN_LIFESPAN); })
                         .build()
+                    .execute();
+        }
+    }
+
+    @Test
+    public void testMaxValuesForAllTimeouts() throws Exception {
+        try(AutoCloseable c = new RealmAttributeUpdater(adminClient.realm(REALM_NAME))
+                .updateWith(r -> {
+                    r.setSsoSessionMaxLifespan(Integer.MAX_VALUE);
+                    r.setAccessCodeLifespan(Integer.MAX_VALUE);
+                    r.setAccessTokenLifespan(Integer.MAX_VALUE);
+                })
+                .update()) {
+            new SamlClientBuilder()
+                    .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post").build()
+                    .login().user(bburkeUser).build()
+                    .processSamlResponse(SamlClient.Binding.POST)
+                    .transformObject(r -> { checkSessionNotOnOrAfter(r, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE); })
+                    .build()
                     .execute();
         }
     }
@@ -115,7 +134,7 @@ public class SessionNotOnOrAfterTest extends AbstractSamlTest {
                         .build()
                     .login().user(bburkeUser).build()
                     .processSamlResponse(SamlClient.Binding.POST)
-                        .transformObject(r -> checkSessionNotOnOrAfter(r, SSO_MAX_LIFESPAN, ACCESS_CODE_LIFESPAN, ACCESS_TOKEN_LIFESPAN))
+                        .transformObject(r -> { checkSessionNotOnOrAfter(r, SSO_MAX_LIFESPAN, ACCESS_CODE_LIFESPAN, ACCESS_TOKEN_LIFESPAN); })
                         .build()
                     .execute();
         }
@@ -131,7 +150,7 @@ public class SessionNotOnOrAfterTest extends AbstractSamlTest {
                     .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post").build()
                     .login().user(bburkeUser).build()
                     .processSamlResponse(SamlClient.Binding.POST)
-                        .transformObject(r -> checkSessionNotOnOrAfter(r, ssoMaxLifespan, 2000, 2000))
+                        .transformObject(r -> { checkSessionNotOnOrAfter(r, ssoMaxLifespan, 2000, 2000); })
                         .build()
                     .execute();
         }
@@ -148,7 +167,7 @@ public class SessionNotOnOrAfterTest extends AbstractSamlTest {
                         .build()
                     .login().user(bburkeUser).build()
                     .processSamlResponse(SamlClient.Binding.POST)
-                        .transformObject(r -> checkSessionNotOnOrAfter(r, ssoMaxLifespan, 1800, 1800))
+                        .transformObject(r -> { checkSessionNotOnOrAfter(r, ssoMaxLifespan, 1800, 1800); })
                         .build()
                     .execute();
         }

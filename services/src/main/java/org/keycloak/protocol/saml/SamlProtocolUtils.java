@@ -60,10 +60,6 @@ public class SamlProtocolUtils {
      * @throws VerificationException
      */
     public static void verifyDocumentSignature(ClientModel client, Document document) throws VerificationException {
-        SamlClient samlClient = new SamlClient(client);
-        if (!samlClient.requiresClientSignature()) {
-            return;
-        }
         PublicKey publicKey = getSignatureValidationKey(client);
         verifyDocumentSignature(document, new HardcodedKeyLocator(publicKey));
     }
@@ -128,11 +124,14 @@ public class SamlProtocolUtils {
 
     public static void verifyRedirectSignature(SAMLDocumentHolder documentHolder, KeyLocator locator, UriInfo uriInformation, String paramKey) throws VerificationException {
         MultivaluedMap<String, String> encodedParams = uriInformation.getQueryParameters(false);
+        verifyRedirectSignature(documentHolder, locator, encodedParams, paramKey);
+    }
+
+    public static void verifyRedirectSignature(SAMLDocumentHolder documentHolder, KeyLocator locator, MultivaluedMap<String, String> encodedParams, String paramKey) throws VerificationException {
         String request = encodedParams.getFirst(paramKey);
         String algorithm = encodedParams.getFirst(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY);
         String signature = encodedParams.getFirst(GeneralConstants.SAML_SIGNATURE_REQUEST_KEY);
         String relayState = encodedParams.getFirst(GeneralConstants.RELAY_STATE);
-        String decodedAlgorithm = uriInformation.getQueryParameters(true).getFirst(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY);
 
         if (request == null) throw new VerificationException("SAM was null");
         if (algorithm == null) throw new VerificationException("SigAlg was null");
@@ -153,6 +152,7 @@ public class SamlProtocolUtils {
         try {
             byte[] decodedSignature = RedirectBindingUtil.urlBase64Decode(signature);
 
+            String decodedAlgorithm = RedirectBindingUtil.urlDecode(encodedParams.getFirst(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY));
             SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.getFromXmlMethod(decodedAlgorithm);
             Signature validator = signatureAlgorithm.createSignature(); // todo plugin signature alg
             Key key = locator.getKey(keyId);

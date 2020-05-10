@@ -77,13 +77,13 @@ public class KeycloakTestingClient implements AutoCloseable {
 
     public void enableFeature(Profile.Feature feature) {
         try (Response response = testing().enableFeature(feature.toString())) {
-            assertEquals(200, response.getStatus());
+            assertEquals(204, response.getStatus());
         }
     }
 
     public void disableFeature(Profile.Feature feature) {
         try (Response response = testing().disableFeature(feature.toString())) {
-            assertEquals(200, response.getStatus());
+            assertEquals(204, response.getStatus());
         }
     }
 

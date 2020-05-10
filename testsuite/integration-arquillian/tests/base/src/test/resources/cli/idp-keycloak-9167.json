@@ -11,11 +11,12 @@
   "linkOnly" : false,
   "firstBrokerLoginFlowAlias" : "first broker login",
   "config" : {
+    "syncMode": "IMPORT",
     "nameIDPolicyFormat" : "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
     "postBindingResponse" : "false",
-    "singleLogoutServiceUrl" : "http://saml.idp/saml",
+    "singleLogoutServiceUrl" : "https://saml.idp/saml",
     "postBindingAuthnRequest" : "false",
-    "singleSignOnServiceUrl" : "http://saml.idp/saml",
+    "singleSignOnServiceUrl" : "https://saml.idp/saml",
     "backchannelSupported" : "false"
   }
 }

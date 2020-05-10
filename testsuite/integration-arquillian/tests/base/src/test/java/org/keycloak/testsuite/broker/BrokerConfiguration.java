@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.broker;
 
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -30,7 +31,14 @@ public interface BrokerConfiguration {
     /**
      * @return Representation of the identity provider for declaration in the broker
      */
-    IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext);
+    default IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext) {
+        return setUpIdentityProvider(suiteContext, IdentityProviderSyncMode.IMPORT);
+    }
+
+    /**
+     * @return Representation of the identity provider for declaration in the broker
+     */
+    IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext, IdentityProviderSyncMode force);
 
     /**
      * @return Name of realm containing identity provider. Must be consistent with {@link #createProviderRealm()}

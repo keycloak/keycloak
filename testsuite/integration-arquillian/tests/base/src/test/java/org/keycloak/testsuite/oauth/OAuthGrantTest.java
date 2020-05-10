@@ -210,7 +210,6 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         // Grant permissions on grant screen
         oauth.clientId(THIRD_PARTY_APP);
         oauth.doLoginGrant("test-user@localhost", "password");
-        oauth.scope(OAuth2Constants.GRANT_TYPE);
 
         // Create new clientScope and add to client
         RealmResource appRealm = adminClient.realm(REALM_NAME);

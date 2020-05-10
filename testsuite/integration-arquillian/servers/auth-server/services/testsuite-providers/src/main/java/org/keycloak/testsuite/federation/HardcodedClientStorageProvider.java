@@ -112,6 +112,11 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
         }
 
         @Override
+        public boolean isAlwaysDisplayInConsole() {
+            return false;
+        }
+
+        @Override
         public Set<String> getWebOrigins() {
             return Collections.EMPTY_SET;
         }

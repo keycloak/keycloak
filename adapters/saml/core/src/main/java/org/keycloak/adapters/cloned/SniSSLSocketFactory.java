@@ -23,6 +23,7 @@ import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.protocol.HttpContext;
+import org.keycloak.common.util.Environment;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -40,6 +41,7 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -55,6 +57,7 @@ import java.util.logging.Logger;
 public class SniSSLSocketFactory extends SSLSocketFactory {
 
     private static final Logger LOG = Logger.getLogger(SniSSLSocketFactory.class.getName());
+    private static final AtomicBoolean skipSNIApplication = new AtomicBoolean(false);
 
     public SniSSLSocketFactory(String algorithm, KeyStore keystore, String keyPassword, KeyStore truststore, SecureRandom random, HostNameResolver nameResolver) throws NoSuchAlgorithmException, KeyManagementException, KeyStoreException, UnrecoverableKeyException {
         super(algorithm, keystore, keyPassword, truststore, random, nameResolver);
@@ -123,6 +126,11 @@ public class SniSSLSocketFactory extends SSLSocketFactory {
     }
 
     private Socket applySNI(final Socket socket, String hostname) {
+        if (skipSNIApplication.get()) {
+            LOG.log(Level.FINE, "Skipping application of SNI because JDK is missing setHost() method.");
+            return socket;
+        }
+
         if (socket instanceof SSLSocket) {
             try {
                 Method setHostMethod = AccessController.doPrivileged(new PrivilegedExceptionAction<Method>() {
@@ -133,8 +141,19 @@ public class SniSSLSocketFactory extends SSLSocketFactory {
                 });
 
                 setHostMethod.invoke(socket, hostname);
-                LOG.log(Level.FINEST, "Applied SNI to socket for host {0}", hostname);
-            } catch (PrivilegedActionException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                LOG.log(Level.FINE, "Applied SNI to socket for host {0}", hostname);
+            } catch (PrivilegedActionException e) {
+                if (e.getCause() instanceof NoSuchMethodException) {
+                    // For IBM java there is no method with name setHost(), however we don't need to applySNI
+                    // because IBM java is doing it automatically, so we can set lower level of this message
+                    // See: KEYCLOAK-6817
+                    Level logLevel = Environment.IS_IBM_JAVA ? Level.FINE : Level.WARNING;
+                    LOG.log(logLevel, "Failed to apply SNI to SSLSocket", e);
+                    skipSNIApplication.set(true);
+                } else {
+                    LOG.log(Level.WARNING, "Failed to apply SNI to SSLSocket", e);
+                }
+            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
                 LOG.log(Level.WARNING, "Failed to apply SNI to SSLSocket", e);
             }
         }

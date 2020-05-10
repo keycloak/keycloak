@@ -30,15 +30,17 @@ import org.keycloak.models.KeycloakSessionFactory;
 public class JpaEventStoreProviderFactory implements EventStoreProviderFactory {
 
     public static final String ID = "jpa";
+    private int maxDetailLength;
 
     @Override
     public EventStoreProvider create(KeycloakSession session) {
         JpaConnectionProvider connection = session.getProvider(JpaConnectionProvider.class);
-        return new JpaEventStoreProvider(connection.getEntityManager());
+        return new JpaEventStoreProvider(connection.getEntityManager(), maxDetailLength);
     }
 
     @Override
     public void init(Config.Scope config) {
+        maxDetailLength = config.getInt("max-detail-length", 0);
     }
 
     @Override

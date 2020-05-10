@@ -5,6 +5,7 @@ import javax.ws.rs.core.Response;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.performance.dataset.idm.Client;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.performance.dataset.NestedEntity;
 import org.keycloak.performance.dataset.Updatable;
@@ -46,6 +47,7 @@ public class ResourceServer extends NestedEntity<Client, ResourceServerRepresent
         r.setId(getClient().getRepresentation().getId());
         r.setClientId(getClient().getRepresentation().getClientId());
         r.setName(getClient().getRepresentation().getName());
+        r.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
         return r;
     }
 

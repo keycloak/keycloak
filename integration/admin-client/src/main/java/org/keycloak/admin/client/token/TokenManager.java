@@ -25,6 +25,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.representations.AccessTokenResponse;
 
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.client.Client;
 import javax.ws.rs.core.Form;
 
 import static org.keycloak.OAuth2Constants.CLIENT_CREDENTIALS;
@@ -46,9 +47,9 @@ public class TokenManager {
     private final TokenService tokenService;
     private final String accessTokenGrantType;
 
-    public TokenManager(Config config, ResteasyClient client) {
+    public TokenManager(Config config, Client client) {
         this.config = config;
-        ResteasyWebTarget target = client.target(config.getServerUrl());
+        ResteasyWebTarget target = (ResteasyWebTarget) client.target(config.getServerUrl());
         if (!config.isPublicClient()) {
             target.register(new BasicAuthFilter(config.getClientId(), config.getClientSecret()));
         }

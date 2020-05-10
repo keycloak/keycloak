@@ -86,6 +86,7 @@
       "adminUrl": "/servlet-authz-app",
       "bearerOnly": false,
       "authorizationServicesEnabled": true,
+      "directAccessGrantsEnabled": true,
       "redirectUris": [
         "/servlet-authz-app/*"
       ],

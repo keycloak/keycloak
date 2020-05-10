@@ -44,7 +44,7 @@ public class Profile {
         DEPRECATED;
     }
     public enum Feature {
-        ACCOUNT2(Type.EXPERIMENTAL),
+        ACCOUNT2(Type.PREVIEW),
         ACCOUNT_API(Type.PREVIEW),
         ADMIN_FINE_GRAINED_AUTHZ(Type.PREVIEW),
         DOCKER(Type.DISABLED_BY_DEFAULT),
@@ -52,16 +52,31 @@ public class Profile {
         OPENSHIFT_INTEGRATION(Type.PREVIEW),
         SCRIPTS(Type.PREVIEW),
         TOKEN_EXCHANGE(Type.PREVIEW),
-        UPLOAD_SCRIPTS(DEPRECATED);
+        UPLOAD_SCRIPTS(DEPRECATED),
+        WEB_AUTHN(Type.DEFAULT, Type.PREVIEW);
 
-        private Type type;
+        private Type typeProject;
+        private Type typeProduct;
 
         Feature(Type type) {
-            this.type = type;
+            this(type, type);
         }
 
-        public Type getType() {
-            return type;
+        Feature(Type typeProject, Type typeProduct) {
+            this.typeProject = typeProject;
+            this.typeProduct = typeProduct;
+        }
+
+        public Type getTypeProject() {
+            return typeProject;
+        }
+
+        public Type getTypeProduct() {
+            return typeProduct;
+        }
+
+        public boolean hasDifferentProductType() {
+            return typeProject != typeProduct;
         }
     }
 
@@ -95,8 +110,9 @@ public class Profile {
 
         for (Feature f : Feature.values()) {
             Boolean enabled = config.getConfig(f);
+            Type type = product.equals(ProductValue.RHSSO) ? f.getTypeProduct() : f.getTypeProject();
 
-            switch (f.getType()) {
+            switch (type) {
                 case DEFAULT:
                     if (enabled != null && !enabled) {
                         disabledFeatures.add(f);
@@ -107,7 +123,7 @@ public class Profile {
                 case DISABLED_BY_DEFAULT:
                     if (enabled == null || !enabled) {
                         disabledFeatures.add(f);
-                    } else if (DEPRECATED.equals(f.getType())) {
+                    } else if (DEPRECATED.equals(type)) {
                         logger.warnf("Deprecated feature enabled: " + f.name().toLowerCase());
                         if (Feature.UPLOAD_SCRIPTS.equals(f)) {
                             previewFeatures.add(Feature.SCRIPTS);

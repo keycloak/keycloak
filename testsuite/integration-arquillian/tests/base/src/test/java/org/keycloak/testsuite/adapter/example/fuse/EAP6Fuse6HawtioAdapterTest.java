@@ -105,7 +105,6 @@ public class EAP6Fuse6HawtioAdapterTest extends AbstractExampleAdapterTest imple
     }
 
     @Test
-    @Ignore("KEYCLOAK-10797")
     public void hawtioLoginAndLogoutTest() {
         testRealmLoginPageFuse.setAuthRealm(DEMO);
 
@@ -119,7 +118,7 @@ public class EAP6Fuse6HawtioAdapterTest extends AbstractExampleAdapterTest imple
 
         waitUntilUrlStartsWith(hawtioPage.toString() + "/welcome", 180);
 
-        hawtioPage.logout();
+        hawtioPage.logout(jsDriver);
         WaitUtils.waitForPageToLoad();
         
         assertCurrentUrlStartsWith(testRealmLoginPageFuse);

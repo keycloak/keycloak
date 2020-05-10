@@ -61,6 +61,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     public static final String ENABLE_OCSP = "x509-cert-auth.ocsp-checking-enabled";
     public static final String ENABLE_CRLDP = "x509-cert-auth.crldp-checking-enabled";
     public static final String CANONICAL_DN = "x509-cert-auth.canonical-dn-enabled";
+    public static final String TIMESTAMP_VALIDATION = "x509-cert-auth.timestamp-validation-enabled";
     public static final String SERIALNUMBER_HEX = "x509-cert-auth.serialnumber-hex-enabled";
     public static final String CRL_RELATIVE_PATH = "x509-cert-auth.crl-relative-path";
     public static final String OCSPRESPONDER_URI = "x509-cert-auth.ocsp-responder-uri";
@@ -137,13 +138,13 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
             return null;
         };
         
-        private static final Function<X509Certificate[], String> getSerialnumberFunc(X509AuthenticatorConfigModel config) {
+        private static Function<X509Certificate[], String> getSerialnumberFunc(X509AuthenticatorConfigModel config) {
             return config.isSerialnumberHex() ? 
                     certs -> Hex.toHexString(certs[0].getSerialNumber().toByteArray()) : 
                     certs -> certs[0].getSerialNumber().toString();
         }
         
-        private static final Function<X509Certificate[], String> getIssuerDNFunc(X509AuthenticatorConfigModel config) {
+        private static Function<X509Certificate[], String> getIssuerDNFunc(X509AuthenticatorConfigModel config) {
             return config.isCanonicalDnEnabled() ? 
                     certs -> certs[0].getIssuerX500Principal().getName(X500Principal.CANONICAL) : 
                     certs -> certs[0].getIssuerDN().getName();

@@ -72,7 +72,11 @@ public class LDAPSyncTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
-
+            String descriptionAttrName = LDAPTestUtils.getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
+            // Add group mapper
+            LDAPTestUtils.addOrUpdateGroupMapper(appRealm, ctx.getLdapModel(), LDAPGroupMapperMode.LDAP_ONLY, descriptionAttrName);
+            // Remove all LDAP groups
+            LDAPTestUtils.removeAllLDAPGroups(session, appRealm, ctx.getLdapModel(), "groupsMapper");
             ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(session, appRealm);
             ldapModel.put(LDAPConstants.SYNC_REGISTRATIONS, "false");
             appRealm.updateComponent(ldapModel);
@@ -416,7 +420,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             LDAPObject group1Loaded = groupMapper.loadLDAPGroupByName("group1");
 
             // update group name and description
-            group1Loaded.setSingleAttribute(group1Loaded.getRdnAttributeName(), "group5");
+            group1Loaded.setSingleAttribute(group1Loaded.getRdnAttributeNames().get(0), "group5");
             group1Loaded.setSingleAttribute(descriptionAttrName, "group5 - description");
             LDAPTestUtils.updateLDAPGroup(session, appRealm, ctx.getLdapModel(), group1Loaded);
 

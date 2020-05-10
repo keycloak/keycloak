@@ -86,6 +86,8 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     // KEYCLOAK-7688 Offline Session Max for Offline Token
     protected boolean offlineSessionMaxLifespanEnabled;
     protected int offlineSessionMaxLifespan;
+    protected int clientSessionIdleTimeout;
+    protected int clientSessionMaxLifespan;
     protected int accessTokenLifespan;
     protected int accessTokenLifespanForImplicitFlow;
     protected int accessCodeLifespan;
@@ -97,6 +99,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected PasswordPolicy passwordPolicy;
     protected OTPPolicy otpPolicy;
     protected WebAuthnPolicy webAuthnPolicy;
+    protected WebAuthnPolicy webAuthnPasswordlessPolicy;
 
     protected String loginTheme;
     protected String accountTheme;
@@ -120,6 +123,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected Map<String, RequiredActionProviderModel> requiredActionProvidersByAlias = new HashMap<>();
     protected MultivaluedHashMap<String, AuthenticationExecutionModel> authenticationExecutions = new MultivaluedHashMap<>();
     protected Map<String, AuthenticationExecutionModel> executionsById = new HashMap<>();
+    protected Map<String, AuthenticationExecutionModel> executionsByFlowId = new HashMap<>();
 
     protected AuthenticationFlowModel browserFlow;
     protected AuthenticationFlowModel registrationFlow;
@@ -195,6 +199,8 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         // KEYCLOAK-7688 Offline Session Max for Offline Token
         offlineSessionMaxLifespanEnabled = model.isOfflineSessionMaxLifespanEnabled();
         offlineSessionMaxLifespan = model.getOfflineSessionMaxLifespan();
+        clientSessionIdleTimeout = model.getClientSessionIdleTimeout();
+        clientSessionMaxLifespan = model.getClientSessionMaxLifespan();
         accessTokenLifespan = model.getAccessTokenLifespan();
         accessTokenLifespanForImplicitFlow = model.getAccessTokenLifespanForImplicitFlow();
         accessCodeLifespan = model.getAccessCodeLifespan();
@@ -206,6 +212,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         passwordPolicy = model.getPasswordPolicy();
         otpPolicy = model.getOTPPolicy();
         webAuthnPolicy = model.getWebAuthnPolicy();
+        webAuthnPasswordlessPolicy = model.getWebAuthnPolicyPasswordless();
 
         loginTheme = model.getLoginTheme();
         accountTheme = model.getAccountTheme();
@@ -256,6 +263,9 @@ public class CachedRealm extends AbstractExtendableRevisioned {
             for (AuthenticationExecutionModel execution : model.getAuthenticationExecutions(flow.getId())) {
                 authenticationExecutions.add(flow.getId(), execution);
                 executionsById.put(execution.getId(), execution);
+                if (execution.getFlowId() != null) {
+                    executionsByFlowId.put(execution.getFlowId(), execution);
+                }
             }
         }
 
@@ -441,6 +451,14 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return offlineSessionMaxLifespan;
     }
 
+    public int getClientSessionIdleTimeout() {
+        return clientSessionIdleTimeout;
+    }
+
+    public int getClientSessionMaxLifespan() {
+        return clientSessionMaxLifespan;
+    }
+
     public int getAccessTokenLifespan() {
         return accessTokenLifespan;
     }
@@ -585,6 +603,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return authenticationExecutions;
     }
 
+    public AuthenticationExecutionModel getAuthenticationExecutionByFlowId(String flowId) {
+        return executionsByFlowId.get(flowId);
+    }
+    
     public Map<String, AuthenticationExecutionModel> getExecutionsById() {
         return executionsById;
     }
@@ -603,6 +625,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public WebAuthnPolicy getWebAuthnPolicy() {
         return webAuthnPolicy;
+    }
+
+    public WebAuthnPolicy getWebAuthnPasswordlessPolicy() {
+        return webAuthnPasswordlessPolicy;
     }
 
     public AuthenticationFlowModel getBrowserFlow() {

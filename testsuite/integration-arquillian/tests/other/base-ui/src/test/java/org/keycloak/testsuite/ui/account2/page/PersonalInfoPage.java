@@ -20,11 +20,14 @@ package org.keycloak.testsuite.ui.account2.page;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.ui.Select;
 
 import static org.keycloak.testsuite.util.UIAssert.assertElementDisabled;
 import static org.keycloak.testsuite.util.UIAssert.assertInputElementValid;
 import static org.keycloak.testsuite.util.UIUtils.getTextInputValue;
 import static org.keycloak.testsuite.util.UIUtils.setTextInputValue;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -38,6 +41,8 @@ public class PersonalInfoPage extends AbstractLoggedInPage {
     private WebElement firstName;
     @FindBy(id = "last-name")
     private WebElement lastName;
+    @FindBy(id = "locale-select")
+    private Select localeSelector;
     @FindBy(id = "save-btn")
     private WebElement saveBtn;
     @FindBy(id = "cancel-btn")
@@ -105,8 +110,14 @@ public class PersonalInfoPage extends AbstractLoggedInPage {
     }
 
     public void clickSave() {
+        clickSave(true);
+    }
+
+    public void clickSave(boolean assertAlert) {
         saveBtn.click();
-        alert().assertIsDisplayed();
+        if (assertAlert) {
+            alert().assertIsDisplayed();
+        }
     }
 
     public void clickCancel() {
@@ -125,5 +136,9 @@ public class PersonalInfoPage extends AbstractLoggedInPage {
                 && user.getEmail().equals(getEmail())
                 && user.getFirstName().equals(getFirstName())
                 && user.getLastName().equals(getLastName());
+    }
+
+    public void selectLocale(String customLocale) {
+        localeSelector.selectByValue(customLocale);
     }
 }

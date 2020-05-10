@@ -25,6 +25,7 @@ import org.junit.runners.MethodSorters;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.LDAPRule;
@@ -77,7 +78,8 @@ public class LdapUsernameAttributeTest extends AbstractLDAPTest {
             Assert.assertEquals("johndow", john.getLastName());
             LDAPObject johnLdap = ctx.getLdapProvider().loadLDAPUserByUsername(appRealm, "johndow");
             Assert.assertNotNull(johnLdap);
-            Assert.assertEquals("johndow", johnLdap.getDn().getFirstRdnAttrValue());
+            LDAPDn.RDN firstRdnEntry = johnLdap.getDn().getFirstRdn();
+            Assert.assertEquals("johndow", firstRdnEntry.getAttrValue(firstRdnEntry.getAllKeys().get(0)));
         });
         // rename to johndow2
         testingClient.server().run(session -> {
@@ -103,7 +105,8 @@ public class LdapUsernameAttributeTest extends AbstractLDAPTest {
             Assert.assertEquals("johndow2", john2.getLastName());
             LDAPObject johnLdap2 = ctx.getLdapProvider().loadLDAPUserByUsername(appRealm, "johndow2");
             Assert.assertNotNull(johnLdap2);
-            Assert.assertEquals("johndow2", johnLdap2.getDn().getFirstRdnAttrValue());
+            LDAPDn.RDN firstRdnEntry = johnLdap2.getDn().getFirstRdn();
+            Assert.assertEquals("johndow2", firstRdnEntry.getAttrValue(firstRdnEntry.getAllKeys().get(0)));
 
             session.users().removeUser(appRealm, john2);
             Assert.assertNull(session.users().getUserByUsername("johndow2", appRealm));

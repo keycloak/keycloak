@@ -31,6 +31,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.authentication.ExpectedParamAuthenticator;
 import org.keycloak.testsuite.authentication.ExpectedParamAuthenticatorFactory;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
@@ -42,9 +43,12 @@ import org.openqa.selenium.By;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
+
 /**
  * @author <a href="mailto:n1330@me.com">Tomohiro Nagai</a>
  */
+@AuthServerContainerExclude(REMOTE)
 public class AuthenticatorSubflowsTest2 extends AbstractTestRealmKeycloakTest {
 
     @Rule

@@ -8,14 +8,16 @@ public class ExportOptions {
     private boolean usersIncluded = true;
     private boolean clientsIncluded = true;
     private boolean groupsAndRolesIncluded = true;
+    private boolean onlyServiceAccountsIncluded = false;
 
     public ExportOptions() {
     }
 
-    public ExportOptions(boolean users, boolean clients, boolean groupsAndRoles) {
+    public ExportOptions(boolean users, boolean clients, boolean groupsAndRoles, boolean onlyServiceAccounts) {
         usersIncluded = users;
         clientsIncluded = clients;
         groupsAndRolesIncluded = groupsAndRoles;
+        onlyServiceAccountsIncluded = onlyServiceAccounts;
     }
 
     public boolean isUsersIncluded() {
@@ -30,6 +32,10 @@ public class ExportOptions {
         return groupsAndRolesIncluded;
     }
 
+    public boolean isOnlyServiceAccountsIncluded() {
+        return onlyServiceAccountsIncluded;
+    }
+
     public void setUsersIncluded(boolean value) {
         usersIncluded = value;
     }
@@ -40,5 +46,9 @@ public class ExportOptions {
 
     public void setGroupsAndRolesIncluded(boolean value) {
         groupsAndRolesIncluded = value;
+    }
+
+    public void setOnlyServiceAccountsIncluded(boolean value) {
+        onlyServiceAccountsIncluded = value;
     }
 }

@@ -50,6 +50,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -97,13 +98,28 @@ public class GroupResource {
      */
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public void updateGroup(GroupRepresentation rep) {
+    public Response updateGroup(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
 
+        for (GroupModel sibling: siblings()) {
+            if (Objects.equals(sibling.getId(), group.getId())) continue;
+            if (sibling.getName().equals(rep.getName())) {
+                return ErrorResponse.exists("Sibling group named '" + rep.getName() + "' already exists.");
+            }
+        }
+        
         updateGroup(rep, group);
         adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
-
-
+        
+        return Response.noContent().build();
+    }
+    
+    private List<GroupModel> siblings() {
+        if (group.getParentId() == null) {
+            return realm.getTopLevelGroups();
+        } else {
+            return new ArrayList(group.getParent().getSubGroups());
+        }
     }
 
     @DELETE
@@ -142,9 +158,10 @@ public class GroupResource {
             if (child == null) {
                 throw new NotFoundException("Could not find child by id");
             }
+            realm.moveGroup(child, group);
             adminEvent.operation(OperationType.UPDATE);
         } else {
-            child = realm.createGroup(rep.getName());
+            child = realm.createGroup(rep.getName(), group);
             updateGroup(rep, child);
             URI uri = session.getContext().getUri().getBaseUriBuilder()
                                            .path(session.getContext().getUri().getMatchedURIs().get(2))
@@ -154,7 +171,6 @@ public class GroupResource {
             adminEvent.operation(OperationType.CREATE);
 
         }
-        realm.moveGroup(child, group);
         adminEvent.resourcePath(session.getContext().getUri()).representation(rep).success();
 
         GroupRepresentation childRep = ModelToRepresentation.toGroupHierarchy(child, true);

@@ -6,10 +6,16 @@
     "sourceMap": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "lib": [ "es2015", "dom" ],
+    "lib": [ "es2015", "dom", "dom.iterable" ],
     "noImplicitAny": true,
     "strictNullChecks": true,
     "jsx": "react",
     "suppressImplicitAnyIndexErrors": true
-  }
+  },
+  "include": [
+    "./**/*.ts?"
+  ],
+  "files": [
+    "../../../../../../../../adapters/oidc/js/src/main/resources/keycloak.d.ts"
+  ]
 }

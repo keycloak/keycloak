@@ -18,9 +18,12 @@
 package org.keycloak.testsuite.oauth;
 
 import org.apache.http.HttpResponse;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.crypto.Algorithm;
@@ -32,6 +35,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -44,10 +48,13 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+
+import javax.ws.rs.ClientErrorException;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -59,6 +66,9 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
 
     @Override
@@ -192,7 +202,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
         OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("secret2");
 
-        assertEquals(400, response.getStatusCode());
+        assertEquals(401, response.getStatusCode());
 
         assertEquals("unauthorized_client", response.getError());
 
@@ -281,6 +291,25 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
     	conductClientCredentialsAuthRequest(Algorithm.HS256, Algorithm.ES256, Algorithm.PS256);
     }
 
+    @Test
+    public void failManagePassword() {
+        UserResource serviceAccount = adminClient.realm("test").users().get(userId);
+        UserRepresentation representation = serviceAccount.toRepresentation();
+
+        CredentialRepresentation password = new CredentialRepresentation();
+        password.setValue("password");
+        password.setType(CredentialRepresentation.PASSWORD);
+        password.setTemporary(false);
+
+        representation.setCredentials(Arrays.asList(password));
+
+        this.expectedException.expect(Matchers.allOf(Matchers.instanceOf(ClientErrorException.class), 
+                Matchers.hasProperty("response", Matchers.hasProperty("status", Matchers.is(409)))));
+        this.expectedException.reportMissingExceptionWithMessage("Should fail, should not be possible to manage credentials for service accounts");
+
+        serviceAccount.update(representation);
+    }
+    
     private void conductClientCredentialsAuthRequest(String expectedRefreshAlg, String expectedAccessAlg, String realmTokenAlg) throws Exception {
         try {
             /// Realm Setting is used for ID Token Signature Algorithm

@@ -18,8 +18,10 @@ package org.keycloak.testsuite.forms;
 
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
 import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -31,6 +33,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -43,6 +46,7 @@ import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.UserActionTokenBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -64,11 +68,13 @@ import org.openqa.selenium.WebElement;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     private String userId;
@@ -79,6 +85,8 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+        RealmBuilder.edit(testRealm)
+                .client(org.keycloak.testsuite.util.ClientBuilder.create().clientId("client-user").serviceAccount());
     }
 
     @Before
@@ -1052,4 +1060,28 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         assertThat(driver2.getPageSource(), Matchers.containsString("Your account has been updated."));
     }
 
+    @Test
+    public void failResetPasswordServiceAccount() {
+        String username = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "client-user";
+        UserRepresentation serviceAccount = testRealm().users()
+                .search(username).get(0);
+
+        serviceAccount.toString();
+
+        UserResource serviceAccount1 = testRealm().users().get(serviceAccount.getId());
+
+        serviceAccount = serviceAccount1.toRepresentation();
+        serviceAccount.setEmail("client-user@test.com");
+        serviceAccount1.update(serviceAccount);
+        
+        String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
+        driver.navigate().to(resetUri);
+
+        resetPasswordPage.assertCurrent();
+
+        resetPasswordPage.changePassword(username);
+
+        loginPage.assertCurrent();
+        assertEquals("Invalid username or password.", errorPage.getError());
+    }
 }

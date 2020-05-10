@@ -47,7 +47,9 @@ import org.keycloak.migration.migrators.MigrateTo4_2_0;
 import org.keycloak.migration.migrators.MigrateTo4_6_0;
 import org.keycloak.migration.migrators.MigrateTo6_0_0;
 import org.keycloak.migration.migrators.MigrateTo8_0_0;
+import org.keycloak.migration.migrators.MigrateTo8_0_2;
 import org.keycloak.migration.migrators.MigrateTo9_0_0;
+import org.keycloak.migration.migrators.MigrateTo9_0_4;
 import org.keycloak.migration.migrators.Migration;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -86,7 +88,9 @@ public class MigrationModelManager {
             new MigrateTo4_6_0(),
             new MigrateTo6_0_0(),
             new MigrateTo8_0_0(),
-            new MigrateTo9_0_0()
+            new MigrateTo8_0_2(),
+            new MigrateTo9_0_0(),
+            new MigrateTo9_0_4()
     };
 
     public static void migrate(KeycloakSession session) {
@@ -118,6 +122,7 @@ public class MigrationModelManager {
     public static final ModelVersion RHSSO_VERSION_7_1_KEYCLOAK_VERSION = new ModelVersion("2.5.5");
     public static final ModelVersion RHSSO_VERSION_7_2_KEYCLOAK_VERSION = new ModelVersion("3.4.3");
     public static final ModelVersion RHSSO_VERSION_7_3_KEYCLOAK_VERSION = new ModelVersion("4.8.3");
+    public static final ModelVersion RHSSO_VERSION_7_4_KEYCLOAK_VERSION = new ModelVersion("9.0.3");
 
     private static final Map<Pattern, ModelVersion> PATTERN_MATCHER = new LinkedHashMap<>();
     static {
@@ -125,6 +130,7 @@ public class MigrationModelManager {
         PATTERN_MATCHER.put(Pattern.compile("^7\\.1\\.\\d+\\.GA$"), RHSSO_VERSION_7_1_KEYCLOAK_VERSION);
         PATTERN_MATCHER.put(Pattern.compile("^7\\.2\\.\\d+\\.GA$"), RHSSO_VERSION_7_2_KEYCLOAK_VERSION);
         PATTERN_MATCHER.put(Pattern.compile("^7\\.3\\.\\d+\\.GA$"), RHSSO_VERSION_7_3_KEYCLOAK_VERSION);
+        PATTERN_MATCHER.put(Pattern.compile("^7\\.4\\.\\d+\\.GA$"), RHSSO_VERSION_7_4_KEYCLOAK_VERSION);
     }
 
     public static void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {

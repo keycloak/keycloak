@@ -20,11 +20,14 @@
         <resource-root path="integration-arquillian-testsuite-providers-${project.version}.jar"/>
     </resources>
     <dependencies>
+        <module name="com.fasterxml.jackson.core.jackson-core"/>
         <module name="javax.api"/>
+        <module name="javax.mail.api"/>
         <module name="javax.ws.rs.api"/>
         <module name="javax.servlet.api"/>
         <module name="io.undertow.core"/>
         <module name="io.undertow.servlet"/>
+        <module name="org.bouncycastle"/>
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-server-spi"/>
@@ -42,5 +45,6 @@
         <module name="org.hibernate"/>
         <module name="org.javassist"/>
         <module name="org.jboss.modules"/>
+        <module name="org.apache.httpcomponents.core"/>
     </dependencies>
 </module>

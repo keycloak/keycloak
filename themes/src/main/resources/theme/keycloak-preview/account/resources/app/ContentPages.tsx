@@ -78,7 +78,7 @@ function createNavItems(activePage: PageDef, contentParam: ContentItem[], groupN
     if (typeof content === 'undefined') return (<React.Fragment/>);
 
     const links: React.ReactElement[] = contentParam.map((item: ContentItem) => {
-        const navLinkId: string = `nav-link-${item.id}`;
+        const navLinkId = `nav-link-${item.id}`;
         if (isExpansion(item)) {
             return <NavExpandable id={navLinkId}
                                   groupId={item.groupId}

@@ -23,6 +23,7 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.GroupModel;
@@ -38,6 +39,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.storage.ReadOnlyException;
@@ -66,8 +68,11 @@ import org.keycloak.testsuite.util.OAuthClient;
 
 import javax.naming.AuthenticationException;
 import javax.ws.rs.core.Response;
+
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -329,7 +334,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     }
 
     @Test
-    public void passwordChangeLdap() throws Exception {
+    public void ldapPasswordChangeWithAccountConsole() throws Exception {
         changePasswordPage.open();
         loginPage.login("johnkeycloak", "Password1");
         changePasswordPage.changePassword("Password1", "New-password1", "New-password1");
@@ -350,6 +355,77 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         changePasswordPage.open();
         changePasswordPage.changePassword("New-password1", "Password1", "Password1");
         Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
+    }
+
+
+    // KEYCLOAK-12340
+    @Test
+    public void ldapPasswordChangeWithAdminEndpointAndRequiredAction() throws Exception {
+        String username = "adminEndpointReqAct";
+        String email = username + "@email.cz";
+
+        // Register new LDAP user with password, logout user
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+        registerPage.register("firstName", "lastName", email,
+                username, "Password1", "Password1");
+
+
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        appPage.logout();
+
+        // Test admin endpoint. Assert federated endpoint returns password in LDAP "supportedCredentials", but there is no stored password
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        assertPasswordConfiguredThroughLDAPOnly(user);
+
+        // Update password through admin REST endpoint. Assert user can authenticate with the new password
+        ApiUtil.resetUserPassword(user, "Password1-updated1", false);
+
+        loginPage.open();
+
+        loginSuccessAndLogout(username, "Password1-updated1");
+
+        // Test admin endpoint. Assert federated endpoint returns password in LDAP "supportedCredentials", but there is no stored password
+        assertPasswordConfiguredThroughLDAPOnly(user);
+
+        // Test this just for the import mode. No-import mode doesn't support requiredActions right now
+        if (isImportEnabled()) {
+            // Update password through required action.
+            UserRepresentation user2 = user.toRepresentation();
+            user2.setRequiredActions(Arrays.asList(UserModel.RequiredAction.UPDATE_PASSWORD.toString()));
+            user.update(user2);
+
+            loginPage.open();
+            loginPage.login(username, "Password1-updated1");
+            requiredActionChangePasswordPage.assertCurrent();
+
+            requiredActionChangePasswordPage.changePassword("Password1-updated2", "Password1-updated2");
+
+            appPage.assertCurrent();
+            appPage.logout();
+
+            // Assert user can authenticate with the new password
+            loginSuccessAndLogout(username, "Password1-updated2");
+
+            // Test admin endpoint. Assert federated endpoint returns password in LDAP "supportedCredentials", but there is no stored password
+            assertPasswordConfiguredThroughLDAPOnly(user);
+        }
+    }
+
+
+    // Use admin REST endpoints
+    private void assertPasswordConfiguredThroughLDAPOnly(UserResource user) {
+        // Assert password not stored locally
+        List<CredentialRepresentation> storedCredentials = user.credentials();
+        for (CredentialRepresentation credential : storedCredentials) {
+            Assert.assertFalse(PasswordCredentialModel.TYPE.equals(credential.getType()));
+        }
+
+        // Assert password is stored in the LDAP
+        List<String> userStorageCredentials = user.getConfiguredUserStorageCredentialTypes();
+        Assert.assertTrue(userStorageCredentials.contains(PasswordCredentialModel.TYPE));
     }
 
     @Test
@@ -908,6 +984,25 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             } catch (AuthenticationException ex) {
                 throw new RuntimeException(ex);
             }
+        });
+
+        // Test admin REST endpoints
+        UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+
+        // Assert password is stored locally
+        List<String> storedCredentials = userResource.credentials().stream()
+                .map(CredentialRepresentation::getType)
+                .collect(Collectors.toList());
+        Assert.assertTrue(storedCredentials.contains(PasswordCredentialModel.TYPE));
+
+        // Assert password is supported in the LDAP too.
+        List<String> userStorageCredentials = userResource.getConfiguredUserStorageCredentialTypes();
+        Assert.assertTrue(userStorageCredentials.contains(PasswordCredentialModel.TYPE));
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            UserModel user = session.users().getUserByUsername("johnkeycloak", appRealm);
 
             // User is deleted just locally
             Assert.assertTrue(session.users().removeUser(appRealm, user));

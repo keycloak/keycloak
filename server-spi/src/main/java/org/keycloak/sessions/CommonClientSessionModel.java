@@ -53,6 +53,8 @@ public interface CommonClientSessionModel {
         SETUP_REQUIRED,
         ATTEMPTED,
         SKIPPED,
-        CHALLENGED
+        CHALLENGED,
+        EVALUATED_TRUE,
+        EVALUATED_FALSE
     }
 }

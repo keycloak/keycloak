@@ -161,6 +161,8 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
                 readSingleLogout(addIdentityProvider, reader);
             } else if (Constants.XML.KEYS.equals(tagName)) {
                 readKeys(list, reader, addr);
+            } else if (Constants.XML.HTTP_CLIENT.equals(tagName)) {
+                readHttpClient(addIdentityProvider, reader);
             } else if (Constants.XML.ALLOWED_CLOCK_SKEW.equals(tagName)) {
                 readAllowedClockSkew(addIdentityProvider, reader);
             } else {
@@ -210,6 +212,21 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             readKey(keyList, reader, parentAddr);
         }
         list.addAll(keyList);
+    }
+
+    void readHttpClient(final ModelNode addIdentityProvider, final XMLExtendedStreamReader reader) throws XMLStreamException {
+        ModelNode httpClientNode = addIdentityProvider.get(Constants.Model.HTTP_CLIENT);
+        for (int i = 0; i < reader.getAttributeCount(); i++) {
+            String name = reader.getAttributeLocalName(i);
+            String value = reader.getAttributeValue(i);
+
+            SimpleAttributeDefinition attr = HttpClientDefinition.lookup(name);
+            if (attr == null) {
+                throw ParseUtils.unexpectedAttribute(reader, i);
+            }
+            attr.parseAndSetParameter(value, httpClientNode, reader);
+        }
+        ParseUtils.requireNoContent(reader);
     }
 
     void readAllowedClockSkew(ModelNode addIdentityProvider, XMLExtendedStreamReader reader) throws XMLStreamException {
@@ -481,6 +498,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             writeSingleSignOn(writer, idpAttributes.get(Constants.Model.SINGLE_SIGN_ON));
             writeSingleLogout(writer, idpAttributes.get(Constants.Model.SINGLE_LOGOUT));
             writeKeys(writer, idpAttributes.get(Constants.Model.KEY));
+            writeHttpClient(writer, idpAttributes.get(Constants.Model.HTTP_CLIENT));
             writeAllowedClockSkew(writer, idpAttributes.get(Constants.Model.ALLOWED_CLOCK_SKEW));
         }
         writer.writeEndElement();
@@ -536,6 +554,16 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
         }
     }
 
+    void writeHttpClient(XMLExtendedStreamWriter writer, ModelNode httpClientModel) throws XMLStreamException {
+        if (!httpClientModel.isDefined()) {
+            return;
+        }
+        writer.writeStartElement(Constants.XML.HTTP_CLIENT);
+        for (SimpleAttributeDefinition attr : HttpClientDefinition.ATTRIBUTES) {
+            attr.marshallAsAttribute(httpClientModel, false, writer);
+        }
+        writer.writeEndElement();
+    }
     void writeAllowedClockSkew(XMLExtendedStreamWriter writer, ModelNode allowedClockSkew) throws XMLStreamException {
         if (!allowedClockSkew.isDefined()) {
             return;

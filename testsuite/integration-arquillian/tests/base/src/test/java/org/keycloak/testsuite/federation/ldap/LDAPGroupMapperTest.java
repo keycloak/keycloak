@@ -212,6 +212,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             john.leaveGroup(groupTeamChild20182019);
 
             mary.leaveGroup(group1);
+            mary.leaveGroup(group11);
             mary.leaveGroup(group12);
             mary.leaveGroup(groupTeam20162017);
             mary.leaveGroup(groupTeamChild20182019);
@@ -417,6 +418,17 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             long dbGroupCount = rob.getGroupsCount();
             Assert.assertEquals(4, dbGroupCount);
 
+            // Check getGroupMembers
+            List<UserModel> group1Members = session.users().getGroupMembers(appRealm, group1, 0, 10);
+            List<UserModel> group11Members = session.users().getGroupMembers(appRealm, group11, 0, 10);
+            List<UserModel> group12Members = session.users().getGroupMembers(appRealm, group12, 0, 10);
+
+            Assert.assertEquals(0, group1Members.size());
+            Assert.assertEquals(1, group11Members.size());
+            Assert.assertEquals("robkeycloak", group11Members.get(0).getUsername());
+            Assert.assertEquals(1, group12Members.size());
+            Assert.assertEquals("robkeycloak", group12Members.get(0).getUsername());
+
             // Delete some group mappings in LDAP and check that it doesn't have any effect and user still has groups
             LDAPObject ldapGroup = groupMapper.loadLDAPGroupByName("group11");
             groupMapper.deleteGroupMappingInLDAP(robLdap, ldapGroup);
@@ -427,6 +439,17 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             robGroups = rob.getGroups();
             Assert.assertTrue(robGroups.contains(group11));
             Assert.assertTrue(robGroups.contains(group12));
+
+            // Check getGroupMembers
+            group1Members = session.users().getGroupMembers(appRealm, group1, 0, 10);
+            group11Members = session.users().getGroupMembers(appRealm, group11, 0, 10);
+            group12Members = session.users().getGroupMembers(appRealm, group12, 0, 10);
+
+            Assert.assertEquals(0, group1Members.size());
+            Assert.assertEquals(1, group11Members.size());
+            Assert.assertEquals("robkeycloak", group11Members.get(0).getUsername());
+            Assert.assertEquals(1, group12Members.size());
+            Assert.assertEquals("robkeycloak", group12Members.get(0).getUsername());
 
             // Delete group mappings through model and verifies that user doesn't have them anymore
             rob.leaveGroup(group11);
@@ -444,15 +467,15 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString());
+            appRealm.updateComponent(mapperModel);
+
             // Ignoring this test on ActiveDirectory as it's not allowed to have LDAP group referencing nonexistent member. KEYCLOAK-2682 was related to OpenLDAP TODO: Better solution than programmatic...
             LDAPConfig config = ctx.getLdapProvider().getLdapIdentityStore().getConfig();
             if (config.isActiveDirectory()) {
                 return;
             }
-
-            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
-            LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString());
-            appRealm.updateComponent(mapperModel);
 
             String descriptionAttrName = getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
 
@@ -467,7 +490,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
 
             // 3 - Add non-existing user to LDAP group
             LDAPDn nonExistentDn = LDAPDn.fromString(ldapProvider.getLdapIdentityStore().getConfig().getUsersDn());
-            nonExistentDn.addFirst(jamesLdap.getRdnAttributeName(), "nonexistent");
+            nonExistentDn.addFirst(jamesLdap.getRdnAttributeNames().get(0), "nonexistent");
             LDAPObject nonExistentLdapUser = new LDAPObject();
             nonExistentLdapUser.setDn(nonExistentDn);
             LDAPUtils.addMember(ldapProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group2, nonExistentLdapUser);
@@ -552,18 +575,13 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             GroupModel group3 = appRealm.createGroup("group3");
-            session.realms().addTopLevelGroup(appRealm, group3);
-            GroupModel group31 = appRealm.createGroup("group31");
-            group3.addChild(group31);
-            GroupModel group32 = appRealm.createGroup("group32");
-            group3.addChild(group32);
+            GroupModel group31 = appRealm.createGroup("group31", group3);
+            GroupModel group32 = appRealm.createGroup("group32", group3);
 
             GroupModel group4 = appRealm.createGroup("group4");
-            session.realms().addTopLevelGroup(appRealm, group4);
 
-            GroupModel group14 = appRealm.createGroup("group14");
             GroupModel group1 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1");
-            group1.addChild(group14);
+            GroupModel group14 = appRealm.createGroup("group14", group1);
 
         });
 
@@ -688,6 +706,12 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString());
             appRealm.updateComponent(mapperModel);
 
+            // Ignoring this test on ActiveDirectory and rhds as it's currently impossible to import more than 60 users without timeout
+            LDAPConfig ldapConfig = ctx.getLdapProvider().getLdapIdentityStore().getConfig();
+            if (ldapConfig.isActiveDirectory() || LDAPConstants.VENDOR_RHDS.equals(ldapConfig.getVendor())) {
+                return;
+            }
+
             // create big grups that use ranged search
             String descriptionAttrName = getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
             LDAPObject bigGroup = LDAPTestUtils.createLDAPGroup(session, appRealm, ctx.getLdapModel(), "biggroup", descriptionAttrName, "biggroup - description");
@@ -733,6 +757,12 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
             ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+
+            // Ignoring this test on ActiveDirectory (same for rhds) as it's not allowed to have LDAP group referencing nonexistent member. KEYCLOAK-2682 was related to OpenLDAP TODO: Better solution than programmatic...
+            LDAPConfig ldapConfig = ctx.getLdapProvider().getLdapIdentityStore().getConfig();
+            if (ldapConfig.isActiveDirectory() || LDAPConstants.VENDOR_RHDS.equals(ldapConfig.getVendor())) {
+                return;
+            }
 
             // create a group with an existing user alone
             String descriptionAttrName = getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());

@@ -2,7 +2,8 @@
   "mvn": {
     "profiles": ["product", "!community", "jboss-release", "distribution-downloads"],
     "properties": {
-        "skipTests": "true"
+      "skipTests": "true",
+      "npmRegistryURL": "$NPM_REGISTRY_INSTANCE_URL"
     }
   },
   "pme": {
@@ -19,13 +20,17 @@
       "dependencyExclusion.org.jboss:jboss-parent@*": "19.0.0.redhat-2",
       "dependencyExclusion.org.jboss.web:jbossweb@*": "$EAP6SUPPORTED_ORG_JBOSS_WEB_JBOSSWEB",
       "dependencyOverride.com.google.guava:guava@org.keycloak.testsuite:integration-arquillian": "",
-      "dependencyOverride.org.apache.httpcomponents:httpclient@org.keycloak.testsuite:integration-arquillian-tests": "",
-      "dependencyOverride.org.apache.httpcomponents:httpcore@*": "4.4.5.redhat-1",
-      "dependencyOverride.org.apache.httpcomponents:httpclient@*": "4.5.4.redhat-00001",
-      "dependencyOverride.com.fasterxml.jackson.dataformat:*@*": "2.9.10.redhat-00003",
+      "dependencyOverride.com.fasterxml.jackson.dataformat:*@*": "2.10.0.redhat-00002",
       "dependencyOverride.org.jboss.logging:jboss-logging-processor@*": "",
       "dependencyOverride.org.jboss.logging:jboss-logging@org.keycloak:keycloak-as7-subsystem": "",
       "dependencyOverride.org.jboss.logging:jboss-logging@org.keycloak:keycloak-saml-as7-subsystem": ""
     }
-  }
+  },
+  "prereqs": [
+    "npm config set fetch-retry-mintimeout 60000",
+    "npm config set fetch-retry-maxtimeout 120000",
+    "npm config set fetch-retries 10",
+    "npm config set strict-ssl=false",
+    "npm config set cafile /tmp/indy-proxy-ca.crt"
+  ]
 }

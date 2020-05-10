@@ -18,6 +18,7 @@ package org.keycloak.testsuite.broker;
 
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -58,10 +59,10 @@ public class KcOidcBrokerPrivateKeyJwtTest extends AbstractBrokerTest {
         }
 
         @Override
-        public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext) {
+        public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext, IdentityProviderSyncMode syncMode) {
             IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
             Map<String, String> config = idp.getConfig();
-            applyDefaultConfiguration(suiteContext, config);
+            applyDefaultConfiguration(suiteContext, config, syncMode);
             config.put("clientSecret", null);
             config.put("clientAuthMethod", OIDCLoginProtocol.PRIVATE_KEY_JWT);
             return idp;

@@ -42,6 +42,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseTokenStoreProvider;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -117,6 +118,20 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
                 return;
             }
 
+            String expectedSignatureAlg = OIDCAdvancedConfigWrapper.fromClientModel(client).getTokenEndpointAuthSigningAlg();
+            if (jws.getHeader().getAlgorithm() == null || jws.getHeader().getAlgorithm().name() == null) {
+                Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "invalid signature algorithm");
+                context.challenge(challengeResponse);
+                return;
+            }
+
+            String actualSignatureAlg = jws.getHeader().getAlgorithm().name();
+            if (expectedSignatureAlg != null && !expectedSignatureAlg.equals(actualSignatureAlg)) {
+                Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "invalid signature algorithm");
+                context.challenge(challengeResponse);
+                return;
+            }
+
             // Get client key and validate signature
             PublicKey clientPublicKey = getSignatureValidationKey(client, context, jws);
             if (clientPublicKey == null) {
@@ -127,7 +142,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
             boolean signatureValid;
             try {
                 JsonWebToken jwt = context.getSession().tokens().decodeClientJWT(clientAssertion, client, JsonWebToken.class);
-                signatureValid = jwt == null ? false : true;
+                signatureValid = jwt != null;
             } catch (RuntimeException e) {
                 Throwable cause = e.getCause() != null ? e.getCause() : e;
                 throw new RuntimeException("Signature on JWT token failed validation", cause);

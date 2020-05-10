@@ -44,7 +44,11 @@ public interface RoleContainerModel {
     boolean removeRole(RoleModel role);
 
     Set<RoleModel> getRoles();
+    
+    Set<RoleModel> getRoles(Integer firstResult, Integer maxResults);
 
+    Set<RoleModel> searchForRoles(String search, Integer first, Integer max);
+    
     List<String> getDefaultRoles();
 
     void addDefaultRole(String name);
@@ -52,4 +56,5 @@ public interface RoleContainerModel {
     void updateDefaultRoles(String... defaultRoles);
 
     void removeDefaultRoles(String... defaultRoles);
+
 }

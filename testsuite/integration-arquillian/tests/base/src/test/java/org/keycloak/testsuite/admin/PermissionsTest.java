@@ -1658,8 +1658,8 @@ public class PermissionsTest extends AbstractKeycloakTest {
         }, Resource.IDENTITY_PROVIDER, false);
         invoke(new InvocationWithResponse() {
             public void invoke(RealmResource realm, AtomicReference<Response> response) {
-                response.set(realm.identityProviders().create(IdentityProviderBuilder.create().providerId("nosuch")
-                        .displayName("nosuch-foo").alias("foo").build()));
+                response.set(realm.identityProviders().create(IdentityProviderBuilder.create().providerId("oidc")
+                        .displayName("nosuch-foo").alias("foo").setAttribute("clientId", "foo").setAttribute("clientSecret", "foo").build()));
             }
         }, Resource.IDENTITY_PROVIDER, true);
 

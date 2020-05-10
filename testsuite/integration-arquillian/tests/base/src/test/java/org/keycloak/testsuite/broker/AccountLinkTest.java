@@ -20,10 +20,14 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
@@ -35,16 +39,20 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 
 import java.util.List;
+import java.util.Set;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class AccountLinkTest extends AbstractKeycloakTest {
     public static final String CHILD_IDP = "child";
     public static final String PARENT_IDP = "parent-idp";
@@ -121,7 +129,6 @@ public class AccountLinkTest extends AbstractKeycloakTest {
         String childIdp = CHILD_IDP;
 
         testAccountLink(childUsername, childPassword, childIdp);
-
     }
 
     @Test
@@ -134,7 +141,46 @@ public class AccountLinkTest extends AbstractKeycloakTest {
 
     }
 
+    @Test
+    public void testDeleteIdentityOnProviderRemoval() {
+        String childUsername = "child";
+        String childPassword = "password";
+        String childIdp = CHILD_IDP;
+
+        assertFederatedIdentity(childUsername, childPassword, childIdp);
+
+        RealmResource realm = adminClient.realm(CHILD_IDP);
+        UsersResource users = realm.users();
+        List<UserRepresentation> search = users.search(childUsername);
+        assertFalse(search.isEmpty());
+        String userId = search.get(0).getId();
+        List<FederatedIdentityRepresentation> identities = users.get(userId).getFederatedIdentity();
+        assertFalse(identities.isEmpty());
+
+        realm.identityProviders().get(PARENT_IDP).remove();
+        
+        identities = users.get(userId).getFederatedIdentity();
+        assertTrue(identities.isEmpty());
+
+        getTestingClient().server(CHILD_IDP).run(AccountLinkTest::checkEmptyFederatedIdentities);
+    }
+    
+    private static void checkEmptyFederatedIdentities(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        UserModel user = session.users().getUserByUsername("child", realm);
+        Set<FederatedIdentityModel> identities1 = session.users()
+                .getFederatedIdentities(user, realm);
+        assertTrue(identities1.isEmpty());
+        assertNull(session.users().getFederatedIdentity(user, PARENT_IDP, realm));
+    }
+
     protected void testAccountLink(String childUsername, String childPassword, String childIdp) {
+        assertFederatedIdentity(childUsername, childPassword, childIdp);
+        assertRemoveFederatedIdentity();
+
+    }
+
+    private void assertFederatedIdentity(String childUsername, String childPassword, String childIdp) {
         accountFederatedIdentityPage.realm(childIdp);
         accountFederatedIdentityPage.open();
         loginPage.isCurrent();
@@ -162,11 +208,12 @@ public class AccountLinkTest extends AbstractKeycloakTest {
         System.out.println(driver.getPageSource());
         assertTrue(accountFederatedIdentityPage.isCurrent());
         assertTrue(driver.getPageSource().contains("id=\"remove-link-" + PARENT_IDP + "\""));
+    }
 
+    private void assertRemoveFederatedIdentity() {
         // Unlink my "test-user"
         accountFederatedIdentityPage.clickRemoveProvider(PARENT_IDP);
         assertTrue(driver.getPageSource().contains("id=\"add-link-" + PARENT_IDP + "\""));
-
 
         // Logout from account management
         accountFederatedIdentityPage.logout();

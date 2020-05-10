@@ -20,18 +20,26 @@ package org.keycloak.testsuite.admin;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -41,9 +49,15 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.testsuite.AbstractTestRealmKeycloakTest.TEST_REALM_NAME;
+import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
+import org.keycloak.testsuite.util.OAuthClient.AuthorizationEndpointResponse;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -147,6 +161,8 @@ public class ConsentsTest extends AbstractKeycloakTest {
         return IDP_OIDC_ALIAS;
     }
 
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     @Page
     protected LoginPage accountLoginPage;
@@ -155,15 +171,20 @@ public class ConsentsTest extends AbstractKeycloakTest {
     protected ConsentPage consentPage;
 
     @Page
+    protected AppPage appPage;
+
+    @Page
     protected ErrorPage errorPage;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation providerRealm = createProviderRealm();
         RealmRepresentation consumerRealm = createConsumerRealm();
+        RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
 
         testRealms.add(providerRealm);
         testRealms.add(consumerRealm);
+        testRealms.add(realmRepresentation);
     }
 
     @Before
@@ -238,6 +259,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testConsents() {
         driver.navigate().to(getAccountUrl(consumerRealmName()));
 
@@ -342,6 +364,38 @@ public class ConsentsTest extends AbstractKeycloakTest {
 
         // successful login
         accountPage.assertCurrent();
+    }
+
+    @Test
+    public void clientConsentRequiredAfterLogin() {
+        oauth.realm(TEST_REALM_NAME).clientId("test-app");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(response.getCode(), "password");
+
+        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        String sessionId = loginEvent.getSessionId();
+
+        ClientRepresentation clientRepresentation = adminClient.realm(TEST_REALM_NAME).clients().findByClientId("test-app").get(0);
+        try {
+            clientRepresentation.setConsentRequired(true);
+            adminClient.realm(TEST_REALM_NAME).clients().get(clientRepresentation.getId()).update(clientRepresentation);
+
+            events.clear();
+
+            // try to refresh the token
+            // this fails as client no longer has requested consent from user
+            AccessTokenResponse refreshTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), "password");
+            Assert.assertEquals(OAuthErrorException.INVALID_SCOPE, refreshTokenResponse.getError());
+            Assert.assertEquals("Client no longer has requested consent from user", refreshTokenResponse.getErrorDescription());
+
+            events.expectRefresh(accessTokenResponse.getRefreshToken(), sessionId).clearDetails().error(Errors.INVALID_TOKEN).assertEvent();
+        } finally {
+            clientRepresentation.setConsentRequired(false);
+            adminClient.realm(TEST_REALM_NAME).clients().get(clientRepresentation.getId()).update(clientRepresentation);
+        }
     }
 
     private String getAccountUrl(String realmName) {

@@ -22,7 +22,10 @@
     },
 
     "eventsStore": {
-        "provider": "${keycloak.eventsStore.provider:jpa}"
+        "provider": "${keycloak.eventsStore.provider:jpa}",
+        "jpa": {
+            "max-detail-length": "${keycloak.eventsStore.maxDetailLength:1000}"
+        }
     },
 
     "eventsListener": {
@@ -137,7 +140,8 @@
             "remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:false}",
             "remoteStoreHost": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
             "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
-            "hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}"
+            "hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
+            "embedded": "${keycloak.connectionsInfinispan.embedded:true}"
         }
     },
 
@@ -195,7 +199,7 @@
     "vault": {
         "files-plaintext": {
             "dir": "target/dependency/vault",
-            "enabled": "${keycloak.vault.plaintext.provider.enabled:false}"
+            "enabled": "${keycloak.vault.files-plaintext.provider.enabled:false}"
         }
     }
 }

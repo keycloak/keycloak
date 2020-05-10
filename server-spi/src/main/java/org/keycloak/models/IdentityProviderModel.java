@@ -28,6 +28,10 @@ import java.util.Map;
  */
 public class IdentityProviderModel implements Serializable {
 
+    public static final String ALLOWED_CLOCK_SKEW = "allowedClockSkew";
+
+    public static final String SYNC_MODE = "syncMode";
+
     private String internalId;
 
     /**
@@ -61,6 +65,8 @@ public class IdentityProviderModel implements Serializable {
     private String postBrokerLoginFlowId;
 
     private String displayName;
+
+    private IdentityProviderSyncMode syncMode;
 
     /**
      * <p>A map containing the configuration and properties for a specific identity provider instance and implementation. The items
@@ -194,5 +200,22 @@ public class IdentityProviderModel implements Serializable {
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
     }
-    
+
+    /**
+     * <p>Validates this configuration.
+     * 
+     * <p>Sub-classes can override this method in order to enforce provider specific validations.
+     * 
+     * @param realm the realm
+     */
+    public void validate(RealmModel realm) {
+    }
+        
+    public IdentityProviderSyncMode getSyncMode() {
+        return IdentityProviderSyncMode.valueOf(getConfig().getOrDefault(SYNC_MODE, "LEGACY"));
+    }
+
+    public void setSyncMode(IdentityProviderSyncMode syncMode) {
+        getConfig().put(SYNC_MODE, syncMode.toString());
+    }
 }

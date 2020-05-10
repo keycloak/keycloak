@@ -17,12 +17,16 @@
 package org.keycloak.connections.httpclient;
 
 import org.apache.http.HttpHost;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.jboss.logging.Logger;
 
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -36,9 +40,13 @@ import java.util.stream.Collectors;
  */
 public class ProxyMappings {
 
+  private static final Logger logger = Logger.getLogger(ProxyMappings.class);
+
   private static final ProxyMappings EMPTY_MAPPING = valueOf(Collections.emptyList());
 
   private final List<ProxyMapping> entries;
+
+  private static Map<String, ProxyMapping> hostnameToProxyCache = new ConcurrentHashMap<>();
 
   /**
    * Creates a {@link ProxyMappings} from the provided {@link ProxyMapping Entries}.
@@ -92,18 +100,28 @@ public class ProxyMappings {
 
   /**
    * @param hostname
-   * @return the {@link HttpHost} proxy associated with the first matching hostname {@link Pattern}
-   * or {@literal null} if none matches.
+   * @return the {@link ProxyMapping} associated with the first matching hostname {@link Pattern}
+   * or the {@link ProxyMapping} including {@literal null} as {@link HttpHost} if none matches.
    */
-  public HttpHost getProxyFor(String hostname) {
+  public ProxyMapping getProxyFor(String hostname) {
 
     Objects.requireNonNull(hostname, "hostname");
+    if (hostnameToProxyCache.containsKey(hostname)) {
+      return hostnameToProxyCache.get(hostname);
+    }
+    ProxyMapping proxyMapping = entries.stream() //
+            .filter(e -> e.matches(hostname)) //
+            .findFirst() //
+            .orElse(null);
+    if (proxyMapping == null) {
+      proxyMapping = new ProxyMapping(null, null, null);
+    }
+    hostnameToProxyCache.put(hostname, proxyMapping);
+    return proxyMapping;
+  }
 
-    return entries.stream() //
-      .filter(e -> e.matches(hostname)) //
-      .findFirst() //
-      .map(ProxyMapping::getProxy) //
-      .orElse(null);
+  public static void clearCache() {
+    hostnameToProxyCache.clear();
   }
 
   /**
@@ -117,19 +135,26 @@ public class ProxyMappings {
 
     private final Pattern hostnamePattern;
 
-    private final HttpHost proxy;
+    private final HttpHost proxyHost;
 
-    public ProxyMapping(Pattern hostnamePattern, HttpHost proxy) {
+    private final UsernamePasswordCredentials proxyCredentials;
+
+    public ProxyMapping(Pattern hostnamePattern, HttpHost proxyHost, UsernamePasswordCredentials proxyCredentials) {
       this.hostnamePattern = hostnamePattern;
-      this.proxy = proxy;
+      this.proxyHost = proxyHost;
+      this.proxyCredentials = proxyCredentials;
     }
 
     public Pattern getHostnamePattern() {
       return hostnamePattern;
     }
 
-    public HttpHost getProxy() {
-      return proxy;
+    public HttpHost getProxyHost() {
+      return proxyHost;
+    }
+
+    public UsernamePasswordCredentials getProxyCredentials() {
+      return proxyCredentials;
     }
 
     public boolean matches(String hostname) {
@@ -166,26 +191,31 @@ public class ProxyMappings {
       String proxyUriString = mappingTokens[1];
 
       Pattern hostPattern = Pattern.compile(hostPatternRegex);
-      HttpHost proxyHost = toProxyHost(proxyUriString);
-
-      return new ProxyMapping(hostPattern, proxyHost);
-    }
-
-    private static HttpHost toProxyHost(String proxyUriString) {
-
       if (NO_PROXY.equals(proxyUriString)) {
-        return null;
+        return new ProxyMapping(hostPattern, null, null);
       }
 
       URI uri = URI.create(proxyUriString);
-      return new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
+      String userInfo = uri.getUserInfo();
+      UsernamePasswordCredentials proxyCredentials = null;
+      if (userInfo != null) {
+        if (userInfo.indexOf(":") > 0) {
+          String[] credencials = userInfo.split(":", 2);
+          if (credencials != null && credencials.length == 2) {
+            proxyCredentials = new UsernamePasswordCredentials(credencials[0], credencials[1]);
+          }
+        } else {
+          logger.warn("Invalid proxy credentials: " + userInfo);
+        }
+      }
+      return new ProxyMapping(hostPattern, new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme()), proxyCredentials);
     }
 
     @Override
     public String toString() {
       return "ProxyMapping{" +
         "hostnamePattern=" + hostnamePattern +
-        ", proxy=" + proxy +
+        ", proxyHost=" + proxyHost +
         '}';
     }
   }

@@ -324,6 +324,16 @@
             "secret": "password"
         },
         {
+            "clientId": "token-refresh",
+            "enabled": true,
+            "adminUrl": "/token-refresh",
+            "baseUrl": "/token-refresh",
+            "redirectUris": [
+                "/token-refresh/*"
+            ],
+            "secret": "password"
+        },
+        {
             "clientId": "third-party",
             "enabled": true,
             "redirectUris": [
@@ -349,6 +359,17 @@
             "clientAuthenticatorType": "client-secret-jwt",
             "redirectUris": [
                 "/client-secret-jwt-secure-portal/*"
+            ],
+            "secret": "234234-234234-234234"
+        },
+        {
+            "clientId": "client-secret-jwt-secure-portal-valid-alg",
+            "enabled": true,
+            "adminUrl": "/client-secret-jwt-secure-portal-valid-alg",
+            "baseUrl": "/client-secret-jwt-secure-portal-valid-alg",
+            "clientAuthenticatorType": "client-secret-jwt",
+            "redirectUris": [
+                "/client-secret-jwt-secure-portal-valid-alg/*"
             ],
             "secret": "234234-234234-234234"
         }

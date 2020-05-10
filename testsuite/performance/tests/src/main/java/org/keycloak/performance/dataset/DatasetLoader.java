@@ -1,5 +1,7 @@
 package org.keycloak.performance.dataset;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -28,7 +30,7 @@ public class DatasetLoader implements Loggable {
     private static final int QUEUE_TIMEOUT = Integer.parseInt(System.getProperty("queue.timeout", "60"));
     private static final int THREADPOOL_SHUTDOWN_TIMEOUT = Integer.parseInt(System.getProperty("shutdown.timeout", "60"));
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         DatasetTemplate template = new DatasetTemplate();
         template.validateConfiguration();
         DatasetLoader loader = new DatasetLoader(template.produce(), DELETE);
@@ -49,6 +51,7 @@ public class DatasetLoader implements Loggable {
         Validate.notNull(dataset);
         this.dataset = dataset;
         this.delete = delete;
+        logger().info(String.format("Opening %s admin clients.", TestConfig.numOfWorkers));
         for (int i = 0; i < TestConfig.numOfWorkers; i++) {
             adminClients.add(Keycloak.getInstance(
                     TestConfig.serverUrisIterator.next(),
@@ -59,7 +62,7 @@ public class DatasetLoader implements Loggable {
         }
     }
 
-    private void processDataset() {
+    private void processDataset() throws InterruptedException {
         if (delete) {
             logger().info("Deleting dataset.");
             processEntities(dataset.realms());
@@ -92,9 +95,10 @@ public class DatasetLoader implements Loggable {
         }
     }
 
-    private void processEntities(Stream<? extends Updatable> stream) {
+    private void processEntities(Stream<? extends Updatable> stream) throws InterruptedException {
         if (!errorReported()) {
             Iterator<? extends Updatable> iterator = stream.iterator();
+            logger().debug("Creating thread pool.");
             ExecutorService threadPool = Executors.newFixedThreadPool(TestConfig.numOfWorkers);
             BlockingQueue<Updatable> queue = new LinkedBlockingQueue<>(TestConfig.numOfWorkers + 5);
             try {
@@ -103,12 +107,10 @@ public class DatasetLoader implements Loggable {
                     try {
                         if (queue.offer(iterator.next(), QUEUE_TIMEOUT, SECONDS)) {
                             threadPool.execute(() -> {
-                                if (!errorReported()) {
-                                    try {
-
-                                        Updatable updatable = queue.take();
+                                try {
+                                    Updatable updatable = queue.take();
+                                    if (!errorReported()) {
                                         Keycloak adminClient = adminClients.take();
-
                                         try {
 
                                             if (delete) {
@@ -126,10 +128,9 @@ public class DatasetLoader implements Loggable {
                                         } finally {
                                             adminClients.add(adminClient); // return client for reuse    
                                         }
-
-                                    } catch (Exception ex) {
-                                        reportError(ex);
                                     }
+                                } catch (Throwable ex) {
+                                    reportError(ex);
                                 }
                             });
                         } else {
@@ -142,21 +143,18 @@ public class DatasetLoader implements Loggable {
             } catch (Exception ex) {
                 reportError(ex);
             }
-            // shut down threadpool
-            if (errorReported()) {
-                logger().error("Exception thrown from executor service. Shutting down.");
+
+            logger().debug("Terminating thread pool.");
+            threadPool.shutdown();
+            threadPool.awaitTermination(THREADPOOL_SHUTDOWN_TIMEOUT, SECONDS);
+            if (!threadPool.isTerminated()) {
+                logger().error("Failed to terminate the thread pool. Attempting force shutdown.");
                 threadPool.shutdownNow();
-                throw new RuntimeException(error);
-            } else {
-                try {
-                    threadPool.shutdown();
-                    threadPool.awaitTermination(THREADPOOL_SHUTDOWN_TIMEOUT, SECONDS);
-                    if (!threadPool.isTerminated()) {
-                        throw new IllegalStateException("Executor service still not terminated.");
-                    }
-                } catch (InterruptedException ex) {
-                    throw new RuntimeException(ex);
-                }
+            }
+
+            if (errorReported()) {
+                closeAdminClients();
+                throw new Error(error);
             }
         }
     }
@@ -192,11 +190,16 @@ public class DatasetLoader implements Loggable {
 
     private synchronized void reportError(Throwable ex) {
         logProcessedEntityCounts(true);
-        logger().error("Error occured: " + ex);
+        
+        StringWriter sw = new StringWriter();
+        ex.printStackTrace(new PrintWriter(sw));
+        
+        logger().error(String.format("Error occured in thread %s: %s", Thread.currentThread().getName(), sw.toString()));
         this.error = ex;
     }
 
     public void closeAdminClients() {
+        logger().info("Closing admin clients.");
         while (!adminClients.isEmpty()) {
             adminClients.poll().close();
         }

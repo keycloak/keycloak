@@ -38,7 +38,7 @@ public interface CredentialProvider<T extends CredentialModel> extends Provider 
 
     CredentialModel createCredential(RealmModel realm, UserModel user, T credentialModel);
 
-    void deleteCredential(RealmModel realm, UserModel user, String credentialId);
+    boolean deleteCredential(RealmModel realm, UserModel user, String credentialId);
 
     T getCredentialFromModel(CredentialModel model);
 
@@ -49,4 +49,6 @@ public interface CredentialProvider<T extends CredentialModel> extends Provider 
         }
         return getCredentialFromModel(models.get(0));
     }
+
+    CredentialTypeMetadata getCredentialTypeMetadata(CredentialTypeMetadataContext metadataContext);
 }

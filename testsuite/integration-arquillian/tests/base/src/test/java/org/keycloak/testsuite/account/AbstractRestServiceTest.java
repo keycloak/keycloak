@@ -61,6 +61,8 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
 
     protected String offlineClientAppUri = APP_ROOT + "/offline-client";
 
+    protected String alwaysDisplayClientAppUri = APP_ROOT + "/always-display-client";
+
     @Before
     public void before() {
         httpClient = HttpClientBuilder.create().build();
@@ -98,6 +100,15 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
                 .directAccessGrants()
                 .secret("secret1").build();
         testRealm.getClients().add(offlineApp);
+
+        org.keycloak.representations.idm.ClientRepresentation alwaysDisplayApp = ClientBuilder.create().clientId("always-display-client")
+                .id(KeycloakModelUtils.generateId())
+                .name("Always Display Client")
+                .baseUrl(alwaysDisplayClientAppUri)
+                .directAccessGrants()
+                .alwaysDisplayInConsole(true)
+                .secret("secret1").build();
+        testRealm.getClients().add(alwaysDisplayApp);
     }
 
     protected String getAccountUrl(String resource) {

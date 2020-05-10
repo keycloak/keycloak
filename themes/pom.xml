@@ -4,13 +4,384 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>9.0.0-SNAPSHOT</version>
+        <version>11.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-themes</artifactId>
     <name>Keycloak Themes</name>
     <description/>
+    <packaging>jar</packaging>
+
+    <properties>
+        <dir.common>src/main/resources/theme/keycloak/common/resources</dir.common>
+        <dir.account2>src/main/resources/theme/keycloak-preview/account/resources</dir.account2>
+        <args.npm.install>ci --no-optional --ignore-scripts</args.npm.install>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <executions>
+                    <!-- Download NPM tools -->
+                    <execution>
+                        <id>setup-node</id>
+                        <goals>
+                            <goal>install-node-and-npm</goal>
+                        </goals>
+                        <phase>initialize</phase>
+                    </execution>
+                    <!-- Compile stuff -->
+                    <execution>
+                        <id>compile-account2</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <workingDirectory>${dir.account2}</workingDirectory>
+                            <arguments>run build --scripts-prepend-node-path</arguments>
+                        </configuration>
+                    </execution>
+                    <!-- Download NPM packages -->
+                    <execution>
+                        <id>npm-install-account2</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <workingDirectory>${dir.account2}</workingDirectory>
+                            <arguments>${args.npm.install}</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <nodeVersion>v12.13.0</nodeVersion>
+                    <npmVersion>6.9.0</npmVersion>
+                    <installDirectory>${project.basedir}</installDirectory>
+                </configuration>
+            </plugin>
+        </plugins>
+
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <excludes>
+                    <exclude>**/node_modules/**/node_modules/**</exclude>
+                    <exclude>**/minimist/**</exclude>
+                    <exclude>**/mkdirp/**</exclude>
+                    <exclude>**/package.json</exclude>
+                    <exclude>**/package-lock.json</exclude>
+                    <exclude>**/bower.json</exclude>
+                    <exclude>**/component.json</exclude>
+                    <exclude>**/composer.json</exclude>
+                    <exclude>**/npm-shrinkwrap.json</exclude>
+                    <exclude>**/select2.jquery.json</exclude>
+                    <exclude>**/*.markdown</exclude>
+                    <exclude>**/*.swf</exclude>
+                    <exclude>**/*.sh</exclude>
+                    <exclude>**/.bin/**</exclude>
+                    <exclude>**/bin/**</exclude>
+                    <exclude>**/build/**</exclude>
+                    <exclude>**/docs/**</exclude>
+                    <exclude>**/demo/**</exclude>
+                    <exclude>**/devtools/**</exclude>
+                    <exclude>**/example/**</exclude>
+                    <exclude>**/examples/**</exclude>
+                    <exclude>**/grunt/**</exclude>
+                    <exclude>**/less/**</exclude>
+                    <exclude>**/sass/**</exclude>
+                    <exclude>**/scss/**</exclude>
+                    <exclude>**/jquery/src/**</exclude>
+                    <exclude>**/angular-treeview/src/**</exclude>
+                    <exclude>**/test/**</exclude>
+                    <exclude>**/tests/**</exclude>
+                    <exclude>**/_config.yml</exclude>
+                    <exclude>**/api.md</exclude>
+                    <exclude>**/AUTHORS.txt</exclude>
+                    <exclude>**/CHANGELOG.md</exclude>
+                    <exclude>**/CONTRIBUTING.md</exclude>
+                    <exclude>**/HELP-US-OUT.txt</exclude>
+                    <exclude>**/README.md</exclude>
+                    <exclude>**/Gruntfile.js</exclude>
+                    <exclude>**/Gemfile*</exclude>
+                    <exclude>**/.*</exclude>
+                    <!-- Remove once rcue stops shipping this file -->
+                    <exclude>**/git-Logo.svg</exclude>
+                    <!-- Remove once account2 manual filter list is removed -->
+                    <exclude>**/keycloak-preview/account/resources/node_modules/**</exclude>
+                </excludes>
+            </resource>
+            <!-- account2 manual filter list -->
+            <!--
+                 To update, use network log in browser, navigate around account2, export
+                 log as HAR json, then run this command to get the new list of includes:
+                 jq -r '.log.entries | .[] | .request.url' /tmp/localhost.har | sed -r 's|^.*/keycloak-preview/(node_modules/.*)$|<include>**/\1</include>|;tx;d;:x' | sort -Vu | xclip -selection clipboard
+            -->
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/node_modules/axios/dist/axios.min.js</include>
+                    <include>**/node_modules/camel-case/camel-case.js</include>
+                    <include>**/node_modules/emotion/dist/emotion.umd.min.js</include>
+                    <include>**/node_modules/exenv/index.js</include>
+                    <include>**/node_modules/focus-trap-react/dist/focus-trap-react.js</include>
+                    <include>**/node_modules/focus-trap/dist/focus-trap.min.js</include>
+                    <include>**/node_modules/lower-case/lower-case.js</include>
+                    <include>**/node_modules/moment/min/moment-with-locales.min.js</include>
+                    <include>**/node_modules/no-case/no-case.js</include>
+                    <include>**/node_modules/no-case/vendor/camel-case-regexp.js</include>
+                    <include>**/node_modules/no-case/vendor/camel-case-upper-regexp.js</include>
+                    <include>**/node_modules/no-case/vendor/non-word-regexp.js</include>
+                    <include>**/node_modules/prop-types/prop-types.min.js</include>
+                    <include>**/node_modules/react-dom/umd/react-dom.production.min.js</include>
+                    <include>**/node_modules/react-router-dom/umd/react-router-dom.min.js</include>
+                    <include>**/node_modules/react/umd/react.production.min.js</include>
+                    <include>**/node_modules/systemjs/dist/system.src.js</include>
+                    <include>**/node_modules/tippy.js/dist/tippy.min.js</include>
+                    <include>**/node_modules/upper-case/upper-case.js</include>
+                    <include>**/node_modules/@patternfly/patternfly/assets/fonts/overpass-webfont/overpass-bold.ttf</include>
+                    <include>**/node_modules/@patternfly/patternfly/assets/fonts/overpass-webfont/overpass-bold.woff2</include>
+                    <include>**/node_modules/@patternfly/patternfly/assets/fonts/overpass-webfont/overpass-bold.woff</include>
+                    <include>**/node_modules/@patternfly/patternfly/assets/fonts/overpass-webfont/overpass-light-italic.woff2</include>
+                    <include>**/node_modules/@patternfly/patternfly/assets/fonts/overpass-webfont/overpass-light.woff2</include>
+                    <include>**/node_modules/@patternfly/patternfly/assets/fonts/overpass-webfont/overpass-regular.woff2</include>
+                    <include>**/node_modules/@patternfly/patternfly/assets/fonts/overpass-webfont/overpass-semibold.ttf</include>
+                    <include>**/node_modules/@patternfly/patternfly/assets/fonts/overpass-webfont/overpass-semibold.woff2</include>
+                    <include>**/node_modules/@patternfly/patternfly/assets/fonts/overpass-webfont/overpass-semibold.woff</include>
+                    <include>**/node_modules/@patternfly/patternfly/assets/fonts/webfonts/fa-solid-900.ttf</include>
+                    <include>**/node_modules/@patternfly/patternfly/assets/fonts/webfonts/fa-solid-900.woff</include>
+                    <include>**/node_modules/@patternfly/patternfly/assets/fonts/webfonts/fa-solid-900.ttf</include>
+                    <include>**/node_modules/@patternfly/patternfly/assets/fonts/webfonts/fa-solid-900.woff2</include>
+                    <include>**/node_modules/@patternfly/patternfly/assets/images/img_avatar.svg</include>
+                    <include>**/node_modules/@patternfly/patternfly/assets/pficon/pficon.woff2</include>
+                    <include>**/node_modules/@patternfly/patternfly/patternfly.min.css</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Alert/AlertActionCloseButton.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Alert/AlertActionLink.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Alert/AlertIcon.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Alert/Alert.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Alert/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Avatar/Avatar.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Avatar/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Backdrop/Backdrop.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Backdrop/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/BackgroundImage/BackgroundImage.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/BackgroundImage/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Badge/Badge.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Badge/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Brand/Brand.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Brand/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Button/Button.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Button/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Card/Card.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Card/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/ChipGroup/ChipButton.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/ChipGroup/ChipGroupToolbarItem.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/ChipGroup/ChipGroup.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/ChipGroup/Chip.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/ChipGroup/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/DataList/DataListAction.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/DataList/DataListCell.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/DataList/DataListCheck.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/DataList/DataListContent.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/DataList/DataListItemCells.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/DataList/DataListItemRow.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/DataList/DataListItem.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/DataList/DataListToggle.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/DataList/DataList.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/DataList/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Dropdown/DropdownGroup.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Dropdown/DropdownItem.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Dropdown/DropdownMenu.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Dropdown/DropdownToggleCheckbox.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Dropdown/DropdownToggle.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Dropdown/Dropdown.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Dropdown/Item.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Dropdown/KebabToggle.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Dropdown/Separator.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Dropdown/Toggle.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Dropdown/dropdownConstants.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Dropdown/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/EmptyState/EmptyStateBody.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/EmptyState/EmptyStateIcon.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/EmptyState/EmptyStateSecondaryActions.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/EmptyState/EmptyState.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/EmptyState/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Form/ActionGroup.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Form/FormContext.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Form/FormGroup.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Form/FormHelperText.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Form/Form.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Form/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/FormSelect/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/FormSelect/FormSelect.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/FormSelect/FormSelectOption.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/FormSelect/FormSelectOptionGroup.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Modal/ModalBoxBody.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Modal/ModalBoxCloseButton.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Modal/ModalBoxFooter.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Modal/ModalBoxHeader.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Modal/ModalBox.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Modal/ModalContent.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Modal/Modal.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Modal/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Nav/NavExpandable.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Nav/NavGroup.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Nav/NavItemSeparator.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Nav/NavItem.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Nav/NavList.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Nav/NavVariants.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Nav/Nav.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Nav/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Page/PageHeader.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Page/PageSection.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Page/PageSidebar.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Page/Page.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Page/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Switch/Switch.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Switch/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Tabs/TabContent.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Tabs/Tabs.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Tabs/Tab.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Tabs/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/TextInput/TextInput.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/TextInput/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Text/TextContent.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Text/TextListItem.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Text/TextList.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Text/Text.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Text/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Title/Title.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Title/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Tooltip/TooltipArrow.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Tooltip/TooltipContent.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Tooltip/Tooltip.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Tooltip/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/Tooltip/styles.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/components/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/helpers/GenerateId/GenerateId.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/helpers/componentShape.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/helpers/constants.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/helpers/htmlConstants.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/helpers/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/helpers/typeUtils.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/helpers/util.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/Bullseye/Bullseye.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/Bullseye/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/Gallery/GalleryItem.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/Gallery/Gallery.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/Gallery/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/Grid/GridItem.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/Grid/Grid.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/Grid/gridUtils.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/Grid/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/Level/LevelItem.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/Level/Level.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/Level/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/Stack/StackItem.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/Stack/Stack.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/Stack/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/Toolbar/ToolbarGroup.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/Toolbar/ToolbarItem.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/Toolbar/ToolbarSection.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/Toolbar/Toolbar.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/Toolbar/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/layouts/index.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/styles/gutters.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/styles/sizes.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/Alert/alert.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/AppLauncher/app-launcher.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/Avatar/avatar.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/Backdrop/backdrop.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/BackgroundImage/background-image.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/Badge/badge.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/Button/button.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/Card/card.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/ChipGroup/chip-group.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/Chip/chip.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/Content/content.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/DataList/data-list.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/Dropdown/dropdown.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/EmptyState/empty-state.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/FormControl/form-control.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/Form/form.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/ModalBox/modal-box.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/Nav/nav.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/Page/page.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/Switch/switch.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/Tabs/tabs.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/Title/title.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/components/Tooltip/tooltip.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/layouts/Bullseye/bullseye.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/layouts/Gallery/gallery.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/layouts/Grid/grid.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/layouts/Level/level.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/layouts/Stack/stack.css.js</include>
+                    <include>**/node_modules/@patternfly/react-core/dist/umd/@patternfly/patternfly/utilities/Accessibility/accessibility.css.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/common.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/createIcon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/amazon-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/angle-down-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/angle-left-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/angle-right-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/arrow-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/bars-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/bitbucket-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/builder-image-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/caret-down-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/check-circle-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/check-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/chrome-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/cube-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/edge-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/edit-alt-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/ellipsis-v-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/exclamation-circle-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/exclamation-triangle-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/facebook-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/firefox-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/github-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/gitlab-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/globe-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/google-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/info-alt-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/info-circle-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/instagram-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/internet-explorer-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/linkedin-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/link-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/microsoft-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/openshift-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/opera-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/passport-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/paypal-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/plus-circle-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/redo-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/remove2-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/safari-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/share-alt-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/stack-overflow-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/times-circle-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/times-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/twitter-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/unlink-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/user-check-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/warning-triangle-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/icons/yandex-international-icon.js</include>
+                    <include>**/node_modules/@patternfly/react-icons/dist/umd/index.js</include>
+                    <include>**/node_modules/@patternfly/react-styles/dist/umd/StyleSheet.js</include>
+                    <include>**/node_modules/@patternfly/react-styles/dist/umd/index.js</include>
+                    <include>**/node_modules/@patternfly/react-styles/dist/umd/utils.js</include>
+                    <include>**/node_modules/@patternfly/react-tokens/dist/umd/index.js</include>
+                    <include>**/node_modules/@tippy.js/react/dist/Tippy.min.js</include>
+                </includes>
+            </resource>
+        </resources>
+    </build>
 
     <profiles>
         <profile>
@@ -22,9 +393,6 @@
             </activation>
             <build>
                 <resources>
-                    <resource>
-                        <directory>src/main/resources</directory>
-                    </resource>
                     <resource>
                         <directory>src/main/resources-community</directory>
                     </resource>
@@ -41,92 +409,9 @@
             <build>
                 <resources>
                     <resource>
-                        <directory>src/main/resources</directory>
-                    </resource>
-                    <resource>
                         <directory>src/main/resources-product</directory>
                     </resource>
                 </resources>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-jar-plugin</artifactId>
-                        <configuration>
-                            <excludes>
-                                <exclude>**/keycloak-preview/**</exclude>
-                            </excludes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        
-        <profile>
-            <id>account2</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>com.github.eirslett</groupId>
-                        <artifactId>frontend-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>install node and npm</id>
-                                <goals>
-                                    <goal>install-node-and-npm</goal>
-                                </goals>
-                                <phase>generate-resources</phase>
-                                <configuration>
-                                    <nodeVersion>v8.9.4</nodeVersion>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>npm install</id>
-                                <goals>
-                                    <goal>npm</goal>
-                                </goals>
-                                <phase>generate-resources</phase>
-                                <configuration>
-                                    <arguments>install</arguments>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>compile typescript</id>
-                                <goals>
-                                    <goal>npm</goal>
-                                </goals>
-                                <phase>compile</phase>
-                                <configuration>
-                                    <arguments>run build</arguments>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>npm remove dev dependencies production=true</id>
-                                <goals>
-                                    <goal>npm</goal>
-                                </goals>
-                                <phase>process-classes</phase>
-                                <configuration>
-                                    <arguments>install --production=true --no-package-lock</arguments>
-                                </configuration>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <workingDirectory>src/main/resources/theme/keycloak-preview/account/resources</workingDirectory>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-clean-plugin</artifactId>
-                        <configuration>
-                            <filesets>
-                                <fileset>
-                                    <directory>src/main/resources/theme/keycloak-preview/account/resources/node_modules</directory>
-                                </fileset>
-                                <fileset>
-                                    <directory>src/main/resources/theme/keycloak-preview/account/resources/node</directory>
-                                </fileset>
-                            </filesets>
-                        </configuration>
-                    </plugin>
-                </plugins>
             </build>
         </profile>
 
@@ -134,19 +419,11 @@
             <id>npm-update</id>
             <build>
                 <plugins>
-                    <!-- Install NPM and download packages -->
+                    <!-- Download packages -->
                     <plugin>
                         <groupId>com.github.eirslett</groupId>
                         <artifactId>frontend-maven-plugin</artifactId>
-                        <version>1.8.0</version>
                         <executions>
-                            <execution>
-                                <id>install-node-and-npm</id>
-                                <phase>generate-resources</phase>
-                                <goals>
-                                    <goal>install-node-and-npm</goal>
-                                </goals>
-                            </execution>
                             <execution>
                                 <id>npm-install</id>
                                 <phase>generate-resources</phase>
@@ -154,15 +431,11 @@
                                     <goal>npm</goal>
                                 </goals>
                                 <configuration>
+                                    <workingDirectory>${dir.common}</workingDirectory>
                                     <arguments>install -P -E --no-optional --ignore-scripts --no-bin-links --no-shrinkwrap --no-package-lock</arguments>
                                 </configuration>
                             </execution>
                         </executions>
-                        <configuration>
-                            <nodeVersion>v12.13.0</nodeVersion>
-                            <npmVersion>6.9.0</npmVersion>
-                            <workingDirectory>src/main/resources</workingDirectory>
-                        </configuration>
                     </plugin>
                     <!-- Clean downloaded packages from NPM -->
                     <plugin>
@@ -177,10 +450,7 @@
                                 <configuration>
                                     <filesets>
                                         <fileset>
-                                            <directory>src/main/resources/node_modules</directory>
-                                        </fileset>
-                                        <fileset>
-                                            <directory>src/main/resources/theme/keycloak/common/resources/node_modules</directory>
+                                            <directory>${dir.common}/node_modules</directory>
                                         </fileset>
                                     </filesets>
                                 </configuration>
@@ -194,86 +464,21 @@
                                 <configuration>
                                     <filesets>
                                         <fileset>
-                                            <directory>src/main/node_modules/angular-translate/node_modules/</directory>
+                                            <directory>${dir.common}/node_modules/angular-translate/node_modules/</directory>
                                         </fileset>
                                         <fileset>
-                                            <directory>src/main/node_modules/patternfly/node_modules/</directory>
+                                            <directory>${dir.common}/node_modules/patternfly/node_modules/</directory>
                                         </fileset>
                                         <fileset>
-                                            <directory>src/main/node_modules/rcue/node_modules/</directory>
+                                            <directory>${dir.common}/node_modules/rcue/node_modules/</directory>
                                         </fileset>
                                         <fileset>
-                                            <directory>src/main/node_modules/minimist</directory>
+                                            <directory>${dir.common}/node_modules/minimist</directory>
                                         </fileset>
                                         <fileset>
-                                            <directory>src/main/node_modules/mkdirp</directory>
+                                            <directory>${dir.common}/node_modules/mkdirp</directory>
                                         </fileset>
                                     </filesets>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <!-- Copy files from NPM packages -->
-                    <plugin>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <version>3.0.2</version>
-                        <executions>
-                            <execution>
-                                <id>copy-resources</id>
-                                <phase>generate-resources</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-
-                                <configuration>
-                                    <outputDirectory>src/main/resources/theme/keycloak/common/resources/node_modules</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>src/main/node_modules</directory>
-                                            <excludes>
-                                                <exclude>**/*.json</exclude>
-                                                <exclude>**/*.json</exclude>
-                                                <exclude>**/*.markdown</exclude>
-                                                <exclude>**/*.swf</exclude>
-                                                <exclude>**/*.sh</exclude>
-                                                <exclude>**/.bin/**</exclude>
-                                                <exclude>**/bin/**</exclude>
-                                                <exclude>**/build/**</exclude>
-                                                <exclude>**/docs/**</exclude>
-                                                <exclude>**/demo/**</exclude>
-                                                <exclude>**/devtools/**</exclude>
-                                                <exclude>**/example/**</exclude>
-                                                <exclude>**/examples/**</exclude>
-                                                <exclude>**/grunt/**</exclude>
-                                                <exclude>**/less/**</exclude>
-                                                <exclude>**/node_modules/**</exclude>
-                                                <exclude>**/sass/**</exclude>
-                                                <exclude>**/scss/**</exclude>
-                                                <exclude>**/src/**</exclude>
-                                                <exclude>**/test/**</exclude>
-                                                <exclude>**/tests/**</exclude>
-                                                <exclude>**/_config.yml</exclude>
-                                                <exclude>**/api.md</exclude>
-                                                <exclude>**/AUTHORS.txt</exclude>
-                                                <exclude>**/CHANGELOG.md</exclude>
-                                                <exclude>**/CONTRIBUTING.md</exclude>
-                                                <exclude>**/HELP-US-OUT.txt</exclude>
-                                                <exclude>**/README.md</exclude>
-                                                <exclude>**/Gruntfile.js</exclude>
-                                                <exclude>**/Gemfile*</exclude>
-                                                <exclude>**/index.js</exclude>
-                                                <exclude>**/.*</exclude>
-                                            </excludes>
-                                        </resource>
-                                        <resource>
-                                            <directory>src/main/node_modules</directory>
-                                            <includes>
-                                                <include>angular-ui-select2/src/select2.js</include>
-                                                <include>filesaver/src/Filesaver.js</include>
-                                                <include>filesaver/src/changename.js</include>
-                                            </includes>
-                                        </resource>
-                                    </resources>
                                 </configuration>
                             </execution>
                         </executions>

@@ -99,7 +99,7 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
 
         RealmModel realm = context.getRealm();
 
-        List<FormMessage> errors = Validation.validateUpdateProfileForm(realm, formData);
+        List<FormMessage> errors = Validation.validateUpdateProfileForm(realm, formData, userCtx.isEditUsernameAllowed());
         if (errors != null && !errors.isEmpty()) {
             Response challenge = context.form()
                     .setErrors(errors)

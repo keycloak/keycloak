@@ -190,6 +190,16 @@
                 <xs:documentation>The password of the key store.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="type" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>Key store format</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="alias" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>Key alias</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
     <xs:complexType name="private-key-type">
         <xs:attribute name="alias" type="xs:string" use="required">

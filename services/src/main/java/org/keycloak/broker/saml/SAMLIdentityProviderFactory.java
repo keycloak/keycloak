@@ -59,6 +59,11 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
     }
 
     @Override
+    public SAMLIdentityProviderConfig createConfig() {
+        return new SAMLIdentityProviderConfig();
+    }
+
+    @Override
     public Map<String, String> parseConfig(KeycloakSession session, InputStream inputStream) {
         try {
             Object parsedObject = SAMLParser.getInstance().parse(inputStream);
@@ -155,7 +160,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
             throw new RuntimeException("Could not parse IdP SAML Metadata", pe);
         }
 
-        return new HashMap<String, String>();
+        return new HashMap<>();
     }
 
     @Override

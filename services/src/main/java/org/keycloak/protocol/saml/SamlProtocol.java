@@ -458,7 +458,7 @@ public class SamlProtocol implements LoginProtocol {
                 assertion.addStatement(attributeStatement);
             }
 
-            samlModel = transformLoginResponse(loginResponseMappers, samlModel, session, userSession, clientSession);
+            samlModel = transformLoginResponse(loginResponseMappers, samlModel, session, userSession, clientSessionCtx);
             samlDocument = builder.buildDocument(samlModel);
         } catch (Exception e) {
             logger.error("failed", e);
@@ -509,8 +509,8 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     public static class ProtocolMapperProcessor<T> {
-        final public T mapper;
-        final public ProtocolMapperModel model;
+        public final T mapper;
+        public final ProtocolMapperModel model;
 
         public ProtocolMapperProcessor(T mapper, ProtocolMapperModel model) {
             this.mapper = mapper;
@@ -528,13 +528,14 @@ public class SamlProtocol implements LoginProtocol {
         return attributeStatement;
     }
 
-    public ResponseType transformLoginResponse(List<ProtocolMapperProcessor<SAMLLoginResponseMapper>> mappers, ResponseType response, KeycloakSession session, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
+    public ResponseType transformLoginResponse(List<ProtocolMapperProcessor<SAMLLoginResponseMapper>> mappers, ResponseType response,
+            KeycloakSession session, UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         for (ProtocolMapperProcessor<SAMLLoginResponseMapper> processor : mappers) {
-            response = processor.mapper.transformLoginResponse(response, processor.model, session, userSession, clientSession);
+            response = processor.mapper.transformLoginResponse(response, processor.model, session, userSession, clientSessionCtx);
         }
 
         for (Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext(); ) {
-            response = (ResponseType) it.next().beforeSendingResponse(response, clientSession);
+            response = (ResponseType) it.next().beforeSendingResponse(response, clientSessionCtx.getClientSession());
         }
 
         return response;

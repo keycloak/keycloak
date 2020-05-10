@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server-jboss</artifactId>
-        <version>9.0.0-SNAPSHOT</version>
+        <version>11.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -33,9 +33,9 @@
         <app.server.jboss>eap</app.server.jboss>
         
         <app.server.jboss.groupId>org.jboss.eap</app.server.jboss.groupId>
-        <app.server.jboss.artifactId>wildfly-dist</app.server.jboss.artifactId>
+        <app.server.jboss.artifactId>wildfly-ee-dist</app.server.jboss.artifactId>
         <app.server.jboss.version>${eap.version}</app.server.jboss.version>
-        <app.server.jboss.unpacked.folder.name>jboss-eap-7.3</app.server.jboss.unpacked.folder.name>
+        <app.server.jboss.unpacked.folder.name>jboss-eap-7.4</app.server.jboss.unpacked.folder.name>
         
         <app.server.oidc.adapter.artifactId>keycloak-wildfly-adapter-dist</app.server.oidc.adapter.artifactId>
         <app.server.saml.adapter.artifactId>keycloak-saml-wildfly-adapter-dist</app.server.saml.adapter.artifactId>

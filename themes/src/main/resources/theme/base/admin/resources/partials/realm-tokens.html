@@ -146,6 +146,36 @@
         </div>
 
         <div class="form-group">
+            <label class="col-md-2 control-label" for="clientSessionIdleTimeout">{{:: 'client-session-idle' | translate}}</label>
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="0"
+                       max="31536000" data-ng-model="realm.clientSessionIdleTimeout.time"
+                       id="clientSessionIdleTimeout" name="clientSessionIdleTimeout"/>
+                <select class="form-control" name="clientSessionIdleTimeoutUnit" data-ng-model="realm.clientSessionIdleTimeout.unit">
+                    <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                    <option value="Hours">{{:: 'hours' | translate}}</option>
+                    <option value="Days">{{:: 'days' | translate}}</option>
+                </select>
+            </div>
+            <kc-tooltip>{{:: 'client-session-idle.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="clientSessionMaxLifespan">{{:: 'client-session-max' | translate}}</label>
+            <div class="col-md-6 time-selector">
+                <input class="form-control" type="number" required min="0"
+                       max="31536000" data-ng-model="realm.clientSessionMaxLifespan.time"
+                       id="clientSessionMaxLifespan" name="clientSessionMaxLifespan"/>
+                <select class="form-control" name="clientSessionMaxLifespanUnit" data-ng-model="realm.clientSessionMaxLifespan.unit">
+                    <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                    <option value="Hours">{{:: 'hours' | translate}}</option>
+                    <option value="Days">{{:: 'days' | translate}}</option>
+                </select>
+            </div>
+            <kc-tooltip>{{:: 'client-session-max.tooltip' | translate}}</kc-tooltip>
+        </div>
+
+        <div class="form-group">
             <label class="col-md-2 control-label" for="accessTokenLifespan">{{:: 'access-token-lifespan' | translate}}</label>
 
             <div class="col-md-6 time-selector">

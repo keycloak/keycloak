@@ -19,12 +19,34 @@ public class ProfileTest {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
-    public void checkDefaults() {
+    public void checkDefaultsKeycloak() {
         Assert.assertEquals("community", Profile.getName());
         assertEquals(Profile.getDisabledFeatures(), Profile.Feature.ACCOUNT2, Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.DOCKER, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.UPLOAD_SCRIPTS);
-        assertEquals(Profile.getPreviewFeatures(), Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION);
-        assertEquals(Profile.getExperimentalFeatures(), Profile.Feature.ACCOUNT2);
+        assertEquals(Profile.getPreviewFeatures(), Profile.Feature.ACCOUNT2, Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION);
         assertEquals(Profile.getDeprecatedFeatures(), Profile.Feature.UPLOAD_SCRIPTS);
+
+        Assert.assertTrue(Profile.Feature.WEB_AUTHN.hasDifferentProductType());
+        Assert.assertEquals(Profile.Feature.WEB_AUTHN.getTypeProject(), Profile.Type.DEFAULT);
+    }
+
+    @Test
+    public void checkDefaultsRH_SSO() {
+        System.setProperty("keycloak.profile", "product");
+        String backUpName = Version.NAME;
+        Version.NAME = "rh-sso";
+        Profile.init();
+
+        Assert.assertEquals("product", Profile.getName());
+        assertEquals(Profile.getDisabledFeatures(), Profile.Feature.ACCOUNT2, Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.DOCKER, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.UPLOAD_SCRIPTS, Profile.Feature.WEB_AUTHN);
+        assertEquals(Profile.getPreviewFeatures(), Profile.Feature.ACCOUNT2, Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.WEB_AUTHN);
+        assertEquals(Profile.getDeprecatedFeatures(), Profile.Feature.UPLOAD_SCRIPTS);
+
+        Assert.assertTrue(Profile.Feature.WEB_AUTHN.hasDifferentProductType());
+        Assert.assertEquals(Profile.Feature.WEB_AUTHN.getTypeProduct(), Profile.Type.PREVIEW);
+
+        System.setProperty("keycloak.profile", "community");
+        Version.NAME = backUpName;
+        Profile.init();
     }
 
     @Test

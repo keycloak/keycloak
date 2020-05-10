@@ -16,15 +16,17 @@
 
 package org.keycloak.credential;
 
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 
-import com.webauthn4j.converter.util.CborConverter;
+import com.webauthn4j.converter.util.ObjectConverter;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
-public class WebAuthnCredentialProviderFactory implements CredentialProviderFactory<WebAuthnCredentialProvider> {
+public class WebAuthnCredentialProviderFactory implements CredentialProviderFactory<WebAuthnCredentialProvider>, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "keycloak-webauthn";
 
-    private static CborConverter converter = new CborConverter();
+    private static ObjectConverter converter = new ObjectConverter();
 
     @Override
     public CredentialProvider create(KeycloakSession session) {
@@ -34,5 +36,10 @@ public class WebAuthnCredentialProviderFactory implements CredentialProviderFact
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.WEB_AUTHN);
     }
 }

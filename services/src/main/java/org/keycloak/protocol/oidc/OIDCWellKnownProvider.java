@@ -42,6 +42,8 @@ import org.keycloak.wellknown.WellKnownProvider;
 
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -115,7 +117,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         List<ClientScopeModel> scopes = realm.getClientScopes();
         List<String> scopeNames = new LinkedList<>();
         for (ClientScopeModel clientScope : scopes) {
-            if (clientScope.getProtocol().equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
+            if (OIDCLoginProtocol.LOGIN_PROTOCOL.equals(clientScope.getProtocol())) {
                 scopeNames.add(clientScope.getName());
             }
         }
@@ -140,11 +142,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     }
 
     private static List<String> list(String... values) {
-        List<String> s = new LinkedList<>();
-        for (String v : values) {
-            s.add(v);
-        }
-        return s;
+        return Arrays.asList(values);
     }
 
     private List<String> getClientAuthMethodsSupported() {

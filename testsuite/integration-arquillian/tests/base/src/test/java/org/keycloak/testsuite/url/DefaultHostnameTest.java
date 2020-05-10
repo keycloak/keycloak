@@ -9,6 +9,7 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
@@ -23,6 +24,7 @@ import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ContainerAssume;
@@ -37,8 +39,10 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 
+@AuthServerContainerExclude(REMOTE)
 public class DefaultHostnameTest extends AbstractHostnameTest {
 
     @ArquillianResource
@@ -64,11 +68,6 @@ public class DefaultHostnameTest extends AbstractHostnameTest {
                 .attribute("frontendUrl", realmFrontEndUrl)
                 .build();
         testRealms.add(customHostname);
-    }
-
-    @BeforeClass
-    public static void enabled() {
-        ContainerAssume.assumeNotAuthServerRemote();
     }
 
     @Test
@@ -98,6 +97,26 @@ public class DefaultHostnameTest extends AbstractHostnameTest {
             assertAdminPage("frontendUrl", realmFrontEndUrl, realmFrontEndUrl);
         } finally {
             reset();
+        }
+    }
+
+    // KEYCLOAK-12953
+    @Test
+    public void emptyRealmFrontendUrl() throws URISyntaxException {
+        expectedBackendUrl = AUTH_SERVER_ROOT;
+        oauth.clientId("direct-grant");
+
+        RealmResource realmResource = realmsResouce().realm("frontendUrl");
+        RealmRepresentation rep = realmResource.toRepresentation();
+
+        try {
+            rep.getAttributes().put("frontendUrl", "");
+            realmResource.update(rep);
+
+            assertWellKnown("frontendUrl", AUTH_SERVER_ROOT);
+        } finally {
+            rep.getAttributes().put("frontendUrl", realmFrontEndUrl);
+            realmResource.update(rep);
         }
     }
 

@@ -30,6 +30,7 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.account.AccountManagement;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
@@ -38,6 +39,10 @@ import org.keycloak.testsuite.util.MailServerConfiguration;
 import org.keycloak.testsuite.util.SslMailServer;
 
 import static org.junit.Assert.assertEquals;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+
+import java.util.Map;
+
 import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
@@ -88,6 +93,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
 
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void verifyEmailWithSslEnabled() {
         UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), "test-user@localhost");
 
@@ -160,5 +166,39 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
         // Email wasn't send, but we won't notify end user about that. Admin is aware due to the error in the logs and the SEND_VERIFY_EMAIL_ERROR event.
         assertEquals("You need to verify your email address to activate your account.",
                 testRealmVerifyEmailPage.feedbackMessage().getText());
+    }
+
+    @Test
+    public void verifyEmailWithSslWrongHostname() throws Exception {
+        UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), "test-user@localhost");
+
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+        realmRep.getSmtpServer().put("host", "localhost.localdomain");
+        testRealm().update(realmRep);
+
+        try {
+            SslMailServer.startWithSsl(this.getClass().getClassLoader().getResource(SslMailServer.PRIVATE_KEY).getFile());
+            accountManagement.navigateTo();
+            loginPage.form().login(user.getUsername(), "password");
+
+            events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL_ERROR)
+                    .error(Errors.EMAIL_SEND_FAILED)
+                    .user(user.getId())
+                    .client("account")
+                    .detail(Details.USERNAME, "test-user@localhost")
+                    .detail(Details.EMAIL, "test-user@localhost")
+                    .removeDetail(Details.REDIRECT_URI)
+                    .assertEvent();
+
+            // Email wasn't send
+            Assert.assertNull(SslMailServer.getLastReceivedMessage());
+
+            // Email wasn't send, but we won't notify end user about that. Admin is aware due to the error in the logs and the SEND_VERIFY_EMAIL_ERROR event.
+            assertEquals("You need to verify your email address to activate your account.",
+                    testRealmVerifyEmailPage.feedbackMessage().getText());
+        } finally {
+            realmRep.getSmtpServer().put("host", "localhost");
+            testRealm().update(realmRep);
+        }
     }
 }

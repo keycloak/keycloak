@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>9.0.0-SNAPSHOT</version>
+        <version>11.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <name>Keycloak Quarkus Parent</name>
@@ -31,8 +31,10 @@
     <packaging>pom</packaging>
 
     <properties>
-        <quarkus.version>1.0.1.Final</quarkus.version>
-        <resteasy.version>4.3.1.Final</resteasy.version>
+        <quarkus.version>1.2.1.Final</quarkus.version>
+        <resteasy.version>4.4.2.Final</resteasy.version>
+        <jackson.version>2.10.2</jackson.version>
+        <jackson.databind.version>${jackson.version}</jackson.databind.version>
 
         <surefire-plugin.version>2.22.0</surefire-plugin.version>
 
@@ -40,7 +42,6 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.test.skip>true</maven.test.skip>
         <noDeps>true</noDeps>
     </properties>
 

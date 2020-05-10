@@ -35,6 +35,7 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.UnsupportedEncodingException;
 import java.security.KeyManagementException;
@@ -47,6 +48,8 @@ import java.util.Properties;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class DefaultEmailSenderProvider implements EmailSenderProvider {
+
+    private static final String SUPPORTED_SSL_PROTOCOLS = getSupportedSslProtocols();
 
     private static final Logger logger = Logger.getLogger(DefaultEmailSenderProvider.class);
 
@@ -89,6 +92,8 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             }
 
             if (ssl || starttls) {
+                props.put("mail.smtp.ssl.protocols", SUPPORTED_SSL_PROTOCOLS);
+
                 setupTruststore(props);
             }
 
@@ -171,7 +176,8 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
         return user.getEmail();
     }
 
-    private void setupTruststore(Properties props) throws NoSuchAlgorithmException, KeyManagementException {
+    private void setupTruststore(Properties props) {
+        boolean checkServerIdentity = true;
 
         JSSETruststoreConfigurator configurator = new JSSETruststoreConfigurator(session);
 
@@ -180,7 +186,12 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             props.put("mail.smtp.ssl.socketFactory", factory);
             if (configurator.getProvider().getPolicy() == HostnameVerificationPolicy.ANY) {
                 props.setProperty("mail.smtp.ssl.trust", "*");
+                checkServerIdentity = false;
             }
+        }
+
+        if (checkServerIdentity) {
+            props.put("mail.smtp.ssl.checkserveridentity", "true");
         }
     }
 
@@ -188,4 +199,17 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
     public void close() {
 
     }
+
+    private static String getSupportedSslProtocols() {
+        try {
+            String[] protocols = SSLContext.getDefault().getSupportedSSLParameters().getProtocols();
+            if (protocols != null) {
+                return String.join(" ", protocols);
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to get list of supported SSL protocols", e);
+        }
+        return null;
+    }
+
 }

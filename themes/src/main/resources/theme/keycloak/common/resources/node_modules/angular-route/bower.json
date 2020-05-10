@@ -1,0 +1,10 @@
+{
+  "name": "angular-route",
+  "version": "1.7.9",
+  "license": "MIT",
+  "main": "./angular-route.js",
+  "ignore": [],
+  "dependencies": {
+    "angular": "1.7.9"
+  }
+}

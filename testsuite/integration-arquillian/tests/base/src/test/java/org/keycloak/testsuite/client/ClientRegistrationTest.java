@@ -24,10 +24,15 @@ import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.services.clientregistration.ErrorCodes;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.NotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -38,10 +43,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
     private static final String CLIENT_ID = "test-client";
@@ -152,7 +159,49 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     	ClientRepresentation createdClient = registerClient(client);
     	assertEquals(name, createdClient.getName());
     }
-    
+
+    @Test
+    public void registerClientValidation() throws IOException {
+    	authCreateClients();
+    	ClientRepresentation client = buildClient();
+    	client.setRootUrl("invalid");
+
+    	try {
+            registerClient(client);
+        } catch (ClientRegistrationException e) {
+            HttpErrorException c = (HttpErrorException) e.getCause();
+            assertEquals(400, c.getStatusLine().getStatusCode());
+
+            OAuth2ErrorRepresentation error = JsonSerialization.readValue(c.getErrorResponse(), OAuth2ErrorRepresentation.class);
+
+            assertEquals("invalid_client_metadata", error.getError());
+            assertEquals("Invalid URL in rootUrl", error.getErrorDescription());
+        }
+    }
+
+    @Test
+    public void updateClientValidation() throws IOException, ClientRegistrationException {
+        registerClientAsAdmin();
+
+        ClientRepresentation client = reg.get(CLIENT_ID);
+        client.setRootUrl("invalid");
+
+    	try {
+            reg.update(client);
+        } catch (ClientRegistrationException e) {
+            HttpErrorException c = (HttpErrorException) e.getCause();
+            assertEquals(400, c.getStatusLine().getStatusCode());
+
+            OAuth2ErrorRepresentation error = JsonSerialization.readValue(c.getErrorResponse(), OAuth2ErrorRepresentation.class);
+
+            assertEquals("invalid_client_metadata", error.getError());
+            assertEquals("Invalid URL in rootUrl", error.getErrorDescription());
+        }
+
+        ClientRepresentation updatedClient = reg.get(CLIENT_ID);
+        assertNull(updatedClient.getRootUrl());
+    }
+
     @Test
     public void getClientAsAdmin() throws ClientRegistrationException {
         registerClientAsAdmin();

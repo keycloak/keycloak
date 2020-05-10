@@ -168,6 +168,16 @@ public class ClientAdapter implements ClientModel, CachedObject {
         updated.setEnabled(enabled);
     }
 
+    public boolean isAlwaysDisplayInConsole() {
+        if(isUpdated()) return updated.isAlwaysDisplayInConsole();
+        return cached.isAlwaysDisplayInConsole();
+    }
+
+    public void setAlwaysDisplayInConsole(boolean alwaysDisplayInConsole) {
+        getDelegateForUpdate();
+        updated.setAlwaysDisplayInConsole(alwaysDisplayInConsole);
+    }
+
     @Override
     public String getClientAuthenticatorType() {
         if (isUpdated()) return updated.getClientAuthenticatorType();
@@ -601,6 +611,16 @@ public class ClientAdapter implements ClientModel, CachedObject {
     public Set<RoleModel> getRoles() {
         return cacheSession.getClientRoles(cachedRealm, this);
     }
+    
+    @Override
+    public Set<RoleModel> getRoles(Integer first, Integer max) {
+        return cacheSession.getClientRoles(cachedRealm, this, first, max);
+    }
+    
+    @Override
+    public Set<RoleModel> searchForRoles(String search, Integer first, Integer max) {
+        return cacheSession.searchForClientRoles(cachedRealm, this, search, first, max);
+    }
 
     @Override
     public int getNodeReRegistrationTimeout() {
@@ -665,5 +685,4 @@ public class ClientAdapter implements ClientModel, CachedObject {
     public int hashCode() {
         return getId().hashCode();
     }
-
 }

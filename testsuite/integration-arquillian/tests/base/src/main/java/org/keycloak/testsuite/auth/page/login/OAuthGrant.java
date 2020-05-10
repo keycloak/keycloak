@@ -52,6 +52,7 @@ public class OAuthGrant extends RequiredActions {
         clickLink(acceptButton);
     }
 
+    @Override
     public void cancel() {
         clickLink(cancelButton);
     }

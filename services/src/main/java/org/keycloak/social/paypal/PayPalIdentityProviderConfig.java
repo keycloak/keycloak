@@ -28,6 +28,10 @@ public class PayPalIdentityProviderConfig extends OAuth2IdentityProviderConfig {
         super(model);
     }
 
+    public PayPalIdentityProviderConfig() {
+        
+    }
+
     public boolean targetSandbox() {
         String sandbox = getConfig().get("sandbox");
         return sandbox == null ? false : Boolean.valueOf(sandbox);

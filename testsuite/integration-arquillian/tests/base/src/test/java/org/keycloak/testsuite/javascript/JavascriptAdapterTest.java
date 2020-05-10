@@ -20,6 +20,7 @@ import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
+import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -38,6 +39,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.Math.toIntExact;
+import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.both;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
@@ -48,6 +50,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
@@ -56,6 +60,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 /**
  * @author mhajas
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     private String testAppUrl;
@@ -73,6 +78,10 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     @JavascriptBrowser
     private OAuthGrant oAuthGrantPage;
 
+    @Page
+    @JavascriptBrowser
+    private UpdatePassword updatePasswordPage;
+
     @Override
     protected RealmRepresentation updateRealm(RealmBuilder builder) {
         return builder.accessTokenLifespan(30 + TOKEN_LIFESPAN_LEEWAY).build();
@@ -80,11 +89,16 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     @Before
     public void setDefaultEnvironment() {
-        testAppUrl = authServerContextRootPage + JAVASCRIPT_URL + "/index.html";
+        testAppUrl = authServerContextRootPage.toString().replace("localhost", NIP_IO_URL) + JAVASCRIPT_URL + "/index.html";
 
         jsDriverTestRealmLoginPage.setAuthRealm(REALM_NAME);
         oAuthGrantPage.setAuthRealm(REALM_NAME);
         applicationsPage.setAuthRealm(REALM_NAME);
+
+        jsDriver.navigate().to(oauth.getLoginFormUrl());
+        waitForPageToLoad();
+        events.poll();
+        jsDriver.manage().deleteAllCookies();
 
         jsDriver.navigate().to(testAppUrl);
 
@@ -125,25 +139,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     }
 
     @Test
-    public void testLoginWithKCLocale() {
-        ProfileAssume.assumeCommunity();
-
-        RealmRepresentation testRealmRep = testRealmResource().toRepresentation();
-        testRealmRep.setInternationalizationEnabled(true);
-        testRealmRep.setDefaultLocale("en");
-        testRealmRep.setSupportedLocales(Stream.of("en", "de").collect(Collectors.toSet()));
-        testRealmResource().update(testRealmRep);
-        
-        testExecutor.init(defaultArguments(), this::assertInitNotAuth)
-                .login(this::assertOnLoginPage)
-                .loginForm(testUser, this::assertOnTestAppUrl)
-                .init(defaultArguments(), this::assertSuccessfullyLoggedIn)
-                .login("{kcLocale: 'de'}", assertLocaleIsSet("de"))
-                .init(defaultArguments(), this::assertSuccessfullyLoggedIn)
-                .login("{kcLocale: 'en'}", assertLocaleIsSet("en"));
-    }
-
-    @Test
     public void testLoginWithPkceS256() {
         JSObjectBuilder pkceS256 = defaultArguments().pkceS256();
         testExecutor.init(pkceS256, this::assertInitNotAuth)
@@ -163,7 +158,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .init(checkSSO, this::assertSuccessfullyLoggedIn)
                 .refresh()
                 .init(checkSSO
-                        .add("silentCheckSsoRedirectUri", authServerContextRootPage + JAVASCRIPT_URL + "/silent-check-sso.html")
+                        .add("silentCheckSsoRedirectUri", authServerContextRootPage.toString().replace("localhost", NIP_IO_URL) + JAVASCRIPT_URL + "/silent-check-sso.html")
                         , this::assertSuccessfullyLoggedIn);
     }
 
@@ -176,8 +171,8 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .init(checkSSO, this::assertSuccessfullyLoggedIn)
                 .refresh()
                 .init(checkSSO
-                        .add("checkLoginIframe", false)
-                        .add("silentCheckSsoRedirectUri", authServerContextRootPage + JAVASCRIPT_URL + "/silent-check-sso.html")
+                        .disableCheckLoginIframe()
+                        .add("silentCheckSsoRedirectUri", authServerContextRootPage.toString().replace("localhost", NIP_IO_URL) + JAVASCRIPT_URL + "/silent-check-sso.html")
                         , this::assertSuccessfullyLoggedIn);
     }
 
@@ -202,7 +197,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         JSObjectBuilder checkSSO = defaultArguments().checkSSOOnLoad();
         testExecutor.init(checkSSO
                 .add("checkLoginIframe", false)
-                .add("silentCheckSsoRedirectUri", authServerContextRootPage + JAVASCRIPT_URL + "/silent-check-sso.html")
+                .add("silentCheckSsoRedirectUri", authServerContextRootPage.toString().replace("localhost", NIP_IO_URL) + JAVASCRIPT_URL + "/silent-check-sso.html")
                 , this::assertInitNotAuth);
     }
 
@@ -375,7 +370,8 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .addHeader("Authorization", "Bearer ' + keycloak.token + '");
 
         testExecutor.init(defaultArguments())
-                .sendXMLHttpRequest(request, assertResponseStatus(401))
+                // Possibility of 0 and 401 is caused by this issue: https://issues.redhat.com/browse/KEYCLOAK-12686
+                .sendXMLHttpRequest(request, response -> assertThat(response, hasEntry(is("status"), anyOf(is(0L), is(401L)))))
                 .refresh();
         if (!"phantomjs".equals(System.getProperty("js.browser"))) {
             // I have no idea why, but this request doesn't work with phantomjs, it works in chrome
@@ -419,7 +415,8 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
         setTimeOffset(67);
         testExecutor.addTimeSkew(-34)
-                .sendXMLHttpRequest(request, assertResponseStatus(401))
+                // Possibility of 0 and 401 is caused by this issue: https://issues.redhat.com/browse/KEYCLOAK-12686
+                .sendXMLHttpRequest(request, response -> assertThat(response, hasEntry(is("status"), anyOf(is(0L), is(401L)))))
                 .refreshToken(5, assertEventsContains("Auth Refresh Success"))
                 .sendXMLHttpRequest(request, assertResponseStatus(200));
     }
@@ -480,6 +477,22 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
                             assertThat(((String) response.get("responseHeaders")).toLowerCase(), containsString("location: " + authServerContextRootPage.toString() + "/auth/admin/realms/" + REALM_NAME + "/users/" + users.get(0).getId()));
                         });
+    }
+
+    @Test
+    public void equalsSignInRedirectUrl() {
+        testAppUrl = authServerContextRootPage.toString().replace("localhost", NIP_IO_URL) + JAVASCRIPT_URL + "/index.html?test=bla=bla&super=man";
+        jsDriver.navigate().to(testAppUrl);
+
+        JSObjectBuilder arguments = defaultArguments();
+
+        testExecutor.init(arguments, this::assertInitNotAuth)
+                .login(this::assertOnLoginPage)
+                .loginForm(testUser, this::assertOnTestAppUrl)
+                .init(arguments, (driver1, output1, events2) -> {
+                    assertTrue(driver1.getCurrentUrl().contains("bla=bla"));
+                    assertSuccessfullyLoggedIn(driver1, output1, events2);
+                });
     }
 
     @Test
@@ -593,22 +606,22 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     @Test
     public void reentrancyCallbackTest() {
         testExecutor.logInAndInit(defaultArguments(), testUser, this::assertSuccessfullyLoggedIn)
-                .executeAsyncScript(
-                        "var callback = arguments[arguments.length - 1];" +
-                        "keycloak.updateToken(60).success(function () {" +
-                        "       event(\"First callback\");" +
-                        "       keycloak.updateToken(60).success(function () {" +
-                        "          event(\"Second callback\");" +
-                        "          callback(\"Success\");" +
-                        "       });" +
-                        "    }" +
-                        ");"
-                        , (driver1, output, events) -> {
-                            waitUntilElement(events).text().contains("First callback");
-                            waitUntilElement(events).text().contains("Second callback");
-                            waitUntilElement(events).text().not().contains("Auth Logout");
-                        }
-                );
+            .executeAsyncScript(
+                "var callback = arguments[arguments.length - 1];" +
+                "keycloak.updateToken(60).then(function () {" +
+                "       event(\"First callback\");" +
+                "       keycloak.updateToken(60).then(function () {" +
+                "          event(\"Second callback\");" +
+                "          callback(\"Success\");" +
+                "       });" +
+                "    }" +
+                ");"
+                , (driver1, output, events) -> {
+                    waitUntilElement(events).text().contains("First callback");
+                    waitUntilElement(events).text().contains("Second callback");
+                    waitUntilElement(events).text().not().contains("Auth Logout");
+                }
+            );
     }
 
     @Test
@@ -636,5 +649,52 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 });
     }
 
+    @Test
+    public void testRefreshTokenWithDeprecatedPromiseHandles() {
+        String refreshWithDeprecatedHandles = "var callback = arguments[arguments.length - 1];" +
+                "   window.keycloak.updateToken(9999).success(function (refreshed) {" +
+            "            callback('Success handle');" +
+                "   }).catch(function () {" +
+                "       callback('Catch handle');" +
+                "   });";
 
+        testExecutor.init(defaultArguments(), this::assertInitNotAuth)
+                .executeAsyncScript(refreshWithDeprecatedHandles, assertOutputContains("Catch handle"))
+                .login(this::assertOnLoginPage)
+                .loginForm(testUser, this::assertOnTestAppUrl)
+                .init(defaultArguments(), this::assertSuccessfullyLoggedIn)
+                .executeAsyncScript(refreshWithDeprecatedHandles, assertOutputContains("Success handle"));
+    }
+
+    @Test
+    public void testAIAFromJavascriptAdapterSuccess() {
+        testExecutor.init(defaultArguments(), this::assertInitNotAuth)
+                .login(JSObjectBuilder.create()
+                        .add("action", "UPDATE_PASSWORD")
+                        .build(), this::assertOnLoginPage)
+                .loginForm(testUser);
+
+        updatePasswordPage.updatePasswords(USER_PASSWORD, USER_PASSWORD);
+
+        testExecutor.init(defaultArguments(), (driver1, output, events1) -> {
+            assertSuccessfullyLoggedIn(driver1, output, events1);
+            waitUntilElement(events1).text().contains("AIA status: success");
+        });
+    }
+
+    @Test
+    public void testAIAFromJavascriptAdapterCancelled() {
+        testExecutor.init(defaultArguments(), this::assertInitNotAuth)
+                .login(JSObjectBuilder.create()
+                        .add("action", "UPDATE_PASSWORD")
+                        .build(), this::assertOnLoginPage)
+                .loginForm(testUser);
+
+        updatePasswordPage.cancel();
+
+        testExecutor.init(defaultArguments(), (driver1, output, events1) -> {
+            assertSuccessfullyLoggedIn(driver1, output, events1);
+            waitUntilElement(events1).text().contains("AIA status: cancelled");
+        });
+    }
 }

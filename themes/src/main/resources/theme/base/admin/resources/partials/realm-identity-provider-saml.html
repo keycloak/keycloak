@@ -22,7 +22,7 @@
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="identifier"><span class="required">*</span> {{:: 'alias' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="identifier" type="text" ng-model="identityProvider.alias" data-ng-readonly="!newIdentityProvider" required>
+                    <input kc-no-reserved-chars class="form-control" id="identifier" type="text" ng-model="identityProvider.alias" data-ng-readonly="!newIdentityProvider" required>
                 </div>
                 <kc-tooltip>{{:: 'identity-provider.alias.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -107,6 +107,21 @@
                 </div>
                 <kc-tooltip>{{:: 'post-broker-login-flow.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="syncMode">{{:: 'sync-mode' | translate}}</label>
+                <div class="col-md-6">
+                    <div>
+                        <select class="form-control" id="syncMode"
+                                ng-model="identityProvider.config.syncMode"
+                                required>
+                            <option id="syncMode_import" name="syncMode" value="IMPORT">{{:: 'sync-mode.import' | translate}}</option>
+                            <option id="syncMode_legacy" name="syncMode" value="LEGACY">{{:: 'sync-mode.legacy' | translate}}</option>
+                            <option id="syncMode_force" name="syncMode" value="FORCE">{{:: 'sync-mode.force' | translate}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'sync-mode.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
         <fieldset>
             <legend uncollapsed><span class="text">{{:: 'saml-config' | translate}}</span> <kc-tooltip>{{:: 'identity-provider.saml-config.tooltip' | translate}}</kc-tooltip></legend>
@@ -141,6 +156,22 @@
                     <!-- <input class="form-control" id="nameIDPolicyFormat" type="text" ng-model="identityProvider.config.nameIDPolicyFormat"> -->
                 </div>
                 <kc-tooltip>{{:: 'nameid-policy-format.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="principalType">{{:: 'saml.principal-type' | translate}}</label>
+                <div class="col-md-6">
+                    <select id="principalType" ng-model="identityProvider.config.principalType"
+                            ng-options="pType.type as pType.name for pType in principalTypes">
+                     </select>
+                </div>
+                <kc-tooltip>{{:: 'saml.principal-type.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="identityProvider.config.principalType.endsWith('ATTRIBUTE')">
+                <label class="col-md-2 control-label" for="principalAttribute">{{:: 'saml.principal-attribute' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="principalAttribute" type="text" ng-model="identityProvider.config.principalAttribute" ng-required="identityProvider.config.principalType.endsWith('ATTRIBUTE')">
+                </div>
+                <kc-tooltip>{{:: 'saml.principal-attribute.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="postBindingResponse">{{:: 'http-post-binding-response' | translate}}</label>
@@ -228,6 +259,13 @@
                     <textarea class="form-control" id="signingCertificate" ng-model="identityProvider.config.signingCertificate"/>
                 </div>
                 <kc-tooltip>{{:: 'validating-x509-certificate.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="allowedClockSkew">{{:: 'allowed-clock-skew' | translate}}</label>
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" string-to-number type="number" min="0" max="2147483" step="1" ng-model="identityProvider.config.allowedClockSkew" id="allowedClockSkew"/>
+                </div>
+                <kc-tooltip>{{:: 'identity-provider.allowed-clock-skew.tooltip' | translate}}</kc-tooltip>
             </div>
          </fieldset>
         <fieldset data-ng-show="newIdentityProvider">

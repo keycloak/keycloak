@@ -41,7 +41,6 @@ import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.ClientStorageManager;
 import org.keycloak.storage.UserStorageManager;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
-import org.keycloak.theme.DefaultThemeManager;
 import org.keycloak.vault.DefaultVaultTranscriber;
 import org.keycloak.vault.VaultProvider;
 import org.keycloak.vault.VaultTranscriber;
@@ -301,7 +300,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     @Override
     public ThemeManager theme() {
         if (themeManager == null) {
-            themeManager = new DefaultThemeManager(this);
+            themeManager = factory.getThemeManagerFactory().create(this);
         }
         return themeManager;
     }

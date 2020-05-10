@@ -17,6 +17,7 @@
 
 package org.keycloak.util.ldap;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -181,12 +182,12 @@ public class RangedAttributeInterceptor extends BaseInterceptor {
         }
 
         @Override
-        public void close() {
+        public void close() throws IOException {
             c.close();
         }
 
         @Override
-        public void close(Exception excptn) {
+        public void close(Exception excptn) throws IOException {
             c.close(excptn);
         }
 

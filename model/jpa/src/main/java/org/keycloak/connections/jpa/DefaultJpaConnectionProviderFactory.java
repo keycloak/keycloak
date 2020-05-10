@@ -276,6 +276,11 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         return sql2012Dialect;
                     }
                 }
+                // For Oracle19c, we may need to set dialect explicitly to workaround https://hibernate.atlassian.net/browse/HHH-13184
+                if (dbProductName.equals("Oracle") && connection.getMetaData().getDatabaseMajorVersion() > 12) {
+                    logger.debugf("Manually specify dialect for Oracle to org.hibernate.dialect.Oracle12cDialect");
+                    return "org.hibernate.dialect.Oracle12cDialect";
+                }
             } catch (SQLException e) {
                 logger.warnf("Unable to detect hibernate dialect due database exception : %s", e.getMessage());
             }

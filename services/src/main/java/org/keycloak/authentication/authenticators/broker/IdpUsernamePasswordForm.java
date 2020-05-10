@@ -22,16 +22,22 @@ import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordForm;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 
+import java.util.Optional;
+
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 /**
- * Same like classic username+password form, but username is "known" and user can't change it
+ * Same like classic username+password form, but for use in IdP linking.
+ *
+ * User identity is optionally established by the preceding idp-create-user-if-unique execution.
+ * In this case username field will be pre-filled (but still changeable).
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -39,34 +45,53 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
 
     @Override
     protected Response challenge(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
-        UserModel existingUser = AbstractIdpAuthenticator.getExistingUser(context.getSession(), context.getRealm(), context.getAuthenticationSession());
-
-        return setupForm(context, formData, existingUser)
+        return setupForm(context, formData, getExistingUser(context))
                 .setStatus(Response.Status.OK)
                 .createLoginUsernamePassword();
     }
 
     @Override
     protected boolean validateForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData) {
-        UserModel existingUser = AbstractIdpAuthenticator.getExistingUser(context.getSession(), context.getRealm(), context.getAuthenticationSession());
-        context.setUser(existingUser);
+        Optional<UserModel> existingUser = getExistingUser(context);
+        existingUser.ifPresent(context::setUser);
+
+        boolean result = validateUserAndPassword(context, formData);
 
         // Restore formData for the case of error
         setupForm(context, formData, existingUser);
 
-        return validatePassword(context, existingUser, formData);
+        return result;
     }
 
-    protected LoginFormsProvider setupForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData, UserModel existingUser) {
+    protected LoginFormsProvider setupForm(AuthenticationFlowContext context, MultivaluedMap<String, String> formData, Optional<UserModel> existingUser) {
         SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromAuthenticationSession(context.getAuthenticationSession(), AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
         if (serializedCtx == null) {
             throw new AuthenticationFlowException("Not found serialized context in clientSession", AuthenticationFlowError.IDENTITY_PROVIDER_ERROR);
         }
 
-        formData.add(AuthenticationManager.FORM_USERNAME, existingUser.getUsername());
-        return context.form()
+        existingUser.ifPresent(u -> formData.putSingle(AuthenticationManager.FORM_USERNAME, u.getUsername()));
+
+        LoginFormsProvider form = context.form()
                 .setFormData(formData)
-                .setAttribute(LoginFormsProvider.USERNAME_EDIT_DISABLED, true)
-                .setInfo(Messages.FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_MESSAGE, existingUser.getUsername(), serializedCtx.getIdentityProviderId());
+                .setAttribute(LoginFormsProvider.REGISTRATION_DISABLED, true)
+                .setInfo(Messages.FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_MESSAGE, serializedCtx.getIdentityProviderId());
+
+        SerializedBrokeredIdentityContext serializedCtx0 = SerializedBrokeredIdentityContext.readFromAuthenticationSession(context.getAuthenticationSession(), AbstractIdpAuthenticator.NESTED_FIRST_BROKER_CONTEXT);
+        if (serializedCtx0 != null) {
+            BrokeredIdentityContext ctx0 = serializedCtx0.deserialize(context.getSession(), context.getAuthenticationSession());
+            form.setError(Messages.NESTED_FIRST_BROKER_FLOW_MESSAGE, ctx0.getIdpConfig().getAlias(), ctx0.getUsername());
+            context.getAuthenticationSession().setAuthNote(AbstractIdpAuthenticator.NESTED_FIRST_BROKER_CONTEXT, null);
+        }
+
+        return form;
+    }
+
+    private Optional<UserModel> getExistingUser(AuthenticationFlowContext context) {
+        try {
+            return Optional.of(AbstractIdpAuthenticator.getExistingUser(context.getSession(), context.getRealm(), context.getAuthenticationSession()));
+        } catch (AuthenticationFlowException ex) {
+            log.debug("No existing user in authSession", ex);
+            return Optional.empty();
+        }
     }
 }

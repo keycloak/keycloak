@@ -316,6 +316,10 @@ public class AppServerTestEnricher {
         return CURRENT_APP_SERVER.contains("fuse");
     }
 
+    public static boolean isRemoteAppServer() {
+        return CURRENT_APP_SERVER.contains("remote");
+    }
+
     private boolean isJBossBased() {
         return testContext.getAppServerInfo().isJBossBased();
     }

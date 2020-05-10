@@ -19,6 +19,9 @@ public class OpenshiftV4IdentityProviderConfig extends OAuth2IdentityProviderCon
         super(identityProviderModel);
     }
 
+    public OpenshiftV4IdentityProviderConfig() {
+    }
+
     private String trimTrailingSlash(String baseUrl) {
         if (baseUrl != null && baseUrl.endsWith("/")) {
             baseUrl = baseUrl.substring(0, baseUrl.length() - 1);

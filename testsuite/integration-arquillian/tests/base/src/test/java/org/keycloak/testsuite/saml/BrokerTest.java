@@ -91,7 +91,7 @@ public class BrokerTest extends AbstractSamlTest {
             final ResponseType res = new SAML2LoginResponseBuilder()
               .requestID(req.getID())
               .destination(req.getAssertionConsumerServiceURL().toString())
-              .issuer("http://saml.idp/saml")
+              .issuer("https://saml.idp/saml")
               .assertionExpiration(1000000)
               .subjectExpiration(1000000)
               .requestIssuer(getAuthServerRealmBase(REALM_NAME).toString())
@@ -118,7 +118,7 @@ public class BrokerTest extends AbstractSamlTest {
 
         AuthenticationExecutionInfoRepresentation reviewProfileAuthenticator = null;
         String firstBrokerLoginFlowAlias = null;
-        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, addIdentityProvider("http://saml.idp/saml"))) {
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, addIdentityProvider("https://saml.idp/saml"))) {
             IdentityProviderRepresentation idpRepresentation = idp.identityProvider().toRepresentation();
             firstBrokerLoginFlowAlias = idpRepresentation.getFirstBrokerLoginFlowAlias();
             List<AuthenticationExecutionInfoRepresentation> executions = realm.flows().getExecutions(firstBrokerLoginFlowAlias);
@@ -168,7 +168,7 @@ public class BrokerTest extends AbstractSamlTest {
     public void testRedirectQueryParametersPreserved() throws IOException {
         final RealmResource realm = adminClient.realm(REALM_NAME);
 
-        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, addIdentityProvider("http://saml.idp/?service=name&serviceType=prod"))) {
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, addIdentityProvider("https://saml.idp/?service=name&serviceType=prod"))) {
             SAMLDocumentHolder samlResponse = new SamlClientBuilder()
               .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
               .login().idp(SAML_BROKER_ALIAS).build()
@@ -178,7 +178,7 @@ public class BrokerTest extends AbstractSamlTest {
 
             assertThat(samlResponse.getSamlObject(), Matchers.instanceOf(AuthnRequestType.class));
             AuthnRequestType ar = (AuthnRequestType) samlResponse.getSamlObject();
-            assertThat(ar.getDestination(), Matchers.equalTo(URI.create("http://saml.idp/?service=name&serviceType=prod")));
+            assertThat(ar.getDestination(), Matchers.equalTo(URI.create("https://saml.idp/?service=name&serviceType=prod")));
 
             Header[] headers = new SamlClientBuilder()
               .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
@@ -187,7 +187,7 @@ public class BrokerTest extends AbstractSamlTest {
               .executeAndTransform(resp -> resp.getHeaders(HttpHeaders.LOCATION));
 
             assertThat(headers.length, Matchers.is(1));
-            assertThat(headers[0].getValue(), Matchers.containsString("http://saml.idp/?service=name&serviceType=prod"));
+            assertThat(headers[0].getValue(), Matchers.containsString("https://saml.idp/?service=name&serviceType=prod"));
             assertThat(headers[0].getValue(), Matchers.containsString("SAMLRequest"));
         }
     }
@@ -228,7 +228,7 @@ public class BrokerTest extends AbstractSamlTest {
     private void assertExpired(XMLGregorianCalendar notBefore, XMLGregorianCalendar notOnOrAfter, boolean shouldPass) throws Exception {
         Status expectedStatus = shouldPass ? Status.OK : Status.BAD_REQUEST;
         final RealmResource realm = adminClient.realm(REALM_NAME);
-        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, addIdentityProvider("http://saml.idp/"))) {
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, addIdentityProvider("https://saml.idp/"))) {
             new SamlClientBuilder()
               .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
               .login().idp(SAML_BROKER_ALIAS).build()

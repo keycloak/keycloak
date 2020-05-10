@@ -1,7 +1,17 @@
 <#import "template.ftl" as layout>
 <@layout.mainLayout active='totp' bodyClass='totp'; section>
 
-    <h2>${msg("authenticatorTitle")}</h2>
+    <div class="row">
+        <div class="col-md-10">
+            <h2>${msg("authenticatorTitle")}</h2>
+        </div>
+        <#if totp.otpCredentials?size == 0>
+            <div class="col-md-2 subtitle">
+                <span class="subtitle"><span class="required">*</span> ${msg("requiredFields")}</span>
+            </div>
+        </#if>
+    </div>
+
     <#if totp.enabled>
         <table class="table table-bordered table-striped">
             <thead>
@@ -80,6 +90,7 @@
         </#if>
         <li>
             <p>${msg("totpStep3")}</p>
+            <p>${msg("totpStep3DeviceName")}</p>
         </li>
     </ol>
 
@@ -89,7 +100,7 @@
         <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
         <div class="form-group">
             <div class="col-sm-2 col-md-2">
-                <label for="totp" class="control-label">${msg("authenticatorCode")}</label>
+                <label for="totp" class="control-label">${msg("authenticatorCode")}</label> <span class="required">*</span>
             </div>
 
             <div class="col-sm-10 col-md-10">
@@ -100,9 +111,9 @@
 
         </div>
 
-        <div class="form-group">
+        <div class="form-group" ${messagesPerField.printIfExists('userLabel',properties.kcFormGroupErrorClass!)}">
             <div class="col-sm-2 col-md-2">
-                <label for="userLabel" class="control-label">Device Name</label>
+                <label for="userLabel" class="control-label">${msg("totpDeviceName")}</label> <#if totp.otpCredentials?size gte 1><span class="required">*</span></#if>
             </div>
 
             <div class="col-sm-10 col-md-10">
@@ -115,10 +126,12 @@
                 <div class="">
                     <button type="submit"
                             class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}"
-                            name="submitAction" value="Save">${msg("doSave")}</button>
+                            id="saveTOTPBtn" name="submitAction" value="Save">${msg("doSave")}
+                    </button>
                     <button type="submit"
                             class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}"
-                            name="submitAction" value="Cancel">${msg("doCancel")}</button>
+                            id="cancelTOTPBtn" name="submitAction" value="Cancel">${msg("doCancel")}
+                    </button>
                 </div>
             </div>
         </div>

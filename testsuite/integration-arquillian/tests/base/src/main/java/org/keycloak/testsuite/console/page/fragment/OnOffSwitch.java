@@ -20,6 +20,8 @@ import org.jboss.arquillian.graphene.fragment.Root;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
+
 /**
  *
  * @author Petr Mensik
@@ -64,6 +66,10 @@ public class OnOffSwitch {
                 || (!on && isOn())) {
             click(); // click if requested value differs from the actual value
         }
+    }
+
+    public boolean isVisible() {
+        return isElementVisible(labelTag);
     }
 
 }

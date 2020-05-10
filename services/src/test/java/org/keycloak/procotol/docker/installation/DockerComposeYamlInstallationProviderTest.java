@@ -64,7 +64,7 @@ public class DockerComposeYamlInstallationProviderTest {
         byteStream = new ByteArrayOutputStream();
         zipOutput = new ZipOutputStream(byteStream);
 
-        return installationProvider.generateInstallation(zipOutput, byteStream, certificate, new URL("http://localhost:8080/auth"), "docker-test", "docker-registry");
+        return installationProvider.generateInstallation(zipOutput, byteStream, certificate, new URL("http://localhost:8080/auth/"), "docker-test", "docker-registry");
     }
 
     @Test

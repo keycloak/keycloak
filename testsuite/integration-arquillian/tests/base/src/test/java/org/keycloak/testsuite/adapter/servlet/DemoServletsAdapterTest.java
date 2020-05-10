@@ -17,7 +17,15 @@
 package org.keycloak.testsuite.adapter.servlet;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.apache.http.util.EntityUtils;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -30,6 +38,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.OIDCAuthenticationError;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
@@ -39,7 +48,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -49,6 +57,7 @@ import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.adapter.page.BasicAuth;
 import org.keycloak.testsuite.adapter.page.ClientSecretJwtSecurePortal;
+import org.keycloak.testsuite.adapter.page.ClientSecretJwtSecurePortalValidAlg;
 import org.keycloak.testsuite.adapter.page.CustomerCookiePortal;
 import org.keycloak.testsuite.adapter.page.CustomerCookiePortalRoot;
 import org.keycloak.testsuite.adapter.page.CustomerDb;
@@ -64,6 +73,7 @@ import org.keycloak.testsuite.adapter.page.SecurePortal;
 import org.keycloak.testsuite.adapter.page.SecurePortalRewriteRedirectUri;
 import org.keycloak.testsuite.adapter.page.SecurePortalWithCustomSessionConfig;
 import org.keycloak.testsuite.adapter.page.TokenMinTTLPage;
+import org.keycloak.testsuite.adapter.page.TokenRefreshPage;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
@@ -72,6 +82,7 @@ import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
+import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 import org.keycloak.testsuite.util.FollowRedirectsEngine;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.Matchers;
@@ -95,10 +106,14 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -112,7 +127,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -171,6 +185,8 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     @Page
     private TokenMinTTLPage tokenMinTTLPage;
     @Page
+    private TokenRefreshPage tokenRefreshPage;
+    @Page
     private OAuthGrant oAuthGrantPage;
     @Page
     protected Applications applicationsPage;
@@ -182,6 +198,8 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     protected Config configPage;
     @Page
     private ClientSecretJwtSecurePortal clientSecretJwtSecurePortal;
+    @Page
+    private ClientSecretJwtSecurePortalValidAlg clientSecretJwtSecurePortalValidAlg;
     @Page
     private CustomerCookiePortal customerCookiePortal;
     @Page
@@ -260,6 +278,11 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         return servletDeployment(TokenMinTTLPage.DEPLOYMENT_NAME, AdapterActionsFilter.class, AbstractShowTokensServlet.class, TokenMinTTLServlet.class, ErrorServlet.class);
     }
 
+    @Deployment(name = TokenRefreshPage.DEPLOYMENT_NAME)
+    protected static WebArchive tokenRefresh() {
+        return servletDeployment(TokenRefreshPage.DEPLOYMENT_NAME, AdapterActionsFilter.class, AbstractShowTokensServlet.class, TokenMinTTLServlet.class, ErrorServlet.class);
+    }
+
     @Deployment(name = BasicAuth.DEPLOYMENT_NAME)
     protected static WebArchive basicAuth() {
         return servletDeployment(BasicAuth.DEPLOYMENT_NAME, BasicAuthServlet.class);
@@ -268,6 +291,11 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     @Deployment(name = ClientSecretJwtSecurePortal.DEPLOYMENT_NAME)
     protected static WebArchive clientSecretSecurePortal() {
         return servletDeployment(ClientSecretJwtSecurePortal.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
+    }
+
+    @Deployment(name = ClientSecretJwtSecurePortalValidAlg.DEPLOYMENT_NAME)
+    protected static WebArchive clientSecretSecurePortalValidAlg() {
+        return servletDeployment(ClientSecretJwtSecurePortalValidAlg.DEPLOYMENT_NAME, CallAuthenticatedServlet.class);
     }
 
     @Deployment(name = CustomerCookiePortalRoot.DEPLOYMENT_NAME)
@@ -746,6 +774,60 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
         // Revert times
         setAdapterAndServerTimeOffset(0, tokenMinTTLPage.toString());
+    }
+
+    @Test
+    public void testTokenConcurrentRefresh() {
+        RealmResource demoRealm = adminClient.realm("demo");
+        RealmRepresentation demo = demoRealm.toRepresentation();
+
+        demo.setAccessTokenLifespan(2);
+        demo.setRevokeRefreshToken(true);
+        demo.setRefreshTokenMaxReuse(0);
+
+        demoRealm.update(demo);
+
+        // Login
+        tokenRefreshPage.navigateTo();
+        assertTrue(testRealmLoginPage.form().isUsernamePresent());
+        assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+        testRealmLoginPage.form().login("bburke@redhat.com", "password");
+        assertCurrentUrlEquals(tokenRefreshPage);
+
+        setAdapterAndServerTimeOffset(5, tokenRefreshPage.toString());
+
+        BasicCookieStore cookieStore = new BasicCookieStore();
+        BasicClientCookie jsessionid = new BasicClientCookie("JSESSIONID", driver.manage().getCookieNamed("JSESSIONID").getValue());
+
+        jsessionid.setDomain("localhost");
+        jsessionid.setPath("/");
+        cookieStore.addCookie(jsessionid);
+
+        ExecutorService executor = Executors.newWorkStealingPool();
+        CompletableFuture future = CompletableFuture.completedFuture(null);
+
+        try {
+            for (int i = 0; i < 5; i++) {
+                future = CompletableFuture.allOf(future, CompletableFuture.runAsync(() -> {
+                    try (CloseableHttpClient client = HttpClientBuilder.create().setDefaultCookieStore(cookieStore)
+                            .build()) {
+                        HttpUriRequest request = new HttpGet(tokenRefreshPage.getInjectedUrl().toString());
+                        try (CloseableHttpResponse httpResponse = client.execute(request)) {
+                            assertTrue("Token not refreshed", EntityUtils.toString(httpResponse.getEntity()).contains("accessToken"));
+                        }
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }, executor));
+            }
+            
+            future.join();
+        } finally {
+            executor.shutdownNow();
+        }
+
+        // Revert times
+        setAdapterAndServerTimeOffset(0, tokenRefreshPage.toString());
     }
 
     // Tests forwarding of parameters like "prompt"
@@ -1232,46 +1314,58 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     @Test
     public void testClientAuthenticatedInClientSecretJwt() {
         // test login to customer-portal which does a bearer request to customer-db
-    	// JWS Client Assertion in client_secret_jwt
-    	// http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication
+        // JWS Client Assertion in client_secret_jwt
+        // http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication
         String targetClientId = "client-secret-jwt-secure-portal";
-  	         
-        expectResultOfClientAuthenticatedInClientSecretJwt(targetClientId);
+
+        expectResultOfClientAuthenticatedInClientSecretJwt(targetClientId, clientSecretJwtSecurePortal);
 
         // test logout
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
                 .queryParam(OAuth2Constants.REDIRECT_URI, clientSecretJwtSecurePortal.toString()).build("demo").toString();
         driver.navigate().to(logoutUri);
     }
-    
+
     @Test
     public void testClientNotAuthenticatedInClientSecretJwtBySharedSecretOutOfSync() {
-    	// JWS Client Assertion in client_secret_jwt
-    	// http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication
-    	String targetClientId = "client-secret-jwt-secure-portal";
-    	String expectedErrorString = "invalid_client_credentials";
-    	
+        // JWS Client Assertion in client_secret_jwt
+        // http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication
+        String targetClientId = "client-secret-jwt-secure-portal";
+        String expectedErrorString = "invalid_client_credentials";
+
         ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), targetClientId);
         ClientRepresentation client = clientResource.toRepresentation();
         client.setSecret("passwordChanged");
         clientResource.update(client);
-        
+
         expectResultOfClientNotAuthenticatedInClientSecretJwt(targetClientId, expectedErrorString);
     }
-    
+
     @Test
     public void testClientNotAuthenticatedInClientSecretJwtByAuthnMethodOutOfSync() {
-    	// JWS Client Assertion in client_secret_jwt
-    	// http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication
-    	String targetClientId = "client-secret-jwt-secure-portal";
-    	String expectedErrorString = "invalid_client_credentials";
-    	
+        // JWS Client Assertion in client_secret_jwt
+        // http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication
+        String targetClientId = "client-secret-jwt-secure-portal";
+        String expectedErrorString = "invalid_client_credentials";
+
         ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), targetClientId);
         ClientRepresentation client = clientResource.toRepresentation();
         client.setClientAuthenticatorType("client-secret");
         clientResource.update(client);
-        
+
         expectResultOfClientNotAuthenticatedInClientSecretJwt(targetClientId, expectedErrorString);
+    }
+
+    @Test
+    public void testClientAuthenticatedInClientSecretJwtValidAlg() {
+        String targetClientId = "client-secret-jwt-secure-portal-valid-alg";
+
+        expectResultOfClientAuthenticatedInClientSecretJwt(targetClientId, clientSecretJwtSecurePortalValidAlg);
+
+        // test logout
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
+                .queryParam(OAuth2Constants.REDIRECT_URI, clientSecretJwtSecurePortalValidAlg.toString()).build("demo").toString();
+        driver.navigate().to(logoutUri);
     }
 
     @Test
@@ -1321,20 +1415,20 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         customerCookiePortalRoot.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
     }
-    
-    private void expectResultOfClientAuthenticatedInClientSecretJwt(String targetClientId) {
+
+    private void expectResultOfClientAuthenticatedInClientSecretJwt(String targetClientId, AbstractPageWithInjectedUrl portal) {
         RealmRepresentation realm = testRealmResource().toRepresentation();
         realm.setEventsEnabled(true);
         realm.setEnabledEventTypes(Arrays.asList("LOGIN", "CODE_TO_TOKEN"));
         realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
         testRealmResource().update(realm); 
-        
-    	clientSecretJwtSecurePortal.navigateTo();
+
+        portal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        
+
         String userId = ApiUtil.findUserByUsername(testRealmResource(), "bburke@redhat.com").getId();
-        
+
         assertEvents.expectLogin()
         .realm(realm.getId())
         .client(targetClientId)
@@ -1342,11 +1436,11 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         .detail(Details.USERNAME, "bburke@redhat.com")
         .detail(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
         .detail(Details.REDIRECT_URI,
-                org.hamcrest.Matchers.anyOf(org.hamcrest.Matchers.equalTo(clientSecretJwtSecurePortal.getInjectedUrl().toString()),
-                        org.hamcrest.Matchers.equalTo(clientSecretJwtSecurePortal.getInjectedUrl().toString() + "/")))
+                org.hamcrest.Matchers.anyOf(org.hamcrest.Matchers.equalTo(portal.getInjectedUrl().toString()),
+                        org.hamcrest.Matchers.equalTo(portal.getInjectedUrl().toString() + "/")))
         .removeDetail(Details.CODE_ID)
         .assertEvent();
-        
+
         assertEvents.expectCodeToToken(null, null)
         .realm(realm.getId())
         .client(targetClientId)
@@ -1355,18 +1449,18 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         .clearDetails()
         .assertEvent();
     }
-    
+
     private void expectResultOfClientNotAuthenticatedInClientSecretJwt(String targetClientId, String expectedErrorString) {
         RealmRepresentation realm = testRealmResource().toRepresentation();
         realm.setEventsEnabled(true);
         realm.setEnabledEventTypes(Arrays.asList("LOGIN", "CODE_TO_TOKEN_ERROR"));
         realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
         testRealmResource().update(realm);
-    	
-    	clientSecretJwtSecurePortal.navigateTo();
+
+        clientSecretJwtSecurePortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        
+
         String userId = ApiUtil.findUserByUsername(testRealmResource(), "bburke@redhat.com").getId();
 
         assertEvents.expectLogin()

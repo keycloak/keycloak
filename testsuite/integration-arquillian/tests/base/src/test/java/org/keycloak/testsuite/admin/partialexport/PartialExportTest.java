@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.admin.partialexport;
 
+import java.util.Arrays;
 import org.junit.Test;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -18,6 +19,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.hamcrest.Matchers;
+import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.representations.idm.UserRepresentation;
 
 
 /**
@@ -40,6 +44,7 @@ public class PartialExportTest extends AbstractAdminTest {
 
         // exportGroupsAndRoles == false, exportClients == false
         RealmRepresentation rep = adminClient.realm(EXPORT_TEST_REALM).partialExport(false, false);
+        Assert.assertNull("Users are null", rep.getUsers());
         Assert.assertNull("Default groups are empty", rep.getDefaultGroups());
         Assert.assertNull("Groups are empty", rep.getGroups());
 
@@ -55,6 +60,7 @@ public class PartialExportTest extends AbstractAdminTest {
 
         // exportGroupsAndRoles == true, exportClients == false
         rep = adminClient.realm(EXPORT_TEST_REALM).partialExport(true, false);
+        Assert.assertNull("Users are null", rep.getUsers());
         Assert.assertNull("Default groups are empty", rep.getDefaultGroups());
         Assert.assertNotNull("Groups not empty", rep.getGroups());
         checkGroups(rep.getGroups());
@@ -75,6 +81,9 @@ public class PartialExportTest extends AbstractAdminTest {
 
         // exportGroupsAndRoles == false, exportClients == true
         rep = adminClient.realm(EXPORT_TEST_REALM).partialExport(false, true);
+        Assert.assertNotNull("The service accout user should be exported", rep.getUsers());
+        Assert.assertEquals("Only one client has a service account", 1, rep.getUsers().size());
+        checkServiceAccountRoles(rep.getUsers().get(0), false); // export but without roles
         Assert.assertNull("Default groups are empty", rep.getDefaultGroups());
         Assert.assertNull("Groups are empty", rep.getGroups());
         Assert.assertNotNull("Default roles not empty", rep.getDefaultRoles());
@@ -90,6 +99,10 @@ public class PartialExportTest extends AbstractAdminTest {
 
         // exportGroupsAndRoles == true, exportClients == true
         rep = adminClient.realm(EXPORT_TEST_REALM).partialExport(true, true);
+        // service accounts are only exported if roles/groups and clients are asked to be exported
+        Assert.assertNotNull("The service accout user should be exported", rep.getUsers());
+        Assert.assertEquals("Only one client has a service account", 1, rep.getUsers().size());
+        checkServiceAccountRoles(rep.getUsers().get(0), true); // exported with roles
         Assert.assertNull("Default groups are empty", rep.getDefaultGroups());
         Assert.assertNotNull("Groups not empty", rep.getGroups());
         checkGroups(rep.getGroups());
@@ -113,6 +126,25 @@ public class PartialExportTest extends AbstractAdminTest {
 
         // check that secrets are masked
         checkSecretsAreMasked(rep);
+    }
+
+    private void checkServiceAccountRoles(UserRepresentation serviceAccount, boolean rolesExpected) {
+        Assert.assertTrue("User is a service account", serviceAccount.getUsername().startsWith(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX));
+        Assert.assertNull("Password should be null", serviceAccount.getCredentials());
+        if (rolesExpected) {
+            List<String> realmRoles = serviceAccount.getRealmRoles();
+            Assert.assertThat("Realm roles are OK", realmRoles, Matchers.containsInAnyOrder("uma_authorization", "user", "offline_access"));
+
+            Map<String, List<String>> clientRoles = serviceAccount.getClientRoles();
+            Assert.assertNotNull("Client roles are exported", clientRoles);
+            Assert.assertThat("Client roles for test-app-service-account are OK", clientRoles.get("test-app-service-account"),
+                    Matchers.containsInAnyOrder("test-app-service-account", "test-app-service-account-parent"));
+            Assert.assertThat("Client roles for account are OK", clientRoles.get("account"),
+                    Matchers.containsInAnyOrder("manage-account", "view-profile"));
+        } else {
+            Assert.assertNull("Service account should be exported without realm roles", serviceAccount.getRealmRoles());
+            Assert.assertNull("Service account should be exported without client roles", serviceAccount.getClientRoles());
+        }
     }
 
     private void checkSecretsAreMasked(RealmRepresentation rep) {
@@ -216,10 +248,13 @@ public class PartialExportTest extends AbstractAdminTest {
         Assert.assertTrue("customer-admin-composite-role / realm / customer-user-premium", cmp.getRealm().contains("customer-user-premium"));
         Assert.assertTrue("customer-admin-composite-role / client['test-app'] / customer-admin", cmp.getClient().get("test-app").contains("customer-admin"));
 
-
         roles = collectRoles(clientRoles.get("test-app-scope"));
         Assert.assertTrue("Client role test-app-disallowed-by-scope for test-app-scope", roles.containsKey("test-app-disallowed-by-scope"));
         Assert.assertTrue("Client role test-app-allowed-by-scope for test-app-scope", roles.containsKey("test-app-allowed-by-scope"));
+
+        roles = collectRoles(clientRoles.get("test-app-service-account"));
+        Assert.assertThat("Client roles are OK for test-app-service-account", roles.keySet(),
+                Matchers.containsInAnyOrder("test-app-service-account", "test-app-service-account-parent", "test-app-service-account-child"));
     }
 
     private Map<String, RoleRepresentation> collectRoles(List<RoleRepresentation> roles) {

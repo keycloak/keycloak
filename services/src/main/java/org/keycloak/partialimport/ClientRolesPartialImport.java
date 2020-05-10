@@ -120,8 +120,8 @@ public class ClientRolesPartialImport {
                 throw noClientFound(clientId);
             }
 
-            toOverwrite.put(clientId, new HashSet<RoleRepresentation>());
-            toSkip.put(clientId, new HashSet<RoleRepresentation>());
+            toOverwrite.put(clientId, new HashSet<>());
+            toSkip.put(clientId, new HashSet<>());
             for (RoleRepresentation roleRep : repList.get(clientId)) {
                 if (exists(realm, session, clientId, roleRep)) {
                     switch (partialImportRep.getPolicy()) {

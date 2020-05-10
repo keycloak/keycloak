@@ -56,12 +56,21 @@ public interface RealmProvider extends Provider, ClientProvider {
 
     boolean removeGroup(RealmModel realm, GroupModel group);
 
-    GroupModel createGroup(RealmModel realm, String name);
+    default GroupModel createGroup(RealmModel realm, String name) {
+        return createGroup(realm, null, name, null);
+    }
 
-    GroupModel createGroup(RealmModel realm, String id, String name);
+    default GroupModel createGroup(RealmModel realm, String id, String name) {
+        return createGroup(realm, id, name, null);
+    }
+
+    default GroupModel createGroup(RealmModel realm, String name, GroupModel toParent) {
+        return createGroup(realm, null, name, toParent);
+    }
+
+    GroupModel createGroup(RealmModel realm, String id, String name, GroupModel toParent);
 
     void addTopLevelGroup(RealmModel realm, GroupModel subGroup);
-
 
     RoleModel addRealmRole(RealmModel realm, String name);
 
@@ -70,6 +79,15 @@ public interface RealmProvider extends Provider, ClientProvider {
     RoleModel getRealmRole(RealmModel realm, String name);
 
     Set<RoleModel> getRealmRoles(RealmModel realm);
+    
+    Set<RoleModel> getRealmRoles(RealmModel realm, Integer first, Integer max);
+    
+    Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client, Integer first, Integer max);
+    
+    Set<RoleModel> searchForClientRoles(RealmModel realm, ClientModel client, String search, Integer first,
+            Integer max);
+    
+    Set<RoleModel> searchForRoles(RealmModel realm, String search, Integer first, Integer max);
 
     boolean removeRole(RealmModel realm, RoleModel role);
 
@@ -91,4 +109,5 @@ public interface RealmProvider extends Provider, ClientProvider {
     List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm);
     void removeExpiredClientInitialAccess();
     void decreaseRemainingCount(RealmModel realm, ClientInitialAccessModel clientInitialAccess); // Separate provider method to ensure we decrease remainingCount atomically instead of doing classic update
+
 }

@@ -1,0 +1,12 @@
+{
+  "realm": "demo",
+  "auth-server-url": "http://localhost:8180/auth",
+  "ssl-required": "external",
+  "resource": "client-secret-jwt-secure-portal-valid-alg",
+  "credentials": {
+    "secret-jwt": {
+      "secret": "234234-234234-234234",
+      "algorithm": "HS512"
+    }
+  }
+}

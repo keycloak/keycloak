@@ -33,6 +33,7 @@ import org.springframework.context.ApplicationContext;
 public class KeycloakSpringBootConfigResolverWrapper extends KeycloakSpringConfigResolverWrapper {
 
     private static ApplicationContext context;
+    private static KeycloakSpringBootProperties adapterConfig;
 
     public KeycloakSpringBootConfigResolverWrapper() {
         super(new KeycloakSpringBootConfigResolver());
@@ -40,9 +41,16 @@ public class KeycloakSpringBootConfigResolverWrapper extends KeycloakSpringConfi
             setDelegate(context.getBean(KeycloakConfigResolver.class));
         } catch (NoSuchBeanDefinitionException ignore) {
         }
+        if (getDelegate() instanceof KeycloakSpringBootConfigResolver) {
+            KeycloakSpringBootConfigResolver.class.cast(getDelegate()).setAdapterConfig(adapterConfig);
+        }
     }
 
     public static void setApplicationContext(ApplicationContext context) {
         KeycloakSpringBootConfigResolverWrapper.context = context;
+    }
+
+    public static void setAdapterConfig(KeycloakSpringBootProperties adapterConfig) {
+        KeycloakSpringBootConfigResolverWrapper.adapterConfig = adapterConfig;
     }
 }

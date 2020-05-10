@@ -26,7 +26,7 @@ export = Keycloak;
  * Creates a new Keycloak client instance.
  * @param config A configuration object or path to a JSON config file.
  */
-declare function Keycloak<TPromise extends Keycloak.KeycloakPromiseType = 'legacy'>(config?: Keycloak.KeycloakConfig | string): Keycloak.KeycloakInstance<TPromise>;
+declare function Keycloak(config?: Keycloak.KeycloakConfig | string): Keycloak.KeycloakInstance;
 
 declare namespace Keycloak {
 	type KeycloakAdapterName = 'cordova' | 'cordova-native' |'default' | any;
@@ -34,7 +34,6 @@ declare namespace Keycloak {
 	type KeycloakResponseMode = 'query'|'fragment';
 	type KeycloakResponseType = 'code'|'id_token token'|'code id_token token';
 	type KeycloakFlow = 'standard'|'implicit'|'hybrid';
-	type KeycloakPromiseType = 'legacy' | 'native';
 	type KeycloakPkceMethod = 'S256';
 
 	interface KeycloakConfig {
@@ -137,21 +136,6 @@ declare namespace Keycloak {
 		flow?: KeycloakFlow;
 
 		/**
-		 * Set the promise type. If set to `native` all methods returning a promise
-		 * will return a native JavaScript promise. If not not specified then
-		 * Keycloak specific legacy promise objects will be returned instead.
-		 *
-		 * Since native promises have become the industry standard it is highly
-		 * recommended that you always specify `native` as the promise type.
-		 *
-		 * Note that in upcoming versions of Keycloak the default will be changed
-		 * to `native`, and support for legacy promises will eventually be removed.
-		 *
-		 * @default legacy
-		 */
-		promiseType?: KeycloakPromiseType;
-
-		/**
 		 * Configures the Proof Key for Code Exchange (PKCE) method to use.
 		 * The currently allowed method is 'S256'.
 		 * If not configured, PKCE will not be used.
@@ -189,7 +173,7 @@ declare namespace Keycloak {
 		 * If value is `'register'` then user is redirected to registration page,
 		 * otherwise to login page.
 		 */
-		action?: 'register';
+		action?: string;
 
 		/**
 		 * Used just if user is already authenticated. Specifies maximum time since
@@ -214,13 +198,6 @@ declare namespace Keycloak {
                  * of the OIDC 1.0 specification.
 		 */
 		locale?: string;
-                
-                /**
-		 * Specifies the desired Keycloak locale for the UI.  This differs from
-                 * the locale param in that it tells the Keycloak server to set a cookie and update
-                 * the user's profile to a new preferred locale.
-		 */
-		kcLocale?: string;
 
 		/**
 		 * Specifies arguments that are passed to the Cordova in-app-browser (if applicable).
@@ -231,16 +208,27 @@ declare namespace Keycloak {
 		cordovaOptions?: { [optionName: string]: string };
 	}
 
+	interface KeycloakLogoutOptions {
+		/**
+		 * Specifies the uri to redirect to after logout.
+		 */
+		redirectUri?: string;
+	}
+
 	type KeycloakPromiseCallback<T> = (result: T) => void;
 
-	interface KeycloakPromise<TSuccess, TError> {
+	class KeycloakPromise<TSuccess, TError> extends Promise<TSuccess> {
 		/**
 		 * Function to call if the promised action succeeds.
+		 * 
+		 * @deprecated Use `.then()` instead.
 		 */
 		success(callback: KeycloakPromiseCallback<TSuccess>): KeycloakPromise<TSuccess, TError>;
 
 		/**
 		 * Function to call if the promised action throws an error.
+		 * 
+		 * @deprecated Use `.catch()` instead.
 		 */
 		error(callback: KeycloakPromiseCallback<TError>): KeycloakPromise<TSuccess, TError>;
 	}
@@ -252,7 +240,7 @@ declare namespace Keycloak {
 
 	interface KeycloakAdapter {
 		login(options?: KeycloakLoginOptions): KeycloakPromise<void, void>;
-		logout(options?: any): KeycloakPromise<void, void>;
+		logout(options?: KeycloakLogoutOptions): KeycloakPromise<void, void>;
 		register(options?: KeycloakLoginOptions): KeycloakPromise<void, void>;
 		accountManagement(): KeycloakPromise<void, void>;
 		redirectUri(options: { redirectUri: string; }, encodeHash: boolean): string;
@@ -288,20 +276,11 @@ declare namespace Keycloak {
 		roles: string[];
 	}
 
-	// export interface KeycloakUserInfo {}
-
-	/**
-	 * Conditional CompatPromise type in order to support
-	 * both legacy promises and native promises as return types.
-	 */
-	type CompatPromise<TPromiseType extends KeycloakPromiseType, TSuccess, TError> =
-		TPromiseType extends 'native' ? Promise<TSuccess> : KeycloakPromise<TSuccess, TError>;
-
 	/**
 	 * A client for the Keycloak authentication server.
 	 * @see {@link https://keycloak.gitbooks.io/securing-client-applications-guide/content/topics/oidc/javascript-adapter.html|Keycloak JS adapter documentation}
 	 */
-	interface KeycloakInstance<TPromise extends KeycloakPromiseType = 'legacy'> {
+	interface KeycloakInstance {
 		/**
 		 * Is true if the user is authenticated, false otherwise.
 		 */
@@ -462,36 +441,40 @@ declare namespace Keycloak {
 		onTokenExpired?(): void;
 
 		/**
+		 * Called when a AIA has been requested by the application.
+		 */
+		onActionUpdate?(status: 'success'|'cancelled'|'error'): void;
+
+		/**
 		 * Called to initialize the adapter.
 		 * @param initOptions Initialization options.
 		 * @returns A promise to set functions to be invoked on success or error.
 		 */
-		init(initOptions: KeycloakInitOptions): CompatPromise<TPromise, boolean, KeycloakError>;
+		init(initOptions: KeycloakInitOptions): KeycloakPromise<boolean, KeycloakError>;
 
 		/**
 		 * Redirects to login form.
 		 * @param options Login options.
 		 */
-		login(options?: KeycloakLoginOptions): CompatPromise<TPromise, void, void>;
+		login(options?: KeycloakLoginOptions): KeycloakPromise<void, void>;
 
 		/**
 		 * Redirects to logout.
 		 * @param options Logout options.
-		 * @param options.redirectUri Specifies the uri to redirect to after logout.
 		 */
-		logout(options?: any): CompatPromise<TPromise, void, void>;
+		logout(options?: KeycloakLogoutOptions): KeycloakPromise<void, void>;
 
 		/**
 		 * Redirects to registration form.
 		 * @param options Supports same options as Keycloak#login but `action` is
 		 *                set to `'register'`.
 		 */
-		register(options?: any): CompatPromise<TPromise, void, void>;
+		register(options?: any): KeycloakPromise<void, void>;
 
 		/**
 		 * Redirects to the Account Management Console.
 		 */
-		accountManagement(): CompatPromise<TPromise, void, void>;
+		accountManagement(): KeycloakPromise<void, void>;
 
 		/**
 		 * Returns the URL to login form.
@@ -502,9 +485,8 @@ declare namespace Keycloak {
 		/**
 		 * Returns the URL to logout the user.
 		 * @param options Logout options.
-		 * @param options.redirectUri Specifies the uri to redirect to after logout.
 		 */
-		createLogoutUrl(options?: any): string;
+		createLogoutUrl(options?: KeycloakLogoutOptions): string;
 
 		/**
 		 * Returns the URL to registration page.
@@ -543,7 +525,7 @@ declare namespace Keycloak {
 		 *   alert('Failed to refresh the token, or the session has expired');
 		 * });
 		 */
-		updateToken(minValidity: number): CompatPromise<TPromise, boolean, boolean>;
+		updateToken(minValidity: number): KeycloakPromise<boolean, boolean>;
 
 		/**
 		 * Clears authentication state, including tokens. This can be useful if
@@ -570,11 +552,11 @@ declare namespace Keycloak {
 		 * Loads the user's profile.
 		 * @returns A promise to set functions to be invoked on success or error.
 		 */
-		loadUserProfile(): CompatPromise<TPromise, KeycloakProfile, void>;
+		loadUserProfile(): KeycloakPromise<KeycloakProfile, void>;
 
 		/**
 		 * @private Undocumented.
 		 */
-		loadUserInfo(): CompatPromise<TPromise, {}, void>;
+		loadUserInfo(): KeycloakPromise<{}, void>;
 	}
 }

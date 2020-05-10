@@ -19,6 +19,7 @@ package org.keycloak.testsuite.util;
 
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -124,9 +125,21 @@ public class RealmBuilder {
 
     public RealmBuilder client(ClientRepresentation client) {
         if (rep.getClients() == null) {
-            rep.setClients(new LinkedList<ClientRepresentation>());
+            rep.setClients(new LinkedList<>());
         }
         rep.getClients().add(client);
+        return this;
+    }
+
+    public RealmBuilder identityProvider(IdentityProviderBuilder identityProvider) {
+        return identityProvider(identityProvider.build());
+    }
+
+    public RealmBuilder identityProvider(IdentityProviderRepresentation identityProvider) {
+        if (rep.getIdentityProviders()== null) {
+            rep.setIdentityProviders(new LinkedList<>());
+        }
+        rep.getIdentityProviders().add(identityProvider);
         return this;
     }
 
@@ -136,7 +149,7 @@ public class RealmBuilder {
 
     public RealmBuilder user(UserRepresentation user) {
         if (rep.getUsers() == null) {
-            rep.setUsers(new LinkedList<UserRepresentation>());
+            rep.setUsers(new LinkedList<>());
         }
         rep.getUsers().add(user);
         return this;
@@ -257,6 +270,16 @@ public class RealmBuilder {
 
     public RealmBuilder offlineSessionMaxLifespanEnabled(boolean offlineSessionMaxLifespanEnabled) {
         rep.setOfflineSessionMaxLifespanEnabled(offlineSessionMaxLifespanEnabled);
+        return this;
+    }
+
+    public RealmBuilder clientSessionIdleTimeout(int clientSessionIdleTimeout) {
+        rep.setClientSessionIdleTimeout(clientSessionIdleTimeout);
+        return this;
+    }
+
+    public RealmBuilder clientSessionMaxLifespan(int clientSessionMaxLifespan) {
+        rep.setClientSessionMaxLifespan(clientSessionMaxLifespan);
         return this;
     }
 }

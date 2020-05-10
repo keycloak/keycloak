@@ -13,6 +13,8 @@ import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
@@ -42,6 +44,7 @@ import org.w3c.dom.Document;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertThat;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_NAME;
 import static org.keycloak.testsuite.utils.io.IOUtil.documentToString;
 import static org.keycloak.testsuite.utils.io.IOUtil.setDocElementAttributeValue;
@@ -157,6 +160,7 @@ public class BasicSamlTest extends AbstractSamlTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testNoPortInDestination() throws Exception {
         // note that this test relies on settings of the login-protocol.saml.knownProtocols configuration option
         testWithOverriddenPort(-1, Response.Status.OK, containsString("login"));

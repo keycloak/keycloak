@@ -120,6 +120,39 @@
           "clientRole": true,
           "containerId": "f3ff0b0d-e922-4874-a34c-cdfa1b3305fe"
         }
+      ],
+      "test-app-service-account": [
+        {
+          "name": "test-app-service-account",
+          "description": "test-app-service-account",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "9f39a1b4-8ca1-45e1-943d-9149c5bdcca4",
+          "attributes": {}
+        },
+        {
+          "name": "test-app-service-account-child",
+          "description": "test-app-service-account-child",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "9f39a1b4-8ca1-45e1-943d-9149c5bdcca4",
+          "attributes": {}
+        },
+        {
+          "name": "test-app-service-account-parent",
+          "description": "test-app-service-account-parent",
+          "composite": true,
+          "composites": {
+            "client": {
+              "test-app-service-account": [
+                "test-app-service-account-child"
+              ]
+            }
+          },
+          "clientRole": true,
+          "containerId": "9f39a1b4-8ca1-45e1-943d-9149c5bdcca4",
+          "attributes": {}
+        }
       ]
     }
   },
@@ -209,6 +242,61 @@
     "user": "user",
     "password": "secret"
   },
+  "users": [
+    {
+      "username" : "bburke",
+      "enabled": true,
+      "email" : "bburke@redhat.com",
+      "credentials" : [
+        {
+          "type" : "password",
+          "value" : "password"
+        }
+      ],
+      "attributes" : {
+        "phone": "617"
+      },
+      "realmRoles": [
+        "user"
+      ],
+      "applicationRoles": {
+        "test-app": [
+          "sample-client-role"
+        ]
+      }
+    },
+    {
+      "username": "service-account-test-app-service-account",
+      "enabled": true,
+      "totp": false,
+      "emailVerified": false,
+      "email": "service-account-test-app-service-account@placeholder.org",
+      "serviceAccountClientId": "test-app-service-account",
+      "credentials" : [
+        {
+          "type" : "password",
+          "value" : "password"
+        }
+      ],
+      "realmRoles": [
+        "uma_authorization",
+        "user",
+        "offline_access"
+      ],
+      "clientRoles": {
+        "test-app-service-account": [
+          "test-app-service-account",
+          "test-app-service-account-parent"
+        ],
+        "account": [
+          "manage-account",
+          "view-profile"
+        ]
+      },
+      "notBefore": 0,
+      "groups": []
+    }
+  ],
   "scopeMappings": [
     {
       "client": "test-app",
@@ -606,6 +694,103 @@
       "useTemplateConfig": false,
       "useTemplateScope": false,
       "useTemplateMappers": false
+    },
+    {
+      "clientId": "test-app-service-account",
+      "rootUrl": "http://localhost:8180/auth/realms/master/app-service-account",
+      "adminUrl": "http://localhost:8180/auth/realms/master/app-service-account",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "password",
+      "redirectUris": [
+        "http://localhost:8180/auth/realms/master/app-service-account/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8180"
+      ],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "saml.assertion.signature": "false",
+        "saml.force.post.binding": "false",
+        "saml.multivalued.roles": "false",
+        "saml.encrypt": "false",
+        "saml.server.signature": "false",
+        "saml.server.signature.keyinfo.ext": "false",
+        "exclude.session.state.from.auth.response": "false",
+        "saml_force_name_id_format": "false",
+        "saml.client.signature": "false",
+        "tls.client.certificate.bound.access.tokens": "false",
+        "saml.authnstatement": "false",
+        "display.on.consent.screen": "false",
+        "saml.onetimeuse.condition": "false"
+      },
+      "authenticationFlowBindingOverrides": {},
+      "fullScopeAllowed": true,
+      "nodeReRegistrationTimeout": -1,
+      "protocolMappers": [
+        {
+          "name": "Client Host",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usersessionmodel-note-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.session.note": "clientHost",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "clientHost",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "Client ID",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usersessionmodel-note-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.session.note": "clientId",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "clientId",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "Client IP Address",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usersessionmodel-note-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.session.note": "clientAddress",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "clientAddress",
+            "jsonType.label": "String"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "role_list",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
     }],
   "components": {
     "org.keycloak.keys.KeyProvider": [
@@ -981,6 +1166,7 @@
       "alias" : "google1",
       "enabled": true,
       "config": {
+        "syncMode": "IMPORT",
         "clientId": "googleId",
         "clientSecret": "googleSecret"
       }

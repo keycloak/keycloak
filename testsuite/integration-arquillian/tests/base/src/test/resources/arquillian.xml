@@ -578,10 +578,17 @@
             <property name="enabled">${auth.server.remote}</property>
             <property name="adapterImplClass">org.jboss.as.arquillian.container.remote.RemoteDeployableContainer</property>
 
-            <property name="managementAddress">${auth.server.host}</property>
+            <property name="managementAddress">${auth.server.management.host}</property>
             <property name="managementPort">${auth.server.management.port}</property>
             <property name="username">admin</property>
             <property name="password">admin</property>
+        </configuration>
+    </container>
+
+    <container qualifier="auth-server-quarkus" mode="manual" >
+        <configuration>
+            <property name="enabled">${auth.server.quarkus}</property>
+            <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer</property>
         </configuration>
     </container>
 

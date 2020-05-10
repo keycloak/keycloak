@@ -33,6 +33,11 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
         this.config = ConfigProvider.getConfig();
     }
 
+    // for testing only
+    MicroProfileConfigProvider(ClassLoader cl) {
+        this.config = ConfigProvider.getConfig(cl);
+    }
+
     @Override
     public String getProvider(String spi) {
         return scope(spi).get("provider");
@@ -104,10 +109,31 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
         }
 
         private <T> T getValue(String key, Class<T> clazz, T defaultValue) {
-            T value = config.getOptionalValue(prefix + "." + key, clazz).orElse(defaultValue);
-            return value;
+            String property = prefix + "." + key;
+            return config.getOptionalValue(toDashCase(property), clazz)
+                    .orElseGet(() -> config.getOptionalValue(property, clazz)
+                        .orElse(defaultValue));
         }
 
+    }
+
+    private static String toDashCase(String s) {
+
+        StringBuilder sb = new StringBuilder(s.length());
+        boolean l = false;
+
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (l && Character.isUpperCase(c)) {
+                sb.append('-');
+                c = Character.toLowerCase(c);
+                l = false;
+            } else {
+                l = Character.isLowerCase(c);
+            }
+            sb.append(c);
+        }
+        return sb.toString();
     }
 
 }

@@ -43,5 +43,7 @@ public interface ClientProvider extends ClientLookupProvider, Provider {
 
     Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client);
 
+    List<ClientModel> getAlwaysDisplayInConsoleClients(RealmModel realm);
+
     boolean removeClient(String id, RealmModel realm);
 }

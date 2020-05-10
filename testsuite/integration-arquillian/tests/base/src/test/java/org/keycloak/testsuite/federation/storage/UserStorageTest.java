@@ -11,6 +11,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialStoreManager;
@@ -22,6 +23,7 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -31,6 +33,7 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.federation.UserMapStorage;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
@@ -66,6 +69,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PROFILE;
+import org.keycloak.provider.ProviderFactory;
 import static org.keycloak.storage.UserStorageProviderModel.CACHE_POLICY;
 import static org.keycloak.storage.UserStorageProviderModel.EVICTION_DAY;
 import static org.keycloak.storage.UserStorageProviderModel.EVICTION_HOUR;
@@ -73,6 +77,9 @@ import static org.keycloak.storage.UserStorageProviderModel.EVICTION_MINUTE;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.storage.UserStorageProviderModel.MAX_LIFESPAN;
 import static org.keycloak.testsuite.actions.RequiredActionEmailVerificationTest.getPasswordResetEmailLink;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.util.WaitUtils;
+
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
@@ -80,6 +87,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
  *
  * @author tkyjovsk
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UserStorageTest extends AbstractAuthTest {
 
     private String memProviderId;
@@ -139,7 +147,7 @@ public class UserStorageTest extends AbstractAuthTest {
     }
 
     @After
-    public void removeTestUser() throws URISyntaxException, IOException {
+    public void afterTestCleanUp() throws URISyntaxException, IOException {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
             if (realm == null) {
@@ -151,6 +159,11 @@ public class UserStorageTest extends AbstractAuthTest {
                 session.userLocalStorage().removeUser(realm, user);
                 session.userCache().clear();
             }
+
+            //we need to clear userPasswords and userGroups from UserMapStorageFactory
+            UserMapStorageFactory userMapStorageFactory = (UserMapStorageFactory) session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, UserMapStorageFactory.PROVIDER_ID);
+            Assert.assertNotNull(userMapStorageFactory);
+            userMapStorageFactory.clear();
         });
     }
 
@@ -317,6 +330,7 @@ public class UserStorageTest extends AbstractAuthTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testRegisterWithRequiredEmail() throws Exception {
         try (AutoCloseable c = new RealmAttributeUpdater(testRealmResource())
           .updateWith(r -> {
@@ -948,6 +962,57 @@ public class UserStorageTest extends AbstractAuthTest {
             List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
             assertOrder(list, otp1Id.get(), otp2Id.get());
         });
+    }
+
+    @Test
+    public void testCRUDCredentialsOfDifferentUser() {
+        // Create OTP credential for user1 in the federated storage
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+
+            UserModel user = session.users().getUserByUsername("thor", realm);
+            Assert.assertFalse(StorageId.isLocalStorage(user));
+
+            CredentialModel otp1 = OTPCredentialModel.createFromPolicy(realm, "secret1");
+            session.userCredentialManager().createCredential(realm, user, otp1);
+        });
+
+        UserResource user1 = ApiUtil.findUserByUsernameId(testRealmResource(), "thor");
+        CredentialRepresentation otpCredential = user1.credentials().stream()
+                .filter(credentialRep -> OTPCredentialModel.TYPE.equals(credentialRep.getType()))
+                .findFirst()
+                .get();
+
+        // Test that when admin operates on user "user2", who is saved in user-storage, he can't update, move or remove credentials of different user "user1"
+        UserResource user2 = ApiUtil.findUserByUsernameId(testRealmResource(), "tbrady");
+        try {
+            user2.setCredentialUserLabel(otpCredential.getId(), "new-label");
+            Assert.fail("Not expected to successfully update user label");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+
+        try {
+            user2.moveCredentialToFirst(otpCredential.getId());
+            Assert.fail("Not expected to successfully move credential");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+
+        try {
+            user2.removeCredential(otpCredential.getId());
+            Assert.fail("Not expected to successfully remove credential");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+
+        // Assert credential was not removed or updated
+        CredentialRepresentation otpCredentialLoaded = user1.credentials().stream()
+                .filter(credentialRep -> OTPCredentialModel.TYPE.equals(credentialRep.getType()))
+                .findFirst()
+                .get();
+        Assert.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getUserLabel(), otpCredentialLoaded.getUserLabel()));
+        Assert.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getPriority(), otpCredentialLoaded.getPriority()));
     }
 
 

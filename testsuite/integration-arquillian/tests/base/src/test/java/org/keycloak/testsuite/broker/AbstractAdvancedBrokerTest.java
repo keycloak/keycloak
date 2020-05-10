@@ -1,23 +1,13 @@
 package org.keycloak.testsuite.broker;
 
-import java.net.URI;
-import java.util.Collections;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientRequestFilter;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderMapperSyncMode;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
@@ -28,11 +18,25 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.Urls;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.openqa.selenium.TimeoutException;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientRequestFilter;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
@@ -62,21 +66,25 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
 
     protected void createRoleMappersForConsumerRealm() {
+        createRoleMappersForConsumerRealm(IdentityProviderMapperSyncMode.FORCE);
+    }
+
+    protected void createRoleMappersForConsumerRealm(IdentityProviderMapperSyncMode syncMode) {
         log.debug("adding mappers to identity provider in realm " + bc.consumerRealmName());
 
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
 
         IdentityProviderResource idpResource = realm.identityProviders().get(bc.getIDPAlias());
-        for (IdentityProviderMapperRepresentation mapper : createIdentityProviderMappers()) {
+        for (IdentityProviderMapperRepresentation mapper : createIdentityProviderMappers(syncMode)) {
             mapper.setIdentityProviderAlias(bc.getIDPAlias());
             Response resp = idpResource.addMapper(mapper);
             resp.close();
         }
     }
 
-    protected abstract Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers();
+    protected abstract Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers(IdentityProviderMapperSyncMode syncMode);
 
-
+    protected abstract void createAdditionalMapperWithCustomSyncMode(IdentityProviderMapperSyncMode syncMode);
 
     /**
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractKeycloakIdentityProviderTest#testAccountManagementLinkIdentity
@@ -142,7 +150,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
         logInWithBroker(bc);
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
         logoutFromRealm(bc.providerRealmName());
         logoutFromRealm(bc.consumerRealmName());
@@ -175,7 +183,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
         logInWithBroker(bc);
         updatePasswordPage.updatePasswords("password", "password");
-        waitForPage(driver, "keycloak account management", true);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
 
         String username = bc.getUserLogin();
@@ -314,18 +322,35 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         assertEquals("Account is disabled, contact your administrator.", errorPage.getError());
     }
 
-
-
-
-
-
     // KEYCLOAK-3987
     @Test
-    public void grantNewRoleFromToken() {
+    public void mapperDoesNotGrantNewRoleFromTokenWithSyncModeImport() {
+        testMapperAssigningRoles(IdentityProviderMapperSyncMode.IMPORT, false);
+    }
+
+    @Test
+    public void mapperGrantsNewRoleFromTokenWithInheritedSyncModeForce() {
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+        realm.identityProviders().get(bc.getIDPAlias())
+                .update(bc.setUpIdentityProvider(suiteContext, IdentityProviderSyncMode.FORCE));
+
+        testMapperAssigningRoles(IdentityProviderMapperSyncMode.INHERIT, true);
+    }
+
+    @Test
+    public void mapperDoesNotGrantNewRoleFromTokenWithInheritedSyncModeImport() {
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+        realm.identityProviders().get(bc.getIDPAlias())
+                .update(bc.setUpIdentityProvider(suiteContext, IdentityProviderSyncMode.IMPORT));
+
+        testMapperAssigningRoles(IdentityProviderMapperSyncMode.INHERIT, false);
+    }
+
+    private void testMapperAssigningRoles(IdentityProviderMapperSyncMode anImport, boolean isAssigned) {
         createRolesForRealm(bc.providerRealmName());
         createRolesForRealm(bc.consumerRealmName());
 
-        createRoleMappersForConsumerRealm();
+        createRoleMappersForConsumerRealm(anImport);
 
         RoleRepresentation managerRole = adminClient.realm(bc.providerRealmName()).roles().get(ROLE_MANAGER).toRepresentation();
         RoleRepresentation userRole = adminClient.realm(bc.providerRealmName()).roles().get(ROLE_USER).toRepresentation();
@@ -335,7 +360,9 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         logInAsUserInIDPForFirstTime();
 
-        Set<String> currentRoles = userResource.roles().realmLevel().listAll().stream()
+        UserResource consumerUserResource = adminClient.realm(bc.consumerRealmName()).users().get(
+                adminClient.realm(bc.consumerRealmName()).users().search(bc.getUserLogin()).get(0).getId());
+        Set<String> currentRoles = consumerUserResource.roles().realmLevel().listAll().stream()
                 .map(RoleRepresentation::getName)
                 .collect(Collectors.toSet());
 
@@ -349,15 +376,63 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         logInAsUserInIDP();
 
-        currentRoles = userResource.roles().realmLevel().listAll().stream()
+        currentRoles = consumerUserResource.roles().realmLevel().listAll().stream()
                 .map(RoleRepresentation::getName)
                 .collect(Collectors.toSet());
-        assertThat(currentRoles, hasItems(ROLE_MANAGER, ROLE_USER));
+        if (isAssigned) {
+            assertThat(currentRoles, hasItems(ROLE_MANAGER, ROLE_USER));
+        } else {
+            assertThat(currentRoles, hasItems(ROLE_MANAGER));
+            assertThat(currentRoles, not(hasItems(ROLE_USER)));
+        }
 
-        logoutFromRealm(bc.providerRealmName());
         logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(bc.providerRealmName());
     }
 
+    @Test
+    public void differentMappersCanHaveDifferentSyncModes() {
+        createRolesForRealm(bc.providerRealmName());
+        createRolesForRealm(bc.consumerRealmName());
+
+        createRoleMappersForConsumerRealm(IdentityProviderMapperSyncMode.INHERIT);
+        createAdditionalMapperWithCustomSyncMode(IdentityProviderMapperSyncMode.FORCE);
+
+
+        RoleRepresentation managerRole = adminClient.realm(bc.providerRealmName()).roles().get(ROLE_MANAGER).toRepresentation();
+        RoleRepresentation userRole = adminClient.realm(bc.providerRealmName()).roles().get(ROLE_USER).toRepresentation();
+        RoleRepresentation friendlyManagerRole = adminClient.realm(bc.providerRealmName()).roles().get(ROLE_FRIENDLY_MANAGER).toRepresentation();
+
+        UserResource userResource = adminClient.realm(bc.providerRealmName()).users().get(userId);
+        userResource.roles().realmLevel().add(Collections.singletonList(managerRole));
+
+        logInAsUserInIDPForFirstTime();
+
+        UserResource consumerUserResource = adminClient.realm(bc.consumerRealmName()).users().get(
+                adminClient.realm(bc.consumerRealmName()).users().search(bc.getUserLogin()).get(0).getId());
+        Set<String> currentRoles = consumerUserResource.roles().realmLevel().listAll().stream()
+                .map(RoleRepresentation::getName)
+                .collect(Collectors.toSet());
+
+        assertThat(currentRoles, hasItems(ROLE_MANAGER));
+        assertThat(currentRoles, not(hasItems(ROLE_USER, ROLE_FRIENDLY_MANAGER)));
+
+        logoutFromRealm(bc.consumerRealmName());
+
+
+        userResource.roles().realmLevel().add(Arrays.asList(userRole, friendlyManagerRole));
+
+        logInAsUserInIDP();
+
+        currentRoles = consumerUserResource.roles().realmLevel().listAll().stream()
+                .map(RoleRepresentation::getName)
+                .collect(Collectors.toSet());
+        assertThat(currentRoles, hasItems(ROLE_MANAGER, ROLE_FRIENDLY_MANAGER));
+        assertThat(currentRoles, not(hasItems(ROLE_USER)));
+
+        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(bc.providerRealmName());
+    }
 
     // KEYCLOAK-4016
     @Test
@@ -386,13 +461,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
 
-        log.debug("Clicking social " + bc.getIDPAlias());
-        loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-        log.debug("Logging in");
-        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        logInWithBroker(bc);
 
         totpPage.assertCurrent();
         String totpSecret = totpPage.getTotpSecret();
@@ -401,28 +470,75 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         assertNumFederatedIdentities(realm.users().search(bc.getUserLogin()).get(0).getId(), 1);
         logoutFromRealm(bc.consumerRealmName());
 
-        log.debug("Clicking social " + bc.getIDPAlias());
-        loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-        log.debug("Logging in");
-        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        logInWithBroker(bc);
 
         loginTotpPage.assertCurrent();
         loginTotpPage.login(totp.generateTOTP(totpSecret));
         logoutFromRealm(bc.consumerRealmName());
 
         testingClient.server(bc.consumerRealmName()).run(disablePostBrokerLoginFlow(bc.getIDPAlias()));
-        log.debug("Clicking social " + bc.getIDPAlias());
-        loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
-        log.debug("Logging in");
-        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
-        waitForPage(driver, "keycloak account management", true);
+        logInWithBroker(bc);
+        waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
+    }
+
+    // KEYCLOAK-12986
+    @Test
+    public void testPostBrokerLoginFlowWithOTP_bruteForceEnabled() {
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+        testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
+
+        // Enable brute force protector in cosumer realm
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+        RealmRepresentation consumerRealmRep = realm.toRepresentation();
+        consumerRealmRep.setBruteForceProtected(true);
+        consumerRealmRep.setFailureFactor(2);
+        consumerRealmRep.setMaxDeltaTimeSeconds(20);
+        consumerRealmRep.setMaxFailureWaitSeconds(100);
+        consumerRealmRep.setWaitIncrementSeconds(5);
+        realm.update(consumerRealmRep);
+
+        try {
+            driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+
+            logInWithBroker(bc);
+
+            totpPage.assertCurrent();
+            String totpSecret = totpPage.getTotpSecret();
+            totpPage.configure(totp.generateTOTP(totpSecret));
+            assertNumFederatedIdentities(realm.users().search(bc.getUserLogin()).get(0).getId(), 1);
+            logoutFromRealm(bc.consumerRealmName());
+
+            logInWithBroker(bc);
+
+            loginTotpPage.assertCurrent();
+
+            // Login for 2 times with incorrect TOTP. This should temporarily disable the user
+            loginTotpPage.login("bad-totp");
+            Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getError());
+
+            loginTotpPage.login("bad-totp");
+            Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getError());
+
+            // Login with valid TOTP. I should not be able to login
+            loginTotpPage.login(totp.generateTOTP(totpSecret));
+            Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getError());
+
+            // Clear login failures
+            String userId = ApiUtil.findUserByUsername(realm, bc.getUserLogin()).getId();
+            realm.attackDetection().clearBruteForceForUser(userId);
+
+            loginTotpPage.login(totp.generateTOTP(totpSecret));
+            waitForAccountManagementTitle();
+            logoutFromRealm(bc.consumerRealmName());
+        } finally {
+            testingClient.server(bc.consumerRealmName()).run(disablePostBrokerLoginFlow(bc.getIDPAlias()));
+
+            // Disable brute force protector
+            consumerRealmRep = realm.toRepresentation();
+            consumerRealmRep.setBruteForceProtected(false);
+            realm.update(consumerRealmRep);
+        }
     }
 
     /**
@@ -475,7 +591,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
             loginPage.clickSocial(bc.getIDPAlias());
             loginPage.login("test-user", "password");
-            waitForPage(driver, "keycloak account management", true);
+            waitForAccountManagementTitle();
             accountUpdateProfilePage.assertCurrent();
 
             accountPage.password();
@@ -492,7 +608,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
             loginPage.clickSocial(bc.getIDPAlias());
             loginPage.login("test-user-noemail", "password");
-            waitForPage(driver, "keycloak account management", true);
+            waitForAccountManagementTitle();
             accountUpdateProfilePage.assertCurrent();
 
             accountPage.password();

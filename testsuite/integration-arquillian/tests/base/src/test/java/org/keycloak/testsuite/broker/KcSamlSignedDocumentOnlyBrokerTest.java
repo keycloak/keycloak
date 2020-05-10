@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.broker;
 
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -61,8 +62,8 @@ public class KcSamlSignedDocumentOnlyBrokerTest extends AbstractBrokerTest {
         }
 
         @Override
-        public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext) {
-            IdentityProviderRepresentation result = super.setUpIdentityProvider(suiteContext);
+        public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext, IdentityProviderSyncMode syncMode) {
+            IdentityProviderRepresentation result = super.setUpIdentityProvider(suiteContext, syncMode);
 
             Map<String, String> config = result.getConfig();
 

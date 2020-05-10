@@ -81,7 +81,16 @@
 
     function getCookie()
     {
-        var name = 'KEYCLOAK_SESSION=';
+        var cookie = getCookieByName('KEYCLOAK_SESSION');
+        if (cookie === null) {
+            return getCookieByName('KEYCLOAK_SESSION_LEGACY');
+        }
+        return cookie;
+    }
+
+    function getCookieByName(name)
+    {
+        name = name + '=';
         var ca = document.cookie.split(';');
         for(var i=0; i<ca.length; i++)
         {

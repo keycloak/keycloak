@@ -186,6 +186,11 @@ public class ClientBuilder {
         return this;
     }
 
+    public ClientBuilder alwaysDisplayInConsole(Boolean alwaysDisplayInConsole) {
+        rep.setAlwaysDisplayInConsole(alwaysDisplayInConsole);
+        return this;
+    }
+
     public ClientBuilder authorizationServicesEnabled(boolean enable) {
         rep.setAuthorizationServicesEnabled(enable);
         return this;

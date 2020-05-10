@@ -41,3 +41,5 @@ org.keycloak.protocol.oidc.mappers.UserRealmRoleMappingMapper
 org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper
 org.keycloak.protocol.docker.mapper.AllowAllDockerProtocolMapper
 org.keycloak.protocol.oidc.mappers.ScriptBasedOIDCProtocolMapper
+org.keycloak.protocol.saml.mappers.SAMLAudienceProtocolMapper
+org.keycloak.protocol.saml.mappers.SAMLAudienceResolveProtocolMapper

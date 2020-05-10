@@ -7,7 +7,7 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
         <meta name="robots" content="noindex, nofollow">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-          
+
         <script>
             <#if properties.developmentMode?has_content && properties.developmentMode == "true">
             var developmentMode = true;
@@ -25,17 +25,29 @@
             var realm = '${realm.name}';
             var resourceUrl = '${resourceUrl}';
             var isReactLoading = false;
-                
+
+            <#if properties.logo?has_content>
+            var brandImg = resourceUrl + '${properties.logo}';
+            <#else>
+            var brandImg = resourceUrl + '/public/logo.svg';
+            </#if>
+
+            <#if properties.logoUrl?has_content>
+            var brandUrl = '${properties.logoUrl}';
+            <#else>
+            var brandUrl = baseUrl;
+            </#if>
+
             var features = {
                 isRegistrationEmailAsUsername : ${realm.registrationEmailAsUsername?c},
                 isEditUserNameAllowed : ${realm.editUsernameAllowed?c},
-                isInternationalizationEnabled : ${realm.internationalizationEnabled?c},
+                isInternationalizationEnabled : ${realm.isInternationalizationEnabled()?c},
                 isLinkedAccountsEnabled : ${realm.identityFederationEnabled?c},
                 isEventsEnabled : ${isEventsEnabled?c},
                 isMyResourcesEnabled : ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c},
                 isTotpConfigured : ${isTotpConfigured?c}
             }
-                
+
             var availableLocales = [];
             <#list supportedLocales as locale, label>
                 availableLocales.push({locale : '${locale}', label : '${label}'});
@@ -44,7 +56,7 @@
             <#if referrer??>
                 var referrer = '${referrer}';
                 var referrerName = '${referrerName}';
-                var referrerUri = '${referrer_uri}';
+                var referrerUri = '${referrer_uri?no_esc}';
             </#if>
 
             <#if msg??>
@@ -55,18 +67,22 @@
                 var l18Msg = {};
             </#if>
         </script>
-        
-        <link rel="icon" href="${resourceUrl}/app/assets/img/favicon.ico" type="image/x-icon"/>
+
+        <#if properties.favIcon?has_content>
+        <link rel="icon" href="${resourceUrl}${properties.favIcon}" type="image/x-icon"/>
+        <#else>
+        <link rel="icon" href="${resourceUrl}/public/favicon.ico" type="image/x-icon"/>
+        </#if>
 
         <script src="${authUrl}js/keycloak.js"></script>
-        
+
         <#if properties.developmentMode?has_content && properties.developmentMode == "true">
         <!-- Don't use this in production: -->
         <script src="${resourceUrl}/node_modules/react/umd/react.development.js" crossorigin></script>
         <script src="${resourceUrl}/node_modules/react-dom/umd/react-dom.development.js" crossorigin></script>
         <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
         </#if>
-        
+
         <#if properties.extensions?has_content>
             <#list properties.extensions?split(' ') as script>
                 <#if properties.developmentMode?has_content && properties.developmentMode == "true">
@@ -76,7 +92,7 @@
                 </#if>
             </#list>
         </#if>
-        
+
         <#if properties.scripts?has_content>
             <#list properties.scripts?split(' ') as script>
         <script type="text/javascript" src="${resourceUrl}/${script}"></script>
@@ -88,6 +104,8 @@
             <link href="${resourceUrl}/${style}" rel="stylesheet"/>
             </#list>
         </#if>
+
+        <link href="${resourceUrl}/public/layout.css" rel="stylesheet"/>
     </head>
 
     <body>
@@ -98,7 +116,7 @@
                 realm: realm,
                 clientId: 'account-console'
             });
-            keycloak.init({onLoad: 'check-sso'}).success(function(authenticated) {
+            keycloak.init({onLoad: 'check-sso', pkceMethod: 'S256'}).success(function(authenticated) {
                 isReactLoading = true;
                 toggleReact();
                 if (!keycloak.authenticated) {
@@ -107,8 +125,9 @@
                 } else {
                     document.getElementById("landingSignOutButton").style.display='inline';
                     document.getElementById("landingSignOutLink").style.display='inline';
+                    document.getElementById("landingLoggedInUser").innerHTML = loggedInUserName('${msg("unknownUser")}', '${msg("fullName")}');
                 }
-                    
+
                 loadjs("/node_modules/systemjs/dist/system.src.js", function() {
                     loadjs("/systemjs.config.js", function() {
                         System.import('${resourceUrl}/Main.js').catch(function (err) {
@@ -125,7 +144,11 @@
 
 <div id="spinner_screen" style="display:block; height:100%">
     <div style="width: 320px; height: 328px; text-align: center; position: absolute; top:0;	bottom: 0; left: 0;	right: 0; margin: auto;">
-                <img src="${resourceUrl}/app/assets/img/keycloak-logo-min.png" alt="Keycloak Logo">
+                <#if properties.logo?has_content>
+                <img src="${resourceUrl}${properties.logo}" alt="Logo" class="brand">
+                <#else>
+                <img src="${resourceUrl}/public/logo.svg" alt="Logo" class="brand">
+                </#if>
                 <p>${msg("loadingMessage")}</p>
                 <div >
                     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="margin: auto; background: rgb(255, 255, 255); display: block; shape-rendering: auto;" width="200px" height="200px" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid">
@@ -142,8 +165,16 @@
     <div class="pf-c-page" id="page-layout-default-nav">
       <header role="banner" class="pf-c-page__header">
         <div class="pf-c-page__header-brand">
-          <a class="pf-c-page__header-brand-link">
-            <img class="pf-c-brand" src="${resourceUrl}/app/assets/img/keycloak-logo-min.png" alt="Keycloak Logo">
+          <#if properties.logoUrl?has_content>
+          <a id="landingLogo" class="pf-c-page__header-brand-link" href="${properties.logoUrl}">
+          <#else>
+          <a id="landingLogo" class="pf-c-page__header-brand-link" href="${baseUrl}">
+          </#if>
+            <#if properties.logo?has_content>
+            <img class="pf-c-brand brand" src="${resourceUrl}${properties.logo}" alt="Logo">
+            <#else>
+            <img class="pf-c-brand brand" src="${resourceUrl}/public/logo.svg" alt="Logo">
+            </#if>
           </a>
         </div>
         <div class="pf-c-page__header-tools">
@@ -152,34 +183,16 @@
               <a id="landingReferrerLink" href="${referrer_uri}" id="referrer" tabindex="0"><span class="pf-icon pf-icon-arrow"></span>${msg("backTo",referrerName)}</a>
             </div>
             </#if>
-            
-            <#if realm.internationalizationEnabled  && supportedLocales?size gt 1>
+
             <div class="pf-c-page__header-tools-group pf-m-icons">
-              <div id="landing-locale-dropdown" class="pf-c-dropdown">
-                <button onclick="toggleLocaleDropdown();" class="pf-c-dropdown__toggle pf-m-plain" id="landing-locale-dropdown-button" aria-expanded="false" aria-haspopup="true">
-                    <span class="pf-c-dropdown__toggle-text">
-                          ${msg("locale_" + locale)}
-                    </span>
-                    <i class="fas fa-caret-down pf-c-dropdown__toggle-icon" aria-hidden="true"></i>
-                </button>
-                <ul id="landing-locale-dropdown-list" class="pf-c-dropdown__menu" aria-labeledby="landing-locale-dropdown-button" role="menu" hidden>
-                    <#list supportedLocales as locale, label>
-                        <#if referrer?has_content && referrer_uri?has_content>
-                        <li id="landing-locale-${locale}" role="none"><a href="${baseUrl}/?kc_locale=${locale}&referrer=${referrer}&referrer_uri=${referrer_uri}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
-                        <#else>
-                        <li id="landing-locale-${locale}" role="none"><a href="${baseUrl}/?kc_locale=${locale}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
-                        </#if>
-                    </#list>
-                </ul>
-              </div>
-            </div>
-            </#if>
-            
-            <div class="pf-c-page__header-tools-group pf-m-icons">
-              <button id="landingSignInButton" tabindex="0" style="display:none" onclick="keycloak.login();" class="pf-c-button pf-m-primary" type="button">${msg("doLogIn")}</button>
+              <button id="landingSignInButton" tabindex="0" style="display:none" onclick="keycloak.login();" class="pf-c-button pf-m-primary" type="button">${msg("doSignIn")}</button>
               <button id="landingSignOutButton" tabindex="0" style="display:none" onclick="keycloak.logout();" class="pf-c-button pf-m-primary" type="button">${msg("doSignOut")}</button>
             </div>
-            
+
+            <div class="pf-l-toolbar__group" style="margin-left: 10px;">
+                <span id="landingLoggedInUser"></span>
+            </div>
+
             <!-- Kebab for mobile -->
             <div class="pf-c-page__header-tools-group">
                 <div id="landingMobileKebab" class="pf-c-dropdown pf-m-mobile" onclick="toggleMobileDropdown();"> <!-- pf-m-expanded -->
@@ -192,20 +205,6 @@
                             <a id="landingMobileReferrerLink" href="${referrer_uri}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${msg("backTo",referrerName)}</a>
                         </li>
                         </#if>
-                        
-                        <!-- locale selector for mobile -->
-                        <#if realm.internationalizationEnabled  && supportedLocales?size gt 1>
-                            <li role="none" aria-expanded="false" onclick="toggleMobileChooseLocale();"><a href="#" id="landing-mobile-local-toggle" class="pf-c-dropdown__menu-item">${msg("locale_" + locale)} <i id="landingMobileLocaleSelectedIcon" class="fas fa-angle-right pf-c-options-menu__menu-item-icon" aria-hidden="true"></i></a></li>
-                            <#list supportedLocales as locale, label>
-                                <#if referrer?has_content && referrer_uri?has_content>
-                                <li role="none" id="landing-mobile-locale-${locale}" style="display:none"><a href="${baseUrl}/?kc_locale=${locale}&referrer=${referrer}&referrer_uri=${referrer_uri}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
-                                <#else>
-                                <li role="none" id="landing-mobile-locale-${locale}" style="display:none"><a href="${baseUrl}/?kc_locale=${locale}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${label}</a></li>
-                                </#if>
-                            </#list>
-                            <li id="landingMobileLocaleSeparator" class="pf-c-dropdown__separator" role="separator" style="display:none"></li>
-                        </#if>
-                        <!-- end locale selector for mobile -->
 
                         <li id="landingSignInLink" role="none" style="display:none">
                             <a href="#" onclick="keycloak.login();" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${msg("doLogIn")}</a>
@@ -216,7 +215,7 @@
                     </ul>
                 </div>
             </div>
-            
+
         </div> <!-- end header tools -->
       </header>
 
@@ -263,7 +262,7 @@
                 </div>
               </div>
             </div>
-            <div class="pf-l-gallery__item" style="display:none" id="landingMyResourcesCard">
+            <div class="pf-l-gallery__item" id="landingMyResourcesCard" style="display:none">
               <div class="pf-c-card">
                 <div class="pf-c-card__header pf-c-content">
                     <h2><i class="pf-icon pf-icon-repository"></i>&nbsp${msg("myResources")}</h2>
@@ -285,10 +284,10 @@
                 document.getElementById("landingLinkedAccountsLink").style.display='block';
             };
 
-            // Hidden until feature is complete.  
-            //if (features.isMyResourcesEnabled) {
-            //    document.getElementById("landingMyResourcesCard").style.display='block';
-            //};
+            // Hidden until feature is complete.
+            if (features.isMyResourcesEnabled) {
+                document.getElementById("landingMyResourcesCard").style.display='block';
+            };
         </script>
 
     </body>

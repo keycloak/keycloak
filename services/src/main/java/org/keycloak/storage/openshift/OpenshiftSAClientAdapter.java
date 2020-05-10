@@ -108,6 +108,11 @@ public final class OpenshiftSAClientAdapter extends AbstractReadOnlyClientStorag
     }
 
     @Override
+    public boolean isAlwaysDisplayInConsole() {
+        return getConfigOrDefault(() -> defaultConfig.isAlwaysDisplayInConsole(), defaultConfig::setAlwaysDisplayInConsole, false);
+    }
+
+    @Override
     public Set<String> getWebOrigins() {
         return new HashSet<>(getConfigOrDefault(() -> defaultConfig.getWebOrigins(), defaultConfig::setWebOrigins, Collections.emptyList()));
     }

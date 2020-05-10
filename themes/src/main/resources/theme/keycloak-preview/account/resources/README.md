@@ -65,7 +65,7 @@ Running tests
 1. Build the project (no need to build the whole distribution).
 1. Run:
 ```
-mvn clean verify -f testsuite/integration-arquillian/tests/other/base-ui -Dtest=**.account2.**  -Dkeycloak.profile.feature.account2=enabled -Dkeycloak.profile.feature.account_api=enabled -Dbrowser=chrome
+mvn clean verify -f testsuite/integration-arquillian/tests/other/base-ui -Dtest=**.account2.** -Dbrowser=chrome -DchromeArguments=--enable-web-authentication-testing-api
 ```
 Use `chrome` or `firefox` as the browser, other browsers are currently broken for the testsuite.
 

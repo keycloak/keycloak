@@ -21,7 +21,6 @@ import {Dropdown, KebabToggle, Toolbar, ToolbarGroup, ToolbarItem} from '@patter
 import {ReferrerDropdownItem} from './widgets/ReferrerDropdownItem';
 import {ReferrerLink} from './widgets/ReferrerLink';
 import {Features} from './widgets/features';
-import {LocaleNav,LocaleDropdown} from './widgets/LocaleSelectors';
 import {LogoutButton,LogoutDropdownItem} from './widgets/Logout';
 
 declare const referrerName: string;
@@ -54,10 +53,6 @@ export class PageToolbar extends React.Component<PageToolbarProps, PageToolbarSt
             )
         }
         
-        if (features.isInternationalizationEnabled) {
-            kebabDropdownItems.push(<LocaleNav key='kebabLocaleNav'/>);
-        }
-            
         kebabDropdownItems.push(<LogoutDropdownItem key='LogoutDropdownItem'/>);
         
         return (
@@ -71,12 +66,6 @@ export class PageToolbar extends React.Component<PageToolbarProps, PageToolbarSt
                 }
                     
                 <ToolbarGroup key='secondGroup'>
-                    {features.isInternationalizationEnabled &&
-                        <ToolbarItem className="pf-m-icons" key='locale'>
-                            <LocaleDropdown/>
-                        </ToolbarItem>
-                    }
-                    
                     <ToolbarItem className="pf-m-icons" key='logout'>
                         <LogoutButton/>
                     </ToolbarItem>

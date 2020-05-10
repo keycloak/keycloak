@@ -495,6 +495,24 @@ public class StaxParserUtil {
     }
 
     /**
+     * Get the element text, replacing every occurrence of ${..} by corresponding system property value
+     *
+     * @param xmlEventReader
+     *
+     * @return A <b>trimmed</b> string value with all property references replaced if any. 
+     * If there are no valid references the input string will be returned
+     *
+     * @throws ParsingException
+     */
+    public static String getElementTextRP(XMLEventReader xmlEventReader) throws ParsingException {
+        try {
+            return trim(StringPropertyReplacer.replaceProperties(xmlEventReader.getElementText()));
+        } catch (XMLStreamException e) {
+            throw logger.parserException(e);
+        }
+    }
+
+    /**
      * Get the XML event reader
      *
      * @param is

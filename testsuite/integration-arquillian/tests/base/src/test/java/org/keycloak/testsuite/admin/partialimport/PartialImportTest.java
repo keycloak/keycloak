@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.admin.partialimport;
 
+import java.io.IOException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -40,6 +41,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.RealmBuilder;
 
@@ -56,7 +58,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import org.keycloak.admin.client.resource.AuthorizationResource;
+import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.partialimport.ResourceType;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+
+import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * Tests for the partial import endpoint in admin client.  Also tests the
@@ -72,6 +81,7 @@ public class PartialImportTest extends AbstractAuthTest {
 
     private static final int NUM_RESOURCE_TYPES = 6;
     private static final String CLIENT_ROLES_CLIENT = "clientRolesClient";
+    private static final String CLIENT_SERVICE_ACCOUNT = "clientServiceAccount";
     private static final String USER_PREFIX = "user";
     private static final String GROUP_PREFIX = "group";
     private static final String CLIENT_PREFIX = "client";
@@ -79,9 +89,20 @@ public class PartialImportTest extends AbstractAuthTest {
     private static final String CLIENT_ROLE_PREFIX = "clientRole";
     private static final String[] IDP_ALIASES = {"twitter", "github", "facebook", "google", "linkedin", "microsoft", "stackoverflow"};
     private static final int NUM_ENTITIES = IDP_ALIASES.length;
+    private static final ResourceServerRepresentation resourceServerSampleSettings;
 
     private PartialImportRepresentation piRep;
     private String realmId;
+
+    static {
+        try {
+            resourceServerSampleSettings = JsonSerialization.readValue(
+                PartialImportTest.class.getResourceAsStream("/import/sample-authz-partial-import.json"),
+                ResourceServerRepresentation.class);
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot load sample resource server configuration", e);
+        }
+    }
 
     @Before
     public void initAdminEvents() {
@@ -104,13 +125,30 @@ public class PartialImportTest extends AbstractAuthTest {
         ClientRepresentation client = new ClientRepresentation();
         client.setClientId(CLIENT_ROLES_CLIENT);
         client.setName(CLIENT_ROLES_CLIENT);
-        client.setRootUrl("foo");
         client.setProtocol("openid-connect");
-        Response resp = testRealmResource().clients().create(client);
+        try (Response resp = testRealmResource().clients().create(client)) {
 
-        // for some reason, findAll() will later fail unless readEntity is called here
-        resp.readEntity(String.class);
-        //testRealmResource().clients().findAll();
+            // for some reason, findAll() will later fail unless readEntity is called here
+            resp.readEntity(String.class);
+            //testRealmResource().clients().findAll();
+        }
+    }
+
+    @Before
+    public void createClientWithServiceAccount() {
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId(CLIENT_SERVICE_ACCOUNT);
+        client.setName(CLIENT_SERVICE_ACCOUNT);
+        client.setRootUrl("http://localhost/foo");
+        client.setProtocol("openid-connect");
+        client.setPublicClient(false);
+        client.setSecret("secret");
+        client.setServiceAccountsEnabled(true);
+        try (Response resp = testRealmResource().clients().create(client)) {
+            String id = ApiUtil.getCreatedId(resp);
+            UserRepresentation serviceAccountUser = testRealmResource().clients().get(id).getServiceAccountUser();
+            assertNotNull(serviceAccountUser);
+        }
     }
 
     @Before
@@ -184,8 +222,9 @@ public class PartialImportTest extends AbstractAuthTest {
     }
 
     private PartialImportResults doImport() {
-        Response response = testRealmResource().partialImport(piRep);
-        return response.readEntity(PartialImportResults.class);
+        try (Response response = testRealmResource().partialImport(piRep)) {
+            return response.readEntity(PartialImportResults.class);
+        }
     }
 
     private void addUsers() {
@@ -226,17 +265,37 @@ public class PartialImportTest extends AbstractAuthTest {
         piRep.setGroups(groups);
     }
 
-    private void addClients() {
+    private void addClients(boolean withServiceAccounts) throws IOException {
         List<ClientRepresentation> clients = new ArrayList<>();
+        List<UserRepresentation> serviceAccounts = new ArrayList<>();
 
         for (int i = 0; i < NUM_ENTITIES; i++) {
             ClientRepresentation client = new ClientRepresentation();
             client.setClientId(CLIENT_PREFIX + i);
             client.setName(CLIENT_PREFIX + i);
-            client.setRootUrl("foo");
             clients.add(client);
+            if (withServiceAccounts) {
+                client.setServiceAccountsEnabled(true);
+                client.setBearerOnly(false);
+                client.setPublicClient(false);
+                client.setAuthorizationSettings(resourceServerSampleSettings);
+                client.setAuthorizationServicesEnabled(true);
+                // create the user service account
+                UserRepresentation serviceAccount = new UserRepresentation();
+                serviceAccount.setUsername(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + client.getClientId());
+                serviceAccount.setEnabled(true);
+                serviceAccount.setEmail(serviceAccount.getUsername() + "@placeholder.org");
+                serviceAccount.setServiceAccountClientId(client.getClientId());
+                serviceAccounts.add(serviceAccount);
+            }
         }
 
+        if (withServiceAccounts) {
+            if (piRep.getUsers() == null) {
+                piRep.setUsers(new ArrayList<>());
+            }
+            piRep.getUsers().addAll(serviceAccounts);
+        }
         piRep.setClients(clients);
     }
 
@@ -332,8 +391,9 @@ public class PartialImportTest extends AbstractAuthTest {
         UserRepresentation user = createUserRepresentation(USER_PREFIX + 999, USER_PREFIX + 1 + "@foo.com", "foo", "bar", true);
         piRep.getUsers().add(user);
 
-        Response response = testRealmResource().partialImport(piRep);
-        assertEquals(409, response.getStatus());
+        try (Response response = testRealmResource().partialImport(piRep)) {
+            assertEquals(409, response.getStatus());
+        }
     }
     
     @Test
@@ -379,7 +439,6 @@ public class PartialImportTest extends AbstractAuthTest {
 
         assertAdminEvents.assertEmpty();
 
-
         for (PartialImportResult result : results.getResults()) {
             String id = result.getId();
             UserResource userRsc = testRealmResource().users().get(id);
@@ -390,9 +449,9 @@ public class PartialImportTest extends AbstractAuthTest {
     }
 
     @Test
-    public void testAddClients() {
+    public void testAddClients() throws IOException {
         setFail();
-        addClients();
+        addClients(false);
 
         PartialImportResults results = doImport();
         assertEquals(NUM_ENTITIES, results.getAdded());
@@ -402,6 +461,36 @@ public class PartialImportTest extends AbstractAuthTest {
             ClientResource clientRsc = testRealmResource().clients().get(id);
             ClientRepresentation client = clientRsc.toRepresentation();
             assertTrue(client.getName().startsWith(CLIENT_PREFIX));
+        }
+    }
+
+    @EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
+    @Test
+    public void testAddClientsWithServiceAccountsAndAuthorization() throws IOException {
+        setFail();
+        addClients(true);
+
+        PartialImportResults results = doImport();
+        assertEquals(NUM_ENTITIES * 2, results.getAdded());
+
+        for (PartialImportResult result : results.getResults()) {
+            if (result.getResourceType().equals(ResourceType.CLIENT)) {
+                String id = result.getId();
+                ClientResource clientRsc = testRealmResource().clients().get(id);
+                ClientRepresentation client = clientRsc.toRepresentation();
+                assertTrue(client.getName().startsWith(CLIENT_PREFIX));
+                Assert.assertTrue(client.isServiceAccountsEnabled());
+                Assert.assertTrue(client.getAuthorizationServicesEnabled());
+                AuthorizationResource authRsc = clientRsc.authorization();
+                ResourceServerRepresentation authRep = authRsc.exportSettings();
+                Assert.assertNotNull(authRep);
+                Assert.assertEquals(2, authRep.getResources().size());
+                Assert.assertEquals(3, authRep.getPolicies().size());
+            } else {
+                UserResource userRsc = testRealmResource().users().get(result.getId());
+                Assert.assertTrue(userRsc.toRepresentation().getUsername().startsWith(
+                        ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + CLIENT_PREFIX));
+            }
         }
     }
 
@@ -475,8 +564,8 @@ public class PartialImportTest extends AbstractAuthTest {
     }
 
     @Test
-    public void testAddClientsFail() {
-        addClients();
+    public void testAddClientsFail() throws IOException {
+        addClients(false);
         testFail();
     }
 
@@ -520,9 +609,21 @@ public class PartialImportTest extends AbstractAuthTest {
     }
 
     @Test
-    public void testAddClientsSkip() {
-        addClients();
+    public void testAddClientsSkip() throws IOException {
+        addClients(false);
         testSkip();
+    }
+
+    @EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
+    @Test
+    public void testAddClientsSkipWithServiceAccountsAndAuthorization() throws IOException {
+        addClients(true);
+        setSkip();
+        PartialImportResults results = doImport();
+        assertEquals(NUM_ENTITIES * 2, results.getAdded());
+
+        results = doImport();
+        assertEquals(NUM_ENTITIES * 2, results.getSkipped());
     }
 
     @Test
@@ -565,9 +666,46 @@ public class PartialImportTest extends AbstractAuthTest {
     }
 
     @Test
-    public void testAddClientsOverwrite() {
-        addClients();
+    public void testAddClientsOverwrite() throws IOException {
+        addClients(false);
         testOverwrite();
+    }
+
+    @EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
+    @Test
+    public void testAddClientsOverwriteWithServiceAccountsAndAuthorization() throws IOException {
+        addClients(true);
+        setOverwrite();
+        PartialImportResults results = doImport();
+        assertEquals(NUM_ENTITIES * 2, results.getAdded());
+
+        results = doImport();
+        assertEquals(NUM_ENTITIES * 2, results.getOverwritten());
+    }
+
+    @EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
+    @Test
+    public void testAddClientsOverwriteServiceAccountsWithNoServiceAccounts() throws IOException {
+        addClients(true);
+        setOverwrite();
+        PartialImportResults results = doImport();
+        assertEquals(NUM_ENTITIES * 2, results.getAdded());
+        // check the service accounts are there
+        for (int i = 0; i < NUM_ENTITIES; i++) {
+            List<UserRepresentation> l = testRealmResource().users().search(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + CLIENT_PREFIX + i);
+            Assert.assertEquals(1, l.size());
+        }
+        // re-import without service accounts enabled
+        piRep = new PartialImportRepresentation();
+        addClients(false);
+        setOverwrite();
+        results = doImport();
+        assertEquals(NUM_ENTITIES, results.getOverwritten());
+        // check the service accounts have been removed
+        for (int i = 0; i < NUM_ENTITIES; i++) {
+            List<UserRepresentation> l = testRealmResource().users().search(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + CLIENT_PREFIX + i);
+            Assert.assertEquals(0, l.size());
+        }
     }
 
     @Test
@@ -588,42 +726,63 @@ public class PartialImportTest extends AbstractAuthTest {
         testOverwrite();
     }
 
-
-    private void importEverything() {
+    private void importEverything(boolean withServiceAccounts) throws IOException {
         addUsers();
         addGroups();
-        addClients();
+        addClients(withServiceAccounts);
         addProviders();
         addRealmRoles();
         addClientRoles();
 
         PartialImportResults results = doImport();
         assertNull(results.getErrorMessage());
-        assertEquals(NUM_ENTITIES * NUM_RESOURCE_TYPES, results.getAdded());
+        if (withServiceAccounts) {
+            assertEquals(NUM_ENTITIES * (NUM_RESOURCE_TYPES + 1), results.getAdded());
+        } else {
+            assertEquals(NUM_ENTITIES * NUM_RESOURCE_TYPES, results.getAdded());
+        }
     }
 
     @Test
-    public void testEverythingFail() {
+    public void testEverythingFail() throws IOException {
         setFail();
-        importEverything();
+        importEverything(false);
         PartialImportResults results = doImport(); // second import will fail because not allowed to skip or overwrite
         assertNotNull(results.getErrorMessage());
     }
 
     @Test
-    public void testEverythingSkip() {
+    public void testEverythingSkip() throws IOException {
         setSkip();
-        importEverything();
+        importEverything(false);
         PartialImportResults results = doImport();
         assertEquals(NUM_ENTITIES * NUM_RESOURCE_TYPES, results.getSkipped());
     }
 
+    @EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
     @Test
-    public void testEverythingOverwrite() {
+    public void testEverythingSkipWithServiceAccounts() throws IOException {
+        setSkip();
+        importEverything(true);
+        PartialImportResults results = doImport();
+        assertEquals(NUM_ENTITIES * (NUM_RESOURCE_TYPES + 1), results.getSkipped());
+    }
+
+    @Test
+    public void testEverythingOverwrite() throws IOException {
         setOverwrite();
-        importEverything();
+        importEverything(false);
         PartialImportResults results = doImport();
         assertEquals(NUM_ENTITIES * NUM_RESOURCE_TYPES, results.getOverwritten());
+    }
+
+    @EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
+    @Test
+    public void testEverythingOverwriteWithServiceAccounts() throws IOException {
+        setOverwrite();
+        importEverything(true);
+        PartialImportResults results = doImport();
+        assertEquals(NUM_ENTITIES * (NUM_RESOURCE_TYPES + 1), results.getOverwritten());
     }
 
     //KEYCLOAK-3042
@@ -656,6 +815,17 @@ public class PartialImportTest extends AbstractAuthTest {
 
         PartialImportResults result = doImport();
         Assert.assertEquals(0, result.getOverwritten());
+    }
+
+    @Test
+    public void testOverwriteExistingClientWithServiceAccount() {
+        setOverwrite();
+        piRep.setClients(Arrays.asList(testRealmResource().clients().findByClientId(CLIENT_SERVICE_ACCOUNT).get(0)));
+
+        Assert.assertEquals(1, doImport().getOverwritten());
+
+        ClientRepresentation client = testRealmResource().clients().findByClientId(CLIENT_SERVICE_ACCOUNT).get(0);
+        testRealmResource().clients().get(client.getId()).getServiceAccountUser();
     }
 
 }

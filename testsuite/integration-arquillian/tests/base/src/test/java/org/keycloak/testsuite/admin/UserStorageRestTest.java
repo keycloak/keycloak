@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.admin;
 
 import org.junit.Test;
+import org.keycloak.admin.client.resource.ComponentResource;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.admin.OperationType;
@@ -26,7 +27,15 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.ComponentTypeRepresentation;
+import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
+import org.keycloak.storage.ldap.mappers.membership.CommonLDAPGroupMapperConfig;
+import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapperFactory;
+import org.keycloak.storage.ldap.mappers.membership.group.GroupMapperConfig;
+import org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapperFactory;
+import org.keycloak.storage.ldap.mappers.membership.role.RoleMapperConfig;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
 import org.keycloak.testsuite.util.AdminEventPaths;
@@ -34,6 +43,8 @@ import org.keycloak.testsuite.util.AdminEventPaths;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 import java.util.List;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -74,18 +85,14 @@ public class UserStorageRestTest extends AbstractAdminTest {
 
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testKerberosAuthenticatorEnabledAutomatically() {
         // Assert kerberos authenticator DISABLED
         AuthenticationExecutionInfoRepresentation kerberosExecution = findKerberosExecution();
         Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.DISABLED.toString());
 
         // create LDAP provider with kerberos
-        ComponentRepresentation ldapRep = new ComponentRepresentation();
-        ldapRep.setName("ldap2");
-        ldapRep.setProviderId("ldap");
-        ldapRep.setProviderType(UserStorageProvider.class.getName());
-        ldapRep.setConfig(new MultivaluedHashMap<>());
-        ldapRep.getConfig().putSingle("priority", Integer.toString(2));
+        ComponentRepresentation ldapRep = createBasicLDAPProviderRep();
         ldapRep.getConfig().putSingle(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "true");
 
         String id = createComponent(ldapRep);
@@ -144,12 +151,7 @@ public class UserStorageRestTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.authUpdateExecutionPath("browser"), kerberosExecution, ResourceType.AUTH_EXECUTION);
 
         // create LDAP provider with kerberos
-        ComponentRepresentation ldapRep = new ComponentRepresentation();
-        ldapRep.setName("ldap2");
-        ldapRep.setProviderId("ldap");
-        ldapRep.setProviderType(UserStorageProvider.class.getName());
-        ldapRep.setConfig(new MultivaluedHashMap<>());
-        ldapRep.getConfig().putSingle("priority", Integer.toString(2));
+        ComponentRepresentation ldapRep = createBasicLDAPProviderRep();
         ldapRep.getConfig().putSingle(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "true");
 
         String id = createComponent(ldapRep);
@@ -185,12 +187,7 @@ public class UserStorageRestTest extends AbstractAdminTest {
         Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.DISABLED.toString());
 
         // create LDAP provider with kerberos
-        ComponentRepresentation ldapRep = new ComponentRepresentation();
-        ldapRep.setName("ldap2");
-        ldapRep.setProviderId("ldap");
-        ldapRep.setProviderType(UserStorageProvider.class.getName());
-        ldapRep.setConfig(new MultivaluedHashMap<>());
-        ldapRep.getConfig().putSingle("priority", Integer.toString(2));
+        ComponentRepresentation ldapRep = createBasicLDAPProviderRep();
         ldapRep.getConfig().putSingle(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "true");
 
 
@@ -239,12 +236,7 @@ public class UserStorageRestTest extends AbstractAdminTest {
     public void testValidateAndCreateLdapProvider() {
         // Invalid filter
 
-        ComponentRepresentation ldapRep = new ComponentRepresentation();
-        ldapRep.setName("ldap2");
-        ldapRep.setProviderId("ldap");
-        ldapRep.setProviderType(UserStorageProvider.class.getName());
-        ldapRep.setConfig(new MultivaluedHashMap<>());
-        ldapRep.getConfig().putSingle("priority", Integer.toString(2));
+        ComponentRepresentation ldapRep = createBasicLDAPProviderRep();
         ldapRep.getConfig().putSingle(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "dc=something");
 
         Response resp = realm.components().add(ldapRep);
@@ -294,12 +286,7 @@ public class UserStorageRestTest extends AbstractAdminTest {
 
     @Test
     public void testUpdateProvider() {
-        ComponentRepresentation ldapRep = new ComponentRepresentation();
-        ldapRep.setName("ldap2");
-        ldapRep.setProviderId("ldap");
-        ldapRep.setProviderType(UserStorageProvider.class.getName());
-        ldapRep.setConfig(new MultivaluedHashMap<>());
-        ldapRep.getConfig().putSingle("priority", Integer.toString(2));
+        ComponentRepresentation ldapRep = createBasicLDAPProviderRep();
         ldapRep.getConfig().putSingle(LDAPConstants.BIND_DN, "cn=manager");
         ldapRep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, "password");
         String id = createComponent(ldapRep);
@@ -342,8 +329,88 @@ public class UserStorageRestTest extends AbstractAdminTest {
     }
 
 
+    // KEYCLOAK-12934
+    @Test
+    public void testLDAPMapperProviderConfigurationForVendorOther() {
+        ComponentRepresentation ldapRep = createBasicLDAPProviderRep();
+        ldapRep.getConfig().putSingle(LDAPConstants.VENDOR, LDAPConstants.VENDOR_OTHER);
+        String ldapModelId = createComponent(ldapRep);
 
+        ComponentTypeRepresentation groupLDAPMapperType = findMapperTypeConfiguration(ldapModelId, GroupLDAPStorageMapperFactory.PROVIDER_ID);
+        ConfigPropertyRepresentation groupRetrieverConfigProperty = getUserRolesRetrieveStrategyConfigProperty(groupLDAPMapperType, CommonLDAPGroupMapperConfig.USER_ROLES_RETRIEVE_STRATEGY);
 
+        // LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY is expected to be present just for the active directory
+        List<String> options = groupRetrieverConfigProperty.getOptions();
+        Assert.assertNames(options, GroupMapperConfig.LOAD_GROUPS_BY_MEMBER_ATTRIBUTE, GroupMapperConfig.GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE);
+        Assert.assertFalse(groupRetrieverConfigProperty.getHelpText().contains("LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY"));
+
+        ComponentTypeRepresentation roleLDAPMapperType = findMapperTypeConfiguration(ldapModelId, RoleLDAPStorageMapperFactory.PROVIDER_ID);
+        ConfigPropertyRepresentation roleRetrieverConfigProperty = getUserRolesRetrieveStrategyConfigProperty(roleLDAPMapperType, CommonLDAPGroupMapperConfig.USER_ROLES_RETRIEVE_STRATEGY);
+
+        // LOAD_ROLES_BY_MEMBER_ATTRIBUTE_RECURSIVELY is expected to be present just for the active directory
+        options = roleRetrieverConfigProperty.getOptions();
+        Assert.assertNames(options, RoleMapperConfig.LOAD_ROLES_BY_MEMBER_ATTRIBUTE, RoleMapperConfig.GET_ROLES_FROM_USER_MEMBEROF_ATTRIBUTE);
+        Assert.assertFalse(roleRetrieverConfigProperty.getHelpText().contains("LOAD_ROLES_BY_MEMBER_ATTRIBUTE_RECURSIVELY"));
+
+        // Cleanup including mappers
+        removeComponent(ldapModelId);
+    }
+
+    // KEYCLOAK-12934
+    @Test
+    public void testLDAPMapperProviderConfigurationForVendorMSAD() {
+        ComponentRepresentation ldapRep = createBasicLDAPProviderRep();
+        ldapRep.getConfig().putSingle(LDAPConstants.VENDOR, LDAPConstants.VENDOR_ACTIVE_DIRECTORY);
+        String ldapModelId = createComponent(ldapRep);
+
+        ComponentTypeRepresentation groupLDAPMapperType = findMapperTypeConfiguration(ldapModelId, GroupLDAPStorageMapperFactory.PROVIDER_ID);
+        ConfigPropertyRepresentation groupRetrieverConfigProperty = getUserRolesRetrieveStrategyConfigProperty(groupLDAPMapperType, CommonLDAPGroupMapperConfig.USER_ROLES_RETRIEVE_STRATEGY);
+
+        // LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY is expected to be present just for the active directory
+        List<String> options = groupRetrieverConfigProperty.getOptions();
+        Assert.assertNames(options, GroupMapperConfig.LOAD_GROUPS_BY_MEMBER_ATTRIBUTE, GroupMapperConfig.GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE,
+                GroupMapperConfig.LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY);
+        Assert.assertTrue(groupRetrieverConfigProperty.getHelpText().contains("LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY"));
+
+        ComponentTypeRepresentation roleLDAPMapperType = findMapperTypeConfiguration(ldapModelId, RoleLDAPStorageMapperFactory.PROVIDER_ID);
+        ConfigPropertyRepresentation roleRetrieverConfigProperty = getUserRolesRetrieveStrategyConfigProperty(roleLDAPMapperType, CommonLDAPGroupMapperConfig.USER_ROLES_RETRIEVE_STRATEGY);
+
+        // LOAD_ROLES_BY_MEMBER_ATTRIBUTE_RECURSIVELY is expected to be present just for the active directory
+        options = roleRetrieverConfigProperty.getOptions();
+        Assert.assertNames(options, RoleMapperConfig.LOAD_ROLES_BY_MEMBER_ATTRIBUTE, RoleMapperConfig.GET_ROLES_FROM_USER_MEMBEROF_ATTRIBUTE,
+                RoleMapperConfig.LOAD_ROLES_BY_MEMBER_ATTRIBUTE_RECURSIVELY);
+        Assert.assertTrue(roleRetrieverConfigProperty.getHelpText().contains("LOAD_ROLES_BY_MEMBER_ATTRIBUTE_RECURSIVELY"));
+
+        // Cleanup including mappers
+        removeComponent(ldapModelId);
+    }
+
+    private ComponentRepresentation createBasicLDAPProviderRep() {
+        ComponentRepresentation ldapRep = new ComponentRepresentation();
+        ldapRep.setName("ldap2");
+        ldapRep.setProviderId("ldap");
+        ldapRep.setProviderType(UserStorageProvider.class.getName());
+        ldapRep.setConfig(new MultivaluedHashMap<>());
+        ldapRep.getConfig().putSingle("priority", Integer.toString(2));
+        return ldapRep;
+    }
+
+    private ComponentTypeRepresentation findMapperTypeConfiguration(String ldapModelId, String mapperProviderId) {
+        ComponentResource ldapProvider = realm.components().component(ldapModelId);
+        List<ComponentTypeRepresentation> componentTypes = ldapProvider.getSubcomponentConfig(LDAPStorageMapper.class.getName());
+
+        return componentTypes.stream()
+                .filter(componentType -> mapperProviderId.equals(componentType.getId()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Not able to find mapper with provider id: " + mapperProviderId));
+    }
+
+    private  ConfigPropertyRepresentation getUserRolesRetrieveStrategyConfigProperty(ComponentTypeRepresentation componentType, String propertyName) {
+        return componentType.getProperties().stream()
+                .filter(configPropertyRep -> propertyName.equals(configPropertyRep.getName()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Not able to find config property with name: " + propertyName));
+    }
 
 /*
     @Test

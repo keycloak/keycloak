@@ -21,6 +21,7 @@ import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -41,7 +42,10 @@ import org.keycloak.social.stackoverflow.StackoverflowIdentityProviderFactory;
 import org.keycloak.social.twitter.TwitterIdentityProviderFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -70,6 +74,7 @@ public class UsernameTemplateMapper extends AbstractClaimMapper {
     };
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+    private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
 
     public static final String TEMPLATE = "template";
 
@@ -85,6 +90,11 @@ public class UsernameTemplateMapper extends AbstractClaimMapper {
     }
 
     public static final String PROVIDER_ID = "oidc-username-idp-mapper";
+
+    @Override
+    public boolean supportsSyncMode(IdentityProviderSyncMode syncMode) {
+        return IDENTITY_PROVIDER_SYNC_MODES.contains(syncMode);
+    }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
@@ -112,13 +122,26 @@ public class UsernameTemplateMapper extends AbstractClaimMapper {
     }
 
     @Override
+    public void updateBrokeredUserLegacy(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+    }
+
+    @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+        // preprocessFederatedIdentity gets called anyways, so we only need to set the username if necessary.
+        // However, we don't want to set the username when the email is used as username
+        if (!realm.isRegistrationEmailAsUsername()) {
+            user.setUsername(context.getModelUsername());
+        }
     }
 
     static Pattern substitution = Pattern.compile("\\$\\{([^}]+)\\}");
 
     @Override
     public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+        setUserNameFromTemplate(mapperModel, context);
+    }
+
+    private void setUserNameFromTemplate(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String template = mapperModel.getConfig().get(TEMPLATE);
         Matcher m = substitution.matcher(template);
         StringBuffer sb = new StringBuffer();
@@ -141,7 +164,6 @@ public class UsernameTemplateMapper extends AbstractClaimMapper {
         m.appendTail(sb);
         String username = sb.toString();
         context.setModelUsername(username);
-
     }
 
     @Override

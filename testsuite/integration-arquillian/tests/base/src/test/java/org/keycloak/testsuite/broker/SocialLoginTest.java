@@ -13,6 +13,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -65,6 +66,8 @@ import java.util.Properties;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.BITBUCKET;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.FACEBOOK;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB;
@@ -86,6 +89,7 @@ import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.TWITTER;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class SocialLoginTest extends AbstractKeycloakTest {
 
     public static final String SOCIAL_CONFIG = "social.config";
@@ -367,7 +371,10 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     public IdentityProviderRepresentation buildIdp(Provider provider) {
-        IdentityProviderRepresentation idp = IdentityProviderBuilder.create().alias(provider.id()).providerId(provider.id()).build();
+        IdentityProviderRepresentation idp = IdentityProviderBuilder.create()
+                .alias(provider.id())
+                .providerId(provider.id())
+                .build();
         idp.setEnabled(true);
         idp.setStoreToken(true);
         idp.getConfig().put("clientId", getConfig(provider, "clientId"));

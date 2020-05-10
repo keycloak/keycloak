@@ -74,7 +74,7 @@ class SimpleWebXmlParser {
                     ElementWrapper loadOnStartupEw = servlet.getElementByTagName("load-on-startup");
                     Integer loadOnStartup = loadOnStartupEw == null ? null : Integer.valueOf(loadOnStartupEw.getText());
 
-                    Class<? extends Servlet> servletClazz = (Class<? extends Servlet>) Class.forName(servletClass);
+                    Class<? extends Servlet> servletClazz = (Class<? extends Servlet>) Class.forName(servletClass, false, di.getClassLoader());
                     ServletInfo undertowServlet = new ServletInfo(servletName, servletClazz);
 
                     if (servletMappings.containsKey(servletName)) {
@@ -101,7 +101,7 @@ class SimpleWebXmlParser {
                 String filterName = filter.getElementByTagName("filter-name").getText();
                 String filterClass = filter.getElementByTagName("filter-class").getText();
 
-                Class<? extends Filter> filterClazz = (Class<? extends Filter>) Class.forName(filterClass);
+                Class<? extends Filter> filterClazz = (Class<? extends Filter>) Class.forName(filterClass, false, di.getClassLoader());
                 FilterInfo undertowFilter = new FilterInfo(filterName, filterClazz);
 
                 List<ElementWrapper> initParams = filter.getElementsByTagName("init-param");

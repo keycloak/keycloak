@@ -21,9 +21,11 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
@@ -31,6 +33,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.policy.PasswordPolicyNotMetException;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ForbiddenException;
@@ -105,8 +109,16 @@ public class UsersResource {
     public Response createUser(final UserRepresentation rep) {
         auth.users().requireManage();
 
+        String username = rep.getUsername();
+        if(realm.isRegistrationEmailAsUsername()) {
+            username = rep.getEmail();
+        }
+        if (ObjectUtil.isBlank(username)) {
+            return ErrorResponse.error("User name is missing", Response.Status.BAD_REQUEST);
+        }
+
         // Double-check duplicated username and email here due to federation
-        if (session.users().getUserByUsername(rep.getUsername(), realm) != null) {
+        if (session.users().getUserByUsername(username, realm) != null) {
             return ErrorResponse.exists("User exists with same username");
         }
         if (rep.getEmail() != null && !realm.isDuplicateEmailsAllowed() && session.users().getUserByEmail(rep.getEmail(), realm) != null) {
@@ -114,10 +126,13 @@ public class UsersResource {
         }
 
         try {
-            UserModel user = session.users().addUser(realm, rep.getUsername());
+            UserModel user = session.users().addUser(realm, username);
             Set<String> emptySet = Collections.emptySet();
 
             UserResource.updateUserFromRep(user, rep, emptySet, realm, session, false);
+            RepresentationToModel.createFederatedIdentities(rep, session, realm, user);
+            RepresentationToModel.createGroups(rep, realm, user);
+
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(rep).success();
 
@@ -131,12 +146,17 @@ public class UsersResource {
                 session.getTransactionManager().setRollbackOnly();
             }
             return ErrorResponse.exists("User exists with same username or email");
+        } catch (PasswordPolicyNotMetException e) {
+            if (session.getTransactionManager().isActive()) {
+                session.getTransactionManager().setRollbackOnly();
+            }
+            return ErrorResponse.error("Password policy not met", Response.Status.BAD_REQUEST);
         } catch (ModelException me){
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();
             }
             logger.warn("Could not create user", me);
-            return ErrorResponse.exists("Could not create user");
+            return ErrorResponse.error("Could not create user", Response.Status.BAD_REQUEST);
         }
     }
     /**
@@ -199,7 +219,9 @@ public class UsersResource {
                     userModels = Arrays.asList(userModel);
                 }
             } else {
-                userModels = session.users().searchForUser(search.trim(), realm, firstResult, maxResults);
+                Map<String, String> attributes = new HashMap<>();
+                attributes.put(UserModel.SEARCH, search.trim());
+                return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult, maxResults, false);
             }
         } else if (last != null || first != null || email != null || username != null) {
             Map<String, String> attributes = new HashMap<>();
@@ -223,14 +245,73 @@ public class UsersResource {
         return toRepresentation(realm, userPermissionEvaluator, briefRepresentation, userModels);
     }
 
+    /**
+     * Returns the number of users that match the given criteria.
+     * It can be called in three different ways.
+     * 1. Don't specify any criteria and pass {@code null}. The number of all
+     * users within that realm will be returned.
+     * <p>
+     * 2. If {@code search} is specified other criteria such as {@code last} will
+     * be ignored even though you set them. The {@code search} string will be
+     * matched against the first and last name, the username and the email of a
+     * user.
+     * <p>
+     * 3. If {@code search} is unspecified but any of {@code last}, {@code first},
+     * {@code email} or {@code username} those criteria are matched against their
+     * respective fields on a user entity. Combined with a logical and.
+     *
+     * @param search   arbitrary search string for all the fields below
+     * @param last     last name filter
+     * @param first    first name filter
+     * @param email    email filter
+     * @param username username filter
+     * @return the number of users that match the given criteria
+     */
     @Path("count")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Integer getUsersCount() {
-        auth.users().requireView();
+    public Integer getUsersCount(@QueryParam("search") String search,
+                                 @QueryParam("lastName") String last,
+                                 @QueryParam("firstName") String first,
+                                 @QueryParam("email") String email,
+                                 @QueryParam("username") String username) {
+        UserPermissionEvaluator userPermissionEvaluator = auth.users();
+        userPermissionEvaluator.requireQuery();
 
-        return session.users().getUsersCount(realm);
+        if (search != null) {
+            if (search.startsWith(SEARCH_ID_PARAMETER)) {
+                UserModel userModel = session.users().getUserById(search.substring(SEARCH_ID_PARAMETER.length()).trim(), realm);
+                return userModel != null && userPermissionEvaluator.canView(userModel) ? 1 : 0;
+            } else if (userPermissionEvaluator.canView()) {
+                return session.users().getUsersCount(search.trim(), realm);
+            } else {
+                return session.users().getUsersCount(search.trim(), realm, auth.groups().getGroupsWithViewPermission());
+            }
+        } else if (last != null || first != null || email != null || username != null) {
+            Map<String, String> parameters = new HashMap<>();
+            if (last != null) {
+                parameters.put(UserModel.LAST_NAME, last);
+            }
+            if (first != null) {
+                parameters.put(UserModel.FIRST_NAME, first);
+            }
+            if (email != null) {
+                parameters.put(UserModel.EMAIL, email);
+            }
+            if (username != null) {
+                parameters.put(UserModel.USERNAME, username);
+            }
+            if (userPermissionEvaluator.canView()) {
+                return session.users().getUsersCount(parameters, realm);
+            } else {
+                return session.users().getUsersCount(parameters, realm, auth.groups().getGroupsWithViewPermission());
+            }
+        } else if (userPermissionEvaluator.canView()) {
+            return session.users().getUsersCount(realm);
+        } else {
+            return session.users().getUsersCount(realm, auth.groups().getGroupsWithViewPermission());
+        }
     }
 
     private List<UserRepresentation> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {

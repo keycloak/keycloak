@@ -26,7 +26,9 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
 import org.keycloak.testsuite.ui.account2.page.PersonalInfoPage;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 
 /**
@@ -59,17 +61,19 @@ public class PersonalInfoTest extends BaseAccountPageTest {
 
         assertTrue(personalInfoPage.valuesEqual(testUser));
         personalInfoPage.assertUsernameDisabled(false);
-        personalInfoPage.assertSaveDisabled(true);
+        personalInfoPage.assertSaveDisabled(false);
 
         personalInfoPage.setValues(testUser2, true);
+        assertEquals("test user", personalInfoPage.header().getToolbarLoggedInUser());
         assertTrue(personalInfoPage.valuesEqual(testUser2));
         personalInfoPage.assertSaveDisabled(false);
         personalInfoPage.clickSave();
         personalInfoPage.alert().assertSuccess();
-        personalInfoPage.assertSaveDisabled(true);
+        personalInfoPage.assertSaveDisabled(false);
 
         personalInfoPage.navigateTo();
         personalInfoPage.valuesEqual(testUser2);
+        assertEquals("Václav Muzikář", personalInfoPage.header().getToolbarLoggedInUser());
 
         // change just first and last name
         testUser2.setFirstName("Another");
@@ -79,6 +83,7 @@ public class PersonalInfoTest extends BaseAccountPageTest {
         personalInfoPage.alert().assertSuccess();
         personalInfoPage.navigateTo();
         personalInfoPage.valuesEqual(testUser2);
+        assertEquals("Another Name", personalInfoPage.header().getToolbarLoggedInUser());
     }
 
     @Test
@@ -87,17 +92,18 @@ public class PersonalInfoTest extends BaseAccountPageTest {
         
         // clear username
         personalInfoPage.setUsername("");
-        personalInfoPage.assertSaveDisabled(false);
+        personalInfoPage.assertSaveDisabled(true);
         personalInfoPage.assertUsernameValid(false);
         personalInfoPage.setUsername("hsimpson");
         personalInfoPage.assertUsernameValid(true);
 
         // clear email
+        personalInfoPage.setEmail("edewit@");
+        personalInfoPage.assertEmailValid(false);
         personalInfoPage.setEmail("");
         personalInfoPage.assertEmailValid(false);
         personalInfoPage.setEmail("hsimpson@springfield.com");
         personalInfoPage.assertEmailValid(true);
-        // TODO test email validation (blocked by KEYCLOAK-8098)
 
         // clear first name
         personalInfoPage.setFirstName("");
@@ -130,6 +136,16 @@ public class PersonalInfoTest extends BaseAccountPageTest {
     }
 
     @Test
+    public void cancelForm() {
+        setEditUsernameAllowed(false);
+
+        personalInfoPage.setValues(testUser2, false);
+        personalInfoPage.setEmail("hsimpson@springfield.com");
+        personalInfoPage.clickCancel();
+        personalInfoPage.valuesEqual(testUser2);
+    }
+
+    @Test
     public void disabledEditUsername() {
         setEditUsernameAllowed(false);
 
@@ -141,6 +157,32 @@ public class PersonalInfoTest extends BaseAccountPageTest {
         testUser2.setUsername(testUser.getUsername()); // the username should remain the same
         personalInfoPage.navigateTo();
         personalInfoPage.valuesEqual(testUser2);
+    }
+    
+    @Test
+    public void clickLogoTest() {
+        personalInfoPage.clickBrandLink();
+        accountWelcomeScreen.assertCurrent();
+    }
+
+    @Test
+    public void testNameInToolbar() {
+        assertEquals("test user", personalInfoPage.header().getToolbarLoggedInUser());
+
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("edewit");
+        user.setEnabled(true);
+        setPasswordFor(user, "password");
+        try {
+            ApiUtil.removeUserByUsername(testRealmResource(), testUser.getUsername());
+            personalInfoPage.navigateTo();
+            ApiUtil.createUserWithAdminClient(testRealmResource(), user);
+            loginPage.form().login(user);
+
+            assertEquals("edewit", personalInfoPage.header().getToolbarLoggedInUser());
+        } finally {
+            ApiUtil.removeUserByUsername(testRealmResource(), user.getUsername());
+        }
     }
 
     private void setEditUsernameAllowed(boolean value) {

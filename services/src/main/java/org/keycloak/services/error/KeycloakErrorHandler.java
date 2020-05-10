@@ -1,5 +1,6 @@
 package org.keycloak.services.error;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.Failure;
 import org.jboss.resteasy.spi.HttpResponse;
@@ -106,17 +107,18 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             Failure f = (Failure) throwable;
             status = f.getErrorCode();
         }
+        if (throwable instanceof JsonParseException) {
+            status = Response.Status.BAD_REQUEST.getStatusCode();
+        }
         return status;
     }
 
     private String getErrorCode(Throwable throwable) {
-        String error = throwable.getMessage();
-
-        if (error == null) {
-            return "unknown_error";
+        if (throwable instanceof WebApplicationException && throwable.getMessage() != null) {
+            return throwable.getMessage();
         }
 
-        return error;
+        return "unknown_error";
     }
 
     private RealmModel resolveRealm() {

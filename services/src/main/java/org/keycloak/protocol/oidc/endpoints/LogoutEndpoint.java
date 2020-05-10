@@ -22,11 +22,14 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.TokenVerifier;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.VerificationException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -120,12 +123,13 @@ public class LogoutEndpoint {
         if (encodedIdToken != null) {
             try {
                 idToken = tokenManager.verifyIDTokenSignature(session, encodedIdToken);
+                TokenVerifier.createWithoutSignature(idToken).tokenType(TokenUtil.TOKEN_TYPE_ID).verify();
                 userSession = session.sessions().getUserSession(realm, idToken.getSessionState());
 
                 if (userSession != null) {
                     checkTokenIssuedAt(idToken, userSession);
                 }
-            } catch (OAuthErrorException e) {
+            } catch (OAuthErrorException | VerificationException e) {
                 event.event(EventType.LOGOUT);
                 event.error(Errors.INVALID_TOKEN);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.SESSION_NOT_ACTIVE);
@@ -154,6 +158,8 @@ public class LogoutEndpoint {
             if (state != null) uriBuilder.queryParam(OIDCLoginProtocol.STATE_PARAM, state);
             return Response.status(302).location(uriBuilder.build()).build();
         } else {
+            // TODO Empty content with ok makes no sense. Should it display a page? Or use noContent?
+            session.getProvider(SecurityHeadersProvider.class).options().allowEmptyContentType();
             return Response.ok().build();
         }
     }

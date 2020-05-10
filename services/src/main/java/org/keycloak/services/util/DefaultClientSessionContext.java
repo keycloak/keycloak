@@ -28,11 +28,13 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.util.TokenUtil;
@@ -48,6 +50,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     private final AuthenticatedClientSessionModel clientSession;
     private final Set<String> clientScopeIds;
+    private final KeycloakSession session;
 
     private Set<ClientScopeModel> clientScopes;
 
@@ -60,38 +63,39 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     private Map<String, Object> attributes = new HashMap<>();
 
-    private DefaultClientSessionContext(AuthenticatedClientSessionModel clientSession, Set<String> clientScopeIds) {
+    private DefaultClientSessionContext(AuthenticatedClientSessionModel clientSession, Set<String> clientScopeIds, KeycloakSession session) {
         this.clientSession = clientSession;
         this.clientScopeIds = clientScopeIds;
+        this.session = session;
     }
 
 
     /**
      * Useful if we want to "re-compute" client scopes based on the scope parameter
      */
-    public static DefaultClientSessionContext fromClientSessionScopeParameter(AuthenticatedClientSessionModel clientSession) {
-        return fromClientSessionAndScopeParameter(clientSession, clientSession.getNote(OAuth2Constants.SCOPE));
+    public static DefaultClientSessionContext fromClientSessionScopeParameter(AuthenticatedClientSessionModel clientSession, KeycloakSession session) {
+        return fromClientSessionAndScopeParameter(clientSession, clientSession.getNote(OAuth2Constants.SCOPE), session);
     }
 
 
-    public static DefaultClientSessionContext fromClientSessionAndScopeParameter(AuthenticatedClientSessionModel clientSession, String scopeParam) {
+    public static DefaultClientSessionContext fromClientSessionAndScopeParameter(AuthenticatedClientSessionModel clientSession, String scopeParam, KeycloakSession session) {
         Set<ClientScopeModel> requestedClientScopes = TokenManager.getRequestedClientScopes(scopeParam, clientSession.getClient());
-        return fromClientSessionAndClientScopes(clientSession, requestedClientScopes);
+        return fromClientSessionAndClientScopes(clientSession, requestedClientScopes, session);
     }
 
 
-    public static DefaultClientSessionContext fromClientSessionAndClientScopeIds(AuthenticatedClientSessionModel clientSession, Set<String> clientScopeIds) {
-        return new DefaultClientSessionContext(clientSession, clientScopeIds);
+    public static DefaultClientSessionContext fromClientSessionAndClientScopeIds(AuthenticatedClientSessionModel clientSession, Set<String> clientScopeIds, KeycloakSession session) {
+        return new DefaultClientSessionContext(clientSession, clientScopeIds, session);
     }
 
 
-    public static DefaultClientSessionContext fromClientSessionAndClientScopes(AuthenticatedClientSessionModel clientSession, Set<ClientScopeModel> clientScopes) {
+    public static DefaultClientSessionContext fromClientSessionAndClientScopes(AuthenticatedClientSessionModel clientSession, Set<ClientScopeModel> clientScopes, KeycloakSession session) {
         Set<String> clientScopeIds = new HashSet<>();
         for (ClientScopeModel clientScope : clientScopes) {
             clientScopeIds.add(clientScope.getId());
         }
 
-        return new DefaultClientSessionContext(clientSession, clientScopeIds);
+        return new DefaultClientSessionContext(clientSession, clientScopeIds, session);
     }
 
 
@@ -261,7 +265,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
         for (ClientScopeModel clientScope : clientScopes) {
             Set<ProtocolMapperModel> currentMappers = clientScope.getProtocolMappers();
             for (ProtocolMapperModel currentMapper : currentMappers) {
-                if (protocol.equals(currentMapper.getProtocol())) {
+                if (protocol.equals(currentMapper.getProtocol()) && ProtocolMapperUtils.isEnabled(session, currentMapper)) {
                     protocolMappers.add(currentMapper);
                 }
             }

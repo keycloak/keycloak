@@ -210,7 +210,7 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
                 IdentityProviderBuilder.create()
                     .alias("saml-idp")
                     .providerId("saml")
-                    .setAttribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "http://saml-idp-sso-service/")
+                    .setAttribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "https://saml-idp-sso-service/")
                     .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "true")
                     .build())) {
             new SamlClientBuilder()

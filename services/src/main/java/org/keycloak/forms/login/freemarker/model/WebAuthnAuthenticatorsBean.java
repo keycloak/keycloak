@@ -28,9 +28,9 @@ import org.keycloak.models.credential.WebAuthnCredentialModel;
 public class WebAuthnAuthenticatorsBean {
     private List<WebAuthnAuthenticatorBean> authenticators = new LinkedList<WebAuthnAuthenticatorBean>();
 
-    public WebAuthnAuthenticatorsBean(KeycloakSession session, RealmModel realm, UserModel user) {
+    public WebAuthnAuthenticatorsBean(KeycloakSession session, RealmModel realm, UserModel user, String credentialType) {
         // should consider multiple credentials in the future, but only single credential supported now.
-        for (CredentialModel credential : session.userCredentialManager().getStoredCredentialsByType(realm, user, WebAuthnCredentialModel.TYPE)) {
+        for (CredentialModel credential : session.userCredentialManager().getStoredCredentialsByType(realm, user, credentialType)) {
             WebAuthnCredentialModel webAuthnCredential = WebAuthnCredentialModel.createFromCredentialModel(credential);
 
             String credentialId = Base64Url.encodeBase64ToBase64Url(webAuthnCredential.getWebAuthnCredentialData().getCredentialId());

@@ -1,0 +1,10 @@
+{
+  "name": "angular-sanitize",
+  "version": "1.7.9",
+  "license": "MIT",
+  "main": "./angular-sanitize.js",
+  "ignore": [],
+  "dependencies": {
+    "angular": "1.7.9"
+  }
+}

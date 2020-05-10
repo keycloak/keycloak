@@ -24,11 +24,11 @@ import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
+import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_SSL_REQUIRED;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -40,6 +40,7 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
     private ClientRepresentation clientPublic;
 
     @Before
+    @Override
     public void before() throws Exception {
         super.before();
 
@@ -96,7 +97,7 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
         assertEquals("RegistrationAccessTokenTestClientSecret", config.getCredentials().get("secret"));
 
         assertEquals(client.getClientId(), config.getResource());
-        assertEquals(SslRequired.EXTERNAL.name().toLowerCase(), config.getSslRequired());
+        if (AUTH_SERVER_SSL_REQUIRED) assertEquals(SslRequired.EXTERNAL.name().toLowerCase(), config.getSslRequired());
     }
 
     @Test
@@ -135,7 +136,7 @@ public class AdapterInstallationConfigTest extends AbstractClientRegistrationTes
         assertEquals(0, config.getCredentials().size());
 
         assertEquals(clientPublic.getClientId(), config.getResource());
-        assertEquals(SslRequired.EXTERNAL.name().toLowerCase(), config.getSslRequired());
+        if (AUTH_SERVER_SSL_REQUIRED) assertEquals(SslRequired.EXTERNAL.name().toLowerCase(), config.getSslRequired());
     }
 
 }

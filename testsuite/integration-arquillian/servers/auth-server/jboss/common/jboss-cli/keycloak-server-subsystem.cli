@@ -21,3 +21,6 @@ echo ** Adding provider **
             module:org.keycloak.testsuite.integration-arquillian-testsuite-providers \
     ] \
 )
+
+echo ** Adding max-detail-length to eventsStore spi **
+/subsystem=keycloak-server/spi=eventsStore/provider=jpa/:write-attribute(name=properties.max-detail-length,value=${keycloak.eventsStore.maxDetailLength:1000})

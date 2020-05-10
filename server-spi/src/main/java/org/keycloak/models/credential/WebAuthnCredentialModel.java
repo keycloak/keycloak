@@ -31,22 +31,28 @@ import org.keycloak.util.JsonSerialization;
  */
 public class WebAuthnCredentialModel extends CredentialModel {
 
-    public static final String TYPE = "webauthn";
+    // Credential type used for WebAuthn two factor credentials
+    public static final String TYPE_TWOFACTOR = "webauthn";
 
+    // Credential type used for WebAuthn passwordless credentials
+    public static final String TYPE_PASSWORDLESS = "webauthn-passwordless";
+
+    // Either
     private final WebAuthnCredentialData credentialData;
     private final WebAuthnSecretData secretData;
 
-    private WebAuthnCredentialModel(WebAuthnCredentialData credentialData, WebAuthnSecretData secretData) {
+    private WebAuthnCredentialModel(String credentialType, WebAuthnCredentialData credentialData, WebAuthnSecretData secretData) {
         this.credentialData = credentialData;
         this.secretData = secretData;
+        setType(credentialType);
     }
 
-    public static WebAuthnCredentialModel create(String userLabel, String aaguid, String credentialId,
-                                                 String attestationStatement, String credentialPublicKey, long counter) {
-        WebAuthnCredentialData credentialData = new WebAuthnCredentialData(aaguid, credentialId, counter, attestationStatement, credentialPublicKey);
+    public static WebAuthnCredentialModel create(String credentialType, String userLabel, String aaguid, String credentialId,
+                                                     String attestationStatement, String credentialPublicKey, long counter, String attestationStatementFormat) {
+        WebAuthnCredentialData credentialData = new WebAuthnCredentialData(aaguid, credentialId, counter, attestationStatement, credentialPublicKey, attestationStatementFormat);
         WebAuthnSecretData secretData = new WebAuthnSecretData();
 
-        WebAuthnCredentialModel credentialModel = new WebAuthnCredentialModel(credentialData, secretData);
+        WebAuthnCredentialModel credentialModel = new WebAuthnCredentialModel(credentialType, credentialData, secretData);
         credentialModel.fillCredentialModelFields();
         credentialModel.setUserLabel(userLabel);
         return credentialModel;
@@ -58,10 +64,10 @@ public class WebAuthnCredentialModel extends CredentialModel {
             WebAuthnCredentialData credentialData = JsonSerialization.readValue(credentialModel.getCredentialData(), WebAuthnCredentialData.class);
             WebAuthnSecretData secretData = JsonSerialization.readValue(credentialModel.getSecretData(), WebAuthnSecretData.class);
 
-            WebAuthnCredentialModel webAuthnCredentialModel = new WebAuthnCredentialModel(credentialData, secretData);
+            WebAuthnCredentialModel webAuthnCredentialModel = new WebAuthnCredentialModel(credentialModel.getType(), credentialData, secretData);
             webAuthnCredentialModel.setUserLabel(credentialModel.getUserLabel());
             webAuthnCredentialModel.setCreatedDate(credentialModel.getCreatedDate());
-            webAuthnCredentialModel.setType(TYPE);
+            webAuthnCredentialModel.setType(credentialModel.getType());
             webAuthnCredentialModel.setId(credentialModel.getId());
             webAuthnCredentialModel.setSecretData(credentialModel.getSecretData());
             webAuthnCredentialModel.setCredentialData(credentialModel.getCredentialData());
@@ -95,7 +101,6 @@ public class WebAuthnCredentialModel extends CredentialModel {
         try {
             setCredentialData(JsonSerialization.writeValueAsString(credentialData));
             setSecretData(JsonSerialization.writeValueAsString(secretData));
-            setType(TYPE);
             setCreatedDate(Time.currentTimeMillis());
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -106,7 +111,8 @@ public class WebAuthnCredentialModel extends CredentialModel {
     @Override
     public String toString() {
         return "WebAuthnCredentialModel { " +
-                credentialData +
+                getType() +
+                ", " + credentialData +
                 ", " + secretData +
                 " }";
     }

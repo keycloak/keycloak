@@ -19,6 +19,7 @@ package org.keycloak.forms.login.freemarker;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
 import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
 import org.keycloak.authentication.requiredactions.util.UserUpdateProfileContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -37,6 +38,7 @@ import org.keycloak.forms.login.freemarker.model.RegisterBean;
 import org.keycloak.forms.login.freemarker.model.RequiredActionUrlFormatterMethod;
 import org.keycloak.forms.login.freemarker.model.SAMLPostFormBean;
 import org.keycloak.forms.login.freemarker.model.TotpBean;
+import org.keycloak.forms.login.freemarker.model.TotpLoginBean;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.forms.login.freemarker.model.X509ConfirmBean;
 import org.keycloak.models.ClientModel;
@@ -51,7 +53,6 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
@@ -192,10 +193,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         if (status != null) {
             attributes.put("statusCode", status.getStatusCode());
         }
-        
-        if (authenticationSession != null && authenticationSession.getClientNote(Constants.KC_ACTION_EXECUTING) != null) {
-            attributes.put("isAppInitiatedAction", true);
-        }
 
         switch (page) {
             case LOGIN_CONFIG_TOTP:
@@ -213,6 +210,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
                 attributes.put("brokerContext", brokerContext);
                 attributes.put("idpAlias", idpAlias);
+                break;
+            case LOGIN_TOTP:
+                attributes.put("otpLogin", new TotpLoginBean(session, realm, user, (String) this.attributes.get(OTPFormAuthenticator.SELECTED_OTP_CREDENTIAL_ID)));
                 break;
             case REGISTER:
                 attributes.put("register", new RegisterBean(formData));
@@ -399,12 +399,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             attributes.put("realm", new RealmBean(realm));
 
             List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
-            identityProviders = LoginFormsUtil.filterIdentityProviders(identityProviders, session, realm, attributes, formData);
+            identityProviders = LoginFormsUtil.filterIdentityProviders(identityProviders, session, realm, attributes, formData, context);
             attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUriWithCodeAndClientId));
 
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
             attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
-            attributes.put("auth", new AuthenticationContextBean(context, actionUri));
+            attributes.put("auth", new AuthenticationContextBean(context, page));
             attributes.put(Constants.EXECUTION, execution);
 
             if (realm.isInternationalizationEnabled()) {
@@ -442,6 +442,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         if (realm != null && user != null && session != null) {
             attributes.put("authenticatorConfigured", new AuthenticatorConfiguredMethod(realm, user, session));
         }
+
+        if (authenticationSession != null && authenticationSession.getClientNote(Constants.KC_ACTION_EXECUTING) != null) {
+            attributes.put("isAppInitiatedAction", true);
+        }
     }
 
     /**
@@ -457,7 +461,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             String result = freeMarker.processTemplate(attributes, templateName, theme);
             javax.ws.rs.core.MediaType mediaType = contentType == null ? MediaType.TEXT_HTML_UTF_8_TYPE : contentType;
             Response.ResponseBuilder builder = Response.status(status == null ? Response.Status.OK : status).type(mediaType).language(locale).entity(result);
-            BrowserSecurityHeaderSetup.headers(builder, realm);
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
                 builder.header(entry.getKey(), entry.getValue());
             }
@@ -543,8 +546,18 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
+    public Response createWebAuthnErrorPage() {
+        return createResponse(LoginFormsPages.ERROR_WEBAUTHN);
+    }
+
+    @Override
     public Response createOAuthGrant() {
         return createResponse(LoginFormsPages.OAUTH_GRANT);
+    }
+
+    @Override
+    public Response createSelectAuthenticator() {
+        return createResponse(LoginFormsPages.LOGIN_SELECT_AUTHENTICATOR);
     }
 
     @Override

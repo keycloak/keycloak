@@ -8,6 +8,7 @@
   "credentials": {
     "secret": "secret"
   },
+  "autodetect-bearer-only": true,
   "policy-enforcer": {
     "on-deny-redirect-to" : "/servlet-authz-app/accessDenied.jsp",
     "lazy-load-paths": true,
@@ -17,6 +18,14 @@
         "claim-information-point": {
           "claims": {
             "request-claim": "{request.parameter['request-claim']}"
+          }
+        }
+      },
+      {
+        "path": "/protected/filter/body",
+        "claim-information-point": {
+          "claims": {
+            "request-claim": "{request.body}"
           }
         }
       }

@@ -54,7 +54,7 @@ public class OIDCResponseType {
             if (ALLOWED_RESPONSE_TYPES.contains(current)) {
                 allowedTypes.add(current);
             } else {
-                throw new IllegalArgumentException("Unsupported response_type: " + responseTypeParam);
+                throw new IllegalArgumentException("Unsupported response_type");
             }
         }
 

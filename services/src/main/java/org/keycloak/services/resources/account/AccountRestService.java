@@ -217,7 +217,7 @@ public class AccountRestService {
 
             event.success();
 
-            return Cors.add(request, Response.ok()).auth().allowedOrigins(auth.getToken()).build();
+            return Cors.add(request, Response.noContent()).auth().allowedOrigins(auth.getToken()).build();
         } catch (ReadOnlyException e) {
             return ErrorResponse.error(Messages.READ_ONLY_USER, Response.Status.BAD_REQUEST);
         }
@@ -364,7 +364,7 @@ public class AccountRestService {
         session.users().revokeConsentForClient(realm, user.getId(), client.getId());
         event.success();
 
-        return Cors.add(request, Response.accepted()).build();
+        return Cors.add(request, Response.noContent()).build();
     }
 
     /**
@@ -407,7 +407,7 @@ public class AccountRestService {
         session.userCredentialManager().disableCredentialType(realm, user, CredentialModel.OTP);
         event.event(EventType.REMOVE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
         
-        return Cors.add(request, Response.accepted()).build();
+        return Cors.add(request, Response.noContent()).build();
     }
 
     /**
@@ -516,6 +516,11 @@ public class AccountRestService {
             ClientModel client = consent.getClient();
             clients.add(client);
             consentModels.put(client.getClientId(), consent);
+        }
+
+        List<ClientModel> alwaysDisplayClients = realm.getAlwaysDisplayInConsoleClients();
+        for(ClientModel client : alwaysDisplayClients) {
+            clients.add(client);
         }
 
         List<ClientRepresentation> apps = new LinkedList<ClientRepresentation>();

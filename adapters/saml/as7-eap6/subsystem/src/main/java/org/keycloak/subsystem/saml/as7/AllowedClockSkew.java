@@ -32,8 +32,8 @@ abstract public class AllowedClockSkew {
     static final SimpleAttributeDefinition ALLOWED_CLOCK_SKEW_VALUE =
             new SimpleAttributeDefinitionBuilder(Constants.Model.ALLOWED_CLOCK_SKEW_VALUE, ModelType.INT, false)
                     .setXmlName(Constants.XML.ALLOWED_CLOCK_SKEW)
-                    .setAllowExpression(false)
-                    .setValidator(new IntRangeValidator(1, Integer.MAX_VALUE, true, false))
+                    .setAllowExpression(true)
+                    .setValidator(new IntRangeValidator(1, Integer.MAX_VALUE, true, true))
                     .build();
 
     static private enum AllowedClockSkewUnits {MINUTES, SECONDS, MILLISECONDS, MICROSECONDS, NANOSECONDS};
@@ -41,9 +41,9 @@ abstract public class AllowedClockSkew {
     static final SimpleAttributeDefinition ALLOWED_CLOCK_SKEW_UNIT =
             new SimpleAttributeDefinitionBuilder(Constants.Model.ALLOWED_CLOCK_SKEW_UNIT, ModelType.STRING, true)
                     .setXmlName(Constants.XML.ALLOWED_CLOCK_SKEW_UNIT)
-                    .setAllowExpression(false)
+                    .setAllowExpression(true)
                     .setDefaultValue(new ModelNode(AllowedClockSkewUnits.SECONDS.name()))
-                    .setValidator(EnumValidator.create(AllowedClockSkewUnits.class, true, false))
+                    .setValidator(EnumValidator.create(AllowedClockSkewUnits.class, true, true))
                     .build();
 
     static final SimpleAttributeDefinition[] ATTRIBUTES = {ALLOWED_CLOCK_SKEW_UNIT, ALLOWED_CLOCK_SKEW_VALUE};

@@ -29,6 +29,7 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.protocol.LoginProtocol.Error;
@@ -188,16 +189,20 @@ public abstract class AuthorizationEndpointBase {
             UserSessionModel userSession = userSessionCrossDCManager.getUserSessionIfExistsRemotely(manager, realm);
 
             if (userSession != null) {
-                String userSessionId = userSession.getId();
-                rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(userSessionId, realm);
-                authSession = rootAuthSession.createAuthenticationSession(client);
-                logger.debugf("Sent request to authz endpoint. We don't have root authentication session with ID '%s' but we have userSession." +
-                        "Re-created root authentication session with same ID. Client is: %s . New authentication session tab ID: %s", userSessionId, client.getClientId(), authSession.getTabId());
+                UserModel user = userSession.getUser();
+                if (user != null && !user.isEnabled()) {
+                    authSession = createNewAuthenticationSession(manager, client);
+
+                    AuthenticationManager.backchannelLogout(session, userSession, true);
+                } else {
+                    String userSessionId = userSession.getId();
+                    rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(userSessionId, realm);
+                    authSession = rootAuthSession.createAuthenticationSession(client);
+                    logger.debugf("Sent request to authz endpoint. We don't have root authentication session with ID '%s' but we have userSession." +
+                            "Re-created root authentication session with same ID. Client is: %s . New authentication session tab ID: %s", userSessionId, client.getClientId(), authSession.getTabId());
+                }
             } else {
-                rootAuthSession = manager.createAuthenticationSession(realm, true);
-                authSession = rootAuthSession.createAuthenticationSession(client);
-                logger.debugf("Sent request to authz endpoint. Created new root authentication session with ID '%s' . Client: %s . New authentication session tab ID: %s",
-                        rootAuthSession.getId(), client.getClientId(), authSession.getTabId());
+                authSession = createNewAuthenticationSession(manager, client);
             }
         }
 
@@ -205,5 +210,13 @@ public abstract class AuthorizationEndpointBase {
 
         return authSession;
 
+    }
+
+    private AuthenticationSessionModel createNewAuthenticationSession(AuthenticationSessionManager manager, ClientModel client) {
+        RootAuthenticationSessionModel rootAuthSession = manager.createAuthenticationSession(realm, true);
+        AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
+        logger.debugf("Sent request to authz endpoint. Created new root authentication session with ID '%s' . Client: %s . New authentication session tab ID: %s",
+                rootAuthSession.getId(), client.getClientId(), authSession.getTabId());
+        return authSession;
     }
 }

@@ -42,12 +42,13 @@ import org.keycloak.storage.openshift.OpenshiftClientStorageProviderFactory;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
 
 import javax.ws.rs.core.Response;
@@ -57,6 +58,7 @@ import java.util.Arrays;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.keycloak.common.Profile.Feature.OPENSHIFT_INTEGRATION;
+import static org.keycloak.testsuite.ProfileAssume.assumeFeatureEnabled;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 
 /**
@@ -64,7 +66,8 @@ import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@EnableFeature(OPENSHIFT_INTEGRATION)
+@AuthServerContainerExclude(AuthServer.REMOTE)
+@EnableFeature(value = OPENSHIFT_INTEGRATION, skipRestart = true)
 public final class OpenshiftClientStorageTest extends AbstractTestRealmKeycloakTest {
 
     private static Undertow OPENSHIFT_API_SERVER;
@@ -140,8 +143,7 @@ public final class OpenshiftClientStorageTest extends AbstractTestRealmKeycloakT
 
     @Before
     public void onBefore() {
-        ContainerAssume.assumeNotAuthServerRemote();
-
+        assumeFeatureEnabled(OPENSHIFT_INTEGRATION);
         ComponentRepresentation provider = new ComponentRepresentation();
 
         provider.setName("openshift-client-storage");

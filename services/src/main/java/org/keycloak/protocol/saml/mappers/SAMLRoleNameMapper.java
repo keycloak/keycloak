@@ -25,5 +25,5 @@ import org.keycloak.models.RoleModel;
  * @version $Revision: 1 $
  */
 public interface SAMLRoleNameMapper {
-    public String mapName(ProtocolMapperModel model, RoleModel role);
+    String mapName(ProtocolMapperModel model, RoleModel role);
 }

@@ -41,7 +41,7 @@ import java.util.Map;
  */
 public class RoleNameMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper {
 
-    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     public static final String ROLE_CONFIG = "role";
     public static String NEW_ROLE_NAME = "new.role.name";
@@ -136,7 +136,7 @@ public class RoleNameMapper extends AbstractOIDCProtocolMapper implements OIDCAc
         mapper.setName(name);
         mapper.setProtocolMapper(mapperId);
         mapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Map<String, String> config = new HashMap<String, String>();
+        Map<String, String> config = new HashMap<>();
         config.put(ROLE_CONFIG, role);
         config.put(NEW_ROLE_NAME, newName);
         mapper.setConfig(config);

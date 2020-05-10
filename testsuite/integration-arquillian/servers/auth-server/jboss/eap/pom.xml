@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-auth-server-jboss</artifactId>
-        <version>9.0.0-SNAPSHOT</version>
+        <version>11.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -45,7 +45,7 @@
         <auth.server.overlay.version>${product.version}</auth.server.overlay.version>
         <overlaid.container.groupId>org.jboss.eap</overlaid.container.groupId>
         <overlaid.container.version>${eap.version}</overlaid.container.version>
-        <overlaid.container.unpacked.folder.name>jboss-eap-7.3</overlaid.container.unpacked.folder.name>
+        <overlaid.container.unpacked.folder.name>jboss-eap-7.4</overlaid.container.unpacked.folder.name>
     </properties>
 
     <build>
@@ -71,5 +71,42 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>auth-server-apply-patch</id>
+            <activation>
+                <property>
+                    <name>auth.server.patch.zips</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>install-patch</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <executable>${common.resources}/install-patch.${script.suffix}</executable>
+                            <workingDirectory>${auth.server.home}/bin</workingDirectory>
+                            <environmentVariables>
+                                <JAVA_HOME>${auth.server.java.home}</JAVA_HOME>
+                                <JBOSS_HOME>${auth.server.home}</JBOSS_HOME>
+                                <AUTH_PATCH_ZIPS>${auth.server.patch.zips}</AUTH_PATCH_ZIPS>
+                            </environmentVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

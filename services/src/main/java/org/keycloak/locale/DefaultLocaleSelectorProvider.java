@@ -16,23 +16,27 @@
  */
 package org.keycloak.locale;
 
-import org.keycloak.OAuth2Constants;
+import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.CookieHelper;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.storage.ReadOnlyException;
 
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
+import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
 
-    protected static final String LOCALE_COOKIE = "KEYCLOAK_LOCALE";
-    protected static final String KC_LOCALE_PARAM = "kc_locale";
+    private static final Logger logger = Logger.getLogger(LocaleSelectorProvider.class);
 
-    protected final KeycloakSession session;
+    private KeycloakSession session;
 
     public DefaultLocaleSelectorProvider(KeycloakSession session) {
         this.session = session;
@@ -40,121 +44,156 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
 
     @Override
     public Locale resolveLocale(RealmModel realm, UserModel user) {
-        final HttpHeaders requestHeaders = session.getContext().getRequestHeaders();
-        final UriInfo uri = session.getContext().getUri();
-        return getLocale(realm, user, requestHeaders, uri);
+        HttpHeaders requestHeaders = session.getContext().getRequestHeaders();
+        AuthenticationSessionModel session = this.session.getContext().getAuthenticationSession();
+
+        if (!realm.isInternationalizationEnabled()) {
+            return Locale.ENGLISH;
+        }
+
+        Locale userLocale = getUserLocale(realm, session, user, requestHeaders);
+        if (userLocale != null) {
+            return userLocale;
+        }
+
+        String realmDefaultLocale = realm.getDefaultLocale();
+        if (realmDefaultLocale != null) {
+            return Locale.forLanguageTag(realmDefaultLocale);
+        }
+
+        return Locale.ENGLISH;
+    }
+
+    private Locale getUserLocale(RealmModel realm, AuthenticationSessionModel session, UserModel user, HttpHeaders requestHeaders) {
+        Locale locale;
+
+        locale = getUserSelectedLocale(realm, session);
+        if (locale != null) {
+            return locale;
+        }
+
+        locale = getUserProfileSelection(realm, user);
+        if (locale != null) {
+            return locale;
+        }
+
+        locale = getClientSelectedLocale(realm, session);
+        if (locale != null) {
+            return locale;
+        }
+
+        locale = getLocaleCookieSelection(realm, requestHeaders);
+        if (locale != null) {
+            return locale;
+        }
+
+        locale = getAcceptLanguageHeaderLocale(realm, requestHeaders);
+        if (locale != null) {
+            return locale;
+        }
+
+        return null;
+    }
+
+    private Locale getUserSelectedLocale(RealmModel realm, AuthenticationSessionModel session) {
+        if (session == null) {
+            return null;
+        }
+
+        String locale = session.getAuthNote(USER_REQUEST_LOCALE);
+        if (locale == null) {
+            return null;
+        }
+
+        return findLocale(realm, locale);
+    }
+
+    private Locale getUserProfileSelection(RealmModel realm, UserModel user) {
+        if (user == null) {
+            return null;
+        }
+
+        String locale = user.getFirstAttribute(UserModel.LOCALE);
+        if (locale == null) {
+            return null;
+        }
+
+        return findLocale(realm, locale);
+    }
+
+    private Locale getClientSelectedLocale(RealmModel realm, AuthenticationSessionModel session) {
+        if (session == null) {
+            return null;
+        }
+
+        String locale = session.getAuthNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE);
+        if (locale == null) {
+            return null;
+        }
+
+        return findLocale(realm, locale.split(" "));
+    }
+
+    private Locale getLocaleCookieSelection(RealmModel realm, HttpHeaders httpHeaders) {
+        if (httpHeaders == null) {
+            return null;
+        }
+
+        Cookie localeCookie = httpHeaders.getCookies().get(LOCALE_COOKIE);
+        if (localeCookie == null) {
+            return null;
+        }
+
+        return findLocale(realm, localeCookie.getValue());
+    }
+
+    private Locale getAcceptLanguageHeaderLocale(RealmModel realm, HttpHeaders httpHeaders) {
+        if (httpHeaders == null) {
+            return null;
+        }
+
+        List<Locale> acceptableLanguages = httpHeaders.getAcceptableLanguages();
+        if (acceptableLanguages == null || acceptableLanguages.isEmpty()) {
+            return null;
+        }
+
+        for (Locale l : acceptableLanguages) {
+            Locale locale = findLocale(realm, l.toLanguageTag());
+            if (locale != null) {
+                return locale;
+            }
+        }
+
+        return null;
+    }
+
+    private Locale findLocale(RealmModel realm, String... localeStrings) {
+        Set<String> supportedLocales = realm.getSupportedLocales();
+        for (String localeString : localeStrings) {
+            if (localeString != null) {
+                Locale result = null;
+                Locale search = Locale.forLanguageTag(localeString);
+                for (String languageTag : supportedLocales) {
+                    Locale locale = Locale.forLanguageTag(languageTag);
+                    if (locale.getLanguage().equals(search.getLanguage())) {
+                        if (search.getCountry().equals("") ^ locale.getCountry().equals("") && result == null) {
+                            result = locale;
+                        }
+                        if (locale.getCountry().equals(search.getCountry())) {
+                            return locale;
+                        }
+                    }
+                }
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+        return null;
     }
 
     @Override
     public void close() {
-
-    }
-
-    protected Locale getLocale(RealmModel realm, UserModel user, HttpHeaders requestHeaders, UriInfo uriInfo) {
-        if (!realm.isInternationalizationEnabled()) {
-            return Locale.ENGLISH;
-        } else {
-            Locale locale = getUserLocale(realm, user, requestHeaders, uriInfo);
-            return locale != null ? locale : Locale.forLanguageTag(realm.getDefaultLocale());
-        }
-    }
-
-    protected Locale getUserLocale(RealmModel realm, UserModel user, HttpHeaders requestHeaders, UriInfo uriInfo) {
-        final LocaleSelection kcLocaleQueryParamSelection = getKcLocaleQueryParamSelection(realm, uriInfo);
-        if (kcLocaleQueryParamSelection != null) {
-            updateLocaleCookie(realm, kcLocaleQueryParamSelection.getLocaleString(), uriInfo);
-            if (user != null) {
-                updateUsersLocale(user, kcLocaleQueryParamSelection.getLocaleString());
-            }
-            return kcLocaleQueryParamSelection.getLocale();
-        }
-
-        final LocaleSelection localeCookieSelection = getLocaleCookieSelection(realm, requestHeaders);
-        if (localeCookieSelection != null) {
-            if (user != null) {
-                updateUsersLocale(user, localeCookieSelection.getLocaleString());
-            }
-            return localeCookieSelection.getLocale();
-        }
-
-        final LocaleSelection userProfileSelection = getUserProfileSelection(realm, user);
-        if (userProfileSelection != null) {
-            updateLocaleCookie(realm, userProfileSelection.getLocaleString(), uriInfo);
-            return userProfileSelection.getLocale();
-        }
-
-        final LocaleSelection uiLocalesQueryParamSelection = getUiLocalesQueryParamSelection(realm, uriInfo);
-        if (uiLocalesQueryParamSelection != null) {
-            return uiLocalesQueryParamSelection.getLocale();
-        }
-
-        final LocaleSelection acceptLanguageHeaderSelection = getAcceptLanguageHeaderLocale(realm, requestHeaders);
-        if (acceptLanguageHeaderSelection != null) {
-            return acceptLanguageHeaderSelection.getLocale();
-        }
-
-        return null;
-    }
-
-    protected LocaleSelection getKcLocaleQueryParamSelection(RealmModel realm, UriInfo uriInfo) {
-        if (uriInfo == null || !uriInfo.getQueryParameters().containsKey(KC_LOCALE_PARAM)) {
-            return null;
-        }
-        String localeString = uriInfo.getQueryParameters().getFirst(KC_LOCALE_PARAM);
-        return findLocale(realm, localeString);
-    }
-
-    protected LocaleSelection getLocaleCookieSelection(RealmModel realm, HttpHeaders httpHeaders) {
-        if (httpHeaders == null || !httpHeaders.getCookies().containsKey(LOCALE_COOKIE)) {
-            return null;
-        }
-        String localeString = httpHeaders.getCookies().get(LOCALE_COOKIE).getValue();
-        return findLocale(realm, localeString);
-    }
-
-    protected LocaleSelection getUserProfileSelection(RealmModel realm, UserModel user) {
-        if (user == null || !user.getAttributes().containsKey(UserModel.LOCALE)) {
-            return null;
-        }
-        String localeString = user.getFirstAttribute(UserModel.LOCALE);
-        return findLocale(realm, localeString);
-    }
-
-    protected LocaleSelection getUiLocalesQueryParamSelection(RealmModel realm, UriInfo uriInfo) {
-        if (uriInfo == null || !uriInfo.getQueryParameters().containsKey(OAuth2Constants.UI_LOCALES_PARAM)) {
-            return null;
-        }
-        String localeString = uriInfo.getQueryParameters().getFirst(OAuth2Constants.UI_LOCALES_PARAM);
-        return findLocale(realm, localeString.split(" "));
-    }
-
-    protected LocaleSelection getAcceptLanguageHeaderLocale(RealmModel realm, HttpHeaders httpHeaders) {
-        if (httpHeaders == null || httpHeaders.getAcceptableLanguages() == null || httpHeaders.getAcceptableLanguages().isEmpty()) {
-            return null;
-        }
-        for (Locale l : httpHeaders.getAcceptableLanguages()) {
-            String localeString = l.toLanguageTag();
-            LocaleSelection localeSelection = findLocale(realm, localeString);
-            if (localeSelection != null) {
-                return localeSelection;
-            }
-        }
-        return null;
-    }
-
-    protected void updateLocaleCookie(RealmModel realm, String locale, UriInfo uriInfo) {
-        boolean secure = realm.getSslRequired().isRequired(uriInfo.getRequestUri().getHost());
-        CookieHelper.addCookie(LOCALE_COOKIE, locale, AuthenticationManager.getRealmCookiePath(realm, uriInfo), null, null, -1, secure, true);
-    }
-
-    protected LocaleSelection findLocale(RealmModel realm, String... localeStrings) {
-        return new LocaleNegotiator(realm.getSupportedLocales()).invoke(localeStrings);
-    }
-
-    protected void updateUsersLocale(UserModel user, String locale) {
-        if (!locale.equals(user.getFirstAttribute("locale"))) {
-            user.setSingleAttribute(UserModel.LOCALE, locale);
-        }
     }
 
 }

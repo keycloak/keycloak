@@ -1,31 +1,44 @@
 package org.keycloak.testsuite.broker;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import org.junit.Test;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
+import org.keycloak.broker.oidc.mappers.ExternalKeycloakRoleToRoleMapper;
+import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderMapperSyncMode;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.Assert;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getAuthRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
-
-import java.util.List;
-
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import org.junit.Test;
-import org.keycloak.admin.client.resource.ClientsResource;
-import org.keycloak.admin.client.resource.IdentityProviderResource;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
-import org.keycloak.broker.oidc.mappers.ExternalKeycloakRoleToRoleMapper;
-import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.protocol.oidc.OIDCConfigAttributes;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
 
 /**
  * Final class as it's not intended to be overriden. Feel free to remove "final" if you really know what you are doing.
@@ -38,11 +51,12 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     }
 
     @Override
-    protected Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers() {
+    protected Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers(IdentityProviderMapperSyncMode syncMode) {
         IdentityProviderMapperRepresentation attrMapper1 = new IdentityProviderMapperRepresentation();
         attrMapper1.setName("manager-role-mapper");
         attrMapper1.setIdentityProviderMapper(ExternalKeycloakRoleToRoleMapper.PROVIDER_ID);
         attrMapper1.setConfig(ImmutableMap.<String,String>builder()
+                .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
                 .put("external.role", ROLE_MANAGER)
                 .put("role", ROLE_MANAGER)
                 .build());
@@ -51,11 +65,69 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         attrMapper2.setName("user-role-mapper");
         attrMapper2.setIdentityProviderMapper(ExternalKeycloakRoleToRoleMapper.PROVIDER_ID);
         attrMapper2.setConfig(ImmutableMap.<String,String>builder()
+                .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
                 .put("external.role", ROLE_USER)
                 .put("role", ROLE_USER)
                 .build());
 
         return Lists.newArrayList(attrMapper1, attrMapper2);
+    }
+
+    @Override
+    protected void createAdditionalMapperWithCustomSyncMode(IdentityProviderMapperSyncMode syncMode) {
+        IdentityProviderMapperRepresentation friendlyManagerMapper = new IdentityProviderMapperRepresentation();
+        friendlyManagerMapper.setName("friendly-manager-role-mapper");
+        friendlyManagerMapper.setIdentityProviderMapper(ExternalKeycloakRoleToRoleMapper.PROVIDER_ID);
+        friendlyManagerMapper.setConfig(ImmutableMap.<String,String>builder()
+                .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
+                .put("external.role", ROLE_FRIENDLY_MANAGER)
+                .put("role", ROLE_FRIENDLY_MANAGER)
+                .build());
+        friendlyManagerMapper.setIdentityProviderAlias(bc.getIDPAlias());
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+        IdentityProviderResource idpResource = realm.identityProviders().get(bc.getIDPAlias());
+        idpResource.addMapper(friendlyManagerMapper).close();
+    }
+
+    @Test
+    public void mapperDoesNothingForLegacyMode() {
+        createRolesForRealm(bc.providerRealmName());
+        createRolesForRealm(bc.consumerRealmName());
+
+        createRoleMappersForConsumerRealm(IdentityProviderMapperSyncMode.LEGACY);
+
+        RoleRepresentation managerRole = adminClient.realm(bc.providerRealmName()).roles().get(ROLE_MANAGER).toRepresentation();
+        RoleRepresentation userRole = adminClient.realm(bc.providerRealmName()).roles().get(ROLE_USER).toRepresentation();
+
+        UserResource userResource = adminClient.realm(bc.providerRealmName()).users().get(userId);
+        userResource.roles().realmLevel().add(Collections.singletonList(managerRole));
+
+        logInAsUserInIDPForFirstTime();
+
+        UserResource consumerUserResource = adminClient.realm(bc.consumerRealmName()).users().get(
+                adminClient.realm(bc.consumerRealmName()).users().search(bc.getUserLogin()).get(0).getId());
+        Set<String> currentRoles = consumerUserResource.roles().realmLevel().listAll().stream()
+                .map(RoleRepresentation::getName)
+                .collect(Collectors.toSet());
+
+        assertThat(currentRoles, hasItems(ROLE_MANAGER));
+        assertThat(currentRoles, not(hasItems(ROLE_USER)));
+
+        logoutFromRealm(bc.consumerRealmName());
+
+
+        userResource.roles().realmLevel().add(Collections.singletonList(userRole));
+
+        logInAsUserInIDP();
+
+        currentRoles = consumerUserResource.roles().realmLevel().listAll().stream()
+                .map(RoleRepresentation::getName)
+                .collect(Collectors.toSet());
+        assertThat(currentRoles, hasItems(ROLE_MANAGER));
+        assertThat(currentRoles, not(hasItems(ROLE_USER)));
+
+        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(bc.providerRealmName());
     }
 
     @Test
@@ -128,6 +200,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         hardCodedSessionNoteMapper.setIdentityProviderAlias(bc.getIDPAlias());
         hardCodedSessionNoteMapper.setIdentityProviderMapper(UserAttributeMapper.PROVIDER_ID);
         hardCodedSessionNoteMapper.setConfig(ImmutableMap.<String, String>builder()
+                .put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.INHERIT.toString())
                 .put(UserAttributeMapper.USER_ATTRIBUTE, "hard-coded")
                 .put(UserAttributeMapper.CLAIM, "hard-coded")
                 .build());
@@ -269,7 +342,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
             loginTotpPage.assertCurrent();
             loginTotpPage.login(totp.generateTOTP(totpSecret));
-            waitForPage(driver, "keycloak account management", true);
+            waitForAccountManagementTitle();
             accountUpdateProfilePage.assertCurrent();
 
             assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 2);
@@ -277,6 +350,48 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
             removeUserByUsername(consumerRealm, "consumer");
         }
+    }
+
+    @Test
+    public void testInvalidIssuedFor() {
+        loginUser();
+        logoutFromRealm(bc.providerRealmName());
+        logoutFromRealm(bc.consumerRealmName());
+
+        log.debug("Clicking social " + bc.getIDPAlias());
+        loginPage.clickSocial(bc.getIDPAlias());
+        waitForPage(driver, "log in to", true);
+
+        RealmResource realm = adminClient.realm(bc.providerRealmName());
+        ClientRepresentation rep = realm.clients().findByClientId(BrokerTestConstants.CLIENT_ID).get(0);
+        ClientResource clientResource = realm.clients().get(rep.getId());
+        ProtocolMapperRepresentation hardCodedAzp = createHardcodedClaim("hard", "azp", "invalid-azp", ProviderConfigProperty.STRING_TYPE, true, true);
+        clientResource.getProtocolMappers().createMapper(hardCodedAzp);
+
+        log.debug("Logging in");
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        errorPage.assertCurrent();
+    }
+
+    @Test
+    public void testInvalidAudience() {
+        loginUser();
+        logoutFromRealm(bc.providerRealmName());
+        logoutFromRealm(bc.consumerRealmName());
+
+        log.debug("Clicking social " + bc.getIDPAlias());
+        loginPage.clickSocial(bc.getIDPAlias());
+        waitForPage(driver, "log in to", true);
+
+        RealmResource realm = adminClient.realm(bc.providerRealmName());
+        ClientRepresentation rep = realm.clients().findByClientId(BrokerTestConstants.CLIENT_ID).get(0);
+        ClientResource clientResource = realm.clients().get(rep.getId());
+        ProtocolMapperRepresentation hardCodedAzp = createHardcodedClaim("hard", "aud", "invalid-aud", ProviderConfigProperty.LIST_TYPE, true, true);
+        clientResource.getProtocolMappers().createMapper(hardCodedAzp);
+
+        log.debug("Logging in");
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        errorPage.assertCurrent();
     }
 
     private UserRepresentation getFederatedIdentity() {
