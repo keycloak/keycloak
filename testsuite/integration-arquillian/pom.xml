@@ -465,12 +465,6 @@
         <profile>
             <id>db-allocator-db-mysql</id>
             <properties>
-                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
-                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
-                <!-- for the particular EAP version -->
-                <jdbc.mvn.groupId>mysql</jdbc.mvn.groupId>
-                <jdbc.mvn.artifactId>mysql-connector-java</jdbc.mvn.artifactId>
-                <jdbc.mvn.version>${mysql.version}</jdbc.mvn.version>
                 <dballocator.type>mysql80</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
@@ -497,6 +491,27 @@
             </properties>
         </profile>
         <profile>
+            <id>db-postgres10</id>
+            <properties>
+                <keycloak.connectionsJpa.driver>org.postgresql.Driver</keycloak.connectionsJpa.driver>
+                <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
+                <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
+                <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.url>jdbc:postgresql://${auth.server.db.host}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
+                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
+                <!-- for the particular EAP version -->
+                <jdbc.mvn.groupId>org.postgresql</jdbc.mvn.groupId>
+                <jdbc.mvn.artifactId>postgresql</jdbc.mvn.artifactId>
+                <jdbc.mvn.version>42.2.2</jdbc.mvn.version>
+                <docker.database.image>postgres:10</docker.database.image>
+                <docker.database.port>5432</docker.database.port>
+                <docker.database.skip>false</docker.database.skip>
+                <docker.database.cmd>postgres</docker.database.cmd>
+                <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
+            </properties>
+        </profile>
+        <profile>
             <id>db-allocator-db-postgres</id>
             <properties>
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
@@ -512,13 +527,6 @@
         <profile>
             <id>db-allocator-db-postgresplus</id>
             <properties>
-                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
-                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
-                <!-- for the particular EAP version -->
-                <!-- For EDB, the JDBC driver will need to be downloaded and manually added to local maven repository -->
-                <jdbc.mvn.groupId>com.edb.Driver</jdbc.mvn.groupId>
-                <jdbc.mvn.artifactId>edb-jdbc</jdbc.mvn.artifactId>
-                <jdbc.mvn.version>18</jdbc.mvn.version>
                 <dballocator.type>postgresplus101</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
@@ -548,12 +556,6 @@
         <profile>
             <id>db-allocator-db-mariadb</id>
             <properties>
-                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
-                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
-                <!-- for the particular EAP version -->
-                <jdbc.mvn.groupId>org.mariadb.jdbc</jdbc.mvn.groupId>
-                <jdbc.mvn.artifactId>mariadb-java-client</jdbc.mvn.artifactId>
-                <jdbc.mvn.version>${mariadb.version}</jdbc.mvn.version>
                 <dballocator.type>mariadb_galera_101</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
@@ -583,12 +585,6 @@
         <profile>
             <id>db-allocator-db-mssql2017</id>
             <properties>
-                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
-                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
-                <!-- for the particular EAP version -->
-                <jdbc.mvn.groupId>com.microsoft.sqlserver</jdbc.mvn.groupId>
-                <jdbc.mvn.artifactId>mssql-jdbc</jdbc.mvn.artifactId>
-                <jdbc.mvn.version>${mssql.version}</jdbc.mvn.version>
                 <dballocator.type>mssql2017</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
@@ -619,12 +615,6 @@
         <profile>
             <id>db-allocator-db-oracleRAC</id>
             <properties>
-                <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
-                <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
-                <!-- for the particular EAP version -->
-                <jdbc.mvn.groupId>com.oracle</jdbc.mvn.groupId>
-                <jdbc.mvn.artifactId>ojdbc8</jdbc.mvn.artifactId>
-                <jdbc.mvn.version>12.2.0.1</jdbc.mvn.version>
                 <dballocator.type>oracle19cRAC</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
