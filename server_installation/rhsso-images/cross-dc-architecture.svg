@@ -11,45 +11,45 @@
    height="421.5"
    viewBox="0 0 760 421.5"
    version="1.1"
-   id="svg160"
-   sodipodi:docname="cross-dc-architecture_rhsso.svg"
-   inkscape:version="0.92.4 (unknown)">
+   id="svg332"
+   sodipodi:docname="70_RHSSO_Load_Balancer_0320_cross-dc.svg"
+   inkscape:version="1.0beta1 (32d4812, 2019-09-19)">
   <metadata
-     id="metadata164">
+     id="metadata336">
     <rdf:RDF>
       <cc:Work
          rdf:about="">
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title>cross-datacenter-arch</dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
   <sodipodi:namedview
      pagecolor="#ffffff"
      bordercolor="#666666"
+     inkscape:document-rotation="0"
      borderopacity="1"
      objecttolerance="10"
      gridtolerance="10"
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="1669"
-     inkscape:window-height="984"
-     id="namedview162"
+     inkscape:window-width="2152"
+     inkscape:window-height="1258"
+     id="namedview334"
      showgrid="false"
-     inkscape:zoom="2"
-     inkscape:cx="291.10606"
-     inkscape:cy="210.75"
-     inkscape:window-x="0"
-     inkscape:window-y="27"
+     inkscape:zoom="1.1633087"
+     inkscape:cx="289.31844"
+     inkscape:cy="327.03379"
+     inkscape:window-x="2021"
+     inkscape:window-y="30"
      inkscape:window-maximized="0"
-     inkscape:current-layer="svg160" />
+     inkscape:current-layer="svg332" />
   <defs
-     id="defs4">
+     id="defs176">
     <style
-       id="style2">
+       id="style174">
       .a {
         font-size: 10px;
         fill: #f3f3f3;
@@ -140,19 +140,19 @@
     </style>
   </defs>
   <title
-     id="title6">cross-datacenter-arch</title>
+     id="title178">cross-dc</title>
   <g
-     id="g12">
+     id="g184">
     <text
        class="a"
        transform="translate(679.802 404.517)"
-       id="text8">70_RHSSO_0320</text>
+       id="text180">70_RHSSO_0320</text>
     <rect
        class="b"
        y="381.5"
        width="760"
        height="40"
-       id="rect10" />
+       id="rect182" />
   </g>
   <rect
      class="c"
@@ -160,136 +160,138 @@
      y="99"
      width="285"
      height="282.5"
-     id="rect14" />
+     id="rect186" />
   <rect
      class="c"
      y="99"
      width="285"
      height="282.5"
-     id="rect16" />
+     id="rect188" />
   <text
      class="d"
-     transform="translate(20 362.23)"
-     id="text20">Datacenter <tspan
-   class="e"
-   x="81.646"
-   y="0"
-   id="tspan18">(site1)</tspan>
-</text>
+     transform="translate(20,362.23)"
+     id="text192"
+     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:14px;font-family:RedHatText-Bold, 'Red Hat Text';-inkscape-font-specification:'RedHatText-Bold, Red Hat Text Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#151515;"><tspan
+       sodipodi:role="line"
+       id="tspan338"
+       x="0"
+       y="0">Datacenter<tspan
+   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;font-family:LiberationMono, 'Liberation Mono';-inkscape-font-specification:'LiberationMono, Liberation Mono Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal"
+   id="tspan340">(site1)</tspan></tspan></text>
   <g
-     id="g26">
+     id="g198">
     <line
        class="f"
        x1="64.236"
        y1="169"
        x2="64.236"
        y2="271.824"
-       id="line22" />
+       id="line194" />
     <polygon
        class="g"
        points="59.25 270.365 64.236 279 69.223 270.365 59.25 270.365"
-       id="polygon24" />
+       id="polygon196" />
   </g>
   <g
-     id="g32">
+     id="g204">
     <line
        class="f"
        x1="142.5"
        y1="168.695"
        x2="142.5"
        y2="193.824"
-       id="line28" />
+       id="line200" />
     <polygon
        class="g"
        points="137.514 192.365 142.5 201 147.486 192.365 137.514 192.365"
-       id="polygon30" />
+       id="polygon202" />
   </g>
   <g
-     id="g38">
+     id="g210">
     <polyline
        class="f"
        points="372.5 63.25 372.5 78.25 142.568 78.25 142.568 109.574"
-       id="polyline34" />
+       id="polyline206" />
     <polygon
        class="g"
        points="137.581 108.115 142.568 116.75 147.554 108.115 137.581 108.115"
-       id="polygon36" />
+       id="polygon208" />
   </g>
   <g
-     id="g44">
+     id="g216">
     <polyline
        class="f"
        points="387.5 63.25 387.5 78.25 617.432 78.25 617.432 109.574"
-       id="polyline40" />
+       id="polyline212" />
     <polygon
        class="g"
        points="612.446 108.115 617.432 116.75 622.419 108.115 612.446 108.115"
-       id="polygon42" />
+       id="polygon214" />
   </g>
   <g
-     id="g66">
+     id="g238">
     <text
        class="h"
        transform="translate(343.469 55.095)"
-       id="text46">Load balancer</text>
+       id="text218">Load balancer</text>
     <g
-       id="g64">
+       id="g236">
       <rect
          class="i"
          x="352.5"
          y="24.75"
          width="55"
          height="13.75"
-         id="rect48" />
+         id="rect220" />
       <line
          class="j"
          x1="401.621"
          y1="30.647"
          x2="401.621"
          y2="30.647"
-         id="line50" />
+         id="line222" />
       <line
          class="k"
          x1="358.393"
          y1="30.113"
          x2="358.393"
          y2="33.077"
-         id="line52" />
+         id="line224" />
       <line
          class="k"
          x1="364.286"
          y1="30.113"
          x2="364.286"
          y2="33.077"
-         id="line54" />
+         id="line226" />
       <line
          class="k"
          x1="370.179"
          y1="30.113"
          x2="370.179"
          y2="33.077"
-         id="line56" />
+         id="line228" />
       <line
          class="k"
          x1="376.071"
          y1="30.113"
          x2="376.071"
          y2="33.077"
-         id="line58" />
+         id="line230" />
       <line
          class="k"
          x1="381.964"
          y1="30.113"
          x2="381.964"
          y2="33.077"
-         id="line60" />
+         id="line232" />
       <line
          class="k"
          x1="387.857"
          y1="30.113"
          x2="387.857"
          y2="33.077"
-         id="line62" />
+         id="line234" />
     </g>
   </g>
   <rect
@@ -298,43 +300,44 @@
      y="281.5"
      width="245"
      height="50"
-     id="rect68" />
+     id="rect240" />
   <text
+     style="-inkscape-font-specification:'RedHatText-Bold, Red Hat Text Bold';font-family:RedHatText-Bold, 'Red Hat Text';font-weight:bold;font-style:normal;font-stretch:normal;font-variant:normal;font-size:11px;font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#151515;"
      class="m"
-     transform="translate(95.296,310.713)"
-     id="text70"
-     style="font-weight:700;font-size:11px;font-family:RedHatText-Bold, 'Red Hat Text';fill:#151515">Data Grid cluster</text>
+     transform="translate(95.296 310.713)"
+     id="text242"><tspan
+       id="tspan258"
+       sodipodi:role="line">Data Grid cluster</tspan></text>
   <rect
      class="l"
      x="20"
      y="119"
      width="245"
      height="50"
-     id="rect72" />
+     id="rect244" />
   <text
      class="m"
-     transform="translate(97.436,148.213)"
-     id="text74"
-     style="font-weight:700;font-size:11px;font-family:RedHatText-Bold, 'Red Hat Text';fill:#151515">RH SSO cluster</text>
+     transform="translate(101.5 148.213)"
+     id="text246">RH SSO cluster</text>
   <g
-     id="g84">
+     id="g256">
     <text
        class="h"
        transform="translate(117.921 251.215)"
-       id="text76">Database</text>
+       id="text248">Database</text>
     <g
-       id="g82">
+       id="g254">
       <path
          class="i"
          d="M124.051,214.192v10.193c0,5.629,8.259,10.192,18.449,10.192s18.449-4.563,18.449-10.192V214.192"
-         id="path78" />
+         id="path250" />
       <ellipse
          class="i"
          cx="142.5"
          cy="214.192"
          rx="18.449"
          ry="10.192"
-         id="ellipse80" />
+         id="ellipse252" />
     </g>
   </g>
   <rect
@@ -343,51 +346,52 @@
      y="205.192"
      width="35.56"
      height="29.115"
-     id="rect86" />
+     id="rect258" />
   <text
      class="n"
      transform="translate(45.025 216.874)"
-     id="text90">Remote<tspan
+     id="text262">Remote<tspan
    x="6.71"
    y="12"
-   id="tspan88">store</tspan>
-</text>
+   id="tspan260">store</tspan></text>
   <text
      class="d"
-     transform="translate(495 362.23)"
-     id="text94">Datacenter <tspan
-   class="e"
-   x="81.646"
-   y="0"
-   id="tspan92">(site2)</tspan>
-</text>
+     transform="translate(495,362.23)"
+     id="text266"
+     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:14px;font-family:RedHatText-Bold, 'Red Hat Text';-inkscape-font-specification:'RedHatText-Bold, Red Hat Text Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#151515;"><tspan
+       sodipodi:role="line"
+       id="tspan342"
+       x="0"
+       y="0">Datacenter<tspan
+   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12px;font-family:LiberationMono, 'Liberation Mono';-inkscape-font-specification:'LiberationMono, Liberation Mono Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal"
+   id="tspan344">(site2)</tspan></tspan></text>
   <g
-     id="g100">
+     id="g272">
     <line
        class="f"
        x1="695.764"
        y1="169"
        x2="695.764"
        y2="271.824"
-       id="line96" />
+       id="line268" />
     <polygon
        class="g"
        points="690.777 270.365 695.764 279 700.75 270.365 690.777 270.365"
-       id="polygon98" />
+       id="polygon270" />
   </g>
   <g
-     id="g106">
+     id="g278">
     <line
        class="f"
        x1="617.5"
        y1="168.695"
        x2="617.5"
        y2="193.824"
-       id="line102" />
+       id="line274" />
     <polygon
        class="g"
        points="612.514 192.365 617.5 201 622.486 192.365 612.514 192.365"
-       id="polygon104" />
+       id="polygon276" />
   </g>
   <rect
      class="l"
@@ -396,46 +400,44 @@
      width="245"
      height="50"
      transform="translate(1235 613) rotate(-180)"
-     id="rect108" />
+     id="rect280" />
   <text
+     style="-inkscape-font-specification:'RedHatText-Bold, Red Hat Text Bold';font-family:RedHatText-Bold, 'Red Hat Text';font-weight:bold;font-style:normal;font-stretch:normal;font-variant:normal;font-size:11px;font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#151515;"
      class="m"
-     transform="translate(570.296,310.713)"
-     id="text110"
-     style="font-weight:700;font-size:11px;font-family:RedHatText-Bold, 'Red Hat Text';fill:#151515"
-     inkscape:export-filename="/home/amunro/git-repos/kc/server_installation/rhsso-images/cross-dc-architecture.png"
-     inkscape:export-xdpi="96"
-     inkscape:export-ydpi="96">Data Grid cluster</text>
+     transform="translate(570.296 310.713)"
+     id="text282"><tspan
+       id="tspan261"
+       sodipodi:role="line">Data Grid cluster</tspan></text>
   <rect
      class="l"
      x="495"
      y="119"
      width="245"
      height="50"
-     id="rect112" />
+     id="rect284" />
   <text
      class="m"
-     transform="translate(572.436,148.213)"
-     id="text114"
-     style="font-weight:700;font-size:11px;font-family:RedHatText-Bold, 'Red Hat Text';fill:#151515">RH SSO cluster</text>
+     transform="translate(576.5 148.213)"
+     id="text286">RH SSO cluster</text>
   <g
-     id="g124">
+     id="g296">
     <text
        class="h"
        transform="translate(592.921 251.215)"
-       id="text116">Database</text>
+       id="text288">Database</text>
     <g
-       id="g122">
+       id="g294">
       <path
          class="i"
          d="M599.051,214.192v10.193c0,5.629,8.259,10.192,18.449,10.192s18.449-4.563,18.449-10.192V214.192"
-         id="path118" />
+         id="path290" />
       <ellipse
          class="i"
          cx="617.5"
          cy="214.192"
          rx="18.449"
          ry="10.192"
-         id="ellipse120" />
+         id="ellipse292" />
     </g>
   </g>
   <rect
@@ -444,85 +446,84 @@
      y="205.192"
      width="35.56"
      height="29.115"
-     id="rect126" />
+     id="rect298" />
   <text
      class="n"
      transform="translate(676.553 216.874)"
-     id="text130">Remote<tspan
+     id="text302">Remote<tspan
    x="6.71"
    y="12"
-   id="tspan128">store</tspan>
-</text>
+   id="tspan300">store</tspan></text>
   <g
-     id="g142">
+     id="g314">
     <line
        class="o"
        x1="485.324"
        y1="306.5"
        x2="483.824"
        y2="306.5"
-       id="line132" />
+       id="line304" />
     <line
        class="p"
        x1="480.814"
        y1="306.5"
        x2="277.681"
        y2="306.5"
-       id="line134" />
+       id="line306" />
     <line
        class="o"
        x1="276.176"
        y1="306.5"
        x2="274.676"
        y2="306.5"
-       id="line136" />
+       id="line308" />
     <polygon
        class="q"
        points="483.865 301.514 492.5 306.5 483.865 311.486 483.865 301.514"
-       id="polygon138" />
+       id="polygon310" />
     <polygon
        class="q"
        points="276.135 301.514 267.5 306.5 276.135 311.486 276.135 301.514"
-       id="polygon140" />
+       id="polygon312" />
   </g>
   <g
-     id="g154">
+     id="g326">
     <line
        class="o"
        x1="588.875"
        y1="219.752"
        x2="587.375"
        y2="219.752"
-       id="line144" />
+       id="line316" />
     <line
        class="r"
        x1="584.391"
        y1="219.752"
        x2="174.116"
        y2="219.752"
-       id="line146" />
+       id="line318" />
     <line
        class="o"
        x1="172.624"
        y1="219.752"
        x2="171.124"
        y2="219.752"
-       id="line148" />
+       id="line320" />
     <polygon
        class="q"
        points="587.416 214.766 596.051 219.752 587.416 224.739 587.416 214.766"
-       id="polygon150" />
+       id="polygon322" />
     <polygon
        class="q"
        points="172.583 214.766 163.948 219.752 172.583 224.739 172.583 214.766"
-       id="polygon152" />
+       id="polygon324" />
   </g>
   <text
      class="n"
      transform="translate(308.154 298.472)"
-     id="text156">Cross-Datacenter Replication</text>
+     id="text328">Cross-Datacenter Replication</text>
   <text
      class="n"
      transform="translate(323.438 211.724)"
-     id="text158">Active/Active database</text>
+     id="text330">Active/Active database</text>
 </svg>
