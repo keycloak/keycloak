@@ -357,20 +357,25 @@ public class ResourceSetService {
     @GET
     @NoCache
     @Produces("application/json")
-    public Response find(@QueryParam("name") String name) {
+    public Response find(@QueryParam("name") String name, @QueryParam("hierarchy") Boolean hierarchy) {
         this.auth.realm().requireViewAuthorization();
         StoreFactory storeFactory = authorization.getStoreFactory();
 
         if (name == null) {
             return Response.status(Status.BAD_REQUEST).build();
         }
-
+        if (hierarchy == null) {
+            hierarchy = false;
+        }
         Resource model = storeFactory.getResourceStore().findByName(name, this.resourceServer.getId());
 
         if (model == null) {
             return Response.status(Status.OK).build();
         }
 
+        if (hierarchy) {
+            return Response.ok(toResourceHierarchy(model, this.resourceServer, authorization, false)).build();
+        }
         return Response.ok(toRepresentation(model, this.resourceServer, authorization)).build();
     }
 
@@ -395,14 +400,15 @@ public class ResourceSetService {
             deep = true;
         }
         if (id != null || name != null || uri != null || type != null) {
-            return find(id, name, uri, owner, type, scope, matchingUri,exactName, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toResourceHierarchy(resource, resourceServer, authorization, deep1));
+            return find(id, name, uri, owner, type, scope, matchingUri, exactName, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toResourceHierarchy(resource, resourceServer, authorization, deep1));
         }
         return find(deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toResourceHierarchy(resource, resourceServer, authorization, deep1));
     }
 
 
     /**
-     *  顶级
+     * 顶级
+     *
      * @param deep
      * @param firstResult
      * @param maxResult
@@ -450,19 +456,19 @@ public class ResourceSetService {
         Map<String, String[]> search = new HashMap<>();
 
         if (id != null && !"".equals(id.trim())) {
-            search.put("id", new String[] {id});
+            search.put("id", new String[]{id});
         }
 
         if (name != null && !"".equals(name.trim())) {
-            search.put("name", new String[] {name});
+            search.put("name", new String[]{name});
 
             if (exactName != null && exactName) {
-                search.put(Resource.EXACT_NAME, new String[] {Boolean.TRUE.toString()});
+                search.put(Resource.EXACT_NAME, new String[]{Boolean.TRUE.toString()});
             }
         }
 
         if (uri != null && !"".equals(uri.trim())) {
-            search.put("uri", new String[] {uri});
+            search.put("uri", new String[]{uri});
         }
 
         if (owner != null && !"".equals(owner.trim())) {
@@ -479,17 +485,17 @@ public class ResourceSetService {
                 }
             }
 
-            search.put("owner", new String[] {owner});
+            search.put("owner", new String[]{owner});
         }
 
         if (type != null && !"".equals(type.trim())) {
-            search.put("type", new String[] {type});
+            search.put("type", new String[]{type});
         }
 
         if (scope != null && !"".equals(scope.trim())) {
             HashMap<String, String[]> scopeFilter = new HashMap<>();
 
-            scopeFilter.put("name", new String[] {scope});
+            scopeFilter.put("name", new String[]{scope});
 
             List<Scope> scopes = authorization.getStoreFactory().getScopeStore().findByResourceServer(scopeFilter, resourceServer.getId(), -1, -1);
 
@@ -505,8 +511,8 @@ public class ResourceSetService {
         if (matchingUri != null && matchingUri && resources.isEmpty()) {
             HashMap<String, String[]> attributes = new HashMap<>();
 
-            attributes.put("uri_not_null", new String[] {"true"});
-            attributes.put("owner", new String[] {resourceServer.getId()});
+            attributes.put("uri_not_null", new String[]{"true"});
+            attributes.put("owner", new String[]{resourceServer.getId()});
 
             List<Resource> serverResources = storeFactory.getResourceStore().findByResourceServer(attributes, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : -1);
 

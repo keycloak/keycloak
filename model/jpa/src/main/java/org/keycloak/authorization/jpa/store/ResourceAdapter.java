@@ -35,14 +35,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -307,7 +300,7 @@ public class ResourceAdapter extends AbstractAuthorizationModel implements Resou
         query.setParameter("serverId", entity.getResourceServer().getId());
         query.setParameter("ownerId", entity.getResourceServer().getId());
         List<ResourceEntity> resources = query.getResultList();
-        Set<Resource> set = new HashSet<>();
+        Set<Resource> set = new LinkedHashSet<>();
         for (ResourceEntity resourceEntity : resources) {
             set.add(new ResourceAdapter(resourceEntity, em, storeFactory));
         }

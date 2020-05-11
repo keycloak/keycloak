@@ -262,7 +262,7 @@ public class JPAResourceStore implements ResourceStore {
             }
         });
 
-        querybuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.asc(root.get("name")));
+        querybuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.asc(root.get("type")));
 
         Query query = entityManager.createQuery(querybuilder);
 

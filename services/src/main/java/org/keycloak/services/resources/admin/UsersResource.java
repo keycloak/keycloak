@@ -212,7 +212,9 @@ public class UsersResource {
                                              @QueryParam("idcard") String idcard,
                                              @QueryParam("first") Integer firstResult,
                                              @QueryParam("max") Integer maxResults,
-                                             @QueryParam("briefRepresentation") Boolean briefRepresentation) {
+                                             @QueryParam("briefRepresentation") Boolean briefRepresentation,
+                                             @QueryParam("attrName") String attrName,
+                                             @QueryParam("attrValue") String attrValue) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
 
         userPermissionEvaluator.requireQuery();
@@ -227,6 +229,7 @@ public class UsersResource {
                 if (userModel != null) {
                     userModels = Arrays.asList(userModel);
                 }
+                //暂时保留
             } else if (search.indexOf(":") != -1 && search.split(":").length > 1) {
                 String[] searchs = search.split(":");
                 userModels = session.users().searchForUserByUserAttribute(searchs[0], searchs[1], realm);
@@ -235,6 +238,8 @@ public class UsersResource {
                 attributes.put(UserModel.SEARCH, search.trim());
                 return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult, maxResults, false);
             }
+        } else if (attrName != null && attrValue != null) {
+            userModels = session.users().searchForUserByUserAttribute(attrName, attrValue, realm);
         } else if (last != null || first != null || email != null || username != null) {
             Map<String, String> attributes = new HashMap<>();
             if (last != null) {

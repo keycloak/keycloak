@@ -275,6 +275,7 @@ public class ModelToRepresentation {
         rep.setEmailVerified(user.isEmailVerified());
         rep.setFederationLink(user.getFederationLink());
         rep.setLoginTimestamp(user.getLoginTimestamp());
+        rep.setIdcard(user.getIdcard());
         List<GroupRepresentation> groups = new LinkedList<>();
         for (GroupModel group : user.getGroups()) {
             groups.add(toRepresentation(group, false));
