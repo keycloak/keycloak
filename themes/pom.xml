@@ -70,6 +70,7 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <excludes>
+                    <exclude>**/node_modules/rcue/**</exclude>
                     <exclude>**/node_modules/**/node_modules/**</exclude>
                     <exclude>**/minimist/**</exclude>
                     <exclude>**/mkdirp/**</exclude>
@@ -410,6 +411,12 @@
                 <resources>
                     <resource>
                         <directory>src/main/resources-product</directory>
+                    </resource>
+                    <resource>
+                        <directory>src/main/resources</directory>
+                        <includes>
+                            <include>**/node_modules/rcue/**</include>
+                        </includes>
                     </resource>
                 </resources>
             </build>
