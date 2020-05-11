@@ -60,14 +60,26 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
+import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
+import org.keycloak.protocol.saml.SamlClient;
+import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
@@ -90,6 +102,8 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.ProfileHelper;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.OPTIONS;
@@ -102,6 +116,8 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import javax.xml.namespace.QName;
+import java.io.IOException;
 import java.security.MessageDigest;
 
 import java.util.List;
@@ -872,7 +888,9 @@ public class TokenEndpoint {
         String requestedTokenType = formParams.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE);
         if (requestedTokenType == null) {
             requestedTokenType = OAuth2Constants.REFRESH_TOKEN_TYPE;
-        } else if (!requestedTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE) && !requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)) {
+        } else if (!requestedTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE) &&
+                !requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE) &&
+                !requestedTokenType.equals(OAuth2Constants.SAML2_TOKEN_TYPE)) {
             event.detail(Details.REASON, "requested_token_type unsupported");
             event.error(Errors.INVALID_REQUEST);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
@@ -904,6 +922,19 @@ public class TokenEndpoint {
 
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
 
+        switch (requestedTokenType) {
+            case OAuth2Constants.ACCESS_TOKEN_TYPE:
+            case OAuth2Constants.REFRESH_TOKEN_TYPE:
+                return exchangeClientToOIDCClient(targetUser, targetUserSession, requestedTokenType, targetClient, audience, scope);
+            case OAuth2Constants.SAML2_TOKEN_TYPE:
+                return exchangeClientToSAML2Client(targetUser, targetUserSession, requestedTokenType, targetClient, audience, scope);
+        }
+
+        throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
+    }
+
+    protected Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
+                                                  ClientModel targetClient, String audience, String scope) {
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
         AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(targetClient);
 
@@ -940,6 +971,56 @@ public class TokenEndpoint {
         AccessTokenResponse res = responseBuilder.build();
         event.detail(Details.AUDIENCE, targetClient.getClientId());
 
+        event.success();
+
+        return cors.builder(Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).build();
+    }
+
+    protected Response exchangeClientToSAML2Client(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
+                                                  ClientModel targetClient, String audience, String scope) {
+        // Create authSession with target SAML 2.0 client and authenticated user
+        LoginProtocolFactory factory = (LoginProtocolFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(LoginProtocol.class, SamlProtocol.LOGIN_PROTOCOL);
+        SamlService samlService = (SamlService) factory.createProtocolEndpoint(realm, event);
+        ResteasyProviderFactory.getInstance().injectProperties(samlService);
+        AuthenticationSessionModel authSession = samlService.getOrCreateLoginSessionForIdpInitiatedSso(session, realm,
+                targetClient, null);
+        if (authSession == null) {
+            logger.error("SAML assertion consumer url not set up");
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Client requires assertion consumer url set up", Response.Status.BAD_REQUEST);
+        }
+
+        authSession.setAuthenticatedUser(targetUser);
+
+        event.session(targetUserSession);
+
+        AuthenticationManager.setClientScopesInSession(authSession);
+        ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession,
+                authSession);
+
+        updateUserSessionFromClientAuth(targetUserSession);
+
+        // Create SAML 2.0 Assertion Response
+        SamlClient samlClient = new SamlClient(targetClient);
+        SamlProtocol samlProtocol = new TokenExchangeSamlProtocol(samlClient).setEventBuilder(event).setHttpHeaders(headers).setRealm(realm)
+                .setSession(session).setUriInfo(session.getContext().getUri());
+
+        Response samlAssertion = samlProtocol.authenticated(authSession, targetUserSession, clientSessionCtx);
+        if (samlAssertion.getStatus() != 200) {
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Can not get SAML 2.0 token", Response.Status.BAD_REQUEST);
+        }
+        String xmlString = (String) samlAssertion.getEntity();
+        String encodedXML = Base64Url.encode(xmlString.getBytes(GeneralConstants.SAML_CHARSET));
+
+        int assertionLifespan = samlClient.getAssertionLifespan();
+
+        AccessTokenResponse res = new AccessTokenResponse();
+        res.setToken(encodedXML);
+        res.setTokenType("Bearer");
+        res.setExpiresIn(assertionLifespan <= 0 ? realm.getAccessCodeLifespan() : assertionLifespan);
+        res.setOtherClaims(OAuth2Constants.ISSUED_TOKEN_TYPE, requestedTokenType);
+
+        event.detail(Details.AUDIENCE, targetClient.getClientId());
         event.success();
 
         return cors.builder(Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).build();
@@ -1237,5 +1318,36 @@ public class TokenEndpoint {
         String codeVerifierEncoded = Base64Url.encode(digestBytes);
         return codeVerifierEncoded;
     }
- 
+
+    private class TokenExchangeSamlProtocol extends SamlProtocol {
+        final SamlClient samlClient;
+
+        TokenExchangeSamlProtocol(SamlClient samlClient) {
+            this.samlClient = samlClient;
+        }
+
+        @Override
+        protected Response buildAuthenticatedResponse(AuthenticatedClientSessionModel clientSession, String redirectUri,
+                                                      Document samlDocument, JaxrsSAML2BindingBuilder bindingBuilder)
+                throws ConfigurationException, ProcessingException, IOException {
+            JaxrsSAML2BindingBuilder.PostBindingBuilder builder = bindingBuilder.postBinding(samlDocument);
+
+            Element assertionElement;
+            if (samlClient.requiresEncryption()) {
+                assertionElement = DocumentUtil.getElement(builder.getDocument(), new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ENCRYPTED_ASSERTION.get()));
+            } else {
+                assertionElement = DocumentUtil.getElement(builder.getDocument(), new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ASSERTION.get()));
+            }
+            if (assertionElement == null) {
+                return Response.status(Status.BAD_REQUEST).build();
+            }
+            String assertion = DocumentUtil.getNodeAsString(assertionElement);
+            return Response.ok(assertion, MediaType.APPLICATION_XML_TYPE).build();
+        }
+
+        @Override
+        protected Response buildErrorResponse(boolean isPostBinding, String destination, JaxrsSAML2BindingBuilder binding, Document document) throws ConfigurationException, ProcessingException, IOException {
+            return Response.status(Status.BAD_REQUEST).build();
+        }
+    }
 }
