@@ -97,6 +97,28 @@ public final class WaitUtils {
     }
 
     /**
+     * Waits for DOMContent to load
+     */
+    public static void waitForDomContentToLoad() {
+        WebDriver driver = getCurrentDriver();
+
+        if (driver instanceof HtmlUnitDriver) {
+            return; // not needed
+        }
+
+        WebDriverWait wait = new WebDriverWait(driver, PAGELOAD_TIMEOUT_MILLIS / 1000);
+
+        try {
+            wait
+                    .pollingEvery(Duration.ofMillis(500))
+                    .until(javaScriptThrowsNoExceptions(
+                    "if (document.readyState !== 'complete') { throw \"Not ready\";}"));
+        } catch (TimeoutException e) {
+            log.warn("waitForPageToLoad time exceeded!");
+        }
+    }
+
+    /**
      * Waits for page to finish any pending redirects, REST API requests etc.
      * Because Keycloak's Admin Console is a single-page application, we need to
      * take extra steps to ensure the page is fully loaded
