@@ -203,7 +203,21 @@ public class DocumentUtil {
      * @throws TransformerException
      */
     public static String getDocumentAsString(Document signedDoc) throws ProcessingException, ConfigurationException {
-        Source source = new DOMSource(signedDoc);
+        return getNodeAsString(signedDoc);
+    }
+
+    /**
+     * Marshall a DOM Node into a String
+     *
+     * @param node
+     *
+     * @return
+     *
+     * @throws ProcessingException
+     * @throws ConfigurationException
+     */
+    public static String getNodeAsString(Node node) throws ProcessingException, ConfigurationException {
+        Source source = new DOMSource(node);
         StringWriter sw = new StringWriter();
 
         Result streamResult = new StreamResult(sw);

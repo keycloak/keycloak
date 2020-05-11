@@ -513,6 +513,11 @@ public class OAuthClient {
 
     public AccessTokenResponse doTokenExchange(String realm, String token, String targetAudience,
                                                String clientId, String clientSecret) throws Exception {
+        return doTokenExchange(realm, token, targetAudience, clientId, clientSecret, null);
+    }
+
+    public AccessTokenResponse doTokenExchange(String realm, String token, String targetAudience,
+                                               String clientId, String clientSecret, Map<String, String> additionalParams) throws Exception {
         try (CloseableHttpClient client = httpClient.get()) {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
 
@@ -521,6 +526,12 @@ public class OAuthClient {
             parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN, token));
             parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE));
             parameters.add(new BasicNameValuePair(OAuth2Constants.AUDIENCE, targetAudience));
+
+            if (additionalParams != null) {
+                for (Map.Entry<String, String> entry : additionalParams.entrySet()) {
+                    parameters.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+                }
+            }
 
             if (clientSecret != null) {
                 String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
@@ -1212,6 +1223,7 @@ public class OAuthClient {
 
         private String idToken;
         private String accessToken;
+        private String issuedTokenType;
         private String tokenType;
         private int expiresIn;
         private int refreshExpiresIn;
@@ -1247,6 +1259,7 @@ public class OAuthClient {
                 if (statusCode == 200) {
                     idToken = (String) responseJson.get("id_token");
                     accessToken = (String) responseJson.get("access_token");
+                    issuedTokenType = (String) responseJson.get("issued_token_type");
                     tokenType = (String) responseJson.get("token_type");
                     expiresIn = (Integer) responseJson.get("expires_in");
                     refreshExpiresIn = (Integer) responseJson.get("refresh_expires_in");
@@ -1299,6 +1312,10 @@ public class OAuthClient {
 
         public String getRefreshToken() {
             return refreshToken;
+        }
+
+        public String getIssuedTokenType() {
+            return issuedTokenType;
         }
 
         public String getTokenType() {
