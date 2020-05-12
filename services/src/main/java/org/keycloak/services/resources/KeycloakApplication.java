@@ -58,7 +58,6 @@ import org.keycloak.timer.TimerProvider;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 import org.keycloak.util.JsonSerialization;
 
-import javax.servlet.ServletContext;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.ws.rs.core.Application;
@@ -99,15 +98,12 @@ public class KeycloakApplication extends Application {
             logger.debugv("PlatformProvider: {0}", platform.getClass().getName());
             logger.debugv("RestEasy provider: {0}", Resteasy.getProvider().getClass().getName());
 
-            ServletContext context = Resteasy.getContextData(ServletContext.class);
-
             loadConfig();
 
             this.sessionFactory = createSessionFactory();
 
             Resteasy.pushDefaultContextObject(KeycloakApplication.class, this);
             Resteasy.pushContext(KeycloakApplication.class, this); // for injection
-            context.setAttribute(KeycloakSessionFactory.class.getName(), this.sessionFactory);
 
             singletons.add(new RobotsResource());
             singletons.add(new RealmsResource());

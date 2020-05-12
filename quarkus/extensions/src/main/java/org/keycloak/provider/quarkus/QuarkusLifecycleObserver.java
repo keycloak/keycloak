@@ -22,7 +22,6 @@ import io.quarkus.runtime.StartupEvent;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
-import javax.servlet.ServletContext;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
@@ -31,6 +30,7 @@ import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.platform.Platform;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
+import org.keycloak.services.resources.KeycloakApplication;
 
 @ApplicationScoped
 public class QuarkusLifecycleObserver {
@@ -39,7 +39,7 @@ public class QuarkusLifecycleObserver {
     private static final String KEYCLOAK_ADMIN_PASSWORD_ENV_VAR = "KEYCLOAK_ADMIN_PASSWORD";
 
     @Inject
-    ServletContext servletContext;
+    KeycloakApplication application;
 
     private void onStartupEvent(@Observes StartupEvent event) {
 
@@ -70,8 +70,7 @@ public class QuarkusLifecycleObserver {
             return;
         }
 
-        KeycloakSessionFactory sessionFactory = (KeycloakSessionFactory) servletContext
-                .getAttribute(KeycloakSessionFactory.class.getName());
+        KeycloakSessionFactory sessionFactory = application.getSessionFactory();
         KeycloakSession session = sessionFactory.create();
         KeycloakTransactionManager transaction = session.getTransactionManager();
 
