@@ -231,22 +231,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     private String getIDTokenForLogout(KeycloakSession session, UserSessionModel userSession) {
-        String tokenExpirationString = userSession.getNote(FEDERATED_TOKEN_EXPIRATION);
-        long exp = tokenExpirationString == null ? 0 : Long.parseLong(tokenExpirationString);
-        int currentTime = Time.currentTime();
-        if (exp > 0 && currentTime > exp) {
-            String response = refreshTokenForLogout(session, userSession);
-            AccessTokenResponse tokenResponse = null;
-            try {
-                tokenResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            return tokenResponse.getIdToken();
-        } else {
-            return userSession.getNote(FEDERATED_ID_TOKEN);
-
-        }
+        return userSession.getNote(FEDERATED_ID_TOKEN);
     }
 
     protected void processAccessTokenResponse(BrokeredIdentityContext context, AccessTokenResponse response) {
