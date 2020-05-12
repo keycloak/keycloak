@@ -268,7 +268,7 @@ public class KeycloakApplication extends Application {
     }
 
     public static void setupScheduledTasks(final KeycloakSessionFactory sessionFactory) {
-        long interval = Config.scope("scheduled").getLong("interval", 60L) * 1000;
+        long interval = Config.scope("scheduled").getLong("interval", 900L) * 1000;
 
         KeycloakSession session = sessionFactory.create();
         try {

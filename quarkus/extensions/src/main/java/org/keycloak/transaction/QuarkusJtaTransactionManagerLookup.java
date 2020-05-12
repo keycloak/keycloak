@@ -53,4 +53,9 @@ public class QuarkusJtaTransactionManagerLookup implements JtaTransactionManager
     public String getId() {
         return "quarkus";
     }
+
+    @Override
+    public int order() {
+        return 100;
+    }
 }

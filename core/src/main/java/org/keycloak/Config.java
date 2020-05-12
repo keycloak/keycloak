@@ -88,7 +88,8 @@ public class Config {
 
         @Override
         public String get(String key, String defaultValue) {
-            return System.getProperty(prefix + key, defaultValue);
+            String v = System.getProperty(prefix + key, defaultValue);
+            return v != null && !v.isEmpty() ? v : null;
         }
 
         @Override

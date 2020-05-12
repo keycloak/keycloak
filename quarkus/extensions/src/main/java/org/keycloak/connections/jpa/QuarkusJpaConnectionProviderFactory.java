@@ -111,7 +111,11 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
     public void postInit(KeycloakSessionFactory factory) {
         this.factory = factory;
         checkJtaEnabled(factory);
+    }
 
+    @Override
+    public int order() {
+        return 100;
     }
 
     protected void checkJtaEnabled(KeycloakSessionFactory factory) {
