@@ -25,8 +25,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import java.io.IOException;
 
-import org.keycloak.services.filters.KeycloakSessionServletFilter;
-
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */

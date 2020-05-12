@@ -49,7 +49,7 @@
 
     <filter>
         <filter-name>Keycloak Session Management</filter-name>
-        <filter-class>org.keycloak.services.filters.KeycloakSessionServletFilter</filter-class>
+        <filter-class>org.keycloak.provider.wildfly.KeycloakSessionServletFilter</filter-class>
         <async-supported>true</async-supported>
     </filter>
 
