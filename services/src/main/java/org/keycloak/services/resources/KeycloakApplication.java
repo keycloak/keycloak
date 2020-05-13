@@ -100,8 +100,6 @@ public class KeycloakApplication extends Application {
 
             loadConfig();
 
-            this.sessionFactory = createSessionFactory();
-
             Resteasy.pushDefaultContextObject(KeycloakApplication.class, this);
             Resteasy.pushContext(KeycloakApplication.class, this); // for injection
 
@@ -128,6 +126,7 @@ public class KeycloakApplication extends Application {
     }
 
     protected void startup() {
+        this.sessionFactory = createSessionFactory();
 
         ExportImportManager[] exportImportManager = new ExportImportManager[1];
 
