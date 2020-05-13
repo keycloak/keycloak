@@ -204,7 +204,7 @@ export class MyResourcesPage extends React.Component<MyResourcesPageProps, MyRes
 
     private makeTab(eventKey: number, title: string, resources: PaginatedResources, sharedResourcesTab: boolean): React.ReactNode {
         return (
-            <Tab eventKey={eventKey} title={Msg.localize(title)}>
+            <Tab id={title} eventKey={eventKey} title={Msg.localize(title)}>
                 <Stack gutter="md">
                     <StackItem isFilled><span/></StackItem>
                     <StackItem isFilled>

@@ -55,7 +55,7 @@ export class SharedResourcesTable extends AbstractResourcesTable<ResourcesTableS
             );
         }
         return (
-            <DataList aria-label={Msg.localize('resources')}>
+            <DataList aria-label={Msg.localize('resources')} id="sharedResourcesList">
                 <DataListItem key='resource-header' aria-labelledby='resource-header'>
                     <DataListItemRow>
                         <DataListItemCells

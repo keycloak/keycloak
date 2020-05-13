@@ -19,9 +19,11 @@ package org.keycloak.testsuite.ui.account2;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.ui.account2.page.ApplicationsPage;
 import org.keycloak.testsuite.ui.account2.page.DeviceActivityPage;
 import org.keycloak.testsuite.ui.account2.page.LinkedAccountsPage;
+import org.keycloak.testsuite.ui.account2.page.MyResourcesPage;
 import org.keycloak.testsuite.ui.account2.page.PersonalInfoPage;
 
 import static org.junit.Assert.assertEquals;
@@ -39,6 +41,8 @@ public class WelcomeScreenTest extends AbstractAccountTest {
     private LinkedAccountsPage linkedAccountsPage;
     @Page
     private ApplicationsPage applicationsPage;
+    @Page
+    private MyResourcesPage myResourcesPage;
 
     @Test
     public void loginLogoutTest() {
@@ -126,21 +130,21 @@ public class WelcomeScreenTest extends AbstractAccountTest {
         applicationsPage.assertCurrent();
     }
 
-//    @Test
-//    public void resourcesTest() {
-//        assertFalse(accountWelcomeScreen.myResourcesCard().isVisible());
-//
-//        // set user managed access
-//        RealmRepresentation testRealm = testRealmResource().toRepresentation();
-//        testRealm.setUserManagedAccessAllowed(true);
-//        testRealmResource().update(testRealm);
-//
-//        // test my resources appeared
-//        accountWelcomeScreen.navigateTo();
-//        assertTrue(accountWelcomeScreen.myResourcesCard().isVisible());
-//        accountWelcomeScreen.myResourcesCard().clickMyResources();
-//        loginToAccount();
-//        resourcesPage.assertCurrent();
-//        // no need to disable user managed access
-//    }
+    @Test
+    public void resourcesTest() {
+        accountWelcomeScreen.assertMyResourcesCardVisible(false);
+
+        // set user managed access
+        RealmRepresentation testRealm = testRealmResource().toRepresentation();
+        testRealm.setUserManagedAccessAllowed(true);
+        testRealmResource().update(testRealm);
+
+        // test my resources appeared
+        accountWelcomeScreen.navigateTo();
+        accountWelcomeScreen.assertMyResourcesCardVisible(true);
+        accountWelcomeScreen.clickMyResourcesLink();
+        loginToAccount();
+        myResourcesPage.assertCurrent();
+        // no need to disable user managed access
+    }
 }

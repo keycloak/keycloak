@@ -57,23 +57,24 @@ export class PermissionRequest extends React.Component<PermissionRequestProps, P
         };
     }
 
-    private handleApprove = async (username: string, scopes: Scope[]) => {
-        this.handle(username, scopes, true);
+    private handleApprove = async (shareRequest: Permission, index: number) => {
+        this.handle(shareRequest.username, shareRequest.scopes as Scope[], true);
+        this.props.resource.shareRequests.splice(index, 1);
     };
 
-    private handleDeny = async (username: string, scopes: Scope[]) => {
-        this.handle(username, scopes);
-    }
+    private handleDeny = async (shareRequest: Permission, index: number) => {
+        this.handle(shareRequest.username, shareRequest.scopes as Scope[]);
+        this.props.resource.shareRequests.splice(index, 1)
+    };
 
     private handle = async (username: string, scopes: Scope[], approve: boolean = false) => {
         const id = this.props.resource._id
         this.handleToggleDialog();
 
         const permissionsRequest: HttpResponse<Permission[]> = await AccountService.doGet(`/resources/${id}/permissions`);
-        const permissions: Permission[] = permissionsRequest.data || [];
-
-        // Erik - I had to add the exclamation point.  Can we be sure that the 'find' will not return undefined?
-        const userScopes = permissions.find((p: Permission) => p.username === username)!.scopes as Scope[];
+        const permissions = permissionsRequest.data || [];
+        const foundPermission = permissions.find(p => p.username === username);
+        const userScopes = foundPermission ? (foundPermission.scopes as Scope[]): [];
         if (approve) {
             userScopes.push(...scopes);
         }
@@ -84,31 +85,29 @@ export class PermissionRequest extends React.Component<PermissionRequestProps, P
         } catch (e) {
             console.error('Could not update permissions', e.error);
         }
-    }
+    };
 
     private handleToggleDialog = () => {
-        if (this.state.isOpen) {
-            this.setState({ isOpen: false });
-        } else {
-            this.setState({ isOpen: true });
-        }
+        this.setState({ isOpen: !this.state.isOpen });
     };
 
     public render(): React.ReactNode {
+        const id = `shareRequest-${this.props.resource.name.replace(/\s/, '-')}`;
         return (
             <React.Fragment>
-                <Button variant="link" onClick={this.handleToggleDialog}>
+                <Button id={id} variant="link" onClick={this.handleToggleDialog}>
                     <UserCheckIcon size="lg" />
                     <Badge>{this.props.resource.shareRequests.length}</Badge>
                 </Button>
 
                 <Modal
-                    title={'Permission requests - ' + this.props.resource.name}
+                    id={`modal-${id}`}
+                    title={Msg.localize('permissionRequests') + ' - ' + this.props.resource.name}
                     isLarge={true}
                     isOpen={this.state.isOpen}
                     onClose={this.handleToggleDialog}
                     actions={[
-                        <Button key="close" variant="link" onClick={this.handleToggleDialog}>
+                        <Button id={`close-${id}`} key="close" variant="link" onClick={this.handleToggleDialog}>
                             <Msg msgKey="close" />
                         </Button>,
                     ]}
@@ -121,7 +120,7 @@ export class PermissionRequest extends React.Component<PermissionRequestProps, P
                                         <strong>Requestor</strong>
                                     </DataListCell>,
                                     <DataListCell key='permissions-requested-header' width={5}>
-                                        <strong><Msg msgKey='permissions' /> requested</strong>
+                                        <strong><Msg msgKey='permissionRequests' /></strong>
                                     </DataListCell>,
                                     <DataListCell key='permission-request-header' width={5}>
                                     </DataListCell>
@@ -133,23 +132,31 @@ export class PermissionRequest extends React.Component<PermissionRequestProps, P
                                 <DataListItemRow>
                                     <DataListItemCells
                                         dataListCells={[
-                                            <DataListCell key={`requestor${i}`}>
-                                                <span>{shareRequest.firstName} {shareRequest.lastName}</span><br />
+                                            <DataListCell id={`requestor${i}`} key={`requestor${i}`}>
+                                                <span>
+                                                    {shareRequest.firstName} {shareRequest.lastName} {shareRequest.lastName ? '' : shareRequest.username}
+                                                </span><br />
                                                 <Text component={TextVariants.small}>{shareRequest.email}</Text>
                                             </DataListCell>,
-                                            <DataListCell key={`permissions${i}`}>
+                                            <DataListCell id={`permissions${i}`} key={`permissions${i}`}>
                                                 {(shareRequest.scopes as Scope[]).map((scope, j) => <Chip key={j} isReadOnly>{scope}</Chip>)}
                                             </DataListCell>,
                                             <DataListCell key={`actions${i}`}>
                                                 <Split gutter="sm">
                                                     <SplitItem>
                                                         <Button
-                                                            onClick={() => this.handleApprove(shareRequest.username, shareRequest.scopes as Scope[])}>
+                                                            id={`accept-${i}-${id}`}
+                                                            onClick={() => this.handleApprove(shareRequest, i)}
+                                                        >
                                                             Accept
                                                         </Button>
                                                     </SplitItem>
                                                     <SplitItem>
-                                                        <Button variant="danger" onClick={() => this.handleDeny(shareRequest.username, shareRequest.scopes as Scope[])}>
+                                                        <Button
+                                                            id={`deny-${i}-${id}`}
+                                                            variant="danger"
+                                                            onClick={() => this.handleDeny(shareRequest, i)}
+                                                        >
                                                             Deny
                                                         </Button>
                                                     </SplitItem>

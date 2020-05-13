@@ -90,8 +90,10 @@ class AccountServiceClient {
             this.kcSvc.login();
         }
 
-        if (response != null && response.data != null && response.data.hasOwnProperty('errorMessage')) {
-            ContentAlert.danger(response.data['errorMessage']);
+        if (response != null && response.data != null) {
+            ContentAlert.danger(
+                `${response.statusText}: ${response.data['errorMessage'] ? response.data['errorMessage'] : ''} ${response.data['error'] ? response.data['error'] : ''}`
+            );
         } else {
             ContentAlert.danger(response.statusText);
         }

@@ -23,15 +23,18 @@ import {Msg} from './Msg';
  * pass in a localization key instead of a static string.
  */
 interface ContinueCancelModalProps {
-    buttonTitle: string;
+    buttonTitle?: string;
     buttonVariant?: ButtonProps['variant'];
     buttonId?: string;
+    render?(toggle: () => void): React.ReactNode;
     modalTitle: string;
-    modalMessage: string;
+    modalMessage?: string;
     modalContinueButtonLabel?: string;
     modalCancelButtonLabel?: string;
     onContinue: () => void;
+    onClose?: () => void;
     isDisabled?: boolean;
+    isLarge?: boolean;
 }
 
 interface ContinueCancelModalState {
@@ -49,7 +52,8 @@ export class ContinueCancelModal extends React.Component<ContinueCancelModalProp
         buttonVariant: 'primary',
         modalContinueButtonLabel: 'continue',
         modalCancelButtonLabel: 'doCancel',
-        isDisabled: false
+        isDisabled: false,
+        isSmall: true
     };
 
     public constructor(props: ContinueCancelModalProps) {
@@ -63,9 +67,10 @@ export class ContinueCancelModal extends React.Component<ContinueCancelModalProp
         this.setState(({ isModalOpen }) => ({
             isModalOpen: !isModalOpen
         }));
+        if (this.props.onClose) this.props.onClose();
     };
 
-    private handleContinue  = () => {
+    private handleContinue = () => {
         this.handleModalToggle();
         this.props.onContinue();
     }
@@ -75,11 +80,13 @@ export class ContinueCancelModal extends React.Component<ContinueCancelModalProp
 
         return (
             <React.Fragment>
+                {!this.props.render &&
                 <Button id={this.props.buttonId} variant={this.props.buttonVariant} onClick={this.handleModalToggle} isDisabled={this.props.isDisabled}>
-                    <Msg msgKey={this.props.buttonTitle}/>
-                </Button>
+                    <Msg msgKey={this.props.buttonTitle!}/>
+                </Button>}
+                {this.props.render && this.props.render(this.handleModalToggle)}
                 <Modal
-                    isSmall
+                    {...this.props}
                     title={Msg.localize(this.props.modalTitle)}
                     isOpen={isModalOpen}
                     onClose={this.handleModalToggle}
@@ -92,7 +99,8 @@ export class ContinueCancelModal extends React.Component<ContinueCancelModalProp
                         </Button>
                     ]}
                 >
-                    <Msg msgKey={this.props.modalMessage}/>
+                    { !this.props.modalMessage && this.props.children}
+                    { this.props.modalMessage && <Msg msgKey={this.props.modalMessage}/>}
                 </Modal>
             </React.Fragment>
         );
