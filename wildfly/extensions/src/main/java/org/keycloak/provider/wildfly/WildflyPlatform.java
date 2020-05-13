@@ -31,10 +31,10 @@ public class WildflyPlatform implements PlatformProvider {
 
     @Override
     public void onStartup(Runnable startupHook) {
+        startupHook.run();
         KeycloakApplication keycloakApplication = Resteasy.getContextData(KeycloakApplication.class);
         ServletContext context = Resteasy.getContextData(ServletContext.class);
         context.setAttribute(KeycloakSessionFactory.class.getName(),  keycloakApplication.getSessionFactory());
-        startupHook.run();
     }
 
     @Override
