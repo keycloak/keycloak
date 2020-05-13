@@ -282,4 +282,14 @@ public class RealmBuilder {
         rep.setClientSessionMaxLifespan(clientSessionMaxLifespan);
         return this;
     }
+
+    public RealmBuilder clientOfflineSessionIdleTimeout(int clientOfflineSessionIdleTimeout) {
+        rep.setClientOfflineSessionIdleTimeout(clientOfflineSessionIdleTimeout);
+        return this;
+    }
+
+    public RealmBuilder clientOfflineSessionMaxLifespan(int clientOfflineSessionMaxLifespan) {
+        rep.setClientOfflineSessionMaxLifespan(clientOfflineSessionMaxLifespan);
+        return this;
+    }
 }
