@@ -25,11 +25,13 @@ import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.storage.ldap.idm.model.LDAPOid;
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
 import org.keycloak.storage.ldap.idm.query.internal.EqualCondition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.store.IdentityStore;
+import org.keycloak.storage.ldap.idm.store.ldap.extended.PasswordModifyRequest;
 import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 
 import javax.naming.AuthenticationException;
@@ -329,31 +331,63 @@ public class LDAPIdentityStore implements IdentityStore {
 
         if (getConfig().isActiveDirectory()) {
             updateADPassword(userDN, password, passwordUpdateDecorator);
-        } else if (config.useExtendedPasswordModifyOp()) {
-            try {
+            return;
+        }
+
+        LDAPOid extendedPasswordModifyOp = new LDAPOid(PasswordModifyRequest.PASSWORD_MODIFY_OID);
+        Set<LDAPOid> supportedExtensions = getLDAPSupportedExtensions();
+
+        boolean useExtendedPasswordModifyOp = supportedExtensions.contains(extendedPasswordModifyOp);
+
+        try {
+            if (useExtendedPasswordModifyOp) {
                 operationManager.passwordModifyExtended(userDN, password, passwordUpdateDecorator);
-            } catch (ModelException me) {
-                throw me;
-            } catch (Exception e) {
-                throw new ModelException("Error in the password modify extended op.", e);
-            }
-        } else {
-            ModificationItem[] mods = new ModificationItem[1];
-
-            try {
+            } else {
+                ModificationItem[] mods = new ModificationItem[1];
                 BasicAttribute mod0 = new BasicAttribute(LDAPConstants.USER_PASSWORD_ATTRIBUTE, password);
-
                 mods[0] = new ModificationItem(DirContext.REPLACE_ATTRIBUTE, mod0);
-
                 operationManager.modifyAttributes(userDN, mods, passwordUpdateDecorator);
-            } catch (ModelException me) {
-                throw me;
-            } catch (Exception e) {
-                throw new ModelException("Error updating password.", e);
             }
+        } catch (ModelException me) {
+            throw me;
+        } catch (Exception e) {
+            throw new ModelException("Error updating password.", e);
         }
     }
 
+    /**
+     * Query the LDAP server RootDSE and extract the supportedExtensions.
+     * Will throw a {@link ModelException} on any error, for example when the supportedExtensions is found
+     * in the searchResult or the searchResult is empty.
+     *
+     * @return the set of extension OIDs.
+     */
+    public Set<LDAPOid> getLDAPSupportedExtensions() {
+        Set<LDAPOid> result = new LinkedHashSet<>();
+        try {
+            List<String> attrs = new ArrayList<>();
+            attrs.add("supportedExtension");
+            List<SearchResult> searchResults = operationManager
+                .search("", "(objectClass=*)", Collections.unmodifiableCollection(attrs), SearchControls.OBJECT_SCOPE);
+            if (searchResults.size() != 1) {
+                throw new ModelException("Could not query root DSE: unexpected result size");
+            }
+            SearchResult rootDse = searchResults.get(0);
+            Attributes attributes = rootDse.getAttributes();
+            Attribute supportedExtension = attributes.get("supportedExtension");
+            if (null == supportedExtension) {
+                throw new ModelException("Could not query root DSE: 'supportedExtension' is not in attributes");
+            }
+            NamingEnumeration<?> values = supportedExtension.getAll();
+            while (values.hasMoreElements()) {
+                Object o = values.nextElement();
+                result.add(new LDAPOid(o));
+            }
+            return result;
+        } catch (NamingException e) {
+            throw new ModelException("Failed to query root DSE: " + e.getMessage(), e);
+        }
+    }
 
     private void updateADPassword(String userDN, String password, LDAPOperationDecorator passwordUpdateDecorator) {
         try {

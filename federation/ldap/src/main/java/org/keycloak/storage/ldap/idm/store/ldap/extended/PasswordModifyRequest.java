@@ -34,9 +34,9 @@ import javax.naming.ldap.ExtendedResponse;
  */
 public final class PasswordModifyRequest implements ExtendedRequest {
 
-  private static final byte SEQUENCE_TYPE = 48;
+  public static final String PASSWORD_MODIFY_OID = "1.3.6.1.4.1.4203.1.11.1";
 
-  private static final String PASSWORD_MODIFY_OID = "1.3.6.1.4.1.4203.1.11.1";
+  private static final byte SEQUENCE_TYPE = 48;
   private static final byte USER_IDENTITY_OCTET_TYPE = -128;
   private static final byte OLD_PASSWORD_OCTET_TYPE = -127;
   private static final byte NEW_PASSWORD_OCTET_TYPE = -126;
