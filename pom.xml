@@ -98,7 +98,7 @@
         <xmlsec.version>2.1.4</xmlsec.version>
         <glassfish.json.version>1.1.6</glassfish.json.version>
         <wildfly.common.version>1.5.2.Final</wildfly.common.version>
-        <ua-parser.version>1.4.3</ua-parser.version>        
+        <ua-parser.version>1.4.3</ua-parser.version>
         <picketbox.version>5.0.3.Final</picketbox.version>
         <google.guava.version>25.0-jre</google.guava.version>
 
@@ -109,8 +109,8 @@
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.9</commons-lang3.version>
         <commons-io.version>2.6</commons-io.version>
-        <apacheds.version>2.0.0-M24</apacheds.version>
-        <apacheds.codec.version>1.0.0</apacheds.codec.version>
+        <apacheds.version>2.0.0.AM26</apacheds.version>
+        <apacheds.codec.version>2.0.0</apacheds.codec.version>
         <google.zxing.version>3.4.0</google.zxing.version>
         <freemarker.version>2.3.29</freemarker.version>
 
@@ -579,6 +579,16 @@
             </dependency>
 
             <!-- Apache DS -->
+            <dependency>
+                <groupId>org.apache.directory.server</groupId>
+                <artifactId>apacheds-core</artifactId>
+                <version>${apacheds.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.directory.server</groupId>
+                <artifactId>apacheds-core-api</artifactId>
+                <version>${apacheds.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.directory.server</groupId>
                 <artifactId>apacheds-core-annotations</artifactId>

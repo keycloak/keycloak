@@ -26,9 +26,12 @@ import org.apache.directory.api.ldap.model.ldif.LdifEntry;
 import org.apache.directory.api.ldap.model.ldif.LdifReader;
 import org.apache.directory.api.ldap.model.schema.SchemaManager;
 import org.apache.directory.server.core.api.DirectoryService;
+import org.apache.directory.server.core.api.interceptor.Interceptor;
 import org.apache.directory.server.core.api.partition.Partition;
-import org.apache.directory.server.core.factory.DirectoryServiceFactory;
-import org.apache.directory.server.core.factory.PartitionFactory;
+import org.apache.directory.server.core.factory.AvlPartitionFactory;
+import org.apache.directory.server.core.factory.DefaultDirectoryServiceFactory;
+import org.apache.directory.server.core.factory.JdbmPartitionFactory;
+import org.apache.directory.server.core.normalization.NormalizationInterceptor;
 import org.apache.directory.server.ldap.LdapServer;
 import org.apache.directory.server.protocol.shared.transport.TcpTransport;
 import org.apache.directory.server.protocol.shared.transport.Transport;
@@ -39,6 +42,7 @@ import org.keycloak.common.util.StreamUtil;
 import java.io.File;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -48,6 +52,7 @@ import java.util.Properties;
 public class LDAPEmbeddedServer {
 
     private static final Logger log = Logger.getLogger(LDAPEmbeddedServer.class);
+    private static final int PAGE_SIZE = 30;
 
     public static final String PROPERTY_BASE_DN = "ldap.baseDN";
     public static final String PROPERTY_BIND_HOST = "ldap.host";
@@ -171,15 +176,15 @@ public class LDAPEmbeddedServer {
         String dcName = baseDN.split(",")[0];
         dcName = dcName.substring(dcName.indexOf("=") + 1);
 
-        DirectoryServiceFactory dsf;
         if (this.directoryServiceFactory.equals(DSF_INMEMORY)) {
-            dsf = new InMemoryDirectoryServiceFactory();
+            System.setProperty( "apacheds.partition.factory", AvlPartitionFactory.class.getName());
         } else if (this.directoryServiceFactory.equals(DSF_FILE)) {
-            dsf = new FileDirectoryServiceFactory();
+            System.setProperty( "apacheds.partition.factory", JdbmPartitionFactory.class.getName());
         } else {
             throw new IllegalStateException("Unknown value of directoryServiceFactory: " + this.directoryServiceFactory);
         }
 
+        DefaultDirectoryServiceFactory dsf = new DefaultDirectoryServiceFactory();
         DirectoryService service = dsf.getDirectoryService();
         service.setAccessControlEnabled(false);
         service.setAllowAnonymousAccess(false);
@@ -187,20 +192,16 @@ public class LDAPEmbeddedServer {
 
         dsf.init(dcName + "DS");
 
-        SchemaManager schemaManager = service.getSchemaManager();
-
-        PartitionFactory partitionFactory = dsf.getPartitionFactory();
-        Partition partition = partitionFactory.createPartition(
-                schemaManager,
-                service.getDnFactory(),
-                dcName,
-                this.baseDN,
-                1000,
-                new File(service.getInstanceLayout().getPartitionsDirectory(), dcName));
-        partition.setCacheService( service.getCacheService() );
+        Partition partition = dsf.getPartitionFactory().createPartition(
+            service.getSchemaManager(),
+            service.getDnFactory(),
+            dcName,
+            this.baseDN,
+            1000,
+            new File(service.getInstanceLayout().getPartitionsDirectory(), dcName));
         partition.initialize();
 
-        partition.setSchemaManager( schemaManager );
+        partition.setSchemaManager(service.getSchemaManager());
 
         // Inject the partition into the DirectoryService
         service.addPartition( partition );
@@ -212,6 +213,23 @@ public class LDAPEmbeddedServer {
                         "objectClass: top\n" +
                         "objectClass: domain\n\n";
         importLdifContent(service, entryLdif);
+
+
+        if (this.directoryServiceFactory.equals(DSF_INMEMORY)) {
+            // Find Normalization interceptor in chain and add our range emulated interceptor
+            List<Interceptor> interceptors = service.getInterceptors();
+            int insertionPosition = -1;
+            for (int pos = 0; pos < interceptors.size(); ++pos) {
+                Interceptor interceptor = interceptors.get(pos);
+                if (interceptor instanceof NormalizationInterceptor) {
+                    insertionPosition = pos;
+                }
+            }
+            RangedAttributeInterceptor interceptor = new RangedAttributeInterceptor("member", PAGE_SIZE);
+            interceptor.init(service);
+            interceptors.add(insertionPosition + 1, interceptor);
+            service.setInterceptors(interceptors);
+        }
 
         return service;
     }

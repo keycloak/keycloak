@@ -37,7 +37,7 @@ import org.apache.directory.server.core.api.interceptor.context.SearchOperationC
 
 /**
  * <p>Ranged interceptor to emulate the behavior of AD. AD has a limit in
- * the number of attributes that return (15000 by default in MaxValRange). 
+ * the number of attributes that return (15000 by default in MaxValRange).
  * See this MS link for AD limits:</p>
  *
  * https://support.microsoft.com/en-us/help/315071/how-to-view-and-set-ldap-policy-in-active-directory-by-using-ntdsutil
@@ -73,16 +73,16 @@ public class RangedAttributeInterceptor extends BaseInterceptor {
                 int end = (max != null && max < attr.size() - 1)? max : attr.size() - 1;
                 if (start != 0 || end != attr.size() - 1) {
                     // some values should be stripped out
-                    Iterator<Value<?>> it = attr.iterator();
-                    Set<Value<?>> valuesToRemove = new HashSet<>(end - start + 1);
+                    Iterator<Value> it = attr.iterator();
+                    Set<Value> valuesToRemove = new HashSet<>(end - start + 1);
                     for (int i = 0; i < attr.size(); i++) {
-                        Value<?> v = it.next();
+                        Value v = it.next();
                         if (i < start || i > end) {
                             valuesToRemove.add(v);
                         }
                     }
                     attr.setUpId(attr.getUpId() + ";range=" + start + "-" + ((end == attr.size() - 1)? "*" : end));
-                    attr.remove(valuesToRemove.toArray(new Value<?>[0]));
+                    attr.remove(valuesToRemove.toArray(new Value[0]));
                 } else if (min != null) {
                     // range explicitly requested although no value stripped
                     attr.setUpId(attr.getUpId() + ";range=0-*");
