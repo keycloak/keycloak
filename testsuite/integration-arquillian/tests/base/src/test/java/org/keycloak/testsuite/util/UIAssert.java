@@ -22,6 +22,7 @@ import org.openqa.selenium.WebElement;
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.util.UIUtils.ARIA_INVALID_ATTR_NAME;
 import static org.keycloak.testsuite.util.UIUtils.isElementDisabled;
+import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
 import static org.keycloak.testsuite.util.UIUtils.isInputElementValid;
 
 /**
@@ -41,8 +42,8 @@ public final class UIAssert {
     }
 
     public static void assertElementVisible(boolean expected, WebElement element) {
-        boolean actual = isElementDisabled(element);
-        String msg = "Element should" + (!expected ? " not" : "") + " be disabled";
+        boolean actual = isElementVisible(element);
+        String msg = "Element should" + (!expected ? " not" : "") + " be visible";
         assertEquals(msg, expected, actual);
     }
 }

@@ -47,6 +47,7 @@ import { ResourcesTableState, ResourcesTableProps, AbstractResourcesTable } from
 import { EditTheResource } from './EditTheResource';
 import { ContentAlert } from '../ContentAlert';
 import EmptyMessageState from '../../widgets/EmptyMessageState';
+import { ContinueCancelModal } from '../../widgets/ContinueCancelModal';
 
 export interface CollapsibleResourcesTableState extends ResourcesTableState {
     isRowOpen: boolean[];
@@ -146,13 +147,13 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
                             />
                             <DataListItemCells
                                 dataListCells={[
-                                    <DataListCell key={'resourceName-' + row} width={5}>
+                                    <DataListCell id={'resourceName-' + row} key={'resourceName-' + row} width={5}>
                                         <Msg msgKey={resource.name} />
                                     </DataListCell>,
-                                    <DataListCell key={'resourceClient-' + row} width={5}>
+                                    <DataListCell id={'resourceClient-' + row} key={'resourceClient-' + row} width={5}>
                                         <a href={resource.client.baseUrl}>{this.getClientName(resource.client)}</a>
                                     </DataListCell>,
-                                    <DataListCell key={'permissionRequests-' + row} width={5}>
+                                    <DataListCell id={'resourceRequests-' + row} key={'permissionRequests-' + row} width={5}>
                                         {resource.shareRequests.length > 0 &&
                                             <PermissionRequest
                                                 resource={resource}
@@ -163,7 +164,7 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
                                 ]}
                             />
                             <DataListAction
-                                className={DataListActionVisibility.hiddenOnXl}
+                                className={DataListActionVisibility.hiddenOnLg}
                                 aria-labelledby="check-action-item3 check-action-action3"
                                 id="check-action-action3"
                                 aria-label="Actions"
@@ -182,6 +183,7 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
                                             onClose={() => {
                                                 this.setState({ isModalActive: false }, () => {
                                                     this.onContextToggle(row + this.props.resources.data.length + 1, false);
+                                                    this.fetchPermissions(resource, row + this.props.resources.data.length + 1);
                                                 });
                                             }}
                                         >
@@ -198,6 +200,7 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
                                             onClose={() => {
                                                 this.setState({ isModalActive: false }, () => {
                                                     this.onContextToggle(row + this.props.resources.data.length + 1, false);
+                                                    this.fetchPermissions(resource, row + this.props.resources.data.length + 1);
                                                 });
                                             }}
                                         >
@@ -212,26 +215,33 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
                                                     </DropdownItem>)
                                             }
                                         </EditTheResource>,
-                                        <DropdownItem
-                                            id={'mob-remove-' + row}
-                                            key="mob-remove"
-                                            isDisabled={this.numOthers(row) < 0}
-                                            onClick={() => {
-                                                this.removeShare(resource, row).then(() =>
-                                                    this.setState({ isModalActive: false }, () => {
-                                                        this.onContextToggle(row + this.props.resources.data.length + 1, false);
-                                                    })
-                                                );
-                                            }}
-                                        >
-                                            <Remove2Icon /> <Msg msgKey="unShare"/>
-                                        </DropdownItem>
+                                        <ContinueCancelModal
+                                            render={(toggle: () => void) => (
+                                                <DropdownItem
+                                                    id={'mob-remove-' + row}
+                                                    key="mob-remove"
+                                                    isDisabled={this.numOthers(row) < 0}
+                                                    onClick={toggle}
+                                                >
+                                                    <Remove2Icon /> <Msg msgKey="unShare"/>
+                                                </DropdownItem>
+                                            )}
+                                            modalTitle="unShare"
+                                            modalMessage="unShareAllConfirm"
+                                            onClose={() =>
+                                                this.setState({ isModalActive: false }, () => {
+                                                    this.onContextToggle(row + this.props.resources.data.length + 1, false);
+                                                })
+                                            }
+                                            onContinue={() => this.removeShare(resource, row)
+                                                .then(() => this.fetchPermissions(resource, row + this.props.resources.data.length + 1))}
+                                        />
                                     ]}
                                 />
                             </DataListAction>
                             <DataListAction
                                 id={`actions-${row}`}
-                                className={css(DataListActionVisibility.visibleOnXl, DataListActionVisibility.hidden)}
+                                className={css(DataListActionVisibility.visibleOnLg, DataListActionVisibility.hidden)}
                                 aria-labelledby="Row actions"
                                 aria-label="Actions"
                             >
@@ -280,21 +290,27 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
                                                     </DropdownItem>)
                                             }
                                         </EditTheResource>,
-                                        <DropdownItem
-                                            id={'remove-' + row}
-                                            key="remove"
-                                            component="button"
-                                            isDisabled={this.numOthers(row) < 0}
-                                            onClick={() => {
-                                                this.removeShare(resource, row).then(() =>
-                                                    this.setState({ isModalActive: false }, () => {
-                                                        this.onContextToggle(row, false);
-                                                    })
-                                                );
-                                            }}
-                                        >
-                                            <Remove2Icon /> <Msg msgKey="unShare"/>
-                                        </DropdownItem>
+                                        <ContinueCancelModal
+                                            render={(toggle: () => void) => (
+                                                <DropdownItem
+                                                    id={'remove-' + row}
+                                                    key="remove"
+                                                    component="button"
+                                                    isDisabled={this.numOthers(row) < 0}
+                                                    onClick={toggle}
+                                                >
+                                                    <Remove2Icon /> <Msg msgKey="unShare"/>
+                                                </DropdownItem>
+                                            )}
+                                            modalTitle="unShare"
+                                            modalMessage='unShareAllConfirm'
+                                            onClose={() =>
+                                                this.setState({ isModalActive: false }, () => {
+                                                    this.onContextToggle(row, false);
+                                                })
+                                            }
+                                            onContinue={() => this.removeShare(resource, row).then(() => this.fetchPermissions(resource, row))}
+                                        />
                                     ]}
                                 />
                             </DataListAction>

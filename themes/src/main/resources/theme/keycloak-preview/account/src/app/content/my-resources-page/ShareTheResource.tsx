@@ -117,10 +117,14 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
         this.setState({usernameInput: username});
     }
 
-    private handleAddUsername = () => {
+    private handleAddUsername = async () => {
         if ((this.state.usernameInput !== '') && (!this.state.usernames.includes(this.state.usernameInput))) {
-            this.state.usernames.push(this.state.usernameInput);
-            this.setState({usernameInput: '', usernames: this.state.usernames});
+            const response = await AccountService.doGet<{username: string}>(`/resources/${this.props.resource._id}/user`, { params: { value: this.state.usernameInput } });
+            if (response.data && response.data.username) {
+                this.setState({ usernameInput: '', usernames: [...this.state.usernames, this.state.usernameInput] });
+            } else {
+                ContentAlert.info('userNotFound', [this.state.usernameInput]);
+            }
         }
     }
 
