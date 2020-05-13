@@ -624,6 +624,10 @@ public class RealmTest extends AbstractAdminTest {
             Assert.assertEquals(realm.getClientSessionIdleTimeout(), storedRealm.getClientSessionIdleTimeout());
         if (realm.getClientSessionMaxLifespan() != null)
             Assert.assertEquals(realm.getClientSessionMaxLifespan(), storedRealm.getClientSessionMaxLifespan());
+        if (realm.getClientOfflineSessionIdleTimeout() != null)
+            Assert.assertEquals(realm.getClientOfflineSessionIdleTimeout(), storedRealm.getClientOfflineSessionIdleTimeout());
+        if (realm.getClientOfflineSessionMaxLifespan() != null)
+            Assert.assertEquals(realm.getClientOfflineSessionMaxLifespan(), storedRealm.getClientOfflineSessionMaxLifespan());
         if (realm.getRequiredCredentials() != null) {
             assertNotNull(storedRealm.getRequiredCredentials());
             for (String cred : realm.getRequiredCredentials()) {

@@ -507,6 +507,32 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public int getClientOfflineSessionIdleTimeout() {
+        if (isUpdated())
+            return updated.getClientOfflineSessionIdleTimeout();
+        return cached.getClientOfflineSessionIdleTimeout();
+    }
+
+    @Override
+    public void setClientOfflineSessionIdleTimeout(int seconds) {
+        getDelegateForUpdate();
+        updated.setClientOfflineSessionIdleTimeout(seconds);
+    }
+
+    @Override
+    public int getClientOfflineSessionMaxLifespan() {
+        if (isUpdated())
+            return updated.getClientOfflineSessionMaxLifespan();
+        return cached.getClientOfflineSessionMaxLifespan();
+    }
+
+    @Override
+    public void setClientOfflineSessionMaxLifespan(int seconds) {
+        getDelegateForUpdate();
+        updated.setClientOfflineSessionMaxLifespan(seconds);
+    }
+
+    @Override
     public int getAccessTokenLifespan() {
         if (isUpdated()) return updated.getAccessTokenLifespan();
         return cached.getAccessTokenLifespan();

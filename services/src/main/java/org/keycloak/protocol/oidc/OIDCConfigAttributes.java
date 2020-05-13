@@ -46,6 +46,8 @@ public final class OIDCConfigAttributes {
     public static final String ACCESS_TOKEN_LIFESPAN = "access.token.lifespan";
     public static final String CLIENT_SESSION_IDLE_TIMEOUT = "client.session.idle.timeout";
     public static final String CLIENT_SESSION_MAX_LIFESPAN = "client.session.max.lifespan";
+    public static final String CLIENT_OFFLINE_SESSION_IDLE_TIMEOUT = "client.offline.session.idle.timeout";
+    public static final String CLIENT_OFFLINE_SESSION_MAX_LIFESPAN = "client.offline.session.max.lifespan";
     public static final String PKCE_CODE_CHALLENGE_METHOD = "pkce.code.challenge.method";
 
     public static final String TOKEN_ENDPOINT_AUTH_SIGNING_ALG = "token.endpoint.auth.signing.alg";

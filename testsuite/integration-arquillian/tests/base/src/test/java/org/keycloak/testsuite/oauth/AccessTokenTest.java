@@ -1163,6 +1163,53 @@ public class AccessTokenTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testClientOfflineSessionMaxLifespan() throws Exception {
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRepresentation = client.toRepresentation();
+
+        RealmResource realm = adminClient.realm("test");
+        RealmRepresentation rep = realm.toRepresentation();
+        int accessTokenLifespan = rep.getAccessTokenLifespan();
+        Boolean originalOfflineSessionMaxLifespanEnabled = rep.getOfflineSessionMaxLifespanEnabled();
+        Integer originalClientOfflineSessionMaxLifespan = rep.getClientOfflineSessionMaxLifespan();
+
+        try {
+            rep.setOfflineSessionMaxLifespanEnabled(true);
+            realm.update(rep);
+
+            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            assertEquals(200, response.getStatusCode());
+            assertExpiration(response.getExpiresIn(), accessTokenLifespan);
+
+            rep.setClientOfflineSessionMaxLifespan(accessTokenLifespan - 100);
+            realm.update(rep);
+
+            String refreshToken = response.getRefreshToken();
+            response = oauth.doRefreshTokenRequest(refreshToken, "password");
+            assertEquals(200, response.getStatusCode());
+            assertExpiration(response.getExpiresIn(), accessTokenLifespan - 100);
+
+            clientRepresentation.getAttributes().put(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_MAX_LIFESPAN,
+                Integer.toString(accessTokenLifespan - 200));
+            client.update(clientRepresentation);
+
+            refreshToken = response.getRefreshToken();
+            response = oauth.doRefreshTokenRequest(refreshToken, "password");
+            assertEquals(200, response.getStatusCode());
+            assertExpiration(response.getExpiresIn(), accessTokenLifespan - 200);
+        } finally {
+            rep.setOfflineSessionMaxLifespanEnabled(originalOfflineSessionMaxLifespanEnabled);
+            rep.setClientOfflineSessionMaxLifespan(originalClientOfflineSessionMaxLifespan);
+            realm.update(rep);
+            clientRepresentation.getAttributes().put(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_MAX_LIFESPAN, null);
+            client.update(clientRepresentation);
+        }
+    }
+
+    @Test
     public void accessTokenRequest_ClientPS384_RealmRS256() throws Exception {
         conductAccessTokenRequest(Algorithm.HS256, Algorithm.PS384, Algorithm.RS256);
     }

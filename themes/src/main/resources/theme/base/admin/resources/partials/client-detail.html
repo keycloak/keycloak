@@ -579,6 +579,42 @@
                 <kc-tooltip>{{:: 'client-session-max.tooltip' | translate}}</kc-tooltip>
             </div>
 
+            <div class="form-group" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="clientOfflineSessionIdleTimeout">{{::
+                    'client-offline-session-idle' | translate}}</label>
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" min="0" max="31536000"
+                        data-ng-model="clientOfflineSessionIdleTimeout.time" id="clientOfflineSessionIdleTimeout"
+                        name="clientOfflineSessionIdleTimeout" data-ng-change="updateClientOfflineSessionIdleTimeout()" /> <select
+                        class="form-control" name="clientOfflineSessionIdleTimeoutUnit"
+                        data-ng-model="clientOfflineSessionIdleTimeout.unit"
+                        data-ng-change="updateClientOfflineSessionIdleTimeout()">
+                        <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                        <option value="Hours">{{:: 'hours' | translate}}</option>
+                        <option value="Days">{{:: 'days' | translate}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'client-offline-session-idle.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="clientOfflineSessionMaxLifespan">{{::
+                    'client-offline-session-max' | translate}}</label>
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" min="0" max="31536000"
+                        data-ng-model="clientOfflineSessionMaxLifespan.time" id="clientOfflineSessionMaxLifespan"
+                        name="clientOfflineSessionMaxLifespan" data-ng-change="updateClientOfflineSessionMaxLifespan()" /> <select
+                        class="form-control" name="clientOfflineSessionMaxLifespanUnit"
+                        data-ng-model="clientOfflineSessionMaxLifespan.unit"
+                        data-ng-change="updateClientOfflineSessionMaxLifespan()">
+                        <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                        <option value="Hours">{{:: 'hours' | translate}}</option>
+                        <option value="Days">{{:: 'days' | translate}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'client-offline-session-max.tooltip' | translate}}</kc-tooltip>
+            </div>
+
             <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="tlsClientCertificateBoundAccessTokens">{{:: 'tls-client-certificate-bound-access-tokens' | translate}}</label>
                 <div class="col-sm-6">
