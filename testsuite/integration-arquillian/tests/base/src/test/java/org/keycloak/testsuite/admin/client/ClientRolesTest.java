@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import javax.ws.rs.BadRequestException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -89,12 +88,6 @@ public class ClientRolesTest extends AbstractClientTest {
         assertTrue(hasRole(rolesRsc, "role1"));
     }
     
-    @Test(expected = BadRequestException.class)
-    public void testAddRoleWithReservedCharacter() {
-        RoleRepresentation role1 = makeRole("r&ole1");
-        rolesRsc.create(role1);
-    }
-
     @Test
     public void testRemoveRole() {
         RoleRepresentation role2 = makeRole("role2");

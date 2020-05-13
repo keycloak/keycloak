@@ -19,7 +19,7 @@
         <div class="col-md-6" data-ng-if="option.type == 'Role'">
             <div class="row">
                 <div class="col-md-8">
-                    <input kc-no-reserved-chars class="form-control" type="text" data-ng-model="config[ option.name ]" >
+                    <input class="form-control" type="text" data-ng-model="config[ option.name ]" >
                 </div>
                 <div class="col-md-2">
                     <button type="button" data-ng-click="openRoleSelector(option.name, config)" class="btn btn-default" tooltip-placement="top" tooltip-trigger="mouseover mouseout" tooltip="{{:: 'selectRole.tooltip' | translate}}">{{:: 'selectRole.label' | translate}}</button>
