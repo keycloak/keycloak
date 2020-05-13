@@ -88,7 +88,7 @@ public class LoginFormsUtil {
             if (serializedCtx != null) {
                 IdentityProviderModel idp = serializedCtx.deserialize(session, authSession).getIdpConfig();
                 return providers.stream()
-                        .filter(p -> !Objects.equals(p.getProviderId(), idp.getProviderId()))
+                        .filter(p -> !Objects.equals(p.getAlias(), idp.getAlias()))
                         .collect(Collectors.toList());
             }
         }

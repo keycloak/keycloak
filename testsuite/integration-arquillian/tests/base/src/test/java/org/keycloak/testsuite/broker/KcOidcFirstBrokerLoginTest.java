@@ -95,6 +95,66 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         }
     }
 
+    @Test
+    public void testFilterMultipleBrokerWhenReauthenticating() {
+        KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
+        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients(suiteContext).get(0);
+        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider(suiteContext);
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+
+        // create another oidc broker
+        KcOidcBrokerConfiguration oidcBrokerConfig = KcOidcBrokerConfiguration.INSTANCE;
+        ClientRepresentation oidcClient = oidcBrokerConfig.createProviderClients(suiteContext).get(0);
+        IdentityProviderRepresentation oidcBroker = oidcBrokerConfig.setUpIdentityProvider(suiteContext);
+        oidcBroker.setAlias("kc-oidc-idp2");
+        oidcBroker.setDisplayName("kc-oidc-idp2");
+
+        try {
+            updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+            adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
+            adminClient.realm(bc.providerRealmName()).clients().create(oidcClient);
+            consumerRealm.identityProviders().create(samlBroker);
+            consumerRealm.identityProviders().create(oidcBroker);
+
+            driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+
+            logInWithBroker(samlBrokerConfig);
+            waitForAccountManagementTitle();
+            accountUpdateProfilePage.assertCurrent();
+            logoutFromRealm(bc.consumerRealmName());
+
+            logInWithBroker(bc);
+
+            waitForPage(driver, "account already exists", false);
+            assertTrue(idpConfirmLinkPage.isCurrent());
+            assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
+            idpConfirmLinkPage.clickLinkAccount();
+
+            assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+
+            // There have to be two idp showed on login page
+            // kc-saml-idp and kc-oidc-idp2 must be present but not kc-oidc-idp
+            this.loginPage.findSocialButton(samlBroker.getAlias());
+            this.loginPage.findSocialButton(oidcBroker.getAlias());
+
+            try {
+                this.loginPage.findSocialButton(bc.getIDPAlias());
+                org.junit.Assert.fail("Not expected to see social button with " + bc.getIDPAlias());
+            } catch (NoSuchElementException expected) {
+            }
+
+            log.debug("Clicking social " + samlBrokerConfig.getIDPAlias());
+            loginPage.clickSocial(samlBrokerConfig.getIDPAlias());
+            waitForAccountManagementTitle();
+            accountUpdateProfilePage.assertCurrent();
+
+            assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 2);
+        } finally {
+            updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
+            removeUserByUsername(consumerRealm, "consumer");
+        }
+    }
+
     /**
      * Tests that nested first broker flows are not allowed. The user wants to link federatedIdentity with existing account. He will try link by reauthentication
      * with different broker not linked to his account. Error message should be shown, and reauthentication should be resumed.
