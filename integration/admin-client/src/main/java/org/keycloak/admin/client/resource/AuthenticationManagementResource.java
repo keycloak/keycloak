@@ -88,6 +88,11 @@ public interface AuthenticationManagementResource {
     @Consumes(MediaType.APPLICATION_JSON)
     Response copy(@PathParam("flowAlias") String flowAlias, Map<String, String> data);
 
+    @Path("/flows/{id}")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    void updateFlow(@PathParam("id") String id, AuthenticationFlowRepresentation flow);
+
     @Path("/flows/{flowAlias}/executions/flow")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)

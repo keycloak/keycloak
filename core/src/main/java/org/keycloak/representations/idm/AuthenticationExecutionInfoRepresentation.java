@@ -30,6 +30,7 @@ public class AuthenticationExecutionInfoRepresentation implements Serializable {
     protected String requirement;
     protected String displayName;
     protected String alias;
+    protected String description;
     protected List<String> requirementChoices;
     protected Boolean configurable;
     protected Boolean authenticationFlow;
@@ -61,6 +62,14 @@ public class AuthenticationExecutionInfoRepresentation implements Serializable {
 
     public void setAlias(String alias) {
         this.alias = alias;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getRequirement() {
