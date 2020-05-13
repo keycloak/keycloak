@@ -32,6 +32,8 @@ import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
@@ -44,8 +46,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.hasItems;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -286,9 +286,9 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         }
 
         // Update execution with not-existent ID - SHOULD FAIL
+        AuthenticationExecutionInfoRepresentation executionRep2 = new AuthenticationExecutionInfoRepresentation();
+        executionRep2.setId("not-existent");
         try {
-            AuthenticationExecutionInfoRepresentation executionRep2 = new AuthenticationExecutionInfoRepresentation();
-            executionRep2.setId("not-existent");
             authMgmtResource.updateExecutions("new-client-flow", executionRep2);
             Assert.fail("Not expected to update not-existent execution");
         } catch (NotFoundException nfe) {

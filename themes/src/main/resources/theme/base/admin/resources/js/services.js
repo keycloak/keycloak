@@ -137,6 +137,35 @@ module.service('CopyDialog', function($modal) {
     return dialog;
 });
 
+module.service('UpdateDialog', function($modal) {
+    var dialog = {};
+    dialog.open = function (title, name, desc, success) {
+        var controller = function($scope, $modalInstance, title) {
+            $scope.title = title;
+            $scope.name = { value: name };
+            $scope.description = { value: desc };
+            $scope.ok = function () {
+                console.log('ok with name: ' + $scope.name + 'and description: ' + $scope.description);
+                $modalInstance.close();
+                success($scope.name.value, $scope.description.value);
+            };
+            $scope.cancel = function () {
+                $modalInstance.dismiss('cancel');
+            };
+        }
+        $modal.open({
+            templateUrl: resourceUrl + '/templates/kc-edit.html',
+            controller: controller,
+            resolve: {
+                title: function() {
+                    return title;
+                }
+            }
+        });
+    };
+    return dialog;
+});
+
 module.factory('Notifications', function($rootScope, $timeout) {
     // time (in ms) the notifications are shown
     var delay = 5000;
@@ -1745,6 +1774,19 @@ module.factory('AuthenticationFlowsCopy', function($resource) {
         alias : '@alias'
     });
 });
+
+module.factory('AuthenticationFlowsUpdate', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/authentication/flows/:flow', {
+        realm : '@realm',
+        flow : '@flow'
+    }, {
+        update : {
+          method : 'PUT'
+        }
+    });
+});
+
+
 module.factory('AuthenticationConfigDescription', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/authentication/config-description/:provider', {
         realm : '@realm',

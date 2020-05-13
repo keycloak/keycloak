@@ -2229,9 +2229,9 @@ module.controller('CreateExecutionCtrl', function($scope, realm, parentFlow, for
 
 
 module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flows, selectedFlow, LastFlowSelected, Dialog,
-                                                      AuthenticationFlows, AuthenticationFlowsCopy, AuthenticationFlowExecutions,
+                                                      AuthenticationFlows, AuthenticationFlowsCopy, AuthenticationFlowsUpdate, AuthenticationFlowExecutions,
                                                       AuthenticationExecution, AuthenticationExecutionRaisePriority, AuthenticationExecutionLowerPriority,
-                                                      $modal, Notifications, CopyDialog, $location) {
+                                                      $modal, Notifications, CopyDialog, UpdateDialog, $location) {
     $scope.realm = realm;
     $scope.flows = flows;
     
@@ -2342,6 +2342,18 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
 
     };
 
+    $scope.editFlow = function(flow) {
+        var copy = angular.copy(flow);
+        UpdateDialog.open('Update Authentication Flow', copy.alias, copy.description, function(name, desc) {
+            copy.alias = name;
+            copy.description = desc;
+            AuthenticationFlowsUpdate.update({realm: realm.realm, flow: flow.id}, copy, function() {
+                $location.url("/realms/" + realm.realm + '/authentication/flows/' + name);
+                Notifications.success("Flow updated");
+            });
+        })
+    };
+
     $scope.addFlow = function() {
         $location.url("/realms/" + realm.realm + '/authentication/flows/' + $scope.flow.id + '/create/flow/execution/' + $scope.flow.id);
 
@@ -2377,6 +2389,22 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
             setupForm();
         });
 
+    };
+
+    $scope.editExecutionFlow = function(execution) {
+        var copy = angular.copy(execution);
+        delete copy.empties;
+        delete copy.levels;
+        delete copy.preLevels;
+        delete copy.postLevels;
+        UpdateDialog.open('Update Execution Flow', copy.displayName, copy.description, function(name, desc) {
+            copy.displayName = name;
+            copy.description = desc;
+            AuthenticationFlowExecutions.update({realm: realm.realm, alias: $scope.flow.alias}, copy, function() {
+                Notifications.success("Execution Flow updated");
+                setupForm();
+            });
+        })
     };
 
     $scope.removeExecution = function(execution) {
