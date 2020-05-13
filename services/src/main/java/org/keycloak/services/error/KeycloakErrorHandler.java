@@ -30,6 +30,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 import java.io.IOException;
+import java.security.Key;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -47,9 +48,6 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
     public static final String UNCAUGHT_SERVER_ERROR_TEXT = "Uncaught server error";
 
     @Context
-    private KeycloakSession session;
-
-    @Context
     private HttpHeaders headers;
 
     @Context
@@ -57,7 +55,8 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
     @Override
     public Response toResponse(Throwable throwable) {
-        KeycloakTransaction tx = Resteasy.getContextData(KeycloakTransaction.class);
+        KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
+        KeycloakTransaction tx = session.getTransactionManager();
         tx.setRollbackOnly();
 
         int statusCode = getStatusCode(throwable);
@@ -78,14 +77,14 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         }
 
         try {
-            RealmModel realm = resolveRealm();
+            RealmModel realm = resolveRealm(session);
 
             Theme theme = session.theme().getTheme(Theme.Type.LOGIN);
 
             Locale locale = session.getContext().resolveLocale(null);
 
             FreeMarkerUtil freeMarker = new FreeMarkerUtil();
-            Map<String, Object> attributes = initAttributes(realm, theme, locale, statusCode);
+            Map<String, Object> attributes = initAttributes(session, realm, theme, locale, statusCode);
 
             String templateName = "error.ftl";
 
@@ -121,7 +120,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         return "unknown_error";
     }
 
-    private RealmModel resolveRealm() {
+    private RealmModel resolveRealm(KeycloakSession session) {
         String path = session.getContext().getUri().getPath();
         Matcher m = realmNamePattern.matcher(path);
         String realmName;
@@ -142,7 +141,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         return realm;
     }
 
-    private Map<String, Object> initAttributes(RealmModel realm, Theme theme, Locale locale, int statusCode) throws IOException {
+    private Map<String, Object> initAttributes(KeycloakSession session, RealmModel realm, Theme theme, Locale locale, int statusCode) throws IOException {
         Map<String, Object> attributes = new HashMap<>();
         Properties messagesBundle = theme.getMessages(locale);
 

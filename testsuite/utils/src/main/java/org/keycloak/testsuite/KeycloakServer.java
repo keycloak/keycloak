@@ -407,7 +407,7 @@ public class KeycloakServer {
 
             di.addServlet(restEasyDispatcher);
 
-            FilterInfo filter = Servlets.filter("SessionFilter", TestKeycloakSessionServletFilter.class);
+            FilterInfo filter = Servlets.filter("SessionFilter", UndertowClientConnectionServletFilter.class);
 
             filter.setAsyncSupported(true);
 
@@ -416,7 +416,7 @@ public class KeycloakServer {
 
             server.deploy(di);
 
-            sessionFactory = ((KeycloakApplication) deployment.getApplication()).getSessionFactory();
+            sessionFactory = KeycloakApplication.getSessionFactory();
 
             setupDevConfig();
 

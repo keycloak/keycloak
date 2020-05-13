@@ -20,6 +20,7 @@ import org.keycloak.common.util.Resteasy;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.KeycloakSession;
 
+import javax.annotation.Priority;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
@@ -27,13 +28,11 @@ import javax.ws.rs.container.ContainerResponseFilter;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Priority(200)
 public class KeycloakSecurityHeadersFilter implements ContainerResponseFilter {
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
-        KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
-        SecurityHeadersProvider securityHeadersProvider = session.getProvider(SecurityHeadersProvider.class);
-        securityHeadersProvider.addHeaders(requestContext, responseContext);
     }
 
 }

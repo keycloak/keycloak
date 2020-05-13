@@ -38,9 +38,6 @@ public class QuarkusLifecycleObserver {
     private static final String KEYCLOAK_ADMIN_ENV_VAR = "KEYCLOAK_ADMIN";
     private static final String KEYCLOAK_ADMIN_PASSWORD_ENV_VAR = "KEYCLOAK_ADMIN_PASSWORD";
 
-    @Inject
-    KeycloakApplication application;
-
     private void onStartupEvent(@Observes StartupEvent event) {
 
         Runnable startupHook = ((QuarkusPlatform) Platform.getPlatform()).startupHook;
@@ -70,7 +67,7 @@ public class QuarkusLifecycleObserver {
             return;
         }
 
-        KeycloakSessionFactory sessionFactory = application.getSessionFactory();
+        KeycloakSessionFactory sessionFactory = KeycloakApplication.getSessionFactory();
         KeycloakSession session = sessionFactory.create();
         KeycloakTransactionManager transaction = session.getTransactionManager();
 

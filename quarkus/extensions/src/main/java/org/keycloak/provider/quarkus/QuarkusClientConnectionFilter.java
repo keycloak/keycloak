@@ -34,49 +34,18 @@ import javax.ws.rs.container.PreMatching;
 import javax.ws.rs.ext.Provider;
 import java.io.IOException;
 
-
 @PreMatching
 @Provider
 @Priority(1)
-public class QuarkusFilter implements javax.ws.rs.container.ContainerRequestFilter,
-        javax.ws.rs.container.ContainerResponseFilter  {
+public class QuarkusClientConnectionFilter implements javax.ws.rs.container.ContainerRequestFilter {
 
-    @Inject
-    KeycloakApplication keycloakApplication;
-    
     @Inject
     RoutingContext routingContext;
 
     @Override
     public void filter(ContainerRequestContext containerRequestContext) {
-        KeycloakSessionFactory sessionFactory = keycloakApplication.getSessionFactory();
-        KeycloakSession session = sessionFactory.create();
-
-        Resteasy.pushContext(KeycloakSession.class, session);
         HttpServerRequest request = routingContext.request();
-
-        session.getContext().setConnection(createConnection(request));
-        Resteasy.pushContext(ClientConnection.class, session.getContext().getConnection());
-
-        KeycloakTransaction tx = session.getTransactionManager();
-        Resteasy.pushContext(KeycloakTransaction.class, tx);
-
-        tx.begin();
-    }
-
-    @Override
-    public void filter(ContainerRequestContext containerRequestContext, ContainerResponseContext containerResponseContext) throws IOException {
-        //End the session and clear context
-        KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
-
-        // KeycloakTransactionCommitter is responsible for committing the transaction, but if an exception is thrown it's not invoked and transaction
-        // should be rolled back
-        if (session.getTransactionManager() != null && session.getTransactionManager().isActive()) {
-            session.getTransactionManager().rollback();
-        }
-
-        session.close();
-        Resteasy.clearContextData();
+        Resteasy.pushContext(ClientConnection.class, createConnection(request));
     }
 
     private ClientConnection createConnection(HttpServerRequest request) {

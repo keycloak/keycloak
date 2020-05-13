@@ -43,7 +43,7 @@ import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.error.KeycloakErrorHandler;
 import org.keycloak.services.filters.KeycloakSecurityHeadersFilter;
-import org.keycloak.services.filters.KeycloakTransactionCommitter;
+import org.keycloak.services.filters.KeycloakSessionFilter;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.UserStorageSyncManager;
@@ -89,7 +89,7 @@ public class KeycloakApplication extends Application {
     protected Set<Object> singletons = new HashSet<Object>();
     protected Set<Class<?>> classes = new HashSet<Class<?>>();
 
-    protected KeycloakSessionFactory sessionFactory;
+    protected static KeycloakSessionFactory sessionFactory;
 
     public KeycloakApplication() {
 
@@ -102,17 +102,13 @@ public class KeycloakApplication extends Application {
 
             this.sessionFactory = createSessionFactory();
 
-            Resteasy.pushDefaultContextObject(KeycloakApplication.class, this);
-            Resteasy.pushContext(KeycloakApplication.class, this); // for injection
-
             singletons.add(new RobotsResource());
             singletons.add(new RealmsResource());
             singletons.add(new AdminRoot());
             classes.add(ThemeResource.class);
             classes.add(JsResource.class);
 
-            classes.add(KeycloakSecurityHeadersFilter.class);
-            classes.add(KeycloakTransactionCommitter.class);
+            classes.add(KeycloakSessionFilter.class);
             classes.add(KeycloakErrorHandler.class);
 
             singletons.add(new ObjectMapperResolver(Boolean.parseBoolean(System.getProperty("keycloak.jsonPrettyPrint", "false"))));
@@ -282,7 +278,7 @@ public class KeycloakApplication extends Application {
         }
     }
 
-    public KeycloakSessionFactory getSessionFactory() {
+    public static KeycloakSessionFactory getSessionFactory() {
         return sessionFactory;
     }
 

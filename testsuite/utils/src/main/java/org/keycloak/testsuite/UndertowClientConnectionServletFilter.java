@@ -39,24 +39,21 @@ import org.keycloak.models.KeycloakTransaction;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class KeycloakSessionServletFilter implements Filter {
-
-    @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
-    }
+public class UndertowClientConnectionServletFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        servletRequest.setCharacterEncoding("UTF-8");
-
         final HttpServletRequest request = (HttpServletRequest)servletRequest;
 
-        KeycloakSessionFactory sessionFactory = (KeycloakSessionFactory) servletRequest.getServletContext().getAttribute(KeycloakSessionFactory.class.getName());
-        KeycloakSession session = sessionFactory.create();
-        Resteasy.pushContext(KeycloakSession.class, session);
         ClientConnection connection = new ClientConnection() {
             @Override
             public String getRemoteAddr() {
+                String forwardedFor = request.getHeader("X-Forwarded-For");
+
+                if (forwardedFor != null) {
+                    return forwardedFor;
+                }
+
                 return request.getRemoteAddr();
             }
 
@@ -80,56 +77,13 @@ public class KeycloakSessionServletFilter implements Filter {
                 return request.getLocalPort();
             }
         };
-        session.getContext().setConnection(connection);
         Resteasy.pushContext(ClientConnection.class, connection);
 
-        KeycloakTransaction tx = session.getTransactionManager();
-        Resteasy.pushContext(KeycloakTransaction.class, tx);
-        tx.begin();
-
-        try {
-            filterChain.doFilter(servletRequest, servletResponse);
-        } finally {
-            if (servletRequest.isAsyncStarted()) {
-                servletRequest.getAsyncContext().addListener(createAsyncLifeCycleListener(session));
-            } else {
-                closeSession(session);
-            }
-        }
+        filterChain.doFilter(servletRequest, servletResponse);
     }
 
-    private AsyncListener createAsyncLifeCycleListener(final KeycloakSession session) {
-        return new AsyncListener() {
-            @Override
-            public void onComplete(AsyncEvent event) {
-                closeSession(session);
-            }
-
-            @Override
-            public void onTimeout(AsyncEvent event) {
-                closeSession(session);
-            }
-
-            @Override
-            public void onError(AsyncEvent event) {
-                closeSession(session);
-            }
-
-            @Override
-            public void onStartAsync(AsyncEvent event) {
-            }
-        };
-    }
-
-    private void closeSession(KeycloakSession session) {
-        // KeycloakTransactionCommitter is responsible for committing the transaction, but if an exception is thrown it's not invoked and transaction
-        // should be rolled back
-        if (session.getTransactionManager() != null && session.getTransactionManager().isActive()) {
-            session.getTransactionManager().rollback();
-        }
-
-        session.close();
-        Resteasy.clearContextData();
+    @Override
+    public void init(FilterConfig filterConfig) {
     }
 
     @Override

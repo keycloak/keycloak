@@ -48,13 +48,13 @@
     </listener>
 
     <filter>
-        <filter-name>Keycloak Session Management</filter-name>
-        <filter-class>org.keycloak.provider.wildfly.KeycloakSessionServletFilter</filter-class>
+        <filter-name>Client Connection Filter</filter-name>
+        <filter-class>org.keycloak.provider.wildfly.WildFlyClientConnectionServletFilter</filter-class>
         <async-supported>true</async-supported>
     </filter>
 
     <filter-mapping>
-        <filter-name>Keycloak Session Management</filter-name>
+        <filter-name>Client Connection Filter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
