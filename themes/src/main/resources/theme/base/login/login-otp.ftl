@@ -47,7 +47,7 @@
                         </div>
                     </div>
                 </form>
-            <script type="text/javascript" src="${url.resourcesPath}/node_modules/jquery/dist/jquery.min.js"></script>
+            <script type="text/javascript" src="${url.resourcesCommonPath}/node_modules/jquery/dist/jquery.min.js"></script>
             <script type="text/javascript">
             $(document).ready(function() {
                 // Card Single Select

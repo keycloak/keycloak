@@ -29,8 +29,13 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="robots" content="noindex, nofollow">
 
-    <link rel="shortcut icon" href="welcome-content/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="${resourcesCommonPath}/img/favicon.ico" />
 
+    <#if properties.stylesCommon?has_content>
+        <#list properties.stylesCommon?split(' ') as style>
+            <link href="${resourcesCommonPath}/${style}" rel="stylesheet" />
+        </#list>
+    </#if>
     <#if properties.styles?has_content>
         <#list properties.styles?split(' ') as style>
             <link href="${resourcesPath}/${style}" rel="stylesheet" />
