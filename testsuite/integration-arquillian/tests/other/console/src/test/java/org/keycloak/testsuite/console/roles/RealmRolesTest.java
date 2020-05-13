@@ -112,21 +112,6 @@ public class RealmRolesTest extends AbstractRolesTest {
         assertNotNull(realmRolesPage.table().findRole(name));
     }
     
-    // KEYCLOAK-12768: Certain characters in names cause bad URIs.  Disallow.
-    @Test
-    public void testAddRoleWithBadCharsInName() {
-        String roleName = "hello;:]!@#role";
-        assertCurrentUrlEquals(realmRolesPage);
-        realmRolesPage.table().addRole();
-        assertCurrentUrlEquals(createRolePage);
-        createRolePage.form().setName(roleName);
-        assertAlertWarning();
-        createRolePage.form().save();
-        assertAlertSuccess();
-        realmRolesPage.navigateTo();
-        assertNotNull(realmRolesPage.table().findRole("hellorole"));
-    }
-    
     @Test
     public void testAddExistingRole() {
         addRole(testRole);
