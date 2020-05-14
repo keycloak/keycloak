@@ -155,7 +155,7 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
     @Override
     public String getId() {
-        return "default";
+        return "quarkus";
     }
 
     @Override
@@ -185,5 +185,10 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
         logger.debugf("Using changelog file %s and changelogTableName %s", changelogLocation, database.getDatabaseChangeLogTableName());
 
         return new Liquibase(changelogLocation, resourceAccessor, database);
+    }
+
+    @Override
+    public int order() {
+        return 100;
     }
 }

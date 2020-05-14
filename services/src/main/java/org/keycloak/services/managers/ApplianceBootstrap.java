@@ -43,19 +43,17 @@ public class ApplianceBootstrap {
     }
 
     public boolean isNewInstall() {
-        if (session.realms().getRealm(Config.getAdminRealm()) != null) {
-            return false;
-        } else {
-            return true;
-        }
+        return getAdminRealm() == null;
     }
 
     public boolean isNoMasterUser() {
-        RealmModel realm = session.realms().getRealm(Config.getAdminRealm());
-        return session.users().getUsersCount(realm) == 0;
+        if (isNewInstall()) {
+            return true;
+        }
+        return session.users().getUsersCount(getAdminRealm()) == 0;
     }
 
-    public boolean createMasterRealm() {
+    public RealmModel createMasterRealm() {
         if (!isNewInstall()) {
             throw new IllegalStateException("Can't create default realm as realms already exists");
         }
@@ -88,12 +86,15 @@ public class ApplianceBootstrap {
         session.getContext().setRealm(realm);
         DefaultKeyProviders.createProviders(realm);
 
-        return true;
+        return realm;
     }
 
     public void createMasterRealmUser(String username, String password) {
-        RealmModel realm = session.realms().getRealm(Config.getAdminRealm());
-        session.getContext().setRealm(realm);
+        RealmModel realm = getAdminRealm();
+
+        if (realm == null) {
+            realm = createMasterRealm();
+        }
 
         if (session.users().getUsersCount(realm) > 0) {
             throw new IllegalStateException("Can't create initial user as users already exists");
@@ -109,4 +110,8 @@ public class ApplianceBootstrap {
         adminUser.grantRole(adminRole);
     }
 
+
+    private RealmModel getAdminRealm() {
+        return session.realms().getRealm(Config.getAdminRealm());
+    }
 }
