@@ -1,5 +1,17 @@
 == Migration Changes
 
+=== Migrating to 11.0.0
+
+==== LDAP no-import bugfix
+
+In the previous {project_name} version, when the LDAP provider was configured with `Import Users` OFF, it was possible to update the
+user even if some of non-LDAP mapped attributes were changed. This situation resulted in confusing behavior, when the attribute appeared to be updated,
+but it was not. In the current version, the update is not allowed to be performed at all if any non-LDAP mapped attributes are changed.
+
+This should not affect most of the deployments, but some can be affected under some rare circumstances. For example if you previously
+tried to update a user with the admin REST API and the user had some incorrect attribute changes, the update was possible. With the
+current version, the update is not possible and you will be immediately informed about the reason.
+
 === Migrating to 9.0.1
 
 ==== Legacy promise in JavaScript adapter

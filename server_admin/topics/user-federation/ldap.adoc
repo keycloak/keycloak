@@ -17,12 +17,11 @@ Selecting _ldap_ will bring you to the LDAP configuration page.
 
 By default, {project_name} will import users from LDAP into the local {project_name} user database. This copy of the user
 is either synchronized on demand, or through a periodic background task.
-The one exception to this is passwords.  Passwords are not imported and password validation is
-delegated to the LDAP server.  The benefits to this approach is that all {project_name} features will work as any extra
-per-user data that is needed can be stored locally.  This approach also reduces load on the LDAP server as uncached users are loaded
-from the {project_name} database the 2nd time they are accessed.  The only load your LDAP server will have is password validation.
-The downside to this approach is that when a user is first queried, this will require a {project_name} database insert.  The import will
-also have to be synchronized with your LDAP server as needed.
+The single exception to this is the synchronization of passwords. Passwords are never imported. Their validation is always delegated to the LDAP server.
+The benefits of this approach is that all {project_name} features will work as any extra per-user data that is needed can be stored locally.
+The downside of this approach is that each time that a specific user is queried for the first time, a corresponding {project_name} database insert is performed.
+The import may also have to be synchronized with your LDAP server. However, import synchronization is not necessary in
+the case that the LDAP mappers are configured to always read particular attributes from the LDAP rather than from the database.
 
 Alternatively, you can choose not to import users into the {project_name} user database.  In this case, the common user model
 that the  {project_name} runtime uses is backed only by the LDAP server.  This means that if LDAP doesn't support
@@ -31,6 +30,14 @@ The benefit to this approach is that you do not have the overhead of importing a
 {project_name} user database.
 
 This storage mode is controled by the `Import Users` switch.  Set to `On` to import users.
+
+NOTE: If user import is disabled, you cannot save user profile attributes into the {project_name} database. Also you cannot save
+      metadata except for user profile metadata that are mapped to the LDAP. The single exception to this are user profile metadata,
+      which are mapped to the LDAP. This possibly includes role mappings, group mappings and other metadata based on the configuration
+      of your LDAP mappers.
+      When the attempt is made to change some of the non-LDAP mapped user data, the update of the user will not be possible. For example
+      you will not be able to disable the LDAP mapped user unless the `enabled` flag of the user is mapped to some LDAP
+      attribute (which is usually not the case).
 
 ==== Edit Mode
 
@@ -50,6 +57,13 @@ UNSYNCED::
   Any changes to username, email, first name, last name, and passwords will be stored in {project_name} local storage.
   It is up to you to figure out how to synchronize back to LDAP. This allows {project_name} deployments to support
   updates of user metadata on a read-only LDAP server.  This option only applies when you are importing users from LDAP into the local {project_name} user database.
+
+NOTE: When the LDAP provider is created, the set of initial <<_ldap_mappers,LDAP mappers>> is created. The mappers are configured on a "best-effort" basis
+      based on the chosen combination of the `Vendor`, `Edit Mode`, and `Import Users` switches. For example in case of UNSYNCED edit mode, the mappers are pre-configured
+      in a way that a particular user attribute is preferably read from the database instead of from the LDAP. However when you later change the edit mode,
+      the mappers configuration will not be changed as it is not easily possible to detect if they were manually changed in the meantime.
+      This means that it is recommended NOT to update the `Edit Mode` switch, but rather always decide on `Edit Mode` when creating the
+      LDAP provider. This applies for `Import Users` switch as well.
 
 ==== Other config options
 
