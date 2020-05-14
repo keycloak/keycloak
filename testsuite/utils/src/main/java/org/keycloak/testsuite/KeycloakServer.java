@@ -25,6 +25,7 @@ import io.undertow.servlet.api.FilterInfo;
 import io.undertow.servlet.api.ServletInfo;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
+import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.common.Version;
@@ -402,7 +403,8 @@ public class KeycloakServer {
 
             ServletInfo restEasyDispatcher = Servlets.servlet("Keycloak REST Interface", HttpServlet30Dispatcher.class);
 
-            restEasyDispatcher.addInitParam("resteasy.servlet.mapping.prefix", "/");
+            restEasyDispatcher.addInitParam(ResteasyContextParameters.RESTEASY_SERVLET_MAPPING_PREFIX, "/");
+            restEasyDispatcher.addInitParam(ResteasyContextParameters.RESTEASY_DISABLE_HTML_SANITIZER, "true");
             restEasyDispatcher.setAsyncSupported(true);
 
             di.addServlet(restEasyDispatcher);
