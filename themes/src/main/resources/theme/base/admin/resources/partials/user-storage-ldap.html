@@ -128,6 +128,26 @@
                 <kc-tooltip>{{:: 'ldap.users-dn.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="customUserSearchFilter">{{:: 'custom-user-ldap-filter' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="customUserSearchFilter" type="text" ng-model="instance.config['customUserSearchFilter'][0]" placeholder="{{:: 'ldap-filter' | translate}}">
+                </div>
+                <kc-tooltip>{{:: 'ldap.custom-user-ldap-filter.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="searchScope">{{:: 'search-scope' | translate}}</label>
+                <div class="col-md-6">
+                    <div>
+                        <select class="form-control" id="searchScope"
+                                ng-model="instance.config['searchScope'][0]"
+                                ng-options="searchScope.id as searchScope.name for searchScope in searchScopes"
+                                required>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'ldap.search-scope.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="authType"><span class="required">*</span> {{:: 'authentication-type' | translate}}</label>
                 <div class="col-md-6">
                     <div>
@@ -139,13 +159,6 @@
                     </div>
                 </div>
                 <kc-tooltip>{{:: 'ldap.authentication-type.tooltip' | translate}}</kc-tooltip>
-            </div>
-            <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="startTls">{{:: 'enable-start-tls' | translate}}</label>
-                <div class="col-md-6">
-                    <input ng-model="instance.config['startTls'][0]" name="startTls" id="startTls" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
-                </div>
-                <kc-tooltip>{{:: 'ldap.startTls.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix" data-ng-hide="instance.config['authType'][0] == 'none'">
                 <label class="col-md-2 control-label" for="ldapBindDn"><span class="required">*</span> {{:: 'bind-dn' | translate}}</label>
@@ -169,6 +182,13 @@
         <fieldset>
             <legend collapsed><span class="text">{{:: 'advanced-ldap-settings' | translate}}</span></legend>
             <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="startTls">{{:: 'enable-start-tls' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="instance.config['startTls'][0]" name="startTls" id="startTls" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'ldap.startTls.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="usePasswordModifyExtendedOp">{{:: 'enable-usePasswordModifyExtendedOp' | translate}}</label>
                 <div class="col-md-6">
                     <input ng-model="instance.config['usePasswordModifyExtendedOp'][0]" name="usePasswordModifyExtendedOp" id="usePasswordModifyExtendedOp" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
@@ -177,26 +197,6 @@
                 <div class="col-sm-4" data-ng-show="access.manageRealm">
                     <a class="btn btn-primary" data-ng-click="queryAndSetLdapSupportedExtensions()">{{:: 'ldap-query-supported-extensions' | translate}}</a>
                 </div>
-            </div>
-            <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="customUserSearchFilter">{{:: 'custom-user-ldap-filter' | translate}}</label>
-                <div class="col-md-6">
-                    <input class="form-control" id="customUserSearchFilter" type="text" ng-model="instance.config['customUserSearchFilter'][0]" placeholder="{{:: 'ldap-filter' | translate}}">
-                </div>
-                <kc-tooltip>{{:: 'ldap.custom-user-ldap-filter.tooltip' | translate}}</kc-tooltip>
-            </div>
-            <div class="form-group">
-                <label class="col-md-2 control-label" for="searchScope">{{:: 'search-scope' | translate}}</label>
-                <div class="col-md-6">
-                    <div>
-                        <select class="form-control" id="searchScope"
-                                ng-model="instance.config['searchScope'][0]"
-                                ng-options="searchScope.id as searchScope.name for searchScope in searchScopes"
-                                required>
-                        </select>
-                    </div>
-                </div>
-                <kc-tooltip>{{:: 'ldap.search-scope.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="validatePasswordPolicy">{{:: 'validate-password-policy' | translate}}</label>
@@ -226,65 +226,6 @@
                 <kc-tooltip>{{:: 'ldap.use-truststore-spi.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="connectionPooling">{{:: 'connection-pooling' | translate}}</label>
-                <div class="col-md-6">
-                    <input ng-model="instance.config['connectionPooling'][0]" name="connectionPooling" id="connectionPooling" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
-                </div>
-                <kc-tooltip>{{:: 'ldap.connection-pooling.tooltip' | translate}}</kc-tooltip>
-                <div class="col-sm-4" data-ng-show="instance.config['connectionPooling'][0] == 'true'">
-                    <a class="btn btn-primary" data-ng-init="connectionPoolSettings=false" data-ng-click="connectionPoolSettings=!connectionPoolSettings">{{:: 'connection-pooling-settings' | translate}}</a>
-                </div>
-            </div>
-            <div class="form-group clearfix" data-ng-show="instance.config['connectionPooling'][0] == 'true' && connectionPoolSettings">
-                <label class="col-md-2 control-label" for="connectionPoolingAuthentication">{{:: 'connection-pooling-authentication' | translate}}</label>
-                <div class="col-md-6">
-                    <input class="form-control" id="connectionPoolingAuthentication" type="text" ng-model="instance.config['connectionPoolingAuthentication'][0]" placeholder="{{:: 'connection-pooling-authentication-default' | translate}}"/>
-                </div>
-                <kc-tooltip>{{:: 'ldap.connection-pooling.authentication.tooltip' | translate}}</kc-tooltip>
-            </div>
-            <div class="form-group clearfix" data-ng-show="instance.config['connectionPooling'][0] == 'true' && connectionPoolSettings">
-                <label class="col-md-2 control-label" for="connectionPoolingDebug">{{:: 'connection-pooling-debug' | translate}}</label>
-                <div class="col-md-6">
-                    <input class="form-control" id="connectionPoolingDebug" type="text" ng-model="instance.config['connectionPoolingDebug'][0]"  placeholder="{{:: 'connection-pooling-debug-default' | translate}}"/>
-                </div>
-                <kc-tooltip>{{:: 'ldap.connection-pooling.debug.tooltip' | translate}}</kc-tooltip>
-            </div>
-            <div class="form-group clearfix" data-ng-show="instance.config['connectionPooling'][0] == 'true' && connectionPoolSettings">
-                <label class="col-md-2 control-label" for="connectionPoolingInitSize">{{:: 'connection-pooling-initsize' | translate}}</label>
-                <div class="col-md-6">
-                    <input class="form-control" id="connectionPoolingInitSize" type="text" ng-model="instance.config['connectionPoolingInitSize'][0]" placeholder="{{:: 'connection-pooling-initsize-default' | translate}}"/>
-                </div>
-                <kc-tooltip>{{:: 'ldap.connection-pooling.initsize.tooltip' | translate}}</kc-tooltip>
-            </div>
-            <div class="form-group clearfix" data-ng-show="instance.config['connectionPooling'][0] == 'true' && connectionPoolSettings">
-                <label class="col-md-2 control-label" for="connectionPoolingMaxSize">{{:: 'connection-pooling-maxsize' | translate}}</label>
-                <div class="col-md-6">
-                    <input class="form-control" id="connectionPoolingMaxSize" type="text" ng-model="instance.config['connectionPoolingMaxSize'][0]" placeholder="{{:: 'connection-pooling-maxsize-default' | translate}}"/>
-                </div>
-                <kc-tooltip>{{:: 'ldap.connection-pooling.maxsize.tooltip' | translate}}</kc-tooltip>
-            </div>
-            <div class="form-group clearfix" data-ng-show="instance.config['connectionPooling'][0] == 'true' && connectionPoolSettings">
-                <label class="col-md-2 control-label" for="connectionPoolingPrefSize">{{:: 'connection-pooling-prefsize' | translate}}</label>
-                <div class="col-md-6">
-                    <input class="form-control" id="connectionPoolingPrefSize" type="text" ng-model="instance.config['connectionPoolingPrefSize'][0]" placeholder="{{:: 'connection-pooling-prefsize-default' | translate}}"/>
-                </div>
-                <kc-tooltip>{{:: 'ldap.connection-pooling.prefsize.tooltip' | translate}}</kc-tooltip>
-            </div>
-            <div class="form-group clearfix" data-ng-show="instance.config['connectionPooling'][0] == 'true' && connectionPoolSettings">
-                <label class="col-md-2 control-label" for="connectionPoolingProtocol">{{:: 'connection-pooling-protocol' | translate}}</label>
-                <div class="col-md-6">
-                    <input class="form-control" id="connectionPoolingProtocol" type="text" ng-model="instance.config['connectionPoolingProtocol'][0]" placeholder="{{:: 'connection-pooling-protocol-default' | translate}}"/>
-                </div>
-                <kc-tooltip>{{:: 'ldap.connection-pooling.protocol.tooltip' | translate}}</kc-tooltip>
-            </div>
-            <div class="form-group clearfix" data-ng-show="instance.config['connectionPooling'][0] == 'true' && connectionPoolSettings">
-                <label class="col-md-2 control-label" for="connectionPoolingTimeout">{{:: 'connection-pooling-timeout' | translate}}</label>
-                <div class="col-md-6">
-                    <input class="form-control" id="connectionPoolingTimeout" type="text" ng-model="instance.config['connectionPoolingTimeout'][0]" placeholder="{{:: 'connection-pooling-timeout-default' | translate}}"/>
-                </div>
-                <kc-tooltip>{{:: 'ldap.connection-pooling.timeout.tooltip' | translate}}</kc-tooltip>
-            </div>
-            <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="connectionTimeout">{{:: 'ldap-connection-timeout' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="connectionTimeout" type="text" ng-model="instance.config['connectionTimeout'][0]" placeholder="{{:: 'ldap-connection-timeout' | translate}}">
@@ -304,6 +245,66 @@
                     <input ng-model="instance.config['pagination'][0]" name="pagination" id="pagination" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                 </div>
                 <kc-tooltip>{{:: 'ldap.pagination.tooltip' | translate}}</kc-tooltip>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend collapsed><span class="text">{{:: 'connection-pooling' | translate}}</span></legend>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="connectionPooling">{{:: 'connection-pooling' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="instance.config['connectionPooling'][0]" name="connectionPooling" id="connectionPooling" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'ldap.connection-pooling.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="instance.config['connectionPooling'][0] == 'true'">
+                <label class="col-md-2 control-label" for="connectionPoolingAuthentication">{{:: 'connection-pooling-authentication' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="connectionPoolingAuthentication" type="text" ng-model="instance.config['connectionPoolingAuthentication'][0]" placeholder="{{:: 'connection-pooling-authentication-default' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'ldap.connection-pooling.authentication.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="instance.config['connectionPooling'][0] == 'true'">
+                <label class="col-md-2 control-label" for="connectionPoolingDebug">{{:: 'connection-pooling-debug' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="connectionPoolingDebug" type="text" ng-model="instance.config['connectionPoolingDebug'][0]"  placeholder="{{:: 'connection-pooling-debug-default' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'ldap.connection-pooling.debug.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="instance.config['connectionPooling'][0] == 'true'">
+                <label class="col-md-2 control-label" for="connectionPoolingInitSize">{{:: 'connection-pooling-initsize' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="connectionPoolingInitSize" type="text" ng-model="instance.config['connectionPoolingInitSize'][0]" placeholder="{{:: 'connection-pooling-initsize-default' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'ldap.connection-pooling.initsize.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="instance.config['connectionPooling'][0] == 'true'">
+                <label class="col-md-2 control-label" for="connectionPoolingMaxSize">{{:: 'connection-pooling-maxsize' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="connectionPoolingMaxSize" type="text" ng-model="instance.config['connectionPoolingMaxSize'][0]" placeholder="{{:: 'connection-pooling-maxsize-default' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'ldap.connection-pooling.maxsize.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="instance.config['connectionPooling'][0] == 'true'">
+                <label class="col-md-2 control-label" for="connectionPoolingPrefSize">{{:: 'connection-pooling-prefsize' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="connectionPoolingPrefSize" type="text" ng-model="instance.config['connectionPoolingPrefSize'][0]" placeholder="{{:: 'connection-pooling-prefsize-default' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'ldap.connection-pooling.prefsize.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="instance.config['connectionPooling'][0] == 'true'">
+                <label class="col-md-2 control-label" for="connectionPoolingProtocol">{{:: 'connection-pooling-protocol' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="connectionPoolingProtocol" type="text" ng-model="instance.config['connectionPoolingProtocol'][0]" placeholder="{{:: 'connection-pooling-protocol-default' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'ldap.connection-pooling.protocol.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-show="instance.config['connectionPooling'][0] == 'true'">
+                <label class="col-md-2 control-label" for="connectionPoolingTimeout">{{:: 'connection-pooling-timeout' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="connectionPoolingTimeout" type="text" ng-model="instance.config['connectionPoolingTimeout'][0]" placeholder="{{:: 'connection-pooling-timeout-default' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'ldap.connection-pooling.timeout.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
 
