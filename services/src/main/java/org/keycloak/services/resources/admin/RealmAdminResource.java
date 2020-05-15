@@ -979,10 +979,20 @@ public class RealmAdminResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
     public Response getLDAPSupportedExtensions(TestLdapConnectionRepresentation config) {
+
+        auth.realm().requireManageRealm();
+
+        String bindCredential = config.getBindCredential();
+        if (config.getComponentId() != null && ComponentRepresentation.SECRET_VALUE.equals(bindCredential)) {
+            bindCredential = realm.getComponent(config.getComponentId()).getConfig().getFirst(LDAPConstants.BIND_CREDENTIAL);
+        }
+
         MultivaluedHashMap<String, String> map = new MultivaluedHashMap<>();
         map.add(LDAPConstants.CONNECTION_URL, config.getConnectionUrl());
+        map.add(LDAPConstants.USE_TRUSTSTORE_SPI, config.getUseTruststoreSpi());
+        map.add(LDAPConstants.AUTH_TYPE, LDAPConstants.AUTH_TYPE_SIMPLE);
         map.add(LDAPConstants.BIND_DN, config.getBindDn());
-        map.add(LDAPConstants.BIND_CREDENTIAL, config.getBindCredential());
+        map.add(LDAPConstants.BIND_CREDENTIAL, bindCredential);
 
         Set<LDAPOid> ldapOids = new LDAPIdentityStore(session, new LDAPConfig(map)).getLDAPSupportedExtensions();
         return Response.ok().entity(ldapOids).build();

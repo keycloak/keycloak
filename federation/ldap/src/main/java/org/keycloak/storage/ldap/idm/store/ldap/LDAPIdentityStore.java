@@ -308,55 +308,8 @@ public class LDAPIdentityStore implements IdentityStore {
         return resultCount;
     }
 
-    // *************** CREDENTIALS AND USER SPECIFIC STUFF
-
-    @Override
-    public void validatePassword(LDAPObject user, String password) throws AuthenticationException {
-        String userDN = user.getDn().toString();
-
-        if (logger.isTraceEnabled()) {
-            logger.tracef("Using DN [%s] for authentication of user", userDN);
-        }
-
-        operationManager.authenticate(userDN, password);
-    }
-
-    @Override
-    public void updatePassword(LDAPObject user, String password, LDAPOperationDecorator passwordUpdateDecorator) {
-        String userDN = user.getDn().toString();
-
-        if (logger.isDebugEnabled()) {
-            logger.debugf("Using DN [%s] for updating LDAP password of user", userDN);
-        }
-
-        if (getConfig().isActiveDirectory()) {
-            updateADPassword(userDN, password, passwordUpdateDecorator);
-            return;
-        }
-
-        LDAPOid extendedPasswordModifyOp = new LDAPOid(PasswordModifyRequest.PASSWORD_MODIFY_OID);
-        Set<LDAPOid> supportedExtensions = getLDAPSupportedExtensions();
-
-        boolean useExtendedPasswordModifyOp = supportedExtensions.contains(extendedPasswordModifyOp);
-
-        try {
-            if (useExtendedPasswordModifyOp) {
-                operationManager.passwordModifyExtended(userDN, password, passwordUpdateDecorator);
-            } else {
-                ModificationItem[] mods = new ModificationItem[1];
-                BasicAttribute mod0 = new BasicAttribute(LDAPConstants.USER_PASSWORD_ATTRIBUTE, password);
-                mods[0] = new ModificationItem(DirContext.REPLACE_ATTRIBUTE, mod0);
-                operationManager.modifyAttributes(userDN, mods, passwordUpdateDecorator);
-            }
-        } catch (ModelException me) {
-            throw me;
-        } catch (Exception e) {
-            throw new ModelException("Error updating password.", e);
-        }
-    }
-
     /**
-     * Query the LDAP server RootDSE and extract the supportedExtensions.
+     * Query the LDAP server RootDSE and extract the OIDs of all supportedExtensions.
      * Will throw a {@link ModelException} on any error, for example when the supportedExtensions is found
      * in the searchResult or the searchResult is empty.
      *
@@ -386,6 +339,48 @@ public class LDAPIdentityStore implements IdentityStore {
             return result;
         } catch (NamingException e) {
             throw new ModelException("Failed to query root DSE: " + e.getMessage(), e);
+        }
+    }
+
+    // *************** CREDENTIALS AND USER SPECIFIC STUFF
+
+    @Override
+    public void validatePassword(LDAPObject user, String password) throws AuthenticationException {
+        String userDN = user.getDn().toString();
+
+        if (logger.isTraceEnabled()) {
+            logger.tracef("Using DN [%s] for authentication of user", userDN);
+        }
+
+        operationManager.authenticate(userDN, password);
+    }
+
+    @Override
+    public void updatePassword(LDAPObject user, String password, LDAPOperationDecorator passwordUpdateDecorator) {
+        String userDN = user.getDn().toString();
+
+        if (logger.isDebugEnabled()) {
+            logger.debugf("Using DN [%s] for updating LDAP password of user", userDN);
+        }
+
+        if (getConfig().isActiveDirectory()) {
+            updateADPassword(userDN, password, passwordUpdateDecorator);
+            return;
+        }
+
+        try {
+            if (config.useExtendedPasswordModifyOp()) {
+                operationManager.passwordModifyExtended(userDN, password, passwordUpdateDecorator);
+            } else {
+                ModificationItem[] mods = new ModificationItem[1];
+                BasicAttribute mod0 = new BasicAttribute(LDAPConstants.USER_PASSWORD_ATTRIBUTE, password);
+                mods[0] = new ModificationItem(DirContext.REPLACE_ATTRIBUTE, mod0);
+                operationManager.modifyAttributes(userDN, mods, passwordUpdateDecorator);
+            }
+        } catch (ModelException me) {
+            throw me;
+        } catch (Exception e) {
+            throw new ModelException("Error updating password.", e);
         }
     }
 
