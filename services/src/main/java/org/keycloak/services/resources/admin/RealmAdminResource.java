@@ -16,21 +16,49 @@
  */
 package org.keycloak.services.resources.admin;
 
+import static org.keycloak.models.utils.StripSecretsUtils.stripForExport;
+import static org.keycloak.util.JsonSerialization.readValue;
+
 import com.fasterxml.jackson.core.type.TypeReference;
+import java.security.cert.X509Certificate;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
 import org.keycloak.KeyPairVerifier;
 import org.keycloak.authentication.CredentialRegistrator;
-import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
-import org.keycloak.credential.CredentialProvider;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
@@ -77,35 +105,9 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.storage.UserStorageProviderModel;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import java.security.cert.X509Certificate;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import static org.keycloak.models.utils.StripSecretsUtils.stripForExport;
-import static org.keycloak.util.JsonSerialization.readValue;
+import org.keycloak.storage.ldap.LDAPConfig;
+import org.keycloak.storage.ldap.idm.model.LDAPOid;
+import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.utils.ReservedCharValidator;
 
 /**
@@ -964,6 +966,26 @@ public class RealmAdminResource {
                 config.getConnectionTimeout(),
                 config.getComponentId(),
                 config.getStartTls());
+    }
+
+    /**
+     * Get LDAP supported extensions.
+     * @param config LDAP configuration
+     * @return
+     */
+    @POST
+    @Path("ldap-supported-extensions")
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
+    public Response getLDAPSupportedExtensions(TestLdapConnectionRepresentation config) {
+        MultivaluedHashMap<String, String> map = new MultivaluedHashMap<>();
+        map.add(LDAPConstants.CONNECTION_URL, config.getConnectionUrl());
+        map.add(LDAPConstants.BIND_DN, config.getBindDn());
+        map.add(LDAPConstants.BIND_CREDENTIAL, config.getBindCredential());
+
+        Set<LDAPOid> ldapOids = new LDAPIdentityStore(session, new LDAPConfig(map)).getLDAPSupportedExtensions();
+        return Response.ok().entity(ldapOids).build();
     }
 
     /**
