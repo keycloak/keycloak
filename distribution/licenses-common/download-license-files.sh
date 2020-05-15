@@ -45,6 +45,10 @@ xmlstarlet tr /dev/stdin "$xml" >> "$tempfile" <<EOF
         <xsl:value-of select="translate(., '&lt;&gt;&quot;:\\|?*', '')"/>
     </xsl:template>
 
+    <xsl:template match="licenseSummary/others/other/description/text()">
+        <xsl:value-of select="translate(., '/', '-')"/>
+    </xsl:template>
+
     <xsl:template match="licenseSummary/others/other/licenses/license/name/text()">
         <xsl:value-of select="translate(., '&lt;&gt;&quot;:\\|?*', '')"/>
     </xsl:template>
