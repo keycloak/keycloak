@@ -861,214 +861,326 @@
       </licenses>
     </other>
     <other>
-      <description>Axios</description>
+      <description>@emotion</description>
       <locations>
-        <file>themes/keycloak-preview/account/resources/node_modules/axios/dist/axios.min.js</file>
+        <file>themes/keycloak/common/resources/web_modules/@patternfly/react-core.js</file>
       </locations>
       <licenses>
         <license>
-          <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/axios/axios/v0.19.0/LICENSE</url>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/emotion-js/emotion/master/LICENSE</url>
         </license>
       </licenses>
     </other>
     <other>
-      <description>ChangeCase</description>
+      <description>stylis-rule-sheet</description>
       <locations>
-        <file>themes/keycloak-preview/account/resources/node_modules/camel-case/camel-case.js</file>
-        <file>themes/keycloak-preview/account/resources/node_modules/lower-case/lower-case.js</file>
-        <file>themes/keycloak-preview/account/resources/node_modules/no-case/no-case.js</file>
-        <file>themes/keycloak-preview/account/resources/node_modules/no-case/vendor/camel-case-regexp.js</file>
-        <file>themes/keycloak-preview/account/resources/node_modules/no-case/vendor/camel-case-upper-regexp.js</file>
-        <file>themes/keycloak-preview/account/resources/node_modules/no-case/vendor/non-word-regexp.js</file>
-        <file>themes/keycloak-preview/account/resources/node_modules/upper-case/upper-case.js</file>
+        <file>themes/keycloak/common/resources/web_modules/@patternfly/react-core.js</file>
       </locations>
       <licenses>
         <license>
-          <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/blakeembrey/change-case/v3.0.0/LICENSE</url>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/thysultan/stylis.js/master/LICENSE</url>
         </license>
       </licenses>
     </other>
     <other>
-      <description>Emotion</description>
+      <description>change-case</description>
       <locations>
-        <file>themes/keycloak-preview/account/resources/node_modules/emotion/dist/emotion.umd.min.js</file>
+        <file>themes/keycloak/common/resources/web_modules/@patternfly/react-core.js</file>
       </locations>
       <licenses>
         <license>
-          <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/emotion-js/emotion/v9.2.12/packages/emotion/package.json</url>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/blakeembrey/change-case/master/LICENSE</url>
         </license>
       </licenses>
     </other>
     <other>
-      <description>ExecutionEnvironment</description>
+      <description>@patternfly</description>
       <locations>
-        <file>themes/keycloak-preview/account/resources/node_modules/exenv/index.js</file>
+        <file>themes/keycloak/common/resources/web_modules/@patternfly/react-core.js</file>
       </locations>
       <licenses>
         <license>
-          <name>BSD 3-clause New or Revised License</name>
-          <url>https://raw.githubusercontent.com/JedWatson/exenv/v1.2.2/LICENSE</url>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/patternfly/patternfly-react/master/LICENSE</url>
         </license>
       </licenses>
     </other>
     <other>
-      <description>focus-trap-react</description>
+      <description>tabbable</description>
       <locations>
-        <file>themes/keycloak-preview/account/resources/node_modules/focus-trap-react/dist/focus-trap-react.js</file>
+        <file>themes/keycloak/common/resources/web_modules/@patternfly/react-core.js</file>
       </locations>
       <licenses>
         <license>
-          <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/davidtheclark/focus-trap-react/4.0.1/LICENSE</url>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/davidtheclark/tabbable/master/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>xtend</description>
+      <locations>
+        <file>themes/keycloak/common/resources/web_modules/@patternfly/react-core.js</file>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/Raynos/xtend/master/LICENSE</url>
         </license>
       </licenses>
     </other>
     <other>
       <description>focus-trap</description>
       <locations>
-        <file>themes/keycloak-preview/account/resources/node_modules/focus-trap/dist/focus-trap.min.js</file>
+        <file>themes/keycloak/common/resources/web_modules/@patternfly/react-core.js</file>
       </locations>
       <licenses>
         <license>
-          <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/davidtheclark/focus-trap/3.0.0/LICENSE</url>
-        </license>
-      </licenses>
-    </other>
-    <other>
-      <description>Moment.js</description>
-      <locations>
-        <file>themes/keycloak-preview/account/resources/node_modules/moment/min/moment-with-locales.min.js</file>
-      </locations>
-      <licenses>
-        <license>
-          <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/moment/moment/2.22.2/LICENSE</url>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/davidtheclark/focus-trap/master/LICENSE</url>
         </license>
       </licenses>
     </other>
     <other>
       <description>prop-types</description>
       <locations>
-        <file>themes/keycloak-preview/account/resources/node_modules/prop-types/prop-types.min.js</file>
+        <file>themes/keycloak/common/resources/web_modules/common/index-fd2ed651.js</file>
       </locations>
       <licenses>
         <license>
-          <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/facebook/prop-types/v15.6.2/LICENSE</url>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/facebook/prop-types/master/LICENSE</url>
         </license>
       </licenses>
     </other>
     <other>
-      <description>React</description>
+      <description>popper.js</description>
       <locations>
-        <file>themes/keycloak-preview/account/resources/node_modules/react-dom/umd/react-dom.production.min.js</file>
-        <file>themes/keycloak-preview/account/resources/node_modules/react-router-dom/umd/react-router-dom.min.js</file>
-        <file>themes/keycloak-preview/account/resources/node_modules/react/umd/react.production.min.js</file>
+        <file>themes/keycloak/common/resources/web_modules/@patternfly/react-core.js</file>
       </locations>
       <licenses>
         <license>
-          <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/facebook/react/v16.8.5/LICENSE</url>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/FezVrasta/popper.js/master/LICENSE.md</url>
         </license>
       </licenses>
     </other>
     <other>
-      <description>SystemJS</description>
+      <description>tippy.js</description>
       <locations>
-        <file>themes/keycloak-preview/account/resources/node_modules/systemjs/dist/system.src.js</file>
+        <file>themes/keycloak/common/resources/web_modules/@patternfly/react-core.js</file>
       </locations>
       <licenses>
         <license>
-          <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/systemjs/systemjs/0.20.19/LICENSE</url>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/atomiks/tippyjs/master/LICENSE</url>
         </license>
       </licenses>
     </other>
     <other>
-      <description>Tippy.js</description>
+      <description>tslib</description>
       <locations>
-        <file>themes/keycloak-preview/account/resources/node_modules/tippy.js/dist/tippy.min.js</file>
+        <file>themes/keycloak/common/resources/web_modules/@patternfly/react-core.js</file>
       </locations>
       <licenses>
         <license>
-          <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/atomiks/tippyjs/v3.4.1/LICENSE</url>
+          <name>Apache-2.0</name>
+          <url>https://raw.githubusercontent.com/Microsoft/tslib/master/LICENSE.txt</url>
         </license>
       </licenses>
     </other>
     <other>
-      <description>Patternfly 4</description>
+      <description>file-selector</description>
       <locations>
-        <directory>themes/keycloak-preview/account/resources/node_modules/@patternfly/patternfly</directory>
+        <file>themes/keycloak/common/resources/web_modules/@patternfly/react-core.js</file>
       </locations>
       <licenses>
         <license>
-          <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/patternfly/patternfly-next/v2.26.5/LICENSE.txt</url>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/react-dropzone/file-selector/master/LICENSE</url>
         </license>
       </licenses>
     </other>
     <other>
-      <description>Patternfly 4 React Core</description>
+      <description>attr-accept</description>
       <locations>
-        <directory>themes/keycloak-preview/account/resources/node_modules/@patternfly/react-core</directory>
+        <file>themes/keycloak/common/resources/web_modules/@patternfly/react-core.js</file>
       </locations>
       <licenses>
         <license>
-          <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/patternfly/patternfly-react/%40patternfly/react-core%403.35.0/LICENSE</url>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/okonet/attr-accept/master/LICENSE</url>
         </license>
       </licenses>
     </other>
     <other>
-      <description>Patternfly 4 React Icons</description>
+      <description>react-dropzone</description>
       <locations>
-        <directory>themes/keycloak-preview/account/resources/node_modules/@patternfly/react-icons</directory>
+        <file>themes/keycloak/common/resources/web_modules/@patternfly/react-core.js</file>
       </locations>
       <licenses>
         <license>
-          <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/patternfly/patternfly-react/%40patternfly/react-icons%403.11.0/LICENSE</url>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/react-dropzone/react-dropzone/master/LICENSE</url>
         </license>
       </licenses>
     </other>
     <other>
-      <description>Patternfly 4 React Styles</description>
+      <description>@pika-react</description>
       <locations>
-        <directory>themes/keycloak-preview/account/resources/node_modules/@patternfly/react-styles</directory>
+        <file>themes/keycloak/common/resources/web_modules/react.js</file>
       </locations>
       <licenses>
         <license>
-          <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/patternfly/patternfly-react/%40patternfly/react-styles%403.5.13/LICENSE</url>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/facebook/react/master/LICENSE</url>
         </license>
       </licenses>
     </other>
     <other>
-      <description>Patternfly 4 React Tokens</description>
+      <description>@pika-react-dom</description>
       <locations>
-        <directory>themes/keycloak-preview/account/resources/node_modules/@patternfly/react-tokens</directory>
+        <file>themes/keycloak/common/resources/web_modules/react-dom.js</file>
       </locations>
       <licenses>
         <license>
-          <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/patternfly/patternfly-react/%40patternfly/react-tokens%402.6.16/LICENSE</url>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/facebook/react/master/LICENSE</url>
         </license>
       </licenses>
     </other>
     <other>
-      <description>Tippy.js React</description>
+      <description>warning</description>
       <locations>
-        <file>themes/keycloak-preview/account/resources/node_modules/@tippy.js/react/dist/Tippy.min.js</file>
+        <file>themes/keycloak/common/resources/web_modules/react-router-dom.js</file>
       </locations>
       <licenses>
         <license>
-          <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/atomiks/tippy.js-react/v1.1.1/LICENSE</url>
+          <name>MIT</name>
+          <url>https://github.com/BerkeleyTrue/warning/raw/master/LICENSE.md</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>invariant</description>
+      <locations>
+        <file>themes/keycloak/common/resources/web_modules/react-router-dom.js</file>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/zertosh/invariant/master/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>resolve-pathname</description>
+      <locations>
+        <file>themes/keycloak/common/resources/web_modules/react-router-dom.js</file>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/mjackson/resolve-pathname/master/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>value-equal</description>
+      <locations>
+        <file>themes/keycloak/common/resources/web_modules/react-router-dom.js</file>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/mjackson/value-equal/master/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>history</description>
+      <locations>
+        <file>themes/keycloak/common/resources/web_modules/react-router-dom.js</file>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/ReactTraining/history/master/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>react-router</description>
+      <locations>
+        <file>themes/keycloak/common/resources/web_modules/react-router-dom.js</file>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/ReactTraining/react-router/master/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>react-router-dom</description>
+      <locations>
+        <file>themes/keycloak/common/resources/web_modules/react-router-dom.js</file>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/ReactTraining/react-router/master/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>isarray</description>
+      <locations>
+        <file>themes/keycloak/common/resources/web_modules/react-router-dom.js</file>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/juliangruber/isarray/master/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>path-to-regexp</description>
+      <locations>
+        <file>themes/keycloak/common/resources/web_modules/react-router-dom.js</file>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/pillarjs/path-to-regexp/master/LICENSE</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>hoist-non-react-statics</description>
+      <locations>
+        <file>themes/keycloak/common/resources/web_modules/react-router-dom.js</file>
+      </locations>
+      <licenses>
+        <license>
+          <name>BSD-3-Clause</name>
+          <url>https://raw.githubusercontent.com/mridgway/hoist-non-react-statics/master/LICENSE.md</url>
+        </license>
+      </licenses>
+    </other>
+    <other>
+      <description>object-assign</description>
+      <locations>
+        <file>themes/keycloak/common/resources/web_modules/common/index-fd2ed651.js</file>
+      </locations>
+      <licenses>
+        <license>
+          <name>MIT</name>
+          <url>https://raw.githubusercontent.com/sindresorhus/object-assign/master/license</url>
         </license>
       </licenses>
     </other>
