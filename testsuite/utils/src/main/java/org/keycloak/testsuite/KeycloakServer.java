@@ -401,16 +401,11 @@ public class KeycloakServer {
 
             di.setDefaultServletConfig(new DefaultServletConfig(true));
 
-            ServletInfo restEasyDispatcher = Servlets.servlet("Keycloak REST Interface", HttpServlet30Dispatcher.class);
-
-            restEasyDispatcher.addInitParam(ResteasyContextParameters.RESTEASY_SERVLET_MAPPING_PREFIX, "/");
-            restEasyDispatcher.addInitParam(ResteasyContextParameters.RESTEASY_DISABLE_HTML_SANITIZER, "true");
-            restEasyDispatcher.setAsyncSupported(true);
-
-            di.addServlet(restEasyDispatcher);
+            // Note that the ResteasyServlet is configured via server.undertowDeployment(...);
+            // KEYCLOAK-14178
+            deployment.setProperty(ResteasyContextParameters.RESTEASY_DISABLE_HTML_SANITIZER, true);
 
             FilterInfo filter = Servlets.filter("SessionFilter", TestKeycloakSessionServletFilter.class);
-
             filter.setAsyncSupported(true);
 
             di.addFilter(filter);
