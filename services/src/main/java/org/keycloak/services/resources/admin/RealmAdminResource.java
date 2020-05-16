@@ -19,7 +19,6 @@ package org.keycloak.services.resources.admin;
 import static org.keycloak.models.utils.StripSecretsUtils.stripForExport;
 import static org.keycloak.util.JsonSerialization.readValue;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -31,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -48,6 +48,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -73,7 +74,18 @@ import org.keycloak.exportimport.ClientDescriptionConverterFactory;
 import org.keycloak.exportimport.util.ExportOptions;
 import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.keys.PublicKeyStorageProvider;
-import org.keycloak.models.*;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -107,8 +119,11 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.idm.model.LDAPOid;
+import org.keycloak.storage.ldap.idm.store.IdentityStore;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.utils.ReservedCharValidator;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
  * Base resource class for the admin REST api of one realm
@@ -940,9 +955,7 @@ public class RealmAdminResource {
                                        @FormParam("componentId") String componentId, @FormParam("startTls") String startTls) {
         auth.realm().requireManageRealm();
 
-        if (componentId != null && bindCredential.equals(ComponentRepresentation.SECRET_VALUE)) {
-            bindCredential = realm.getComponent(componentId).getConfig().getFirst(LDAPConstants.BIND_CREDENTIAL);
-        }
+        bindCredential = handleSavedBindCredential(componentId, bindCredential);
 
         boolean result = LDAPConnectionTestManager.testLDAP(session, action, connectionUrl, bindDn, bindCredential, useTruststoreSpi, connectionTimeout, startTls);
         return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
@@ -982,20 +995,27 @@ public class RealmAdminResource {
 
         auth.realm().requireManageRealm();
 
-        String bindCredential = config.getBindCredential();
-        if (config.getComponentId() != null && ComponentRepresentation.SECRET_VALUE.equals(bindCredential)) {
-            bindCredential = realm.getComponent(config.getComponentId()).getConfig().getFirst(LDAPConstants.BIND_CREDENTIAL);
-        }
+        String bindCredential = handleSavedBindCredential(config.getComponentId(), config.getBindCredential());
 
+        // Create Factory Methods for LDAPConfig and LDAPIdentityStore in LDAPConnectionTestManager?
         MultivaluedHashMap<String, String> map = new MultivaluedHashMap<>();
         map.add(LDAPConstants.CONNECTION_URL, config.getConnectionUrl());
         map.add(LDAPConstants.USE_TRUSTSTORE_SPI, config.getUseTruststoreSpi());
         map.add(LDAPConstants.AUTH_TYPE, LDAPConstants.AUTH_TYPE_SIMPLE);
         map.add(LDAPConstants.BIND_DN, config.getBindDn());
         map.add(LDAPConstants.BIND_CREDENTIAL, bindCredential);
+        IdentityStore ldapIdentityStore = new LDAPIdentityStore(session, new LDAPConfig(map));
 
-        Set<LDAPOid> ldapOids = new LDAPIdentityStore(session, new LDAPConfig(map)).getLDAPSupportedExtensions();
+        Set<LDAPOid> ldapOids = ldapIdentityStore.queryServerCapabilities();
         return Response.ok().entity(ldapOids).build();
+    }
+
+    private String handleSavedBindCredential(final String componentId, final String bindCredentialParam) {
+        if (componentId != null && ComponentRepresentation.SECRET_VALUE.equals(bindCredentialParam)) {
+            return realm.getComponent(componentId).getConfig().getFirst(LDAPConstants.BIND_CREDENTIAL);
+        } else {
+            return bindCredentialParam;
+        }
     }
 
     /**

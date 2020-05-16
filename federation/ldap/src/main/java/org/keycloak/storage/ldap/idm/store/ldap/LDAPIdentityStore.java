@@ -308,18 +308,14 @@ public class LDAPIdentityStore implements IdentityStore {
         return resultCount;
     }
 
-    /**
-     * Query the LDAP server RootDSE and extract the OIDs of all supportedExtensions.
-     * Will throw a {@link ModelException} on any error, for example when the supportedExtensions is found
-     * in the searchResult or the searchResult is empty.
-     *
-     * @return the set of extension OIDs.
-     */
-    public Set<LDAPOid> getLDAPSupportedExtensions() {
+    @Override
+    public Set<LDAPOid> queryServerCapabilities() {
         Set<LDAPOid> result = new LinkedHashSet<>();
         try {
             List<String> attrs = new ArrayList<>();
+            attrs.add("supportedControl");
             attrs.add("supportedExtension");
+            attrs.add("supportedFeatures");
             List<SearchResult> searchResults = operationManager
                 .search("", "(objectClass=*)", Collections.unmodifiableCollection(attrs), SearchControls.OBJECT_SCOPE);
             if (searchResults.size() != 1) {
@@ -327,14 +323,15 @@ public class LDAPIdentityStore implements IdentityStore {
             }
             SearchResult rootDse = searchResults.get(0);
             Attributes attributes = rootDse.getAttributes();
-            Attribute supportedExtension = attributes.get("supportedExtension");
-            if (null == supportedExtension) {
-                throw new ModelException("Could not query root DSE: 'supportedExtension' is not in attributes");
-            }
-            NamingEnumeration<?> values = supportedExtension.getAll();
-            while (values.hasMoreElements()) {
-                Object o = values.nextElement();
-                result.add(new LDAPOid(o));
+            for (String attr: attrs) {
+                Attribute attribute = attributes.get(attr);
+                if (null != attribute) {
+                    NamingEnumeration<?> values = attribute.getAll();
+                    while (values.hasMoreElements()) {
+                        Object o = values.nextElement();
+                        result.add(new LDAPOid(o));
+                    }
+                }
             }
             return result;
         } catch (NamingException e) {
