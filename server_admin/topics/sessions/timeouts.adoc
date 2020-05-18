@@ -41,10 +41,16 @@ greater than 0 it uses the same idle timeout as set in the SSO Session Idle conf
 There is a small window of time that is always added to the idle timeout before the session  invalidation takes effect. See the note below.
 
 |Offline Session Max Limited
-|For <<_offline-access, offline access>>, if this flag is on, Offline Session Max is enabled to control the maximum time the offline token can remain active, regardless of user activity.
+|For <<_offline-access, offline access>>, if this flag is on, Offline Session Max is enabled to control the maximum time the offline token can remain active, regardless of user activity. Also Client Offline Session Idle and Client Offline Session Max are enabled.
 
 |Offline Session Max
 |For <<_offline-access, offline access>>, this is the maximum time before the corresponding offline token is revoked.  This option controls the maximum time the offline token can remain active, regardless of user activity.
+
+|Client Offline Session Idle
+|For <<_offline-access, offline access>>, if the user is not active for longer than this timeout, offline token requests will bump the idle timeout. It allows for the specification of a shorter idle timeout of offline token than offline session idle timeout. However, it can be overridden on individual clients. It is an optional configuration and if not set to a value bigger than 0, it uses the same idle timeout set in the Offline Session Idle configuration.
+
+|Client Offline Session Max
+|For <<_offline-access, offline access>>, the maximum time before a offline token is expired and invalidated. It allows for the specification of a shorter timeout of offline token than offline session timeout. However, it can be overridden on individual clients. It is an optional configuration and if not set to a value bigger than 0, it uses the same idle timeout set in the Offline Session Max configuration.
 
 |Client Session Idle
 |If the user is not active for longer than this timeout, refresh token requests will bump the idle timeout. It allows for the specification of a shorter idle timeout of refresh token than session idle timeout. And it can be overridden on individual clients. It is an optional configuration and if not set to a value bigger than 0 it uses the same idle timeout set in the SSO Session Idle configuration.
