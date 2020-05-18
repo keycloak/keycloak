@@ -1,4 +1,4 @@
-package org.keycloak.connections.liquibase;
+package org.keycloak.quarkus.deployment;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,8 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import liquibase.exception.ServiceNotFoundException;
-import liquibase.parser.core.xml.XMLChangeLogSAXParser;
+import io.agroal.api.configuration.AgroalDataSourceConfiguration;
+import io.quarkus.agroal.deployment.JdbcDataSourceBuildItem;
+import io.quarkus.arc.deployment.BeanContainerListenerBuildItem;
+import io.quarkus.datasource.runtime.DataSourceBuildTimeConfig;
+import io.quarkus.datasource.runtime.DataSourcesBuildTimeConfig;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
@@ -21,22 +24,28 @@ import org.jboss.jandex.IndexReader;
 import org.keycloak.connections.jpa.updater.liquibase.lock.CustomInsertLockRecordGenerator;
 import org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockDatabaseChangeLogGenerator;
 import org.keycloak.connections.jpa.updater.liquibase.lock.DummyLockService;
+import org.keycloak.connections.liquibase.KeycloakLogger;
 
+import io.quarkus.deployment.annotations.BuildStep;
+import io.quarkus.deployment.annotations.ExecutionTime;
+import io.quarkus.deployment.annotations.Record;
+import io.quarkus.deployment.builditem.FeatureBuildItem;
 import liquibase.database.Database;
 import liquibase.lockservice.LockService;
 import liquibase.logging.Logger;
 import liquibase.parser.ChangeLogParser;
-import liquibase.servicelocator.DefaultPackageScanClassResolver;
+import liquibase.parser.core.xml.XMLChangeLogSAXParser;
 import liquibase.servicelocator.LiquibaseService;
-import liquibase.servicelocator.ServiceLocator;
 import liquibase.sqlgenerator.SqlGenerator;
+import org.keycloak.runtime.KeycloakRecorder;
 
-public class FastServiceLocator extends ServiceLocator {
+class LiquibaseProcessor {
 
-    private static Map<String, List<String>> CLASS_INDEX = new HashMap<>();
-
-    static {
+    @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep
+    void configure(KeycloakRecorder recorder) {
         DotName liquibaseServiceName = DotName.createSimple(LiquibaseService.class.getName());
+        Map<String, List<String>> services = new HashMap<>();
 
         try (InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream("META-INF/liquibase.idx")) {
             IndexReader reader = new IndexReader(in);
@@ -54,7 +63,7 @@ public class FastServiceLocator extends ServiceLocator {
                     LockService.class,
                     SqlGenerator.class)) {
                 List<String> impls = new ArrayList<>();
-                CLASS_INDEX.put(c.getName(), impls);
+                services.put(c.getName(), impls);
                 Set<ClassInfo> classes = new HashSet<>();
                 if (c.isInterface()) {
                     classes.addAll(index.getAllKnownImplementors(DotName.createSimple(c.getName())));
@@ -78,68 +87,12 @@ public class FastServiceLocator extends ServiceLocator {
             throw new RuntimeException("Failed to get liquibase jandex index", cause);
         }
 
-        CLASS_INDEX.put(Logger.class.getName(), Arrays.asList(KeycloakLogger.class.getName()));
-        CLASS_INDEX.put(LockService.class.getName(), Arrays.asList(DummyLockService.class.getName()));
-        CLASS_INDEX.put(ChangeLogParser.class.getName(), Arrays.asList(XMLChangeLogSAXParser.class.getName()));
-        CLASS_INDEX.get(SqlGenerator.class.getName()).add(CustomInsertLockRecordGenerator.class.getName());
-        CLASS_INDEX.get(SqlGenerator.class.getName()).add(CustomLockDatabaseChangeLogGenerator.class.getName());
-    }
+        services.put(Logger.class.getName(), Arrays.asList(KeycloakLogger.class.getName()));
+        services.put(LockService.class.getName(), Arrays.asList(DummyLockService.class.getName()));
+        services.put(ChangeLogParser.class.getName(), Arrays.asList(XMLChangeLogSAXParser.class.getName()));
+        services.get(SqlGenerator.class.getName()).add(CustomInsertLockRecordGenerator.class.getName());
+        services.get(SqlGenerator.class.getName()).add(CustomLockDatabaseChangeLogGenerator.class.getName());
 
-    protected FastServiceLocator() {
-        super(new DefaultPackageScanClassResolver() {
-            @Override
-            public Set<Class<?>> findImplementations(Class parent, String... packageNames) {
-                List<String> found = CLASS_INDEX.get(parent.getName());
-
-                if (found == null) {
-                    return super.findImplementations(parent, packageNames);
-                }
-
-                Set<Class<?>> ret = new HashSet<>();
-                for (String i : found) {
-                    try {
-                        ret.add(Class.forName(i, false, Thread.currentThread().getContextClassLoader()));
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
-                    }
-                }
-                return ret;
-            }
-        });
-
-        if (!System.getProperties().containsKey("liquibase.scan.packages")) {
-            if (getPackages().remove("liquibase.core")) {
-                addPackageToScan("liquibase.core.xml");
-            }
-
-            if (getPackages().remove("liquibase.parser")) {
-                addPackageToScan("liquibase.parser.core.xml");
-            }
-
-            if (getPackages().remove("liquibase.serializer")) {
-                addPackageToScan("liquibase.serializer.core.xml");
-            }
-
-            getPackages().remove("liquibase.ext");
-            getPackages().remove("liquibase.sdk");
-        }
-
-        // we only need XML parsers
-        getPackages().remove("liquibase.parser.core.yaml");
-        getPackages().remove("liquibase.serializer.core.yaml");
-        getPackages().remove("liquibase.parser.core.json");
-        getPackages().remove("liquibase.serializer.core.json");
-    }
-
-    @Override
-    public Object newInstance(Class requiredInterface) throws ServiceNotFoundException {
-        if (Logger.class.equals(requiredInterface)) {
-            return new KeycloakLogger();
-        }
-        return super.newInstance(requiredInterface);
-    }
-
-    public void register(Class<? extends Database> type) {
-        CLASS_INDEX.put(Database.class.getName(), Arrays.asList(type.getName()));
+        recorder.configureLiquibase(services);
     }
 }

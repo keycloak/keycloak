@@ -32,7 +32,7 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-quarkus-server</artifactId>
+            <artifactId>keycloak-quarkus-server-app</artifactId>
             <version>${project.version}</version>
             <exclusions>
                 <exclusion>

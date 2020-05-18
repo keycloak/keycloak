@@ -48,7 +48,11 @@ public class QuarkusJpaUpdaterProviderFactory implements JpaUpdaterProviderFacto
 
     @Override
     public String getId() {
-        return "liquibase";
+        return "quarkus";
     }
 
+    @Override
+    public int order() {
+        return 100;
+    }
 }
