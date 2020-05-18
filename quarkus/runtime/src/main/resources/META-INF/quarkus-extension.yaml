@@ -1,0 +1,9 @@
+---
+name: "Keycloak"
+metadata:
+  keywords:
+  - "keycloak"
+  guide: "https://keycloak.org"
+  categories:
+  - "security"
+  status: "preview"

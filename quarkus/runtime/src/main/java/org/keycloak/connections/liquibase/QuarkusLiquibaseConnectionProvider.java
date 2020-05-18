@@ -73,23 +73,8 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
     }
 
     protected void baseLiquibaseInitialization(KeycloakSession session) {
-        LogFactory.setInstance(new LogFactory() {
-            KeycloakLogger logger = new KeycloakLogger();
-
-            @Override
-            public liquibase.logging.Logger getLog(String name) {
-                return logger;
-            }
-
-            @Override
-            public liquibase.logging.Logger getLog() {
-                return logger;
-            }
-        });
-
         resourceAccessor = new ClassLoaderResourceAccessor(getClass().getClassLoader());
-        FastServiceLocator locator = new FastServiceLocator();
-        ServiceLocator.setInstance(locator);
+        FastServiceLocator locator = (FastServiceLocator) ServiceLocator.getInstance();
 
         JpaConnectionProviderFactory jpaConnectionProvider = (JpaConnectionProviderFactory) session
                 .getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
@@ -101,22 +86,20 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
             DatabaseFactory.getInstance().clearRegistry();
             if (database.getDatabaseProductName().equals(PostgresDatabase.PRODUCT_NAME)) {
                 // Adding PostgresPlus support to liquibase
-                DatabaseFactory.getInstance().register(new PostgresPlusDatabase());
+                locator.register(new PostgresPlusDatabase());
             } else if (database.getDatabaseProductName().equals(MySQLDatabase.PRODUCT_NAME)) {
                 // Adding newer version of MySQL/MariaDB support to liquibase
-                DatabaseFactory.getInstance().register(new UpdatedMySqlDatabase());
+                locator.register(new UpdatedMySqlDatabase());
                 // Adding CustomVarcharType for MySQL 8 and newer
                 DataTypeFactory.getInstance().register(MySQL8VarcharType.class);
             } else if (database.getDatabaseProductName().equals(MariaDBDatabase.PRODUCT_NAME)) {
-                DatabaseFactory.getInstance().register(new UpdatedMariaDBDatabase());
+                locator.register(new UpdatedMariaDBDatabase());
                 // Adding CustomVarcharType for MySQL 8 and newer
                 DataTypeFactory.getInstance().register(MySQL8VarcharType.class);
             } else {
-                DatabaseFactory.getInstance().register(database);
+                locator.register(database);
             }
-            
-            locator.register(database.getClass());
-            
+
             // disables XML validation
             for (ChangeLogParser parser : ChangeLogParserFactory.getInstance().getParsers()) {
                 if (parser instanceof XMLChangeLogSAXParser) {
@@ -126,6 +109,7 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
                         getSaxParserFactory.setAccessible(true);
                         SAXParserFactory saxParserFactory = (SAXParserFactory) getSaxParserFactory.invoke(parser);
                         saxParserFactory.setValidating(false);
+                        saxParserFactory.setSchema(null);
                     } catch (Exception e) {
                         logger.warnf("Failed to disable liquibase XML validations");
                     } finally {
@@ -155,7 +139,7 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
     @Override
     public String getId() {
-        return "default";
+        return "quarkus";
     }
 
     @Override
@@ -168,7 +152,7 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
         String changelog = QuarkusJpaUpdaterProvider.CHANGELOG;
 
         logger.debugf("Using changelog file %s and changelogTableName %s", changelog, database.getDatabaseChangeLogTableName());
-        
+
         return new Liquibase(changelog, resourceAccessor, database);
     }
 
@@ -185,5 +169,10 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
         logger.debugf("Using changelog file %s and changelogTableName %s", changelogLocation, database.getDatabaseChangeLogTableName());
 
         return new Liquibase(changelogLocation, resourceAccessor, database);
+    }
+
+    @Override
+    public int order() {
+        return 100;
     }
 }
