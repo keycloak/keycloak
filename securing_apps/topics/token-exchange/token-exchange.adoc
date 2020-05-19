@@ -23,7 +23,7 @@ to impersonate a user.  Here's a short summary of the current capabilities of {p
 * A client can exchange an external token for a {project_name} token.
 * A client can impersonate a user
 
-Token exchange in {project_name} is a very loose implementation of the link:https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16[OAuth Token Exchange] specification at the IETF.
+Token exchange in {project_name} is a very loose implementation of the link:https://tools.ietf.org/html/rfc8693[OAuth Token Exchange] specification at the IETF.
 We have extended it a little, ignored some of it, and loosely interpreted other parts of the specification.  It is
 a simple grant type invocation on a realm's OpenID Connect token endpoint.
 
