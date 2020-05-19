@@ -133,13 +133,14 @@ public class OAuth2DeviceAuthorizationEndpoint extends AuthorizationEndpointBase
         int interval = realm.getOAuth2DevicePollingInterval();
 
         OAuth2DeviceCodeModel deviceCode = OAuth2DeviceCodeModel.create(realm, client,
-                Base64Url.encode(KeycloakModelUtils.generateSecret()), request.getScope(), request.getNonce());
+                Base64Url.encode(KeycloakModelUtils.generateSecret()), request.getScope(), request.getNonce(), request.getAdditionalReqParams());
 
         OAuth2DeviceUserCodeProvider userCodeProvider = session.getProvider(OAuth2DeviceUserCodeProvider.class);
         String secret = userCodeProvider.generate();
         OAuth2DeviceUserCodeModel userCode = new OAuth2DeviceUserCodeModel(realm,
                 deviceCode.getDeviceCode(),
-                secret);
+                secret
+        );
 
         // To inform "expired_token" to the client, the lifespan of the cache provider is longer than device code
         int lifespanSeconds = expiresIn + interval + 10;
