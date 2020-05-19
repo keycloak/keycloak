@@ -1716,7 +1716,7 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
                 const ldapOids = response.data;
                 if (angular.isArray(ldapOids)) {
                     const passwordModifyOid = ldapOids.filter(ldapOid => ldapOid.oid === PASSWORD_MODIFY_OID);
-                    $scope.instance.config['usePasswordModifyExtendedOp'][0] = `${!!passwordModifyOid}`;
+                    $scope.instance.config['usePasswordModifyExtendedOp'][0] = `${passwordModifyOid.length > 0}`;
                 }
             },
             () => Notifications.error("Error when trying to request supported extensions of LDAP. See server.log for details."));
