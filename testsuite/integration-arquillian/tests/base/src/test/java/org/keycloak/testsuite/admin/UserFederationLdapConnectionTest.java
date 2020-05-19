@@ -106,7 +106,7 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
             LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://localhost:10389", "uid=admin,ou=system", "secret",
             "false", null, "false", LDAPConstants.AUTH_TYPE_SIMPLE);
 
-        Response response = realm.getLDAPSupportedExtensions(
+        Response response = realm.ldapServerCapabilities(
             config);
 
         assertStatus(response, 200);

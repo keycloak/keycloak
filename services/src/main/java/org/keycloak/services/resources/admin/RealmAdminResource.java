@@ -980,7 +980,7 @@ public class RealmAdminResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-    public Response getLDAPSupportedExtensions(TestLdapConnectionRepresentation config) {
+    public Response ldapServerCapabilities(TestLdapConnectionRepresentation config) {
         auth.realm().requireManageRealm();
         Set<LDAPCapability> ldapOids = LDAPServerCapabilitiesManager.queryServerCapabilities(config, session, realm);
         return Response.ok().entity(ldapOids).build();
