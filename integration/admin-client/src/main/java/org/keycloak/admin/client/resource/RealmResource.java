@@ -222,6 +222,13 @@ public interface RealmResource {
     @NoCache
     Response testLDAPConnection(TestLdapConnectionRepresentation config);
 
+    @POST
+    @Path("ldap-server-capabilities")
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
+    Response getLDAPSupportedExtensions(TestLdapConnectionRepresentation config);
+
     @Path("testSMTPConnection")
     @POST
     @NoCache

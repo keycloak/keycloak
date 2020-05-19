@@ -16,13 +16,21 @@
  */
 package org.keycloak.services.managers;
 
+import java.util.Collections;
+import java.util.Set;
+
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.storage.ldap.LDAPConfig;
+import org.keycloak.storage.ldap.idm.model.LDAPOid;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPContextManager;
+import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -33,52 +41,68 @@ public class LDAPConnectionTestManager {
 
     public static final String TEST_CONNECTION = "testConnection";
     public static final String TEST_AUTHENTICATION = "testAuthentication";
+    public static final String QUERY_SERVER_CAPABILITIES = "queryServerCapabilities";
 
-    public static boolean testLDAP(KeycloakSession session, String action, String connectionUrl, String bindDn,
-                                   String bindCredential, String useTruststoreSpi, String connectionTimeout, String tls) {
-        if (!TEST_CONNECTION.equals(action) && !TEST_AUTHENTICATION.equals(action)) {
-            ServicesLogger.LOGGER.unknownAction(action);
+    public static LDAPConfig buildLDAPConfig(TestLdapConnectionRepresentation config, RealmModel realm) {
+        String bindCredential = config.getBindCredential();
+        if (config.getComponentId() != null && ComponentRepresentation.SECRET_VALUE.equals(bindCredential)) {
+            bindCredential = realm.getComponent(config.getComponentId()).getConfig().getFirst(LDAPConstants.BIND_CREDENTIAL);
+        }
+        MultivaluedHashMap<String, String> configMap = new MultivaluedHashMap<>();
+        configMap.putSingle(LDAPConstants.AUTH_TYPE, config.getAuthType());
+        configMap.putSingle(LDAPConstants.BIND_DN, config.getBindDn());
+        configMap.putSingle(LDAPConstants.BIND_CREDENTIAL, bindCredential);
+        configMap.add(LDAPConstants.CONNECTION_URL, config.getConnectionUrl());
+        configMap.add(LDAPConstants.USE_TRUSTSTORE_SPI, config.getUseTruststoreSpi());
+        configMap.putSingle(LDAPConstants.CONNECTION_TIMEOUT, config.getConnectionTimeout());
+        configMap.add(LDAPConstants.START_TLS, config.getStartTls());
+        return new LDAPConfig(configMap);
+    }
+
+    public static Set<LDAPOid> queryServerCapabilities(TestLdapConnectionRepresentation config, KeycloakSession session,
+            RealmModel realm) {
+
+        if (! QUERY_SERVER_CAPABILITIES.equals(config.getAction())) {
+            ServicesLogger.LOGGER.unknownAction(config.getAction());
+            return Collections.emptySet();
+        }
+
+        LDAPConfig ldapConfig = buildLDAPConfig(config, realm);
+        return new LDAPIdentityStore(session, ldapConfig).queryServerCapabilities();
+    }
+
+    public static boolean testLDAP(TestLdapConnectionRepresentation config, KeycloakSession session, RealmModel realm) {
+
+        if (!TEST_CONNECTION.equals(config.getAction()) && !TEST_AUTHENTICATION.equals(config.getAction())) {
+            ServicesLogger.LOGGER.unknownAction(config.getAction());
             return false;
         }
 
-
-        // Prepare MultivaluedHashMap so that it is usable in LDAPContext class
-        MultivaluedHashMap<String, String> ldapConfig = new MultivaluedHashMap<>();
-
-        if (connectionUrl == null) {
-            logger.errorf("Unknown connection URL");
-            return false;
-        }
-        ldapConfig.putSingle(LDAPConstants.CONNECTION_URL, connectionUrl);
-        ldapConfig.putSingle(LDAPConstants.USE_TRUSTSTORE_SPI, useTruststoreSpi);
-        ldapConfig.putSingle(LDAPConstants.CONNECTION_TIMEOUT, connectionTimeout);
-        ldapConfig.putSingle(LDAPConstants.START_TLS, tls);
-
-        if (TEST_AUTHENTICATION.equals(action)) {
+        if (TEST_AUTHENTICATION.equals(config.getAction())) {
             // If AUTHENTICATION action is executed add also dn and credentials to configuration
             // LDAPContextManager is responsible for correct order of addition of credentials to context in case
             // tls is true
-
-            if (bindDn == null) {
+            if (config.getBindDn() == null) {
                 logger.error("Unknown bind DN");
                 return false;
             }
-
-            ldapConfig.putSingle(LDAPConstants.AUTH_TYPE, LDAPConstants.AUTH_TYPE_SIMPLE);
-            ldapConfig.putSingle(LDAPConstants.BIND_DN, bindDn);
-            ldapConfig.putSingle(LDAPConstants.BIND_CREDENTIAL, bindCredential);
         } else {
-            ldapConfig.putSingle(LDAPConstants.AUTH_TYPE, LDAPConstants.AUTH_TYPE_NONE);
+            // only test the connection.
+            config.setAuthType(LDAPConstants.AUTH_TYPE_NONE);
         }
 
-        // Create ldapContextManager in try-with-resource so that ldapContext/tlsResponse/VaultSecret is closed/removed when it is not needed anymore
-        try (LDAPContextManager ldapContextManager = LDAPContextManager.create(session, new LDAPConfig(ldapConfig))) {
+        LDAPConfig ldapConfig = buildLDAPConfig(config, realm);
+
+        // Create ldapContextManager in try-with-resource so that ldapContext/tlsResponse/VaultSecret is closed/removed when it
+        // is not needed anymore
+        try (LDAPContextManager ldapContextManager = LDAPContextManager.create(session, ldapConfig)) {
             ldapContextManager.getLdapContext();
 
             // Connection was successful, no exception was raised returning true
             return true;
         } catch (Exception ne) {
-            String errorMessage = (TEST_AUTHENTICATION.equals(action)) ? "Error when authenticating to LDAP: " : "Error when connecting to LDAP: ";
+            String errorMessage = (TEST_AUTHENTICATION.equals(config.getAction())) ? "Error when authenticating to LDAP: "
+                : "Error when connecting to LDAP: ";
             ServicesLogger.LOGGER.errorAuthenticating(ne, errorMessage + ne.getMessage());
             return false;
         }

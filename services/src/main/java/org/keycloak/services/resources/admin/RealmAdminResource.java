@@ -955,9 +955,9 @@ public class RealmAdminResource {
                                        @FormParam("componentId") String componentId, @FormParam("startTls") String startTls) {
         auth.realm().requireManageRealm();
 
-        bindCredential = handleSavedBindCredential(componentId, bindCredential);
-
-        boolean result = LDAPConnectionTestManager.testLDAP(session, action, connectionUrl, bindDn, bindCredential, useTruststoreSpi, connectionTimeout, startTls);
+        TestLdapConnectionRepresentation config = new TestLdapConnectionRepresentation(action, connectionUrl, bindDn, bindCredential, useTruststoreSpi, connectionTimeout, startTls, LDAPConstants.AUTH_TYPE_SIMPLE);
+        config.setComponentId(componentId);
+        boolean result = LDAPConnectionTestManager.testLDAP(config, session, realm);
         return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
     }
 
@@ -970,15 +970,8 @@ public class RealmAdminResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     public Response testLDAPConnection(TestLdapConnectionRepresentation config) {
-        return testLDAPConnection(
-                config.getAction(),
-                config.getConnectionUrl(),
-                config.getBindDn(),
-                config.getBindCredential(),
-                config.getUseTruststoreSpi(),
-                config.getConnectionTimeout(),
-                config.getComponentId(),
-                config.getStartTls());
+        boolean result = LDAPConnectionTestManager.testLDAP(config, session, realm);
+        return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
     }
 
     /**
@@ -987,35 +980,14 @@ public class RealmAdminResource {
      * @return
      */
     @POST
-    @Path("ldap-supported-extensions")
+    @Path("ldap-server-capabilities")
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
     public Response getLDAPSupportedExtensions(TestLdapConnectionRepresentation config) {
-
         auth.realm().requireManageRealm();
-
-        String bindCredential = handleSavedBindCredential(config.getComponentId(), config.getBindCredential());
-
-        // Create Factory Methods for LDAPConfig and LDAPIdentityStore in LDAPConnectionTestManager?
-        MultivaluedHashMap<String, String> map = new MultivaluedHashMap<>();
-        map.add(LDAPConstants.CONNECTION_URL, config.getConnectionUrl());
-        map.add(LDAPConstants.USE_TRUSTSTORE_SPI, config.getUseTruststoreSpi());
-        map.add(LDAPConstants.AUTH_TYPE, LDAPConstants.AUTH_TYPE_SIMPLE);
-        map.add(LDAPConstants.BIND_DN, config.getBindDn());
-        map.add(LDAPConstants.BIND_CREDENTIAL, bindCredential);
-        IdentityStore ldapIdentityStore = new LDAPIdentityStore(session, new LDAPConfig(map));
-
-        Set<LDAPOid> ldapOids = ldapIdentityStore.queryServerCapabilities();
+        Set<LDAPOid> ldapOids = LDAPConnectionTestManager.queryServerCapabilities(config, session, realm);
         return Response.ok().entity(ldapOids).build();
-    }
-
-    private String handleSavedBindCredential(final String componentId, final String bindCredentialParam) {
-        if (componentId != null && ComponentRepresentation.SECRET_VALUE.equals(bindCredentialParam)) {
-            return realm.getComponent(componentId).getConfig().getFirst(LDAPConstants.BIND_CREDENTIAL);
-        } else {
-            return bindCredentialParam;
-        }
     }
 
     /**

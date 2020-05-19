@@ -1673,10 +1673,12 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
             Notifications.error("Error during unlink");
         });
     };
+
     var initConnectionTest = function(testAction, ldapConfig) {
         return {
             action: testAction,
             connectionUrl: ldapConfig.connectionUrl && ldapConfig.connectionUrl[0],
+            authType: ldapConfig.authType && ldapConfig.authType[0],
             bindDn: ldapConfig.bindDn && ldapConfig.bindDn[0],
             bindCredential: ldapConfig.bindCredential && ldapConfig.bindCredential[0],
             useTruststoreSpi: ldapConfig.useTruststoreSpi && ldapConfig.useTruststoreSpi[0],
@@ -1709,8 +1711,8 @@ module.controller('LDAPUserStorageCtrl', function($scope, $location, Notificatio
         const PASSWORD_MODIFY_OID = '1.3.6.1.4.1.4203.1.11.1';
 
         $http.post(
-            `${authUrl}/admin/realms/${realm.realm}/ldap-supported-extensions`,
-            initConnectionTest("getLdapSupportedExtensions", $scope.instance.config)).then(
+            `${authUrl}/admin/realms/${realm.realm}/ldap-server-capabilities`,
+            initConnectionTest("queryServerCapabilities", $scope.instance.config)).then(
             (response) => {
                 Notifications.success("LDAP supported extensions successfully requested.");
                 const ldapOids = response.data;
