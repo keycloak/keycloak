@@ -330,7 +330,9 @@ public class LDAPIdentityStore implements IdentityStore {
                     NamingEnumeration<?> values = attribute.getAll();
                     while (values.hasMoreElements()) {
                         Object o = values.nextElement();
-                        result.add(new LDAPCapability(o, capabilityType));
+                        LDAPCapability capability = new LDAPCapability(o, capabilityType);
+                        logger.info("rootDSE query: " + capability);
+                        result.add(capability);
                     }
                 }
             }

@@ -982,8 +982,12 @@ public class RealmAdminResource {
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
     public Response ldapServerCapabilities(TestLdapConnectionRepresentation config) {
         auth.realm().requireManageRealm();
-        Set<LDAPCapability> ldapOids = LDAPServerCapabilitiesManager.queryServerCapabilities(config, session, realm);
-        return Response.ok().entity(ldapOids).build();
+        try {
+            Set<LDAPCapability> ldapCapabilities = LDAPServerCapabilitiesManager.queryServerCapabilities(config, session, realm);
+            return Response.ok().entity(ldapCapabilities).build();
+        } catch (Exception e) {
+            return ErrorResponse.error("ldapServerCapabilities error", Status.BAD_REQUEST);
+        }
     }
 
     /**

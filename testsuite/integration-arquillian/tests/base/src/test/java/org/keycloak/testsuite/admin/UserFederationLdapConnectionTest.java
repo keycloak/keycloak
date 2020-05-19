@@ -103,13 +103,23 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
 
         // Query the rootDSE success
         TestLdapConnectionRepresentation config = new TestLdapConnectionRepresentation(
-            LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://localhost:10389", "uid=admin,ou=system", "secret",
+            LDAPServerCapabilitiesManager.QUERY_SERVER_CAPABILITIES, "ldap://localhost:10389", "uid=admin,ou=system", "secret",
             "false", null, "false", LDAPConstants.AUTH_TYPE_SIMPLE);
 
         Response response = realm.ldapServerCapabilities(
             config);
 
         assertStatus(response, 200);
+
+        // Query the rootDSE failure
+        config = new TestLdapConnectionRepresentation(
+            LDAPServerCapabilitiesManager.QUERY_SERVER_CAPABILITIES, "ldap://localhost:10389", "foo", "bar",
+            "false", null, "false", LDAPConstants.AUTH_TYPE_SIMPLE);
+
+        response = realm.ldapServerCapabilities(
+            config);
+
+        assertStatus(response, 400);
 
     }
 
