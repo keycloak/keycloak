@@ -69,6 +69,7 @@
         <infinispan.version>9.4.18.Final</infinispan.version>
         <jackson.version>2.10.1</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
+        <jackson.annotations.version>${jackson.databind.version}</jackson.annotations.version>
         <jakarta.mail.version>1.6.4</jakarta.mail.version>
         <jboss.logging.version>3.4.1.Final</jboss.logging.version>
         <jboss.logging.tools.version>2.2.1.Final</jboss.logging.tools.version>
