@@ -116,7 +116,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.storage.UserStorageProviderModel;
-import org.keycloak.storage.ldap.idm.model.LDAPOid;
+import org.keycloak.storage.ldap.idm.model.LDAPCapability;
 import org.keycloak.utils.ReservedCharValidator;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -982,7 +982,7 @@ public class RealmAdminResource {
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
     public Response getLDAPSupportedExtensions(TestLdapConnectionRepresentation config) {
         auth.realm().requireManageRealm();
-        Set<LDAPOid> ldapOids = LDAPServerCapabilitiesManager.queryServerCapabilities(config, session, realm);
+        Set<LDAPCapability> ldapOids = LDAPServerCapabilitiesManager.queryServerCapabilities(config, session, realm);
         return Response.ok().entity(ldapOids).build();
     }
 

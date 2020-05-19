@@ -28,7 +28,7 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.storage.ldap.LDAPConfig;
-import org.keycloak.storage.ldap.idm.model.LDAPOid;
+import org.keycloak.storage.ldap.idm.model.LDAPCapability;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPContextManager;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 
@@ -59,7 +59,7 @@ public class LDAPServerCapabilitiesManager {
         return new LDAPConfig(configMap);
     }
 
-    public static Set<LDAPOid> queryServerCapabilities(TestLdapConnectionRepresentation config, KeycloakSession session,
+    public static Set<LDAPCapability> queryServerCapabilities(TestLdapConnectionRepresentation config, KeycloakSession session,
             RealmModel realm) {
 
         if (! QUERY_SERVER_CAPABILITIES.equals(config.getAction())) {
@@ -82,7 +82,7 @@ public class LDAPServerCapabilitiesManager {
             // If AUTHENTICATION action is executed add also dn and credentials to configuration
             // LDAPContextManager is responsible for correct order of addition of credentials to context in case
             // tls is true
-            if (config.getBindDn() == null) {
+            if (config.getBindDn() == null || config.getBindDn().isEmpty()) {
                 logger.error("Unknown bind DN");
                 return false;
             }

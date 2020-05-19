@@ -23,15 +23,15 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPConfig;
+import org.keycloak.storage.ldap.idm.model.LDAPCapability.CapabilityType;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.storage.ldap.idm.model.LDAPOid;
+import org.keycloak.storage.ldap.idm.model.LDAPCapability;
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
 import org.keycloak.storage.ldap.idm.query.internal.EqualCondition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.store.IdentityStore;
-import org.keycloak.storage.ldap.idm.store.ldap.extended.PasswordModifyRequest;
 import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 
 import javax.naming.AuthenticationException;
@@ -309,8 +309,8 @@ public class LDAPIdentityStore implements IdentityStore {
     }
 
     @Override
-    public Set<LDAPOid> queryServerCapabilities() {
-        Set<LDAPOid> result = new LinkedHashSet<>();
+    public Set<LDAPCapability> queryServerCapabilities() {
+        Set<LDAPCapability> result = new LinkedHashSet<>();
         try {
             List<String> attrs = new ArrayList<>();
             attrs.add("supportedControl");
@@ -326,10 +326,11 @@ public class LDAPIdentityStore implements IdentityStore {
             for (String attr: attrs) {
                 Attribute attribute = attributes.get(attr);
                 if (null != attribute) {
+                    CapabilityType capabilityType = CapabilityType.fromRootDseAttributeName(attr);
                     NamingEnumeration<?> values = attribute.getAll();
                     while (values.hasMoreElements()) {
                         Object o = values.nextElement();
-                        result.add(new LDAPOid(o));
+                        result.add(new LDAPCapability(o, capabilityType));
                     }
                 }
             }

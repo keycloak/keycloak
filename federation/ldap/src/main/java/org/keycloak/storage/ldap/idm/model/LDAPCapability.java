@@ -10,16 +10,39 @@ import java.util.StringJoiner;
  * @author Lars Uffmann, 2020-05-13
  * @since 11.0
  */
-public class LDAPOid {
+public class LDAPCapability {
+
+  public enum CapabilityType {
+    CONTROL,
+    EXTENSION,
+    FEATURE,
+    UNKNOWN;
+
+    public static CapabilityType fromRootDseAttributeName(String attributeName) {
+      switch (attributeName) {
+        case "supportedExtension": return CapabilityType.EXTENSION;
+        case "supportedControl": return CapabilityType.CONTROL;
+        case "supportedFeatures": return CapabilityType.FEATURE;
+        default: return CapabilityType.UNKNOWN;
+      }
+    }
+  };
 
   private final Object oid;
 
-  public LDAPOid(Object oidValue) {
+  private final CapabilityType type;
+
+  public LDAPCapability(Object oidValue, CapabilityType type) {
     this.oid = Objects.requireNonNull(oidValue);
+    this.type = type;
   }
 
   public String getOid() {
     return oid instanceof String ? (String) oid : String.valueOf(oid);
+  }
+
+  public CapabilityType getType() {
+    return type;
   }
 
   @Override
@@ -31,7 +54,7 @@ public class LDAPOid {
       return false;
     }
 
-    LDAPOid ldapOid = (LDAPOid) o;
+    LDAPCapability ldapOid = (LDAPCapability) o;
     return oid.equals(ldapOid.oid);
   }
 
@@ -42,8 +65,9 @@ public class LDAPOid {
 
   @Override
   public String toString() {
-    return new StringJoiner(", ", LDAPOid.class.getSimpleName() + "[", "]")
+    return new StringJoiner(", ", LDAPCapability.class.getSimpleName() + "[", "]")
         .add("oid=" + oid)
+        .add("type=" + type)
         .toString();
   }
 }
