@@ -246,7 +246,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
                      UserModel imported = importUserFromLDAP(session, realm, ldapUser);
                      searchResults.add(imported);
                  } else {
-                     searchResults.add(proxy(realm, localUser, ldapUser));
+                     searchResults.add(proxy(realm, localUser, ldapUser, false));
                  }
              }
 
