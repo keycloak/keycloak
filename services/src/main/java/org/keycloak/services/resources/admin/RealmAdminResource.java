@@ -58,7 +58,6 @@ import org.keycloak.authentication.CredentialRegistrator;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Event;
@@ -109,7 +108,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.LDAPConnectionTestManager;
+import org.keycloak.services.managers.LDAPServerCapabilitiesManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.UserStorageSyncManager;
@@ -117,10 +116,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.storage.UserStorageProviderModel;
-import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.idm.model.LDAPOid;
-import org.keycloak.storage.ldap.idm.store.IdentityStore;
-import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.utils.ReservedCharValidator;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -957,7 +953,7 @@ public class RealmAdminResource {
 
         TestLdapConnectionRepresentation config = new TestLdapConnectionRepresentation(action, connectionUrl, bindDn, bindCredential, useTruststoreSpi, connectionTimeout, startTls, LDAPConstants.AUTH_TYPE_SIMPLE);
         config.setComponentId(componentId);
-        boolean result = LDAPConnectionTestManager.testLDAP(config, session, realm);
+        boolean result = LDAPServerCapabilitiesManager.testLDAP(config, session, realm);
         return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
     }
 
@@ -970,7 +966,7 @@ public class RealmAdminResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     public Response testLDAPConnection(TestLdapConnectionRepresentation config) {
-        boolean result = LDAPConnectionTestManager.testLDAP(config, session, realm);
+        boolean result = LDAPServerCapabilitiesManager.testLDAP(config, session, realm);
         return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
     }
 
@@ -986,7 +982,7 @@ public class RealmAdminResource {
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
     public Response getLDAPSupportedExtensions(TestLdapConnectionRepresentation config) {
         auth.realm().requireManageRealm();
-        Set<LDAPOid> ldapOids = LDAPConnectionTestManager.queryServerCapabilities(config, session, realm);
+        Set<LDAPOid> ldapOids = LDAPServerCapabilitiesManager.queryServerCapabilities(config, session, realm);
         return Response.ok().entity(ldapOids).build();
     }
 

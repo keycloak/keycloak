@@ -35,9 +35,9 @@ import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class LDAPConnectionTestManager {
+public class LDAPServerCapabilitiesManager {
 
-    private static final Logger logger = Logger.getLogger(LDAPConnectionTestManager.class);
+    private static final Logger logger = Logger.getLogger(LDAPServerCapabilitiesManager.class);
 
     public static final String TEST_CONNECTION = "testConnection";
     public static final String TEST_AUTHENTICATION = "testAuthentication";
