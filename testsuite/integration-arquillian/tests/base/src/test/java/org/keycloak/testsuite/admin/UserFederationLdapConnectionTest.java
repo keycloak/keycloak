@@ -17,15 +17,21 @@
 
 package org.keycloak.testsuite.admin;
 
+import java.util.List;
+
+import org.hamcrest.Matchers;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 import org.keycloak.services.managers.LDAPServerCapabilitiesManager;
+import org.keycloak.storage.ldap.idm.store.ldap.extended.PasswordModifyRequest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.util.LDAPRule;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
@@ -106,21 +112,20 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
             LDAPServerCapabilitiesManager.QUERY_SERVER_CAPABILITIES, "ldap://localhost:10389", "uid=admin,ou=system", "secret",
             "false", null, "false", LDAPConstants.AUTH_TYPE_SIMPLE);
 
-        Response response = realm.ldapServerCapabilities(
-            config);
-
-        assertStatus(response, 200);
+        List<LDAPCapabilityRepresentation> ldapCapabilities = realm.ldapServerCapabilities(config);
+        Assert.assertThat(ldapCapabilities, Matchers.hasItem(new LDAPCapabilityRepresentation(PasswordModifyRequest.PASSWORD_MODIFY_OID, LDAPCapabilityRepresentation.CapabilityType.EXTENSION)));
 
         // Query the rootDSE failure
-        config = new TestLdapConnectionRepresentation(
-            LDAPServerCapabilitiesManager.QUERY_SERVER_CAPABILITIES, "ldap://localhost:10389", "foo", "bar",
-            "false", null, "false", LDAPConstants.AUTH_TYPE_SIMPLE);
+        try {
+            config = new TestLdapConnectionRepresentation(
+                    LDAPServerCapabilitiesManager.QUERY_SERVER_CAPABILITIES, "ldap://localhost:10389", "foo", "bar",
+                    "false", null, "false", LDAPConstants.AUTH_TYPE_SIMPLE);
+            realm.ldapServerCapabilities(config);
 
-        response = realm.ldapServerCapabilities(
-            config);
-
-        assertStatus(response, 400);
-
+            Assert.fail("It wasn't expected to successfully sent the request for query capabilities");
+        } catch (BadRequestException bre) {
+            // Expected
+        }
     }
 
     private void assertStatus(Response response, int status) {

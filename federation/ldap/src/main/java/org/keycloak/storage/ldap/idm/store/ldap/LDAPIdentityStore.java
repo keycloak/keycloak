@@ -23,10 +23,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPConfig;
-import org.keycloak.storage.ldap.idm.model.LDAPCapability.CapabilityType;
+import org.keycloak.representations.idm.LDAPCapabilityRepresentation.CapabilityType;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.storage.ldap.idm.model.LDAPCapability;
+import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
 import org.keycloak.storage.ldap.idm.query.internal.EqualCondition;
@@ -309,8 +309,8 @@ public class LDAPIdentityStore implements IdentityStore {
     }
 
     @Override
-    public Set<LDAPCapability> queryServerCapabilities() {
-        Set<LDAPCapability> result = new LinkedHashSet<>();
+    public Set<LDAPCapabilityRepresentation> queryServerCapabilities() {
+        Set<LDAPCapabilityRepresentation> result = new LinkedHashSet<>();
         try {
             List<String> attrs = new ArrayList<>();
             attrs.add("supportedControl");
@@ -330,7 +330,7 @@ public class LDAPIdentityStore implements IdentityStore {
                     NamingEnumeration<?> values = attribute.getAll();
                     while (values.hasMoreElements()) {
                         Object o = values.nextElement();
-                        LDAPCapability capability = new LDAPCapability(o, capabilityType);
+                        LDAPCapabilityRepresentation capability = new LDAPCapabilityRepresentation(o, capabilityType);
                         logger.info("rootDSE query: " + capability);
                         result.add(capability);
                     }

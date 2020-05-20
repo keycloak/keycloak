@@ -116,7 +116,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.storage.UserStorageProviderModel;
-import org.keycloak.storage.ldap.idm.model.LDAPCapability;
+import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.utils.ReservedCharValidator;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -983,7 +983,7 @@ public class RealmAdminResource {
     public Response ldapServerCapabilities(TestLdapConnectionRepresentation config) {
         auth.realm().requireManageRealm();
         try {
-            Set<LDAPCapability> ldapCapabilities = LDAPServerCapabilitiesManager.queryServerCapabilities(config, session, realm);
+            Set<LDAPCapabilityRepresentation> ldapCapabilities = LDAPServerCapabilitiesManager.queryServerCapabilities(config, session, realm);
             return Response.ok().entity(ldapCapabilities).build();
         } catch (Exception e) {
             return ErrorResponse.error("ldapServerCapabilities error", Status.BAD_REQUEST);

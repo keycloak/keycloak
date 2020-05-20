@@ -28,7 +28,7 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.storage.ldap.LDAPConfig;
-import org.keycloak.storage.ldap.idm.model.LDAPCapability;
+import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPContextManager;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 
@@ -59,8 +59,8 @@ public class LDAPServerCapabilitiesManager {
         return new LDAPConfig(configMap);
     }
 
-    public static Set<LDAPCapability> queryServerCapabilities(TestLdapConnectionRepresentation config, KeycloakSession session,
-            RealmModel realm) {
+    public static Set<LDAPCapabilityRepresentation> queryServerCapabilities(TestLdapConnectionRepresentation config, KeycloakSession session,
+                                                                            RealmModel realm) {
 
         if (! QUERY_SERVER_CAPABILITIES.equals(config.getAction())) {
             ServicesLogger.LOGGER.unknownAction(config.getAction());
