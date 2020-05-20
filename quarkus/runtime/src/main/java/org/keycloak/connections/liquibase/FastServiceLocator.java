@@ -13,6 +13,9 @@ import liquibase.database.Database;
 import liquibase.logging.Logger;
 import liquibase.servicelocator.DefaultPackageScanClassResolver;
 import liquibase.servicelocator.ServiceLocator;
+import org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase;
+import org.keycloak.connections.jpa.updater.liquibase.UpdatedMariaDBDatabase;
+import org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase;
 
 public class FastServiceLocator extends ServiceLocator {
 

@@ -75,52 +75,50 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
     protected void baseLiquibaseInitialization(KeycloakSession session) {
         resourceAccessor = new ClassLoaderResourceAccessor(getClass().getClassLoader());
         FastServiceLocator locator = (FastServiceLocator) ServiceLocator.getInstance();
-
         JpaConnectionProviderFactory jpaConnectionProvider = (JpaConnectionProviderFactory) session
                 .getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
+
+        // register our custom databases
+        locator.register(new PostgresPlusDatabase());
+        locator.register(new UpdatedMySqlDatabase());
+        locator.register(new UpdatedMariaDBDatabase());
 
         // registers only the database we are using
         try (Connection connection = jpaConnectionProvider.getConnection()) {
             Database database = DatabaseFactory.getInstance()
                     .findCorrectDatabaseImplementation(new JdbcConnection(connection));
-            DatabaseFactory.getInstance().clearRegistry();
-            if (database.getDatabaseProductName().equals(PostgresDatabase.PRODUCT_NAME)) {
-                // Adding PostgresPlus support to liquibase
-                locator.register(new PostgresPlusDatabase());
-            } else if (database.getDatabaseProductName().equals(MySQLDatabase.PRODUCT_NAME)) {
-                // Adding newer version of MySQL/MariaDB support to liquibase
-                locator.register(new UpdatedMySqlDatabase());
+            if (database.getDatabaseProductName().equals(MySQLDatabase.PRODUCT_NAME)) {
                 // Adding CustomVarcharType for MySQL 8 and newer
                 DataTypeFactory.getInstance().register(MySQL8VarcharType.class);
             } else if (database.getDatabaseProductName().equals(MariaDBDatabase.PRODUCT_NAME)) {
-                locator.register(new UpdatedMariaDBDatabase());
                 // Adding CustomVarcharType for MySQL 8 and newer
                 DataTypeFactory.getInstance().register(MySQL8VarcharType.class);
-            } else {
-                locator.register(database);
             }
 
-            // disables XML validation
-            for (ChangeLogParser parser : ChangeLogParserFactory.getInstance().getParsers()) {
-                if (parser instanceof XMLChangeLogSAXParser) {
-                    Method getSaxParserFactory = null;
-                    try {
-                        getSaxParserFactory = XMLChangeLogSAXParser.class.getDeclaredMethod("getSaxParserFactory");
-                        getSaxParserFactory.setAccessible(true);
-                        SAXParserFactory saxParserFactory = (SAXParserFactory) getSaxParserFactory.invoke(parser);
-                        saxParserFactory.setValidating(false);
-                        saxParserFactory.setSchema(null);
-                    } catch (Exception e) {
-                        logger.warnf("Failed to disable liquibase XML validations");
-                    } finally {
-                        if (getSaxParserFactory != null) {
-                            getSaxParserFactory.setAccessible(false);
-                        }
+            DatabaseFactory.getInstance().clearRegistry();
+            locator.register(database);
+        } catch (Exception cause) {
+            throw new RuntimeException("Failed to configure Liquibase database", cause);
+        }
+
+        // disables XML validation
+        for (ChangeLogParser parser : ChangeLogParserFactory.getInstance().getParsers()) {
+            if (parser instanceof XMLChangeLogSAXParser) {
+                Method getSaxParserFactory = null;
+                try {
+                    getSaxParserFactory = XMLChangeLogSAXParser.class.getDeclaredMethod("getSaxParserFactory");
+                    getSaxParserFactory.setAccessible(true);
+                    SAXParserFactory saxParserFactory = (SAXParserFactory) getSaxParserFactory.invoke(parser);
+                    saxParserFactory.setValidating(false);
+                    saxParserFactory.setSchema(null);
+                } catch (Exception e) {
+                    logger.warnf("Failed to disable liquibase XML validations");
+                } finally {
+                    if (getSaxParserFactory != null) {
+                        getSaxParserFactory.setAccessible(false);
                     }
                 }
             }
-        } catch (Exception cause) {
-            throw new RuntimeException("Failed to configure Liquibase database", cause);
         }
     }
 
