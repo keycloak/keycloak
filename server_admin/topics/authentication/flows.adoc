@@ -55,7 +55,7 @@ This is better described in an example.  Let's walk through the `browser` authen
 . The next execution is a sub-flow called `Forms`.  Since this sub-flow is marked as _alternative_ it will not be executed if the `Cookie` authentication type passed.
   This sub-flow contains additional authentication type that needs to be executed.
   The executions for this sub-flow are loaded and the same processing logic occurs.
-. The first execution in the Forms sub-flow is the Username Password Form.  This authentication type renders the username and password page.
+. The first execution in the Forms sub-flow is the `Username Password Form`.  This authentication type renders the username and password page.
   It is marked as _required_ so the user must enter in a valid username and password.
 . The second execution in the Forms sub-flow is a new sub-flow: the `Browser - Conditional OTP` sub-flow. Since this sub-flow is _conditional_, whether it is executed depends on the result of the
   evaluation of the `Condition - User Configured` execution. If it is, the executions for this sub-flow are loaded and the same processing logic occurs
@@ -88,7 +88,7 @@ Alias::
 Description::
   The description you can set to the flow.
 Top Level Flow Type::
-  The type of flow. the type `client` is used only for the authentication of clients (applications). For all other cases choose `generic`.
+  The type of flow. The type `client` is used only for the authentication of clients (applications). For all other cases choose `generic`.
 
 Once the flow is created, in addition to the `New` and `Copy` buttons, you now have, `Delete`, `Add execution` and `Add flow`.
 
@@ -107,7 +107,7 @@ image:{project_images}/Create-authentication-execution.png[]
 These can be divided into _automatic executions_ and _interactive executions_. _Automatic executions_ are similar to the `Cookie` execution, and will automatically
 perform their action when they are encountered in the flow. _Interactive executions_ will halt the flow, usually to get some user input. Executions that execute
 successfully will get the _success_ status. This is important, because this is part of whether a flow is successful or not. For example, an empty `Browser` flow
-would not allow anyone to log in. For that it would need at least one execution that successfully evaluates, for example a `Username Password Form` that is corrected
+would not allow anyone to log in. For that it would need at least one execution that successfully evaluates, for example a `Username Password Form` that is correctly
 filled and submitted.
 
 Sub-flows can be added in top level flow with the `Add flow` button, which opens a `Create Execution Flow` page that is very similar to the `Create Top Level Form`
