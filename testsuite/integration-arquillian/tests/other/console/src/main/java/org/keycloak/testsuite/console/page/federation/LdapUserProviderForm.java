@@ -60,6 +60,9 @@ public class LdapUserProviderForm extends Form {
     @FindBy(id = "searchScope")
     private Select searchScopeSelect;
 
+    @FindBy(id = "kerberosIntegrationHeader")
+    private WebElement kerberosIntegrationHeader;
+
     @FindBy(id = "kerberosRealm")
     private WebElement kerberosRealmInput;
 
@@ -123,7 +126,7 @@ public class LdapUserProviderForm extends Form {
     @FindBy(xpath = ".//div[contains(@class,'onoffswitch') and ./input[@id='changedSyncEnabled']]")
     private OnOffSwitch periodicChangedUsersSync;
 
-    @FindByJQuery("a:contains('Connection Pooling Settings')")
+    @FindBy(id = "connectionPoolSettingsHeader")
     private WebElement connectionPoolingSettingsButton;
 
     @FindBy(id = "connectionPoolingAuthentication")
@@ -189,6 +192,16 @@ public class LdapUserProviderForm extends Form {
 
     public void setCustomUserSearchFilter(String customUserSearchFilter) {
         UIUtils.setTextInputValue(customUserSearchFilterInput, customUserSearchFilter);
+    }
+
+    public void uncollapseKerberosIntegrationHeader() {
+        if (UIUtils.isElementVisible(kerberosRealmInput)) {
+            // Already collapsed
+            return;
+        }
+
+        kerberosIntegrationHeader.click();
+        waitUntilElement(By.id("kerberosRealm")).is().present();
     }
 
     public void setKerberosRealmInput(String kerberosRealm) {

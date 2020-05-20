@@ -16,21 +16,49 @@
  */
 package org.keycloak.services.resources.admin;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import static org.keycloak.models.utils.StripSecretsUtils.stripForExport;
+import static org.keycloak.util.JsonSerialization.readValue;
+
+import java.security.cert.X509Certificate;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
 import org.keycloak.KeyPairVerifier;
 import org.keycloak.authentication.CredentialRegistrator;
-import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
-import org.keycloak.credential.CredentialProvider;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
@@ -45,7 +73,18 @@ import org.keycloak.exportimport.ClientDescriptionConverterFactory;
 import org.keycloak.exportimport.util.ExportOptions;
 import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.keys.PublicKeyStorageProvider;
-import org.keycloak.models.*;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -69,7 +108,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.LDAPConnectionTestManager;
+import org.keycloak.services.managers.LDAPServerCapabilitiesManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.managers.UserStorageSyncManager;
@@ -77,36 +116,10 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.storage.UserStorageProviderModel;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import java.security.cert.X509Certificate;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import static org.keycloak.models.utils.StripSecretsUtils.stripForExport;
-import static org.keycloak.util.JsonSerialization.readValue;
+import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.utils.ReservedCharValidator;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
  * Base resource class for the admin REST api of one realm
@@ -938,11 +951,9 @@ public class RealmAdminResource {
                                        @FormParam("componentId") String componentId, @FormParam("startTls") String startTls) {
         auth.realm().requireManageRealm();
 
-        if (componentId != null && bindCredential.equals(ComponentRepresentation.SECRET_VALUE)) {
-            bindCredential = realm.getComponent(componentId).getConfig().getFirst(LDAPConstants.BIND_CREDENTIAL);
-        }
-
-        boolean result = LDAPConnectionTestManager.testLDAP(session, action, connectionUrl, bindDn, bindCredential, useTruststoreSpi, connectionTimeout, startTls);
+        TestLdapConnectionRepresentation config = new TestLdapConnectionRepresentation(action, connectionUrl, bindDn, bindCredential, useTruststoreSpi, connectionTimeout, startTls, LDAPConstants.AUTH_TYPE_SIMPLE);
+        config.setComponentId(componentId);
+        boolean result = LDAPServerCapabilitiesManager.testLDAP(config, session, realm);
         return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
     }
 
@@ -955,15 +966,28 @@ public class RealmAdminResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     public Response testLDAPConnection(TestLdapConnectionRepresentation config) {
-        return testLDAPConnection(
-                config.getAction(),
-                config.getConnectionUrl(),
-                config.getBindDn(),
-                config.getBindCredential(),
-                config.getUseTruststoreSpi(),
-                config.getConnectionTimeout(),
-                config.getComponentId(),
-                config.getStartTls());
+        boolean result = LDAPServerCapabilitiesManager.testLDAP(config, session, realm);
+        return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
+    }
+
+    /**
+     * Get LDAP supported extensions.
+     * @param config LDAP configuration
+     * @return
+     */
+    @POST
+    @Path("ldap-server-capabilities")
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
+    public Response ldapServerCapabilities(TestLdapConnectionRepresentation config) {
+        auth.realm().requireManageRealm();
+        try {
+            Set<LDAPCapabilityRepresentation> ldapCapabilities = LDAPServerCapabilitiesManager.queryServerCapabilities(config, session, realm);
+            return Response.ok().entity(ldapCapabilities).build();
+        } catch (Exception e) {
+            return ErrorResponse.error("ldapServerCapabilities error", Status.BAD_REQUEST);
+        }
     }
 
     /**

@@ -23,8 +23,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPConfig;
+import org.keycloak.representations.idm.LDAPCapabilityRepresentation.CapabilityType;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.EscapeStrategy;
 import org.keycloak.storage.ldap.idm.query.internal.EqualCondition;
@@ -306,6 +308,40 @@ public class LDAPIdentityStore implements IdentityStore {
         return resultCount;
     }
 
+    @Override
+    public Set<LDAPCapabilityRepresentation> queryServerCapabilities() {
+        Set<LDAPCapabilityRepresentation> result = new LinkedHashSet<>();
+        try {
+            List<String> attrs = new ArrayList<>();
+            attrs.add("supportedControl");
+            attrs.add("supportedExtension");
+            attrs.add("supportedFeatures");
+            List<SearchResult> searchResults = operationManager
+                .search("", "(objectClass=*)", Collections.unmodifiableCollection(attrs), SearchControls.OBJECT_SCOPE);
+            if (searchResults.size() != 1) {
+                throw new ModelException("Could not query root DSE: unexpected result size");
+            }
+            SearchResult rootDse = searchResults.get(0);
+            Attributes attributes = rootDse.getAttributes();
+            for (String attr: attrs) {
+                Attribute attribute = attributes.get(attr);
+                if (null != attribute) {
+                    CapabilityType capabilityType = CapabilityType.fromRootDseAttributeName(attr);
+                    NamingEnumeration<?> values = attribute.getAll();
+                    while (values.hasMoreElements()) {
+                        Object o = values.nextElement();
+                        LDAPCapabilityRepresentation capability = new LDAPCapabilityRepresentation(o, capabilityType);
+                        logger.info("rootDSE query: " + capability);
+                        result.add(capability);
+                    }
+                }
+            }
+            return result;
+        } catch (NamingException e) {
+            throw new ModelException("Failed to query root DSE: " + e.getMessage(), e);
+        }
+    }
+
     // *************** CREDENTIALS AND USER SPECIFIC STUFF
 
     @Override
@@ -329,23 +365,24 @@ public class LDAPIdentityStore implements IdentityStore {
 
         if (getConfig().isActiveDirectory()) {
             updateADPassword(userDN, password, passwordUpdateDecorator);
-        } else {
-            ModificationItem[] mods = new ModificationItem[1];
+            return;
+        }
 
-            try {
+        try {
+            if (config.useExtendedPasswordModifyOp()) {
+                operationManager.passwordModifyExtended(userDN, password, passwordUpdateDecorator);
+            } else {
+                ModificationItem[] mods = new ModificationItem[1];
                 BasicAttribute mod0 = new BasicAttribute(LDAPConstants.USER_PASSWORD_ATTRIBUTE, password);
-
                 mods[0] = new ModificationItem(DirContext.REPLACE_ATTRIBUTE, mod0);
-
                 operationManager.modifyAttributes(userDN, mods, passwordUpdateDecorator);
-            } catch (ModelException me) {
-                throw me;
-            } catch (Exception e) {
-                throw new ModelException("Error updating password.", e);
             }
+        } catch (ModelException me) {
+            throw me;
+        } catch (Exception e) {
+            throw new ModelException("Error updating password.", e);
         }
     }
-
 
     private void updateADPassword(String userDN, String password, LDAPOperationDecorator passwordUpdateDecorator) {
         try {

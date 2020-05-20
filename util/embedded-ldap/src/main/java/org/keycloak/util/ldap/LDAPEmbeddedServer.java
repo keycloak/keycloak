@@ -22,6 +22,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.text.StrSubstitutor;
 import org.apache.directory.api.ldap.model.entry.DefaultEntry;
 import org.apache.directory.api.ldap.model.exception.LdapEntryAlreadyExistsException;
+import org.apache.directory.api.ldap.model.exception.LdapException;
 import org.apache.directory.api.ldap.model.ldif.LdifEntry;
 import org.apache.directory.api.ldap.model.ldif.LdifReader;
 import org.apache.directory.api.ldap.model.schema.SchemaManager;
@@ -33,6 +34,7 @@ import org.apache.directory.server.core.factory.DefaultDirectoryServiceFactory;
 import org.apache.directory.server.core.factory.JdbmPartitionFactory;
 import org.apache.directory.server.core.normalization.NormalizationInterceptor;
 import org.apache.directory.server.ldap.LdapServer;
+import org.apache.directory.server.ldap.handlers.extended.PwdModifyHandler;
 import org.apache.directory.server.protocol.shared.transport.TcpTransport;
 import org.apache.directory.server.protocol.shared.transport.Transport;
 import org.jboss.logging.Logger;
@@ -254,6 +256,13 @@ public class LDAPEmbeddedServer {
 
         // Associate the DS to this LdapServer
         ldapServer.setDirectoryService( directoryService );
+
+        // Support for extended password modify as described in https://tools.ietf.org/html/rfc3062
+        try {
+            ldapServer.addExtendedOperationHandler(new PwdModifyHandler());
+        } catch (LdapException le) {
+            throw new IllegalStateException("It wasn't possible to add PwdModifyHandler");
+        }
 
         // Propagate the anonymous flag to the DS
         directoryService.setAllowAnonymousAccess(false);
