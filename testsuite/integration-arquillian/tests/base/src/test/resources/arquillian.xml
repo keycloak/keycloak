@@ -37,6 +37,7 @@
         <property name="firefoxLogLevel">OFF</property>
         <property name="firefoxLegacy">${firefoxLegacyDriver}</property>
         <property name="firefoxDriverVersion">${firefoxDriverVersion}</property>
+        <property name="firefoxUserPreferences">${firefoxUserPreferences}</property>
 
         <!-- chrome -->
         <property name="chromeBinary">${chromeBinary}</property>
@@ -86,6 +87,7 @@
         <property name="firefoxLogLevel">OFF</property>
         <property name="firefoxLegacy">${firefoxLegacyDriver}</property>
         <property name="firefoxDriverVersion">${firefoxDriverVersion}</property>
+        <property name="firefoxUserPreferences">${firefoxUserPreferences}</property>
 
         <!-- chrome -->
         <property name="chromeBinary">${chromeBinary}</property>

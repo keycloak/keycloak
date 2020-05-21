@@ -165,6 +165,7 @@
         <firefox_binary/> <!-- the path is set automatically based on the OS -->
         <firefoxLegacyDriver>false</firefoxLegacyDriver>
         <firefoxDriverVersion/>
+        <firefoxUserPreferences/>
         <chromeBinary/>
         <chromeArguments/>
         <chromeDriverVersion/>
@@ -520,6 +521,7 @@
 
                             <firefoxLegacyDriver>${firefoxLegacyDriver}</firefoxLegacyDriver>
                             <firefoxDriverVersion>${firefoxDriverVersion}</firefoxDriverVersion>
+                            <firefoxUserPreferences>${firefoxUserPreferences}</firefoxUserPreferences>
 
                             <appium.platformName>${appium.platformName}</appium.platformName>
                             <appium.deviceName>${appium.deviceName}</appium.deviceName>
