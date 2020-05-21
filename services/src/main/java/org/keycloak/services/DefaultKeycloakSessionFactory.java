@@ -34,6 +34,7 @@ import org.keycloak.provider.Spi;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.theme.DefaultThemeManagerFactory;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -48,12 +49,12 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
 
     private static final Logger logger = Logger.getLogger(DefaultKeycloakSessionFactory.class);
 
-    private Set<Spi> spis = new HashSet<>();
-    private Map<Class<? extends Provider>, String> provider = new HashMap<>();
-    private volatile Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoriesMap = new HashMap<>();
+    protected Set<Spi> spis = new HashSet<>();
+    protected Map<Class<? extends Provider>, String> provider = new HashMap<>();
+    protected volatile Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoriesMap = new HashMap<>();
     protected CopyOnWriteArrayList<ProviderEventListener> listeners = new CopyOnWriteArrayList<>();
 
-    private DefaultThemeManagerFactory themeManagerFactory;
+    private final DefaultThemeManagerFactory themeManagerFactory = new DefaultThemeManagerFactory();
 
     // TODO: Likely should be changed to int and use Time.currentTime() to be compatible with all our "time" reps
     protected long serverStartupTimestamp;
@@ -105,8 +106,6 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
         }
 
         AdminPermissions.registerListener(this);
-
-        themeManagerFactory = new DefaultThemeManagerFactory();
     }
 
     protected Map<Class<? extends Provider>, Map<String, ProviderFactory>> getFactoriesCopy() {
@@ -265,7 +264,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
         return factoryMap;
     }
 
-    private boolean isEnabled(ProviderFactory factory, Config.Scope scope) {
+    protected boolean isEnabled(ProviderFactory factory, Config.Scope scope) {
         if (!scope.getBoolean("enabled", true)) {
             return false;
         }
@@ -309,8 +308,8 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
 
     @Override
     public List<ProviderFactory> getProviderFactories(Class<? extends Provider> clazz) {
+        if (factoriesMap == null) return Collections.emptyList();
         List<ProviderFactory> list = new LinkedList<ProviderFactory>();
-        if (factoriesMap == null) return list;
         Map<String, ProviderFactory> providerFactoryMap = factoriesMap.get(clazz);
         if (providerFactoryMap == null) return list;
         list.addAll(providerFactoryMap.values());
@@ -318,8 +317,12 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
     }
 
     <T extends Provider> Set<String> getAllProviderIds(Class<T> clazz) {
-        Set<String> ids = new HashSet<String>();
-        for (ProviderFactory f : factoriesMap.get(clazz).values()) {
+        Map<String, ProviderFactory> factoryMap = factoriesMap.get(clazz);
+        if (factoryMap == null) {
+            return Collections.emptySet();
+        }
+        Set<String> ids = new HashSet<>();
+        for (ProviderFactory f : factoryMap.values()) {
             ids.add(f.getId());
         }
         return ids;
@@ -343,7 +346,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
         }
     }
 
-    private boolean isInternal(ProviderFactory<?> factory) {
+    protected boolean isInternal(ProviderFactory<?> factory) {
         String packageName = factory.getClass().getPackage().getName();
         return packageName.startsWith("org.keycloak") && !packageName.startsWith("org.keycloak.examples");
     }

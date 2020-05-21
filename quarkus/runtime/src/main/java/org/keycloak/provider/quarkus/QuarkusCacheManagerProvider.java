@@ -49,7 +49,7 @@ public final class QuarkusCacheManagerProvider implements ManagedCacheManagerPro
                 configureTransportStack(config, builder);
             }
 
-            return (C) new DefaultCacheManager(builder, true);
+            return (C) new DefaultCacheManager(builder, false);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
