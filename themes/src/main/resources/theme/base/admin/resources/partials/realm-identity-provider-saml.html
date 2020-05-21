@@ -256,7 +256,7 @@
             <div class="form-group clearfix" data-ng-show="identityProvider.config.validateSignature == 'true'">
                 <label class="col-md-2 control-label" for="signingCertificate">{{:: 'validating-x509-certificate' | translate}}</label>
                 <div class="col-md-6">
-                    <textarea class="form-control" id="signingCertificate" ng-model="identityProvider.config.signingCertificate"/>
+                    <textarea class="form-control" id="signingCertificate" ng-model="identityProvider.config.signingCertificate"></textarea>
                 </div>
                 <kc-tooltip>{{:: 'validating-x509-certificate.tooltip' | translate}}</kc-tooltip>
             </div>

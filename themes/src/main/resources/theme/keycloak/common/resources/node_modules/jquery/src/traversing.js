@@ -1,5 +1,6 @@
 define( [
 	"./core",
+	"./var/getProto",
 	"./var/indexOf",
 	"./traversing/var/dir",
 	"./traversing/var/siblings",
@@ -9,7 +10,7 @@ define( [
 	"./core/init",
 	"./traversing/findFilter",
 	"./selector"
-], function( jQuery, indexOf, dir, siblings, rneedsContext, nodeName ) {
+], function( jQuery, getProto, indexOf, dir, siblings, rneedsContext, nodeName ) {
 
 "use strict";
 
@@ -117,7 +118,7 @@ jQuery.each( {
 	parents: function( elem ) {
 		return dir( elem, "parentNode" );
 	},
-	parentsUntil: function( elem, i, until ) {
+	parentsUntil: function( elem, _i, until ) {
 		return dir( elem, "parentNode", until );
 	},
 	next: function( elem ) {
@@ -132,10 +133,10 @@ jQuery.each( {
 	prevAll: function( elem ) {
 		return dir( elem, "previousSibling" );
 	},
-	nextUntil: function( elem, i, until ) {
+	nextUntil: function( elem, _i, until ) {
 		return dir( elem, "nextSibling", until );
 	},
-	prevUntil: function( elem, i, until ) {
+	prevUntil: function( elem, _i, until ) {
 		return dir( elem, "previousSibling", until );
 	},
 	siblings: function( elem ) {
@@ -145,7 +146,13 @@ jQuery.each( {
 		return siblings( elem.firstChild );
 	},
 	contents: function( elem ) {
-		if ( typeof elem.contentDocument !== "undefined" ) {
+		if ( elem.contentDocument != null &&
+
+			// Support: IE 11+
+			// <object> elements with no `data` attribute has an object
+			// `contentDocument` with a `null` prototype.
+			getProto( elem.contentDocument ) ) {
+
 			return elem.contentDocument;
 		}
 
