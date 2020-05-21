@@ -276,7 +276,7 @@
                 <div class="form-group clearfix" data-ng-hide="identityProvider.config.useJwksUrl == 'true'">
                     <label class="col-md-2 control-label" for="publicKeySignatureVerifierKey">{{:: 'validating-public-key' | translate}}</label>
                     <div class="col-md-6">
-                        <textarea class="form-control" id="publicKeySignatureVerifier" ng-model="identityProvider.config.publicKeySignatureVerifier"/>
+                        <textarea class="form-control" id="publicKeySignatureVerifier" ng-model="identityProvider.config.publicKeySignatureVerifier"></textarea>
                     </div>
                     <kc-tooltip>{{:: 'identity-provider.validating-public-key.tooltip' | translate}}</kc-tooltip>
                 </div>
