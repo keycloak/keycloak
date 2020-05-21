@@ -2,14 +2,18 @@ package org.keycloak.runtime;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import org.keycloak.QuarkusKeycloakSessionFactory;
+import org.keycloak.connections.liquibase.FastServiceLocator;
+import org.keycloak.connections.liquibase.KeycloakLogger;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
 import io.quarkus.agroal.runtime.DataSourceSupport;
 import io.quarkus.arc.runtime.BeanContainer;
 import io.quarkus.arc.runtime.BeanContainerListener;
 import io.quarkus.datasource.common.runtime.DataSourceUtil;
-import org.keycloak.connections.liquibase.FastServiceLocator;
-import org.keycloak.connections.liquibase.KeycloakLogger;
-
 import io.quarkus.runtime.annotations.Recorder;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
@@ -54,6 +58,15 @@ public class KeycloakRecorder {
                 DataSourceSupport instance = container.instance(DataSourceSupport.class);
                 DataSourceSupport.Entry entry = instance.entries.get(DataSourceUtil.DEFAULT_DATASOURCE_NAME);
                 entry.resolvedDriverClass = driver;
+            }
+        };
+    }
+
+    public BeanContainerListener configSessionFactory(Map<Spi, Set<Class<? extends ProviderFactory>>> factories) {
+        return new BeanContainerListener() {
+            @Override
+            public void created(BeanContainer container) {
+                QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories));
             }
         };
     }

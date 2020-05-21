@@ -75,6 +75,7 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
     protected void baseLiquibaseInitialization(KeycloakSession session) {
         resourceAccessor = new ClassLoaderResourceAccessor(getClass().getClassLoader());
         FastServiceLocator locator = (FastServiceLocator) ServiceLocator.getInstance();
+
         JpaConnectionProviderFactory jpaConnectionProvider = (JpaConnectionProviderFactory) session
                 .getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
 
@@ -82,7 +83,7 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
         locator.register(new PostgresPlusDatabase());
         locator.register(new UpdatedMySqlDatabase());
         locator.register(new UpdatedMariaDBDatabase());
-
+        
         // registers only the database we are using
         try (Connection connection = jpaConnectionProvider.getConnection()) {
             Database database = DatabaseFactory.getInstance()

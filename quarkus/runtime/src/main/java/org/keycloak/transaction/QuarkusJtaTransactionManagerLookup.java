@@ -18,30 +18,36 @@
 package org.keycloak.transaction;
 
 import javax.enterprise.inject.spi.CDI;
+import javax.transaction.TransactionManager;
+
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSessionFactory;
-
-import javax.transaction.TransactionManager;
 
 public class QuarkusJtaTransactionManagerLookup implements JtaTransactionManagerLookup {
 
     private static final Logger logger = Logger.getLogger(QuarkusJtaTransactionManagerLookup.class);
 
-    private TransactionManager tm;
+    private volatile TransactionManager tm;
 
     @Override
     public TransactionManager getTransactionManager() {
+        if (tm == null) {
+            synchronized (this) {
+                if (tm == null) {
+                    tm = CDI.current().select(TransactionManager.class).get();
+                    logger.tracev("TransactionManager = {0}", tm);
+                    if (tm == null) {
+                        logger.debug("Could not locate JTA TransactionManager. JTA transactions not supported.");
+                    }
+                }
+            }
+        }
         return tm;
     }
 
     @Override
     public void init(Config.Scope config) {
-        tm = CDI.current().select(TransactionManager.class).get();
-        logger.tracev("TransactionManager = {0}", tm);
-        if (tm == null) {
-            logger.debug("Could not locate TransactionManager");
-        }
     }
 
     @Override
