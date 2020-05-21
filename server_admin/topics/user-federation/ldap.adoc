@@ -137,6 +137,14 @@ FullName Mapper::
   This allows you to specify that the full name of the user, which is saved in some LDAP attribute (usually `cn` ) will be mapped to `firstName` and `lastname` attributes in the {project_name} database.
   Having `cn` to contain full name of user is a common case for some LDAP deployments.
 
+NOTE: When registering new users in {project_name} and `Sync Registrations` is ON for the LDAP provider, the fullName mapper
+      allows the possibility of fallback to the username. This fallback is especially useful in case of the Microsoft Active Directory. The common
+      setup for the MSAD is to configure `cn` LDAP attribute as fullName and at the same time, the `cn` is usually used as `RDN LDAP Attribute`
+      in the configuration of the LDAP provider. With this setup, the fallback to the username will be used. For example when you create
+      {project_name} user "john123" and leave firstName and lastName empty, then fullname mapper will save "john123" as the value of the `cn` in LDAP.
+      When you later enter "John Doe" for firstName and lastName, the fullname mapper will update LDAP `cn` to the value "John Doe" as
+      fallback to the username will not be needed anymore.
+
 Hardcoded Attribute Mapper::
   This mapper adds a hardcoded attribute value to each {project_name} user linked with LDAP. 
   This mapper can also force the values for the `enabled` or `emailVerified` user properties.
