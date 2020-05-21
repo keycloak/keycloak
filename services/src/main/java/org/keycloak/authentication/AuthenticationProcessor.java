@@ -1047,9 +1047,9 @@ public class AuthenticationProcessor {
     }
 
     public Response finishAuthentication(LoginProtocol protocol) {
-        event.success();
         RealmModel realm = authenticationSession.getRealm();
         ClientSessionContext clientSessionCtx = attachSession();
+        event.success();
         return AuthenticationManager.redirectAfterSuccessfulFlow(session, realm, userSession, clientSessionCtx, request, uriInfo, connection, event, authenticationSession, protocol);
 
     }
