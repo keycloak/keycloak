@@ -27,11 +27,11 @@ import org.keycloak.models.KeycloakSession;
  *
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
-public class GdprAwareJBossLoggingEventListenerProvider extends JBossLoggingEventListenerProvider {
+public class PrivacyPreservingJBossLoggingEventListenerProvider extends JBossLoggingEventListenerProvider {
 
     private final Anonymizer anonymizer;
 
-    public GdprAwareJBossLoggingEventListenerProvider(KeycloakSession session, Logger logger, Logger.Level successLevel, Logger.Level errorLevel, Anonymizer anonymizer) {
+    public PrivacyPreservingJBossLoggingEventListenerProvider(KeycloakSession session, Logger logger, Logger.Level successLevel, Logger.Level errorLevel, Anonymizer anonymizer) {
         super(session, logger, successLevel, errorLevel);
         this.anonymizer = anonymizer;
     }

@@ -25,13 +25,13 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
 /**
- * Factory for {@link GdprAwareJBossLoggingEventListenerProvider}
+ * Factory for {@link PrivacyPreservingJBossLoggingEventListenerProvider}
  *
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
-public class GdprAwareJBossLoggingEventListenerProviderFactory implements EventListenerProviderFactory {
+public class PrivacyPreservingJBossLoggingEventListenerProviderFactory implements EventListenerProviderFactory {
 
-    public static final String ID = "gdpr-jboss-logging";
+    public static final String ID = "privacy-preserving-jboss-logging";
 
     private static final Logger LOGGER = Logger.getLogger("org.keycloak.events");
 
@@ -43,7 +43,7 @@ public class GdprAwareJBossLoggingEventListenerProviderFactory implements EventL
 
     @Override
     public EventListenerProvider create(KeycloakSession session) {
-        return new GdprAwareJBossLoggingEventListenerProvider(session, LOGGER, successLevel, errorLevel, anonymizer);
+        return new PrivacyPreservingJBossLoggingEventListenerProvider(session, LOGGER, successLevel, errorLevel, anonymizer);
     }
 
     @Override
