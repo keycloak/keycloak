@@ -62,9 +62,9 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
             sb.append(", clientId=");
             sb.append(event.getClientId());
             sb.append(", userId=");
-            sb.append(event.getUserId());
+            sb.append(getUserId(event));
             sb.append(", ipAddress=");
-            sb.append(event.getIpAddress());
+            sb.append(getIpAddress(event));
 
             if (event.getError() != null) {
                 sb.append(", error=");
@@ -74,13 +74,16 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
             if (event.getDetails() != null) {
                 for (Map.Entry<String, String> e : event.getDetails().entrySet()) {
                     sb.append(", ");
+
+                    String eventDetailValue = getEventDetailValue(event, e.getKey(), e.getValue());
+
                     sb.append(e.getKey());
-                    if (e.getValue() == null || e.getValue().indexOf(' ') == -1) {
+                    if (eventDetailValue == null || eventDetailValue.indexOf(' ') == -1) {
                         sb.append("=");
-                        sb.append(e.getValue());
+                        sb.append(eventDetailValue);
                     } else {
                         sb.append("='");
-                        sb.append(e.getValue());
+                        sb.append(eventDetailValue);
                         sb.append("'");
                     }
                 }
@@ -139,6 +142,35 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
 
             logger.log(logger.isTraceEnabled() ? Logger.Level.TRACE : level, sb.toString());
         }
+    }
+
+    /**
+     * Enables subclasses to filter / mask or anonymize event detail values.
+     * @param event
+     * @param key
+     * @param value
+     * @return
+     */
+    protected String getEventDetailValue(Event event, String key, String value) {
+        return value;
+    }
+
+    /**
+     * Enables subclasses to filter / mask or anonymize IP adresses.
+     * @param event
+     * @return
+     */
+    protected String getIpAddress(Event event) {
+        return event.getIpAddress();
+    }
+
+    /**
+     * Enables subclasses to filter / mask or anonymize userIds.
+     * @param event
+     * @return
+     */
+    protected String getUserId(Event event) {
+        return event.getUserId();
     }
 
     @Override
