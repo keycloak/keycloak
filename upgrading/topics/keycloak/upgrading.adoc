@@ -14,3 +14,8 @@ include::../migrate_themes.adoc[leveloffset=1]
 == Upgrading {project_name} Adapters
 
 include::../upgrade_adapters.adoc[leveloffset=1]
+
+
+== Upgrading {project_name} Admin Client
+
+include::../upgrade_admin_client.adoc[leveloffset=1]
