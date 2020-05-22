@@ -20,6 +20,8 @@ package org.keycloak.services.managers;
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -100,7 +102,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     public void failure(KeycloakSession session, LoginEvent event) {
         logger.debug("failure");
         RealmModel realm = getRealmModel(session, event);
-        logFailure(event);
+        logFailure(session, realm, event);
 
         String userId = event.userId;
         UserModel user = session.users().getUserById(userId, realm);
@@ -121,12 +123,20 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         }
         userLoginFailure.setLastFailure(currentTime);
 
-        if(realm.isPermanentLockout()) {
+        if (realm.isPermanentLockout()) {
             userLoginFailure.incrementFailures();
             logger.debugv("new num failures: {0}", userLoginFailure.getNumFailures());
 
-            if(userLoginFailure.getNumFailures() == realm.getFailureFactor()) {
-                logger.debugv("user {0} locked permanently due to too many login attempts", user.getUsername());
+            if (userLoginFailure.getNumFailures() == realm.getFailureFactor()) {
+
+                EventBuilder eventBuilder = new EventBuilder(realm, session, NOOP_CONNECTION);
+                eventBuilder
+                        .event(EventType.LOGIN_ERROR)
+                        .user(event.userId)
+                        .ipAddress(event.ip)
+                        .error("user locked permanently due to too many failed login attempts");
+
+
                 user.setEnabled(false);
                 return;
             }
@@ -150,7 +160,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         userLoginFailure.incrementFailures();
         logger.debugv("new num failures: {0}", userLoginFailure.getNumFailures());
 
-        int waitSeconds = realm.getWaitIncrementSeconds() *  (userLoginFailure.getNumFailures() / realm.getFailureFactor());
+        int waitSeconds = realm.getWaitIncrementSeconds() * (userLoginFailure.getNumFailures() / realm.getFailureFactor());
         logger.debugv("waitSeconds: {0}", waitSeconds);
         logger.debugv("deltaTime: {0}", deltaTime);
 
@@ -250,23 +260,64 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     }
 
     private void success(KeycloakSession session, LoginEvent event) {
-        String userId = event.userId;
-        UserModel model = session.users().getUserById(userId, getRealmModel(session, event));
+        RealmModel realm = getRealmModel(session, event);
 
-        UserLoginFailureModel user = getUserModel(session, event);
-        if(user == null) return;
+        UserLoginFailureModel userLoginFailure = getUserModel(session, event);
+        if (userLoginFailure == null) {
+            return;
+        }
 
-        logger.debugv("user {0} successfully logged in, clearing all failures", model.getUsername());
-        user.clearFailures();
+        EventBuilder eventBuilder = new EventBuilder(realm, session, NOOP_CONNECTION);
+        eventBuilder
+                .event(EventType.LOGIN)
+                .user(event.userId)
+                .ipAddress(event.ip)
+                .error("user successfully logged in, clearing all failures");
+
+        userLoginFailure.clearFailures();
     }
 
-    protected void logFailure(LoginEvent event) {
-        ServicesLogger.LOGGER.loginFailure(event.userId, event.ip);
+    private static final ClientConnection NOOP_CONNECTION = new ClientConnection() {
+        @Override
+        public String getRemoteAddr() {
+            return null;
+        }
+
+        @Override
+        public String getRemoteHost() {
+            return null;
+        }
+
+        @Override
+        public int getRemotePort() {
+            return 0;
+        }
+
+        @Override
+        public String getLocalAddr() {
+            return null;
+        }
+
+        @Override
+        public int getLocalPort() {
+            return 0;
+        }
+    };
+
+    protected void logFailure(KeycloakSession session, RealmModel realm, LoginEvent event) {
+
+        EventBuilder eventBuilder = new EventBuilder(realm, session, NOOP_CONNECTION);
+        eventBuilder
+                .event(EventType.LOGIN_ERROR)
+                .user(event.userId)
+                .ipAddress(event.ip)
+                .error("recording login failure for user");
+
         failures++;
         long delta = 0;
         if (lastFailure > 0) {
             delta = Time.currentTimeMillis() - lastFailure;
-            if (delta > (long)maxDeltaTimeSeconds * 1000L) {
+            if (delta > (long) maxDeltaTimeSeconds * 1000L) {
                 totalTime = 0;
 
             } else {
@@ -317,6 +368,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
 
         return false;
     }
+
     @Override
     public void close() {
 
