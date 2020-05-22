@@ -85,6 +85,16 @@ public class KeycloakInstalled {
         LOGGED_MANUAL, LOGGED_DESKTOP
     }
 
+    /**
+     * local port to listen for callbacks. The value {@code 0} will choose a random port.
+     */
+    private int listenPort = 0;
+
+    /**
+     * local hostname to listen for callbacks.
+     */
+    private String listenHostname = "localhost";
+
     private AccessTokenResponse tokenResponse;
     private String tokenString;
     private String idTokenString;
@@ -124,6 +134,33 @@ public class KeycloakInstalled {
         this.locale = locale;
     }
 
+    public int getListenPort() {
+        return listenPort;
+    }
+
+    /**
+     * Configures the local port to listen for callbacks. The value {@code 0} will choose a random port. Defaults to {@code 0}.
+     * @param listenPort a valid port number
+     */
+    public void setListenPort(int listenPort) {
+        if (listenPort < 0 || listenPort > 65535) {
+            throw new IllegalArgumentException("localPort");
+        }
+        this.listenPort = listenPort;
+    }
+
+    public String getListenHostname() {
+        return listenHostname;
+    }
+
+    /**
+     * Configures the local hostname to listen for callbacks. The value {@code 0} will choose a random port
+     * @param listenHostname a valid local hostname
+     */
+    public void setListenHostname(String listenHostname) {
+        this.listenHostname = listenHostname;
+    }
+
     public void login() throws IOException, ServerRequest.HttpFailure, VerificationException, InterruptedException, OAuthErrorException, URISyntaxException {
         if (isDesktopSupported()) {
             loginDesktop();
@@ -160,7 +197,7 @@ public class KeycloakInstalled {
         CallbackListener callback = new CallbackListener();
         callback.start();
 
-        String redirectUri = "http://localhost:" + callback.getLocalPort();
+        String redirectUri = String.format("http://%s:%s", getListenHostname(), callback.getLocalPort());
         String state = UUID.randomUUID().toString();
         Pkce pkce = deployment.isPkce() ? generatePkce() : null;
 
@@ -220,7 +257,7 @@ public class KeycloakInstalled {
         CallbackListener callback = new CallbackListener();
         callback.start();
 
-        String redirectUri = "http://localhost:" + callback.getLocalPort();
+        String redirectUri = String.format("http://%s:%s", getListenHostname(), callback.getLocalPort());
 
         String logoutUrl = deployment.getLogoutUrl()
                 .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
@@ -629,7 +666,7 @@ public class KeycloakInstalled {
             server = Undertow.builder()
                     .setIoThreads(1)
                     .setWorkerThreads(1)
-                    .addHttpListener(0, "localhost")
+                    .addHttpListener(getListenPort(), getListenHostname())
                     .setHandler(gracefulShutdownHandler)
                     .build();
 
