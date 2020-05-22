@@ -32,7 +32,6 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.ObjectUtil;
@@ -624,6 +623,65 @@ public class UserTest extends AbstractAdminTest {
 
         List<UserRepresentation> users = realm.users().search("wit", null, null);
         assertEquals(1, users.size());
+    }
+
+    @Test
+    public void searchByEnabled() {
+        String userCommonName = "enabled-disabled-user";
+
+        UserRepresentation user1 = new UserRepresentation();
+        user1.setUsername(userCommonName + "1");
+        user1.setRequiredActions(Collections.emptyList());
+        user1.setEnabled(true);
+        createUser(user1);
+
+        UserRepresentation user2 = new UserRepresentation();
+        user2.setUsername(userCommonName + "2");
+        user2.setRequiredActions(Collections.emptyList());
+        user2.setEnabled(false);
+        createUser(user2);
+
+        List<UserRepresentation> enabledUsers = realm.users().search(null, null, null, null, null, null, true, false);
+        assertEquals(1, enabledUsers.size());
+
+        List<UserRepresentation> enabledUsersWithFilter = realm.users().search(userCommonName, null, null, null, null, null, true, true);
+        assertEquals(1, enabledUsersWithFilter.size());
+        assertEquals(user1.getUsername(), enabledUsersWithFilter.get(0).getUsername());
+
+        List<UserRepresentation> disabledUsers = realm.users().search(userCommonName, null, null, null, null, null, false, false);
+        assertEquals(1, disabledUsers.size());
+        assertEquals(user2.getUsername(), disabledUsers.get(0).getUsername());
+
+        List<UserRepresentation> allUsers = realm.users().search(userCommonName, null, null, null, 0, 100, null, true);
+        assertEquals(2, allUsers.size());
+    }
+
+    @Test
+    public void searchWithFilters() {
+        createUser();
+
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user2");
+        user.setFirstName("First");
+        user.setLastName("Last");
+        user.setEmail("user2@localhost");
+        user.setRequiredActions(Collections.emptyList());
+        user.setEnabled(false);
+        createUser(user);
+
+        List<UserRepresentation> searchFirstNameAndDisabled = realm.users().search(null, "First", null, null, null, null, false, true);
+        assertEquals(1, searchFirstNameAndDisabled.size());
+        assertEquals(user.getUsername(), searchFirstNameAndDisabled.get(0).getUsername());
+
+        List<UserRepresentation> searchLastNameAndEnabled = realm.users().search(null, null, "Last", null, null, null, true, false);
+        assertEquals(0, searchLastNameAndEnabled.size());
+
+        List<UserRepresentation> searchEmailAndDisabled = realm.users().search(null, null, null, "user2@localhost", 0, 50, false, true);
+        assertEquals(1, searchEmailAndDisabled.size());
+        assertEquals(user.getUsername(), searchEmailAndDisabled.get(0).getUsername());
+
+        List<UserRepresentation> searchInvalidSizeAndDisabled = realm.users().search(null, null, null, null, 10, 20, null, false);
+        assertEquals(0, searchInvalidSizeAndDisabled.size());
     }
 
     @Test

@@ -189,6 +189,7 @@ public class UsersResource {
      * @param first
      * @param email
      * @param username
+     * @param enabled Boolean representing if user is enabled or not
      * @param first Pagination offset
      * @param maxResults Maximum results size (defaults to 100)
      * @return
@@ -203,6 +204,7 @@ public class UsersResource {
                                              @QueryParam("username") String username,
                                              @QueryParam("first") Integer firstResult,
                                              @QueryParam("max") Integer maxResults,
+                                             @QueryParam("enabled") Boolean enabled,
                                              @QueryParam("briefRepresentation") Boolean briefRepresentation,
                                              @QueryParam("exact") Boolean exact) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
@@ -222,6 +224,9 @@ public class UsersResource {
             } else {
                 Map<String, String> attributes = new HashMap<>();
                 attributes.put(UserModel.SEARCH, search.trim());
+                if (enabled != null) {
+                    attributes.put(UserModel.ENABLED, enabled.toString());
+                }
                 return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult, maxResults, false);
             }
         } else if (last != null || first != null || email != null || username != null) {
@@ -237,6 +242,9 @@ public class UsersResource {
             }
             if (username != null) {
                 attributes.put(UserModel.USERNAME, username);
+            }
+            if (enabled != null) {
+                attributes.put(UserModel.ENABLED, enabled.toString());
             }
             if (exact != null) {
                 attributes.put(UserModel.EXACT, exact.toString());

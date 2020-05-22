@@ -204,6 +204,7 @@ public interface UserQueryProvider {
      * "last" - last name
      * "email" - email
      * "username" - username
+     * "enabled" - is user enabled (true/false)
      *
      * If possible, implementations should treat the parameter values as patterns i.e. in RDMBS terms use LIKE.
      * This method is used by the REST API when querying users.

@@ -50,6 +50,7 @@ public interface UsersResource {
                                     @QueryParam("email") String email,
                                     @QueryParam("first") Integer firstResult,
                                     @QueryParam("max") Integer maxResults,
+                                    @QueryParam("enabled") Boolean enabled,
                                     @QueryParam("briefRepresentation") Boolean briefRepresentation);
 
     @GET
