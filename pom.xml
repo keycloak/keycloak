@@ -105,7 +105,7 @@
         <elytron.undertow-server.version>1.7.1.Final</elytron.undertow-server.version>
         <jetty92.version>9.2.4.v20141103</jetty92.version>
         <jetty93.version>9.3.9.v20160517</jetty93.version>
-        <jetty94.version>9.4.2.v20170220</jetty94.version>
+        <jetty94.version>9.4.29.v20200521</jetty94.version>
         <woodstox.version>6.0.3</woodstox.version>
         <xmlsec.version>2.1.4</xmlsec.version>
         <glassfish.json.version>1.1.6</glassfish.json.version>
