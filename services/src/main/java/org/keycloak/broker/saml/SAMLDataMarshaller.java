@@ -49,11 +49,11 @@ public class SAMLDataMarshaller extends DefaultDataMarshaller {
                 if (obj instanceof ResponseType) {
                     ResponseType responseType = (ResponseType) obj;
                     SAMLResponseWriter samlWriter = new SAMLResponseWriter(StaxUtil.getXMLStreamWriter(bos));
-                    samlWriter.write(responseType, true);
+                    samlWriter.write(responseType);
                 } else if (obj instanceof AssertionType) {
                     AssertionType assertion = (AssertionType) obj;
                     SAMLAssertionWriter samlWriter = new SAMLAssertionWriter(StaxUtil.getXMLStreamWriter(bos));
-                    samlWriter.write(assertion, true);
+                    samlWriter.write(assertion);
                 } else if (obj instanceof AuthnStatementType) {
                     AuthnStatementType authnStatement = (AuthnStatementType) obj;
                     SAMLAssertionWriter samlWriter = new SAMLAssertionWriter(StaxUtil.getXMLStreamWriter(bos));
