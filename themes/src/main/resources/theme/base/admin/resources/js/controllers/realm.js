@@ -1057,8 +1057,6 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
     
     $scope.configuredProviders = angular.copy(realm.identityProviders);
 
-    removeUsedSocial();
-    
     $scope.authFlows = [];
     for (var i=0 ; i<authFlows.length ; i++) {
         if (authFlows[i].providerId == 'basic-flow') {
@@ -1245,22 +1243,6 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
                 Notifications.success("The identity provider has been deleted.");
             });
         });
-    };
-    
-    // KEYCLOAK-5932: remove social providers that have already been defined
-    function removeUsedSocial() {
-        var i = $scope.allProviders.length;
-        while (i--) {
-            if ($scope.allProviders[i].groupName !== 'Social') continue;
-            if ($scope.configuredProviders != null) {
-                for (var j = 0; j < $scope.configuredProviders.length; j++) {
-                    if ($scope.configuredProviders[j].providerId === $scope.allProviders[i].id) {
-                        $scope.allProviders.splice(i, 1);
-                        break;
-                    }
-                }
-            }
-        }
     };
 
     if (instance && instance.alias) {

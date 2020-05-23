@@ -8,6 +8,8 @@
     <kc-tabs-identity-provider></kc-tabs-identity-provider>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageIdentityProviders">
+
+
         <fieldset>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="redirectUri">{{:: 'redirect-uri' | translate}}</label>
@@ -18,6 +20,20 @@
             </div>
         </fieldset>
         <fieldset>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="identifier"><span class="required">*</span> {{:: 'alias' | translate}}</label>
+                <div class="col-md-6">
+                    <input kc-no-reserved-chars class="form-control" id="identifier" type="text" ng-model="identityProvider.alias" data-ng-readonly="!newIdentityProvider" required>
+                </div>
+                <kc-tooltip>{{:: 'identity-provider.alias.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="displayName"> {{:: 'display-name' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="displayName" type="text" ng-model="identityProvider.displayName">
+                </div>
+                <kc-tooltip>{{:: 'identity-provider.display-name.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="clientId"><span class="required">*</span> {{:: 'client-id' | translate}}</label>
                 <div class="col-md-6">
