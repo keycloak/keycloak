@@ -253,6 +253,11 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         for (IDToken idt : idTokens) {
             Assert.assertEquals("abcdef123456", idt.getNonce());
             Assert.assertEquals(authzResponse.getSessionState(), idt.getSessionState());
+            // see KEYCLOAK-9635
+            if (authzResponse.getCode() != null && authzResponse.getAccessToken() != null) {
+                // we have an IDToken that was obtained via auth code flow alongside an AccessToken
+                Assert.assertNotNull("claim at_hash should be present in IDToken for OIDC auth code flow requests", idt.getAccessTokenHash());
+            }
         }
     }
 
