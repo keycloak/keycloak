@@ -740,9 +740,9 @@ public class JpaRealmProvider implements RealmProvider {
         List<GroupModel> list = new ArrayList<>();
         for (String id : groups) {
             GroupModel groupById = session.realms().getGroupById(id, realm);
-            while(Objects.nonNull(groupById.getParentId())) {
-                groupById = session.realms().getGroupById(groupById.getParentId(), realm);
-            }
+//            while(Objects.nonNull(groupById.getParentId())) {
+//                groupById = session.realms().getGroupById(groupById.getParentId(), realm);
+//            }
             if(!list.contains(groupById)) {
                 list.add(groupById);
             }

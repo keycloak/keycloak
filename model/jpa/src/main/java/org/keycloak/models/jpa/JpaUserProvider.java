@@ -854,11 +854,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
                     orPredicates.add(builder.like(builder.lower(root.get(UserModel.USERNAME)), "%" + value + "%"));
                     orPredicates.add(builder.like(builder.lower(root.get(UserModel.EMAIL)), "%" + value + "%"));
-                    orPredicates.add(builder.like(
-                            builder.lower(builder.concat(builder.concat(
-                                    builder.coalesce(root.get(UserModel.FIRST_NAME), builder.literal("")), " "),
-                                    builder.coalesce(root.get(UserModel.LAST_NAME), builder.literal("")))),
-                            "%" + value+ "%"));
+                    orPredicates.add(builder.like(builder.lower(root.get(UserModel.FIRST_NAME)), "%" + value + "%"));
+                    orPredicates.add(builder.like(builder.lower(root.get(UserModel.IDCARD)), "%" + value + "%"));
 
                     predicates.add(builder.or(orPredicates.toArray(new Predicate[orPredicates.size()])));
 
@@ -869,7 +866,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 case UserModel.LAST_NAME:
                 case UserModel.EMAIL:
                 case UserModel.IDCARD:
-                    predicates.add(builder.like(builder.lower(root.get(key)), "%" + value+ "%"));
+                    predicates.add(builder.like(builder.lower(root.get(UserModel.IDCARD)), "%" + value+ "%"));
             }
         }
 
@@ -905,7 +902,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             predicates.add(builder.exists(subquery));
         }
 
-        queryBuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.desc(root.get("createdTimestamp")));
+        queryBuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.desc(root.get("modifyTimestamp")),builder.desc(root.get("createdTimestamp")));
 
         TypedQuery<UserEntity> query = em.createQuery(queryBuilder);
 

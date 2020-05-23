@@ -1,0 +1,157 @@
+{
+
+    "hostname": {
+        "provider": "${keycloak.hostname.provider:default}",
+
+        "default": {
+            "frontendUrl": "${keycloak.frontendUrl:}",
+            "adminUrl": "${keycloak.adminUrl:}",
+            "forceBackendUrlToFrontendUrl": "${keycloak.hostname.default.forceBackendUrlToFrontendUrl:false}"
+        }
+    },
+
+    "admin": {
+        "realm": "master"
+    },
+
+    "eventsStore": {
+        "provider": "${keycloak.eventsStore.provider:jpa}"
+    },
+
+    "eventsListener": {
+        "jboss-logging" : {
+            "success-level": "debug",
+            "error-level": "warn"
+        }
+    },
+
+    "realm": {
+        "provider": "${keycloak.realm.provider:jpa}"
+    },
+
+    "user": {
+        "provider": "${keycloak.user.provider:jpa}"
+    },
+
+    "userFederatedStorage": {
+        "provider": "${keycloak.userFederatedStorage.provider:jpa}"
+    },
+
+    "userSessionPersister": {
+        "provider": "${keycloak.userSessionPersister.provider:jpa}"
+    },
+
+    "authorizationPersister": {
+        "provider": "${keycloak.authorization.provider:jpa}"
+    },
+
+    "userCache": {
+        "default" : {
+            "enabled": true
+        }
+    },
+
+    "timer": {
+        "provider": "basic"
+    },
+
+    "theme": {
+        "staticMaxAge": "${keycloak.theme.staticMaxAge:2592000}",
+        "cacheTemplates": "${keycloak.theme.cacheTemplates:false}",
+        "cacheThemes": "${keycloak.theme.cacheThemes:false}",
+        "folder": {
+            "dir": "${keycloak.theme.dir}"
+        }
+    },
+
+    "scheduled": {
+        "interval": 900
+    },
+
+    "connectionsHttpClient": {
+        "default": {}
+    },
+
+    "connectionsJpa": {
+        "default": {
+            "url": "${keycloak.connectionsJpa.url:jdbc:mysql://localhost:3306/keycloak_uc_test?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=UTC}",
+            "driver": "${keycloak.connectionsJpa.driver:com.mysql.jdbc.Driver}",
+            "driverDialect": "${keycloak.connectionsJpa.driverDialect:org.hibernate.dialect.MySQLDialect}",
+            "user": "${keycloak.connectionsJpa.user:root}",
+            "password": "${keycloak.connectionsJpa.password:root}",
+            "initializeEmpty": true,
+            "migrationStrategy": "update",
+            "showSql": "${keycloak.connectionsJpa.showSql:false}",
+            "formatSql": "${keycloak.connectionsJpa.formatSql:false}",
+            "globalStatsInterval": "${keycloak.connectionsJpa.globalStatsInterval:-1}"
+        }
+    },
+
+    "realmCache": {
+        "default" : {
+            "enabled": true
+        }
+    },
+
+    "connectionsInfinispan": {
+        "default": {
+            "jgroupsUdpMcastAddr": "${keycloak.connectionsInfinispan.jgroupsUdpMcastAddr:234.56.78.90}",
+            "nodeName": "${keycloak.connectionsInfinispan.nodeName,jboss.node.name:}",
+            "siteName": "${keycloak.connectionsInfinispan.siteName,jboss.site.name:}",
+            "clustered": "${keycloak.connectionsInfinispan.clustered:false}",
+            "async": "${keycloak.connectionsInfinispan.async:false}",
+            "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:1}",
+            "l1Lifespan": "${keycloak.connectionsInfinispan.l1Lifespan:600000}",
+            "remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:false}",
+            "remoteStoreHost": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
+            "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
+            "hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
+            "embedded": "${keycloak.connectionsInfinispan.embedded:true}"
+        }
+    },
+
+    "scripting": {
+    },
+
+    "jta-lookup": {
+        "provider": "${keycloak.jta.lookup.provider:jboss}",
+        "jboss" : {
+            "enabled": true
+        }
+
+    },
+
+    "login-protocol": {
+        "saml": {
+            "knownProtocols": [
+                "http=${auth.server.http.port}",
+                "https=${auth.server.https.port}"
+            ]
+        }
+    },
+
+    "x509cert-lookup": {
+        "provider": "${keycloak.x509cert.lookup.provider:default}",
+        "default": {
+            "enabled": true
+        },
+        "haproxy": {
+            "enabled": true,
+            "sslClientCert": "x-ssl-client-cert",
+            "sslCertChainPrefix": "x-ssl-client-cert-chain",
+            "certificateChainLength": 1
+        },
+        "apache": {
+            "enabled": true,
+            "sslClientCert": "x-ssl-client-cert",
+            "sslCertChainPrefix": "x-ssl-client-cert-chain",
+            "certificateChainLength": 1
+        },
+        "nginx": {
+            "enabled": true,
+            "sslClientCert": "x-ssl-client-cert",
+            "sslCertChainPrefix": "x-ssl-client-cert-chain",
+            "certificateChainLength": 1
+        }
+    }
+}

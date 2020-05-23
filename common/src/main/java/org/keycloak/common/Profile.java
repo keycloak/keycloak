@@ -106,7 +106,7 @@ public class Profile {
         Config config = new Config();
 
         product = "rh-sso".equals(Version.NAME) ? ProductValue.RHSSO : ProductValue.KEYCLOAK;
-        profile = ProfileValue.valueOf(config.getProfile().toUpperCase());
+        profile = ProfileValue.valueOf("COMMUNITY");
 
         for (Feature f : Feature.values()) {
             Boolean enabled = config.getConfig(f);
