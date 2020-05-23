@@ -38,6 +38,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -170,6 +172,30 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
         assertFalse(resource.getRole(ids.get("role-a")).isComposite());
         assertEquals(0, resource.getRoleComposites(ids.get("role-a")).size());
 
+    }
+
+    /**
+     * see KEYCLOAK-12754
+     */
+    @Test
+    public void createNewMixedRealmCompositeRole() {
+
+        RoleRepresentation newRoleComp = RoleBuilder.create().name("role-mixed-comp").composite().realmComposite("role-a").clientComposite("client-a","role-c").build();
+        adminClient.realm(REALM_NAME).roles().create(newRoleComp);
+
+        RoleRepresentation roleMixedComp = adminClient.realm(REALM_NAME).roles().get(newRoleComp.getName()).toRepresentation();
+        assertTrue(roleMixedComp.isComposite());
+
+        Predicate<RoleRepresentation> isClientRole = RoleRepresentation::getClientRole;
+
+        Set<RoleRepresentation> roleComposites = resource.getRoleComposites(roleMixedComp.getId());
+        Set<RoleRepresentation> containedRealmRoles = roleComposites.stream().filter(isClientRole.negate()).collect(Collectors.toSet());
+        assertFalse(containedRealmRoles.isEmpty());
+        assertTrue(containedRealmRoles.stream().anyMatch(r -> r.getName().equals("role-a")));
+
+        Set<RoleRepresentation> containedClientRoles = roleComposites.stream().filter(isClientRole).collect(Collectors.toSet());
+        assertFalse(containedClientRoles.isEmpty());
+        assertTrue(containedClientRoles.stream().anyMatch(r -> r.getContainerId().equals(clientUuid) && r.getName().equals("role-c")));
     }
 
     @Test
