@@ -395,6 +395,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
     }
 
+    // KEYCLOAK-12729
     @Test
     public void changePasswordWithNotUsernamePolicy() {
         setPasswordPolicy("notUsername(1)");
@@ -407,6 +408,23 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("Invalid password: must not be equal to the username.", profilePage.getError());
         events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).assertEvent();
 
+
+        changePasswordPage.changePassword("password", "newPassword", "newPassword");
+        Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
+        events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
+    }
+
+    @Test
+    public void changePasswordWithNotEmailPolicy() {
+        setPasswordPolicy("notEmail(1)");
+
+        changePasswordPage.open();
+        loginPage.login("test-user@localhost", "password");
+        events.expectLogin().client("account").detail(Details.REDIRECT_URI, getAccountRedirectUrl() + "?path=password").assertEvent();
+
+        changePasswordPage.changePassword("password", "test-user@localhost", "test-user@localhost");
+        Assert.assertEquals("Invalid password: must not be equal to the email.", profilePage.getError());
+        events.expectAccount(EventType.UPDATE_PASSWORD_ERROR).error(Errors.PASSWORD_REJECTED).assertEvent();
 
         changePasswordPage.changePassword("password", "newPassword", "newPassword");
         Assert.assertEquals("Your password has been updated.", profilePage.getSuccess());
