@@ -39,7 +39,6 @@ import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAssertionQNames;
-import org.w3c.dom.Element;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
@@ -48,7 +47,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.Set;
 
-import javax.xml.crypto.dsig.XMLSignature;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
 
 /**
@@ -71,17 +69,8 @@ public class SAMLAssertionWriter extends BaseWriter {
      * @throws org.keycloak.saml.common.exceptions.ProcessingException
      */
     public void write(AssertionType assertion) throws ProcessingException {
-        write(assertion, false);
-    }
-
-    public void write(AssertionType assertion, boolean forceWriteDsigNamespace) throws ProcessingException {
-        Element sig = assertion.getSignature();
-
         StaxUtil.writeStartElement(writer, ASSERTION_PREFIX, JBossSAMLConstants.ASSERTION.get(), ASSERTION_NSURI.get());
         StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, ASSERTION_NSURI.get());
-        if (forceWriteDsigNamespace && sig != null && sig.getPrefix() != null && ! sig.hasAttribute("xmlns:" + sig.getPrefix())) {
-            StaxUtil.writeNameSpace(writer, sig.getPrefix(), XMLSignature.XMLNS);
-        }
         StaxUtil.writeDefaultNameSpace(writer, ASSERTION_NSURI.get());
 
         // Attributes
@@ -92,9 +81,6 @@ public class SAMLAssertionWriter extends BaseWriter {
         NameIDType issuer = assertion.getIssuer();
         if (issuer != null)
             write(issuer, new QName(ASSERTION_NSURI.get(), JBossSAMLConstants.ISSUER.get(), ASSERTION_PREFIX));
-
-        if (sig != null)
-            StaxUtil.writeDOMElement(writer, sig);
 
         SubjectType subject = assertion.getSubject();
         if (subject != null) {
