@@ -525,7 +525,7 @@
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/webauthn4j/webauthn4j/0.10.2.RELEASE/LICENSE.txt</url>
+          <url>https://raw.githubusercontent.com/webauthn4j/webauthn4j/0.12.0.RELEASE/LICENSE.txt</url>
         </license>
       </licenses>
     </dependency>
@@ -536,7 +536,7 @@
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/webauthn4j/webauthn4j/0.10.2.RELEASE/LICENSE.txt</url>
+          <url>https://raw.githubusercontent.com/webauthn4j/webauthn4j/0.12.0.RELEASE/LICENSE.txt</url>
         </license>
       </licenses>
     </dependency>

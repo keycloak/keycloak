@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.webauthn4j.WebAuthnAuthenticationManager;
 import com.webauthn4j.converter.util.ObjectConverter;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
@@ -167,7 +168,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
         WebAuthnCredentialModelInput context = WebAuthnCredentialModelInput.class.cast(input);
         List<WebAuthnCredentialModelInput> auths = getWebAuthnCredentialModelList(realm, user);
 
-        WebAuthnManager webAuthnManager = WebAuthnManager.createNonStrictWebAuthnManager(); // not special setting is needed for authentication's validation.
+        WebAuthnAuthenticationManager webAuthnAuthenticationManager = new WebAuthnAuthenticationManager();
         AuthenticationData authenticationData = null;
 
         try {
@@ -182,14 +183,14 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
                     );
 
                     // parse
-                    authenticationData = webAuthnManager.parse(context.getAuthenticationRequest());
+                    authenticationData = webAuthnAuthenticationManager.parse(context.getAuthenticationRequest());
                     // validate
                     AuthenticationParameters authenticationParameters = new AuthenticationParameters(
                             context.getAuthenticationParameters().getServerProperty(),
                             authenticator,
                             context.getAuthenticationParameters().isUserVerificationRequired()
                     );
-                    webAuthnManager.validate(authenticationData, authenticationParameters);
+                    webAuthnAuthenticationManager.validate(authenticationData, authenticationParameters);
 
 
                     logger.debugv("response.getAuthenticatorData().getFlags() = {0}", authenticationData.getAuthenticatorData().getFlags());
