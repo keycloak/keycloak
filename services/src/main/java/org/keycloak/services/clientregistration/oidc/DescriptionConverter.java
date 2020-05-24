@@ -246,7 +246,6 @@ public class DescriptionConverter {
         if (config.getTokenEndpointAuthSigningAlg() != null) {
             response.setTokenEndpointAuthSigningAlg(config.getTokenEndpointAuthSigningAlg());
         }
-
         if (config.getAccessTokenSignedResponseAlg() != null) {
             response.setAccessTokenSignedResponseAlg(config.getAccessTokenSignedResponseAlg());
         }

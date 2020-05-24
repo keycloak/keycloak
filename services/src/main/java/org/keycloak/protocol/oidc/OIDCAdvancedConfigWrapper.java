@@ -138,6 +138,7 @@ public class OIDCAdvancedConfigWrapper {
     public String getIdTokenSignedResponseAlg() {
         return getAttribute(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG);
     }
+
     public void setIdTokenSignedResponseAlg(String algName) {
         setAttribute(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG, algName);
     }
@@ -169,6 +170,7 @@ public class OIDCAdvancedConfigWrapper {
     public String getAccessTokenSignedResponseAlg() {
         return getAttribute(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG);
     }
+
     public void setAccessTokenSignedResponseAlg(String algName) {
         setAttribute(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG, algName);
     }

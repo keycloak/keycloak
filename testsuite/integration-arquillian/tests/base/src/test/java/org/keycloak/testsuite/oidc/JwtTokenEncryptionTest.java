@@ -118,12 +118,12 @@ public class JwtTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void testIdTokenEncryptionAlgRSA1_5EncA192CBC_HS384() {
+    public void testJwtTokenEncryptionAlgRSA1_5EncA192CBC_HS384() {
         testJwtTokenSignatureAndEncryption(Algorithm.PS256, JWEConstants.RSA1_5, JWEConstants.A192CBC_HS384);
     }
 
     @Test
-    public void testIdTokenEncryptionAlgRSA1_5EncA256CBC_HS512() {
+    public void testJwtTokenEncryptionAlgRSA1_5EncA256CBC_HS512() {
         testJwtTokenSignatureAndEncryption(Algorithm.PS384, JWEConstants.RSA1_5, JWEConstants.A256CBC_HS512);
     }
 
@@ -177,6 +177,7 @@ public class JwtTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void testJwtTokenSignatureAndEncryption(String sigAlgorithm, String algAlgorithm, String encAlgorithm) {
+
         ClientResource clientResource;
         ClientRepresentation clientRep;
         try {
@@ -184,16 +185,17 @@ public class JwtTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
             TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
             oidcClientEndpointsResource.generateKeys(algAlgorithm);
 
+            // get decryption key
+            // not publickey , use privateKey
+            Map<String, String> keyPair = oidcClientEndpointsResource.getKeysAsPem();
+            PrivateKey decryptionKEK = PemUtils.decodePrivateKey(keyPair.get("privateKey"));
+
             clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
             clientRep = clientResource.toRepresentation();
             // set id token signature algorithm and encryption algorithms
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(sigAlgorithm);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenEncryptedResponseAlg(algAlgorithm);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenEncryptedResponseEnc(encAlgorithm);
+            configureIdTokenEncryption(clientRep, sigAlgorithm, algAlgorithm, encAlgorithm);
+            configureAccessTokenEncryption(clientRep, sigAlgorithm, algAlgorithm, encAlgorithm);
 
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenSignedResponseAlg(sigAlgorithm);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenEncryptedResponseAlg(algAlgorithm);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenEncryptedResponseEnc(encAlgorithm);
             // use and set jwks_url
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
             String jwksUrl = TestApplicationResourceUrls.clientJwksUri();
@@ -207,24 +209,21 @@ public class JwtTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
 
             // parse JWE and JOSE Header
             String jweStrIdToken = tokenResponse.getIdToken();
-            String[] partsIdToken = jweStrIdToken.split("\\.");
-            Assert.assertEquals(partsIdToken.length, 5);
+            assertJweConsistsOfParts(jweStrIdToken, 5);
 
             String jweStrAccessToken = tokenResponse.getAccessToken();
+            assertJweConsistsOfParts(jweStrAccessToken, 5);
 
-            // get decryption key
-            // not publickey , use privateKey
-            Map<String, String> keyPair = oidcClientEndpointsResource.getKeysAsPem();
-            PrivateKey decryptionKEK = PemUtils.decodePrivateKey(keyPair.get("privateKey"));
 
-            // verify and decrypt JWE
+
             JWEAlgorithmProvider algorithmProvider = getJweAlgorithmProvider(algAlgorithm);
             JWEEncryptionProvider encryptionProvider = getJweEncryptionProvider(encAlgorithm);
-            byte[] decodedIdTokenString = TokenUtil.jweKeyEncryptionVerifyAndDecode(decryptionKEK, jweStrIdToken, algorithmProvider, encryptionProvider);
-            String idTokenString = new String(decodedIdTokenString, StandardCharsets.UTF_8);
 
-            byte[] decodedAccessTokenString = TokenUtil.jweKeyEncryptionVerifyAndDecode(decryptionKEK, jweStrAccessToken, algorithmProvider, encryptionProvider);
-            String accessTokenString = new String(decodedAccessTokenString, StandardCharsets.UTF_8);
+            // verify and decrypt ID Token JWE
+            String idTokenString = decryptToken(jweStrIdToken, decryptionKEK, algorithmProvider, encryptionProvider);
+
+            // verify and decrypt Access Token JWE
+            String accessTokenString = decryptToken(jweStrAccessToken, decryptionKEK, algorithmProvider, encryptionProvider);
 
             // verify IDToken JWS
             IDToken idToken = oauth.verifyIDToken(idTokenString);
@@ -241,19 +240,26 @@ public class JwtTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
             clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
             clientRep = clientResource.toRepresentation();
             // revert id token signature algorithm and encryption algorithms
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(Algorithm.RS256);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenEncryptedResponseAlg(null);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenEncryptedResponseEnc(null);
+            configureIdTokenEncryption(clientRep, Algorithm.RS256, null, null);
 
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenSignedResponseAlg(Algorithm.RS256);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenEncryptedResponseAlg(null);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenEncryptedResponseEnc(null);
+            // revert access token signature algorithm and encryption algorithms
+            configureAccessTokenEncryption(clientRep, Algorithm.RS256, null, null);
 
             // revert jwks_url settings
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(false);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(null);
             clientResource.update(clientRep);
         }
+    }
+
+    private void assertJweConsistsOfParts(String jweStrIdToken, int parts) {
+        String[] partsIdToken = jweStrIdToken.split("\\.");
+        Assert.assertEquals(partsIdToken.length, parts);
+    }
+
+    private String decryptToken(String jweTokenString, PrivateKey decryptionKEK, JWEAlgorithmProvider algorithmProvider, JWEEncryptionProvider encryptionProvider) throws JWEException {
+        byte[] decodedIdTokenString = TokenUtil.jweKeyEncryptionVerifyAndDecode(decryptionKEK, jweTokenString, algorithmProvider, encryptionProvider);
+        return new String(decodedIdTokenString, StandardCharsets.UTF_8);
     }
 
     private JWEAlgorithmProvider getJweAlgorithmProvider(String algAlgorithm) {
@@ -296,13 +302,9 @@ public class JwtTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
             clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
             clientRep = clientResource.toRepresentation();
             // set id token signature algorithm and encryption algorithms
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(Algorithm.RS256);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenEncryptedResponseAlg(JWEConstants.RSA1_5);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenEncryptedResponseEnc(JWEConstants.A128CBC_HS256);
+            configureIdTokenEncryption(clientRep, Algorithm.RS256, JWEConstants.RSA1_5, JWEConstants.A128CBC_HS256);
 
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenSignedResponseAlg(Algorithm.RS256);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenEncryptedResponseAlg(JWEConstants.RSA1_5);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenEncryptedResponseEnc(JWEConstants.A128CBC_HS256);
+            configureAccessTokenEncryption(clientRep, Algorithm.RS256, JWEConstants.RSA1_5, JWEConstants.A128CBC_HS256);
 
             // use and set jwks_url
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
@@ -320,19 +322,41 @@ public class JwtTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
             // Revert
             clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
             clientRep = clientResource.toRepresentation();
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(Algorithm.RS256);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenEncryptedResponseAlg(null);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenEncryptedResponseEnc(null);
 
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenSignedResponseAlg(Algorithm.RS256);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenEncryptedResponseAlg(null);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenEncryptedResponseEnc(null);
+            configureIdTokenEncryption(clientRep, Algorithm.RS256, null, null);
+            configureAccessTokenEncryption(clientRep, Algorithm.RS256, null, null);
 
             // Revert jwks_url settings
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(false);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(null);
             clientResource.update(clientRep);
         }
+    }
+
+    /**
+     * Set id token signature algorithm and encryption algorithms
+     * @param clientRep
+     * @param sig
+     * @param alg
+     * @param enc
+     */
+    private void configureAccessTokenEncryption(ClientRepresentation clientRep, String sig, String alg, String enc) {
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenSignedResponseAlg(sig);
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenEncryptedResponseAlg(alg);
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setAccessTokenEncryptedResponseEnc(enc);
+    }
+
+    /**
+     * Set access token signature algorithm and encryption algorithms
+     * @param clientRep
+     * @param sig
+     * @param alg
+     * @param enc
+     */
+    protected void configureIdTokenEncryption(ClientRepresentation clientRep, String sig, String alg, String enc) {
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenSignedResponseAlg(sig);
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenEncryptedResponseAlg(alg);
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setIdTokenEncryptedResponseEnc(enc);
     }
 
 }
