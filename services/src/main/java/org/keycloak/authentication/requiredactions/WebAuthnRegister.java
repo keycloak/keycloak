@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
+import com.webauthn4j.WebAuthnRegistrationManager;
 import org.jboss.logging.Logger;
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.CredentialRegistrator;
@@ -42,8 +43,6 @@ import org.keycloak.credential.WebAuthnCredentialProviderFactory;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
@@ -68,7 +67,6 @@ import com.webauthn4j.validator.attestation.statement.packed.PackedAttestationSt
 import com.webauthn4j.validator.attestation.statement.tpm.TPMAttestationStatementValidator;
 import com.webauthn4j.validator.attestation.statement.u2f.FIDOU2FAttestationStatementValidator;
 import com.webauthn4j.validator.attestation.trustworthiness.certpath.CertPathTrustworthinessValidator;
-import com.webauthn4j.validator.attestation.trustworthiness.ecdaa.DefaultECDAATrustworthinessValidator;
 import com.webauthn4j.validator.attestation.trustworthiness.self.DefaultSelfAttestationTrustworthinessValidator;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 
@@ -208,12 +206,12 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         RegistrationRequest registrationRequest = new RegistrationRequest(attestationObject, clientDataJSON);
         RegistrationParameters registrationParameters = new RegistrationParameters(serverProperty, isUserVerificationRequired);
 
-        WebAuthnManager webAuthnManager = createWebAuthnManager();
+        WebAuthnRegistrationManager webAuthnRegistrationManager = createWebAuthnRegistrationManager();
         try {
             // parse
-            RegistrationData registrationData = webAuthnManager.parse(registrationRequest);
+            RegistrationData registrationData = webAuthnRegistrationManager.parse(registrationRequest);
             // validate
-            webAuthnManager.validate(registrationData, registrationParameters);
+            webAuthnRegistrationManager.validate(registrationData, registrationParameters);
 
             showInfoAfterWebAuthnApiCreate(registrationData);
 
@@ -252,8 +250,8 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         }
     }
 
-    private WebAuthnManager createWebAuthnManager() {
-        return new WebAuthnManager(
+    private WebAuthnRegistrationManager createWebAuthnRegistrationManager() {
+        return new WebAuthnRegistrationManager(
                 Arrays.asList(
                         new NoneAttestationStatementValidator(),
                         new PackedAttestationStatementValidator(),
@@ -262,10 +260,8 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
                         new AndroidSafetyNetAttestationStatementValidator(),
                         new FIDOU2FAttestationStatementValidator()
                 ), this.certPathtrustValidator,
-                new DefaultECDAATrustworthinessValidator(),
                 new DefaultSelfAttestationTrustworthinessValidator(),
                 Collections.emptyList(), // Custom Registration Validator is not supported
-                Collections.emptyList(), // Custom Authentication Validator is not supported
                 new ObjectConverter()
                 );
     }
