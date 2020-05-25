@@ -20,7 +20,7 @@
             <div class="form-group">
                 <label class="col-md-2 control-label"for="id">{{:: 'created-at' | translate}}</label>
                 <div class="col-md-6">
-                    {{user.createdTimestamp|date:'shortDate'}}&nbsp;{{user.createdTimestamp|date:'mediumTime'}}
+                    {{user.createdTimestamp|date:('dateFormat' | translate)}}&nbsp;{{user.createdTimestamp|date:('timeFormat' | translate)}}
                 </div>
             </div>
 

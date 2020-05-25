@@ -81,7 +81,7 @@
         </tfoot>
         <tbody>
             <tr ng-repeat="event in events">
-                <td>{{event.time|date:'shortDate'}}<br>{{event.time|date:'mediumTime'}}</td>
+                <td>{{event.time|date:('dateFormat' | translate)}}<br>{{event.time|date:('timeFormat' | translate)}}</td>
                 <td>{{event.type}}</td>
                 <td>
                     <table class="table table-striped table-bordered">
