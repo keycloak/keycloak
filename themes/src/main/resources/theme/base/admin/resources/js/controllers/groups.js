@@ -1,9 +1,9 @@
-module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, GroupsCount, Group, GroupChildren, Notifications, $location, Dialog, ComponentUtils) {
+module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, GroupsCount, Group, GroupChildren, Notifications, $location, Dialog, ComponentUtils, $translate) {
     $scope.realm = realm;
     $scope.groupList = [
         {
             "id" : "realm",
-            "name": "Groups",
+            "name": $translate.instant('groups'),
             "subGroups" : []
         }
     ];
@@ -46,7 +46,7 @@ module.controller('GroupListCtrl', function($scope, $route, $q, realm, Groups, G
             $scope.groupList = [
                 {
                     "id" : "realm",
-                    "name": "Groups",
+                    "name": $translate.instant('groups'),
                     "subGroups": ComponentUtils.sortGroups('name', groups)
                 }
             ];
