@@ -114,7 +114,7 @@
             </tfoot>
             <tbody>
                 <tr data-ng-repeat="event in events">
-                    <td>{{event.time|date:'shortDate'}}<br>{{event.time|date:'mediumTime'}}</td>
+                    <td>{{event.time|date:('dateFormat' | translate)}}<br>{{event.time|date:('timeFormat' | translate)}}</td>
                     <td data-ng-class="events-error">{{event.operationType}}</td>
                     <td data-ng-class="events-error">{{event.resourceType}}</td>
                     <td>{{event.resourcePath}}</td>

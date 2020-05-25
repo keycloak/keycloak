@@ -2,7 +2,7 @@
 
 var module = angular.module('keycloak.services', [ 'ngResource', 'ngRoute' ]);
 
-module.service('Dialog', function($modal) {
+module.service('Dialog', function($modal, $translate) {
     var dialog = {};
 
     var openDialog = function(title, message, btns, template) {
@@ -43,20 +43,11 @@ module.service('Dialog', function($modal) {
     };
 
     dialog.confirmDelete = function(name, type, success) {
-        var title = 'Delete ' + escapeHtml(type.charAt(0).toUpperCase() + type.slice(1));
-        var msg = 'Are you sure you want to permanently delete the ' + type + ' ' + name + '?';
-        var btns = {
-            ok: {
-                label: 'Delete',
-                cssClass: 'btn btn-danger'
-            },
-            cancel: {
-                label: 'Cancel',
-                cssClass: 'btn btn-default'
-            }
-        }
+        var title = $translate.instant('dialogs.delete.title', {type: escapeHtml(type.charAt(0).toUpperCase() + type.slice(1))});
+        var msg = $translate.instant('dialogs.delete.message', {type: type, name: name});
+        var confirm = $translate.instant('dialogs.delete.confirm');
 
-        openDialog(title, msg, btns, '/templates/kc-modal.html').then(success);
+        dialog.confirmWithButtonText(title, msg, confirm, success);
     }
 
     dialog.confirmGenerateKeys = function(name, type, success) {
@@ -77,13 +68,17 @@ module.service('Dialog', function($modal) {
     }
 
     dialog.confirm = function(title, message, success, cancel) {
+        dialog.confirmWithButtonText(title, message, title, success, cancel);
+    }
+
+    dialog.confirmWithButtonText = function(title, message, confirm, success, cancel) {
         var btns = {
             ok: {
-                label: title,
+                label: confirm,
                 cssClass: 'btn btn-danger'
             },
             cancel: {
-                label: 'Cancel',
+                label: $translate.instant('dialogs.cancel'),
                 cssClass: 'btn btn-default'
             }
         }
@@ -94,7 +89,7 @@ module.service('Dialog', function($modal) {
     dialog.message = function(title, message, success, cancel) {
         var btns = {
             ok: {
-                label: "Ok",
+                label: $translate.instant('dialogs.ok'),
                 cssClass: 'btn btn-default'
             }
         }
@@ -166,7 +161,7 @@ module.service('UpdateDialog', function($modal) {
     return dialog;
 });
 
-module.factory('Notifications', function($rootScope, $timeout) {
+module.factory('Notifications', function($rootScope, $timeout, $translate) {
     // time (in ms) the notifications are shown
     var delay = 5000;
 
@@ -202,19 +197,19 @@ module.factory('Notifications', function($rootScope, $timeout) {
     }
 
     notifications.info = function(message) {
-        notifications.message("info", "Info!", message);
+        notifications.message("info", $translate.instant('notifications.info.header'), message);
     };
 
     notifications.success = function(message) {
-        notifications.message("success", "Success!", message);
+        notifications.message("success", $translate.instant('notifications.success.header'), message);
     };
 
     notifications.error = function(message) {
-        notifications.message("danger", "Error!", message);
+        notifications.message("danger", $translate.instant('notifications.error.header'), message);
     };
 
     notifications.warn = function(message) {
-        notifications.message("warning", "Warning!", message);
+        notifications.message("warning", $translate.instant('notifications.warn.header'), message);
     };
 
     return notifications;
