@@ -38,8 +38,8 @@
         <tbody>
         <tr ng-repeat="ia in clientInitialAccess | filter:search2 | orderBy:'timestamp'">
             <td>{{ia.id}}</td>
-            <td>{{(ia.timestamp * 1000)|date:'shortDate'}}&nbsp;{{(ia.timestamp * 1000)|date:'mediumTime'}}</td>
-            <td><span data-ng-show="ia.expiration > 0">{{((ia.timestamp + ia.expiration) * 1000)|date:'shortDate'}}&nbsp;{{((ia.timestamp + ia.expiration) * 1000)|date:'mediumTime'}}</span></td>
+            <td>{{(ia.timestamp * 1000)|date:('dateFormat' | translate)}}&nbsp;{{(ia.timestamp * 1000)|date:('timeFormat' | translate)}}</td>
+            <td><span data-ng-show="ia.expiration > 0">{{((ia.timestamp + ia.expiration) * 1000)|date:('dateFormat' | translate)}}&nbsp;{{((ia.timestamp + ia.expiration) * 1000)|date:('timeFormat' | translate)}}</span></td>
             <td>{{ia.count}}</td>
             <td>{{ia.remainingCount}}</td>
             <td class="kc-action-cell" data-ng-click="remove(ia.id)">{{:: 'delete' | translate}}</td>
