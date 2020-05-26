@@ -118,6 +118,15 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("tls_client_certificate_bound_access_tokens")
     private Boolean tlsClientCertificateBoundAccessTokens;
 
+    @JsonProperty("revocation_endpoint")
+    private String revocationEndpoint;
+
+    @JsonProperty("revocation_endpoint_auth_methods_supported")
+    private List<String> revocationEndpointAuthMethodsSupported;
+
+    @JsonProperty("revocation_endpoint_auth_signing_alg_values_supported")
+    private List<String> revocationEndpointAuthSigningAlgValuesSupported;
+
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
     public String getIssuer() {
@@ -345,6 +354,30 @@ public class OIDCConfigurationRepresentation {
 
     public void setTlsClientCertificateBoundAccessTokens(Boolean tlsClientCertificateBoundAccessTokens) {
         this.tlsClientCertificateBoundAccessTokens = tlsClientCertificateBoundAccessTokens;
+    }
+
+    public String getRevocationEndpoint() {
+        return revocationEndpoint;
+    }
+
+    public void setRevocationEndpoint(String revocationEndpoint) {
+        this.revocationEndpoint = revocationEndpoint;
+    }
+
+    public List<String> getRevocationEndpointAuthMethodsSupported() {
+        return revocationEndpointAuthMethodsSupported;
+    }
+
+    public void setRevocationEndpointAuthMethodsSupported(List<String> revocationEndpointAuthMethodsSupported) {
+        this.revocationEndpointAuthMethodsSupported = revocationEndpointAuthMethodsSupported;
+    }
+
+    public List<String> getRevocationEndpointAuthSigningAlgValuesSupported() {
+        return revocationEndpointAuthSigningAlgValuesSupported;
+    }
+
+    public void setRevocationEndpointAuthSigningAlgValuesSupported(List<String> revocationEndpointAuthSigningAlgValuesSupported) {
+        this.revocationEndpointAuthSigningAlgValuesSupported = revocationEndpointAuthSigningAlgValuesSupported;
     }
 
     @JsonAnyGetter
