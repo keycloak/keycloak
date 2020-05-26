@@ -25,7 +25,6 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.UserModelDelegate;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPConfig;
@@ -198,7 +197,8 @@ public class LDAPTestUtils {
                     GroupMapperConfig.GROUPS_DN, "ou=Groups," + baseDn,
                     GroupMapperConfig.MAPPED_GROUP_ATTRIBUTES, descriptionAttrName,
                     GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "true",
-                    GroupMapperConfig.MODE, mode.toString());
+                    GroupMapperConfig.MODE, mode.toString(),
+                    GroupMapperConfig.LDAP_GROUPS_PATH, "/");
             updateGroupMapperConfigOptions(mapperModel, otherConfigOptions);
             realm.addComponentModel(mapperModel);
         }
