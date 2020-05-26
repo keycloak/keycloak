@@ -14,8 +14,10 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
@@ -246,12 +248,21 @@ public class DefaultHostnameTest extends AbstractHostnameTest {
 
     private void assertAdminPage(String realm, String expectedFrontendUrl, String expectedAdminUrl) throws IOException, URISyntaxException {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            String indexPage = SimpleHttp.doGet(AUTH_SERVER_ROOT + "/admin/" + realm +"/console/", client).asString();
+            SimpleHttp.Response response = SimpleHttp.doGet(AUTH_SERVER_ROOT + "/admin/" + realm +"/console/", client).asResponse();
+            String indexPage = response.asString();
 
             assertTrue(indexPage.contains("authServerUrl = '" + expectedFrontendUrl +"'"));
             assertTrue(indexPage.contains("authUrl = '" + expectedAdminUrl +"'"));
             assertTrue(indexPage.contains("consoleBaseUrl = '" + new URI(expectedAdminUrl).getPath() +"/admin/" + realm + "/console/'"));
             assertTrue(indexPage.contains("resourceUrl = '" + new URI(expectedAdminUrl).getPath() +"/resources/"));
+
+            String cspHeader = response.getFirstHeader(BrowserSecurityHeaders.CONTENT_SECURITY_POLICY);
+
+            if (expectedFrontendUrl.equalsIgnoreCase(expectedAdminUrl)) {
+                assertEquals("frame-src 'self'; frame-ancestors 'self'; object-src 'none';", cspHeader);
+            } else {
+                assertEquals("frame-src " + UriUtils.getOrigin(expectedFrontendUrl) + "; frame-ancestors 'self'; object-src 'none';", cspHeader);
+            }
         }
     }
 
