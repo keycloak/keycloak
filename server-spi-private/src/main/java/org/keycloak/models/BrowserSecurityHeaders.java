@@ -97,9 +97,9 @@ public class BrowserSecurityHeaders {
 
     public static class ContentSecurityPolicyBuilder {
 
-        private String frameSrc = "self";
-        private String frameAncestors = "self";
-        private String objectSrc = "none";
+        private String frameSrc = "'self'";
+        private String frameAncestors = "'self'";
+        private String objectSrc = "'none'";
 
         private boolean first;
         private StringBuilder sb;
@@ -136,7 +136,7 @@ public class BrowserSecurityHeaders {
                 }
                 first = false;
 
-                sb.append(k).append(" '").append(v).append("';");
+                sb.append(k).append(" ").append(v).append(";");
             }
         }
 
