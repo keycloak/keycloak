@@ -67,7 +67,7 @@ public class DefaultKeyManager implements KeyManager {
                 List<KeyProvider> providers = getProviders(realm);
                 activeKey = getActiveKey(providers, realm, use, algorithm);
                 if (activeKey != null) {
-                    logger.warnv("Fallback key created: realm={0} algorithm={1} use={2}", realm.getName(), algorithm, use.name());
+                    logger.infov("No keys found for realm={0} and algorithm={1} for use={2}. Generating keys.", realm.getName(), algorithm, use.name());
                     return activeKey;
                 } else {
                     break;
