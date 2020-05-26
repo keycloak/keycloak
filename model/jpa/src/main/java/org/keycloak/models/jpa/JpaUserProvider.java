@@ -852,10 +852,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 case UserModel.SEARCH:
                     List<Predicate> orPredicates = new ArrayList();
 
-                    orPredicates.add(builder.like(builder.lower(root.get(UserModel.USERNAME)), "%" + value + "%"));
-                    orPredicates.add(builder.like(builder.lower(root.get(UserModel.EMAIL)), "%" + value + "%"));
-                    orPredicates.add(builder.like(builder.lower(root.get(UserModel.FIRST_NAME)), "%" + value + "%"));
-                    orPredicates.add(builder.like(builder.lower(root.get(UserModel.IDCARD)), "%" + value + "%"));
+                    orPredicates.add(builder.like(root.get(UserModel.USERNAME), "%" + value + "%"));
+                    orPredicates.add(builder.like(root.get(UserModel.FIRST_NAME), "%" + value + "%"));
+                    orPredicates.add(builder.like(root.get(UserModel.IDCARD), "%" + value + "%"));
 
                     predicates.add(builder.or(orPredicates.toArray(new Predicate[orPredicates.size()])));
 
@@ -866,7 +865,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 case UserModel.LAST_NAME:
                 case UserModel.EMAIL:
                 case UserModel.IDCARD:
-                    predicates.add(builder.like(builder.lower(root.get(UserModel.IDCARD)), "%" + value+ "%"));
+                    predicates.add(builder.like(builder.lower(root.get(key)), "%" + value+ "%"));
             }
         }
 
@@ -902,7 +901,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             predicates.add(builder.exists(subquery));
         }
 
-        queryBuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.desc(root.get("modifyTimestamp")),builder.desc(root.get("createdTimestamp")));
+        queryBuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.desc(root.get("createdTimestamp")));
 
         TypedQuery<UserEntity> query = em.createQuery(queryBuilder);
 

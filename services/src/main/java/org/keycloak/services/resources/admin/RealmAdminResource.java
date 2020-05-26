@@ -1092,6 +1092,7 @@ public class RealmAdminResource {
     @Path("partialImport")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response partialImport(PartialImportRepresentation rep) {
         auth.realm().requireManageRealm();
 

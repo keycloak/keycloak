@@ -1805,10 +1805,9 @@ public class RepresentationToModel {
     public static void createGroups(UserRepresentation userRep, RealmModel newRealm, UserModel user) {
         if (userRep.getGroups() != null) {
             for (GroupRepresentation groupRepresentation : userRep.getGroups()) {
-                GroupModel group = KeycloakModelUtils.findGroupByPath(newRealm, groupRepresentation.getPath());
+                GroupModel group = newRealm.getGroupById(groupRepresentation.getId());
                 if (group == null) {
-                    throw new RuntimeException("Unable to find group specified by path: " + groupRepresentation.getName());
-
+                    throw new RuntimeException("Unable to find group specified by id: " + groupRepresentation.getId());
                 }
                 user.joinGroup(group);
             }
@@ -2834,9 +2833,9 @@ public class RepresentationToModel {
 
         if (userRep.getGroups() != null) {
             for (GroupRepresentation groupRepresentation : userRep.getGroups()) {
-                GroupModel group = KeycloakModelUtils.findGroupByPath(newRealm, groupRepresentation.getName());
+                GroupModel group = newRealm.getGroupById(groupRepresentation.getId());
                 if (group == null) {
-                    throw new RuntimeException("Unable to find group specified by path: " + groupRepresentation.getName());
+                    throw new RuntimeException("Unable to find group specified by id: " + groupRepresentation.getId());
 
                 }
                 federatedStorage.joinGroup(newRealm, userRep.getId(), group);
