@@ -68,8 +68,10 @@
         <auth.server.memory.settings>-Xms64m -Xmx512m</auth.server.memory.settings>
         <auth.server.config.property.name>serverConfig</auth.server.config.property.name>
         <auth.server.adapter.impl.class>org.jboss.as.arquillian.container.managed.ManagedDeployableContainer</auth.server.adapter.impl.class>
-        <auth.server.truststore>&#36;{jboss.home.dir}/standalone/configuration/keycloak.truststore</auth.server.truststore>
+        <auth.server.truststore>${auth.server.config.dir}/keycloak.truststore</auth.server.truststore>
         <auth.server.truststore.password>secret</auth.server.truststore.password>
+        <auth.server.keystore>${auth.server.config.dir}/keycloak.jks</auth.server.keystore>
+        <auth.server.keystore.password>secret</auth.server.keystore.password>
         <auth.server.jvm.args.extra/>
 
         <auth.server.jboss.artifactId>integration-arquillian-servers-auth-server-${auth.server}</auth.server.jboss.artifactId>
@@ -90,6 +92,7 @@
         <app.server.skip.unpack>true</app.server.skip.unpack>
         <app.server.artifactId>integration-arquillian-servers-app-server-${app.server}</app.server.artifactId>
         <app.server.home>${containers.home}/app-server-${app.server}</app.server.home>
+        <app.server.config.dir>${app.server.home}/standalone/configuration</app.server.config.dir>
         <app.server.port.offset>200</app.server.port.offset>
         <app.server.http.port>8280</app.server.http.port>
         <app.server.https.port>8643</app.server.https.port>
@@ -108,6 +111,10 @@
         <app.server.memory.Xmx>512m</app.server.memory.Xmx>
         <app.server.memory.settings>-Xms${app.server.memory.Xms} -Xmx${app.server.memory.Xmx} -XX:MetaspaceSize=${surefire.memory.metaspace} -XX:MaxMetaspaceSize=${surefire.memory.metaspace.max}</app.server.memory.settings>
         <app.server.ssl.required>false</app.server.ssl.required>
+        <app.server.truststore>${app.server.config.dir}/keycloak.truststore</app.server.truststore>
+        <app.server.truststore.password>secret</app.server.truststore.password>
+        <app.server.keystore>${app.server.config.dir}/adapter.jks</app.server.keystore>
+        <app.server.keystore.password>secret</app.server.keystore.password>
         <app.server.jvm.args.extra/>
 
         <cache.server>undefined</cache.server>
@@ -118,6 +125,12 @@
         <cache.server.2.port.offset>2010</cache.server.2.port.offset>
         <cache.server.2.management.port>12000</cache.server.2.management.port>
         <cache.server.console.output>true</cache.server.console.output>
+
+        <dependency.keystore.root>${project.build.directory}/dependency/keystore</dependency.keystore.root>
+        <dependency.truststore>${dependency.keystore.root}/keycloak.truststore</dependency.truststore>
+        <dependency.truststore.password>secret</dependency.truststore.password>
+        <dependency.keystore>${dependency.keystore.root}/keycloak.jks</dependency.keystore>
+        <dependency.keystore.password>secret</dependency.keystore.password>
 
         <keycloak.connectionsInfinispan.remoteStoreServer>localhost</keycloak.connectionsInfinispan.remoteStoreServer>
         <keycloak.connectionsInfinispan.remoteStorePort>12232</keycloak.connectionsInfinispan.remoteStorePort>
@@ -463,6 +476,8 @@
                             <auth.server.jboss.jvm.debug.args>${auth.server.jboss.jvm.debug.args}</auth.server.jboss.jvm.debug.args>
                             <auth.server.truststore>${auth.server.truststore}</auth.server.truststore>
                             <auth.server.truststore.password>${auth.server.truststore.password}</auth.server.truststore.password>
+                            <auth.server.keystore>${auth.server.keystore}</auth.server.keystore>
+                            <auth.server.keystore.password>${auth.server.keystore.password}</auth.server.keystore.password>
                             <auth.server.jvm.args.extra>${auth.server.jvm.args.extra}</auth.server.jvm.args.extra>
 
                             <auth.server.profile>${auth.server.profile}</auth.server.profile>
@@ -470,6 +485,7 @@
 
                             <app.server>${app.server}</app.server>
                             <app.server.home>${app.server.home}</app.server.home>
+                            <app.server.config.dir>${app.server.config.dir}</app.server.config.dir>
                             <app.server.java.home>${app.server.java.home}</app.server.java.home>
                             <app.server.memory.settings>${app.server.memory.settings}</app.server.memory.settings>
                             <app.server.port.offset>${app.server.port.offset}</app.server.port.offset>
@@ -484,6 +500,10 @@
                             <app.server.2.port.offset>${app.server.2.port.offset}</app.server.2.port.offset>
                             <app.server.2.management.port>${app.server.2.management.port}</app.server.2.management.port>
                             <app.server.jboss.jvm.debug.args>${app.server.jboss.jvm.debug.args}</app.server.jboss.jvm.debug.args>
+                            <app.server.truststore>${app.server.truststore}</app.server.truststore>
+                            <app.server.truststore.password>${app.server.truststore.password}</app.server.truststore.password>
+                            <app.server.keystore>${app.server.keystore}</app.server.keystore>
+                            <app.server.keystore.password>${app.server.keystore.password}</app.server.keystore.password>
                             <app.server.jvm.args.extra>${app.server.jvm.args.extra}</app.server.jvm.args.extra>
 
                             <frontend.console.output>${frontend.console.output}</frontend.console.output>
@@ -501,6 +521,12 @@
                             <testsuite.constants>${testsuite.constants}</testsuite.constants>
                             <cli.log.output>${cli.log.output}</cli.log.output>
                             <test.intermittent>${test.intermittent}</test.intermittent>
+
+                            <dependency.keystore.root>${dependency.keystore.root}</dependency.keystore.root>
+                            <dependency.truststore>${dependency.truststore}</dependency.truststore>
+                            <dependency.truststore.password>${dependency.truststore.password}</dependency.truststore.password>
+                            <dependency.keystore>${dependency.keystore}</dependency.keystore>
+                            <dependency.keystore.password>${dependency.keystore.password}</dependency.keystore.password>
 
                             <browser>${browser}</browser>
                             <js.browser>${js.browser}</js.browser>
@@ -1685,6 +1711,10 @@
                         <groupId>org.liquibase</groupId>
                         <artifactId>liquibase-maven-plugin</artifactId>
                     </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>keytool-maven-plugin</artifactId>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -1719,6 +1749,104 @@
             <properties>
                 <app.server.memory.settings>-Xms${app.server.memory.Xms} -Xmx${app.server.memory.Xmx} -XX:PermSize=${surefire.memory.metaspace} -XX:MaxPermSize=${surefire.memory.metaspace.max}</app.server.memory.settings>
             </properties>
+        </profile>
+
+        <profile>
+            <id>generate-certs-for-custom-auth-server-host</id>
+            <activation>
+                <property>
+                    <name>auth.server.host</name>
+                </property>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>keytool-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>remove-old-auth-server-key</id>
+                                    <phase>generate-test-resources</phase>
+                                    <goals>
+                                        <goal>deleteAlias</goal>
+                                    </goals>
+                                    <configuration>
+                                        <keystore>${dependency.keystore}</keystore>
+                                        <storepass>${dependency.keystore.password}</storepass>
+                                        <alias>localhost</alias>
+                                    </configuration>
+                                </execution>
+                                <execution>
+                                    <id>generate-new-auth-server-cert</id>
+                                    <phase>generate-test-resources</phase>
+                                    <goals>
+                                        <goal>generateKeyPair</goal>
+                                    </goals>
+                                    <configuration>
+                                        <keystore>${dependency.keystore}</keystore>
+                                        <storepass>${dependency.keystore.password}</storepass>
+                                        <alias>${auth.server.host}</alias>
+                                        <dname>CN=${auth.server.host}, OU=Keycloak, O=Red Hat, L=Westword, ST=MA, C=US</dname>
+                                        <keyalg>RSA</keyalg>
+                                        <keysize>2048</keysize>
+                                        <sigalg>SHA256withRSA</sigalg>
+                                    </configuration>
+                                </execution>
+                                <execution>
+                                    <id>export-auth-server-cert</id>
+                                    <phase>generate-test-resources</phase>
+                                    <goals>
+                                        <goal>exportCertificate</goal>
+                                    </goals>
+                                    <configuration>
+                                        <keystore>${dependency.keystore}</keystore>
+                                        <storepass>${dependency.keystore.password}</storepass>
+                                        <alias>${auth.server.host}</alias>
+                                        <file>${dependency.keystore.root}/${auth.server.host}.pem</file>
+                                    </configuration>
+                                </execution>
+                                <execution>
+                                    <id>import-auth-server-cert-to-truststore</id>
+                                    <phase>generate-test-resources</phase>
+                                    <goals>
+                                        <goal>importCertificate</goal>
+                                    </goals>
+                                    <configuration>
+                                        <keystore>${dependency.truststore}</keystore>
+                                        <storepass>${dependency.truststore.password}</storepass>
+                                        <alias>${auth.server.host}</alias>
+                                        <file>${dependency.keystore.root}/${auth.server.host}.pem</file>
+                                        <trustcacerts>true</trustcacerts>
+                                        <noprompt>true</noprompt>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <artifactId>maven-resources-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>copy-processed-truststore-to-auth-server</id>
+                                    <phase>process-test-resources</phase>
+                                    <goals>
+                                        <goal>copy-resources</goal>
+                                    </goals>
+                                    <configuration>
+                                        <outputDirectory>${auth.server.config.dir}</outputDirectory>
+                                        <resources>
+                                            <resource>
+                                                <directory>${dependency.keystore.root}</directory>
+                                            </resource>
+                                        </resources>
+                                        <overwrite>true</overwrite>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
         </profile>
 
     </profiles>
