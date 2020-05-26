@@ -25,6 +25,7 @@ import javax.ws.rs.NotFoundException;
 import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Version;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
@@ -309,7 +310,7 @@ public class AdminConsole {
 
             // Replace CSP if admin is hosted on different URL
             if (!adminBaseUri.equals(authServerBaseUri)) {
-                session.getProvider(SecurityHeadersProvider.class).options().allowFrameSrc(UriBuilder.fromUri(authServerBaseUri).replacePath("").build().toString());
+                session.getProvider(SecurityHeadersProvider.class).options().allowFrameSrc(UriUtils.getOrigin(authServerBaseUri));
             }
 
             return builder.build();
