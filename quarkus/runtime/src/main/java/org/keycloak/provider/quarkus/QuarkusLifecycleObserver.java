@@ -41,7 +41,7 @@ public class QuarkusLifecycleObserver {
     @Inject
     KeycloakApplication application;
 
-    private void onStartupEvent(@Observes StartupEvent event) {
+    void onStartupEvent(@Observes StartupEvent event) {
 
         Runnable startupHook = ((QuarkusPlatform) Platform.getPlatform()).startupHook;
 
@@ -52,7 +52,7 @@ public class QuarkusLifecycleObserver {
 
     }
 
-    private void onShutdownEvent(@Observes ShutdownEvent event) {
+    void onShutdownEvent(@Observes ShutdownEvent event) {
 
         Runnable shutdownHook = ((QuarkusPlatform) Platform.getPlatform()).shutdownHook;
 
