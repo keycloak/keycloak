@@ -15,16 +15,17 @@
  */
 
 import * as React from 'react';
-import {Alert, AlertActionCloseButton} from '@patternfly/react-core';
-import {Msg} from '../widgets/Msg';
+import { Alert, AlertActionCloseButton, AlertGroup, AlertVariant } from '@patternfly/react-core';
+import { Msg } from '../widgets/Msg';
 
-interface ContentAlertProps {}
+interface ContentAlertProps { }
 
-type AlertVariant = 'success' | 'danger' | 'warning' | 'info';
 interface ContentAlertState {
-    isVisible: boolean;
-    message: string;
-    variant: AlertVariant;
+    alerts: {
+        key: number;
+        message: string;
+        variant: AlertVariant;
+    }[];
 }
 export class ContentAlert extends React.Component<ContentAlertProps, ContentAlertState> {
     private static instance: ContentAlert;
@@ -32,7 +33,9 @@ export class ContentAlert extends React.Component<ContentAlertProps, ContentAler
     private constructor(props: ContentAlertProps) {
         super(props);
 
-        this.state = {isVisible: false, message: '', variant: 'success'};
+        this.state = {
+            alerts: []
+        };
         ContentAlert.instance = this;
     }
 
@@ -40,62 +43,69 @@ export class ContentAlert extends React.Component<ContentAlertProps, ContentAler
      * @param message A literal text message or localization key.
      */
     public static success(message: string, params?: string[]): void {
-        ContentAlert.instance.postAlert('success', message, params);
+        ContentAlert.instance.postAlert(AlertVariant.success, message, params);
     }
 
     /**
      * @param message A literal text message or localization key.
      */
     public static danger(message: string, params?: string[]): void {
-        ContentAlert.instance.postAlert('danger', message, params);
+        ContentAlert.instance.postAlert(AlertVariant.danger, message, params);
     }
 
     /**
      * @param message A literal text message or localization key.
      */
     public static warning(message: string, params?: string[]): void {
-        ContentAlert.instance.postAlert('warning', message, params);
+        ContentAlert.instance.postAlert(AlertVariant.warning, message, params);
     }
 
     /**
      * @param message A literal text message or localization key.
      */
     public static info(message: string, params?: string[]): void {
-        ContentAlert.instance.postAlert('info', message, params);
+        ContentAlert.instance.postAlert(AlertVariant.info, message, params);
     }
 
-    private hideAlert = () => {
-        this.setState({isVisible: false});
+    private hideAlert = (key: number) => {
+        this.setState({ alerts: [...this.state.alerts.filter(el => el.key !== key)] });
     }
+
+    private getUniqueId = () => (new Date().getTime());
 
     private postAlert = (variant: AlertVariant, message: string, params?: string[]) => {
-        this.setState({isVisible: true,
-                       message: Msg.localize(message, params),
-                       variant});
+        const alerts = this.state.alerts;
+        const key = this.getUniqueId();
+        alerts.push({
+            key,
+            message: Msg.localize(message, params),
+            variant
+        });
+        this.setState({ alerts });
 
-        if (variant !== 'danger') {
-            setTimeout(() => this.setState({isVisible: false}), 5000);
+        if (variant !== AlertVariant.danger) {
+            setTimeout(() => this.hideAlert(key), 8000);
         }
     }
 
     public render(): React.ReactNode {
         return (
-            <React.Fragment>
-            { this.state.isVisible &&
-                <section className="pf-c-page__main-section pf-m-light">
+            <AlertGroup isToast>
+                {this.state.alerts.map(({ key, variant, message }) => (
                     <Alert
-                      id="content-alert"
-                      title=''
-                      variant={this.state.variant}
-                      variantLabel=''
-                      aria-label=''
-                      action={<AlertActionCloseButton id="content-alert-close" onClose={this.hideAlert} />}
-                    >
-                        {this.state.message}
-                    </Alert>
-                </section>
-            }
-            </React.Fragment>
+                        isLiveRegion
+                        variant={variant}
+                        title={message}
+                        action={
+                            <AlertActionCloseButton
+                                title={message}
+                                variantLabel={`${variant} alert`}
+                                onClose={() => this.hideAlert(key)}
+                            />
+                        }
+                        key={key} />
+                ))}
+            </AlertGroup>
         );
     }
 }

@@ -26,11 +26,13 @@ import {
     ChipGroupToolbarItem,
     Chip
   } from '@patternfly/react-core';
+import { RepositoryIcon } from '@patternfly/react-icons';
 
 
-import {PaginatedResources, Resource} from "./MyResourcesPage";
+import {PaginatedResources, Resource, Scope} from "./MyResourcesPage";
 import { Msg } from '../../widgets/Msg';
 import { AbstractResourcesTable, ResourcesTableState } from './AbstractResourceTable';
+import EmptyMessageState from '../../widgets/EmptyMessageState';
 
 export interface ResourcesTableProps {
     resources: PaginatedResources;
@@ -47,6 +49,11 @@ export class SharedResourcesTable extends AbstractResourcesTable<ResourcesTableS
     }
 
     public render(): React.ReactNode {
+        if (this.props.resources.data.length === 0) {
+            return (
+                <EmptyMessageState icon={RepositoryIcon} messageKey="noResourcesSharedWithYou"/>
+            );
+        }
         return (
             <DataList aria-label={Msg.localize('resources')}>
                 <DataListItem key='resource-header' aria-labelledby='resource-header'>
@@ -65,7 +72,6 @@ export class SharedResourcesTable extends AbstractResourcesTable<ResourcesTableS
                         />
                     </DataListItemRow>
                 </DataListItem>
-                {(this.props.resources.data.length === 0) && <Msg msgKey="noResourcesSharedWithYou"/>}
                 {this.props.resources.data.map((resource: Resource, row: number) => (
                     <DataListItem key={'resource-' + row} aria-labelledby={resource.name}>
                         <DataListItemRow>
@@ -96,7 +102,7 @@ export class SharedResourcesTable extends AbstractResourcesTable<ResourcesTableS
                                         <ChipGroup withToolbar>
                                             <ChipGroupToolbarItem key='permissions' categoryName={Msg.localize('pending')}>
                                                 {
-                                                    resource.shareRequests[0].scopes.map(scope => (
+                                                    (resource.shareRequests[0].scopes as Scope[]).map(scope => (
                                                         <Chip key={scope.name} isReadOnly>
                                                             {scope.displayName || scope.name}
                                                         </Chip>
