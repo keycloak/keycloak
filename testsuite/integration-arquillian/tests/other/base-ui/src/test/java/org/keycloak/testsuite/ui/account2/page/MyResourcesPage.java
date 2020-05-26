@@ -30,29 +30,27 @@ public class MyResourcesPage extends AbstractLoggedInPage {
     }
 
     public void clickShareButton(int row) {
-        final WebElement webElement = driver.findElement(By.id("ex-expand" + row));
-
-        //first button is share
-        webElement.findElements(By.tagName("button")).get(0).click();
+        driver.findElement(By.id("share-" + row)).click();
     }
 
     public void clickEditButton(int row) {
-        final WebElement webElement = driver.findElement(By.id("ex-expand" + row));
-
-        //first button share 2rd is the edit button
-        webElement.findElements(By.tagName("button")).get(1).click();
+        final WebElement webElement = driver.findElement(By.id("action-menu-" + row));
+        webElement.click();
+        webElement.findElement(By.id("edit-" + row)).click();
     }
 
     public void createShare(String userName) {
         driver.findElement(By.id("username")).sendKeys(userName);
         driver.findElement(By.id("add")).click();
-        driver.findElement(By.id("remove_pf-random-id-1")).click();
+        driver.findElement(By.id("pf-toggle-id-6")).click();
+        driver.findElement(By.id("Scope A-1")).click();
+        driver.findElement(By.id("pf-toggle-id-9")).click();
         driver.findElement(By.id("done")).click();
     }
 
     public void removeAllPermissions() {
-        driver.findElement(By.id("remove_pf-random-id-1")).click();
-        driver.findElement(By.id("remove_pf-random-id-2")).click();
+        driver.findElement(By.className("pf-c-select__toggle-clear")).click();
+        driver.findElement(By.id("save-0")).click();
         driver.findElement(By.id("done")).click();
     }
 }

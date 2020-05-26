@@ -14,7 +14,21 @@
  * limitations under the License.
  */
 import * as React from 'react';
-import { Button, Modal, Text, Badge, DataListItem, DataList, TextVariants, DataListItemRow, DataListItemCells, DataListCell, Chip } from '@patternfly/react-core';
+import {
+    Button,
+    Modal,
+    Text,
+    Badge,
+    DataListItem,
+    DataList,
+    TextVariants,
+    DataListItemRow,
+    DataListItemCells,
+    DataListCell,
+    Chip,
+    Split,
+    SplitItem
+} from '@patternfly/react-core';
 import { UserCheckIcon } from '@patternfly/react-icons';
 
 import AccountService, {HttpResponse} from '../../account-service/account.service';
@@ -59,7 +73,7 @@ export class PermissionRequest extends React.Component<PermissionRequestProps, P
         const permissions: Permission[] = permissionsRequest.data || [];
 
         // Erik - I had to add the exclamation point.  Can we be sure that the 'find' will not return undefined?
-        const userScopes = permissions.find((p: Permission) => p.username === username)!.scopes;
+        const userScopes = permissions.find((p: Permission) => p.username === username)!.scopes as Scope[];
         if (approve) {
             userScopes.push(...scopes);
         }
@@ -124,15 +138,22 @@ export class PermissionRequest extends React.Component<PermissionRequestProps, P
                                                 <Text component={TextVariants.small}>{shareRequest.email}</Text>
                                             </DataListCell>,
                                             <DataListCell key={`permissions${i}`}>
-                                                {shareRequest.scopes.map((scope, j) => <Chip key={j} isReadOnly>{scope}</Chip>)}
+                                                {(shareRequest.scopes as Scope[]).map((scope, j) => <Chip key={j} isReadOnly>{scope}</Chip>)}
                                             </DataListCell>,
                                             <DataListCell key={`actions${i}`}>
-                                                <Button onClick={() => this.handleApprove(shareRequest.username, shareRequest.scopes)}>
-                                                    Accept
-                                                </Button>
-                                                <Button variant="danger" onClick={() => this.handleDeny(shareRequest.username, shareRequest.scopes)}>
-                                                    Deny
-                                                </Button>
+                                                <Split gutter="sm">
+                                                    <SplitItem>
+                                                        <Button
+                                                            onClick={() => this.handleApprove(shareRequest.username, shareRequest.scopes as Scope[])}>
+                                                            Accept
+                                                        </Button>
+                                                    </SplitItem>
+                                                    <SplitItem>
+                                                        <Button variant="danger" onClick={() => this.handleDeny(shareRequest.username, shareRequest.scopes as Scope[])}>
+                                                            Deny
+                                                        </Button>
+                                                    </SplitItem>
+                                                </Split>
                                             </DataListCell>
                                         ]}
                                     />

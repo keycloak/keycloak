@@ -31,19 +31,18 @@ import {
     TextInput
 } from '@patternfly/react-core';
 
-import { ShareAltIcon } from '@patternfly/react-icons';
-
-import AccountService, {HttpResponse} from '../../account-service/account.service';
+import AccountService from '../../account-service/account.service';
 import { Resource, Permission, Scope } from './MyResourcesPage';
 import { Msg } from '../../widgets/Msg';
 import {ContentAlert} from '../ContentAlert';
+import { PermissionSelect } from './PermissionSelect';
 
 interface ShareTheResourceProps {
     resource: Resource;
     permissions: Permission[];
     sharedWithUsersMsg: React.ReactNode;
-    onClose: (resource: Resource, row: number) => void;
-    row: number;
+    onClose: () => void;
+    children: (toggle: () => void) => void;
 }
 
 interface ShareTheResourceState {
@@ -58,7 +57,7 @@ interface ShareTheResourceState {
  * @author Stan Silvert ssilvert@redhat.com (C) 2019 Red Hat Inc.
  */
 export class ShareTheResource extends React.Component<ShareTheResourceProps, ShareTheResourceState> {
-    protected static defaultProps = {permissions: [], row: 0};
+    protected static defaultProps = {permissions: []};
 
     public constructor(props: ShareTheResourceProps) {
         super(props);
@@ -100,13 +99,14 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
         AccountService.doPut(`/resources/${rscId}/permissions`, permissions)
             .then(() => {
                 ContentAlert.success('shareSuccess');
-                this.props.onClose(this.props.resource, this.props.row);
+                this.props.onClose();
             })
     };
 
     private handleToggleDialog = () => {
        if (this.state.isOpen) {
            this.setState({isOpen: false});
+           this.props.onClose();
        } else {
            this.clearState();
            this.setState({isOpen: true});
@@ -136,21 +136,6 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
         this.setState({usernames: newUsernames});
     }
 
-    private handleSelectPermission = (selectedPermission: Scope) => {
-        let newPermissionsSelected: Scope[] = this.state.permissionsSelected;
-        let newPermissionsUnSelected: Scope[] = this.state.permissionsUnSelected;
-
-        if (newPermissionsSelected.includes(selectedPermission)) {
-            newPermissionsSelected = newPermissionsSelected.filter(permission => permission !== selectedPermission);
-            newPermissionsUnSelected.push(selectedPermission);
-        } else {
-            newPermissionsUnSelected = newPermissionsUnSelected.filter(permission => permission !== selectedPermission);
-            newPermissionsSelected.push(selectedPermission);
-        }
-
-        this.setState({permissionsSelected: newPermissionsSelected, permissionsUnSelected: newPermissionsUnSelected});
-    }
-
     private isAddDisabled(): boolean {
         return this.state.usernameInput === '' || this.isAlreadyShared();
     }
@@ -168,12 +153,9 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
     }
 
     public render(): React.ReactNode {
-
         return (
             <React.Fragment>
-                <Button variant="link" onClick={this.handleToggleDialog}>
-                    <ShareAltIcon/> Share
-                </Button>
+                {this.props.children(this.handleToggleDialog)}
 
                 <Modal
                 title={'Share the resource - ' + this.props.resource.name}
@@ -207,7 +189,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
                                                 isValid={!this.isAlreadyShared()}
                                                 id="username"
                                                 aria-describedby="username-helper"
-                                                placeholder="username or email"
+                                                placeholder="Username or email"
                                                 onChange={this.handleUsernameChange}
                                                 onKeyPress={this.handleEnterKeyInAddField}
                                             />
@@ -233,30 +215,11 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
                                 label=""
                                 fieldId="permissions-selected"
                             >
-                                {this.state.permissionsSelected.length < 1 && <strong>Select permissions below:</strong>}
-                                <ChipGroup withToolbar>
-                                    <ChipGroupToolbarItem key='permissions-selected' categoryName='Grant Permissions '>
-                                    {this.state.permissionsSelected.map((currentChip: Scope) => (
-                                        <Chip key={currentChip.toString()} onClick={() => this.handleSelectPermission(currentChip)}>
-                                            {currentChip.toString()}
-                                        </Chip>
-                                    ))}
-                                    </ChipGroupToolbarItem>
-                                </ChipGroup>
-                            </FormGroup>
-                            <FormGroup
-                                label=""
-                                fieldId="permissions-not-selected"
-                            >
-                                <ChipGroup withToolbar>
-                                    <ChipGroupToolbarItem key='permissions-unselected' categoryName='Not Selected '>
-                                    {this.state.permissionsUnSelected.map((currentChip: Scope) => (
-                                        <Chip key={currentChip.toString()} onClick={() => this.handleSelectPermission(currentChip)}>
-                                            {currentChip.toString()}
-                                        </Chip>
-                                    ))}
-                                    </ChipGroupToolbarItem>
-                                </ChipGroup>
+                                <PermissionSelect
+                                    scopes={this.state.permissionsUnSelected}
+                                    onSelect={selection => this.setState({ permissionsSelected: selection })}
+                                    direction="up"
+                                />
                             </FormGroup>
                         </Form>
                     </StackItem>
