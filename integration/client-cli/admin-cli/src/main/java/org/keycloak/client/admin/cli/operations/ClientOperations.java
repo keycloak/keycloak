@@ -24,6 +24,6 @@ import static org.keycloak.client.admin.cli.util.HttpUtil.getIdForType;
 public class ClientOperations {
 
     public static String getIdFromClientId(String rootUrl, String realm, String auth, String clientId) {
-        return getIdForType(rootUrl, realm, auth, "clients", "clientId", clientId);
+        return getIdForType(rootUrl, realm, auth, "clients", "clientId", clientId, "clientId");
     }
 }
