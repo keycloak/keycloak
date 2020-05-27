@@ -434,25 +434,21 @@ public class HttpUtil {
         checkSuccess(resourceUrl, response);
     }
 
-    public static String getIdForType(String rootUrl, String realm, String auth, String resourceEndpoint, String attrName, String attrValue) {
+    public static String getIdForType(String rootUrl, String realm, String auth, String resourceEndpoint, String attrName, String attrValue, String inputAttrName) {
 
-        return getAttrForType(rootUrl, realm, auth, resourceEndpoint, attrName, attrValue, "id");
+        return getAttrForType(rootUrl, realm, auth, resourceEndpoint, attrName, attrValue, inputAttrName, "id");
     }
 
-    public static String getAttrForType(String rootUrl, String realm, String auth, String resourceEndpoint, String attrName, String attrValue, String returnAttrName) {
+    public static String getAttrForType(String rootUrl, String realm, String auth, String resourceEndpoint, String attrName, String attrValue, String inputAttrName, String returnAttrName) {
 
         String resourceUrl = composeResourceUrl(rootUrl, realm, resourceEndpoint);
-        if ("roles".equals(resourceEndpoint)) {
-            resourceUrl = HttpUtil.addQueryParamsToUri(resourceUrl, "search", attrValue, "first", "0", "max", "2");
-        } else {
-            resourceUrl = HttpUtil.addQueryParamsToUri(resourceUrl, attrName, attrValue, "first", "0", "max", "2");
-        }
+        resourceUrl = HttpUtil.addQueryParamsToUri(resourceUrl, attrName, attrValue, "first", "0", "max", "2");
 
         List<ObjectNode> users = doGetJSON(RoleOperations.LIST_OF_NODES.class, resourceUrl, auth);
 
         ObjectNode user;
         try {
-            user = new LocalSearch(users).exactMatchOne(attrValue, attrName);
+            user = new LocalSearch(users).exactMatchOne(attrValue, inputAttrName);
         } catch (Exception e) {
             throw new RuntimeException("Multiple " + resourceEndpoint + " found for " + attrName + ": " + attrValue, e);
         }
