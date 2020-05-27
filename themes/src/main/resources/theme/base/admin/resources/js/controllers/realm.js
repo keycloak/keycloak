@@ -962,9 +962,14 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
     };
 
     var setConfig = function(data) {
+    	if (data["enabledFromMetadata"] !== undefined ) {
+             $scope.identityProvider.enabled = data["enabledFromMetadata"] == "true";
+             delete data["enabledFromMetadata"];
+        }
         for (var key in data) {
             $scope.identityProvider.config[key] = data[key];
         }
+       
     }
 
     $scope.uploadFile = function() {
