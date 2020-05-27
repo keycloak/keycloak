@@ -95,7 +95,7 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
 
     private ProviderLoader createUserProviderLoader() {
         return UserProviderLoader
-                .create(KeycloakDeploymentInfo.create().services(), getClass().getClassLoader());
+                .create(KeycloakDeploymentInfo.create().services(), Thread.currentThread().getContextClassLoader());
     }
 
     private ProviderFactory lookupProviderFactory(Class<? extends ProviderFactory> factoryClazz) {

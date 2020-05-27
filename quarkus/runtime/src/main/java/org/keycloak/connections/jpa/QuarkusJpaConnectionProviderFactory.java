@@ -60,6 +60,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
+import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
@@ -380,6 +381,8 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
 
             if (createMasterRealm) {
                 applianceBootstrap.createMasterRealm();
+                //TODO: Remove this to reduce startup time. See https://issues.redhat.com/browse/KEYCLOAK-14308.
+                DefaultKeyProviders.createProviders(session.getContext().getRealm());
             }
 
             session.getTransactionManager().commit();

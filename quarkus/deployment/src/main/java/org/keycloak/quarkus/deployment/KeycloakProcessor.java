@@ -63,13 +63,13 @@ class KeycloakProcessor {
      */
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
-    void configureBuiltInProviders(KeycloakRecorder recorder, BuildProducer<BeanContainerListenerBuildItem> container) {
-        container.produce(new BeanContainerListenerBuildItem(recorder.configSessionFactory(loadBuiltInFactories())));
+    void configureBuiltInProviders(KeycloakRecorder recorder) {
+        recorder.configSessionFactory(loadBuiltInFactories());
     }
 
     private Map<Spi, Set<Class<? extends ProviderFactory>>> loadBuiltInFactories() {
         ProviderManager pm = new ProviderManager(
-                KeycloakDeploymentInfo.create().services(), getClass().getClassLoader(), Config.scope().getArray("providers"));
+                KeycloakDeploymentInfo.create().services(), Thread.currentThread().getContextClassLoader(), Config.scope().getArray("providers"));
         Map<Spi, Set<Class<? extends ProviderFactory>>> result = new HashMap<>();
 
         for (Spi spi : pm.loadSpis()) {
