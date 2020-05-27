@@ -20,7 +20,9 @@ package org.keycloak.testsuite.admin;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.metadata.EndpointType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
@@ -494,16 +496,16 @@ public class IdentityProviderTest extends AbstractAdminTest {
     }
 
     private IdentityProviderRepresentation createRep(String id, String providerId) {
-        return createRep(id, providerId, null);
+        return createRep(id, providerId,true, null);
     }
 
-    private IdentityProviderRepresentation createRep(String id, String providerId, Map<String, String> config) {
+    private IdentityProviderRepresentation createRep(String id, String providerId,boolean enabled, Map<String, String> config) {
         IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
 
         idp.setAlias(id);
         idp.setDisplayName(id);
         idp.setProviderId(providerId);
-        idp.setEnabled(true);
+        idp.setEnabled(enabled);
         if (config != null) {
             idp.setConfig(config);
         }
@@ -603,14 +605,14 @@ public class IdentityProviderTest extends AbstractAdminTest {
         form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata.xml");
 
         Map<String, String> result = realm.identityProviders().importFrom(form);
-        assertSamlImport(result, SIGNING_CERT_1);
+        assertSamlImport(result, SIGNING_CERT_1,true);
 
         // Create new SAML identity provider using configuration retrieved from import-config
-        create(createRep("saml", "saml", result));
+        create(createRep("saml", "saml",true, result));
 
         IdentityProviderResource provider = realm.identityProviders().get("saml");
         IdentityProviderRepresentation rep = provider.toRepresentation();
-        assertCreatedSamlIdp(rep);
+        assertCreatedSamlIdp(rep,true);
 
         // Now list the providers - we should see the one just created
         List<IdentityProviderRepresentation> providers = realm.identityProviders().findAll();
@@ -626,6 +628,32 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
         assertSamlExport(body);
     }
+    
+    @Test
+    public void testSamlImportAndExportDisabled() throws URISyntaxException, IOException, ParsingException {
+
+        // Use import-config to convert IDPSSODescriptor file into key value pairs
+        // to use when creating a SAML Identity Provider
+        MultipartFormDataOutput form = new MultipartFormDataOutput();
+        form.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
+
+        URL idpMeta = getClass().getClassLoader().getResource("admin-test/saml-idp-metadata-disabled.xml");
+        byte[] content = Files.readAllBytes(Paths.get(idpMeta.toURI()));
+        String body = new String(content, Charset.forName("utf-8"));
+        form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata-disabled.xml");
+
+        Map<String, String> result = realm.identityProviders().importFrom(form);
+        assertSamlImport(result, SIGNING_CERT_1, false);
+
+        // Create new SAML identity provider using configuration retrieved from import-config
+        create(createRep("saml", "saml", false, result));
+
+        IdentityProviderResource provider = realm.identityProviders().get("saml");
+        IdentityProviderRepresentation rep = provider.toRepresentation();
+        assertCreatedSamlIdp(rep, false);
+        
+    }
+
 
     @Test
     public void testSamlImportAndExportMultipleSigningKeys() throws URISyntaxException, IOException, ParsingException {
@@ -641,14 +669,14 @@ public class IdentityProviderTest extends AbstractAdminTest {
         form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata-two-signing-certs");
 
         Map<String, String> result = realm.identityProviders().importFrom(form);
-        assertSamlImport(result, SIGNING_CERT_1 + "," + SIGNING_CERT_2);
+        assertSamlImport(result, SIGNING_CERT_1 + "," + SIGNING_CERT_2,true);
 
         // Create new SAML identity provider using configuration retrieved from import-config
-        create(createRep("saml", "saml", result));
+        create(createRep("saml", "saml",true, result));
 
         IdentityProviderResource provider = realm.identityProviders().get("saml");
         IdentityProviderRepresentation rep = provider.toRepresentation();
-        assertCreatedSamlIdp(rep);
+        assertCreatedSamlIdp(rep,true);
 
         // Now list the providers - we should see the one just created
         List<IdentityProviderRepresentation> providers = realm.identityProviders().findAll();
@@ -863,13 +891,13 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertEquals("config", expected.getConfig(), actual.getConfig());
     }
 
-    private void assertCreatedSamlIdp(IdentityProviderRepresentation idp) {
+    private void assertCreatedSamlIdp(IdentityProviderRepresentation idp,boolean enabled) {
         //System.out.println("idp: " + idp);
         Assert.assertNotNull("IdentityProviderRepresentation not null", idp);
         Assert.assertNotNull("internalId", idp.getInternalId());
         Assert.assertEquals("alias", "saml", idp.getAlias());
         Assert.assertEquals("providerId", "saml", idp.getProviderId());
-        Assert.assertTrue("enabled", idp.isEnabled());
+        Assert.assertEquals("enabled",enabled, idp.isEnabled());
         Assert.assertEquals("firstBrokerLoginFlowAlias", "first broker login",idp.getFirstBrokerLoginFlowAlias());
         assertSamlConfig(idp.getConfig());
     }
@@ -889,7 +917,8 @@ public class IdentityProviderTest extends AbstractAdminTest {
           "nameIDPolicyFormat",
           "signingCertificate",
           "addExtensionsElementWithKeyInfo",
-          "loginHint"
+          "loginHint",
+          "hideOnLoginPage"
         ));
         assertThat(config, hasEntry("validateSignature", "true"));
         assertThat(config, hasEntry("singleLogoutServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml"));
@@ -899,10 +928,15 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertThat(config, hasEntry("wantAuthnRequestsSigned", "true"));
         assertThat(config, hasEntry("addExtensionsElementWithKeyInfo", "false"));
         assertThat(config, hasEntry("nameIDPolicyFormat", "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"));
+        assertThat(config, hasEntry("hideOnLoginPage", "true"));
         assertThat(config, hasEntry(is("signingCertificate"), notNullValue()));
     }
 
-    private void assertSamlImport(Map<String, String> config, String expectedSigningCertificates) {
+    private void assertSamlImport(Map<String, String> config, String expectedSigningCertificates,boolean enabled) {
+        //firtsly check and remove enabledFromMetadata from config
+        boolean enabledFromMetadata = Boolean.valueOf(config.get(SAMLIdentityProviderConfig.ENABLED_FROM_METADATA));
+        config.remove(SAMLIdentityProviderConfig.ENABLED_FROM_METADATA);
+        Assert.assertEquals(enabledFromMetadata,enabled);
         assertSamlConfig(config);
         assertThat(config, hasEntry("signingCertificate", expectedSigningCertificates));
     }

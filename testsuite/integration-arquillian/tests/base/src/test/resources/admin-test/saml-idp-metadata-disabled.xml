@@ -4,6 +4,7 @@
                   xmlns:mdattr="urn:oasis:names:tc:SAML:metadata:attribute"
                   xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
                   xmlns:dsig="http://www.w3.org/2000/09/xmldsig#"
+                  validUntil="2019-12-10T04:48:55Z"
 >
      <Extensions>
 	 <mdattr:EntityAttributes>
@@ -14,6 +15,16 @@
       </Extensions>
    <IDPSSODescriptor WantAuthnRequestsSigned="true"
       protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+   <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</NameIDFormat>
+   <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>
+   <NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified</NameIDFormat>
+   <NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</NameIDFormat>
+
+      <SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+         Location="http://localhost:8080/auth/realms/master/protocol/saml" />
+      <SingleLogoutService
+         Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+         Location="http://localhost:8080/auth/realms/master/protocol/saml" />
       <KeyDescriptor use="signing">
           <dsig:KeyInfo xmlns:dsig="http://www.w3.org/2000/09/xmldsig#">
               <dsig:X509Data>
@@ -23,14 +34,5 @@
               </dsig:X509Data>
           </dsig:KeyInfo>
       </KeyDescriptor>
-      <SingleLogoutService
-        Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
-        Location="http://localhost:8080/auth/realms/master/protocol/saml" />
-      <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</NameIDFormat>
-      <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>
-      <NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified</NameIDFormat>
-      <NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</NameIDFormat>
-      <SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
-        Location="http://localhost:8080/auth/realms/master/protocol/saml" />
    </IDPSSODescriptor>
 </EntityDescriptor>

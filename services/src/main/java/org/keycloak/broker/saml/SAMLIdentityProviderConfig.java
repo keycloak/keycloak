@@ -52,6 +52,7 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final String WANT_ASSERTIONS_SIGNED = "wantAssertionsSigned";
     public static final String WANT_AUTHN_REQUESTS_SIGNED = "wantAuthnRequestsSigned";
     public static final String XML_SIG_KEY_INFO_KEY_NAME_TRANSFORMER = "xmlSigKeyInfoKeyNameTransformer";
+    public static final String ENABLED_FROM_METADATA  = "enabledFromMetadata";
 
     public SAMLIdentityProviderConfig() {
     }
@@ -279,6 +280,14 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     public void setPrincipalAttribute(String principalAttribute) {
         getConfig().put(PRINCIPAL_ATTRIBUTE, principalAttribute);
+    }
+    
+    public boolean isEnabledFromMetadata() {
+        return Boolean.valueOf(getConfig().get(ENABLED_FROM_METADATA ));
+    }
+
+    public void setEnabledFromMetadata(boolean enabled) {
+        getConfig().put(ENABLED_FROM_METADATA , String.valueOf(enabled));
     }
 
     @Override
