@@ -62,12 +62,7 @@ public class KeycloakRecorder {
         };
     }
 
-    public BeanContainerListener configSessionFactory(Map<Spi, Set<Class<? extends ProviderFactory>>> factories) {
-        return new BeanContainerListener() {
-            @Override
-            public void created(BeanContainer container) {
-                QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories));
-            }
-        };
+    public void configSessionFactory(Map<Spi, Set<Class<? extends ProviderFactory>>> factories) {
+        QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories));
     }
 }
