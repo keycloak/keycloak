@@ -38,7 +38,7 @@ public class ResolveRelative {
     public static String resolveRelativeUri(String frontendUrl, String adminUrl, String rootUrl, String url) {
         if (url == null || !url.startsWith("/")) {
             return url;
-        } else if (rootUrl != null) {
+        } else if (rootUrl != null && !rootUrl.isEmpty()) {
             return resolveRootUrl(frontendUrl, adminUrl, rootUrl) + url;
         } else {
             return UriBuilder.fromUri(frontendUrl).replacePath(url).build().toString();
