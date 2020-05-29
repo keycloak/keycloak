@@ -72,6 +72,7 @@ public class LDAPTestConfiguration {
         PROP_MAPPINGS.put(KerberosConstants.ALLOW_PASSWORD_AUTHENTICATION, "idm.test.kerberos.allow.password.authentication");
         PROP_MAPPINGS.put(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN, "idm.test.kerberos.update.profile.first.login");
         PROP_MAPPINGS.put(KerberosConstants.USE_KERBEROS_FOR_PASSWORD_AUTHENTICATION, "idm.test.kerberos.use.kerberos.for.password.authentication");
+        PROP_MAPPINGS.put(LDAPConstants.USE_TRUSTSTORE_SPI, "idm.test.ldap.truststore.spi");
 
         DEFAULT_VALUES.put(LDAPConstants.CONNECTION_URL, "ldap://localhost:10389");
         DEFAULT_VALUES.put(LDAPConstants.BASE_DN, "dc=keycloak,dc=org");
@@ -85,6 +86,7 @@ public class LDAPTestConfiguration {
         DEFAULT_VALUES.put(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, null);
         DEFAULT_VALUES.put(LDAPConstants.USER_OBJECT_CLASSES, null);
         DEFAULT_VALUES.put(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.READ_ONLY.toString());
+        DEFAULT_VALUES.put(LDAPConstants.USE_TRUSTSTORE_SPI, LDAPConstants.USE_TRUSTSTORE_ALWAYS);
 
         DEFAULT_VALUES.put(KerberosConstants.ALLOW_KERBEROS_AUTHENTICATION, "false");
         DEFAULT_VALUES.put(KerberosConstants.KERBEROS_REALM, "KEYCLOAK.ORG");
@@ -102,7 +104,7 @@ public class LDAPTestConfiguration {
         ldapTestConfiguration.loadConnectionProperties(connectionPropertiesLocation);
         return ldapTestConfiguration;
     }
-    
+
     public static String getResource(String resourcePath) {
         URL urlPath = LDAPTestConfiguration.class.getResource(resourcePath);
         String absolutePath = new File(urlPath.getFile()).getAbsolutePath();
