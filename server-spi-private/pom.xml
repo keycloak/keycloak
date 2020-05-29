@@ -92,4 +92,20 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Include inner test classes in execution -->
+                    <excludes>
+                        <exclude/>
+                    </excludes>
+                    <!-- Surefire misses to pass on correct encoding to forked JVM, even though encoding is set correct. -->
+                    <argLine>-Dfile.encoding=UTF-8</argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

@@ -242,7 +242,7 @@ public class SimpleHttp {
     }
 
     private StringEntity getJsonEntity() throws IOException {
-        return new StringEntity(JsonSerialization.writeValueAsString(entity));
+        return new StringEntity(JsonSerialization.writeValueAsString(entity), ContentType.getByMimeType(headers.get("Content-Type")));
     }
 
     private UrlEncodedFormEntity getFormEntityFromParameter() throws IOException{
