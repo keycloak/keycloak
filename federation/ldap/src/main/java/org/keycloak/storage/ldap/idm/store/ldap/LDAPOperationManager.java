@@ -47,6 +47,8 @@ import javax.naming.ldap.LdapName;
 import javax.naming.ldap.PagedResultsControl;
 import javax.naming.ldap.PagedResultsResponseControl;
 import javax.naming.ldap.StartTlsResponse;
+import javax.net.ssl.SSLSocketFactory;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -511,7 +513,13 @@ public class LDAPOperationManager {
 
             authCtx = new InitialLdapContext(env, null);
             if (config.isStartTls()) {
-                tlsResponse = LDAPContextManager.startTLS(authCtx, "simple", dn, password.toCharArray());
+                SSLSocketFactory sslSocketFactory = null;
+                String useTruststoreSpi = config.getUseTruststoreSpi();
+                if (useTruststoreSpi != null && useTruststoreSpi.equals(LDAPConstants.USE_TRUSTSTORE_ALWAYS)) {
+                    sslSocketFactory = org.keycloak.truststore.SSLSocketFactory.getDefault();
+                }
+
+                tlsResponse = LDAPContextManager.startTLS(authCtx, "simple", dn, password.toCharArray(), sslSocketFactory);
 
                 // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
                 if (tlsResponse == null) {

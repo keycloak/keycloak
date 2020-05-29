@@ -13,6 +13,8 @@ import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
 import javax.naming.ldap.StartTlsRequest;
 import javax.naming.ldap.StartTlsResponse;
+import javax.net.ssl.SSLSocketFactory;
+
 import java.io.IOException;
 import java.nio.CharBuffer;
 import java.util.HashMap;
@@ -76,8 +78,14 @@ public final class LDAPContextManager implements AutoCloseable {
 
         ldapContext = new InitialLdapContext(connProp, null);
         if (ldapConfig.isStartTls()) {
+            SSLSocketFactory sslSocketFactory = null;
+            String useTruststoreSpi = ldapConfig.getUseTruststoreSpi();
+            if (useTruststoreSpi != null && useTruststoreSpi.equals(LDAPConstants.USE_TRUSTSTORE_ALWAYS)) {
+                sslSocketFactory = org.keycloak.truststore.SSLSocketFactory.getDefault();
+            }
+
             tlsResponse = startTLS(ldapContext, ldapConfig.getAuthType(), ldapConfig.getBindDN(),
-                    vaultCharSecret.getAsArray().orElse(ldapConfig.getBindCredential().toCharArray()));
+                    vaultCharSecret.getAsArray().orElse(ldapConfig.getBindCredential().toCharArray()), sslSocketFactory);
 
             // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
             if (tlsResponse == null) {
@@ -99,12 +107,12 @@ public final class LDAPContextManager implements AutoCloseable {
                 : session.vault().getCharSecret(ldapConfig.getBindCredential());
     }
 
-    public static StartTlsResponse startTLS(LdapContext ldapContext, String authType, String bindDN, char[] bindCredential) throws NamingException {
+    public static StartTlsResponse startTLS(LdapContext ldapContext, String authType, String bindDN, char[] bindCredential, SSLSocketFactory sslSocketFactory) throws NamingException {
         StartTlsResponse tls = null;
 
         try {
             tls = (StartTlsResponse) ldapContext.extendedOperation(new StartTlsRequest());
-            tls.negotiate();
+            tls.negotiate(sslSocketFactory);
 
             ldapContext.addToEnvironment(Context.SECURITY_AUTHENTICATION, authType);
 
@@ -179,8 +187,12 @@ public final class LDAPContextManager implements AutoCloseable {
             logger.warn("LDAP URL is null. LDAPOperationManager won't work correctly");
         }
 
-        String useTruststoreSpi = ldapConfig.getUseTruststoreSpi();
-        LDAPConstants.setTruststoreSpiIfNeeded(useTruststoreSpi, url, env);
+        // when using Start TLS, use default socket factory for LDAP client but pass the TrustStore SSL socket factory later
+        // when calling StartTlsResponse.negotiate(trustStoreSSLSocketFactory)
+        if (!ldapConfig.isStartTls()) {
+            String useTruststoreSpi = ldapConfig.getUseTruststoreSpi();
+            LDAPConstants.setTruststoreSpiIfNeeded(useTruststoreSpi, url, env);
+        }
 
         String connectionPooling = ldapConfig.getConnectionPooling();
         if (connectionPooling != null) {
