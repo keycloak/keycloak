@@ -189,7 +189,7 @@ When the password of user is updated from {project_name} and sent to LDAP, it is
 updating the password to built-in {project_name} database, when the hashing and salting is applied to the password before it is sent to DB.
 In the case of LDAP, the {project_name} relies on the LDAP server to provide hashing and salting of passwords.
 
-Most LDAP servers (Microsoft Active Directory, RHDS, FreeIPA) provide this by default. Some others (OpenLDAP, ApacheDS) may store the passwords
+LDAP servers such as Microsoft Active Directory, RHDS or FreeIPA provide this by default. Others such as OpenLDAP or ApacheDS may store the passwords
 in plain-text by default unless you use the _LDAPv3 Password Modify Extended Operation_ as per *RFC3062*. The LDAPv3 Password Modify Extended Operation
 must be enabled explicitly in the LDAP configuration page. See the documentation of your LDAP server for more details.
 
