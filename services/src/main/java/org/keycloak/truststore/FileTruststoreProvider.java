@@ -20,7 +20,7 @@ package org.keycloak.truststore;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.Map;
-
+import javax.net.ssl.SSLSocketFactory;
 import javax.security.auth.x500.X500Principal;
 
 /**
@@ -29,6 +29,7 @@ import javax.security.auth.x500.X500Principal;
 public class FileTruststoreProvider implements TruststoreProvider {
 
     private final HostnameVerificationPolicy policy;
+    private final SSLSocketFactory sslSocketFactory;
     private final KeyStore truststore;
     private final Map<X500Principal, X509Certificate> rootCertificates;
     private final Map<X500Principal, X509Certificate> intermediateCertificates;
@@ -38,11 +39,19 @@ public class FileTruststoreProvider implements TruststoreProvider {
         this.truststore = truststore;
         this.rootCertificates = rootCertificates;
         this.intermediateCertificates = intermediateCertificates;
+
+        SSLSocketFactory jsseSSLSocketFactory = new JSSETruststoreConfigurator(this).getSSLSocketFactory();
+        this.sslSocketFactory = (jsseSSLSocketFactory != null) ? jsseSSLSocketFactory : (SSLSocketFactory) javax.net.ssl.SSLSocketFactory.getDefault();
     }
 
     @Override
     public HostnameVerificationPolicy getPolicy() {
         return policy;
+    }
+
+    @Override
+    public SSLSocketFactory getSSLSocketFactory() {
+        return sslSocketFactory;
     }
 
     @Override

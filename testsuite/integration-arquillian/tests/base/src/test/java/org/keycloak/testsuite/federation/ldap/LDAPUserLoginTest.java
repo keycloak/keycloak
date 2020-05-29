@@ -242,7 +242,6 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
     // Test variant: Bind credential set to secret (default)
     // KEYCLOAK-14358 - Disable the StartTLS LDAP tests till KEYCLOAK-14343 & KEYCLOAK-14354 are corrected
     //                  since they don't work properly with auth server Wildfly due these bugs
-    @Ignore
     @Test
     @LDAPConnectionParameters(bindType=LDAPConnectionParameters.BindType.SIMPLE, encryption=LDAPConnectionParameters.Encryption.STARTTLS)
     public void loginLDAPUserAuthenticationSimpleEncryptionStartTLS() {
@@ -254,7 +253,6 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
     // Test variant: Bind credential set to vault
     // KEYCLOAK-14358 - Disable the StartTLS LDAP tests till KEYCLOAK-14343 & KEYCLOAK-14354 are corrected
     //                  since they don't work properly with auth server Wildfly due these bugs
-    @Ignore
     @Test
     @LDAPConnectionParameters(bindCredential=LDAPConnectionParameters.BindCredential.VAULT, bindType=LDAPConnectionParameters.BindType.SIMPLE, encryption=LDAPConnectionParameters.Encryption.STARTTLS)
     public void loginLDAPUserCredentialVaultAuthenticationSimpleEncryptionStartTLS() {

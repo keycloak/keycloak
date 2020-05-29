@@ -19,10 +19,10 @@ package org.keycloak.truststore;
 
 import org.keycloak.provider.Provider;
 
-import java.security.KeyStore;
 import java.security.cert.X509Certificate;
+import java.security.KeyStore;
 import java.util.Map;
-
+import javax.net.ssl.SSLSocketFactory;
 import javax.security.auth.x500.X500Principal;
 
 /**
@@ -31,6 +31,8 @@ import javax.security.auth.x500.X500Principal;
 public interface TruststoreProvider extends Provider {
 
     HostnameVerificationPolicy getPolicy();
+
+    SSLSocketFactory getSSLSocketFactory();
 
     KeyStore getTruststore();
 
