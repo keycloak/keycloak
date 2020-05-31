@@ -141,8 +141,12 @@ public class KeycloakInstalled {
     }
 
     public void logout() throws IOException, InterruptedException, URISyntaxException {
+        logout(logoutUrl -> Desktop.getDesktop().browse(new URI(logoutUrl)));
+    }
+
+    public void logout(BrowseCallback browseCallback) throws IOException, InterruptedException, URISyntaxException {
         if (status == Status.LOGGED_DESKTOP) {
-            logoutDesktop();
+            logoutDesktop(browseCallback);
         }
 
         tokenString = null;
@@ -157,6 +161,10 @@ public class KeycloakInstalled {
     }
 
     public void loginDesktop() throws IOException, VerificationException, OAuthErrorException, URISyntaxException, ServerRequest.HttpFailure, InterruptedException {
+        loginDesktop(authUrl -> Desktop.getDesktop().browse(new URI(authUrl)));
+    }
+
+    public void loginDesktop(BrowseCallback browseCallback) throws IOException, VerificationException, OAuthErrorException, URISyntaxException, ServerRequest.HttpFailure, InterruptedException {
         CallbackListener callback = new CallbackListener();
         callback.start();
 
@@ -166,7 +174,7 @@ public class KeycloakInstalled {
 
         String authUrl = createAuthUrl(redirectUri, state, pkce);
 
-        Desktop.getDesktop().browse(new URI(authUrl));
+        browseCallback.browse(authUrl);
 
         try {
             callback.await();
@@ -216,7 +224,7 @@ public class KeycloakInstalled {
         return Pkce.generatePkce();
     }
 
-    private void logoutDesktop() throws IOException, URISyntaxException, InterruptedException {
+    private void logoutDesktop(BrowseCallback browseCallback) throws IOException, URISyntaxException, InterruptedException {
         CallbackListener callback = new CallbackListener();
         callback.start();
 
@@ -226,7 +234,7 @@ public class KeycloakInstalled {
                 .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
                 .build().toString();
 
-        Desktop.getDesktop().browse(new URI(logoutUrl));
+        browseCallback.browse(logoutUrl);
 
         try {
             callback.await();
