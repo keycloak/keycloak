@@ -35,6 +35,7 @@ import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.List;
 
@@ -61,10 +62,11 @@ public class AccountLoader {
 
         Theme theme = getTheme(session);
         boolean deprecatedAccount = isDeprecatedFormsAccountConsole(theme);
+        UriInfo uriInfo = session.getContext().getUri();
 
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
             return new CorsPreflightService(request);
-        } else if ((accepts.contains(MediaType.APPLICATION_JSON_TYPE) || MediaType.APPLICATION_JSON_TYPE.equals(content)) && !request.getUri().getPath().endsWith("keycloak.json")) {
+        } else if ((accepts.contains(MediaType.APPLICATION_JSON_TYPE) || MediaType.APPLICATION_JSON_TYPE.equals(content)) && !uriInfo.getPath().endsWith("keycloak.json")) {
             AuthenticationManager.AuthResult authResult = new AppAuthManager().authenticateBearerToken(session);
             if (authResult == null) {
                 throw new NotAuthorizedException("Bearer token required");
