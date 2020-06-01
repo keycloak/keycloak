@@ -75,8 +75,36 @@
                 </property>
             </activation>
             <properties>
-                <auth.server.dist.unpacked.folder.name>${product.name}-${auth.server.legacy.filename.version}</auth.server.dist.unpacked.folder.name>
+                <auth.server.dist.unpacked.folder.name>${product.name}-legacy</auth.server.dist.unpacked.folder.name>
             </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>rename-unpacked-directory</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <path id="unpacked_dir_name">
+                                            <dirset dir="${project.build.directory}/unpacked/">
+                                                <include name="${product.name}-*"/>
+                                            </dirset>
+                                        </path>
+                                        <property name="unpacked.dir.name" refid="unpacked_dir_name" />
+                                        <echo message="renaming ${unpacked.dir.name} to ${project.build.directory}/unpacked/${product.name}-legacy" />
+                                        <move file="${unpacked.dir.name}" tofile="${project.build.directory}/unpacked/${product.name}-legacy" />
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>

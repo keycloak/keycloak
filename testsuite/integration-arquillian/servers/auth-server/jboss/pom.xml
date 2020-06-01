@@ -112,7 +112,7 @@
                             </execution>
                             <execution>
                                 <id>copy-testsuite-providers</id>
-                                <phase>generate-resources</phase>
+                                <phase>process-resources</phase>
                                 <goals>
                                     <goal>copy</goal>
                                 </goals>
@@ -131,7 +131,7 @@
                             </execution>
                             <execution>
                                 <id>install-testsuite-providers-module</id>
-                                <phase>generate-resources</phase>
+                                <phase>process-resources</phase>
                                 <goals>
                                     <goal>unpack</goal>
                                 </goals>
