@@ -408,6 +408,27 @@ public class LDAPStorageProvider implements UserStorageProvider,
         return Collections.emptyList();
     }
 
+    @Override
+    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role) {
+        return getRoleMembers(realm, role, 0, Integer.MAX_VALUE - 1);
+    }
+
+    @Override
+    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+        List<ComponentModel> mappers = realm.getComponents(model.getId(), LDAPStorageMapper.class.getName());
+        List<ComponentModel> sortedMappers = mapperManager.sortMappersAsc(mappers);
+        for (ComponentModel mapperModel : sortedMappers) {
+            LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
+            List<UserModel> users = ldapMapper.getRoleMembers(realm, role, firstResult, maxResults);
+
+            // Sufficient for now
+            if (users.size() > 0) {
+                return users;
+            }
+        }
+        return Collections.emptyList();
+    }
+
     public List<UserModel> loadUsersByUsernames(List<String> usernames, RealmModel realm) {
         List<UserModel> result = new ArrayList<>();
         for (String username : usernames) {
