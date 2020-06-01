@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -290,6 +291,21 @@ public class RealmBuilder {
 
     public RealmBuilder clientOfflineSessionMaxLifespan(int clientOfflineSessionMaxLifespan) {
         rep.setClientOfflineSessionMaxLifespan(clientOfflineSessionMaxLifespan);
+        return this;
+    }
+
+    public RealmBuilder internationalizationEnabled(boolean internationalizationEnabled) {
+        rep.setInternationalizationEnabled(internationalizationEnabled);
+        return this;
+    }
+
+    public RealmBuilder supportedLocales(Set<String> supportedLocales) {
+        rep.setSupportedLocales(supportedLocales);
+        return this;
+    }
+
+    public RealmBuilder defaultLocale(String defaultLocale) {
+        rep.setDefaultLocale(defaultLocale);
         return this;
     }
 }
