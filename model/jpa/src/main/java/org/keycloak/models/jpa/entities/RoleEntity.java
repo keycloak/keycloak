@@ -38,9 +38,9 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -101,12 +101,12 @@ public class RoleEntity {
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "COMPOSITE_ROLE", joinColumns = @JoinColumn(name = "COMPOSITE"), inverseJoinColumns = @JoinColumn(name = "CHILD_ROLE"))
-    private Set<RoleEntity> compositeRoles = new HashSet<>();
+    private Set<RoleEntity> compositeRoles;
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="role")
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
-    protected List<RoleAttributeEntity> attributes = new ArrayList<>();
+    protected Collection<RoleAttributeEntity> attributes;
 
     public String getId() {
         return id;
@@ -125,10 +125,13 @@ public class RoleEntity {
     }
 
     public Collection<RoleAttributeEntity> getAttributes() {
+        if (attributes == null) {
+            attributes = new LinkedList<>();
+        }
         return attributes;
     }
 
-    public void setAttributes(List<RoleAttributeEntity> attributes) {
+    public void setAttributes(Collection<RoleAttributeEntity> attributes) {
         this.attributes = attributes;
     }
 
@@ -149,6 +152,9 @@ public class RoleEntity {
     }
 
     public Set<RoleEntity> getCompositeRoles() {
+        if (compositeRoles == null) {
+            compositeRoles = new HashSet<>();
+        }
         return compositeRoles;
     }
 

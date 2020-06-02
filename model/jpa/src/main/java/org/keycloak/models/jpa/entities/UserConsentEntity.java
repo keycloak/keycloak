@@ -31,8 +31,8 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -73,7 +73,7 @@ public class UserConsentEntity {
     protected String externalClientId;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "userConsent")
-    Collection<UserConsentClientScopeEntity> grantedClientScopes = new ArrayList<>();
+    Collection<UserConsentClientScopeEntity> grantedClientScopes;
 
     @Column(name = "CREATED_DATE")
     private Long createdDate;
@@ -98,6 +98,9 @@ public class UserConsentEntity {
     }
 
     public Collection<UserConsentClientScopeEntity> getGrantedClientScopes() {
+        if (grantedClientScopes == null) {
+            grantedClientScopes = new LinkedList<>();
+        }
         return grantedClientScopes;
     }
 

@@ -32,12 +32,11 @@ import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -138,36 +137,36 @@ public class RealmEntity {
     protected String emailTheme;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm", fetch = FetchType.EAGER)
-    Collection<RealmAttributeEntity> attributes = new ArrayList<>();
+    Collection<RealmAttributeEntity> attributes;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<RequiredCredentialEntity> requiredCredentials = new ArrayList<>();
+    Collection<RequiredCredentialEntity> requiredCredentials;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    List<UserFederationProviderEntity> userFederationProviders = new ArrayList<>();
+    List<UserFederationProviderEntity> userFederationProviders;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<UserFederationMapperEntity> userFederationMappers = new ArrayList<UserFederationMapperEntity>();
+    Collection<UserFederationMapperEntity> userFederationMappers;
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<ClientScopeEntity> clientScopes = new ArrayList<>();
+    Collection<ClientScopeEntity> clientScopes;
 
     @ElementCollection
     @MapKeyColumn(name="NAME")
     @Column(name="VALUE")
     @CollectionTable(name="REALM_SMTP_CONFIG", joinColumns={ @JoinColumn(name="REALM_ID") })
-    protected Map<String, String> smtpConfig = new HashMap<String, String>();
+    protected Map<String, String> smtpConfig;
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="REALM_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="REALM_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
-    protected Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
+    protected Collection<RoleEntity> defaultRoles;
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="REALM_DEFAULT_GROUPS", joinColumns = { @JoinColumn(name="REALM_ID")}, inverseJoinColumns = { @JoinColumn(name="GROUP_ID")})
-    protected Collection<GroupEntity> defaultGroups = new ArrayList<>();
+    protected Collection<GroupEntity> defaultGroups;
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    protected Collection<GroupEntity> groups = new ArrayList<>();
+    protected Collection<GroupEntity> groups;
 
     @Column(name="EVENTS_ENABLED")
     protected boolean eventsEnabled;
@@ -177,40 +176,39 @@ public class RealmEntity {
     @ElementCollection
     @Column(name="VALUE")
     @CollectionTable(name="REALM_EVENTS_LISTENERS", joinColumns={ @JoinColumn(name="REALM_ID") })
-    protected Set<String> eventsListeners = new HashSet<String>();
+    protected Set<String> eventsListeners;
     
     @ElementCollection
     @Column(name="VALUE")
     @CollectionTable(name="REALM_ENABLED_EVENT_TYPES", joinColumns={ @JoinColumn(name="REALM_ID") })
-    protected Set<String> enabledEventTypes = new HashSet<String>();
+    protected Set<String> enabledEventTypes;
     
     @Column(name="ADMIN_EVENTS_ENABLED")
     protected boolean adminEventsEnabled;
     
     @Column(name="ADMIN_EVENTS_DETAILS_ENABLED")
     protected boolean adminEventsDetailsEnabled;
-    
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="MASTER_ADMIN_CLIENT")
-    protected ClientEntity masterAdminClient;
+
+    @Column(name="MASTER_ADMIN_CLIENT")
+    protected String masterAdminClient;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    protected List<IdentityProviderEntity> identityProviders = new ArrayList<IdentityProviderEntity>();
+    protected List<IdentityProviderEntity> identityProviders;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<IdentityProviderMapperEntity> identityProviderMappers = new ArrayList<IdentityProviderMapperEntity>();
+    Collection<IdentityProviderMapperEntity> identityProviderMappers;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<AuthenticatorConfigEntity> authenticators = new ArrayList<>();
+    Collection<AuthenticatorConfigEntity> authenticators;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<RequiredActionProviderEntity> requiredActionProviders = new ArrayList<>();
+    Collection<RequiredActionProviderEntity> requiredActionProviders;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    Collection<AuthenticationFlowEntity> authenticationFlows = new ArrayList<>();
+    Collection<AuthenticationFlowEntity> authenticationFlows;
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.ALL}, orphanRemoval = true, mappedBy = "realm")
-    Set<ComponentEntity> components = new HashSet<>();
+    Set<ComponentEntity> components;
 
     @Column(name="BROWSER_FLOW")
     protected String browserFlow;
@@ -237,7 +235,7 @@ public class RealmEntity {
     @ElementCollection
     @Column(name="VALUE")
     @CollectionTable(name="REALM_SUPPORTED_LOCALES", joinColumns={ @JoinColumn(name="REALM_ID") })
-    protected Set<String> supportedLocales = new HashSet<String>();
+    protected Set<String> supportedLocales;
 
     @Column(name="DEFAULT_LOCALE")
     protected String defaultLocale;
@@ -438,6 +436,9 @@ public class RealmEntity {
     }
 
     public Collection<RequiredCredentialEntity> getRequiredCredentials() {
+        if (requiredCredentials == null) {
+            requiredCredentials = new LinkedList<>();
+        }
         return requiredCredentials;
     }
 
@@ -445,6 +446,9 @@ public class RealmEntity {
         this.requiredCredentials = requiredCredentials;
     }
     public Map<String, String> getSmtpConfig() {
+        if (smtpConfig == null) {
+            smtpConfig = new HashMap<>();
+        }
         return smtpConfig;
     }
 
@@ -453,6 +457,9 @@ public class RealmEntity {
     }
 
     public Collection<RoleEntity> getDefaultRoles() {
+        if (defaultRoles == null) {
+            defaultRoles = new LinkedList<>();
+        }
         return defaultRoles;
     }
 
@@ -461,6 +468,9 @@ public class RealmEntity {
     }
 
     public Collection<GroupEntity> getDefaultGroups() {
+        if (defaultGroups == null) {
+            defaultGroups = new LinkedList<>();
+        }
         return defaultGroups;
     }
 
@@ -469,6 +479,9 @@ public class RealmEntity {
     }
 
     public Collection<GroupEntity> getGroups() {
+        if (groups == null) {
+            groups = new LinkedList<>();
+        }
         return groups;
     }
 
@@ -541,6 +554,9 @@ public class RealmEntity {
     }
 
     public Set<String> getEventsListeners() {
+        if (eventsListeners == null) {
+            eventsListeners = new HashSet<>();
+        }
         return eventsListeners;
     }
 
@@ -549,6 +565,9 @@ public class RealmEntity {
     }
     
     public Set<String> getEnabledEventTypes() {
+        if (enabledEventTypes == null) {
+            enabledEventTypes = new HashSet<>();
+        }
         return enabledEventTypes;
     }
 
@@ -572,15 +591,18 @@ public class RealmEntity {
         this.adminEventsDetailsEnabled = adminEventsDetailsEnabled;
     }
 
-    public ClientEntity getMasterAdminClient() {
+    public String getMasterAdminClient() {
         return masterAdminClient;
     }
 
-    public void setMasterAdminClient(ClientEntity masterAdminClient) {
+    public void setMasterAdminClient(String masterAdminClient) {
         this.masterAdminClient = masterAdminClient;
     }
 
     public List<UserFederationProviderEntity> getUserFederationProviders() {
+        if (userFederationProviders == null) {
+            userFederationProviders = new LinkedList<>();
+        }
         return userFederationProviders;
     }
 
@@ -589,6 +611,9 @@ public class RealmEntity {
     }
 
     public Collection<UserFederationMapperEntity> getUserFederationMappers() {
+        if (userFederationMappers == null) {
+            userFederationMappers = new LinkedList<>();
+        }
         return userFederationMappers;
     }
 
@@ -597,6 +622,9 @@ public class RealmEntity {
     }
 
     public Collection<RealmAttributeEntity> getAttributes() {
+        if (attributes == null) {
+            attributes = new LinkedList<>();
+        }
         return attributes;
     }
 
@@ -605,6 +633,9 @@ public class RealmEntity {
     }
 
     public List<IdentityProviderEntity> getIdentityProviders() {
+        if (identityProviders == null) {
+            identityProviders = new LinkedList<>();
+        }
         return this.identityProviders;
     }
 
@@ -626,6 +657,9 @@ public class RealmEntity {
     }
 
     public Set<String> getSupportedLocales() {
+        if (supportedLocales == null) {
+            supportedLocales = new HashSet<>();
+        }
         return supportedLocales;
     }
 
@@ -642,6 +676,9 @@ public class RealmEntity {
     }
 
     public Collection<IdentityProviderMapperEntity> getIdentityProviderMappers() {
+        if (identityProviderMappers == null) {
+            identityProviderMappers = new LinkedList<>();
+        }
         return identityProviderMappers;
     }
 
@@ -650,14 +687,20 @@ public class RealmEntity {
     }
 
     public Collection<AuthenticatorConfigEntity> getAuthenticatorConfigs() {
+        if (authenticators == null) {
+            authenticators = new LinkedList<>();
+        }
         return authenticators;
     }
-
+    
     public void setAuthenticatorConfigs(Collection<AuthenticatorConfigEntity> authenticators) {
         this.authenticators = authenticators;
     }
 
     public Collection<RequiredActionProviderEntity> getRequiredActionProviders() {
+        if (requiredActionProviders == null) {
+            requiredActionProviders = new LinkedList<>();
+        }
         return requiredActionProviders;
     }
 
@@ -666,6 +709,9 @@ public class RealmEntity {
     }
 
     public Collection<AuthenticationFlowEntity> getAuthenticationFlows() {
+        if (authenticationFlows == null) {
+            authenticationFlows = new LinkedList<>();
+        }
         return authenticationFlows;
     }
 
@@ -674,6 +720,9 @@ public class RealmEntity {
     }
 
     public Set<ComponentEntity> getComponents() {
+        if (components == null) {
+            components = new HashSet<>();
+        }
         return components;
     }
 
@@ -779,6 +828,9 @@ public class RealmEntity {
     }
 
     public Collection<ClientScopeEntity> getClientScopes() {
+        if (clientScopes == null) {
+            clientScopes = new LinkedList<>();
+        }
         return clientScopes;
     }
 

@@ -151,7 +151,7 @@ public class JpaRealmProvider implements RealmProvider {
         em.flush();
 
         int num = em.createNamedQuery("deleteGroupRoleMappingsByRealm")
-                .setParameter("realm", realm).executeUpdate();
+                .setParameter("realm", realm.getId()).executeUpdate();
 
         TypedQuery<String> query = em.createNamedQuery("getClientIdsByRealm", String.class);
         query.setParameter("realm", realm.getId());
@@ -407,7 +407,7 @@ public class JpaRealmProvider implements RealmProvider {
     public GroupModel getGroupById(String id, RealmModel realm) {
         GroupEntity groupEntity = em.find(GroupEntity.class, id);
         if (groupEntity == null) return null;
-        if (!groupEntity.getRealm().getId().equals(realm.getId())) return null;
+        if (!groupEntity.getRealm().equals(realm.getId())) return null;
         GroupAdapter adapter =  new GroupAdapter(realm, em, groupEntity);
         return adapter;
     }
@@ -543,7 +543,7 @@ public class JpaRealmProvider implements RealmProvider {
             session.realms().removeGroup(realm, subGroup);
         }
         GroupEntity groupEntity = em.find(GroupEntity.class, group.getId(), LockModeType.PESSIMISTIC_WRITE);
-        if ((groupEntity == null) || (!groupEntity.getRealm().getId().equals(realm.getId()))) {
+        if ((groupEntity == null) || (!groupEntity.getRealm().equals(realm.getId()))) {
             return false;
         }
         em.createNamedQuery("deleteGroupRoleMappingsByGroup").setParameter("group", groupEntity).executeUpdate();
@@ -569,7 +569,7 @@ public class JpaRealmProvider implements RealmProvider {
         groupEntity.setId(id);
         groupEntity.setName(name);
         RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
-        groupEntity.setRealm(realmEntity);
+        groupEntity.setRealm(realmEntity.getId());
         groupEntity.setParentId(toParent == null? GroupEntity.TOP_PARENT_ID : toParent.getId());
         em.persist(groupEntity);
         em.flush();
