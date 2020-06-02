@@ -37,9 +37,8 @@ public class Version {
     public static String DEFAULT_PROFILE;
 
     static {
-        Properties props = new Properties();
-        InputStream is = Version.class.getResourceAsStream("/keycloak-version.properties");
-        try {
+        try (InputStream is = Version.class.getResourceAsStream("/keycloak-version.properties")) {
+            Properties props = new Properties();
             props.load(is);
             Version.NAME = props.getProperty("name");
             Version.NAME_FULL = props.getProperty("name-full");
