@@ -40,7 +40,6 @@
         <module>release_notes</module>
         <module>upgrading</module>
         <module>aggregation</module>
-        <module>tests</module>
   </modules>
 
     <profiles>
@@ -58,6 +57,17 @@
             <modules>
                 <module>openshift</module>
                 <module>openshift-openj9</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>tests</id>
+            <activation>
+                <property>
+                    <name>!skipProjectTests</name>
+                </property>
+            </activation>
+            <modules>
+                <module>tests</module>
             </modules>
         </profile>
         <profile>
