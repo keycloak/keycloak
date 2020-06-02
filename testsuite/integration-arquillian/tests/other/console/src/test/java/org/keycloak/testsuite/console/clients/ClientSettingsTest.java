@@ -35,6 +35,7 @@ import static org.keycloak.testsuite.auth.page.login.Login.OIDC;
 import static org.keycloak.testsuite.auth.page.login.Login.SAML;
 import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.OidcAccessType.BEARER_ONLY;
 import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.OidcAccessType.CONFIDENTIAL;
+import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
@@ -99,6 +100,8 @@ public class ClientSettingsTest extends AbstractClientTest {
     @Test
     @EnableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true)
     public void alwaysDisplayInAccountConsole() {
+        refreshPageAndWaitForLoad();
+
         newClient = createClientRep("always-display-in-console", OIDC);
         createClient(newClient);
 
