@@ -1229,7 +1229,11 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public ClientModel getMasterAdminClient() {
-        ClientEntity masterAdminClient = realm.getMasterAdminClient();
+        String masterAdminClientId = realm.getMasterAdminClient();
+        if (masterAdminClientId == null) {
+            return null;
+        }
+        ClientEntity masterAdminClient = em.find(ClientEntity.class, masterAdminClientId);
         if (masterAdminClient == null) {
             return null;
         }
@@ -1245,8 +1249,8 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public void setMasterAdminClient(ClientModel client) {
-        ClientEntity appEntity = client !=null ? em.getReference(ClientEntity.class, client.getId()) : null;
-        realm.setMasterAdminClient(appEntity);
+        String appEntityId = client !=null ? em.getReference(ClientEntity.class, client.getId()).getId() : null;
+        realm.setMasterAdminClient(appEntityId);
         em.flush();
     }
 
