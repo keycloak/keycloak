@@ -73,15 +73,9 @@ class KeycloakProcessor {
         Map<Spi, Set<Class<? extends ProviderFactory>>> result = new HashMap<>();
 
         for (Spi spi : pm.loadSpis()) {
-            List<ProviderFactory> loaded = pm.load(spi);
-            
-            if (loaded.isEmpty()) {
-                continue;
-            }
-
             Set<Class<? extends ProviderFactory>> factories = new HashSet<>();
 
-            for (ProviderFactory factory : loaded) {
+            for (ProviderFactory factory : pm.load(spi)) {
                 if (Arrays.asList(
                         JBossJtaTransactionManagerLookup.class,
                         DefaultJpaConnectionProviderFactory.class,

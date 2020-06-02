@@ -131,6 +131,8 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             }
 
             try {
+                // wait before checking for opening a new connection
+                Thread.sleep(1000);
                 connection = (HttpURLConnection) contextRoot.openConnection();
 
                 connection.setReadTimeout((int) getStartTimeout());

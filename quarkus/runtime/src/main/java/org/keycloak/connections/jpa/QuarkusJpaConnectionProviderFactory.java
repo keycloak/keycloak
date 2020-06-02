@@ -381,8 +381,6 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
 
             if (createMasterRealm) {
                 applianceBootstrap.createMasterRealm();
-                //TODO: Remove this to reduce startup time. See https://issues.redhat.com/browse/KEYCLOAK-14308.
-                DefaultKeyProviders.createProviders(session.getContext().getRealm());
             }
 
             session.getTransactionManager().commit();

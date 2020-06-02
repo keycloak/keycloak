@@ -19,6 +19,8 @@ package org.keycloak.provider.quarkus;
 
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.web.RoutingContext;
+import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
+import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.models.KeycloakSession;
@@ -46,6 +48,12 @@ public class QuarkusFilter implements javax.ws.rs.container.ContainerRequestFilt
     
     @Inject
     RoutingContext routingContext;
+
+    public QuarkusFilter() {
+        //TODO: a temporary hack for https://github.com/quarkusio/quarkus/issues/9647, we need to disable the sanitizer to avoid
+        // escaping text/html responses from the server
+        Resteasy.getContextData(ResteasyDeployment.class).setProperty(ResteasyContextParameters.RESTEASY_DISABLE_HTML_SANITIZER, Boolean.TRUE);
+    }
 
     @Override
     public void filter(ContainerRequestContext containerRequestContext) {
