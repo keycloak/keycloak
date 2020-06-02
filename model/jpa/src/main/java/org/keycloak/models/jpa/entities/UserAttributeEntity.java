@@ -36,6 +36,7 @@ import javax.persistence.Table;
  * @version $Revision: 1 $
  */
 @NamedQueries({
+        @NamedQuery(name="getUserAttributeIdByNameAndUser",query = "select attr.id from UserAttributeEntity attr where attr.user.id = :userId and attr.name = :name"),
         @NamedQuery(name="deleteUserAttributesByRealm", query="delete from  UserAttributeEntity attr where attr.user IN (select u from UserEntity u where u.realmId=:realmId)"),
         @NamedQuery(name="deleteUserAttributesByNameAndUser", query="delete from  UserAttributeEntity attr where attr.user.id = :userId and attr.name = :name"),
         @NamedQuery(name="deleteUserAttributesByNameAndUserOtherThan", query="delete from  UserAttributeEntity attr where attr.user.id = :userId and attr.name = :name and attr.id <> :attrId"),

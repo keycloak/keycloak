@@ -35,6 +35,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -51,7 +52,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Objects;
-import java.util.stream.Stream;
 import javax.persistence.LockModeType;
 
 /**
@@ -118,32 +118,8 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         if (value == null) {
             user.getAttributes().removeIf(a -> a.getName().equals(name));
         } else {
-            String firstExistingAttrId = null;
-            List<UserAttributeEntity> toRemove = new ArrayList<>();
-            for (UserAttributeEntity attr : user.getAttributes()) {
-                if (attr.getName().equals(name)) {
-                    if (firstExistingAttrId == null) {
-                        attr.setValue(value);
-                        firstExistingAttrId = attr.getId();
-                    } else {
-                        toRemove.add(attr);
-                    }
-                }
-            }
-
-            if (firstExistingAttrId != null) {
-                // Remove attributes through HQL to avoid StaleUpdateException
-                Query query = em.createNamedQuery("deleteUserAttributesByNameAndUserOtherThan");
-                query.setParameter("name", name);
-                query.setParameter("userId", user.getId());
-                query.setParameter("attrId", firstExistingAttrId);
-                int numUpdated = query.executeUpdate();
-
-                // Remove attribute from local entity
-                user.getAttributes().removeAll(toRemove);
-            } else {
-                persistAttributeValue(name, value);
-            }
+            removeAttribute(name);
+            persistAttributeValue(name, value);
         }
     }
 
@@ -168,24 +144,26 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public void removeAttribute(String name) {
-        List<UserAttributeEntity> toRemove = new ArrayList<>();
-        for (UserAttributeEntity attr : user.getAttributes()) {
-            if (attr.getName().equals(name)) {
-                toRemove.add(attr);
-            }
-        }
-
-        if (toRemove.isEmpty()) {
-            return;
-        }
-
-        // KEYCLOAK-3296 : Remove attribute through HQL to avoid StaleUpdateException
-        Query query = em.createNamedQuery("deleteUserAttributesByNameAndUser");
+        Query query = em.createNamedQuery("getUserAttributeIdByNameAndUser");
         query.setParameter("name", name);
         query.setParameter("userId", user.getId());
-        query.executeUpdate();
-        // KEYCLOAK-3494 : Also remove attributes from local user entity
-        user.getAttributes().removeAll(toRemove);
+        query.setMaxResults(1);
+
+        try {
+            query.getSingleResult();
+
+            // KEYCLOAK-3296 : Remove attribute through HQL to avoid StaleUpdateException
+            query = em.createNamedQuery("deleteUserAttributesByNameAndUser");
+            query.setParameter("name", name);
+            query.setParameter("userId", user.getId());
+            query.executeUpdate();
+
+            // KEYCLOAK-3494 : Also remove attributes from local user entity
+            user.getAttributes().removeIf(a -> a.getName().equals(name));
+
+        } catch (NoResultException e) {
+            // There isn't any attribute, which should be removed.
+        }
     }
 
     @Override
