@@ -41,6 +41,7 @@ public @interface AuthServerContainerExclude {
     AuthServer[] value();
 
     public enum AuthServer {
-        REMOTE
+        REMOTE,
+        QUARKUS
     }
 }

@@ -159,6 +159,10 @@ public class AuthServerTestEnricher {
         return AUTH_SERVER_CONTAINER.equals("auth-server-remote");
     }
 
+    public static boolean isAuthServerQuarkus() {
+        return AUTH_SERVER_CONTAINER.equals("auth-server-quarkus");
+    }
+
     public static String getAuthServerContextRoot() {
         return getAuthServerContextRoot(0);
     }
