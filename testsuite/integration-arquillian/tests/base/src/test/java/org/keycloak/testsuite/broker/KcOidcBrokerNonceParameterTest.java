@@ -1,26 +1,18 @@
 package org.keycloak.testsuite.broker;
 
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import org.junit.Assert;
+import org.junit.Test;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.representations.IDToken;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.OAuthClient;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.JWSInputException;
-import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.IDToken;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.testsuite.arquillian.SuiteContext;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
-import org.openqa.selenium.Cookie;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 public class KcOidcBrokerNonceParameterTest extends AbstractBrokerTest {
 
@@ -28,12 +20,12 @@ public class KcOidcBrokerNonceParameterTest extends AbstractBrokerTest {
     protected BrokerConfiguration getBrokerConfiguration() {
         return new KcOidcBrokerConfiguration() {
             @Override
-            public List<ClientRepresentation> createConsumerClients(SuiteContext suiteContext) {
-                List<ClientRepresentation> clients = new ArrayList<>(super.createConsumerClients(suiteContext));
+            public List<ClientRepresentation> createConsumerClients() {
+                List<ClientRepresentation> clients = new ArrayList<>(super.createConsumerClients());
                 
                 clients.add(ClientBuilder.create().clientId("consumer-client")
                         .publicClient()
-                        .redirectUris("http://localhost:8180/auth/realms/master/app/auth/*", "https://localhost:8543/auth/realms/master/app/auth/*")
+                        .redirectUris(getConsumerRoot() + "/auth/realms/master/app/auth/*")
                         .publicClient().build());
                 
                 return clients;

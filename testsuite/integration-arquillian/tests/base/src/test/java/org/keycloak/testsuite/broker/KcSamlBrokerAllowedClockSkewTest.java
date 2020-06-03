@@ -53,7 +53,7 @@ public class KcSamlBrokerAllowedClockSkewTest extends AbstractInitializedBaseBro
         Document doc = SAML2Request.convert(loginRep);
 
         new SamlClientBuilder()
-          .authnRequest(getAuthServerSamlEndpoint(bc.consumerRealmName()), doc, SamlClient.Binding.POST).build()   // Request to consumer IdP
+          .authnRequest(getConsumerSamlEndpoint(bc.consumerRealmName()), doc, SamlClient.Binding.POST).build()   // Request to consumer IdP
           .login().idp(bc.getIDPAlias()).build()
 
           .processSamlResponse(SamlClient.Binding.POST)    // AuthnRequest to producer IdP
@@ -79,7 +79,7 @@ public class KcSamlBrokerAllowedClockSkewTest extends AbstractInitializedBaseBro
             Document doc = SAML2Request.convert(loginRep);
 
             SAMLDocumentHolder samlResponse = new SamlClientBuilder()
-              .authnRequest(getAuthServerSamlEndpoint(bc.consumerRealmName()), doc, SamlClient.Binding.POST).build()   // Request to consumer IdP
+              .authnRequest(getConsumerSamlEndpoint(bc.consumerRealmName()), doc, SamlClient.Binding.POST).build()   // Request to consumer IdP
               .login().idp(bc.getIDPAlias()).build()
 
               .processSamlResponse(SamlClient.Binding.POST)    // AuthnRequest to producer IdP

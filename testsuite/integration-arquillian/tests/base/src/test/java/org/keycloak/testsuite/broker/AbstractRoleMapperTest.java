@@ -3,6 +3,8 @@ package org.keycloak.testsuite.broker;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 import java.util.Collections;
 import java.util.List;
@@ -13,6 +15,7 @@ import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.openqa.selenium.firefox.FirefoxDriver;
 
 /**
  * @author hmlnarik,
@@ -52,7 +55,7 @@ public abstract class AbstractRoleMapperTest extends AbstractIdentityProviderMap
         if (createAfterFirstLogin) {
             createMapperInIdp(idp, syncMode);
         }
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
         updateUser();
 

@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.broker.KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 import java.util.List;
 
@@ -62,7 +63,7 @@ public abstract class AbstractUsernameTemplateMapperTest extends AbstractIdentit
         String mappedUserName = String.format(getMapperTemplate(), userName);
         findUser(bc.consumerRealmName(), mappedUserName, bc.getUserEmail());
 
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
         updateUser(updatedUserName);
 

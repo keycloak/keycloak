@@ -16,8 +16,9 @@ import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getAuthRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 
 public class KcOidcBrokerLogoutTest extends AbstractBaseBrokerTest {
 
@@ -50,7 +51,7 @@ public class KcOidcBrokerLogoutTest extends AbstractBaseBrokerTest {
         log.debug("adding identity provider to realm " + bc.consumerRealmName());
 
         final RealmResource realm = adminClient.realm(bc.consumerRealmName());
-        realm.identityProviders().create(bc.setUpIdentityProvider(suiteContext)).close();
+        realm.identityProviders().create(bc.setUpIdentityProvider()).close();
     }
 
     @Before
@@ -63,8 +64,8 @@ public class KcOidcBrokerLogoutTest extends AbstractBaseBrokerTest {
         logInAsUserInIDPForFirstTime();
         assertLoggedInAccountManagement();
 
-        logoutFromRealm(bc.consumerRealmName());
-        driver.navigate().to(getAccountUrl(REALM_PROV_NAME));
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        driver.navigate().to(getAccountUrl(getProviderRoot(), REALM_PROV_NAME));
         waitForPage(driver, "log in to provider", true);
     }
 
@@ -73,8 +74,8 @@ public class KcOidcBrokerLogoutTest extends AbstractBaseBrokerTest {
         logInAsUserInIDPForFirstTime();
         assertLoggedInAccountManagement();
 
-        logoutFromRealm(bc.consumerRealmName(), "kc-oidc-idp");
-        driver.navigate().to(getAccountUrl(REALM_PROV_NAME));
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName(), "kc-oidc-idp");
+        driver.navigate().to(getAccountUrl(getProviderRoot(), REALM_PROV_NAME));
 
         waitForAccountManagementTitle();
     }
@@ -84,14 +85,14 @@ public class KcOidcBrokerLogoutTest extends AbstractBaseBrokerTest {
         logInAsUserInIDPForFirstTime();
         assertLoggedInAccountManagement();
 
-        logoutFromRealm(bc.consumerRealmName(), "something-else");
-        driver.navigate().to(getAccountUrl(REALM_PROV_NAME));
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName(), "something-else");
+        driver.navigate().to(getAccountUrl(getProviderRoot(), REALM_PROV_NAME));
         waitForPage(driver, "log in to provider", true);
     }
 
     @Test
     public void logoutAfterBrowserRestart() {
-        driver.navigate().to(getLoginUrl(bc.consumerRealmName(), "broker-app"));
+        driver.navigate().to(getLoginUrl(getConsumerRoot(), bc.consumerRealmName(), "broker-app"));
         logInWithBroker(bc);
         updateAccountInformation();
 
@@ -99,7 +100,7 @@ public class KcOidcBrokerLogoutTest extends AbstractBaseBrokerTest {
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         OAuthClient.AccessTokenResponse response = oauth.realm(bc.consumerRealmName())
                 .clientId("broker-app")
-                .redirectUri(getAuthRoot(suiteContext) + "/auth/realms/" + REALM_CONS_NAME + "/app")
+                .redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app")
                 .doAccessTokenRequest(code, "broker-app-secret");
         assertEquals(200, response.getStatusCode());
 
@@ -111,8 +112,8 @@ public class KcOidcBrokerLogoutTest extends AbstractBaseBrokerTest {
         driver.manage().deleteCookieNamed(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
         driver.manage().deleteCookieNamed(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE + CookieHelper.LEGACY_COOKIE);
 
-        logoutFromRealm(bc.consumerRealmName(), null, idToken);
-        driver.navigate().to(getAccountUrl(REALM_PROV_NAME));
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName(), null, idToken);
+        driver.navigate().to(getAccountUrl(getProviderRoot(), REALM_PROV_NAME));
 
         waitForPage(driver, "log in to provider", true);
     }

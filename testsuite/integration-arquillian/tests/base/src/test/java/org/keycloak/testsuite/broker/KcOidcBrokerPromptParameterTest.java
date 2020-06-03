@@ -5,12 +5,12 @@ import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.arquillian.SuiteContext;
 
 import java.util.List;
 import java.util.Map;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 public class KcOidcBrokerPromptParameterTest extends AbstractBrokerTest {
 
@@ -25,7 +25,7 @@ public class KcOidcBrokerPromptParameterTest extends AbstractBrokerTest {
 
     @Override
     protected void loginUser() {
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
 
         driver.navigate().to(driver.getCurrentUrl() + "&" + OIDCLoginProtocol.PROMPT_PARAM + "=" + PROMPT_CONSENT);
 
@@ -77,8 +77,8 @@ public class KcOidcBrokerPromptParameterTest extends AbstractBrokerTest {
 
     private class KcOidcBrokerConfiguration2 extends KcOidcBrokerConfiguration {
         @Override
-        protected void applyDefaultConfiguration(final SuiteContext suiteContext, final Map<String, String> config, IdentityProviderSyncMode syncMode) {
-            super.applyDefaultConfiguration(suiteContext, config, syncMode);
+        protected void applyDefaultConfiguration(final Map<String, String> config, IdentityProviderSyncMode syncMode) {
+            super.applyDefaultConfiguration(config, syncMode);
             config.remove("prompt");
         }
     }

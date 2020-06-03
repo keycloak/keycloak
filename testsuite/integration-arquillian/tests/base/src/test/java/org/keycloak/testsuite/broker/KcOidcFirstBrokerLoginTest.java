@@ -11,6 +11,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -35,7 +36,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         String username = "firstandlastname";
         createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, firstname, lastname, "firstnamelastname@example.org");
 
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithIdp(bc.getIDPAlias(), username, BrokerTestConstants.USER_PASSWORD);
 
         accountUpdateProfilePage.assertCurrent();
@@ -52,8 +53,8 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
     @Test
     public void testLinkAccountByReauthenticationWithDifferentBroker() {
         KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
-        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients(suiteContext).get(0);
-        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider(suiteContext);
+        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients().get(0);
+        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider();
         RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
 
         try {
@@ -61,12 +62,12 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
             consumerRealm.identityProviders().create(samlBroker);
 
-            driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+            driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
 
             logInWithBroker(samlBrokerConfig);
             waitForAccountManagementTitle();
             accountUpdateProfilePage.assertCurrent();
-            logoutFromRealm(bc.consumerRealmName());
+            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
             logInWithBroker(bc);
 
@@ -98,14 +99,14 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
     @Test
     public void testFilterMultipleBrokerWhenReauthenticating() {
         KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
-        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients(suiteContext).get(0);
-        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider(suiteContext);
+        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients().get(0);
+        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider();
         RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
 
         // create another oidc broker
         KcOidcBrokerConfiguration oidcBrokerConfig = KcOidcBrokerConfiguration.INSTANCE;
-        ClientRepresentation oidcClient = oidcBrokerConfig.createProviderClients(suiteContext).get(0);
-        IdentityProviderRepresentation oidcBroker = oidcBrokerConfig.setUpIdentityProvider(suiteContext);
+        ClientRepresentation oidcClient = oidcBrokerConfig.createProviderClients().get(0);
+        IdentityProviderRepresentation oidcBroker = oidcBrokerConfig.setUpIdentityProvider();
         oidcBroker.setAlias("kc-oidc-idp2");
         oidcBroker.setDisplayName("kc-oidc-idp2");
 
@@ -116,12 +117,12 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             consumerRealm.identityProviders().create(samlBroker);
             consumerRealm.identityProviders().create(oidcBroker);
 
-            driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+            driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
 
             logInWithBroker(samlBrokerConfig);
             waitForAccountManagementTitle();
             accountUpdateProfilePage.assertCurrent();
-            logoutFromRealm(bc.consumerRealmName());
+            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
             logInWithBroker(bc);
 
@@ -162,8 +163,8 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
     @Test
     public void testNestedFirstBrokerFlow() {
         KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
-        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients(suiteContext).get(0);
-        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider(suiteContext);
+        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients().get(0);
+        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider();
         RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
 
         try {
@@ -171,7 +172,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
             consumerRealm.identityProviders().create(samlBroker);
 
-            driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+            driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
 
             createUser(bc.getUserLogin());
 
@@ -207,8 +208,8 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
     @Test
     public void testLoginWithDifferentBrokerWhenUpdatingProfile() {
         KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
-        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients(suiteContext).get(0);
-        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider(suiteContext);
+        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients().get(0);
+        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider();
         RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
 
         try {
@@ -216,11 +217,11 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
             consumerRealm.identityProviders().create(samlBroker);
 
-            driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+            driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
             logInWithBroker(samlBrokerConfig);
             waitForPage(driver, "update account information", false);
             updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
-            logoutFromRealm(bc.consumerRealmName());
+            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
             logInWithBroker(bc);
 
@@ -246,7 +247,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
 
         createUser(bc.providerRealmName(), "no-first-name", "password", null, "LastName", "no-first-name@localhost.com");
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
         waitForPage(driver, "log in to", true);

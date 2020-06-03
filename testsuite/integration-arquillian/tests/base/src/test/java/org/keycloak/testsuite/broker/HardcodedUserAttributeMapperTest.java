@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.models.IdentityProviderMapperSyncMode.FORCE;
 import static org.keycloak.models.IdentityProviderMapperSyncMode.IMPORT;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 import java.util.HashMap;
 
@@ -87,7 +88,7 @@ public class HardcodedUserAttributeMapperTest extends AbstractIdentityProviderMa
         if (createAfterFirstLogin) {
             createMapperInIdp(idp, syncMode);
         }
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
         if (user.getAttributes() != null) {
             user.setAttributes(new HashMap<>());

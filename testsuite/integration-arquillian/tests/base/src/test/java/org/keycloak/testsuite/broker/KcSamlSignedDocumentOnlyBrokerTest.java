@@ -4,7 +4,6 @@ import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.SuiteContext;
 
 import java.util.HashMap;
 import java.util.List;
@@ -37,8 +36,8 @@ public class KcSamlSignedDocumentOnlyBrokerTest extends AbstractBrokerTest {
         }
 
         @Override
-        public List<ClientRepresentation> createProviderClients(SuiteContext suiteContext) {
-            List<ClientRepresentation> clientRepresentationList = super.createProviderClients(suiteContext);
+        public List<ClientRepresentation> createProviderClients() {
+            List<ClientRepresentation> clientRepresentationList = super.createProviderClients();
 
             for (ClientRepresentation client : clientRepresentationList) {
                 client.setClientAuthenticatorType("client-secret");
@@ -62,8 +61,8 @@ public class KcSamlSignedDocumentOnlyBrokerTest extends AbstractBrokerTest {
         }
 
         @Override
-        public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext, IdentityProviderSyncMode syncMode) {
-            IdentityProviderRepresentation result = super.setUpIdentityProvider(suiteContext, syncMode);
+        public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
+            IdentityProviderRepresentation result = super.setUpIdentityProvider(syncMode);
 
             Map<String, String> config = result.getConfig();
 

@@ -23,7 +23,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation.KeyMetadataRepresentation;
-import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.util.KeyUtils;
 
 import java.util.HashMap;
@@ -44,8 +43,8 @@ public class KcOidcBrokerPrivateKeyJwtTest extends AbstractBrokerTest {
     private class KcOidcBrokerConfigurationWithJWTAuthentication extends KcOidcBrokerConfiguration {
 
         @Override
-        public List<ClientRepresentation> createProviderClients(SuiteContext suiteContext) {
-            List<ClientRepresentation> clientsRepList = super.createProviderClients(suiteContext);
+        public List<ClientRepresentation> createProviderClients() {
+            List<ClientRepresentation> clientsRepList = super.createProviderClients();
             log.info("Update provider clients to accept JWT authentication");
             KeyMetadataRepresentation keyRep = KeyUtils.getActiveKey(adminClient.realm(consumerRealmName()).keys().getKeyMetadata(), Algorithm.RS256);
             for (ClientRepresentation client: clientsRepList) {
@@ -59,10 +58,10 @@ public class KcOidcBrokerPrivateKeyJwtTest extends AbstractBrokerTest {
         }
 
         @Override
-        public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext, IdentityProviderSyncMode syncMode) {
+        public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
             IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
             Map<String, String> config = idp.getConfig();
-            applyDefaultConfiguration(suiteContext, config, syncMode);
+            applyDefaultConfiguration(config, syncMode);
             config.put("clientSecret", null);
             config.put("clientAuthMethod", OIDCLoginProtocol.PRIVATE_KEY_JWT);
             return idp;
