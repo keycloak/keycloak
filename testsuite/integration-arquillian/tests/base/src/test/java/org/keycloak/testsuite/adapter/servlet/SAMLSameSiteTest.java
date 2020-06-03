@@ -6,6 +6,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.adapters.rotation.PublicKeyLocator;
+import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.adapter.page.Employee2Servlet;
 import org.keycloak.testsuite.adapter.page.EmployeeSigServlet;
@@ -20,6 +21,7 @@ import org.openqa.selenium.By;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Collections;
 
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getAppServerContextRoot;
@@ -33,13 +35,9 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 /**
  * @author mhajas
  */
-@AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
-@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT7)
+// @AppServerContainer(ContainerConstants.APP_SERVER_EAP) // Should be added in: KEYCLOAK-14434
+// @AppServerContainer(ContainerConstants.APP_SERVER_EAP6) // Should be added in: KEYCLOAK-14435
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
 @AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
@@ -50,12 +48,14 @@ public class SAMLSameSiteTest extends AbstractSAMLServletAdapterTest {
 
     @Deployment(name = Employee2Servlet.DEPLOYMENT_NAME)
     protected static WebArchive employee2() {
-        return samlServletDeployment(Employee2Servlet.DEPLOYMENT_NAME, WEB_XML_WITH_ACTION_FILTER, SendUsernameServlet.class, AdapterActionsFilter.class, PublicKeyLocator.class);
+        return samlServletDeployment(Employee2Servlet.DEPLOYMENT_NAME, WEB_XML_WITH_ACTION_FILTER, SendUsernameServlet.class, AdapterActionsFilter.class, PublicKeyLocator.class)
+                .addAsWebInfResource(undertowHandlersConf, UNDERTOW_HANDLERS_CONF);
     }
 
     @Deployment(name = EmployeeSigServlet.DEPLOYMENT_NAME)
     protected static WebArchive employeeSig() {
-        return samlServletDeployment(EmployeeSigServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
+        return samlServletDeployment(EmployeeSigServlet.DEPLOYMENT_NAME, SendUsernameServlet.class)
+                .addAsWebInfResource(undertowHandlersConf, UNDERTOW_HANDLERS_CONF);
     }
 
     @Page
@@ -64,6 +64,7 @@ public class SAMLSameSiteTest extends AbstractSAMLServletAdapterTest {
     @BeforeClass
     public static void enabledOnlyWithSSL() {
         ContainerAssume.assumeAuthServerSSL();
+        ContainerAssume.assumeAppServerSSL();
     }
 
     @Test

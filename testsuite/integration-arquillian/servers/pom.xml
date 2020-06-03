@@ -48,6 +48,10 @@
         <cache.default.worker.task-max-threads>4</cache.default.worker.task-max-threads>
 
         <jboss.cli.executable>jboss-cli.sh</jboss.cli.executable>
+
+        <!-- Tomcat versions needs to be overwritten to newer versions because of https://issues.redhat.com/browse/KEYCLOAK-14103 -->
+        <tomcat9.version>9.0.29</tomcat9.version>
+        <tomcat8.version>8.5.49</tomcat8.version>
     </properties>
 
     <modules>
