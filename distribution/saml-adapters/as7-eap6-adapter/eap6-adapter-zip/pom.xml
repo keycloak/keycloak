@@ -40,6 +40,12 @@
             <artifactId>keycloak-as7-modules</artifactId>
             <type>zip</type>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-as7-modules</artifactId>
+            <version>${project.version}</version>
+            <type>zip</type>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

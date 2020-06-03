@@ -70,7 +70,7 @@ public class KeycloakPrincipal<T extends KeycloakSecurityContext> implements Pri
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         DelegatingSerializationFilter filter = new DelegatingSerializationFilter();
-        filter.setFilter(in, "org.keycloak.KeycloakSecurityContext;org.keycloak.KeycloakPrincipal;!*");
+        filter.setFilter(in, "org.keycloak.KeycloakSecurityContext;org.keycloak.KeycloakPrincipal;java.util.*;!*");
         in.defaultReadObject();
     }
 }
