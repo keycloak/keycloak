@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BRANCHES="upstream/master prod/3.4.x prod/4.8.x"
+BRANCHES="upstream/master prod/3.4.x prod/4.8.x prod/9.0.x"
 
 echo "-----------------------------------------------------------------"
 
