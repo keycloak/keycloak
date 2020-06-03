@@ -17,33 +17,55 @@
 
 package org.keycloak.provider.quarkus;
 
+import java.io.File;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 
 import io.quarkus.runtime.configuration.DeploymentProfileConfigSource;
 import io.quarkus.runtime.configuration.ExpandingConfigSource;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
+import org.jboss.logging.Logger;
 
 public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
 
+    private static final Logger log = Logger.getLogger(KeycloakConfigSourceProvider.class);
     private static final String KEYCLOAK_CONFIG_FILE_PROP = "keycloak.config.file";
     private static final String KEYCLOAK_CONFIG_FILE_ENV = "KEYCLOAK_CONFIG_FILE";
 
     @Override
     public Iterable<ConfigSource> getConfigSources(ClassLoader forClassLoader) {
 
-        ArrayList<ConfigSource> sources = new ArrayList<>();
+        List<ConfigSource> sources = new ArrayList<>();
 
-        sources.add(wrap(new KeycloakPropertiesConfigSource.InJar()));
+        String filePath = System.getProperty(KEYCLOAK_CONFIG_FILE_PROP);
 
-        String fileName = System.getProperty(KEYCLOAK_CONFIG_FILE_PROP);
+        if (filePath == null)
+            filePath = System.getenv(KEYCLOAK_CONFIG_FILE_ENV);
 
-        if (fileName == null)
-            fileName = System.getenv(KEYCLOAK_CONFIG_FILE_ENV);
+        if (filePath == null) {
+            String homeDir = System.getProperty("keycloak.home.dir");
 
-        if (fileName != null)
-            sources.add(wrap(new KeycloakPropertiesConfigSource.InFileSystem(fileName)));
+            if (homeDir != null) {
+                File file = Paths.get(homeDir, "conf", KeycloakPropertiesConfigSource.KEYCLOAK_PROPERTIES).toFile();
+
+                if (file.exists()) {
+                    filePath = file.getAbsolutePath();
+                }
+            }
+        }
+
+        if (filePath != null) {
+            sources.add(wrap(new KeycloakPropertiesConfigSource.InFileSystem(filePath)));
+        }
+
+        // fall back to the default configuration within the server classpath
+        if (sources.isEmpty()) {
+            log.debug("Loading the default server configuration");
+            sources.add(wrap(new KeycloakPropertiesConfigSource.InJar()));
+        }
 
         return sources;
 
