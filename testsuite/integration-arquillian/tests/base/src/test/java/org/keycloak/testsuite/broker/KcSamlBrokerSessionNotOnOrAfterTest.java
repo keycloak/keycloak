@@ -32,7 +32,7 @@ public class KcSamlBrokerSessionNotOnOrAfterTest extends AbstractBrokerTest {
     @Test
     public void testConsumerIdpInitiatedLoginContainsSessionNotOnOrAfter() throws Exception {
         SAMLDocumentHolder samlResponse = new SamlClientBuilder()
-                .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_CONS_NAME), "sales-post").build()
+                .idpInitiatedLogin(getConsumerSamlEndpoint(REALM_CONS_NAME), "sales-post").build()
                 // Request login via kc-saml-idp
                 .login().idp(IDP_SAML_ALIAS).build()
 

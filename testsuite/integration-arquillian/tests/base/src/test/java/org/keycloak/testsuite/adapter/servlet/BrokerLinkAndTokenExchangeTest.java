@@ -312,7 +312,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
     }
 
     public void createParentChild() {
-        BrokerTestTools.createKcOidcBroker(adminClient, CHILD_IDP, PARENT_IDP, suiteContext);
+        BrokerTestTools.createKcOidcBroker(adminClient, CHILD_IDP, PARENT_IDP);
     }
 
 

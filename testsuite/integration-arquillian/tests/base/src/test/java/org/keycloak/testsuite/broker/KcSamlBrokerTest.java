@@ -4,7 +4,6 @@ import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import com.google.common.collect.ImmutableMap;
-import org.keycloak.broker.oidc.mappers.ExternalKeycloakRoleToRoleMapper;
 import org.keycloak.broker.saml.mappers.AttributeToRoleMapper;
 import org.keycloak.broker.saml.mappers.UserAttributeMapper;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
@@ -15,7 +14,6 @@ import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
-import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -43,14 +41,13 @@ import org.w3c.dom.Document;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
-import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
-import static org.keycloak.testsuite.broker.AbstractBrokerTest.ROLE_MANAGER;
-import static org.keycloak.testsuite.broker.AbstractBrokerTest.ROLE_USER;
 import static org.keycloak.testsuite.saml.RoleMapperTest.ROLE_ATTRIBUTE_NAME;
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 import static org.keycloak.testsuite.util.SamlStreams.assertionsUnencrypted;
 import static org.keycloak.testsuite.util.SamlStreams.attributeStatements;
 import static org.keycloak.testsuite.util.SamlStreams.attributesUnecrypted;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 
 /**
  * Final class as it's not intended to be overriden. Feel free to remove "final" if you really know what you are doing.
@@ -158,7 +155,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
         assertThat(currentRoles, hasItems(ROLE_MANAGER));
         assertThat(currentRoles, not(hasItems(ROLE_USER, ROLE_FRIENDLY_MANAGER)));
 
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
 
         userResource.roles().realmLevel().add(Collections.singletonList(userRole));
@@ -171,7 +168,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
           .collect(Collectors.toSet());
         assertThat(currentRoles, hasItems(ROLE_MANAGER, ROLE_USER, ROLE_FRIENDLY_MANAGER));
 
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
 
         userResource.roles().realmLevel().remove(Collections.singletonList(friendlyManagerRole));
@@ -184,8 +181,8 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
         assertThat(currentRoles, hasItems(ROLE_MANAGER, ROLE_USER));
         assertThat(currentRoles, not(hasItems(ROLE_FRIENDLY_MANAGER)));
 
-        logoutFromRealm(bc.providerRealmName());
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getProviderRoot(), bc.providerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
     }
 
     @Test
@@ -214,7 +211,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
         assertThat(currentRoles, hasItems(ROLE_MANAGER));
         assertThat(currentRoles, not(hasItems(ROLE_USER, ROLE_FRIENDLY_MANAGER, ROLE_USER_DOT_GUIDE)));
 
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
 
         UserRepresentation urp = userResourceProv.toRepresentation();
@@ -231,7 +228,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
           .collect(Collectors.toSet());
         assertThat(currentRoles, hasItems(ROLE_MANAGER, ROLE_USER, ROLE_USER_DOT_GUIDE, ROLE_FRIENDLY_MANAGER));
 
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
 
         urp = userResourceProv.toRepresentation();
@@ -246,19 +243,19 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
         assertThat(currentRoles, hasItems(ROLE_MANAGER, ROLE_USER, ROLE_USER_DOT_GUIDE));
         assertThat(currentRoles, not(hasItems(ROLE_FRIENDLY_MANAGER)));
 
-        logoutFromRealm(bc.providerRealmName());
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getProviderRoot(), bc.providerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
     }
 
     // KEYCLOAK-6106
     @Test
     public void loginClientWithDotsInName() throws Exception {
-        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted", getAuthServerContextRoot() + "/sales-post/saml", null);
+        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted", getConsumerRoot() + "/sales-post/saml", null);
 
         Document doc = SAML2Request.convert(loginRep);
 
         SAMLDocumentHolder samlResponse = new SamlClientBuilder()
-          .authnRequest(getAuthServerSamlEndpoint(bc.consumerRealmName()), doc, Binding.POST).build()   // Request to consumer IdP
+          .authnRequest(getConsumerSamlEndpoint(bc.consumerRealmName()), doc, Binding.POST).build()   // Request to consumer IdP
           .login().idp(bc.getIDPAlias()).build()
 
           .processSamlResponse(Binding.POST)    // AuthnRequest to producer IdP
@@ -285,12 +282,12 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
         createRolesForRealm(bc.consumerRealmName());
         createRoleMappersForConsumerRealm();
 
-        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted", getAuthServerContextRoot() + "/sales-post/saml", null);
+        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted", getConsumerRoot() + "/sales-post/saml", null);
 
         Document doc = SAML2Request.convert(loginRep);
 
         SAMLDocumentHolder samlResponse = new SamlClientBuilder()
-                .authnRequest(getAuthServerSamlEndpoint(bc.consumerRealmName()), doc, Binding.POST).build()   // Request to consumer IdP
+                .authnRequest(getConsumerSamlEndpoint(bc.consumerRealmName()), doc, Binding.POST).build()   // Request to consumer IdP
                 .login().idp(bc.getIDPAlias()).build()
 
                 .processSamlResponse(Binding.POST)    // AuthnRequest to producer IdP

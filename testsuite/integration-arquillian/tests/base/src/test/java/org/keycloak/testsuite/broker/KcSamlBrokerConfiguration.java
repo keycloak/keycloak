@@ -17,7 +17,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.SuiteContext;
 
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -59,28 +58,28 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
     }
 
     @Override
-    public List<ClientRepresentation> createProviderClients(SuiteContext suiteContext) {
-        String clientId = getIDPClientIdInProviderRealm(suiteContext);
-        return Arrays.asList(createProviderClient(suiteContext, clientId));
+    public List<ClientRepresentation> createProviderClients() {
+        String clientId = getIDPClientIdInProviderRealm();
+        return Arrays.asList(createProviderClient(clientId));
     }
 
-    private ClientRepresentation createProviderClient(SuiteContext suiteContext, String clientId) {
+    private ClientRepresentation createProviderClient(String clientId) {
         ClientRepresentation client = new ClientRepresentation();
 
         client.setClientId(clientId);
         client.setEnabled(true);
         client.setProtocol(IDP_SAML_PROVIDER_ID);
         client.setRedirectUris(Collections.singletonList(
-                getAuthRoot(suiteContext) + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint"
+                getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint"
         ));
 
         Map<String, String> attributes = new HashMap<>();
 
         attributes.put(SamlConfigAttributes.SAML_AUTHNSTATEMENT, "true");
         attributes.put(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE,
-                getAuthRoot(suiteContext) + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint");
+                getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint");
         attributes.put(SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE,
-                getAuthRoot(suiteContext) + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint");
+                getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint");
         attributes.put(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE, "true");
         attributes.put(SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE, "username");
         attributes.put(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "false");
@@ -149,16 +148,15 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
     }
 
     @Override
-    public List<ClientRepresentation> createConsumerClients(SuiteContext suiteContext) {
+    public List<ClientRepresentation> createConsumerClients() {
         return Arrays.asList(
           ClientBuilder.create()
             .clientId(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST)
             .enabled(true)
             .fullScopeEnabled(true)
             .protocol(SamlProtocol.LOGIN_PROTOCOL)
-            .baseUrl("http://localhost:8080/sales-post")
-            .addRedirectUri("http://localhost:8180/sales-post/*")
-            .addRedirectUri("https://localhost:8543/sales-post/*")
+            .baseUrl(getConsumerRoot() + "/sales-post")
+            .addRedirectUri(getConsumerRoot() + "/sales-post/*")
             .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
             .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
             .build(),
@@ -167,13 +165,12 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
             .enabled(true)
             .fullScopeEnabled(true)
             .protocol(SamlProtocol.LOGIN_PROTOCOL)
-            .baseUrl("http://localhost:8080/sales-post")
-            .addRedirectUri("http://localhost:8180/sales-post/*")
-            .addRedirectUri("https://localhost:8543/sales-post/*")
+            .baseUrl(getConsumerRoot() + "/sales-post")
+            .addRedirectUri(getConsumerRoot() + "/sales-post/*")
             .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
             .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
             .attribute(SAML_IDP_INITIATED_SSO_URL_NAME, "sales-post")
-            .attribute(SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, "https://localhost:8180/sales-post/saml")
+            .attribute(SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, getConsumerRoot() + "/sales-post/saml")
             .build(),
           ClientBuilder.create()
             .id("broker-app")
@@ -182,14 +179,14 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
             .secret("broker-app-secret")
             .enabled(true)
             .directAccessGrants()
-            .addRedirectUri(getAuthRoot(suiteContext) + "/auth/*")
-            .baseUrl(getAuthRoot(suiteContext) + "/auth/realms/" + REALM_CONS_NAME + "/app")
+            .addRedirectUri(getConsumerRoot() + "/auth/*")
+            .baseUrl(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app")
             .build()
         );
     }
 
     @Override
-    public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext, IdentityProviderSyncMode syncMode) {
+    public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
         IdentityProviderRepresentation idp = createIdentityProvider(IDP_SAML_ALIAS, IDP_SAML_PROVIDER_ID);
 
         idp.setTrustEmail(true);
@@ -199,8 +196,8 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         Map<String, String> config = idp.getConfig();
 
         config.put(IdentityProviderModel.SYNC_MODE, syncMode.toString());
-        config.put(SINGLE_SIGN_ON_SERVICE_URL, getAuthRoot(suiteContext) + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
-        config.put(SINGLE_LOGOUT_SERVICE_URL, getAuthRoot(suiteContext) + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
+        config.put(SINGLE_SIGN_ON_SERVICE_URL, getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
+        config.put(SINGLE_LOGOUT_SERVICE_URL, getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/saml");
         config.put(NAME_ID_POLICY_FORMAT, "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress");
         config.put(FORCE_AUTHN, "false");
         config.put(POST_BINDING_RESPONSE, "true");
@@ -223,8 +220,8 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
     }
 
     @Override
-    public String getIDPClientIdInProviderRealm(SuiteContext suiteContext) {
-        return getAuthRoot(suiteContext) + "/auth/realms/" + consumerRealmName();
+    public String getIDPClientIdInProviderRealm() {
+        return getConsumerRoot() + "/auth/realms/" + consumerRealmName();
     }
 
     @Override

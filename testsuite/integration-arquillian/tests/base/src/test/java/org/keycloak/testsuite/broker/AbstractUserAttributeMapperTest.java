@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 import java.util.List;
 import java.util.Map;
@@ -108,7 +109,7 @@ public abstract class AbstractUserAttributeMapperTest extends AbstractIdentityPr
 
         assertUserAttributes(initialUserAttributes, userRep);
 
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
         // update user in provider realm
         UserRepresentation userRepProvider = findUser(bc.providerRealmName(), bc.getUserLogin(), email);

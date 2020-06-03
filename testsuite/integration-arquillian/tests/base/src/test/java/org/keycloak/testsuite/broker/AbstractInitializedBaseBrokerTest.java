@@ -55,7 +55,7 @@ public abstract class AbstractInitializedBaseBrokerTest extends AbstractBaseBrok
 
         log.debug("adding identity provider to realm " + bc.consumerRealmName());
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
-        realm.identityProviders().create(bc.setUpIdentityProvider(suiteContext)).close();
+        realm.identityProviders().create(bc.setUpIdentityProvider()).close();
         identityProviderResource = realm.identityProviders().get(bc.getIDPAlias());
 
         addClientsToProviderAndConsumer();

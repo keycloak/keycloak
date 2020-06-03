@@ -38,6 +38,7 @@
         <property name="firefoxLegacy">${firefoxLegacyDriver}</property>
         <property name="firefoxDriverVersion">${firefoxDriverVersion}</property>
         <property name="firefoxUserPreferences">${firefoxUserPreferences}</property>
+        <property name="firefoxHeadless">${firefoxHeadless}</property>
 
         <!-- chrome -->
         <property name="chromeBinary">${chromeBinary}</property>
@@ -88,6 +89,7 @@
         <property name="firefoxLegacy">${firefoxLegacyDriver}</property>
         <property name="firefoxDriverVersion">${firefoxDriverVersion}</property>
         <property name="firefoxUserPreferences">${firefoxUserPreferences}</property>
+        <property name="firefoxHeadless">${firefoxHeadless}</property>
 
         <!-- chrome -->
         <property name="chromeBinary">${chromeBinary}</property>

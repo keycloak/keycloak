@@ -5,7 +5,6 @@ import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.arquillian.SuiteContext;
 
 import java.util.List;
 import java.util.Map;
@@ -17,6 +16,7 @@ import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
 import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 public class KcOidcBrokerUiLocalesEnabledTest extends AbstractBrokerTest {
 
@@ -28,10 +28,10 @@ public class KcOidcBrokerUiLocalesEnabledTest extends AbstractBrokerTest {
     private class KcOidcBrokerConfigurationWithUiLocalesEnabled extends KcOidcBrokerConfiguration {
 
         @Override
-        public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext, IdentityProviderSyncMode syncMode) {
+        public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
             IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
             Map<String, String> config = idp.getConfig();
-            applyDefaultConfiguration(suiteContext, config, syncMode);
+            applyDefaultConfiguration(config, syncMode);
             config.put("uiLocales", "true");
             return idp;
         }
@@ -39,7 +39,7 @@ public class KcOidcBrokerUiLocalesEnabledTest extends AbstractBrokerTest {
 
     @Override
     protected void loginUser() {
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
 
         driver.navigate().to(driver.getCurrentUrl());
 

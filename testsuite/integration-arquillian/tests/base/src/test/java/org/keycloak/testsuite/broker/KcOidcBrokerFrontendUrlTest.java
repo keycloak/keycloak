@@ -17,7 +17,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.util.ReverseProxy;
 
 public final class KcOidcBrokerFrontendUrlTest extends AbstractBrokerTest {
@@ -42,8 +41,8 @@ public final class KcOidcBrokerFrontendUrlTest extends AbstractBrokerTest {
             }
 
             @Override 
-            public List<ClientRepresentation> createProviderClients(SuiteContext suiteContext) {
-                List<ClientRepresentation> clients = super.createProviderClients(suiteContext);
+            public List<ClientRepresentation> createProviderClients() {
+                List<ClientRepresentation> clients = super.createProviderClients();
 
                 List<String> redirectUris = new ArrayList<>();
 

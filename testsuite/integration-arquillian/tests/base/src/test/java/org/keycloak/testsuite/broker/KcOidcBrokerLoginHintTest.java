@@ -9,6 +9,7 @@ import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
@@ -17,7 +18,6 @@ import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.UserBuilder;
 
@@ -31,11 +31,11 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
     private class KcOidcBrokerConfigurationWithLoginHint extends KcOidcBrokerConfiguration {
         
         @Override
-        public IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext, IdentityProviderSyncMode syncMode) {
+        public IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode syncMode) {
             IdentityProviderRepresentation idp = createIdentityProvider(IDP_OIDC_ALIAS, IDP_OIDC_PROVIDER_ID);
 
             Map<String, String> config = idp.getConfig();
-            applyDefaultConfiguration(suiteContext, config, syncMode);
+            applyDefaultConfiguration(config, syncMode);
             config.put("loginHint", "true");
             return idp;
         }
@@ -43,7 +43,7 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
 
     @Override
     protected void loginUser() {
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         
         driver.navigate().to(driver.getCurrentUrl() + "&login_hint=" + USER_EMAIL);
 
@@ -99,7 +99,7 @@ public class KcOidcBrokerLoginHintTest extends AbstractBrokerTest {
                         .enabled(true)
                         .build()
             )) {
-            driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+            driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
             waitForPageToLoad();
             driver.navigate().to(driver.getCurrentUrl() + "&login_hint=" + USER_EMAIL + "&kc_idp_hint=" + IDP_OIDC_ALIAS);
             waitForPageToLoad();

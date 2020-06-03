@@ -119,7 +119,7 @@ public class AccountLinkTest extends AbstractKeycloakTest {
 
 
     public void createParentChild() {
-        BrokerTestTools.createKcOidcBroker(adminClient, CHILD_IDP, PARENT_IDP, suiteContext);
+        BrokerTestTools.createKcOidcBroker(adminClient, CHILD_IDP, PARENT_IDP);
     }
 
     @Test

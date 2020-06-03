@@ -36,9 +36,10 @@ import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getAuthRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 
 /**
  * Final class as it's not intended to be overriden. Feel free to remove "final" if you really know what you are doing.
@@ -113,7 +114,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         assertThat(currentRoles, hasItems(ROLE_MANAGER));
         assertThat(currentRoles, not(hasItems(ROLE_USER)));
 
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
 
         userResource.roles().realmLevel().add(Collections.singletonList(userRole));
@@ -126,8 +127,8 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         assertThat(currentRoles, hasItems(ROLE_MANAGER));
         assertThat(currentRoles, not(hasItems(ROLE_USER)));
 
-        logoutFromRealm(bc.consumerRealmName());
-        logoutFromRealm(bc.providerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        logoutFromRealm(getProviderRoot(), bc.providerRealmName());
     }
 
     @Test
@@ -140,14 +141,14 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             IdentityProviderResource identityProviderResource = realmsResouce().realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias());
             IdentityProviderRepresentation idp = identityProviderResource.toRepresentation();
 
-            idp.getConfig().put(OIDCIdentityProviderConfig.JWKS_URL, getAuthRoot(suiteContext) + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/certs");
+            idp.getConfig().put(OIDCIdentityProviderConfig.JWKS_URL, getProviderRoot() + "/auth/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/certs");
             identityProviderResource.update(idp);
 
             brokerApp.getAttributes().put(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG, Algorithm.RS256);
             brokerApp.getAttributes().put("validateSignature", Boolean.TRUE.toString());
             clients.get(brokerApp.getId()).update(brokerApp);
 
-            driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+            driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
             logInWithBroker(bc);
 
             waitForPage(driver, "update account information", false);
@@ -221,8 +222,8 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     @Test
     public void testReauthenticationSamlBrokerWithOTPRequired() throws Exception {
         KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
-        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients(suiteContext).get(0);
-        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider(suiteContext);
+        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients().get(0);
+        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider();
         RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
 
         try {
@@ -230,14 +231,14 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
             consumerRealm.identityProviders().create(samlBroker);
 
-            driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+            driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
             testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(samlBrokerConfig.getIDPAlias()));
             logInWithBroker(samlBrokerConfig);
 
             totpPage.assertCurrent();
             String totpSecret = totpPage.getTotpSecret();
             totpPage.configure(totp.generateTOTP(totpSecret));
-            logoutFromRealm(bc.consumerRealmName());
+            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
             logInWithBroker(bc);
 
@@ -263,8 +264,8 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     @Test
     public void testReauthenticationOIDCBrokerWithOTPRequired() throws Exception {
         KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
-        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients(suiteContext).get(0);
-        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider(suiteContext);
+        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients().get(0);
+        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider();
         RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
 
         try {
@@ -272,9 +273,9 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
             consumerRealm.identityProviders().create(samlBroker);
 
-            driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+            driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
             logInWithBroker(samlBrokerConfig);
-            logoutFromRealm(bc.consumerRealmName());
+            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
             testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
             logInWithBroker(bc);
@@ -282,7 +283,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             waitForPage(driver, "account already exists", false);
             idpConfirmLinkPage.assertCurrent();
             idpConfirmLinkPage.clickLinkAccount();
-            logoutFromRealm(bc.providerRealmName());
+            logoutFromRealm(getProviderRoot(), bc.providerRealmName());
 
             driver.navigate().back();
             logInWithBroker(samlBrokerConfig);
@@ -290,7 +291,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             totpPage.assertCurrent();
             String totpSecret = totpPage.getTotpSecret();
             totpPage.configure(totp.generateTOTP(totpSecret));
-            logoutFromRealm(bc.consumerRealmName());
+            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
             assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 2);
         } finally {
@@ -305,8 +306,8 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     @Test
     public void testReauthenticationBothBrokersWithOTPRequired() throws Exception {
         KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
-        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients(suiteContext).get(0);
-        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider(suiteContext);
+        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients().get(0);
+        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider();
         RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
 
         try {
@@ -314,13 +315,13 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
             consumerRealm.identityProviders().create(samlBroker);
 
-            driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+            driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
             testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(samlBrokerConfig.getIDPAlias()));
             logInWithBroker(samlBrokerConfig);
             totpPage.assertCurrent();
             String totpSecret = totpPage.getTotpSecret();
             totpPage.configure(totp.generateTOTP(totpSecret));
-            logoutFromRealm(bc.consumerRealmName());
+            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
             testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
             logInWithBroker(bc);
@@ -328,15 +329,15 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             waitForPage(driver, "account already exists", false);
             idpConfirmLinkPage.assertCurrent();
             idpConfirmLinkPage.clickLinkAccount();
-            logoutFromRealm(bc.providerRealmName());
+            logoutFromRealm(getProviderRoot(), bc.providerRealmName());
 
             driver.navigate().back();
             logInWithBroker(samlBrokerConfig);
 
             loginTotpPage.assertCurrent();
             loginTotpPage.login(totp.generateTOTP(totpSecret));
-            logoutFromRealm(bc.providerRealmName());
-            logoutFromRealm(bc.consumerRealmName());
+            logoutFromRealm(getProviderRoot(), bc.providerRealmName());
+            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
             logInWithBroker(bc);
 
@@ -355,8 +356,8 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     @Test
     public void testInvalidIssuedFor() {
         loginUser();
-        logoutFromRealm(bc.providerRealmName());
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getProviderRoot(), bc.providerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
@@ -376,8 +377,8 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     @Test
     public void testInvalidAudience() {
         loginUser();
-        logoutFromRealm(bc.providerRealmName());
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getProviderRoot(), bc.providerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());

@@ -93,6 +93,8 @@
         <auth.server.profile/>
         <auth.server.feature/>
 
+        <auth.server.host2>${auth.server.host}</auth.server.host2> <!-- for broker and JS adapter tests; defaults to auth.server.host -->
+
         <app.server.skip.unpack>true</app.server.skip.unpack>
         <app.server.artifactId>integration-arquillian-servers-app-server-${app.server}</app.server.artifactId>
         <app.server.home>${containers.home}/app-server-${app.server}</app.server.home>
@@ -183,6 +185,7 @@
         <firefoxLegacyDriver>false</firefoxLegacyDriver>
         <firefoxDriverVersion/>
         <firefoxUserPreferences/>
+        <firefoxHeadless>false</firefoxHeadless>
         <chromeBinary/>
         <chromeArguments/>
         <chromeDriverVersion/>
@@ -508,6 +511,8 @@
                             <auth.server.profile>${auth.server.profile}</auth.server.profile>
                             <auth.server.feature>${auth.server.feature}</auth.server.feature>
 
+                            <auth.server.host2>${auth.server.host2}</auth.server.host2> <!-- for broker tests -->
+
                             <app.server>${app.server}</app.server>
                             <app.server.home>${app.server.home}</app.server.home>
                             <app.server.config.dir>${app.server.config.dir}</app.server.config.dir>
@@ -573,6 +578,7 @@
                             <firefoxLegacyDriver>${firefoxLegacyDriver}</firefoxLegacyDriver>
                             <firefoxDriverVersion>${firefoxDriverVersion}</firefoxDriverVersion>
                             <firefoxUserPreferences>${firefoxUserPreferences}</firefoxUserPreferences>
+                            <firefoxHeadless>${firefoxHeadless}</firefoxHeadless>
 
                             <appium.platformName>${appium.platformName}</appium.platformName>
                             <appium.deviceName>${appium.deviceName}</appium.deviceName>
@@ -1904,6 +1910,7 @@
                                         <storepass>${dependency.keystore.password}</storepass>
                                         <alias>${auth.server.host}</alias>
                                         <dname>CN=${auth.server.host}, OU=Keycloak, O=Red Hat, L=Westword, ST=MA, C=US</dname>
+                                        <ext>SAN=dns:${auth.server.host},dns:${auth.server.host2}</ext> <!-- for broker tests; IdP is the same server as auth server -->
                                         <keyalg>RSA</keyalg>
                                         <keysize>2048</keysize>
                                         <sigalg>SHA256withRSA</sigalg>
@@ -1963,6 +1970,15 @@
                     </plugins>
                 </pluginManagement>
             </build>
+        </profile>
+
+        <profile>
+            <id>firefox-strict-cookies</id>
+            <properties>
+                <browser>firefox</browser>
+                <firefoxUserPreferences>${project.build.directory}/dependency/firefox-cookies-prefs.js</firefoxUserPreferences>
+                <firefoxHeadless>true</firefoxHeadless>
+            </properties>
         </profile>
 
     </profiles>

@@ -974,3 +974,22 @@ Run tests using the `auth-server-quarkus` profile:
 Right now, the server runs in a separate process. To debug the server set `auth.server.debug` system property to `true`.
 
 To configure the debugger port, set the `auth.server.debug.port` system property with any valid port number. Default is `5005`. 
+
+## Cookies testing
+In order to reproduce some specific cookies behaviour in browsers (like SameSite policies or 3rd party cookie blocking),
+some subset of tests needs to be ran with different hosts for auth server and app/IdP server in order to simulate third
+party contexts. Those hosts must be different from localhost as that host has some special treatment from browsers. At
+the same time both hosts must use different domains to be considered cross-origin, e.g. `127.0.0.1.nip.io` and
+`127.0.0.1.xip.io`. NOT `app1.127.0.0.1.nip.io` and `app2.127.0.0.1.nip.io`!!
+
+Also, those new cookies policies are currently not yet enabled by default (which will change in the near future). To test
+those policies, you need the latest stable Firefox together with `firefox-strict-cookies` profile. This profile sets the
+browser to Firefox, configures the proper cookies behavior and makes Firefox to run in the headless mode (which is ok
+because this is not UI testing). For debugging purposes you can override the headless mode with `-DfirefoxHeadless=false`. 
+
+**Broker tests:**
+
+    mvn clean install -f testsuite/integration-arquillian/tests/base \
+                      -Pfirefox-strict-cookies \
+                      -Dtest=**.broker.** \
+                      -Dauth.server.host=[some_host] -Dauth.server.host2=[some_other_host]

@@ -1,22 +1,16 @@
 package org.keycloak.testsuite.broker;
 
-import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
+import org.junit.Ignore;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.testsuite.util.ClientBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.JWSInputException;
-import org.keycloak.representations.IDToken;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.testsuite.arquillian.SuiteContext;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.OAuthClient;
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 public class KcOidcBrokerSubMatchIntrospectionest extends AbstractBrokerTest {
 
@@ -24,20 +18,20 @@ public class KcOidcBrokerSubMatchIntrospectionest extends AbstractBrokerTest {
     protected BrokerConfiguration getBrokerConfiguration() {
         return new KcOidcBrokerConfiguration() {
             @Override
-            public List<ClientRepresentation> createConsumerClients(SuiteContext suiteContext) {
-                List<ClientRepresentation> clients = new ArrayList<>(super.createConsumerClients(suiteContext));
+            public List<ClientRepresentation> createConsumerClients() {
+                List<ClientRepresentation> clients = new ArrayList<>(super.createConsumerClients());
                 
                 clients.add(ClientBuilder.create().clientId("consumer-client")
                         .publicClient()
-                        .redirectUris("http://localhost:8180/auth/realms/master/app/auth/*", "https://localhost:8543/auth/realms/master/app/auth/*")
+                        .redirectUris(getConsumerRoot() + "/auth/realms/master/app/auth/*")
                         .publicClient().build());
                 
                 return clients;
             }
 
             @Override
-            public List<ClientRepresentation> createProviderClients(SuiteContext suiteContext) {
-                List<ClientRepresentation> clients = super.createProviderClients(suiteContext);
+            public List<ClientRepresentation> createProviderClients() {
+                List<ClientRepresentation> clients = super.createProviderClients();
                 List<ProtocolMapperRepresentation> mappers = new ArrayList<>();
                 
                 mappers.add(createHardcodedClaim("sub-override", "sub", "overriden", "String", true, true));
@@ -51,7 +45,7 @@ public class KcOidcBrokerSubMatchIntrospectionest extends AbstractBrokerTest {
 
     @Override
     public void testLogInAsUserInIDP() {
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
 
         oauth.realm(bc.consumerRealmName());
         oauth.clientId("consumer-client");

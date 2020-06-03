@@ -7,6 +7,7 @@ import org.keycloak.testsuite.Assert;
 import java.util.List;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 public class KcOidcBrokerAcrParameterTest extends AbstractBrokerTest {
 
@@ -20,7 +21,7 @@ public class KcOidcBrokerAcrParameterTest extends AbstractBrokerTest {
 
     @Override
     protected void loginUser() {
-        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
 
         driver.navigate().to(driver.getCurrentUrl() + "&" + ACR_VALUES + "=" + ACR_3);
 
