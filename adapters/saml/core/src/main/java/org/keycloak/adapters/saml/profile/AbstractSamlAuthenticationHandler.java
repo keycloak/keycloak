@@ -288,6 +288,10 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
                     sessionStore.setCurrentAction(SamlSessionStore.CurrentAction.NONE);
                 }
             }
+
+            log.warn("Keycloak Adapter obtained Response, that is not understood. This may be because the containers " +
+                    "cookies are not properly configured with SameSite settings. Refer to KEYCLOAK-14103 for more details.");
+
             return AuthOutcome.NOT_ATTEMPTED;
         }
 
@@ -352,6 +356,12 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
     }
 
     protected AuthOutcome handleLoginResponse(SAMLDocumentHolder responseHolder, boolean postBinding, OnSessionCreated onCreateSession) {
+        if (!sessionStore.isLoggingIn()) {
+            log.warn("Adapter obtained LoginResponse, however containers session is not aware of sending any request. " +
+                    "This may be because the session cookies created by container are not properly configured " +
+                    "with SameSite settings. Refer to KEYCLOAK-14103 for more details.");
+        }
+
     	final ResponseType responseType = (ResponseType) responseHolder.getSamlObject();
         AssertionType assertion = null;
         if (! isSuccessfulSamlResponse(responseType) || responseType.getAssertions() == null || responseType.getAssertions().isEmpty()) {

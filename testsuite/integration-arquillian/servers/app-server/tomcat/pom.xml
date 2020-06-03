@@ -317,6 +317,74 @@
                 <module>common</module>
             </modules>
         </profile>
+
+        <profile>
+            <id>configure-ssl</id>
+            <activation>
+                <property>
+                    <name>app.server.ssl.required</name>
+                </property>
+            </activation>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>xml-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>configure-https-connector</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <configuration>
+                                    <transformationSets>
+                                        <transformationSet>
+                                            <dir>${app.server.tomcat.home}/conf</dir>
+                                            <stylesheet>${common.resources}/tomcat-add-connector.xsl</stylesheet>
+                                            <includes>
+                                                <include>server.xml</include>
+                                            </includes>
+                                            <outputDir>${app.server.tomcat.home}/conf</outputDir>
+                                        </transformationSet>
+                                    </transformationSets>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-keycloak-truststore</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${app.server.tomcat.home}/conf</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${common.resources}/keystore</directory>
+                                            <includes>
+                                                <include>keycloak.truststore</include>
+                                                <include>adapter.jks</include>
+                                            </includes>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                    <nonFilteredFileExtensions>
+                                        <nonFilteredFileExtension>truststore</nonFilteredFileExtension>
+                                        <nonFilteredFileExtension>jks</nonFilteredFileExtension>
+                                    </nonFilteredFileExtensions>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         
     </profiles>
 </project>

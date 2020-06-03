@@ -60,6 +60,7 @@ public class AppServerTestEnricher {
     private static final Logger log = Logger.getLogger(AppServerTestEnricher.class);
 
     public static final String CURRENT_APP_SERVER = System.getProperty("app.server", "undertow");
+    public static final boolean APP_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("app.server.ssl.required", "false"));
 
     @Inject private Instance<ContainerController> containerConrollerInstance;
     @Inject private Instance<TestContext> testContextInstance;

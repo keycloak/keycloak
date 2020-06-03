@@ -126,7 +126,7 @@ public class OAuthClient {
     private String clientId;
 
     private String redirectUri;
-    
+
     private String kcAction;
 
     private StateParamProvider state;
