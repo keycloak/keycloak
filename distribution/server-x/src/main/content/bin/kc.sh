@@ -38,6 +38,10 @@ do
               shift
           fi
           ;;
+      --config)
+          SERVER_OPTS="$SERVER_OPTS -Dkeycloak.config.file=$2"
+          shift
+          ;;
       --)
           shift
           break;;
