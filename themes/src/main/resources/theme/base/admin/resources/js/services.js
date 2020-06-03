@@ -910,15 +910,11 @@ module.factory('RoleClientComposites', function($resource) {
 
 function clientSelectControl($scope, realm, Client) {
     $scope.clientsUiSelect = {
-        minimumInputLength: 1,
+        minimumInputLength: 0,
         delay: 500,
         allowClear: true,
         query: function (query) {
             var data = {results: []};
-            if ('' == query.term.trim()) {
-                query.callback(data);
-                return;
-            }
             Client.query({realm: realm, search: true, clientId: query.term.trim(), max: 20}, function(response) {
                 data.results = response;
                 query.callback(data);
