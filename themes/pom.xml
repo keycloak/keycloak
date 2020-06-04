@@ -15,12 +15,25 @@
 
     <properties>
         <dir.common>src/main/resources/theme/keycloak/common/resources</dir.common>
-        <dir.account2>src/main/resources/theme/keycloak-preview/account/resources</dir.account2>
+        <dir.account2>src/main/resources/theme/keycloak-preview/account/src</dir.account2>
         <args.npm.install>ci --no-optional --ignore-scripts</args.npm.install>
     </properties>
 
     <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>${dir.account2}/web_modules</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>${dir.common}/web_modules</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
@@ -110,9 +123,11 @@
                     <exclude>**/Gruntfile.js</exclude>
                     <exclude>**/Gemfile*</exclude>
                     <exclude>**/.*</exclude>
+                    
                     <!-- Remove once rcue stops shipping this file -->
                     <exclude>**/git-Logo.svg</exclude>
-                    <exclude>**/keycloak-preview/account/resources/node_modules/**</exclude>
+                    
+                    <exclude>**/keycloak-preview/account/src/**</exclude>
                 </excludes>
             </resource>
         </resources>

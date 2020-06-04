@@ -130,7 +130,7 @@
                     document.getElementById("landingLoggedInUser").innerHTML = loggedInUserName('${msg("unknownUser")}', '${msg("fullName")}');
                 }
 
-                loadjs("/app/Main.js");
+                loadjs("/Main.js");
 
             }).error(function() {
                 alert('failed to initialize keycloak');
@@ -231,7 +231,7 @@
                     <h6>${msg("personalInfoIntroMessage")}</h6>
                 </div>
                 <div class="pf-c-card__body pf-c-content">
-                    <h5 id="landingPersonalInfoLink" onclick="toggleReact()"><a href="#/app/personal-info">${msg("personalInfoHtmlTitle")}</a></h5>
+                    <h5 id="landingPersonalInfoLink" onclick="toggleReact()"><a href="#personal-info">${msg("personalInfoHtmlTitle")}</a></h5>
                 </div>
               </div>
             </div>
@@ -242,9 +242,9 @@
                     <h6>${msg("accountSecurityIntroMessage")}</h6>
                 </div>
                 <div class="pf-c-card__body pf-c-content">
-                    <h5 id="landingSigningInLink" onclick="toggleReact()"><a href="#/app/security/signingin">${msg("signingIn")}</a></h5>
-                    <h5 id="landingDeviceActivityLink" onclick="toggleReact()"><a href="#/app/security/device-activity">${msg("deviceActivityHtmlTitle")}</a></h5>
-                    <h5 id="landingLinkedAccountsLink" style="display:none" onclick="toggleReact()"><a href="#/app/security/linked-accounts">${msg("linkedAccountsHtmlTitle")}</a></h5>
+                    <h5 id="landingSigningInLink" onclick="toggleReact()"><a href="#security/signingin">${msg("signingIn")}</a></h5>
+                    <h5 id="landingDeviceActivityLink" onclick="toggleReact()"><a href="#security/device-activity">${msg("deviceActivityHtmlTitle")}</a></h5>
+                    <h5 id="landingLinkedAccountsLink" style="display:none" onclick="toggleReact()"><a href="#security/linked-accounts">${msg("linkedAccountsHtmlTitle")}</a></h5>
                 </div>
               </div>
             </div>
@@ -255,7 +255,7 @@
                     <h6>${msg("applicationsIntroMessage")}</h6>
                 </div>
                 <div class="pf-c-card__body pf-c-content">
-                    <h5 id="landingApplicationsLink" onclick="toggleReact()"><a href="#/app/applications">${msg("applicationsHtmlTitle")}</a></h5>
+                    <h5 id="landingApplicationsLink" onclick="toggleReact()"><a href="#applications">${msg("applicationsHtmlTitle")}</a></h5>
                 </div>
               </div>
             </div>
@@ -266,7 +266,7 @@
                     <h6>${msg("resourceIntroMessage")}</h6>
                 </div>
                 <div class="pf-c-card__body pf-c-content">
-                    <h5 id="landingMyResourcesLink" onclick="toggleReact()"><a href="#/app/resources">${msg("myResources")}</a></h5>
+                    <h5 id="landingMyResourcesLink" onclick="toggleReact()"><a href="#resources">${msg("myResources")}</a></h5>
                 </div>
               </div>
             </div>
