@@ -93,7 +93,7 @@ function createNavItems(activePage: PageDef, contentParam: ContentItem[], groupN
                             groupId={item.groupId}
                             itemId={item.itemId}
                             key={item.itemId}
-                            to={'#/app/' + page.path}
+                            to={'#/' + page.path}
                             isActive={activePage.itemId === item.itemId}
                             type="button">
                         {Msg.localize(page.label, page.labelParams)}
@@ -158,10 +158,10 @@ export function makeRoutes(): React.ReactNode {
     const routes: React.ReactElement<Route>[] = pageDefs.map((page: PageDef) => {
         if (isModulePageDef(page)) {
             const node: React.ReactNode = React.createElement(page.module[page.componentName], {'pageDef': page});
-            return <Route key={page.itemId} path={'/app/' + page.path} exact render={() => node} />;
+            return <Route key={page.itemId} path={'/' + page.path} exact render={() => node} />;
         } else {
             const pageDef: ComponentPageDef = page as ComponentPageDef;
-            return <Route key={page.itemId} path={'/app/' + page.path} exact component={pageDef.component}/>;
+            return <Route key={page.itemId} path={'/' + page.path} exact component={pageDef.component}/>;
         }
     });
 

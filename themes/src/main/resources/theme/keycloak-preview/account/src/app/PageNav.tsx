@@ -37,7 +37,7 @@ class PageNavigation extends React.Component<PageNavProps, PageNavState> {
         const items: PageDef[] = flattenContent(content);
         const firstItem = items[0];
         for (let item of items) {
-            const itemPath: string = '/app/' + item.path;
+            const itemPath: string = '/' + item.path;
             if (itemPath === currentPath) {
                 return item;
             }

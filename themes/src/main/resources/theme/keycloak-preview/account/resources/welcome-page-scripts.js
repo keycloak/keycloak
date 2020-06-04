@@ -15,7 +15,7 @@
  */
 var isWelcomePage = function () {
     var winHash = window.location.hash;
-    return winHash.indexOf('#/app') !== 0;
+    return winHash === '#/';
 };
 
 var toggleReact = function () {

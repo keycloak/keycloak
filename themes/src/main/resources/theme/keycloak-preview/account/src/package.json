@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "description": "keycloak-preview account management written in React",
   "scripts": {
-    "build": "snowpack && npm run check-types && npm run babel",
-    "babel": "babel --source-maps --extensions \".js,.ts,.tsx\" app/ --out-dir app/",
+    "build": "snowpack && npm run check-types && npm run babel && npm run move-web_modules",
+    "babel": "babel --source-maps --extensions \".js,.ts,.tsx\" app/ --out-dir ../resources/",
     "babel:watch": "npm run babel -- --watch",
     "check-types": "tsc --noImplicitAny --strictNullChecks --jsx react -p ./",
     "check-types:watch": "npm run check-types -- -w",
-    "lint": "eslint ./app/**/*.ts*"
+    "lint": "eslint ./app/**/*.ts*",
+    "move-web_modules": "shx mv web_modules ../../../keycloak/common/resources"
   },
   "keywords": [],
   "author": "Stan Silvert",
@@ -42,6 +43,7 @@
     "eslint-plugin-react": "^7.12.4",
     "rollup-plugin-copy": "^3.3.0",
     "rollup-plugin-postcss": "^2.5.0",
+    "shx": "^0.3.2",
     "snowpack": "^1.7.0",
     "typescript": "^3.8.3"
   },
