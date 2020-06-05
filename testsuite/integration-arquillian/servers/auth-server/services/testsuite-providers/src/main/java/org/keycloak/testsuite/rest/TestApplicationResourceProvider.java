@@ -119,9 +119,10 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     }
 
     @POST
+    @Consumes(javax.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_HTML_UTF_8)
     @Path("/{action}")
-    public String post(@PathParam("action") String action) {
+    public String post(@PathParam("action") String action, MultivaluedMap<String, String> formParams) {
         String title = "APP_REQUEST";
         if (action.equals("auth")) {
             title = "AUTH_RESPONSE";
@@ -133,8 +134,6 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
         sb.append("<html><head><title>" + title + "</title></head><body>");
 
         sb.append("<b>Form parameters: </b><br>");
-        HttpRequest request = session.getContext().getContextObject(HttpRequest.class);
-        MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
         for (String paramName : formParams.keySet()) {
             sb.append(paramName).append(": ").append("<span id=\"")
                     .append(paramName).append("\">")

@@ -3,7 +3,6 @@ package org.keycloak;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -29,7 +28,13 @@ class UserProviderLoader {
         String homeDir = System.getProperty("keycloak.home.dir");
         
         if (homeDir == null) {
-            return parent;
+            // don't load resources from classpath
+            return new ClassLoader() {
+                @Override
+                public Enumeration<URL> getResources(String name) throws IOException {
+                    return Collections.emptyEnumeration();
+                }
+            };
         }
 
         try {
@@ -45,11 +50,6 @@ class UserProviderLoader {
             logger.debug("Loading providers from " + urls.toString());
 
             return new URLClassLoader(urls.toArray(new URL[urls.size()]), parent) {
-                @Override
-                public InputStream getResourceAsStream(String name) {
-                    return super.getResourceAsStream(name);
-                }
-
                 @Override
                 public Enumeration<URL> getResources(String name) throws IOException {
                     Enumeration<URL> resources = findResources(name);
