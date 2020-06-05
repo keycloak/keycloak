@@ -914,3 +914,14 @@ When running the test, add the following arguments to the command line:
 ## Java 11 support
 Java 11 requires some arguments to be passed to JVM. Those can be activated using `-Pjava11-auth-server` and
 `-Pjava11-app-server` profiles, respectively.
+
+### Running tests using Quarkus distribution
+
+Make sure you build the project using the `quarkus` profile as follows:
+
+    mvn -Pdistribution,quarkus clean install
+    
+Then, just run tests using the `auth-server-quarkus` profile:
+
+    mvn -f testsuite/integration-arquillian/tests/base/pom.xml clean install -Pauth-server-quarkus
+

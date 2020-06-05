@@ -698,6 +698,7 @@
                 <auth.server.quarkus>true</auth.server.quarkus>
                 <auth.server.jboss>false</auth.server.jboss>
                 <auth.server.undertow>false</auth.server.undertow>
+                <auth.server.config.dir>${auth.server.home}/conf</auth.server.config.dir>
             </properties>
         </profile>
 

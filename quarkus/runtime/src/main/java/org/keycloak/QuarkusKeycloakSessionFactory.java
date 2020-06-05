@@ -47,11 +47,11 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
 
     @Override
     public void init() {
-        spis = factories.keySet();
         serverStartupTimestamp = System.currentTimeMillis();
         ProviderLoader userProviderLoader = createUserProviderLoader();
+        spis = loadRuntimeSpis(userProviderLoader);
 
-        for (Spi spi : factories.keySet()) {
+        for (Spi spi : spis) {
             loadUserProviders(spi, userProviderLoader);
             for (Class<? extends ProviderFactory> factoryClazz : factories.get(spi)) {
                 ProviderFactory factory = lookupProviderFactory(factoryClazz);
@@ -81,6 +81,22 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
         }
 
         AdminPermissions.registerListener(this);
+    }
+
+    private Set<Spi> loadRuntimeSpis(ProviderLoader runtimeLoader) {
+        // most of the time SPIs loaded at build time are enough but under certain circumstances (e.g.: testsuite) we may
+        // want to load additional SPIs at runtime only from the JARs deployed at the providers dir
+        List<Spi> loaded = runtimeLoader.loadSpis();
+
+        if (loaded.isEmpty()) {
+            return factories.keySet();
+        }
+
+        Set<Spi> spis = new HashSet<>(factories.keySet());
+
+        spis.addAll(loaded);
+
+        return spis;
     }
 
     @Override

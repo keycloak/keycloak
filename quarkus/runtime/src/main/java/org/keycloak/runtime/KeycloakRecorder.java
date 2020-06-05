@@ -47,6 +47,13 @@ public class KeycloakRecorder {
                 return logger;
             }
         });
+        
+        // we set this property to avoid Liquibase to lookup resources from the classpath and access JAR files
+        // we already index the packages we want so Liquibase will still be able to load these services
+        // for uber-jar, this is not a problem because everything is inside the JAR, but once we move to fast-jar we'll have performance penalties
+        // it seems that v4 of liquibase provides a more smart way of initialization the ServiceLocator that may allow us to remove this
+        System.setProperty("liquibase.scan.packages", "org.liquibase.core");
+        
         ServiceLocator.setInstance(new FastServiceLocator(services));
     }
 
