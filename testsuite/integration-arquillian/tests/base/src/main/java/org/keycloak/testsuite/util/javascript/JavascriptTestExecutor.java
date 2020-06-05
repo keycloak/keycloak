@@ -42,11 +42,11 @@ public class JavascriptTestExecutor {
     }
 
     public JavascriptTestExecutor login() {
-        return login(null, null);
+        return login((String)null, null);
     }
     
     public JavascriptTestExecutor login(JavascriptStateValidator validator) {
-        return login(null, validator);
+        return login((String)null, validator);
     }
 
     /**
@@ -81,6 +81,10 @@ public class JavascriptTestExecutor {
         return this;
     }
     
+    public JavascriptTestExecutor login(JSObjectBuilder optionsBuilder, JavascriptStateValidator validator) {
+        return login(optionsBuilder.build(), validator);
+    }
+
     public JavascriptTestExecutor login(String options, JavascriptStateValidator validator) {
         if (options == null)
             jsExecutor.executeScript("keycloak.login()");

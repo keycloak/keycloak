@@ -30,6 +30,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.javascript.JSObjectBuilder;
+import org.keycloak.testsuite.util.javascript.JavascriptStateValidator;
 import org.keycloak.testsuite.util.javascript.JavascriptTestExecutor;
 import org.keycloak.testsuite.util.javascript.XMLHttpRequest;
 import org.openqa.selenium.TimeoutException;
@@ -448,6 +449,53 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
         testExecutor.loginForm(testUser, this::assertOnTestAppUrl)
                 .init(defaultArguments(), this::assertInitAuth);
+    }
+
+    /**
+     * Test for scope handling via {@code initOptions}: <pre>{@code
+     * Keycloak keycloak = new Keycloak(); keycloak.init({.... scope: "profile email phone"})
+     * }</pre>
+     * See KEYCLOAK-14412
+     */
+    @Test
+    public void testScopeInInitOptionsShouldBeConsideredByLoginUrl() {
+
+        JSObjectBuilder initOptions = defaultArguments()
+                .loginRequiredOnLoad()
+                // phone is optional client scope
+                .add("scope", "profile email phone");
+
+        try {
+            testExecutor.init(initOptions);
+            // This throws exception because when JavascriptExecutor waits for AsyncScript to finish
+            // it is redirected to login page and executor gets no response
+
+            throw new RuntimeException("Probably the login-required OnLoad mode doesn't work, because testExecutor should fail with error that page was redirected.");
+        } catch (WebDriverException ex) {
+            // should happen
+        }
+
+        testExecutor.loginForm(testUser, this::assertOnTestAppUrl)
+                    .init(initOptions, this::assertSuccessfullyLoggedIn)
+                    .executeScript("return window.keycloak.tokenParsed.scope", assertOutputContains("phone"));
+    }
+
+    /**
+     * Test for scope handling via {@code loginOptions}: <pre>{@code
+     * Keycloak keycloak = new Keycloak(); keycloak.login({.... scope: "profile email phone"})
+     * }</pre>
+     * See KEYCLOAK-14412
+     */
+    @Test
+    public void testScopeInLoginOptionsShouldBeConsideredByLoginUrl() {
+
+        testExecutor.configure().init(defaultArguments());
+
+        JSObjectBuilder loginOptions = JSObjectBuilder.create().add("scope", "profile email phone");
+
+        testExecutor.login(loginOptions, (JavascriptStateValidator) (driver, output, events) -> {
+            assertThat(driver.getCurrentUrl(), containsString("&scope=openid%20profile%20email%20phone"));
+        });
     }
 
     @Test
