@@ -20,7 +20,6 @@ package org.keycloak.testsuite.federation.ldap;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.FixMethodOrder;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
@@ -240,8 +239,6 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
 
     // Check LDAP federated user (in)valid login(s) with simple authentication & startTLS encryption enabled
     // Test variant: Bind credential set to secret (default)
-    // KEYCLOAK-14358 - Disable the StartTLS LDAP tests till KEYCLOAK-14343 & KEYCLOAK-14354 are corrected
-    //                  since they don't work properly with auth server Wildfly due these bugs
     @Test
     @LDAPConnectionParameters(bindType=LDAPConnectionParameters.BindType.SIMPLE, encryption=LDAPConnectionParameters.Encryption.STARTTLS)
     public void loginLDAPUserAuthenticationSimpleEncryptionStartTLS() {
@@ -251,8 +248,6 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
 
     // Check LDAP federated user (in)valid login(s) with simple authentication & startTLS encryption enabled
     // Test variant: Bind credential set to vault
-    // KEYCLOAK-14358 - Disable the StartTLS LDAP tests till KEYCLOAK-14343 & KEYCLOAK-14354 are corrected
-    //                  since they don't work properly with auth server Wildfly due these bugs
     @Test
     @LDAPConnectionParameters(bindCredential=LDAPConnectionParameters.BindCredential.VAULT, bindType=LDAPConnectionParameters.BindType.SIMPLE, encryption=LDAPConnectionParameters.Encryption.STARTTLS)
     public void loginLDAPUserCredentialVaultAuthenticationSimpleEncryptionStartTLS() {
@@ -298,9 +293,6 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
 
     // Check LDAP federated user (in)valid login(s) with anonymous authentication & startTLS encryption enabled
     // Test variant: Bind credential set to secret (default)
-    // KEYCLOAK-14358 - Disable the StartTLS LDAP tests till KEYCLOAK-14343 & KEYCLOAK-14354 are corrected
-    //                  since they don't work properly with auth server Wildfly due these bugs
-    @Ignore
     @Test
     @LDAPConnectionParameters(bindType=LDAPConnectionParameters.BindType.NONE, encryption=LDAPConnectionParameters.Encryption.STARTTLS)
     public void loginLDAPUserAuthenticationNoneEncryptionStartTLS() {
@@ -310,9 +302,6 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
 
     // Check LDAP federated user (in)valid login(s) with anonymous authentication & startTLS encryption enabled
     // Test variant: Bind credential set to vault
-    // KEYCLOAK-14358 - Disable the StartTLS LDAP tests till KEYCLOAK-14343 & KEYCLOAK-14354 are corrected
-    //                  since they don't work properly with auth server Wildfly due these bugs
-    @Ignore
     @Test
     @LDAPConnectionParameters(bindCredential=LDAPConnectionParameters.BindCredential.VAULT, bindType=LDAPConnectionParameters.BindType.NONE, encryption=LDAPConnectionParameters.Encryption.STARTTLS)
     public void loginLDAPUserCredentialVaultAuthenticationNoneEncryptionStartTLS() {
