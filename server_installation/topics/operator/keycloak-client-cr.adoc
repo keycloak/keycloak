@@ -16,7 +16,12 @@ kind: KeycloakClient
 metadata:
   name: example-client
   labels:
+ifeval::[{project_community}==true]
+    app: app=example-keycloak
+endif::[]  
+ifeval::[{project_product}==true]
     app: sso
+endif::[]  
 spec:
   realmSelector:
      matchLabels:
@@ -70,14 +75,19 @@ After the Operator processes the custom resource, view the status with this comm
 
 [source,bash,subs=+attributes]
 ----
-$ {create_cmd_brief} describe keycloak <cr_name>
+$ {create_cmd_brief} describe keycloak <CR-name>
 ----
 
 .Client custom resource Status
 ```yaml
 Name:         client-secret
 Namespace:    keycloak
+ifeval::[{project_community}==true]
+Labels:       app=example-keycloak
+endif::[]  
+ifeval::[{project_product}==true]
 Labels:       app=sso
+endif::[]  
 API Version:  keycloak.org/v1alpha1
 Kind:         KeycloakClient
 Spec:
@@ -87,7 +97,12 @@ Spec:
     Id:                            keycloak-client-secret
   Realm Selector:
     Match Labels:
+ifeval::[{project_community}==true]
+      App:  keycloak
+endif::[]  
+ifeval::[{project_product}==true]
       App:  sso
+endif::[]  
 Status:
   Message:
   Phase:    reconciling

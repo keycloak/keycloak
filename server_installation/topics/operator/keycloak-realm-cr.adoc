@@ -16,7 +16,12 @@ kind: KeycloakRealm
 metadata:
   name: test
   labels:
+ifeval::[{project_community}==true]
+    app: app=example-keycloak
+endif::[]  
+ifeval::[{project_product}==true]
     app: sso
+endif::[]  
 spec:
   realm:
     id: "basic"
@@ -25,7 +30,13 @@ spec:
     displayName: "Basic Realm"
   instanceSelector:
     matchLabels:
+ifeval::[{project_community}==true]
+      app: example-keycloak
+endif::[]  
+ifeval::[{project_product}==true]
       app: sso
+endif::[]  
+
 ```
 
 .Prerequisites
@@ -61,14 +72,19 @@ After the Operator processes the custom resource, view the status with this comm
 
 [source,bash,subs=+attributes]
 ----
-$ {create_cmd_brief} describe keycloak <cr_name>
+$ {create_cmd_brief} describe keycloak <CR-name>
 ----
 
 .Realm custom resource status
 ```yaml
 Name:         example-keycloakrealm
 Namespace:    keycloak
+ifeval::[{project_community}==true]
+Labels:       app=example-keycloak
+endif::[]  
+ifeval::[{project_product}==true]
 Labels:       app=sso
+endif::[]  
 Annotations:  <none>
 API Version:  keycloak.org/v1alpha1
 Kind:         KeycloakRealm
@@ -83,7 +99,12 @@ Metadata:
 Spec:
   Instance Selector:
     Match Labels:
-      App:  sso
+ifeval::[{project_community}==true]
+      App: example-keycloak
+endif::[]  
+ifeval::[{project_product}==true]
+      App: sso
+endif::[]  
   Realm:
     Display Name:  Basic Realm
     Enabled:       true

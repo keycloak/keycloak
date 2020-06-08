@@ -43,7 +43,12 @@ ifeval::[{project_product}==true]
   name: example-sso
 endif::[]  
   labels:
+ifeval::[{project_community}==true]
+   app: example-keycloak
+endif::[]  
+ifeval::[{project_product}==true]
     app: sso
+endif::[]  
 spec:
   instances: 1
   externalAccess:
@@ -120,7 +125,7 @@ image:images/new_install_cr.png[]
 +
 [source,bash,subs=+attributes]
 ----
-$ {create_cmd_brief} describe keycloak <cr_name>
+$ {create_cmd_brief} describe keycloak <CR-name>
 ----
 
 ifeval::[{project_community}==true]
@@ -144,7 +149,7 @@ $ {create_cmd} -f keycloak.yaml -n keycloak
 keycloak.keycloak.org/example-keycloak created
 ----
 
-. Find the ingress: `{create_cmd_brief} get ingress -n <cr_name>`. For example:
+. Find the ingress: `{create_cmd_brief} get ingress -n <CR-name>`. For example:
 +
 [source,bash,subs=+attributes]
 ----
@@ -184,14 +189,19 @@ After the Operator processes the custom resource, view the status with this comm
 
 [source,bash,subs=+attributes]
 ----
-$ {create_cmd_brief} describe keycloak <cr_name>
+$ {create_cmd_brief} describe keycloak <CR-name>
 ----
 
 .Keycloak custom resource Status
 ```yaml
 Name:         example-keycloak
 Namespace:    keycloak
+ifeval::[{project_community}==true]
+Labels:       app=example-keycloak
+endif::[]  
+ifeval::[{project_product}==true]
 Labels:       app=sso
+endif::[]  
 Annotations:  <none>
 API Version:  keycloak.org/v1alpha1
 Kind:         Keycloak

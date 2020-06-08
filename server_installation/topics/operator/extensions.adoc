@@ -11,7 +11,12 @@ kind: Keycloak
 metadata:
   name: example-keycloak
   labels:
-    app: sso
+ifeval::[{project_community}==true]
+   app: keycloak
+endif::[]  
+ifeval::[{project_product}==true]
+   app: sso
+endif::[]  
 spec:
   instances: 1
   extensions:
@@ -29,7 +34,7 @@ spec:
 
 .Procedure
 
-. Edit the YAML file for the Keycloak custom resource: `{create_cmd_brief} edit <cr-name>`
+. Edit the YAML file for the Keycloak custom resource: `{create_cmd_brief} edit <CR-name>`
 
 . Add a line called `extensions:` after the `instances` line.
 

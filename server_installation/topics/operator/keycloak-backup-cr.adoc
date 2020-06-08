@@ -149,7 +149,7 @@ $ {create_cmd} -f one-time-backup.yaml
 keycloak.keycloak.org/test-backup
 ----
 +
-The Operator creates a `PersistentVolumeClaim` with the following naming scheme:  `Keycloak-backup-<CR_name>`.
+The Operator creates a `PersistentVolumeClaim` with the following naming scheme:  `Keycloak-backup-<CR-name>`.
 
 . View a list of volumes:
 +

@@ -15,7 +15,7 @@ stringData:
     POSTGRES_DATABASE: <Database Name>
     POSTGRES_EXTERNAL_ADDRESS: <External Database IP or URL (resolvable by K8s)>
     POSTGRES_EXTERNAL_PORT: <External Database Port>
-    # Strongly recommended to use <'Keycloak CR Name'-postgresql>
+    # Strongly recommended to use <'Keycloak CR-Name'-postgresql>
     POSTGRES_HOST: <Database Service Name>
     POSTGRES_PASSWORD: <Database Password>
     # Required for AWS Backup functionality
@@ -48,7 +48,12 @@ apiVersion: keycloak.org/v1alpha1
 kind: Keycloak
 metadata:
   labels:
-    app: sso
+ifeval::[{project_community}==true]
+      app: example-keycloak
+endif::[]  
+ifeval::[{project_product}==true]
+      app: sso
+endif::[]  
   name: example-keycloak
   namespace: keycloak
 spec:

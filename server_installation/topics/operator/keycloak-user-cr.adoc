@@ -32,7 +32,12 @@ spec:
         - "manage-users"
   realmSelector:
     matchLabels:
+ifeval::[{project_community}==true]
+      app: example-keycloak
+endif::[]  
+ifeval::[{project_product}==true]
       app: sso
+endif::[]  
 ```
 
 .Prerequisites
@@ -82,20 +87,30 @@ Once the Operator processes the custom resource, view the status with this comma
 
 [source,bash,subs=+attributes]
 ----
-$ {create_cmd_brief} describe keycloak <cr_name>
+$ {create_cmd_brief} describe keycloak <CR-name>
 ----
 
 .User custom resource Status
 ```yaml
 Name:         example-realm-user
 Namespace:    keycloak
+ifeval::[{project_community}==true]
+Labels:       app=example-keycloak
+endif::[]  
+ifeval::[{project_product}==true]
 Labels:       app=sso
+endif::[]  
 API Version:  keycloak.org/v1alpha1
 Kind:         KeycloakUser
 Spec:
   Realm Selector:
     Match Labels:
-      App:  sso
+ifeval::[{project_community}==true]
+      App: example-keycloak
+endif::[]  
+ifeval::[{project_product}==true]
+      App: sso
+endif::[]  
   User:
     Email:           realm_user@redhat.com
     Credentials:
