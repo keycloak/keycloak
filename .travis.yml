@@ -24,20 +24,44 @@ env:
     - TESTS=crossdc-adapter
     - TESTS=broker
 
+matrix:
+  include:
+    - os: linux
+      arch: s390x
+      dist: bionic
+      env: TESTS=unit
+    - os: linux
+      arch: s390x
+      dist: bionic
+      env: TESTS=server-group1
+    - os: linux
+      arch: s390x
+      dist: bionic
+      env: TESTS=server-group4
+    - os: linux
+      arch: s390x
+      dist: bionic
+      env: TESTS=crossdc-server
+    - os: linux
+      arch: s390x
+      dist: bionic
+      env: TESTS=crossdc-adapter
+    - os: linux
+      arch: s390x
+      dist: bionic
+      env: TESTS=broker
+
 jdk:
   - openjdk8
 
 install: true
 
 before_install:
-  - "export PHANTOMJS_VERSION=2.1.1"
-  - "phantomjs --version"
-  - "export PATH=$PWD/travis_phantomjs/phantomjs-$PHANTOMJS_VERSION-linux-x86_64/bin:$PATH"
-  - "phantomjs --version"
-  - "if [ $(phantomjs --version) != '$PHANTOMJS_VERSION' ]; then rm -rf $PWD/travis_phantomjs; mkdir -p $PWD/travis_phantomjs; fi"
-  - "if [ $(phantomjs --version) != '$PHANTOMJS_VERSION' ]; then wget https://github.com/Medium/phantomjs/releases/download/v$PHANTOMJS_VERSION/phantomjs-$PHANTOMJS_VERSION-linux-x86_64.tar.bz2 -O $PWD/travis_phantomjs/phantomjs-$PHANTOMJS_VERSION-linux-x86_64.tar.bz2; fi"
-  - "if [ $(phantomjs --version) != '$PHANTOMJS_VERSION' ]; then tar -xvf $PWD/travis_phantomjs/phantomjs-$PHANTOMJS_VERSION-linux-x86_64.tar.bz2 -C $PWD/travis_phantomjs; fi"
-  - "phantomjs --version"
+  - .travis/before_install.sh
+  - if [[ $(uname -m) == 's390x' ]]; then 
+      export QT_QPA_PLATFORM=offscreen;
+      export PATH="$PWD/jdk8u252-b09/bin:$PATH";
+    fi
 
 before_script:
   - export -f travis_fold
