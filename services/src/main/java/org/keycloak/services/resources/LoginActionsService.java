@@ -48,7 +48,6 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.exceptions.TokenNotActiveException;
 import org.keycloak.locale.LocaleSelectorProvider;
-import org.keycloak.locale.LocaleSelectorSPI;
 import org.keycloak.locale.LocaleUpdaterProvider;
 import org.keycloak.models.ActionTokenKeyModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -70,6 +69,7 @@ import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ServicesLogger;
@@ -380,10 +380,10 @@ public class LoginActionsService {
             if (!realm.isResetPasswordAllowed()) {
                 event.event(EventType.RESET_PASSWORD);
                 event.error(Errors.NOT_ALLOWED);
-                return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.RESET_CREDENTIAL_NOT_ALLOWED);
 
             }
-            authSession = createAuthenticationSessionForClient();
+            authSession = createAuthenticationSessionForClient(clientId);
             return processResetCredentials(false, null, authSession, null);
         }
 
@@ -391,12 +391,19 @@ public class LoginActionsService {
         return resetCredentials(authSessionId, code, execution, clientId, tabId);
     }
 
-    AuthenticationSessionModel createAuthenticationSessionForClient()
-      throws UriBuilderException, IllegalArgumentException {
+    AuthenticationSessionModel createAuthenticationSessionForClient(String clientID)
+            throws UriBuilderException, IllegalArgumentException {
         AuthenticationSessionModel authSession;
 
-        // set up the account service as the endpoint to call.
-        ClientModel client = SystemClientUtil.getSystemClient(realm);
+        ClientModel client = session.realms().getClientByClientId(clientID, realm);
+        String redirectUri;
+
+        if (client == null) {
+            client = SystemClientUtil.getSystemClient(realm);
+            redirectUri = Urls.accountBase(session.getContext().getUri().getBaseUri()).path("/").build(realm.getName()).toString();
+        } else {
+            redirectUri = RedirectUtils.getFirstValidRedirectUri(session, client.getRootUrl(), client.getRedirectUris());
+        }
 
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, true);
         authSession = rootAuthSession.createAuthenticationSession(client);
@@ -404,7 +411,6 @@ public class LoginActionsService {
         authSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
         //authSession.setNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        String redirectUri = Urls.accountBase(session.getContext().getUri().getBaseUri()).path("/").build(realm.getName()).toString();
         authSession.setRedirectUri(redirectUri);
         authSession.setClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, OAuth2Constants.CODE);
         authSession.setClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, redirectUri);
