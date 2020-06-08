@@ -131,7 +131,7 @@ public class Retry {
         while (true) {
             try {
                 return supplier.get(iteration);
-            } catch (RuntimeException | AssertionError e) {
+            } catch (Exception | AssertionError e) {
                 attemptsCount--;
                 iteration++;
                 if (attemptsCount > 0) {

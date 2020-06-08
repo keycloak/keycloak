@@ -25,6 +25,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -80,9 +81,10 @@ public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverCl
                 .enabled(true)
                 .requiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
                 .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.toString())
+                .password("password")
                 .build();
 
-        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(adminClient.realm("test"), user, "password");
+        userId = ApiUtil.createUserWithAdminClient(adminClient.realm("test"), user);
         getCleanup().addUserId(userId);
 
         oauth.clientId("test-app");

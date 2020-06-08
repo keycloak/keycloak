@@ -2,6 +2,7 @@ package org.keycloak.testsuite.cluster;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
+import org.keycloak.common.util.Retry;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 
@@ -43,12 +44,16 @@ public class RealmInvalidationClusterTest extends AbstractInvalidationClusterTes
 
     @Override
     protected RealmRepresentation readEntity(RealmRepresentation realm, ContainerInfo node) {
-        RealmRepresentation realmOnNode = null;
-        try {
-            realmOnNode = entityResource(realm, node).toRepresentation();
-        } catch (NotFoundException nfe) {
-            // expected if realm not found
-        }
+        RealmRepresentation realmOnNode = Retry.call(new Retry.Supplier<RealmRepresentation>() {
+            @Override
+            public RealmRepresentation get(int iteration) {
+                try {
+                    return entityResource(realm, node).toRepresentation();
+                } catch (NotFoundException nfe) {
+                    return null;
+                }
+            }
+        }, 3, 5000);
         return realmOnNode;
     }
 
@@ -58,7 +63,12 @@ public class RealmInvalidationClusterTest extends AbstractInvalidationClusterTes
     }
 
     private RealmRepresentation updateEntity(String realmName, RealmRepresentation realm, ContainerInfo node) {
-        entityResource(realmName, node).update(realm);
+        Retry.execute(new Runnable() {
+            @Override
+            public void run() {
+                entityResource(realmName, node).update(realm);
+            }
+        }, 3, 5000);
         return readEntity(realm, node);
     }
 

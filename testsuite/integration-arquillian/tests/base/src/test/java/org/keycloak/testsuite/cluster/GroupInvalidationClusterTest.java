@@ -4,6 +4,7 @@ import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Before;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.GroupsResource;
+import org.keycloak.common.util.Retry;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
@@ -66,24 +67,38 @@ public class GroupInvalidationClusterTest extends AbstractInvalidationClusterTes
 
     @Override
     protected GroupRepresentation readEntity(GroupRepresentation group, ContainerInfo node) {
-        GroupRepresentation u = null;
-        try {
-            u = entityResource(group, node).toRepresentation();
-        } catch (NotFoundException nfe) {
-            // expected when group doesn't exist
-        }
+        GroupRepresentation u = Retry.call(new Retry.Supplier<GroupRepresentation>() {
+            @Override
+            public GroupRepresentation get(int iteration) {
+                try {
+                    return entityResource(group, node).toRepresentation();
+                } catch (NotFoundException nfe) {
+                    return null;
+                }
+            }
+        }, 3, 5000);
         return u;
     }
 
     @Override
     protected GroupRepresentation updateEntity(GroupRepresentation group, ContainerInfo node) {
-        entityResource(group, node).update(group);
+        Retry.execute(new Runnable() {
+            @Override
+            public void run() {
+                entityResource(group, node).update(group);
+            }
+        }, 3, 5000);
         return readEntity(group, node);
     }
 
     @Override
     protected void deleteEntity(GroupRepresentation group, ContainerInfo node) {
-        entityResource(group, node).remove();
+        Retry.execute(new Runnable() {
+            @Override
+            public void run() {
+                entityResource(group, node).remove();
+            }
+        }, 3, 5000);
         assertNull(readEntity(group, node));
     }
 

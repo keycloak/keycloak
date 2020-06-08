@@ -649,6 +649,46 @@ After you build the distribution, you run this command to setup servers and run 
     -Dauth.server.log.check=false \
     -Dfrontend.console.output=true \
     -Dtest=org.keycloak.testsuite.cluster.**.*Test clean install
+    
+### Cluster tests with Keycloak on Quarkus
+
+Run tests using the `auth-server-cluster-quarkus` profile:
+
+     mvn -f testsuite/integration-arquillian/tests/base/pom.xml clean install \
+     -Pauth-server-cluster-quarkus \
+     -Dsession.cache.owners=2  \
+     -Dtest=AuthenticationSessionFailoverClusterTest
+     
+---
+**NOTE**
+
+Right now, tests are using a H2 database.
+
+To run tests using a different database such as PostgreSQL, add the following properties into the `testsuite/integration-arquillian/servers/auth-server/quarkus/src/main/content/conf/keycloak.properties` configuration file:
+
+```
+# HA using PostgreSQL
+%ha.datasource.dialect=org.hibernate.dialect.PostgreSQL9Dialect
+%ha.datasource.driver = org.postgresql.xa.PGXADataSource
+%ha.datasource.url = jdbc:postgresql://localhost/keycloak
+%ha.datasource.username = keycloak
+%ha.datasource.password = password
+```
+
+The `ha` profile is automatically set when running clustering tests. 
+
+This is temporary and database configuration should be more integrated with the test suite once we review Quarkus configuration.
+
+---
+     
+#### Run cluster tests from IDE on Quarkus
+
+Activate the following profiles:
+
+* `quarkus`
+* `auth-server-cluster-quarkus`
+
+Then run any cluster test as usual.
 
 ### Cluster tests with Keycloak on embedded undertow
 
@@ -915,13 +955,22 @@ When running the test, add the following arguments to the command line:
 Java 11 requires some arguments to be passed to JVM. Those can be activated using `-Pjava11-auth-server` and
 `-Pjava11-app-server` profiles, respectively.
 
-### Running tests using Quarkus distribution
+## Running tests using Quarkus distribution
+
+### Before Everything
 
 Make sure you build the project using the `quarkus` profile as follows:
 
     mvn -Pdistribution,quarkus clean install
+
+### Running tests
     
-Then, just run tests using the `auth-server-quarkus` profile:
+Run tests using the `auth-server-quarkus` profile:
 
     mvn -f testsuite/integration-arquillian/tests/base/pom.xml clean install -Pauth-server-quarkus
+    
+### Debug the Server
+    
+Right now, the server runs in a separate process. To debug the server set `auth.server.debug` system property to `true`.
 
+To configure the debugger port, set the `auth.server.debug.port` system property with any valid port number. Default is `5005`. 

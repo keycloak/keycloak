@@ -1,11 +1,16 @@
 package org.keycloak.testsuite.arquillian.containers;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.arquillian.container.spi.ConfigurationException;
 import org.jboss.arquillian.container.spi.client.container.ContainerConfiguration;
 import org.jboss.logging.Logger;
+import org.keycloak.util.JsonSerialization;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author mhajas
@@ -20,6 +25,10 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
     private int bindHttpsPort = Integer.valueOf(System.getProperty("auth.server.https.port", "8543"));
     private Path providersPath = Paths.get(System.getProperty("auth.server.home"));
     private int startupTimeoutInSeconds = 60;
+    private String route;
+    private String keycloakConfigPropertyOverrides;
+    private HashMap<String, Object> keycloakConfigPropertyOverridesMap;
+    private String profile;
 
     @Override
     public void validate() throws ConfigurationException {
@@ -32,6 +41,15 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
         setBindHttpsPort(newHttpsPort);
 
         log.info("Keycloak will listen for http on port: " + newPort + " and for https on port: " + newHttpsPort);
+
+        if (this.keycloakConfigPropertyOverrides != null) {
+            try {
+                TypeReference<HashMap<String,Object>> typeRef = new TypeReference<HashMap<String,Object>>() {};
+                this.keycloakConfigPropertyOverridesMap = JsonSerialization.sysPropertiesAwareMapper.readValue(this.keycloakConfigPropertyOverrides, typeRef);
+            } catch (IOException ex) {
+                throw new ConfigurationException(ex);
+            }
+        }
     }
 
     public int getBindHttpPortOffset() {
@@ -80,5 +98,33 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
 
     public void setStartupTimeoutInSeconds(int startupTimeoutInSeconds) {
         this.startupTimeoutInSeconds = startupTimeoutInSeconds;
+    }
+
+    public String getRoute() {
+        return route;
+    }
+
+    public void setRoute(String route) {
+        this.route = route;
+    }
+
+    public String getProfile() {
+        return profile;
+    }
+
+    public void setProfile(String profile) {
+        this.profile = profile;
+    }
+
+    public String getKeycloakConfigPropertyOverrides() {
+        return keycloakConfigPropertyOverrides;
+    }
+
+    public void setKeycloakConfigPropertyOverrides(String keycloakConfigPropertyOverrides) {
+        this.keycloakConfigPropertyOverrides = keycloakConfigPropertyOverrides;
+    }
+
+    public Map<String, Object> getKeycloakConfigPropertyOverridesMap() {
+        return keycloakConfigPropertyOverridesMap;
     }
 }
