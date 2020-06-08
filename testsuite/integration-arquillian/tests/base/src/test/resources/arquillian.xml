@@ -619,8 +619,53 @@
         <configuration>
             <property name="enabled">${auth.server.quarkus}</property>
             <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer</property>
+            <property name="bindHttpPortOffset">${auth.server.port.offset}</property>
         </configuration>
     </container>
+
+    <!-- Clustering with Quarkus -->
+    <group qualifier="auth-server-quarkus-cluster">
+        <container qualifier="auth-server-quarkus-backend1" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.quarkus.cluster}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="bindHttpsPort">${auth.server.https.port}</property>
+                <property name="bindHttpPortOffset">1</property>
+                <property name="bindHttpsPortOffset">1</property>
+                <property name="route">node1</property>
+                <property name="remoteMode">${quarkus.remote}</property>
+                <property name="profile">ha</property>
+                <property name="keycloakConfigPropertyOverrides">{
+                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.8",
+                    "keycloak.connectionsInfinispan.nodeName": "node1",
+                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}"
+                    }
+                </property>
+            </configuration>
+        </container>
+        <container qualifier="auth-server-quarkus-backend2" mode="manual" >
+            <configuration>
+                <property name="enabled">${auth.server.quarkus.cluster}</property>
+                <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer</property>
+                <property name="bindAddress">localhost</property>
+                <property name="bindHttpPort">${auth.server.http.port}</property>
+                <property name="bindHttpsPort">${auth.server.https.port}</property>
+                <property name="bindHttpPortOffset">2</property>
+                <property name="bindHttpsPortOffset">2</property>
+                <property name="route">node2</property>
+                <property name="remoteMode">${quarkus.remote}</property>
+                <property name="profile">ha</property>
+                <property name="keycloakConfigPropertyOverrides">{
+                    "keycloak.connectionsInfinispan.jgroupsUdpMcastAddr": "234.56.78.8",
+                    "keycloak.connectionsInfinispan.nodeName": "node2",
+                    "keycloak.connectionsInfinispan.clustered": "${keycloak.connectionsInfinispan.clustered:true}"
+                    }
+                </property>
+            </configuration>
+        </container>
+    </group>
 
     <!-- PREVIOUS VERSION OF KEYCLOAK FOR MIGRATION TESTS -->
 

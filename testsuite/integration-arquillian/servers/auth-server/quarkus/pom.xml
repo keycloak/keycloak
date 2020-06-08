@@ -14,6 +14,10 @@
 
     <properties>
         <auth.server.home>${project.build.directory}/unpacked/keycloak.x-${project.version}</auth.server.home>
+        <session.cache.owners>2</session.cache.owners>
+        <offline.session.cache.owners>2</offline.session.cache.owners>
+        <login.failure.cache.owners>2</login.failure.cache.owners>
+        <auth.server.quarkus.config>local</auth.server.quarkus.config>
     </properties>
     
     <dependencies>
@@ -112,4 +116,13 @@
             </plugin>
         </plugins>
     </build>
+    
+    <profiles>
+        <profile>
+            <id>auth-server-cluster-quarkus</id>
+            <properties>
+                <auth.server.quarkus.config>ha</auth.server.quarkus.config>
+            </properties>
+        </profile>
+    </profiles>
 </project>

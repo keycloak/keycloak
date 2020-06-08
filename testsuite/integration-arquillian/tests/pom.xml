@@ -46,6 +46,7 @@
         <auth.server.undertow.cluster>false</auth.server.undertow.cluster>
         <auth.server.jboss.cluster>false</auth.server.jboss.cluster>
         <auth.server.jboss.legacy>false</auth.server.jboss.legacy>
+        <auth.server.quarkus.cluster>false</auth.server.quarkus.cluster>
 
         <auth.server.crossdc>false</auth.server.crossdc>
         <auth.server.undertow.crossdc>false</auth.server.undertow.crossdc>
@@ -77,6 +78,8 @@
 
         <auth.server.jboss.artifactId>integration-arquillian-servers-auth-server-${auth.server}</auth.server.jboss.artifactId>
         <auth.server.jboss.skip.unpack>${auth.server.undertow}</auth.server.jboss.skip.unpack>
+        <auth.server.quarkus.skip.unpack>true</auth.server.quarkus.skip.unpack>
+        <auth.server.undertow.skip.unpack>false</auth.server.undertow.skip.unpack>
         <auth.server.jboss.startup.timeout>300</auth.server.jboss.startup.timeout>
 
         <!--debug properties-->
@@ -215,6 +218,7 @@
 
         <auth.server.ocsp.responder.enabled>false</auth.server.ocsp.responder.enabled>
         <keycloak.x509cert.lookup.provider>default</keycloak.x509cert.lookup.provider>
+        <auth.server.quarkus.config>local</auth.server.quarkus.config>
     </properties>
 
     <build>
@@ -260,6 +264,26 @@
                                     </artifactItem>
                                 </artifactItems>
                                 <includes>*.jks,*.crt,*.truststore,*.crl,*.key,certs/clients/*</includes>
+                                <skip>${auth.server.undertow.skip.unpack}</skip>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>unpack-quarkus-server</id>
+                            <phase>generate-test-resources</phase>
+                            <goals>
+                                <goal>unpack</goal>
+                            </goals>
+                            <configuration>
+                                <artifactItems>
+                                    <artifactItem>
+                                        <groupId>org.keycloak.testsuite</groupId>
+                                        <artifactId>integration-arquillian-servers-auth-server-quarkus</artifactId>
+                                        <version>${project.version}</version>
+                                        <type>zip</type>
+                                        <outputDirectory>${containers.home}</outputDirectory>
+                                    </artifactItem>
+                                </artifactItems>
+                                <skip>${auth.server.quarkus.skip.unpack}</skip>
                             </configuration>
                         </execution>
                         <execution>
@@ -580,6 +604,8 @@
                             <auth.server.undertow.cluster>${auth.server.undertow.cluster}</auth.server.undertow.cluster>
                             <auth.server.jboss.cluster>${auth.server.jboss.cluster}</auth.server.jboss.cluster>
                             <auth.server.jboss.legacy>${auth.server.jboss.legacy}</auth.server.jboss.legacy>
+                            <auth.server.quarkus.cluster>${auth.server.quarkus.cluster}</auth.server.quarkus.cluster>
+                            <auth.server.quarkus.config>${auth.server.quarkus.config}</auth.server.quarkus.config>
 
                             <!--cache server properties-->
                             <auth.server.crossdc>${auth.server.crossdc}</auth.server.crossdc>
@@ -701,7 +727,41 @@
                 <auth.server.jboss>false</auth.server.jboss>
                 <auth.server.undertow>false</auth.server.undertow>
                 <auth.server.config.dir>${auth.server.home}/conf</auth.server.config.dir>
+                <auth.server.quarkus.skip.unpack>false</auth.server.quarkus.skip.unpack>
+                <auth.server.undertow.skip.unpack>true</auth.server.undertow.skip.unpack>
+                <auth.server.jboss.skip.unpack>true</auth.server.jboss.skip.unpack>
             </properties>
+        </profile>
+
+        <profile>
+            <id>auth-server-cluster-quarkus</id>
+            <properties>
+                <!--disable exclusion pattern for cluster test which is enabled by default in base/pom.xml-->
+                <exclude.cluster>-</exclude.cluster>
+                <auth.server.cluster>true</auth.server.cluster>
+                <auth.server.quarkus.cluster>true</auth.server.quarkus.cluster>
+                <auth.server.quarkus.config>ha</auth.server.quarkus.config>
+                <auth.server>quarkus</auth.server>
+                <auth.server.quarkus>true</auth.server.quarkus>
+                <auth.server.jboss>false</auth.server.jboss>
+                <auth.server.undertow>false</auth.server.undertow>
+                <auth.server.config.dir>${auth.server.home}/conf</auth.server.config.dir>
+                <auth.server.quarkus.skip.unpack>false</auth.server.quarkus.skip.unpack>
+                <auth.server.undertow.skip.unpack>true</auth.server.undertow.skip.unpack>
+                <auth.server.jboss.skip.unpack>true</auth.server.jboss.skip.unpack>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <pageload.timeout>20000</pageload.timeout>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
         <profile>

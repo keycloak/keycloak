@@ -61,8 +61,15 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
     }
 
     // Assume that route like "node6" will have corresponding backend container like "auth-server-wildfly-backend6"
-    protected void setCurrentFailNodeForRoute(String route) {
-        String routeNumber = route.substring(route.length() - 1);
+    protected void setCurrentFailNodeForRoute(String nodeName) {
+        String route = nodeName.substring(nodeName.lastIndexOf('.') + 1);
+        String routeNumber;
+        int portSeparator = route.indexOf('-');
+        if (portSeparator == -1) {
+            routeNumber = route.substring(route.length() - 1);
+        } else {
+            routeNumber = route.substring(portSeparator - 1, portSeparator);
+        }
         currentFailNodeIndex = Integer.parseInt(routeNumber) - 1;
     }
 

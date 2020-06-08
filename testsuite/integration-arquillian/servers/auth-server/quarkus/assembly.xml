@@ -42,5 +42,12 @@
             <fileMode>0755</fileMode>
         </fileSet>
     </fileSets>
-
+    <files>
+        <file>
+            <source>src/main/content/conf/cluster-${auth.server.quarkus.config}.xml</source>
+            <outputDirectory>/auth-server-quarkus/conf</outputDirectory>
+            <destName>cluster.xml</destName>
+            <filtered>true</filtered>
+        </file>
+    </files>
 </assembly>

@@ -42,7 +42,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
     
     private KeycloakQuarkusConfiguration configuration;
     private Process container;
-    private AtomicBoolean restart = new AtomicBoolean();
+    private static AtomicBoolean restart = new AtomicBoolean();
 
     @Inject
     private Instance<SuiteContext> suiteContext;
@@ -130,6 +130,12 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         commands.add("-Dquarkus.http.port=" + configuration.getBindHttpPort());
         commands.add("-Dquarkus.http.ssl-port=" + configuration.getBindHttpsPort());
 
+        if (configuration.getRoute() != null) {
+            commands.add("-Djboss.node.name=" + configuration.getRoute());
+        }
+
+        commands.add("-Dquarkus.profile=" + System.getProperty("auth.server.quarkus.config", "local"));
+
         return commands.toArray(new String[commands.size()]);
     }
 
@@ -137,7 +143,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         SuiteContext suiteContext = this.suiteContext.get();
         //TODO: not sure if the best endpoint but it makes sure that everything is properly initialized. Once we have
         // support for MP Health this should change
-        URL contextRoot = new URL(suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/master/");
+        URL contextRoot = new URL(getBaseUrl(suiteContext) + "/auth/realms/master/");
         HttpURLConnection connection;
         long startTime = System.currentTimeMillis();
 
@@ -150,7 +156,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             try {
                 // wait before checking for opening a new connection
                 Thread.sleep(1000);
-                if ("https".equals(contextRoot.toURI().getScheme())) {
+                if ("https".equals(contextRoot.getProtocol())) {
                     HttpsURLConnection httpsConnection = (HttpsURLConnection) (connection = (HttpURLConnection) contextRoot.openConnection());
                     httpsConnection.setSSLSocketFactory(createInsecureSslSocketFactory());
                     httpsConnection.setHostnameVerifier(createInsecureHostnameVerifier());
@@ -171,7 +177,19 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             }
         }
         
-        log.infof("Keycloak is ready at %s", this.suiteContext.get().getAuthServerInfo().getContextRoot());
+        log.infof("Keycloak is ready at %s", contextRoot);
+    }
+
+    private URL getBaseUrl(SuiteContext suiteContext) throws MalformedURLException {
+        URL baseUrl = suiteContext.getAuthServerInfo().getContextRoot();
+
+        // might be running behind a load balancer
+        if ("https".equals(baseUrl.getProtocol())) {
+            baseUrl = new URL(baseUrl.toString().replace(String.valueOf(baseUrl.getPort()), String.valueOf(configuration.getBindHttpsPort())));
+        } else {
+            baseUrl = new URL(baseUrl.toString().replace(String.valueOf(baseUrl.getPort()), String.valueOf(configuration.getBindHttpPort())));
+        }
+        return baseUrl;
     }
 
     private HostnameVerifier createInsecureHostnameVerifier() {

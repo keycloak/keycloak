@@ -99,7 +99,7 @@ public class AuthenticationSessionClusterTest extends AbstractClusterTest {
             driver.manage().deleteAllCookies();
         }
 
-        Assert.assertThat(visitedRoutes, Matchers.containsInAnyOrder("node1", "node2"));
+        Assert.assertThat(visitedRoutes, Matchers.containsInAnyOrder(Matchers.startsWith("node1"), Matchers.startsWith("node2")));
     }
 
 
@@ -128,7 +128,7 @@ public class AuthenticationSessionClusterTest extends AbstractClusterTest {
             getTestingClientFor(backendNode(0)).server().run(session -> {
                 Cache authSessionCache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME);
                 String keyOwner = InfinispanUtil.getTopologyInfo(session).getRouteName(authSessionCache, authSessionCookie);
-                Assert.assertEquals("node1", keyOwner);
+                Assert.assertTrue(keyOwner.startsWith("node1"));
             });
         }
 
