@@ -28,7 +28,6 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.util.ResolveRelative;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -189,10 +188,26 @@ public class RedirectUtils {
     private static String getSingleValidRedirectUri(Collection<String> validRedirects) {
         if (validRedirects.size() != 1) return null;
         String validRedirect = validRedirects.iterator().next();
-        int idx = validRedirect.indexOf("/*");
+        return validateRedirectUriWildcard(validRedirect);
+    }
+
+    public static String validateRedirectUriWildcard(String redirectUri) {
+        if (redirectUri == null)
+            return null;
+
+        int idx = redirectUri.indexOf("/*");
         if (idx > -1) {
-            validRedirect = validRedirect.substring(0, idx);
+            redirectUri = redirectUri.substring(0, idx);
         }
-        return validRedirect;
+        return redirectUri;
+    }
+
+    private static String getFirstValidRedirectUri(Collection<String> validRedirects) {
+        final String redirectUri = validRedirects.stream().findFirst().orElse(null);
+        return (redirectUri != null) ? validateRedirectUriWildcard(redirectUri) : null;
+    }
+
+    public static String getFirstValidRedirectUri(KeycloakSession session, String rootUrl, Set<String> validRedirects) {
+        return getFirstValidRedirectUri(resolveValidRedirects(session, rootUrl, validRedirects));
     }
 }
