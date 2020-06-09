@@ -1264,6 +1264,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-server-x</artifactId>
+                <version>${project.version}</version>
+                <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-demo-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
