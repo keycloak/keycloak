@@ -15,6 +15,14 @@
     <properties>
         <auth.server.home>${project.build.directory}/unpacked/keycloak.x-${project.version}</auth.server.home>
     </properties>
+    
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-x</artifactId>
+            <type>zip</type>
+        </dependency>
+    </dependencies>
 
     <build>
         <plugins>
