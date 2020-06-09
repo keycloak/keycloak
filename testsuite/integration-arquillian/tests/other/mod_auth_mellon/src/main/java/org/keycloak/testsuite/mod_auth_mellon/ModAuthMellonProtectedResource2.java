@@ -18,7 +18,7 @@ public class ModAuthMellonProtectedResource2 extends AbstractPageWithInjectedUrl
     @Override
     public URL getInjectedUrl() {
         try {
-            return new URL(System.getProperty("apache.mod_auth_mellon2.url", "http://localhost:8480") + "/auth2");
+            return new URL(System.getProperty("apache.mod_auth_mellon2.url", "https://app-saml-127-0-0-1.nip.io:8843") + "/auth2");
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
