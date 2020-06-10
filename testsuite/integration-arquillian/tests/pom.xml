@@ -780,7 +780,6 @@
                 <auth.server.undertow>false</auth.server.undertow>
                 <auth.server.config.property.value>standalone.xml</auth.server.config.property.value>
                 <auth.server.config.dir>${auth.server.home}/standalone/configuration</auth.server.config.dir>
-                <h2.version>1.4.193</h2.version>
                 <surefire.memory.Xmx>1024m</surefire.memory.Xmx>
             </properties>
             <dependencies>
@@ -805,7 +804,6 @@
                 <auth.server.undertow>false</auth.server.undertow>
                 <auth.server.config.property.value>standalone.xml</auth.server.config.property.value>
                 <auth.server.config.dir>${auth.server.home}/standalone/configuration</auth.server.config.dir>
-                <h2.version>1.4.193</h2.version>
                 <surefire.memory.Xmx>1024m</surefire.memory.Xmx>
             </properties>
             <dependencies>
@@ -1042,7 +1040,7 @@
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
                 <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>2.8</keycloak.connectionsInfinispan.hotrodProtocolVersion>
+                <keycloak.connectionsInfinispan.hotrodProtocolVersion>2.9</keycloak.connectionsInfinispan.hotrodProtocolVersion>
             </properties>
             <dependencies>
                 <dependency>
@@ -1113,7 +1111,7 @@
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
                 <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>2.6</keycloak.connectionsInfinispan.hotrodProtocolVersion>
+                <keycloak.connectionsInfinispan.hotrodProtocolVersion>2.9</keycloak.connectionsInfinispan.hotrodProtocolVersion>
             </properties>
             <dependencies>
                 <dependency>
@@ -1801,6 +1799,12 @@
                     <groupId>org.osgi</groupId>
                     <artifactId>org.osgi.enterprise</artifactId>
                     <scope>provided</scope>
+                </dependency>
+
+                <!-- Needed for infinispan statistics -->
+                <dependency>
+                    <groupId>org.eclipse.microprofile.metrics</groupId>
+                    <artifactId>microprofile-metrics-api</artifactId>
                 </dependency>
 
             </dependencies>

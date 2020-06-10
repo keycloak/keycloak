@@ -387,9 +387,6 @@ public class RealmCacheSession implements CacheRealmProvider {
     @Override
     public RealmModel getRealm(String id) {
         CachedRealm cached = cache.get(id, CachedRealm.class);
-        if (cached != null) {
-            logger.tracev("by id cache hit: {0}", cached.getName());
-        }
         boolean wasCached = false;
         if (cached == null) {
             Long loaded = cache.getCurrentRevision(id);
@@ -1039,9 +1036,6 @@ public class RealmCacheSession implements CacheRealmProvider {
         CachedClient cached = cache.get(id, CachedClient.class);
         if (cached != null && !cached.getRealm().equals(realm.getId())) {
             cached = null;
-        }
-        if (cached != null) {
-            logger.tracev("client by id cache hit: {0}", cached.getClientId());
         }
 
         if (cached == null) {
