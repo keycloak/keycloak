@@ -19,12 +19,12 @@
 <!--  See src/resources/configuration/ReadMe.txt for how the configuration assembly works -->
 <config default-supplement="default">
     <extension-module>org.jboss.as.clustering.infinispan</extension-module>
-    <subsystem xmlns="urn:jboss:domain:infinispan:9.0">
+    <subsystem xmlns="urn:jboss:domain:infinispan:10.0">
         <?CACHE-CONTAINERS?>
     </subsystem>
     <supplement name="default">
         <replacement placeholder="CACHE-CONTAINERS">
-            <cache-container name="keycloak">
+            <cache-container name="keycloak" module="org.keycloak.keycloak-model-infinispan">
                 <local-cache name="realms">
                     <object-memory size="10000"/>
                 </local-cache>
@@ -89,7 +89,7 @@
     </supplement>
     <supplement name="ha">
         <replacement placeholder="CACHE-CONTAINERS">
-            <cache-container name="keycloak">
+            <cache-container name="keycloak" module="org.keycloak.keycloak-model-infinispan">
                 <transport lock-timeout="60000"/>
                 <local-cache name="realms">
                     <object-memory size="10000"/>

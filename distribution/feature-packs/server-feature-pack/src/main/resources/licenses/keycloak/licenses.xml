@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version='1.0' encoding='UTF-8'?>
 <licenseSummary>
   <dependencies>
     <dependency>
@@ -103,7 +103,7 @@
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-utils</artifactId>
-      <version>3.0.22</version>
+      <version>3.1.1</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
@@ -548,6 +548,17 @@
         <license>
           <name>Apache Software License 2.0</name>
           <url>https://raw.githubusercontent.com/apache/directory-kerby/kerby-all-2.0.0/LICENSE</url>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.infinispan</groupId>
+      <artifactId>infinispan-jboss-marshalling</artifactId>
+      <version>10.1.8.Final</version>
+      <licenses>
+        <license>
+          <name>Apache Software License 2.0</name>
+          <url>https://raw.githubusercontent.com/infinispan/infinispan/master/LICENSE.md</url>
         </license>
       </licenses>
     </dependency>

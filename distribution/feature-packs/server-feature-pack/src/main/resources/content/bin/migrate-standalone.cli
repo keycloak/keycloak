@@ -639,4 +639,12 @@ if (result != fixed) of /subsystem=keycloak-server/spi=hostname/:read-attribute(
     end-try
 end-if
 
+# Migrate from 10.0.2 to 11.0.0 (migration changes for infinispan update from 9.4.18.Final to 10.1.8.Final)
+
+if (result != org.keycloak.keycloak-model-infinispan) of /subsystem=infinispan/cache-container=keycloak:read-attribute(name=module)
+    echo Setting class loader for keycloak cache-container so JBoss Marshalling works properly with Infinispan 10.x
+    /subsystem=infinispan/cache-container=keycloak:write-attribute(name=module,value=org.keycloak.keycloak-model-infinispan)
+    echo
+end-if
+
 echo *** End Migration ***
