@@ -22,7 +22,7 @@ import org.junit.Assume;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.APP_SERVER_SSL_REQUIRED;
-import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_SSL_REQUIRED;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 
 public class ContainerAssume {
 

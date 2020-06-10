@@ -854,6 +854,7 @@
                 <app.server.port.offset>0</app.server.port.offset>
                 <app.server.http.port>8080</app.server.http.port>
                 <app.server.management.port>9990</app.server.management.port>
+                <app.server.config.dir>${app.server.home}/conf</app.server.config.dir>
             </properties>
             <dependencies>
                 <dependency>
@@ -887,6 +888,7 @@
                 <app.server.port.offset>0</app.server.port.offset>
                 <app.server.http.port>8080</app.server.http.port>
                 <app.server.management.port>9990</app.server.management.port>
+                <app.server.config.dir>${app.server.home}/conf</app.server.config.dir>
             </properties>
             <dependencies>
                 <dependency>
@@ -920,6 +922,7 @@
                 <app.server.port.offset>0</app.server.port.offset>
                 <app.server.http.port>8080</app.server.http.port>
                 <app.server.management.port>9990</app.server.management.port>
+                <app.server.config.dir>${app.server.home}/conf</app.server.config.dir>
             </properties>
             <dependencies>
                 <dependency>

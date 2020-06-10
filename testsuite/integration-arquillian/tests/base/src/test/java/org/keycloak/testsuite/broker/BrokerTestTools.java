@@ -4,7 +4,6 @@ import org.apache.http.client.utils.URIBuilder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.pages.PageUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -19,9 +18,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_HOST;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST2;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 /**
  *
@@ -36,14 +36,14 @@ public class BrokerTestTools {
         if (providerRoot == null) {
             // everything is identical to consumerRoot but the host (it's technically the same server instance)
             providerRoot = new URIBuilder(URI.create(getConsumerRoot()))
-                    .setHost(System.getProperty("auth.server.host2", AUTH_SERVER_HOST)).toString();
+                    .setHost(AUTH_SERVER_HOST2).toString();
         }
         return providerRoot;
     }
 
     public static String getConsumerRoot() {
         if (consumerRoot == null) {
-            consumerRoot = AuthServerTestEnricher.getAuthServerContextRoot();
+            consumerRoot = getAuthServerContextRoot();
         }
         return consumerRoot;
     }

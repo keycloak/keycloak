@@ -40,6 +40,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import static org.keycloak.testsuite.utils.io.IOUtil.modifyDocElementAttribute;
+import static org.keycloak.testsuite.util.ServerURLs.getAppServerContextRoot;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
+
 /**
  *
  * @author <a href="mailto:vramik@redhat.com">Vlasta Ramik</a>
@@ -50,6 +54,10 @@ public class DeploymentArchiveProcessorUtils {
 
     private static final boolean AUTH_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
     private static final boolean APP_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("app.server.ssl.required"));
+
+    private static final String APP_SERVER_SCHEMA = APP_SERVER_SSL_REQUIRED ? "https" : "http";
+    private static final String APP_SERVER_PORT_PROPERTY = "auth.server." + APP_SERVER_SCHEMA + ".port";
+    private static final String AUTH_SERVER_REPLACED_URL = "http://localhost:8080";
 
     public static final String WEBXML_PATH = "/WEB-INF/web.xml";
     public static final String ADAPTER_CONFIG_PATH = "/WEB-INF/keycloak.json";
@@ -223,28 +231,12 @@ public class DeploymentArchiveProcessorUtils {
     public static void modifySAMLAdapterConfig(Archive<?> archive, String adapterConfigPath) {
         Document doc = IOUtil.loadXML(archive.get(adapterConfigPath).getAsset().openStream());
 
-        if (AUTH_SERVER_SSL_REQUIRED) {
-            IOUtil.modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "8080", System.getProperty("auth.server.https.port"));
-            IOUtil.modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "http", "https");
-            IOUtil.modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", "8080", System.getProperty("auth.server.https.port"));
-            IOUtil.modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", "http", "https");
-            IOUtil.modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", "8080", System.getProperty("auth.server.https.port"));
-            IOUtil.modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", "http", "https");
-        } else {
-            IOUtil.modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "8080", System.getProperty("auth.server.http.port"));
-            IOUtil.modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", "8080", System.getProperty("auth.server.http.port"));
-            IOUtil.modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", "8080", System.getProperty("auth.server.http.port"));
-        }
+        modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", AUTH_SERVER_REPLACED_URL, getAuthServerContextRoot());
+        modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", AUTH_SERVER_REPLACED_URL, getAuthServerContextRoot());
+        modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", AUTH_SERVER_REPLACED_URL, getAuthServerContextRoot());
 
-        if (APP_SERVER_SSL_REQUIRED) {
-            IOUtil.modifyDocElementAttribute(doc, "SP", "logoutPage", "8080", System.getProperty("app.server.https.port"));
-            IOUtil.modifyDocElementAttribute(doc, "SP", "logoutPage", "http", "https");
-            IOUtil.modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", "8080", System.getProperty("app.server.https.port"));
-            IOUtil.modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", "http", "https");
-        } else {
-            IOUtil.modifyDocElementAttribute(doc, "SP", "logoutPage", "8080", System.getProperty("app.server.http.port"));
-            IOUtil.modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", "8080", System.getProperty("app.server.http.port"));
-        }
+        modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", AUTH_SERVER_REPLACED_URL, getAppServerContextRoot());
+        modifyDocElementAttribute(doc, "SP", "logoutPage", AUTH_SERVER_REPLACED_URL, getAppServerContextRoot());
 
         archive.add(new StringAsset(IOUtil.documentToString(doc)), adapterConfigPath);
 

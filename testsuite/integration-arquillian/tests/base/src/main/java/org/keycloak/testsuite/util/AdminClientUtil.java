@@ -41,11 +41,11 @@ import org.jboss.resteasy.plugins.providers.jackson.ResteasyJackson2Provider;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.models.Constants;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import static org.keycloak.testsuite.utils.io.IOUtil.PROJECT_BUILD_DIRECTORY;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 
 public class AdminClientUtil {
@@ -55,7 +55,7 @@ public class AdminClientUtil {
 
     }
     public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String realmName, String username, String password, String clientId, String clientSecret) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
-        return createAdminClient(ignoreUnknownProperties, AuthServerTestEnricher.getAuthServerContextRoot(), realmName, username, password, clientId, clientSecret);
+        return createAdminClient(ignoreUnknownProperties, getAuthServerContextRoot(), realmName, username, password, clientId, clientSecret);
     }
 
     public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String authServerContextRoot, String realmName, String username, String password, String clientId, String clientSecret) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
@@ -96,11 +96,11 @@ public class AdminClientUtil {
     }
 
     public static Keycloak createAdminClient() throws Exception {
-        return createAdminClient(false, AuthServerTestEnricher.getAuthServerContextRoot());
+        return createAdminClient(false, getAuthServerContextRoot());
     }
 
     public static Keycloak createAdminClient(boolean ignoreUnknownProperties) throws Exception {
-        return createAdminClient(ignoreUnknownProperties, AuthServerTestEnricher.getAuthServerContextRoot());
+        return createAdminClient(ignoreUnknownProperties, getAuthServerContextRoot());
     }
 
     private static SSLContext getSSLContextWithTrustore(File file, String password) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {

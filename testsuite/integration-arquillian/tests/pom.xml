@@ -172,6 +172,7 @@
         <skip.copy.example.wars>false</skip.copy.example.wars>
 
         <browser>htmlUnit</browser>
+        <browser.strict.cookies>false</browser.strict.cookies>
         <webdriverDownloadBinaries>true</webdriverDownloadBinaries>
         <droneInstantiationTimeoutInSeconds>60</droneInstantiationTimeoutInSeconds>
         <github.username/>
@@ -559,6 +560,7 @@
                             <dependency.keystore.password>${dependency.keystore.password}</dependency.keystore.password>
 
                             <browser>${browser}</browser>
+                            <browser.strict.cookies>${browser.strict.cookies}</browser.strict.cookies>
                             <js.browser>${js.browser}</js.browser>
                             <js.chromeArguments>${js.chromeArguments}</js.chromeArguments>
                             <htmlUnitBrowserVersion>${htmlUnitBrowserVersion}</htmlUnitBrowserVersion>
@@ -1976,8 +1978,10 @@
             <id>firefox-strict-cookies</id>
             <properties>
                 <browser>firefox</browser>
+                <js.browser>firefox</js.browser>
                 <firefoxUserPreferences>${project.build.directory}/dependency/firefox-cookies-prefs.js</firefoxUserPreferences>
                 <firefoxHeadless>true</firefoxHeadless>
+                <browser.strict.cookies>true</browser.strict.cookies>
             </properties>
         </profile>
 

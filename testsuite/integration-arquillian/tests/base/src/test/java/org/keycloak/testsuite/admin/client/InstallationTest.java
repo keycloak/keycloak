@@ -35,7 +35,6 @@ import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.installation.SamlSPDescriptorClientInstallation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.w3c.dom.Document;
@@ -47,6 +46,7 @@ import org.xml.sax.SAXException;
 import javax.ws.rs.NotFoundException;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 /**
  * Test getting the installation/configuration files for OIDC and SAML.
@@ -89,7 +89,7 @@ public class InstallationTest extends AbstractClientTest {
     }
 
     private String authServerUrl() {
-        return AuthServerTestEnricher.getAuthServerContextRoot() + "/auth";
+        return getAuthServerContextRoot() + "/auth";
     }
 
     private String samlUrl() {

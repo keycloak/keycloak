@@ -33,6 +33,8 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST2;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
@@ -47,7 +49,7 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
         void apply(T a, U b, V c, W d);
     }
 
-    public static final String NIP_IO_URL = "js-app-127-0-0-1.nip.io";
+    public static final String JS_APP_HOST = AUTH_SERVER_HOST2;
     public static final String CLIENT_ID = "js-console";
     public static final String REALM_NAME = "test";
     public static final String SPACE_REALM_NAME = "Example realm";
@@ -120,8 +122,8 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
                 .client(
                         ClientBuilder.create()
                                 .clientId(CLIENT_ID)
-                                .redirectUris(oauth.SERVER_ROOT.replace("localhost", NIP_IO_URL) + JAVASCRIPT_URL + "/*", oauth.SERVER_ROOT + JAVASCRIPT_ENCODED_SPACE_URL + "/*")
-                                .addWebOrigin(oauth.SERVER_ROOT.replace("localhost", NIP_IO_URL))
+                                .redirectUris(oauth.SERVER_ROOT.replace(AUTH_SERVER_HOST, JS_APP_HOST) + JAVASCRIPT_URL + "/*", oauth.SERVER_ROOT + JAVASCRIPT_ENCODED_SPACE_URL + "/*")
+                                .addWebOrigin(oauth.SERVER_ROOT.replace(AUTH_SERVER_HOST, JS_APP_HOST))
                                 .publicClient()
                 )
                 .accessTokenLifespan(30 + TOKEN_LIFESPAN_LEEWAY)
@@ -151,7 +153,7 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
 
     protected abstract RealmRepresentation updateRealm(RealmBuilder builder);
 
-    protected void assertSuccessfullyLoggedIn(WebDriver driver1, Object output, WebElement events) {
+    protected void assertInitAuth(WebDriver driver1, Object output, WebElement events) {
         buildFunction(this::assertOutputContains, "Init Success (Authenticated)").validate(driver1, output, events);
         waitUntilElement(events).text().contains("Auth Success");
     }
@@ -193,6 +195,10 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
         waitUntilElement(events).text().contains(value);
     }
 
+    public void assertEventsWebElementDoesntContain(String value, WebDriver driver1, Object output, WebElement events) {
+        waitUntilElement(events).text().not().contains(value);
+    }
+
     public ResponseValidator assertResponseStatus(long status) {
         return output -> Assert.assertThat(output, hasEntry("status", status));
     }
@@ -203,5 +209,9 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
 
     public JavascriptStateValidator assertEventsContains(String text) {
         return buildFunction(this::assertEventsWebElementContains, text);
+    }
+
+    public JavascriptStateValidator assertEventsDoesntContain(String text) {
+        return buildFunction(this::assertEventsWebElementDoesntContain, text);
     }
 }

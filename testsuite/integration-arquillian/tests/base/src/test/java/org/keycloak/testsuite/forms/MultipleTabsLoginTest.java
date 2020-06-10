@@ -49,8 +49,8 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.NoSuchElementException;
 
 import static org.junit.Assert.fail;
-import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 /**
  * Tries to simulate testing with multiple browser tabs

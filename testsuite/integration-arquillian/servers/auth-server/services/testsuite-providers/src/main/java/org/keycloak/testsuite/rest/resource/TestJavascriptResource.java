@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
+
 /**
  * @author mhajas
  */
@@ -63,6 +65,6 @@ public class TestJavascriptResource {
             line = buf.readLine();
         }
 
-        return sb.toString();
+        return sb.toString().replace("${js-adapter.auth-server-url}", getAuthServerContextRoot() + "/auth");
     }
 }

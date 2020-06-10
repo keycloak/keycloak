@@ -52,7 +52,6 @@ import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isRelative
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isTomcatAppServer;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isWLSAppServer;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.isWASAppServer;
-import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
 import static org.keycloak.testsuite.utils.io.IOUtil.appendChildInDocument;
 import static org.keycloak.testsuite.utils.io.IOUtil.documentToString;
 import static org.keycloak.testsuite.utils.io.IOUtil.getElementTextContent;
@@ -62,6 +61,7 @@ import static org.keycloak.testsuite.utils.io.IOUtil.modifyDocElementAttribute;
 import static org.keycloak.testsuite.utils.io.IOUtil.modifyDocElementValue;
 import static org.keycloak.testsuite.utils.io.IOUtil.removeElementsFromDoc;
 import static org.keycloak.testsuite.utils.io.IOUtil.removeNodeByAttributeValue;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 
 /**
