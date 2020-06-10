@@ -35,6 +35,18 @@
         <maven.compiler.source>1.7</maven.compiler.source>
     </properties>
 
+    <repositories>
+        <!-- KEYCLOAK-13692 Needed for org.picketbox:*:jar:5.0.3.Final-redhat-00005 -->
+        <repository>
+            <id>jboss-enterprise-maven-repository</id>
+            <name>JBoss Enterprise Maven Repository</name>
+            <url>https://maven.repository.redhat.com/ga/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>org.jboss.logging</groupId>
