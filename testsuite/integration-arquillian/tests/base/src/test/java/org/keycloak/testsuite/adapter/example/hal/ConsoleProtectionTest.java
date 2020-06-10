@@ -18,6 +18,7 @@ package org.keycloak.testsuite.adapter.example.hal;
 
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 import java.io.IOException;
 import java.util.List;
@@ -31,7 +32,6 @@ import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractAdapterTest;
 import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
@@ -83,7 +83,7 @@ public class ConsoleProtectionTest extends AbstractAdapterTest {
             Assume.assumeTrue(operations.exists(Address.subsystem("elytron").and("security-domain", "KeycloakDomain")));
 
             // Create a realm for both wildfly console and mgmt interface
-            clientWorkerNodeClient.execute("/subsystem=keycloak/realm=jboss-infra:add(auth-server-url=" + AuthServerTestEnricher.getAuthServerContextRoot() + "/auth,realm-public-key=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB)");
+            clientWorkerNodeClient.execute("/subsystem=keycloak/realm=jboss-infra:add(auth-server-url=" + getAuthServerContextRoot() + "/auth,realm-public-key=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB)");
 
             // Create a secure-deployment in order to protect mgmt interface
             clientWorkerNodeClient.execute("/subsystem=keycloak/secure-deployment=wildfly-management:add(realm=jboss-infra,resource=wildfly-management,principal-attribute=preferred_username,bearer-only=true,ssl-required=EXTERNAL)");

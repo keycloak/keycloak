@@ -22,6 +22,7 @@ public class JSObjectBuilder {
     public JSObjectBuilder defaultSettings() {
         standardFlow();
         fragmentResponse();
+        enableLogging();
         return this;
     }
 
@@ -50,13 +51,28 @@ public class JSObjectBuilder {
         return this;
     }
 
+    public JSObjectBuilder disableSilentCheckSSOFallback() {
+        arguments.put("silentCheckSsoFallback", false);
+        return this;
+    }
+
     public JSObjectBuilder disableCheckLoginIframe() {
         arguments.put("checkLoginIframe", false);
         return this;
     }
 
+    public JSObjectBuilder setCheckLoginIframeIntervalTo1() {
+        arguments.put("checkLoginIframeInterval", 1);
+        return this;
+    }
+
     public JSObjectBuilder loginRequiredOnLoad() {
         arguments.put("onLoad", "login-required");
+        return this;
+    }
+
+    public JSObjectBuilder enableLogging() {
+        arguments.put("enableLogging", true);
         return this;
     }
 

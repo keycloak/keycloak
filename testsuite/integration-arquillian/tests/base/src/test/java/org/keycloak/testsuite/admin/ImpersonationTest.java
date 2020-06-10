@@ -55,7 +55,6 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -82,6 +81,7 @@ import java.util.Map;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 /**
  * Tests Undertow Adapter
@@ -318,7 +318,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
             password = username.equals("admin") ? "admin" : "password";
         }
 
-        return KeycloakBuilder.builder().serverUrl(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth")
+        return KeycloakBuilder.builder().serverUrl(getAuthServerContextRoot() + "/auth")
                 .realm(realm)
                 .username(username)
                 .password(password)

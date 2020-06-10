@@ -6,10 +6,13 @@ import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.fail;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 
@@ -101,6 +104,11 @@ public class JavascriptTestExecutor {
     }
 
     public JavascriptTestExecutor configure(JSObjectBuilder argumentsBuilder) {
+        // a nasty hack: redirect console.warn to events
+        // mainly for FF as it doesn't yet support reading console.warn directly through webdriver
+        // see https://github.com/mozilla/geckodriver/issues/284
+        jsExecutor.executeScript("console.warn = event;");
+
         if (argumentsBuilder == null) {
             jsExecutor.executeScript("window.keycloak = Keycloak();");
         } else {
@@ -126,6 +134,10 @@ public class JavascriptTestExecutor {
     }
 
     public JavascriptTestExecutor init(JSObjectBuilder argumentsBuilder, JavascriptStateValidator validator) {
+        return init(argumentsBuilder, validator, false);
+    }
+
+    public JavascriptTestExecutor init(JSObjectBuilder argumentsBuilder, JavascriptStateValidator validator, boolean expectPromptNoneRedirect) {
         if(!configured) {
             configure();
         }
@@ -139,7 +151,23 @@ public class JavascriptTestExecutor {
                 "       callback(\"Init Error\");" +
                 "   });";
 
-        Object output = jsExecutor.executeAsyncScript(script);
+        Object output;
+
+        if (expectPromptNoneRedirect) {
+            try {
+                output = jsExecutor.executeAsyncScript(script);
+                fail("Redirect to Keycloak was expected");
+            }
+            catch (WebDriverException e) {
+                waitForPageToLoad();
+                configured = false;
+                // the redirect should use prompt=none, that means KC should immediately redirect back to the app (regardless login state)
+                return init(argumentsBuilder, validator, false);
+            }
+        }
+        else {
+            output = jsExecutor.executeAsyncScript(script);
+        }
 
         if (validator != null) {
             validator.validate(jsDriver, output, events);
@@ -285,4 +313,13 @@ public class JavascriptTestExecutor {
         return this;
     }
 
+    public JavascriptTestExecutor wait(long millis, JavascriptStateValidator validator) {
+        pause(millis);
+
+        if (validator != null) {
+            validator.validate(jsDriver, null, events);
+        }
+
+        return this;
+    }
 }

@@ -41,7 +41,6 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.broker.BrokerTestTools;
@@ -67,6 +66,7 @@ import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
 import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -215,7 +215,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
                 .path("link")
                 .queryParam("response", "true");
 
-        UriBuilder directLinking = UriBuilder.fromUri(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth")
+        UriBuilder directLinking = UriBuilder.fromUri(getAuthServerContextRoot() + "/auth")
                 .path("realms/child/broker/{provider}/link")
                 .queryParam("client_id", "client-linking")
                 .queryParam("redirect_uri", redirectUri.build())
@@ -509,7 +509,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
 
             String uri = "/auth/realms/child/broker/parent-idp/login";
 
-            uri = UriBuilder.fromUri(AuthServerTestEnricher.getAuthServerContextRoot())
+            uri = UriBuilder.fromUri(getAuthServerContextRoot())
                     .path(uri)
                     .queryParam(LoginActionsService.SESSION_CODE, queryParams.get(LoginActionsService.SESSION_CODE))
                     .queryParam(Constants.CLIENT_ID, queryParams.get(Constants.CLIENT_ID))

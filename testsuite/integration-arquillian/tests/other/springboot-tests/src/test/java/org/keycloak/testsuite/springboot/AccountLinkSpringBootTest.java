@@ -184,7 +184,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
 
         UriBuilder redirectUri = UriBuilder.fromUri(LINKING_URL).queryParam("response", "true");
 
-        UriBuilder directLinking = UriBuilder.fromUri(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth")
+        UriBuilder directLinking = UriBuilder.fromUri(getAuthServerContextRoot() + "/auth")
                 .path("realms/{child-realm}/broker/{provider}/link")
                 .queryParam("client_id", CLIENT_ID)
                 .queryParam("redirect_uri", redirectUri.build())
@@ -470,7 +470,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
 
             String uri = "/auth/realms/" + REALM_NAME + "/broker/" + PARENT_REALM + "/login";
 
-            uri = UriBuilder.fromUri(AuthServerTestEnricher.getAuthServerContextRoot())
+            uri = UriBuilder.fromUri(getAuthServerContextRoot())
                     .path(uri)
                     .queryParam(LoginActionsService.SESSION_CODE, queryParams.get(LoginActionsService.SESSION_CODE))
                     .queryParam(Constants.CLIENT_ID, queryParams.get(Constants.CLIENT_ID))

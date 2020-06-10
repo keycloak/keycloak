@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
 
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
 import static org.openqa.selenium.support.ui.ExpectedConditions.not;
 import static org.openqa.selenium.support.ui.ExpectedConditions.urlMatches;
 import static org.openqa.selenium.support.ui.ExpectedConditions.urlToBe;
@@ -131,13 +132,6 @@ public final class URLUtils {
             }
         }
         return true;
-    }
-
-    /**
-     * Removes default ports: 80 and 443 from url
-     */
-    public static String removeDefaultPorts(String url) {
-        return url != null ? url.replaceFirst("(.*)(:80)(\\/.*)?$", "$1$3").replaceFirst("(.*)(:443)(\\/.*)?$", "$1$3") : null;
     }
 
     /**

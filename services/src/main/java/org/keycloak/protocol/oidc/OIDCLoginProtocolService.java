@@ -35,6 +35,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LoginStatusIframeEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
+import org.keycloak.protocol.oidc.endpoints.ThirdPartyCookiesIframeEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenRevocationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
@@ -187,6 +188,13 @@ public class OIDCLoginProtocolService {
     @Path("login-status-iframe.html")
     public Object getLoginStatusIframe() {
         LoginStatusIframeEndpoint endpoint = new LoginStatusIframeEndpoint();
+        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
+        return endpoint;
+    }
+
+    @Path("3p-cookies")
+    public Object thirdPartyCookiesCheck() {
+        ThirdPartyCookiesIframeEndpoint endpoint = new ThirdPartyCookiesIframeEndpoint();
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
     }

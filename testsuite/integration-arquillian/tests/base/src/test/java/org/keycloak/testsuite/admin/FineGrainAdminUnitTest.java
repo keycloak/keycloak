@@ -52,7 +52,6 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.resources.admin.permissions.ClientPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.GroupPermissionManagement;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -71,6 +70,7 @@ import static org.keycloak.testsuite.admin.ImpersonationDisabledTest.IMPERSONATI
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -880,7 +880,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     public void testWithTokenExchange() throws Exception {
         String exchanged = checkTokenExchange(true);
         Assert.assertNotNull(exchanged);
-        try (Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+        try (Keycloak client = Keycloak.getInstance(getAuthServerContextRoot() + "/auth",
                 AuthRealm.MASTER, Constants.ADMIN_CLI_CLIENT_ID, exchanged, TLSUtils.initializeTLS())) {
             Assert.assertNotNull(client.realm("master").roles().get("offline_access"));
         }
@@ -936,7 +936,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             }
         });
 
-        try (Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+        try (Keycloak client = Keycloak.getInstance(getAuthServerContextRoot() + "/auth",
                 "test", "customer-a-manager", "password", Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS())) {
 
             List<UserRepresentation> result = client.realm("test").users().search(null, "test", null, null, -1, 20);
@@ -949,7 +949,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             Assert.assertEquals(0, result.size());
         }
 
-        try (Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+        try (Keycloak client = Keycloak.getInstance(getAuthServerContextRoot() + "/auth",
                 "test", "regular-admin-user", "password", Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS())) {
 
             List<UserRepresentation> result = client.realm("test").users().search(null, "test", null, null, -1, 20);
@@ -963,7 +963,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             Assert.assertThat(result, Matchers.everyItem(Matchers.hasProperty("username", Matchers.startsWith("a"))));
         }
 
-        try (Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+        try (Keycloak client = Keycloak.getInstance(getAuthServerContextRoot() + "/auth",
                 "test", "customer-a-manager", "password", Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS())) {
 
             List<UserRepresentation> result = client.realm("test").users().search(null, null, null, null, -1, 20);
@@ -1019,7 +1019,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             policy.addAssociatedPolicy(RepresentationToModel.toModel(userPolicyRepresentation, provider, userPolicy));
         });
 
-        try (Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+        try (Keycloak client = Keycloak.getInstance(getAuthServerContextRoot() + "/auth",
                 "test", "regular-admin-user", "password", Constants.ADMIN_CLI_CLIENT_ID,
                 TLSUtils.initializeTLS())) {
 
@@ -1049,7 +1049,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             policy.addAssociatedPolicy(provider.getStoreFactory().getPolicyStore().findByName("Only regular-admin-user", realmAdminClient.getId()));
         });
 
-        try (Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+        try (Keycloak client = Keycloak.getInstance(getAuthServerContextRoot() + "/auth",
                 "test", "regular-admin-user", "password", Constants.ADMIN_CLI_CLIENT_ID,
                 TLSUtils.initializeTLS())) {
 
@@ -1058,7 +1058,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             Assert.assertEquals(2, result.size());
         }
 
-        try (Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+        try (Keycloak client = Keycloak.getInstance(getAuthServerContextRoot() + "/auth",
                 "test", "regular-admin-user", "password", Constants.ADMIN_CLI_CLIENT_ID,
                 TLSUtils.initializeTLS())) {
 
@@ -1067,7 +1067,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             Assert.assertEquals(2, result.size());
         }
 
-        try (Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+        try (Keycloak client = Keycloak.getInstance(getAuthServerContextRoot() + "/auth",
                 "test", "regular-admin-user", "password", Constants.ADMIN_CLI_CLIENT_ID,
                 TLSUtils.initializeTLS())) {
 
@@ -1086,7 +1086,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             Assert.assertTrue(result.isEmpty());
         }
         
-        try (Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+        try (Keycloak client = Keycloak.getInstance(getAuthServerContextRoot() + "/auth",
                 "test", "regular-admin-user", "password", Constants.ADMIN_CLI_CLIENT_ID,
                 TLSUtils.initializeTLS())) {
 
@@ -1118,7 +1118,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             }
         });
 
-        try (Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+        try (Keycloak client = Keycloak.getInstance(getAuthServerContextRoot() + "/auth",
                 "test", "regular-admin-user", "password", Constants.ADMIN_CLI_CLIENT_ID,
                 TLSUtils.initializeTLS())) {
             
@@ -1202,7 +1202,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             }
         });
 
-        try (Keycloak client = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
+        try (Keycloak client = Keycloak.getInstance(getAuthServerContextRoot() + "/auth",
                 "test", "regular-admin-user", "password", Constants.ADMIN_CLI_CLIENT_ID,
                 TLSUtils.initializeTLS())) {
 
