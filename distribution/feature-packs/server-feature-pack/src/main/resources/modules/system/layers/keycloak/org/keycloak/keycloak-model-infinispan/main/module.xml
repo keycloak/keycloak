@@ -34,8 +34,10 @@
         <module name="org.infinispan.commons"/>
         <module name="org.infinispan.persistence.remote"/>
         <module name="org.infinispan.client.hotrod"/>
+        <module name="org.infinispan.jboss-marshalling"/>
         <module name="org.jgroups"/>
         <module name="org.jboss.logging"/>
+        <module name="org.wildfly.clustering.marshalling.api"/>
         <module name="io.netty"/>
         <module name="javax.api"/>
     </dependencies>

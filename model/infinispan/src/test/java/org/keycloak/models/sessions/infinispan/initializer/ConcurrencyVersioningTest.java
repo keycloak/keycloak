@@ -252,7 +252,12 @@ public class ConcurrencyVersioningTest {
                 //.invocationBatching().enable()
                 .transaction().transactionMode(TransactionMode.TRANSACTIONAL)
                 .transaction().transactionManagerLookup(new EmbeddedTransactionManagerLookup())
-                .locking().isolationLevel(IsolationLevel.REPEATABLE_READ).writeSkewCheck(true).versioning().enable().scheme(VersioningScheme.SIMPLE);
+                .locking().isolationLevel(IsolationLevel.REPEATABLE_READ);
+                // KEYCLOAK-13692 - Per ISPN-7613 Infinispan:
+                // * Automatically enables versioning when needed,
+                // * writeSkewCheck automatically enabled for OPTIMISTIC and REPEATABLE_READ transactions
+                //.writeSkewCheck(true).versioning()
+                //.enable().scheme(VersioningScheme.SIMPLE);
 
 
         //invalidationConfigBuilder.locking().isolationLevel(IsolationLevel.REPEATABLE_READ).writeSkewCheck(true).versioning().enable().scheme(VersioningScheme.SIMPLE);

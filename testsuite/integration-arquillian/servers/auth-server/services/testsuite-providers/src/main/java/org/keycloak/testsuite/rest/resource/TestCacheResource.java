@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.rest.resource;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -77,7 +78,9 @@ public class TestCacheResource {
     @Path("/enumerate-keys")
     @Produces(MediaType.APPLICATION_JSON)
     public Set<String> enumerateKeys() {
-        return cache.keySet().stream()
+        // Wrap cache.keySet into another set to avoid infinispan ClassNotFoundExceptions
+        Set<Object> keySet = new HashSet<>(cache.keySet());
+        return keySet.stream()
           .map(Object::toString)
           .collect(CacheCollectors.serializableCollector(Collectors::toSet));    // See https://issues.jboss.org/browse/ISPN-7596
     }

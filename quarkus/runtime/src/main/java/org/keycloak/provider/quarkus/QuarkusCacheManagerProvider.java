@@ -17,18 +17,22 @@
 
 package org.keycloak.provider.quarkus;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Collectors;
 
 import org.infinispan.commons.util.FileLookupFactory;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.configuration.parsing.ParserRegistry;
 import org.infinispan.manager.DefaultCacheManager;
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
 import org.keycloak.cluster.ManagedCacheManagerProvider;
+import org.keycloak.Config;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -42,8 +46,8 @@ public final class QuarkusCacheManagerProvider implements ManagedCacheManagerPro
     @Override
     public <C> C getCacheManager(Config.Scope config) {
         try {
-            InputStream configurationStream = loadConfiguration(config);
-            ConfigurationBuilderHolder builder = new ParserRegistry().parse(configurationStream);
+            String configurationAsString = loadConfigurationToString(config);
+            ConfigurationBuilderHolder builder = new ParserRegistry().parse(configurationAsString);
 
             if (builder.getNamedConfigurationBuilders().get("sessions").clustering().cacheMode().isClustered()) {
                 configureTransportStack(config, builder);
@@ -53,6 +57,11 @@ public final class QuarkusCacheManagerProvider implements ManagedCacheManagerPro
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private String loadConfigurationToString(Config.Scope config) throws FileNotFoundException {
+        BufferedReader configurationReader = new BufferedReader(new InputStreamReader(loadConfiguration(config), StandardCharsets.UTF_8));
+        return configurationReader.lines().collect(Collectors.joining(System.lineSeparator()));
     }
 
     private InputStream loadConfiguration(Config.Scope config) throws FileNotFoundException {

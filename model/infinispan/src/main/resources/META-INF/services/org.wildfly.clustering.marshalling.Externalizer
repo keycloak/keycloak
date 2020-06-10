@@ -1,0 +1,80 @@
+#
+# Copyright 2020 Red Hat, Inc. and/or its affiliates
+# and other contributors as indicated by the @author tags.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#
+
+org.keycloak.models.sessions.infinispan.entities.wildfly.GroupListPredicateWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.RealmRemovedSessionEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.ActionTokenReducedKeyWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.WrapperClusterEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.UserConsentsUpdatedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.RoleRemovedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.RealmRemovedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.RemoveUserSessionsEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.ResourceRemovedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.ResourceServerRemovedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.RealmUpdatedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.RemoveAllUserLoginFailuresEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.InScopePredicateWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.AuthenticationSessionAuthNoteUpdateEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.PolicyUpdatedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.ClientUpdatedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.ClientAddedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.LoginFailureEntityWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.PublicKeyStorageInvalidationEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.UserUpdatedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.UserLoginFailurePredicateWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.UserFederationLinkUpdatedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.UserCacheRealmInvalidationEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.InResourcePredicateWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.UserFederationLinkRemovedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.SessionDataWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.GroupAddedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.GroupRemovedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.GroupMovedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.GroupUpdatedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.ScopeUpdatedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.ResourceServerUpdatedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.ResourceUpdatedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.AuthenticatedClientSessionStoreWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.LoginFailureKeyWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.LockEntryPredicateWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.LockEntryWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.ActionTokenValueEntityWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.RoleAddedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.InClientPredicateWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.UserFullInvalidationEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.ClientRemovedSessionEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.SessionPredicateWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.UserSessionEntityWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.RoleUpdatedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.HasRolePredicateWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.InRealmPredicateWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.ClientTemplateEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.RootAuthenticationSessionPredicateWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.InResourceServerPredicateWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.ClientRemovedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.ScopeRemovedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.AuthenticationSessionEntityWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.RootAuthenticationSessionEntityWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.AuthenticatedClientSessionPredicateWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.AuthenticatedClientSessionEntityWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.LastSessionRefreshEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.PolicyRemovedEventWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.UserSessionPredicateWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.InIdentityProviderPredicateWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.SessionEntityWrapperWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.InitializerStateWFExternalizer
