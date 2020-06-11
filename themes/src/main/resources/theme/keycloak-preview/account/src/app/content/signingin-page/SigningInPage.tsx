@@ -33,12 +33,15 @@ import {
 
 import {AIACommand} from '../../util/AIACommand';
 import TimeUtil from '../../util/TimeUtil';
-import AccountService, {HttpResponse} from '../../account-service/account.service';
+import {HttpResponse, AccountServiceClient} from '../../account-service/account.service';
+import {AccountServiceContext} from '../../account-service/AccountServiceContext';
 import {ContinueCancelModal} from '../../widgets/ContinueCancelModal';
 import {Features} from '../../widgets/features';
 import {Msg} from '../../widgets/Msg';
 import {ContentPage} from '../ContentPage';
 import {ContentAlert} from '../ContentAlert';
+import { KeycloakContext } from '../../keycloak-service/KeycloakContext';
+import { KeycloakService } from '../../keycloak-service/keycloak.service';
 
 declare const features: Features;
 
@@ -84,9 +87,13 @@ interface SigningInPageState {
  * @author Stan Silvert ssilvert@redhat.com (C) 2018 Red Hat Inc.
  */
 class SigningInPage extends React.Component<SigningInPageProps, SigningInPageState> {
+    static contextType = AccountServiceContext;
+    context: React.ContextType<typeof AccountServiceContext>;
 
-    public constructor(props: SigningInPageProps) {
+    public constructor(props: SigningInPageProps, context: React.ContextType<typeof AccountServiceContext>) {
         super(props);
+        this.context = context;
+    
         this.state = {
             credentialContainers: new Map()
         }
@@ -95,7 +102,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
     }
 
     private getCredentialContainers(): void {
-        AccountService.doGet("/credentials")
+        this.context!.doGet("/credentials")
             .then((response: HttpResponse<CredentialContainer[]>) => {
 
                 const allContainers: CredContainerMap = new Map();
@@ -115,7 +122,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
     }
 
     private handleRemove = (credentialId: string, userLabel: string) => {
-      AccountService.doDelete("/credentials/" + credentialId)
+      this.context!.doDelete("/credentials/" + credentialId)
         .then(() => {
             this.getCredentialContainers();
             ContentAlert.success('successRemovedMessage', [userLabel]);
@@ -154,13 +161,19 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
     }
 
     private renderTypes(credTypeMap: CredTypeMap): React.ReactNode {
-        return (<> {
+        return (
+        <KeycloakContext.Consumer> 
+        { keycloak => (
+            <>{
             Array.from(credTypeMap.keys()).map((credType: CredType, index: number, typeArray: string[]) => ([
-                this.renderCredTypeTitle(credTypeMap.get(credType)!),
-                this.renderUserCredentials(credTypeMap, credType),
+                this.renderCredTypeTitle(credTypeMap.get(credType)!, keycloak!),
+                this.renderUserCredentials(credTypeMap, credType, keycloak!),
                 this.renderEmptyRow(credTypeMap.get(credType)!.type, index === typeArray.length - 1)
             ]))
-        }</>)
+            }</>
+        )}
+        </KeycloakContext.Consumer>
+        );
     }
 
     private renderEmptyRow(type: string, isLast: boolean): React.ReactNode {
@@ -175,7 +188,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         )
     }
 
-    private renderUserCredentials(credTypeMap: CredTypeMap, credType: CredType): React.ReactNode {
+    private renderUserCredentials(credTypeMap: CredTypeMap, credType: CredType, keycloak: KeycloakService): React.ReactNode {
         const credContainer: CredentialContainer = credTypeMap.get(credType)!;
         const userCredentials: UserCredential[] = credContainer.userCredentials;
         const removeable: boolean = credContainer.removeable;
@@ -207,7 +220,7 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
 
         let updateAIA: AIACommand;
         if (credContainer.updateAction) {
-            updateAIA = new AIACommand(credContainer.updateAction);
+            updateAIA = new AIACommand(keycloak, credContainer.updateAction);
         }
 
         return (
@@ -239,12 +252,12 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         return credRowCells;
     }
 
-    private renderCredTypeTitle(credContainer: CredentialContainer): React.ReactNode {
+    private renderCredTypeTitle(credContainer: CredentialContainer, keycloak: KeycloakService): React.ReactNode {
         if (!credContainer.hasOwnProperty('helptext') && !credContainer.hasOwnProperty('createAction')) return;
 
         let setupAction: AIACommand;
         if (credContainer.createAction) {
-            setupAction = new AIACommand(credContainer.createAction);
+            setupAction = new AIACommand(keycloak, credContainer.createAction);
         }
         const credContainerDisplayName: string = Msg.localize(credContainer.displayName);
 

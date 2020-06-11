@@ -38,7 +38,8 @@ import { css } from '@patternfly/react-styles';
 
 import { Remove2Icon, RepositoryIcon, ShareAltIcon, EditAltIcon } from '@patternfly/react-icons';
 
-import AccountService, { HttpResponse } from '../../account-service/account.service';
+import { HttpResponse } from '../../account-service/account.service';
+import { AccountServiceContext } from '../../account-service/AccountServiceContext';
 import { PermissionRequest } from "./PermissionRequest";
 import { ShareTheResource } from "./ShareTheResource";
 import { Permission, Resource } from "./MyResourcesPage";
@@ -56,9 +57,13 @@ export interface CollapsibleResourcesTableState extends ResourcesTableState {
 }
 
 export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesTableState> {
+    static contextType = AccountServiceContext;
+    context: React.ContextType<typeof AccountServiceContext>;
 
-    public constructor(props: ResourcesTableProps) {
+    public constructor(props: ResourcesTableProps, context: React.ContextType<typeof AccountServiceContext>) {
         super(props);
+        this.context = context;
+
         this.state = {
             isRowOpen: [],
             contextOpen: [],
@@ -87,7 +92,7 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
     }
 
     private fetchPermissions(resource: Resource, row: number): void {
-        AccountService.doGet(`/resources/${resource._id}/permissions`)
+        this.context!.doGet(`/resources/${resource._id}/permissions`)
             .then((response: HttpResponse<Permission[]>) => {
                 const newPermissions: Map<number, Permission[]> = new Map(this.state.permissions);
                 newPermissions.set(row, response.data || []);
@@ -97,7 +102,7 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
 
     private removeShare(resource: Resource, row: number): Promise<void> {
         const permissions = this.state.permissions.get(row)!.map(a => ({ username: a.username, scopes: [] }));
-        return AccountService.doPut(`/resources/${resource._id}/permissions`, permissions)
+        return this.context!.doPut(`/resources/${resource._id}/permissions`, permissions)
             .then(() => {
                 ContentAlert.success(Msg.localize('unShareSuccess'));
             });

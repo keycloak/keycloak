@@ -28,7 +28,7 @@ import { OkIcon } from '@patternfly/react-icons';
 
 import { Resource, Permission, Scope } from './MyResourcesPage';
 import { Msg } from '../../widgets/Msg';
-import AccountService from '../../account-service/account.service';
+import { AccountServiceContext } from '../../account-service/AccountServiceContext';
 import { ContentAlert } from '../ContentAlert';
 import { PermissionSelect } from './PermissionSelect';
 
@@ -46,9 +46,12 @@ interface EditTheResourceState {
 
 export class EditTheResource extends React.Component<EditTheResourceProps, EditTheResourceState> {
     protected static defaultProps = { permissions: [] };
+    static contextType = AccountServiceContext;
+    context: React.ContextType<typeof AccountServiceContext>;
 
-    public constructor(props: EditTheResourceProps) {
+    public constructor(props: EditTheResourceProps, context: React.ContextType<typeof AccountServiceContext>) {
         super(props);
+        this.context = context;
 
         this.state = {
             changed: [],
@@ -77,7 +80,7 @@ export class EditTheResource extends React.Component<EditTheResourceProps, EditT
     }
 
     async savePermission(permission: Permission): Promise<void> {
-        await AccountService.doPut(`/resources/${this.props.resource._id}/permissions`, [permission]);
+        await this.context!.doPut(`/resources/${this.props.resource._id}/permissions`, [permission]);
         ContentAlert.success(Msg.localize('updateSuccess'));
     }
 

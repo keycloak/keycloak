@@ -18,20 +18,24 @@ import * as React from 'react';
 
 import {Msg} from './Msg';
 import {KeycloakService} from '../keycloak-service/keycloak.service';
+import { KeycloakContext } from '../keycloak-service/KeycloakContext';
 
 import {Button, DropdownItem} from '@patternfly/react-core';
 
-declare const baseUrl: string;
-
-function handleLogout(): void {
-    KeycloakService.Instance.logout(baseUrl);
+function handleLogout(keycloak: KeycloakService): void {
+    keycloak.logout();
 }
 
 interface LogoutProps {}
 export class LogoutButton extends React.Component<LogoutProps> {
     public render(): React.ReactNode {
         return (
-            <Button id="signOutButton" onClick={handleLogout}><Msg msgKey="doSignOut"/></Button>
+            <KeycloakContext.Consumer>
+            { keycloak => (
+                <Button id="signOutButton" onClick={() => handleLogout(keycloak!)}><Msg msgKey="doSignOut"/></Button>
+            )}
+            </KeycloakContext.Consumer>
+
         );
     }
 }
@@ -40,9 +44,13 @@ interface LogoutDropdownItemProps {}
 export class LogoutDropdownItem extends React.Component<LogoutDropdownItemProps> {
     public render(): React.ReactNode {
         return (
-            <DropdownItem id="signOutLink" key="logout" onClick={handleLogout}>
-                {Msg.localize('doSignOut')}
-            </DropdownItem>
+            <KeycloakContext.Consumer>
+                { keycloak => (
+                <DropdownItem id="signOutLink" key="logout" onClick={() => handleLogout(keycloak!)}>
+                    {Msg.localize('doSignOut')}
+                </DropdownItem>
+                )}
+            </KeycloakContext.Consumer>
         );
     }
 }

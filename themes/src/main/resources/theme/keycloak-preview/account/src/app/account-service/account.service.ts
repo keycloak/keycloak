@@ -38,11 +38,14 @@ export class AccountServiceError extends Error {
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2018 Red Hat Inc.
  */
-class AccountServiceClient {
-    private kcSvc: KeycloakService = KeycloakService.Instance;
-    private accountUrl: string = this.kcSvc.authServerUrl() + 'realms/' + this.kcSvc.realm() + '/account';
+export class AccountServiceClient {
+    private kcSvc: KeycloakService;
+    private accountUrl: string;
 
-    constructor() {}
+    public constructor(keycloakService: KeycloakService) {
+        this.kcSvc = keycloakService;
+        this.accountUrl = this.kcSvc.authServerUrl() + 'realms/' + this.kcSvc.realm() + '/account';
+    }
 
     public async doGet<T>(endpoint: string,
                           config?: RequestInitWithParams): Promise<HttpResponse<T>> {
@@ -129,9 +132,6 @@ class AccountServiceClient {
     }
 
 }
-
-const AccountService: AccountServiceClient = new AccountServiceClient();
-export default AccountService;
 
 window.addEventListener("unhandledrejection", (event: PromiseRejectionEvent) => {
     event.promise.catch(error => {

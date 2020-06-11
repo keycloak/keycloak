@@ -50,7 +50,8 @@ import {
     UnlinkIcon
 } from '@patternfly/react-icons';
 
-import AccountService, {HttpResponse} from '../../account-service/account.service';
+import {HttpResponse} from '../../account-service/account.service';
+import {AccountServiceContext} from '../../account-service/AccountServiceContext';
 import {Msg} from '../../widgets/Msg';
 import {ContentPage} from '../ContentPage';
 import {createRedirect} from '../../util/RedirectUri';
@@ -76,9 +77,13 @@ interface LinkedAccountsPageState {
  * @author Stan Silvert
  */
 class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, LinkedAccountsPageState> {
+    static contextType = AccountServiceContext;
+    context: React.ContextType<typeof AccountServiceContext>;
 
-    public constructor(props: LinkedAccountsPageProps) {
+    public constructor(props: LinkedAccountsPageProps, context: React.ContextType<typeof AccountServiceContext>) {
         super(props);
+        this.context = context;
+
         this.state = {
             linkedAccounts: [],
             unLinkedAccounts: []
@@ -88,7 +93,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
     }
 
     private getLinkedAccounts(): void {
-        AccountService.doGet<LinkedAccount[]>("/linked-accounts")
+        this.context!.doGet<LinkedAccount[]>("/linked-accounts")
             .then((response: HttpResponse<LinkedAccount[]>) => {
                 console.log({response});
                 const linkedAccounts = response.data!.filter((account) => account.connected);
@@ -100,7 +105,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
     private unLinkAccount(account: LinkedAccount): void {
         const url = '/linked-accounts/' + account.providerName;
 
-        AccountService.doDelete<void>(url)
+        this.context!.doDelete<void>(url)
             .then((response: HttpResponse<void>) => {
                 console.log({response});
                 this.getLinkedAccounts();
@@ -112,7 +117,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
 
         const redirectUri: string = createRedirect(this.props.location.pathname);
 
-        AccountService.doGet<{accountLinkUri: string}>(url, { params: {providerId: account.providerName, redirectUri}})
+        this.context!.doGet<{accountLinkUri: string}>(url, { params: {providerId: account.providerName, redirectUri}})
             .then((response: HttpResponse<{accountLinkUri: string}>) => {
                 console.log({response});
                 window.location.href = response.data!.accountLinkUri;
