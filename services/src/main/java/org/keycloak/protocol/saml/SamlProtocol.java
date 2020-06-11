@@ -432,7 +432,7 @@ public class SamlProtocol implements LoginProtocol {
             if (mapper instanceof SAMLLoginResponseMapper) {
                 loginResponseMappers.add(new ProtocolMapperProcessor<SAMLLoginResponseMapper>((SAMLLoginResponseMapper) mapper, mapping));
             }
-            if (mapper instanceof SAMLRoleListMapper) {
+            if (mapper instanceof SAMLRoleListMapper && roleListMapper == null) {
                 roleListMapper = new ProtocolMapperProcessor<SAMLRoleListMapper>((SAMLRoleListMapper) mapper, mapping);
             }
         }
