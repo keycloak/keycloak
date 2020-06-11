@@ -85,6 +85,11 @@ Examples:
 * -Dkeycloak.import=/tmp/realm1.json
 * -Dkeycloak.import=/tmp/realm1.json,/tmp/realm2.json
 
+NOTE: The mechanism based on `keycloak.import` cannot be used together with the other mechanism based on `keycloak.migration.X` properties.
+If it is used together, the `keycloak.import` will be ignored. The `keycloak.import` mechanism always ignores the realms, which already
+exist in {project_name}. Generally the `keycloak.import` mechanism can be convenient for some development purposes, but if more
+flexibility is needed, we recommend that you stick with the mechanism based on `keycloak.migration.X` properties.
+
 === Admin console export/import
 
 Import of most resources can be performed from the admin console as well as export of most resources.
