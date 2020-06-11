@@ -31,7 +31,8 @@ import {
 import { InfoAltIcon, CheckIcon, BuilderImageIcon } from '@patternfly/react-icons';
 import { ContentPage } from '../ContentPage';
 import { ContinueCancelModal } from '../../widgets/ContinueCancelModal';
-import AccountService, {HttpResponse} from '../../account-service/account.service';
+import { HttpResponse } from '../../account-service/account.service';
+import { AccountServiceContext } from '../../account-service/AccountServiceContext';
 import { Msg } from '../../widgets/Msg';
 
 declare const locale: string;
@@ -69,9 +70,12 @@ interface Application {
 }
 
 export class ApplicationsPage extends React.Component<ApplicationsPageProps, ApplicationsPageState> {
+  static contextType = AccountServiceContext;
+  context: React.ContextType<typeof AccountServiceContext>;
 
-  public constructor(props: ApplicationsPageProps) {
+  public constructor(props: ApplicationsPageProps, context: React.ContextType<typeof AccountServiceContext>) {
     super(props);
+    this.context = context;
     this.state = {
       isRowOpen: [],
       applications: []
@@ -81,7 +85,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
   }
 
   private removeConsent = (clientId: string) => {
-    AccountService.doDelete("/applications/" + clientId + "/consent")
+    this.context!.doDelete("/applications/" + clientId + "/consent")
       .then(() => {
         this.fetchApplications();
       });
@@ -94,7 +98,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
   };
 
   private fetchApplications(): void {
-    AccountService.doGet<Application[]>("/applications")
+    this.context!.doGet<Application[]>("/applications")
       .then((response: HttpResponse<Application[]>) => {
         const applications = response.data || [];
         this.setState({

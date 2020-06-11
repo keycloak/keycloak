@@ -16,7 +16,8 @@
 
 import * as React from 'react';
 
-import AccountService, {HttpResponse} from '../../account-service/account.service';
+import {HttpResponse} from '../../account-service/account.service';
+import { AccountServiceContext } from '../../account-service/AccountServiceContext';
 import TimeUtil from '../../util/TimeUtil';
 
 import {
@@ -46,11 +47,11 @@ import {
 
 import {Msg} from '../../widgets/Msg';
 import {ContinueCancelModal} from '../../widgets/ContinueCancelModal';
-import {KeycloakService} from '../../keycloak-service/keycloak.service';
+import { KeycloakService } from '../../keycloak-service/keycloak.service';
+import { KeycloakContext } from '../../keycloak-service/KeycloakContext';
+
 import {ContentPage} from '../ContentPage';
 import { ContentAlert } from '../ContentAlert';
-
-declare const baseUrl: string;
 
 export interface DeviceActivityPageProps {
 }
@@ -91,9 +92,12 @@ interface Client {
  * @author Stan Silvert ssilvert@redhat.com (C) 2019 Red Hat Inc.
  */
 export class DeviceActivityPage extends React.Component<DeviceActivityPageProps, DeviceActivityPageState> {
+    static contextType = AccountServiceContext;
+    context: React.ContextType<typeof AccountServiceContext>;
 
-    public constructor(props: DeviceActivityPageProps) {
+    public constructor(props: DeviceActivityPageProps, context: React.ContextType<typeof AccountServiceContext>) {
         super(props);
+        this.context = context;
 
         this.state = {
           devices: []
@@ -102,15 +106,15 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
         this.fetchDevices();
     }
 
-    private signOutAll = () => {
-      AccountService.doDelete("/sessions")
+    private signOutAll = (keycloakService: KeycloakService) => {
+      this.context!.doDelete("/sessions")
         .then( () => {
-          KeycloakService.Instance.logout(baseUrl);
+          keycloakService.logout();
         });
     }
 
     private signOutSession = (device: Device, session: Session) => {
-      AccountService.doDelete("/sessions/" + session.id)
+      this.context!.doDelete("/sessions/" + session.id)
           .then (() => {
             this.fetchDevices();
             ContentAlert.success('signedOutSession', [session.browser, device.os]);
@@ -118,7 +122,7 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
     }
 
     private fetchDevices(): void {
-      AccountService.doGet<Device[]>("/sessions/devices")
+      this.context!.doGet<Device[]>("/sessions/devices")
           .then((response: HttpResponse<Device[]>) => {
             console.log({response});
 
@@ -232,16 +236,20 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
                                       </p>
                                   </div>
                                 </DataListCell>,
-                                <DataListCell key='signOutAllButton' width={1}>
-                                  {this.isShowSignOutAll(this.state.devices) &&
-                                    <ContinueCancelModal buttonTitle='signOutAllDevices'
-                                                  buttonId='sign-out-all'
-                                                  modalTitle='signOutAllDevices'
-                                                  modalMessage='signOutAllDevicesWarning'
-                                                  onContinue={this.signOutAll}
-                                    />
-                                  }
-                                </DataListCell>
+                                <KeycloakContext.Consumer>
+                                { (keycloak: KeycloakService) => (
+                                  <DataListCell key='signOutAllButton' width={1}>
+                                    {this.isShowSignOutAll(this.state.devices) &&
+                                      <ContinueCancelModal buttonTitle='signOutAllDevices'
+                                                    buttonId='sign-out-all'
+                                                    modalTitle='signOutAllDevices'
+                                                    modalMessage='signOutAllDevicesWarning'
+                                                    onContinue={() => this.signOutAll(keycloak)}
+                                      />
+                                    }
+                                  </DataListCell>
+                                )}
+                                </KeycloakContext.Consumer>
                               ]}
                           />
                       </DataListItemRow>

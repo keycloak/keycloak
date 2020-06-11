@@ -31,7 +31,8 @@ import {
 } from '@patternfly/react-core';
 import { UserCheckIcon } from '@patternfly/react-icons';
 
-import AccountService, {HttpResponse} from '../../account-service/account.service';
+import { HttpResponse } from '../../account-service/account.service';
+import { AccountServiceContext } from '../../account-service/AccountServiceContext';
 import { Msg } from '../../widgets/Msg';
 import { ContentAlert } from '../ContentAlert';
 import { Resource, Scope, Permission } from './MyResourcesPage';
@@ -48,10 +49,13 @@ interface PermissionRequestState {
 
 export class PermissionRequest extends React.Component<PermissionRequestProps, PermissionRequestState> {
     protected static defaultProps = { permissions: [], row: 0 };
+    static contextType = AccountServiceContext;
+    context: React.ContextType<typeof AccountServiceContext>;
 
-    public constructor(props: PermissionRequestProps) {
+    public constructor(props: PermissionRequestProps, context: React.ContextType<typeof AccountServiceContext>) {
         super(props);
-
+        this.context = context;
+    
         this.state = {
             isOpen: false,
         };
@@ -71,7 +75,7 @@ export class PermissionRequest extends React.Component<PermissionRequestProps, P
         const id = this.props.resource._id
         this.handleToggleDialog();
 
-        const permissionsRequest: HttpResponse<Permission[]> = await AccountService.doGet(`/resources/${id}/permissions`);
+        const permissionsRequest: HttpResponse<Permission[]> = await this.context!.doGet(`/resources/${id}/permissions`);
         const permissions = permissionsRequest.data || [];
         const foundPermission = permissions.find(p => p.username === username);
         const userScopes = foundPermission ? (foundPermission.scopes as Scope[]): [];
@@ -79,7 +83,7 @@ export class PermissionRequest extends React.Component<PermissionRequestProps, P
             userScopes.push(...scopes);
         }
         try {
-            await AccountService.doPut(`/resources/${id}/permissions`, [{ username: username, scopes: userScopes }] )
+            await this.context!.doPut(`/resources/${id}/permissions`, [{ username: username, scopes: userScopes }] )
             ContentAlert.success(Msg.localize('shareSuccess'));
             this.props.onClose();
         } catch (e) {

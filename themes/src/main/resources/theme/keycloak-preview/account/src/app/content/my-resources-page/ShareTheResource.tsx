@@ -31,7 +31,7 @@ import {
     TextInput
 } from '@patternfly/react-core';
 
-import AccountService from '../../account-service/account.service';
+import { AccountServiceContext } from '../../account-service/AccountServiceContext';
 import { Resource, Permission, Scope } from './MyResourcesPage';
 import { Msg } from '../../widgets/Msg';
 import {ContentAlert} from '../ContentAlert';
@@ -58,10 +58,13 @@ interface ShareTheResourceState {
  */
 export class ShareTheResource extends React.Component<ShareTheResourceProps, ShareTheResourceState> {
     protected static defaultProps = {permissions: []};
+    static contextType = AccountServiceContext;
+    context: React.ContextType<typeof AccountServiceContext>;
 
-    public constructor(props: ShareTheResourceProps) {
+    public constructor(props: ShareTheResourceProps, context: React.ContextType<typeof AccountServiceContext>) {
         super(props);
-
+        this.context = context;
+    
         this.state = {
             isOpen: false,
             permissionsSelected: [],
@@ -96,7 +99,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
 
         this.handleToggleDialog();
 
-        AccountService.doPut(`/resources/${rscId}/permissions`, permissions)
+        this.context!.doPut(`/resources/${rscId}/permissions`, permissions)
             .then(() => {
                 ContentAlert.success('shareSuccess');
                 this.props.onClose();
@@ -119,7 +122,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
 
     private handleAddUsername = async () => {
         if ((this.state.usernameInput !== '') && (!this.state.usernames.includes(this.state.usernameInput))) {
-            const response = await AccountService.doGet<{username: string}>(`/resources/${this.props.resource._id}/user`, { params: { value: this.state.usernameInput } });
+            const response = await this.context!.doGet<{username: string}>(`/resources/${this.props.resource._id}/user`, { params: { value: this.state.usernameInput } });
             if (response.data && response.data.username) {
                 this.setState({ usernameInput: '', usernames: [...this.state.usernames, this.state.usernameInput] });
             } else {

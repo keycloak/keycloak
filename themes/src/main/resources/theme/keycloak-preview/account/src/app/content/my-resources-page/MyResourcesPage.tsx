@@ -20,7 +20,8 @@ import parse from '../../util/ParseLink';
 
 import { Button, Level, LevelItem, Stack, StackItem, Tab, Tabs, TextInput } from '@patternfly/react-core';
 
-import AccountService, {HttpResponse} from '../../account-service/account.service';
+import {HttpResponse} from '../../account-service/account.service';
+import {AccountServiceContext} from '../../account-service/AccountServiceContext';
 
 import {ResourcesTable} from './ResourcesTable';
 import {ContentPage} from '../ContentPage';
@@ -83,11 +84,15 @@ const MY_RESOURCES_TAB = 0;
 const SHARED_WITH_ME_TAB = 1;
 
 export class MyResourcesPage extends React.Component<MyResourcesPageProps, MyResourcesPageState> {
+    static contextType = AccountServiceContext;
+    context: React.ContextType<typeof AccountServiceContext>;
     private first = 0;
     private max = 5;
 
-    public constructor(props: MyResourcesPageProps) {
+    public constructor(props: MyResourcesPageProps, context: React.ContextType<typeof AccountServiceContext>) {
         super(props);
+        this.context = context;
+
         this.state = {
             activeTabKey: MY_RESOURCES_TAB,
             nameFilter: '',
@@ -136,7 +141,7 @@ export class MyResourcesPage extends React.Component<MyResourcesPageProps, MyRes
     }
 
     private fetchResources(url: string, extraParams?: Record<string, string|number>): void {
-        AccountService.doGet<Resource[]>(url, {params: extraParams})
+        this.context!.doGet<Resource[]>(url, {params: extraParams})
             .then((response: HttpResponse<Resource[]>) => {
                 const resources: Resource[] = response.data || [];
                 resources.forEach((resource: Resource) => resource.shareRequests = []);
@@ -163,7 +168,7 @@ export class MyResourcesPage extends React.Component<MyResourcesPageProps, MyRes
     }
 
     private fetchShareRequests(resource: Resource): void {
-        AccountService.doGet('/resources/' + resource._id + '/permissions/requests')
+        this.context!.doGet('/resources/' + resource._id + '/permissions/requests')
             .then((response: HttpResponse<Permission[]>) => {
                 resource.shareRequests = response.data || [];
                 if (resource.shareRequests.length > 0) {
@@ -173,7 +178,7 @@ export class MyResourcesPage extends React.Component<MyResourcesPageProps, MyRes
     }
 
     private fetchPending = async () => {
-        const response: HttpResponse<Resource[]> = await AccountService.doGet(`/resources/pending-requests`);
+        const response: HttpResponse<Resource[]> = await this.context!.doGet(`/resources/pending-requests`);
         const resources: Resource[] = response.data || [];
         resources.forEach((pendingRequest: Resource) => {
             this.state.sharedWithMe.data.forEach(resource => {

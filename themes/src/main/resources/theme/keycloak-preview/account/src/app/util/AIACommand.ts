@@ -21,10 +21,10 @@ import {KeycloakService} from '../keycloak-service/keycloak.service';
  */
 export class AIACommand {
 
-    constructor(private action: string) {}
+    constructor(private keycloak: KeycloakService, private action: string) {}
 
-    public execute(): void  {
-        KeycloakService.Instance.login({
+    public execute(): void {
+        this.keycloak.login({
             action: this.action,
         })
 

@@ -16,7 +16,8 @@
 import * as React from 'react';
 import { ActionGroup, Button, Form, FormGroup, TextInput } from '@patternfly/react-core';
 
-import AccountService, {HttpResponse} from '../../account-service/account.service';
+import { HttpResponse, AccountServiceClient } from '../../account-service/account.service';
+import { AccountServiceContext } from '../../account-service/AccountServiceContext';
 import { Features } from '../../widgets/features';
 import { Msg } from '../../widgets/Msg';
 import { ContentPage } from '../ContentPage';
@@ -46,6 +47,8 @@ interface AccountPageState {
  * @author Stan Silvert ssilvert@redhat.com (C) 2018 Red Hat Inc.
  */
 export class AccountPage extends React.Component<AccountPageProps, AccountPageState> {
+    static contextType = AccountServiceContext;
+    context: React.ContextType<typeof AccountServiceContext>;
     private isRegistrationEmailAsUsername: boolean = features.isRegistrationEmailAsUsername;
     private isEditUserNameAllowed: boolean = features.isEditUserNameAllowed;
     private readonly DEFAULT_STATE: AccountPageState = {
@@ -66,13 +69,15 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
 
     public state: AccountPageState = this.DEFAULT_STATE;
 
-    public constructor(props: AccountPageProps) {
+    public constructor(props: AccountPageProps, context: React.ContextType<typeof AccountServiceContext>) {
         super(props);
+        this.context = context;
+
         this.fetchPersonalInfo();
     }
 
     private fetchPersonalInfo(): void {
-        AccountService.doGet<FormFields>("/")
+        this.context!.doGet<FormFields>("/")
             .then((response: HttpResponse<FormFields>) => {
                 this.setState(this.DEFAULT_STATE);
                 const formFields = response.data;
@@ -104,7 +109,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
         const isValid = form.checkValidity();
         if (isValid) {
             const reqData: FormFields = { ...this.state.formFields };
-            AccountService.doPost<void>("/", reqData)
+            this.context!.doPost<void>("/", reqData)
                 .then(() => {
                     ContentAlert.success('accountUpdatedMessage');
                     if (locale !== this.state.formFields.attributes!.locale![0]) {

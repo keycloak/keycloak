@@ -31,6 +31,8 @@ import {
   EmptyStateBody
 } from '@patternfly/react-core';
 import { PassportIcon } from '@patternfly/react-icons';
+import { KeycloakService } from '../../keycloak-service/keycloak.service';
+import { KeycloakContext } from '../../keycloak-service/KeycloakContext';
 
 // Note: This class demonstrates two features of the ContentPages framework:
 // 1) The PageDef is available as a React property.
@@ -57,8 +59,8 @@ class ApplicationInitiatedActionPage extends React.Component<AppInitiatedActionP
         super(props);
     }
 
-    private handleClick = (): void => {
-        new AIACommand(this.props.pageDef.kcAction).execute();
+    private handleClick = (keycloak: KeycloakService): void => {
+        new AIACommand(keycloak, this.props.pageDef.kcAction).execute();
     }
 
     public render(): React.ReactNode {
@@ -71,9 +73,14 @@ class ApplicationInitiatedActionPage extends React.Component<AppInitiatedActionP
                 <EmptyStateBody>
                   <Msg msgKey="actionRequiresIDP"/>
                 </EmptyStateBody>
-                <Button variant="primary"
-                        onClick={this.handleClick}
-                        target="_blank"><Msg msgKey="continue"/></Button>
+                <KeycloakContext.Consumer>
+                { keycloak => (
+                    <Button variant="primary"
+                            onClick={() => this.handleClick(keycloak!)}
+                            target="_blank"><Msg msgKey="continue"/></Button>
+                )}
+                </KeycloakContext.Consumer>
+            
             </EmptyState>
         );
     }
