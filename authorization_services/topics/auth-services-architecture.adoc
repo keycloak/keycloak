@@ -65,7 +65,7 @@ image:images/policy-mgmt-process.png[alt="Permission and Policy Management Overv
 
 Policies define the conditions that must be satisfied to access or perform operations on something (resource or scope), but they are not tied to what they are protecting. They are generic and can be reused to build permissions or even more complex policies.
 
-For instance,to allow access to a group of resources only for users granted with a role "User Premium", you can use RBAC (Role-based Access Control).
+For instance, to allow access to a group of resources only for users granted with a role "User Premium", you can use RBAC (Role-based Access Control).
 
 {project_name} provides a few built-in policy types (and their respective policy providers) covering the most common access control mechanisms. You can even create policies based on rules written using JavaScript.
 
