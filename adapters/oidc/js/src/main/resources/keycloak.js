@@ -1410,32 +1410,46 @@
                     logout: function(options) {
                         var promise = createPromise();
 
+                        var cordovaOptions = createCordovaOptions(options);
                         var logoutUrl = kc.createLogoutUrl(options);
-                        var ref = cordovaOpenWindowWrapper(logoutUrl, '_blank', 'location=no,hidden=yes');
+                        var ref = cordovaOpenWindowWrapper(logoutUrl, '_blank', cordovaOptions);
 
-                        var error;
+                        var closed = false;
+                        var closeBrowser = function() {
+                            closed = true;
+                            ref.close();
+                        };
+
+                        var success = function() {
+                            // no automatic re-login if we're doing a logout
+                            if (kc.token) {
+                                setToken(null, null, null);
+                            }
+                            kc.onAuthLogout && kc.onAuthLogout();
+                            promise.setSuccess();
+                        }
 
                         ref.addEventListener('loadstart', function(event) {
                             if (event.url.indexOf('http://localhost') == 0) {
-                                ref.close();
+                                success();
+                                closeBrowser();
                             }
                         });
 
                         ref.addEventListener('loaderror', function(event) {
-                            if (event.url.indexOf('http://localhost') == 0) {
-                                ref.close();
-                            } else {
-                                error = true;
-                                ref.close();
+                            if (!closed) {
+                                if (event.url.indexOf('http://localhost') == 0) {
+                                    success();
+                                } else {
+                                    promise.setError();
+                                }
+                                closeBrowser();
                             }
                         });
 
                         ref.addEventListener('exit', function(event) {
-                            if (error) {
+                            if (!closed) {
                                 promise.setError();
-                            } else {
-                                kc.clearToken();
-                                promise.setSuccess();
                             }
                         });
 
