@@ -1410,23 +1410,27 @@
                     logout: function(options) {
                         var promise = createPromise();
 
+                        var cordovaOptions = createCordovaOptions(options);
                         var logoutUrl = kc.createLogoutUrl(options);
-                        var ref = cordovaOpenWindowWrapper(logoutUrl, '_blank', 'location=no,hidden=yes');
+                        var ref = cordovaOpenWindowWrapper(logoutUrl, '_blank', cordovaOptions);
 
                         var error;
 
                         ref.addEventListener('loadstart', function(event) {
                             if (event.url.indexOf('http://localhost') == 0) {
                                 ref.close();
+                                promise.setSuccess();
                             }
                         });
 
                         ref.addEventListener('loaderror', function(event) {
                             if (event.url.indexOf('http://localhost') == 0) {
                                 ref.close();
+                                promise.setSuccess();
                             } else {
                                 error = true;
                                 ref.close();
+                                promise.setError();
                             }
                         });
 
