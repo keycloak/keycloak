@@ -25,6 +25,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -56,9 +62,7 @@ public abstract class AbstractLoginProtocolFactory implements LoginProtocolFacto
 
         // Create default client scopes for realm built-in clients too
         if (addScopesToExistingClients) {
-            for (ClientModel client : newRealm.getClients()) {
-                addDefaultClientScopes(newRealm, client);
-            }
+            addDefaultClientScopes(newRealm, newRealm.getClients());
         }
     }
 
@@ -69,15 +73,22 @@ public abstract class AbstractLoginProtocolFactory implements LoginProtocolFacto
 
 
     protected void addDefaultClientScopes(RealmModel realm, ClientModel newClient) {
-        for (ClientScopeModel clientScope : realm.getDefaultClientScopes(true)) {
-            if (getId().equals(clientScope.getProtocol())) {
-                newClient.addClientScope(clientScope, true);
-            }
+        addDefaultClientScopes(realm, Arrays.asList(newClient));
+    }
+
+    protected void addDefaultClientScopes(RealmModel realm, List<ClientModel> newClients) {
+        Set<ClientScopeModel> defaultClientScopes = realm.getDefaultClientScopes(true).stream()
+                .filter(clientScope -> getId().equals(clientScope.getProtocol()))
+                .collect(Collectors.toSet());
+        for (ClientModel newClient : newClients) {
+            newClient.addClientScopes(defaultClientScopes, true);
         }
-        for (ClientScopeModel clientScope : realm.getDefaultClientScopes(false)) {
-            if (getId().equals(clientScope.getProtocol())) {
-                newClient.addClientScope(clientScope, false);
-            }
+
+        Set<ClientScopeModel> nonDefaultClientScopes = realm.getDefaultClientScopes(false).stream()
+                .filter(clientScope -> getId().equals(clientScope.getProtocol()))
+                .collect(Collectors.toSet());
+        for (ClientModel newClient : newClients) {
+            newClient.addClientScopes(nonDefaultClientScopes, false);
         }
     }
 

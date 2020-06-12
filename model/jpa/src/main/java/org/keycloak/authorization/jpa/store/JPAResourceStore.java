@@ -24,7 +24,6 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 
 import javax.persistence.EntityManager;
 import javax.persistence.FlushModeType;
@@ -36,7 +35,10 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -150,7 +152,7 @@ public class JPAResourceStore implements ResourceStore {
             queryName = pagination ? "findAnyResourceIdByOwnerOrdered" : "findAnyResourceIdByOwner";
         }
 
-        TypedQuery<ResourceEntity> query = entityManager.createNamedQuery(queryName, ResourceEntity.class);
+        TypedQuery<String> query = entityManager.createNamedQuery(queryName, String.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("owner", ownerId);
@@ -165,10 +167,10 @@ public class JPAResourceStore implements ResourceStore {
         }
 
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
-        List<ResourceEntity> result = query.getResultList();
+        List<String> result = query.getResultList();
 
-        for (ResourceEntity entity : result) {
-            Resource cached = resourceStore.findById(entity.getId(), resourceServerId);
+        for (String entity : result) {
+            Resource cached = resourceStore.findById(entity, resourceServerId);
 
             if (cached != null) {
                 consumer.accept(cached);

@@ -174,7 +174,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             user.setAttributes(originalAttributes);
             SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
             System.out.println(response.asString());
-            assertEquals(200, response.getStatus());
+            assertEquals(204, response.getStatus());
         }
 
     }
@@ -198,13 +198,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         } finally {
             user.setFirstName(originalFirstname);
             int status = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asStatus();
-            assertEquals(200, status);
+            assertEquals(204, status);
         }
     }
 
     private UserRepresentation updateAndGet(UserRepresentation user) throws IOException {
         int status = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asStatus();
-        assertEquals(200, status);
+        assertEquals(204, status);
         return SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
     }
 
@@ -270,7 +270,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         events.poll();
 
         //Change the password
-        updatePassword("password", "Str0ng3rP4ssw0rd", 200);
+        updatePassword("password", "Str0ng3rP4ssw0rd", 204);
 
         //Get the new value for lastUpdate
         AccountCredentialResource.PasswordDetails updatedDetails = getPasswordDetails();
@@ -285,17 +285,17 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertEquals(updatedDetails.getLastUpdate(), finalDetails.getLastUpdate());
 
         //Change the password back
-        updatePassword("Str0ng3rP4ssw0rd", "password", 200);
+        updatePassword("Str0ng3rP4ssw0rd", "password", 204);
    }
 
     @Test
     public void testPasswordConfirmation() throws IOException {
         updatePassword("password", "Str0ng3rP4ssw0rd", "confirmationDoesNotMatch", 400);
 
-        updatePassword("password", "Str0ng3rP4ssw0rd", "Str0ng3rP4ssw0rd", 200);
+        updatePassword("password", "Str0ng3rP4ssw0rd", "Str0ng3rP4ssw0rd", 204);
 
         //Change the password back
-        updatePassword("Str0ng3rP4ssw0rd", "password", 200);
+        updatePassword("Str0ng3rP4ssw0rd", "password", 204);
     }
 
     private AccountCredentialResource.PasswordDetails getPasswordDetails() throws IOException {
@@ -1090,14 +1090,14 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .header("Accept", "application/json")
                 .auth(token.getToken())
                 .asResponse();
-        assertEquals(202, response.getStatus());
+        assertEquals(204, response.getStatus());
 
         response = SimpleHttp
                 .doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
                 .header("Accept", "application/json")
                 .auth(token.getToken())
                 .asResponse();
-        assertEquals(202, response.getStatus());
+        assertEquals(204, response.getStatus());
     }
 
     @Test

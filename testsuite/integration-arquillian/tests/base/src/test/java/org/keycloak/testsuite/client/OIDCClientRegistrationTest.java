@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
@@ -348,6 +349,37 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void testTokenEndpointSigningAlg() throws Exception {
+        OIDCClientRepresentation response = null;
+        OIDCClientRepresentation updated = null;
+        try {
+            OIDCClientRepresentation clientRep = createRep();
+            clientRep.setTokenEndpointAuthSigningAlg(Algorithm.ES256.toString());
+
+            response = reg.oidc().create(clientRep);
+            Assert.assertEquals(Algorithm.ES256.toString(), response.getTokenEndpointAuthSigningAlg());
+
+            ClientRepresentation kcClient = getClient(response.getClientId());
+            OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+            Assert.assertEquals(Algorithm.ES256.toString(), config.getTokenEndpointAuthSigningAlg());
+
+            reg.auth(Auth.token(response));
+            response.setTokenEndpointAuthSigningAlg(null);
+            updated = reg.oidc().update(response);
+            Assert.assertEquals(null, response.getTokenEndpointAuthSigningAlg());
+
+            kcClient = getClient(updated.getClientId());
+            config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+            Assert.assertEquals(null, config.getTokenEndpointAuthSigningAlg());
+        } finally {
+            // revert
+            reg.auth(Auth.token(updated));
+            updated.setTokenEndpointAuthSigningAlg(null);
+            reg.oidc().update(updated);
+        }
+    }
+
+    @Test
     public void testOIDCEndpointCreateWithSamlClient() throws Exception {
         ClientsResource clientsResource = adminClient.realm(TEST).clients();
         ClientRepresentation samlClient = clientsResource.findByClientId("saml-client").get(0);
@@ -389,6 +421,47 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         // revert client
         samlClient.setProtocol("openid-connect");
         clientsResource.get(samlClient.getId()).update(samlClient);
+    }
+
+    @Test
+    public void testTlsClientAuthSubjectDn() throws Exception {
+        OIDCClientRepresentation response = null;
+        OIDCClientRepresentation updated = null;
+        try {
+             // create (no specification)
+             OIDCClientRepresentation clientRep = createRep();
+             clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.TLS_CLIENT_AUTH);
+             clientRep.setTlsClientAuthSubjectDn("Ein");
+
+             response = reg.oidc().create(clientRep);
+             Assert.assertEquals(OIDCLoginProtocol.TLS_CLIENT_AUTH, response.getTokenEndpointAuthMethod());
+             Assert.assertEquals("Ein", response.getTlsClientAuthSubjectDn());
+
+             // Test Keycloak representation
+             ClientRepresentation kcClient = getClient(response.getClientId());
+             OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+             Assert.assertEquals(X509ClientAuthenticator.PROVIDER_ID, kcClient.getClientAuthenticatorType());
+             Assert.assertEquals("Ein", config.getTlsClientAuthSubjectDn());
+
+             // update
+             reg.auth(Auth.token(response));
+             response.setTlsClientAuthSubjectDn("(.*?)(?:$)");
+             updated = reg.oidc().update(response);
+             Assert.assertEquals(OIDCLoginProtocol.TLS_CLIENT_AUTH, updated.getTokenEndpointAuthMethod());
+             Assert.assertEquals("(.*?)(?:$)", updated.getTlsClientAuthSubjectDn());
+
+             // Test Keycloak representation
+             kcClient = getClient(updated.getClientId());
+             config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+             Assert.assertEquals(X509ClientAuthenticator.PROVIDER_ID, kcClient.getClientAuthenticatorType());
+             Assert.assertEquals("(.*?)(?:$)", config.getTlsClientAuthSubjectDn());
+        } finally {
+            // revert
+            reg.auth(Auth.token(updated));
+            updated.setTokenEndpointAuthMethod(null);
+            updated.setTlsClientAuthSubjectDn(null);
+            reg.oidc().update(updated);
+        }
     }
 
     private ClientRepresentation getKeycloakClient(String clientId) {

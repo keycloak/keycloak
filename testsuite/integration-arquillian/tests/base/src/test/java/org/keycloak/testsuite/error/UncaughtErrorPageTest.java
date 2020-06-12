@@ -13,6 +13,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.StreamUtil;
+import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -20,6 +21,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -29,6 +31,7 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -113,6 +116,27 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
 
         assertTrue(errorPage.isCurrent());
         assertEquals("An internal server error has occurred", errorPage.getError());
+    }
+
+    @Test
+    @UncaughtServerErrorExpected
+    public void uncaughtErrorHeaders() throws IOException {
+        URI uri = suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/realms/master/testing/uncaught-error").build();
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            SimpleHttp.Response response = SimpleHttp.doGet(uri.toString(), client).header("Accept", MediaType.TEXT_HTML_UTF_8).asResponse();
+
+            for (Map.Entry<String, String> e : BrowserSecurityHeaders.headerAttributeMap.entrySet()) {
+                String header = e.getValue();
+                String expectedValue = BrowserSecurityHeaders.defaultHeaders.get(e.getKey());
+
+                if (expectedValue == null || expectedValue.isEmpty()) {
+                    assertNull(response.getFirstHeader(header));
+                } else {
+                    assertEquals(expectedValue, response.getFirstHeader(header));
+                }
+            }
+        }
     }
 
     @Test

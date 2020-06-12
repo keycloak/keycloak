@@ -27,7 +27,7 @@ public class MigrationModelTest extends AbstractKeycloakTest {
     @Test
     public void test() {
         testingClient.server().run(session -> {
-            String currentVersion = Version.VERSION_KEYCLOAK.replaceAll("^(\\d(?:\\.\\d){0,2}).*$", "$1");
+            String currentVersion = Version.VERSION_KEYCLOAK.replaceAll("^(\\d+(?:\\.\\d+){0,2}).*$", "$1");
 
             JpaConnectionProvider p = session.getProvider(JpaConnectionProvider.class);
             EntityManager em = p.getEntityManager();

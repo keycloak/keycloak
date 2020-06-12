@@ -50,6 +50,28 @@ angular.element(document).ready(function () {
         req.send();
     }
 
+    function loadSelect2Localization() {
+        // 'en' is the built-in default and does not have to be loaded.
+        var supportedLocales = ['ar', 'az', 'bg', 'ca', 'cs', 'da', 'de', 'el', 'es', 'et', 'eu', 'fa', 'fi', 'fr',
+            'gl', 'he', 'hr', 'hu', 'id', 'is', 'it', 'ja', 'ka', 'ko', 'lt', 'lv', 'mk', 'ms', 'nl', 'no', 'pl',
+            'pt-BR', 'pt-PT', 'ro', 'rs', 'ru', 'sk', 'sv', 'th', 'tr', 'ug-CN', 'uk', 'vi', 'zh-CN', 'zh-TW'];
+        if (supportedLocales.indexOf(locale) == -1) return;
+        var select2JsUrl;
+        var allScriptElements = document.getElementsByTagName('script');
+        for (var i = 0, n = allScriptElements.length; i < n; i++) {
+            var src = allScriptElements[i].getAttribute('src');
+            if (src && src.match(/\/select2\/select2\.js$/)) {
+                select2JsUrl = src;
+                break;
+            }
+        }
+        if (!select2JsUrl) return;
+        var scriptElement = document.createElement('script');
+        scriptElement.src = select2JsUrl.replace(/\/select2\/select2\.js$/, '/select2/select2_locale_'+locale+'.js');
+        scriptElement.type = 'text/javascript';
+        document.getElementsByTagName('head')[0].appendChild(scriptElement);
+    }
+
     function hasAnyAccess(user) {
         return user && user['realm_access'];
     }
@@ -91,6 +113,8 @@ angular.element(document).ready(function () {
                 });
             });
         });
+
+        loadSelect2Localization();
     }).error(function () {
         window.location.reload();
     });

@@ -29,6 +29,12 @@ public class AesGcmJWEEncryptionProvider extends AesGcmEncryptionProvider {
         if (JWEConstants.A128GCM.equals(jwaAlgorithmName)) {
             expectedAesKeyLength = 16;
             expectedCEKLength = 16;
+        } else if (JWEConstants.A192GCM.equals(jwaAlgorithmName)) {
+            expectedAesKeyLength = 24;
+            expectedCEKLength = 24;
+        } else if (JWEConstants.A256GCM.equals(jwaAlgorithmName)) {
+            expectedAesKeyLength = 32;
+            expectedCEKLength = 32;
         } else {
             expectedAesKeyLength = 0;
             expectedCEKLength = 0;

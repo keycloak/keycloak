@@ -420,7 +420,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             LDAPObject group1Loaded = groupMapper.loadLDAPGroupByName("group1");
 
             // update group name and description
-            group1Loaded.setSingleAttribute(group1Loaded.getRdnAttributeName(), "group5");
+            group1Loaded.setSingleAttribute(group1Loaded.getRdnAttributeNames().get(0), "group5");
             group1Loaded.setSingleAttribute(descriptionAttrName, "group5 - description");
             LDAPTestUtils.updateLDAPGroup(session, appRealm, ctx.getLdapModel(), group1Loaded);
 

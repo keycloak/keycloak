@@ -93,6 +93,13 @@ public abstract class AbstractTestRealmKeycloakTest extends AbstractKeycloakTest
 
 
     protected IDToken sendTokenRequestAndGetIDToken(EventRepresentation loginEvent) {
+
+        OAuthClient.AccessTokenResponse response = sendTokenRequestAndGetResponse(loginEvent);
+        return oauth.verifyIDToken(response.getIdToken());
+    }
+
+    protected OAuthClient.AccessTokenResponse sendTokenRequestAndGetResponse(EventRepresentation loginEvent) {
+
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
@@ -100,14 +107,15 @@ public abstract class AbstractTestRealmKeycloakTest extends AbstractKeycloakTest
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
         Assert.assertEquals(200, response.getStatusCode());
-        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+
 
         Field eventsField = Reflections.findDeclaredField(this.getClass(), "events");
         if (eventsField != null) {
             AssertEvents events = Reflections.getFieldValue(eventsField, this, AssertEvents.class);
             events.expectCodeToToken(codeId, sessionId).assertEvent();
         }
-        return idToken;
+
+        return response;
     }
 
     /** KEYCLOAK-12065 Inherit Client Connection from parent session **/

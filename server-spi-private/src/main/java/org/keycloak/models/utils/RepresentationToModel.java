@@ -220,6 +220,16 @@ public class RepresentationToModel {
             newRealm.setOfflineSessionMaxLifespan(rep.getOfflineSessionMaxLifespan());
         else newRealm.setOfflineSessionMaxLifespan(Constants.DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN);
 
+        if (rep.getClientSessionIdleTimeout() != null)
+            newRealm.setClientSessionIdleTimeout(rep.getClientSessionIdleTimeout());
+        if (rep.getClientSessionMaxLifespan() != null)
+            newRealm.setClientSessionMaxLifespan(rep.getClientSessionMaxLifespan());
+
+        if (rep.getClientOfflineSessionIdleTimeout() != null)
+            newRealm.setClientOfflineSessionIdleTimeout(rep.getClientOfflineSessionIdleTimeout());
+        if (rep.getClientOfflineSessionMaxLifespan() != null)
+            newRealm.setClientOfflineSessionMaxLifespan(rep.getClientOfflineSessionMaxLifespan());
+
         if (rep.getAccessCodeLifespan() != null) newRealm.setAccessCodeLifespan(rep.getAccessCodeLifespan());
         else newRealm.setAccessCodeLifespan(60);
 
@@ -1109,6 +1119,14 @@ public class RepresentationToModel {
         if (rep.getOfflineSessionMaxLifespanEnabled() != null) realm.setOfflineSessionMaxLifespanEnabled(rep.getOfflineSessionMaxLifespanEnabled());
         if (rep.getOfflineSessionMaxLifespan() != null)
             realm.setOfflineSessionMaxLifespan(rep.getOfflineSessionMaxLifespan());
+        if (rep.getClientSessionIdleTimeout() != null)
+            realm.setClientSessionIdleTimeout(rep.getClientSessionIdleTimeout());
+        if (rep.getClientSessionMaxLifespan() != null)
+            realm.setClientSessionMaxLifespan(rep.getClientSessionMaxLifespan());
+        if (rep.getClientOfflineSessionIdleTimeout() != null)
+            realm.setClientOfflineSessionIdleTimeout(rep.getClientOfflineSessionIdleTimeout());
+        if (rep.getClientOfflineSessionMaxLifespan() != null)
+            realm.setClientOfflineSessionMaxLifespan(rep.getClientOfflineSessionMaxLifespan());
         if (rep.getRequiredCredentials() != null) {
             realm.updateRequiredCredentials(rep.getRequiredCredentials());
         }
@@ -2593,7 +2611,7 @@ public class RepresentationToModel {
             existing.setIconUri(resource.getIconUri());
             existing.setOwnerManagedAccess(Boolean.TRUE.equals(resource.getOwnerManagedAccess()));
             existing.updateScopes(resource.getScopes().stream()
-                    .map((ScopeRepresentation scope) -> toModel(scope, resourceServer, authorization))
+                    .map((ScopeRepresentation scope) -> toModel(scope, resourceServer, authorization, false))
                     .collect(Collectors.toSet()));
             Map<String, List<String>> attributes = resource.getAttributes();
 
@@ -2750,7 +2768,7 @@ public class RepresentationToModel {
         Set<ScopeRepresentation> scopes = resource.getScopes();
 
         if (scopes != null) {
-            model.updateScopes(scopes.stream().map((Function<ScopeRepresentation, Scope>) scope -> toModel(scope, resourceServer, authorization)).collect(Collectors.toSet()));
+            model.updateScopes(scopes.stream().map(scope -> toModel(scope, resourceServer, authorization, false)).collect(Collectors.toSet()));
         }
 
         Map<String, List<String>> attributes = resource.getAttributes();
@@ -2767,6 +2785,10 @@ public class RepresentationToModel {
     }
 
     public static Scope toModel(ScopeRepresentation scope, ResourceServer resourceServer, AuthorizationProvider authorization) {
+        return toModel(scope, resourceServer, authorization, true);
+    }
+    
+    public static Scope toModel(ScopeRepresentation scope, ResourceServer resourceServer, AuthorizationProvider authorization, boolean updateIfExists) {
         StoreFactory storeFactory = authorization.getStoreFactory();
         ScopeStore scopeStore = storeFactory.getScopeStore();
         Scope existing;
@@ -2778,9 +2800,11 @@ public class RepresentationToModel {
         }
 
         if (existing != null) {
-            existing.setName(scope.getName());
-            existing.setDisplayName(scope.getDisplayName());
-            existing.setIconUri(scope.getIconUri());
+            if (updateIfExists) {
+                existing.setName(scope.getName());
+                existing.setDisplayName(scope.getDisplayName());
+                existing.setIconUri(scope.getIconUri());
+            }
             return existing;
         }
 

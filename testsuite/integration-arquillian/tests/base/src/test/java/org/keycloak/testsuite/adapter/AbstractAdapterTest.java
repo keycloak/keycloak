@@ -198,7 +198,7 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
         if (realm.getClients() != null) {
             for (ClientRepresentation client : realm.getClients()) {
                 if (client.getProtocol() != null && client.getProtocol().equals("saml")) {
-                    log.info("Modifying attributes of SAML client: " + client.getClientId());
+                    log.debug("Modifying attributes of SAML client: " + client.getClientId());
                     for (Map.Entry<String, String> entry : client.getAttributes().entrySet()) {
                         client.getAttributes().put(entry.getKey(), entry.getValue().replaceAll(regex, replacement));
                     }
@@ -211,7 +211,7 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
         if (realm.getClients() != null) {
             for (ClientRepresentation client : realm.getClients()) {
                 if (client.getProtocol() != null && client.getProtocol().equals("saml")) {
-                    log.info("Modifying master URL of SAML client: " + client.getClientId());
+                    log.debug("Modifying master URL of SAML client: " + client.getClientId());
                     String masterUrl = client.getAdminUrl();
                     if (masterUrl == null) {
                         masterUrl = client.getBaseUrl();

@@ -196,6 +196,18 @@ public interface RealmModel extends RoleContainerModel {
     int getOfflineSessionMaxLifespan();
     void setOfflineSessionMaxLifespan(int seconds);
 
+    int getClientSessionIdleTimeout();
+    void setClientSessionIdleTimeout(int seconds);
+
+    int getClientSessionMaxLifespan();
+    void setClientSessionMaxLifespan(int seconds);
+
+    int getClientOfflineSessionIdleTimeout();
+    void setClientOfflineSessionIdleTimeout(int seconds);
+
+    int getClientOfflineSessionMaxLifespan();
+    void setClientOfflineSessionMaxLifespan(int seconds);
+
     void setAccessTokenLifespan(int seconds);
 
     int getAccessTokenLifespanForImplicitFlow();

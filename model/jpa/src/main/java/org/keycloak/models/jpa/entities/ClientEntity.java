@@ -37,10 +37,10 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
@@ -102,12 +102,12 @@ public class ClientEntity {
     @ElementCollection
     @Column(name="VALUE")
     @CollectionTable(name = "WEB_ORIGINS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
-    protected Set<String> webOrigins = new HashSet<String>();
+    protected Set<String> webOrigins;
 
     @ElementCollection
     @Column(name="VALUE")
     @CollectionTable(name = "REDIRECT_URIS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
-    protected Set<String> redirectUris = new HashSet<String>();
+    protected Set<String> redirectUris;
 
     @ElementCollection
     @Column(name="VALUE")
@@ -115,16 +115,16 @@ public class ClientEntity {
     protected Set<String> resourceKeys = new HashSet<String>();
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "client")
-    protected Collection<ClientAttributeEntity> attributes = new ArrayList<>();
+    protected Collection<ClientAttributeEntity> attributes;
 
     @ElementCollection
     @MapKeyColumn(name="BINDING_NAME")
     @Column(name="FLOW_ID", length = 4000)
     @CollectionTable(name="CLIENT_AUTH_FLOW_BINDINGS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
-    protected Map<String, String> authFlowBindings = new HashMap<String, String>();
+    protected Map<String, String> authFlowBindings;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "client")
-    Collection<ProtocolMapperEntity> protocolMappers = new ArrayList<ProtocolMapperEntity>();
+    Collection<ProtocolMapperEntity> protocolMappers;
 
     @Column(name="SURROGATE_AUTH_REQUIRED")
     private boolean surrogateAuthRequired;
@@ -161,17 +161,17 @@ public class ClientEntity {
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
     @JoinTable(name="CLIENT_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
-    Collection<RoleEntity> defaultRoles = new ArrayList<RoleEntity>();
+    Collection<RoleEntity> defaultRoles;
 
     @OneToMany(fetch = FetchType.LAZY)
     @JoinTable(name="SCOPE_MAPPING", joinColumns = { @JoinColumn(name="CLIENT_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
-    protected Set<RoleEntity> scopeMapping = new HashSet<>();
+    protected Set<RoleEntity> scopeMapping;
 
     @ElementCollection
     @MapKeyColumn(name="NAME")
     @Column(name="VALUE")
     @CollectionTable(name="CLIENT_NODE_REGISTRATIONS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
-    Map<String, Integer> registeredNodes = new HashMap<String, Integer>();
+    Map<String, Integer> registeredNodes;
 
     public RealmEntity getRealm() {
         return realm;
@@ -230,6 +230,9 @@ public class ClientEntity {
     }
 
     public Set<String> getWebOrigins() {
+        if (webOrigins == null) {
+            webOrigins = new HashSet<>();
+        }
         return webOrigins;
     }
 
@@ -238,6 +241,9 @@ public class ClientEntity {
     }
 
     public Set<String> getRedirectUris() {
+        if (redirectUris == null) {
+            redirectUris = new HashSet<>();
+        }
         return redirectUris;
     }
 
@@ -294,6 +300,9 @@ public class ClientEntity {
     }
 
     public Collection<ClientAttributeEntity> getAttributes() {
+        if (attributes == null) {
+            attributes = new LinkedList<>();
+        }
         return attributes;
     }
 
@@ -302,6 +311,9 @@ public class ClientEntity {
     }
 
     public Map<String, String> getAuthFlowBindings() {
+        if (authFlowBindings == null) {
+            authFlowBindings = new HashMap<>();
+        }
         return authFlowBindings;
     }
 
@@ -326,6 +338,9 @@ public class ClientEntity {
     }
 
     public Collection<ProtocolMapperEntity> getProtocolMappers() {
+        if (protocolMappers == null) {
+            protocolMappers = new LinkedList<>();
+        }
         return protocolMappers;
     }
 
@@ -366,6 +381,9 @@ public class ClientEntity {
     }
 
     public Collection<RoleEntity> getDefaultRoles() {
+        if (defaultRoles == null) {
+            defaultRoles = new LinkedList<>();
+        }
         return defaultRoles;
     }
 
@@ -430,6 +448,9 @@ public class ClientEntity {
     }
 
     public Map<String, Integer> getRegisteredNodes() {
+        if (registeredNodes == null) {
+            registeredNodes = new HashMap<>();
+        }
         return registeredNodes;
     }
 
@@ -438,6 +459,9 @@ public class ClientEntity {
     }
 
     public Set<RoleEntity> getScopeMapping() {
+        if (scopeMapping == null) {
+            scopeMapping = new HashSet<>();
+        }
         return scopeMapping;
     }
 

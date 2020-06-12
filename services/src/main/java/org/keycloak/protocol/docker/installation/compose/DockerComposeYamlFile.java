@@ -54,9 +54,9 @@ public class DockerComposeYamlFile {
         writer.print("    REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /" + registryDataDirName + "\n");
         writer.print("    REGISTRY_HTTP_TLS_CERTIFICATE: " + containerCertPath + "/" + localhostCrtFileName + "\n");
         writer.print("    REGISTRY_HTTP_TLS_KEY: " + containerCertPath + "/" + localhostKeyFileName + "\n");
-        writer.print("    REGISTRY_AUTH_TOKEN_REALM: " + authServerUrl + "/realms/" + realmName + "/protocol/docker-v2/auth\n");
+        writer.print("    REGISTRY_AUTH_TOKEN_REALM: " + authServerUrl + "realms/" + realmName + "/protocol/docker-v2/auth\n");
         writer.print("    REGISTRY_AUTH_TOKEN_SERVICE: " + serviceId + "\n");
-        writer.print("    REGISTRY_AUTH_TOKEN_ISSUER: " + authServerUrl + "/realms/" + realmName + "\n");
+        writer.print("    REGISTRY_AUTH_TOKEN_ISSUER: " + authServerUrl + "realms/" + realmName + "\n");
         writer.print("    REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE: " + containerCertPath + "/" + authServerTrustChainFileName + "\n");
         writer.print("  volumes:\n");
         writer.print("    - ./" + registryDataDirName + ":/" + registryDataDirName + ":z\n");

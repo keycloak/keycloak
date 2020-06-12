@@ -88,7 +88,8 @@ public class JsonConfigProvider implements Config.ConfigProvider {
             if (n == null) {
                 return defaultValue;
             }
-            return replaceProperties(n.textValue());
+            String v = replaceProperties(n.textValue());
+            return !v.isEmpty() ? v : defaultValue;
         }
 
         @Override
@@ -126,7 +127,8 @@ public class JsonConfigProvider implements Config.ConfigProvider {
                 return defaultValue;
             }
             if (n.isTextual()) {
-                return Integer.parseInt(replaceProperties(n.textValue()));
+                String v = replaceProperties(n.textValue());
+                return !v.isEmpty() ? Integer.parseInt(v) : defaultValue;
             } else {
                 return n.intValue();
             }
@@ -147,7 +149,8 @@ public class JsonConfigProvider implements Config.ConfigProvider {
                 return defaultValue;
             }
             if (n.isTextual()) {
-                return Long.parseLong(replaceProperties(n.textValue()));
+                String v = replaceProperties(n.textValue());
+                return !v.isEmpty() ? Long.parseLong(v) : defaultValue;
             } else {
                 return n.longValue();
             }
@@ -168,7 +171,8 @@ public class JsonConfigProvider implements Config.ConfigProvider {
                 return defaultValue;
             }
             if (n.isTextual()) {
-                return Boolean.parseBoolean(replaceProperties(n.textValue()));
+                String v = replaceProperties(n.textValue());
+                return !v.isEmpty() ? Boolean.parseBoolean(v) : defaultValue;
             } else {
                 return n.booleanValue();
             }

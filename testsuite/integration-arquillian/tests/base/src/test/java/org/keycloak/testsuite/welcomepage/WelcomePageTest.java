@@ -161,4 +161,14 @@ public class WelcomePageTest extends AbstractKeycloakTest {
                 driver.getPageSource().contains("Invalid username or password."));
     }
 
+    @Test
+    public void test_6_CheckProductNameOnWelcomePage() {
+        welcomePage.navigateTo();
+
+        String actualMessage = welcomePage.getWelcomeMessage();
+        String expectedMessage = suiteContext.getAuthServerInfo().isEAP() ? "Red Hat Single Sign-On" : "Keycloak";
+
+        Assert.assertEquals("Welcome to " + expectedMessage, actualMessage);
+    }
+
 }

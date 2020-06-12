@@ -865,7 +865,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 case UserModel.LAST_NAME:
                 case UserModel.EMAIL:
                 case UserModel.IDCARD:
-                    predicates.add(builder.like(builder.lower(root.get(key)), "%" + value+ "%"));
+                    if (Boolean.valueOf(attributes.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()))) {
+                        predicates.add(builder.equal(builder.lower(root.get(key)), value));
+                    } else {
+                        predicates.add(builder.like(builder.lower(root.get(key)), "%" + value + "%"));
+                    }
             }
         }
 
@@ -1084,22 +1088,5 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         UserEntity user = em.getReference(UserEntity.class, id);
         boolean isLoaded = em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(user);
         return isLoaded ? user : null;
-    }
-
-    @Override
-    public UserModel getUserByIdcard(String idcard, RealmModel realm) {
-        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByIdcard", UserEntity.class);
-        query.setParameter("idcard", idcard);
-        query.setParameter("realmId", realm.getId());
-        List<UserEntity> results = query.getResultList();
-        if (results.size() == 0) return null;
-        return new UserAdapter(session, realm, em, results.get(0));
-    }
-
-    @Override
-    public void updateLoginTimestamp(UserModel userModel) {
-        UserEntity entity=em.find(UserEntity.class,userModel.getId());
-        if (entity == null) return;
-        entity.setLoginTimestamp(Time.currentTimeMillis());
     }
 }

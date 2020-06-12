@@ -653,6 +653,48 @@ public class OAuthClient {
         return client.execute(post);
     }
 
+    public CloseableHttpResponse doTokenRevoke(String token, String tokenTypeHint, String clientSecret) {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            return doTokenRevoke(token, tokenTypeHint, clientSecret, client);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public CloseableHttpResponse doTokenRevoke(String token, String tokenTypeHint, String clientSecret,
+        CloseableHttpClient client) throws IOException {
+        HttpPost post = new HttpPost(getTokenRevocationUrl());
+
+        List<NameValuePair> parameters = new LinkedList<>();
+        if (token != null) {
+            parameters.add(new BasicNameValuePair("token", token));
+        }
+        if (tokenTypeHint != null) {
+            parameters.add(new BasicNameValuePair("token_type_hint", tokenTypeHint));
+        }
+
+        if (origin != null) {
+            post.addHeader("Origin", origin);
+        }
+
+        if (clientId != null && clientSecret != null) {
+            String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+            post.setHeader("Authorization", authorization);
+        } else if (clientId != null) {
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
+        }
+
+        UrlEncodedFormEntity formEntity;
+        try {
+            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        post.setEntity(formEntity);
+
+        return client.execute(post);
+    }
+
     // KEYCLOAK-6771 Certificate Bound Token
     public AccessTokenResponse doRefreshTokenRequest(String refreshToken, String password) {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
@@ -931,6 +973,11 @@ public class OAuthClient {
 
     public LogoutUrlBuilder getLogoutUrl() {
         return new LogoutUrlBuilder();
+    }
+
+    public String getTokenRevocationUrl() {
+        UriBuilder b = OIDCLoginProtocolService.tokenRevocationUrl(UriBuilder.fromUri(baseUrl));
+        return b.build(realm).toString();
     }
 
     public String getResourceOwnerPasswordCredentialGrantUrl() {

@@ -17,6 +17,9 @@
 
 package org.keycloak.testsuite.federation.ldap.noimport;
 
+import java.util.Collections;
+
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 
 import org.junit.Assert;
@@ -24,6 +27,8 @@ import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.admin.client.resource.ComponentResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
@@ -33,15 +38,18 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.StorageId;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.ldap.LDAPProvidersIntegrationTest;
 import org.keycloak.testsuite.federation.ldap.LDAPTestAsserts;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+import org.keycloak.testsuite.util.WaitUtils;
 
 
 /**
@@ -155,8 +163,25 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
 
     @Test
     @Override
-    @Ignore // Unsynced mode doesn't have much sense in no-import
+    // Unsynced mode doesn't have much sense in no-import. So it is not allowed at the configuration level
     public void testUnsynced() throws Exception {
+        ComponentResource ldapProviderResource = testRealm().components().component(ldapModelId);
+        ComponentRepresentation ldapProviderRep = ldapProviderResource.toRepresentation();
+        String currentEditMode = ldapProviderRep.getConfig().getFirst(LDAPConstants.EDIT_MODE);
+        Assert.assertEquals(UserStorageProvider.EditMode.WRITABLE.toString(), currentEditMode);
+
+        // Try update editMode to UNSYNCED. It should not work as UNSYNCED with no-import is not allowed
+        ldapProviderRep.getConfig().putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.UNSYNCED.toString());
+        try {
+            ldapProviderResource.update(ldapProviderRep);
+            Assert.fail("Not expected to successfully update provider");
+        } catch (BadRequestException bre) {
+            // Expected
+        }
+
+        // Try to set editMode to WRITABLE should work
+        ldapProviderRep.getConfig().putSingle(LDAPConstants.EDIT_MODE, currentEditMode);
+        ldapProviderResource.update(ldapProviderRep);
     }
 
 
@@ -219,7 +244,6 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             fullnameUser.setLastName("Dee2");
         });
 
-
         // Assert changed user available in Keycloak, but his firstName is null (due the fullnameMapper is write-only and firstName mapper is removed)
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -241,6 +265,69 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
         Response response = testRealm().components().add(firstNameMapperRep);
         Assert.assertEquals(201, response.getStatus());
         response.close();
+    }
+
+    // Tests that attempt to change some user attributes, which are not mapped to LDAP, will fail
+    @Test
+    public void testImpossibleToChangeNonLDAPMappedAttributes() {
+        UserResource john = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+
+        UserRepresentation johnRep = john.toRepresentation();
+        String firstNameOrig = johnRep.getFirstName();
+        String lastNameOrig = johnRep.getLastName();
+        String postalCodeOrig = johnRep.getAttributes().get("postal_code").get(0);
+
+        try {
+            // Attempt to disable user should fail
+            try {
+                johnRep.setFirstName("John2");
+                johnRep.setLastName("Doe2");
+                johnRep.setEnabled(false);
+
+                john.update(johnRep);
+                Assert.fail("Not supposed to successfully update 'enabled' state of the user");
+            } catch (BadRequestException bre) {
+                // Expected
+            }
+
+            // Attempt to set requiredAction to the user should fail
+            try {
+                johnRep = john.toRepresentation();
+                johnRep.setRequiredActions(Collections.singletonList(UserModel.RequiredAction.CONFIGURE_TOTP.toString()));
+                john.update(johnRep);
+                Assert.fail("Not supposed to successfully add requiredAction to the user");
+            } catch (BadRequestException bre) {
+                // Expected
+            }
+
+            // Attempt to add some new attribute should fail
+            try {
+                johnRep = john.toRepresentation();
+                johnRep.singleAttribute("foo", "bar");
+                john.update(johnRep);
+                Assert.fail("Not supposed to successfully add attribute to the user");
+            } catch (BadRequestException bre) {
+                // Expected
+            }
+
+            // Attempt to update firstName, lastName and postal_code should be successful. All those attributes are mapped to LDAP
+            johnRep = john.toRepresentation();
+            johnRep.setFirstName("John2");
+            johnRep.setLastName("Doe2");
+            johnRep.singleAttribute("postal_code", "654321");
+            john.update(johnRep);
+
+            johnRep = john.toRepresentation();
+            Assert.assertEquals("John2", johnRep.getFirstName());
+            Assert.assertEquals("Doe2", johnRep.getLastName());
+            Assert.assertEquals("654321", johnRep.getAttributes().get("postal_code").get(0));
+        } finally {
+            // Revert
+            johnRep.setFirstName(firstNameOrig);
+            johnRep.setLastName(lastNameOrig);
+            johnRep.singleAttribute("postal_code", postalCodeOrig);
+            john.update(johnRep);
+        }
     }
 
 }

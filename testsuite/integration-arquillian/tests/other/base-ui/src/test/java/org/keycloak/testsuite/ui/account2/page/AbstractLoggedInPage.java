@@ -53,6 +53,9 @@ public abstract class AbstractLoggedInPage extends AbstractAccountPage {
 
     @FindBy(id = "refresh-page")
     private WebElement refreshPageBtn;
+    
+    @FindBy(id = "brandLink")
+    private WebElement brandLink;
 
     public AbstractLoggedInPage() {
         hashPath = new LinkedList<>();
@@ -111,6 +114,10 @@ public abstract class AbstractLoggedInPage extends AbstractAccountPage {
 
     public void clickRefreshPage() {
         clickLink(refreshPageBtn);
+    }
+
+    public void clickBrandLink() {
+        clickLink(brandLink);
     }
 
     @Override

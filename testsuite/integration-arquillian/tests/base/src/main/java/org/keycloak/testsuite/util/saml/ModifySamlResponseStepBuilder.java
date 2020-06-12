@@ -149,7 +149,11 @@ public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2
 
         final String attrName = this.targetAttribute != null ? this.targetAttribute : samlParam.getName();
 
-        return createRequest(locationUri, attrName, transformed, params);
+        final URI uri = this.targetUri != null
+          ? this.targetUri
+          : locationUri;
+
+        return createRequest(uri, attrName, transformed, params);
     }
 
     private HttpUriRequest handlePostBinding(CloseableHttpResponse currentResponse) throws Exception {

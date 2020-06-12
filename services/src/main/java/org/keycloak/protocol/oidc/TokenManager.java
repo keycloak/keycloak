@@ -77,7 +77,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Stateless object that creates tokens and manages oauth access codes
@@ -510,8 +512,7 @@ public class TokenManager {
         }
 
         // Add optional client scopes requested by scope parameter
-        String[] scopes = scopeParam.split(" ");
-        Collection<String> scopeParamParts = Arrays.asList(scopes);
+        Collection<String> scopeParamParts = parseScopeParameter(scopeParam);
         Map<String, ClientScopeModel> allOptionalScopes = client.getClientScopes(false, true);
         for (String scopeParamPart : scopeParamParts) {
             ClientScopeModel scope = allOptionalScopes.get(scopeParamPart);
@@ -521,6 +522,39 @@ public class TokenManager {
         }
 
         return clientScopes;
+    }
+    
+    public static boolean isValidScope(String scopes, ClientModel client) {
+        if (scopes == null) {
+            return true;
+        }
+
+        Set<String> clientScopes = getRequestedClientScopes(scopes, client).stream()
+                .filter(obj -> !ClientModel.class.isInstance(obj))
+                .map(ClientScopeModel::getName)
+                .collect(Collectors.toSet());
+        Collection<String> requestedScopes = TokenManager.parseScopeParameter(scopes);
+
+        if (TokenUtil.isOIDCRequest(scopes)) {
+            requestedScopes.remove(OAuth2Constants.SCOPE_OPENID);
+        }
+
+        if (!requestedScopes.isEmpty() && clientScopes.isEmpty()) {
+            return false;
+        }
+
+        for (String requestedScope : requestedScopes) {
+            // we also check dynamic scopes in case the client is from a provider that dynamically provides scopes to their clients
+            if (!clientScopes.contains(requestedScope) && client.getDynamicClientScope(requestedScope) == null) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    public static Collection<String> parseScopeParameter(String scopeParam) {
+        return new HashSet<>(Arrays.asList(scopeParam.split(" ")));
     }
 
     // Check if user still has granted consents to all requested client scopes
@@ -536,7 +570,7 @@ public class TokenManager {
                 continue;
             }
 
-            if (!grantedConsent.getGrantedClientScopes().contains(requestedScope)) {
+            if (grantedConsent == null || !grantedConsent.getGrantedClientScopes().contains(requestedScope)) {
                 logger.debugf("Client '%s' no longer has requested consent from user '%s' for client scope '%s'",
                         client.getClientId(), user.getUsername(), requestedScope.getName());
                 return false;
@@ -614,12 +648,16 @@ public class TokenManager {
 
 
         token.setSessionState(session.getId());
-        token.expiration(getTokenExpiration(realm, client, session, clientSession));
+        ClientScopeModel offlineAccessScope = KeycloakModelUtils.getClientScopeByName(realm, OAuth2Constants.OFFLINE_ACCESS);
+        boolean offlineTokenRequested = offlineAccessScope == null ? false
+            : clientSessionCtx.getClientScopeIds().contains(offlineAccessScope.getId());
+        token.expiration(getTokenExpiration(realm, client, session, clientSession, offlineTokenRequested));
 
         return token;
     }
 
-    private int getTokenExpiration(RealmModel realm, ClientModel client,  UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
+    private int getTokenExpiration(RealmModel realm, ClientModel client, UserSessionModel userSession,
+        AuthenticatedClientSessionModel clientSession, boolean offlineTokenRequested) {
         boolean implicitFlow = false;
         String responseType = clientSession.getNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
         if (responseType != null) {
@@ -647,10 +685,45 @@ public class TokenManager {
             expiration = Time.currentTime() + tokenLifespan;
         }
 
-        if (!userSession.isOffline()) {
-            int sessionExpires = userSession.getStarted() + (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ?
-                    realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan());
+        if (userSession.isOffline() || offlineTokenRequested) {
+            if (realm.isOfflineSessionMaxLifespanEnabled()) {
+                int sessionExpires = userSession.getStarted() + realm.getOfflineSessionMaxLifespan();
+                expiration = expiration <= sessionExpires ? expiration : sessionExpires;
+
+                int clientOfflineSessionMaxLifespan;
+                String clientOfflineSessionMaxLifespanPerClient = client
+                    .getAttribute(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_MAX_LIFESPAN);
+                if (clientOfflineSessionMaxLifespanPerClient != null
+                    && !clientOfflineSessionMaxLifespanPerClient.trim().isEmpty()) {
+                    clientOfflineSessionMaxLifespan = Integer.parseInt(clientOfflineSessionMaxLifespanPerClient);
+                } else {
+                    clientOfflineSessionMaxLifespan = realm.getClientOfflineSessionMaxLifespan();
+                }
+
+                if (clientOfflineSessionMaxLifespan > 0) {
+                    int clientOfflineSessionExpiration = userSession.getStarted() + clientOfflineSessionMaxLifespan;
+                    return expiration < clientOfflineSessionExpiration ? expiration : clientOfflineSessionExpiration;
+                }
+            }
+        } else {
+            int sessionExpires = userSession.getStarted()
+                + (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0
+                    ? realm.getSsoSessionMaxLifespanRememberMe()
+                    : realm.getSsoSessionMaxLifespan());
             expiration = expiration <= sessionExpires ? expiration : sessionExpires;
+
+            int clientSessionMaxLifespan;
+            String clientSessionMaxLifespanPerClient = client.getAttribute(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN);
+            if (clientSessionMaxLifespanPerClient != null && !clientSessionMaxLifespanPerClient.trim().isEmpty()) {
+                clientSessionMaxLifespan = Integer.parseInt(clientSessionMaxLifespanPerClient);
+            } else {
+                clientSessionMaxLifespan = realm.getClientSessionMaxLifespan();
+            }
+
+            if (clientSessionMaxLifespan > 0) {
+                int clientSessionExpiration = userSession.getStarted() + clientSessionMaxLifespan;
+                return expiration < clientSessionExpiration ? expiration : clientSessionExpiration;
+            }
         }
 
         return expiration;
@@ -732,6 +805,8 @@ public class TokenManager {
 
                 refreshToken = new RefreshToken(accessToken);
                 refreshToken.type(TokenUtil.TOKEN_TYPE_OFFLINE);
+                if (realm.isOfflineSessionMaxLifespanEnabled())
+                    refreshToken.expiration(getOfflineExpiration());
                 sessionManager.createOrUpdateOfflineSession(clientSessionCtx.getClientSession(), userSession);
             } else {
                 refreshToken = new RefreshToken(accessToken);
@@ -743,10 +818,80 @@ public class TokenManager {
         }
 
         private int getRefreshExpiration() {
-            int sessionExpires = userSession.getStarted() + (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ?
-                    realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan());
-            int expiration = Time.currentTime() + (userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0 ?
-                    realm.getSsoSessionIdleTimeoutRememberMe() : realm.getSsoSessionIdleTimeout());
+            int sessionExpires = userSession.getStarted()
+                + (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0
+                    ? realm.getSsoSessionMaxLifespanRememberMe()
+                    : realm.getSsoSessionMaxLifespan());
+
+            int clientSessionMaxLifespan;
+            String clientSessionMaxLifespanPerClient = client.getAttribute(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN);
+            if (clientSessionMaxLifespanPerClient != null && !clientSessionMaxLifespanPerClient.trim().isEmpty()) {
+                clientSessionMaxLifespan = Integer.parseInt(clientSessionMaxLifespanPerClient);
+            } else {
+                clientSessionMaxLifespan = realm.getClientSessionMaxLifespan();
+            }
+
+            if (clientSessionMaxLifespan > 0) {
+                int clientSessionMaxExpiration = userSession.getStarted() + clientSessionMaxLifespan;
+                sessionExpires = sessionExpires < clientSessionMaxExpiration ? sessionExpires : clientSessionMaxExpiration;
+            }
+
+            int expiration = Time.currentTime() + (userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0
+                ? realm.getSsoSessionIdleTimeoutRememberMe()
+                : realm.getSsoSessionIdleTimeout());
+
+            int clientSessionIdleTimeout;
+            String clientSessionIdleTimeoutPerClient = client.getAttribute(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT);
+            if (clientSessionIdleTimeoutPerClient != null && !clientSessionIdleTimeoutPerClient.trim().isEmpty()) {
+                clientSessionIdleTimeout = Integer.parseInt(clientSessionIdleTimeoutPerClient);
+            } else {
+                clientSessionIdleTimeout = realm.getClientSessionIdleTimeout();
+            }
+
+            if (clientSessionIdleTimeout > 0) {
+                int clientSessionIdleExpiration = Time.currentTime() + clientSessionIdleTimeout;
+                expiration = expiration < clientSessionIdleExpiration ? expiration : clientSessionIdleExpiration;
+            }
+
+            return expiration <= sessionExpires ? expiration : sessionExpires;
+        }
+
+        private int getOfflineExpiration() {
+            int sessionExpires = userSession.getStarted() + realm.getOfflineSessionMaxLifespan();
+
+            int clientOfflineSessionMaxLifespan;
+            String clientOfflineSessionMaxLifespanPerClient = client
+                .getAttribute(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_MAX_LIFESPAN);
+            if (clientOfflineSessionMaxLifespanPerClient != null
+                && !clientOfflineSessionMaxLifespanPerClient.trim().isEmpty()) {
+                clientOfflineSessionMaxLifespan = Integer.parseInt(clientOfflineSessionMaxLifespanPerClient);
+            } else {
+                clientOfflineSessionMaxLifespan = realm.getClientOfflineSessionMaxLifespan();
+            }
+
+            if (clientOfflineSessionMaxLifespan > 0) {
+                int clientOfflineSessionMaxExpiration = userSession.getStarted() + clientOfflineSessionMaxLifespan;
+                sessionExpires = sessionExpires < clientOfflineSessionMaxExpiration ? sessionExpires
+                    : clientOfflineSessionMaxExpiration;
+            }
+
+            int expiration = Time.currentTime() + realm.getOfflineSessionIdleTimeout();
+
+            int clientOfflineSessionIdleTimeout;
+            String clientOfflineSessionIdleTimeoutPerClient = client
+                .getAttribute(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_IDLE_TIMEOUT);
+            if (clientOfflineSessionIdleTimeoutPerClient != null
+                && !clientOfflineSessionIdleTimeoutPerClient.trim().isEmpty()) {
+                clientOfflineSessionIdleTimeout = Integer.parseInt(clientOfflineSessionIdleTimeoutPerClient);
+            } else {
+                clientOfflineSessionIdleTimeout = realm.getClientOfflineSessionIdleTimeout();
+            }
+
+            if (clientOfflineSessionIdleTimeout > 0) {
+                int clientOfflineSessionIdleExpiration = Time.currentTime() + clientOfflineSessionIdleTimeout;
+                expiration = expiration < clientOfflineSessionIdleExpiration ? expiration : clientOfflineSessionIdleExpiration;
+            }
+
             return expiration <= sessionExpires ? expiration : sessionExpires;
         }
 

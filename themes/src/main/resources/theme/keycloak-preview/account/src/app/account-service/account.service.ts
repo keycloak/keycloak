@@ -1,0 +1,141 @@
+/*
+ * Copyright 2018 Red Hat Inc. and/or its affiliates and other contributors
+ * as indicated by the @author tags. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
+import {KeycloakService} from '../keycloak-service/keycloak.service';
+import {ContentAlert} from '../content/ContentAlert';
+
+type ConfigResolve = (config: RequestInit) => void;
+
+export interface HttpResponse<T = {}> extends Response {
+    data?: T;
+}
+
+export interface RequestInitWithParams extends RequestInit {
+    params?: {[name: string]: string | number};
+}
+
+export class AccountServiceError extends Error {
+    constructor(public response: HttpResponse) {
+        super(response.statusText);
+    }
+}
+
+/**
+ *
+ * @author Stan Silvert ssilvert@redhat.com (C) 2018 Red Hat Inc.
+ */
+class AccountServiceClient {
+    private kcSvc: KeycloakService = KeycloakService.Instance;
+    private accountUrl: string = this.kcSvc.authServerUrl() + 'realms/' + this.kcSvc.realm() + '/account';
+
+    constructor() {}
+
+    public async doGet<T>(endpoint: string,
+                          config?: RequestInitWithParams): Promise<HttpResponse<T>> {
+        return this.doRequest(endpoint, {...config, method: 'get'});
+    }
+
+    public async doDelete<T>(endpoint: string,
+                            config?: RequestInitWithParams): Promise<HttpResponse<T>> {
+        return this.doRequest(endpoint, {...config, method: 'delete'});
+    }
+
+    public async doPost<T>(endpoint: string,
+                          body: string | {},
+                          config?: RequestInitWithParams): Promise<HttpResponse<T>> {
+        return this.doRequest(endpoint, {...config, body: JSON.stringify(body), method: 'post'});
+    }
+
+    public async doPut<T>(endpoint: string,
+                         body: string | {},
+                         config?: RequestInitWithParams): Promise<HttpResponse<T>> {
+        return this.doRequest(endpoint, {...config, body: JSON.stringify(body), method: 'put'});
+    }
+
+    public async doRequest<T>(endpoint: string,
+                              config?: RequestInitWithParams): Promise<HttpResponse<T>> {
+
+        const response: HttpResponse<T> = await fetch(this.makeUrl(endpoint, config).toString(),
+                                                      await this.makeConfig(config));
+
+        try {
+            response.data = await response.json();
+        } catch (e) {} // ignore.  Might be empty
+
+        if (!response.ok) {
+            this.handleError(response);
+            throw new AccountServiceError(response);
+        }
+
+        return response;
+    }
+
+    private handleError(response: HttpResponse): void {
+        if (response != null && response.status === 401) {
+            // session timed out?
+            this.kcSvc.login();
+        }
+
+        if (response != null && response.data != null && response.data.hasOwnProperty('errorMessage')) {
+            ContentAlert.danger(response.data['errorMessage']);
+        } else {
+            ContentAlert.danger(response.statusText);
+        }
+    }
+
+    private makeUrl(endpoint: string, config?: RequestInitWithParams): URL {
+        if (endpoint.startsWith('http')) return new URL(endpoint);
+        const url = new URL(this.accountUrl + endpoint);
+
+        // add request params
+        if (config && config.hasOwnProperty('params')) {
+            const params: {[name: string]: string} = config.params as {} || {};
+            Object.keys(params).forEach(key => url.searchParams.append(key, params[key]))
+        }
+
+        return url;
+    }
+
+    private makeConfig(config: RequestInit = {}): Promise<RequestInit> {
+        return new Promise( (resolve: ConfigResolve) => {
+            this.kcSvc.getToken()
+                .then( (token: string) => {
+                    resolve( {
+                        ...config,
+                        headers: {'Content-Type': 'application/json',
+                                 ...config.headers,
+                                  Authorization: 'Bearer ' + token}
+                    });
+                }).catch(() => {
+                    this.kcSvc.login();
+                });
+        });
+    }
+
+}
+
+const AccountService: AccountServiceClient = new AccountServiceClient();
+export default AccountService;
+
+window.addEventListener("unhandledrejection", (event: PromiseRejectionEvent) => {
+    event.promise.catch(error => {
+        if (error instanceof AccountServiceError) {
+            // We already handled the error. Ignore unhandled rejection.
+            event.preventDefault();
+        }
+    });
+});

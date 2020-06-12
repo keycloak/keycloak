@@ -1,20 +1,14 @@
-# ignore typescript-generated files 
+# ignore typescript-generated files
 *.js
 *.js.map
-
-# ignore keycloak.json - we won't need this much longer
-keycloak.json
 
 # ignore log files
 *.log
 
-# Do not commit, installed at compile time
-node_modules
-
 # Don't ignore these
-!keycloak.js
-!systemjs.config.extras.js
-!systemjs.config.js
-!.eslintrc.js
 !WelcomePageScripts.js
 !content.js
+
+public/app.css
+public/base.css
+public/assets/

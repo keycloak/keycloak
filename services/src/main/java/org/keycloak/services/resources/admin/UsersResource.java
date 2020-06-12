@@ -18,9 +18,7 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-
 import javax.ws.rs.NotFoundException;
-
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.ObjectUtil;
@@ -68,9 +66,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Base resource for managing users
  *
+ * @resource Users
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
- * @resource Users
  */
 public class UsersResource {
 
@@ -100,7 +98,7 @@ public class UsersResource {
 
     /**
      * Create a new user
-     * <p>
+     *
      * Username must be unique.
      *
      * @param rep
@@ -112,7 +110,7 @@ public class UsersResource {
         auth.users().requireManage();
 
         String username = rep.getUsername();
-        if (realm.isRegistrationEmailAsUsername()) {
+        if(realm.isRegistrationEmailAsUsername()) {
             username = rep.getEmail();
         }
         if (ObjectUtil.isBlank(username)) {
@@ -130,7 +128,6 @@ public class UsersResource {
         if (rep.getIdcard() != null && session.users().getUserByIdcard(rep.getIdcard(), realm) != null) {
             return ErrorResponse.exists("User exists with same idcard ");
         }
-
 
         try {
             UserModel user = session.users().addUser(realm, username);
@@ -158,7 +155,7 @@ public class UsersResource {
                 session.getTransactionManager().setRollbackOnly();
             }
             return ErrorResponse.error("Password policy not met", Response.Status.BAD_REQUEST);
-        } catch (ModelException me) {
+        } catch (ModelException me){
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();
             }
@@ -166,7 +163,6 @@ public class UsersResource {
             return ErrorResponse.error("Could not create user", Response.Status.BAD_REQUEST);
         }
     }
-
     /**
      * Get representation of the user
      *
@@ -189,15 +185,15 @@ public class UsersResource {
 
     /**
      * Get users
-     * <p>
+     *
      * Returns a list of users, filtered according to query parameters
      *
-     * @param search     A String contained in username, first or last name, or email
+     * @param search A String contained in username, first or last name, or email
      * @param last
      * @param first
      * @param email
      * @param username
-     * @param first      Pagination offset
+     * @param first Pagination offset
      * @param maxResults Maximum results size (defaults to 100)
      * @return
      */
@@ -212,9 +208,10 @@ public class UsersResource {
                                              @QueryParam("idcard") String idcard,
                                              @QueryParam("first") Integer firstResult,
                                              @QueryParam("max") Integer maxResults,
-                                             @QueryParam("briefRepresentation") Boolean briefRepresentation,
                                              @QueryParam("attrName") String attrName,
-                                             @QueryParam("attrValue") String attrValue) {
+                                             @QueryParam("attrValue") String attrValue,
+                                             @QueryParam("briefRepresentation") Boolean briefRepresentation,
+                                             @QueryParam("exact") Boolean exact) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
 
         userPermissionEvaluator.requireQuery();
@@ -257,7 +254,10 @@ public class UsersResource {
             if (idcard != null) {
                 attributes.put(UserModel.IDCARD, idcard);
             }
-            userModels = session.users().searchForUser(attributes, realm, firstResult, maxResults);
+            if (exact != null) {
+                attributes.put(UserModel.EXACT, exact.toString());
+            }
+            return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult, maxResults, true);
         } else {
             return searchForUser(new HashMap<>(), realm, userPermissionEvaluator, briefRepresentation, firstResult, maxResults, false);
         }

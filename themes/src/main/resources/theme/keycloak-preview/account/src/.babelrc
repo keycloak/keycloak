@@ -1,0 +1,19 @@
+{
+  "plugins": [
+    [
+      "snowpack/assets/babel-plugin.js",
+      {
+        "webModulesUrl": "../common/keycloak/web_modules",
+        "moduleResolution": "node"
+      }
+    ],
+    [
+      "@babel/plugin-proposal-class-properties",
+      {}
+    ]
+  ],
+  "presets": [
+    "@babel/preset-react",
+    "@babel/preset-typescript"
+  ]
+}

@@ -144,14 +144,14 @@ public class KeycloakContainerFeaturesController {
     private void checkAnnotatedElementForFeatureAnnotations(AnnotatedElement annotatedElement, State state) throws Exception {
         List<UpdateFeature> updateFeatureList = new ArrayList<>(0);
 
-        if (annotatedElement.isAnnotationPresent(EnableFeatures.class) || annotatedElement.isAnnotationPresent(EnableFeature.class)) {
+        if (isEnableFeature(annotatedElement)) {
             updateFeatureList.addAll(Arrays.stream(annotatedElement.getAnnotationsByType(EnableFeature.class))
                     .map(annotation -> new UpdateFeature(annotation.value(), annotation.skipRestart(),
                             state == State.BEFORE ? FeatureAction.ENABLE : FeatureAction.DISABLE, annotation.onlyForProduct()))
                     .collect(Collectors.toList()));
         }
 
-        if (annotatedElement.isAnnotationPresent(DisableFeatures.class) || annotatedElement.isAnnotationPresent(DisableFeature.class)) {
+        if (isDisableFeature(annotatedElement)) {
             updateFeatureList.addAll(Arrays.stream(annotatedElement.getAnnotationsByType(DisableFeature.class))
                     .map(annotation -> new UpdateFeature(annotation.value(), annotation.skipRestart(),
                             state == State.BEFORE ? FeatureAction.DISABLE : FeatureAction.ENABLE, annotation.onlyForProduct()))
@@ -163,12 +163,44 @@ public class KeycloakContainerFeaturesController {
         }
     }
 
+    private boolean isEnableFeature(AnnotatedElement annotatedElement) {
+        return (annotatedElement.isAnnotationPresent(EnableFeatures.class) || annotatedElement.isAnnotationPresent(EnableFeature.class));
+    }
+
+    private boolean isDisableFeature(AnnotatedElement annotatedElement) {
+        return (annotatedElement.isAnnotationPresent(DisableFeatures.class) || annotatedElement.isAnnotationPresent(DisableFeature.class));
+    }
+
+    private boolean shouldExecuteAsLast(AnnotatedElement annotatedElement) {
+        if (isEnableFeature(annotatedElement)) {
+            return Arrays.stream(annotatedElement.getAnnotationsByType(EnableFeature.class))
+                    .anyMatch(EnableFeature::executeAsLast);
+        }
+
+        if (isDisableFeature(annotatedElement)) {
+            return Arrays.stream(annotatedElement.getAnnotationsByType(DisableFeature.class))
+                    .anyMatch(DisableFeature::executeAsLast);
+        }
+
+        return false;
+    }
+    
     public void handleEnableFeaturesAnnotationBeforeClass(@Observes(precedence = 1) BeforeClass event) throws Exception {
         checkAnnotatedElementForFeatureAnnotations(event.getTestClass().getJavaClass(), State.BEFORE);
     }
 
     public void handleEnableFeaturesAnnotationBeforeTest(@Observes(precedence = 1) Before event) throws Exception {
-        checkAnnotatedElementForFeatureAnnotations(event.getTestMethod(), State.BEFORE);
+        if (!shouldExecuteAsLast(event.getTestMethod())) {
+            checkAnnotatedElementForFeatureAnnotations(event.getTestMethod(), State.BEFORE);
+        }
+    }
+
+    // KEYCLOAK-13572 Precedence is too low in order to ensure the feature change will be executed as last.
+    // If some fail occurs in @Before method, the feature doesn't change its state.
+    public void handleChangeStateFeaturePriorityBeforeTest(@Observes(precedence = -100) Before event) throws Exception {
+        if (shouldExecuteAsLast(event.getTestMethod())) {
+            checkAnnotatedElementForFeatureAnnotations(event.getTestMethod(), State.BEFORE);
+        }
     }
 
     public void handleEnableFeaturesAnnotationAfterTest(@Observes(precedence = 2) After event) throws Exception {

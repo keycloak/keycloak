@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.ui.account2;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -123,31 +122,6 @@ public class ReferrerTest extends AbstractAccountTest {
         testReferrer(personalInfoPage.header(), false);
     }
 
-    /**
-     * Test that i18n and referrer work well together
-     */
-    @Test
-    @Ignore // TODO remove this once KEYCLOAK-12936 is resolved
-    public void i18nTest() {
-        RealmRepresentation realm = testRealmResource().toRepresentation();
-        configureInternationalizationForRealm(realm);
-        testRealmResource().update(realm);
-        testContext.setTestRealmReps(Collections.emptyList()); // a small hack; we want realm re-import after this test
-
-        welcomeScreen.navigateTo(FAKE_CLIENT_ID, getFakeClientUrl());
-        welcomeScreen.header().assertReferrerLinkVisible(true);
-        welcomeScreen.header().selectLocale(CUSTOM_LOCALE);
-        welcomeScreen.header().assertReferrerLinkVisible(true);
-
-        welcomeScreen.clickPersonalInfoLink();
-        assertEquals(CUSTOM_LOCALE_NAME, loginPage.localeDropdown().getSelected());
-        loginToAccount();
-        personalInfoPage.header().assertReferrerLinkVisible(true);
-        personalInfoPage.header().selectLocale(DEFAULT_LOCALE);
-        assertEquals(DEFAULT_LOCALE_NAME, personalInfoPage.header().getCurrentLocaleName());
-        testReferrer(personalInfoPage.header(), true);
-    }
-
     private void testReferrer(AbstractHeader header, boolean expectReferrerVisible) {
         if (expectReferrerVisible) {
             assertEquals(REFERRER_LINK_TEXT, header.getReferrerLinkText());
@@ -163,8 +137,6 @@ public class ReferrerTest extends AbstractAccountTest {
         // we need to use some page which host exists – Firefox is throwing exceptions like crazy if we try to load
         // a page on a non-existing host, like e.g. http://non-existing-server/
         // also we need to do this here as getAuthServerRoot is not ready when firing this class' constructor
-        return getAuthServerRoot() + "auth/non-existing-page/?foo=bar";
-        // TODO replace ^^ with the following once KEYCLOAK-12173 and KEYCLOAK-12189 are resolved
-        // return getAuthServerRoot() + "auth/non-existing-page/?foo=bar&bar=foo#anchor";
+         return getAuthServerRoot() + "auth/non-existing-page/?foo=bar&bar=foo#anchor";
     }
 }

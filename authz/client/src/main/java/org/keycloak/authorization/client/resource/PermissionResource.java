@@ -71,7 +71,7 @@ public class PermissionResource {
     /**
      * Creates a new permission ticket for a set of one or more resource and scope(s).
      *
-     * @param request the {@link PermissionRequest} representing the resource and scope(s) (not {@code null})
+     * @param requests the {@link PermissionRequest} representing the resource and scope(s) (not {@code null})
      * @return a permission response holding a permission ticket with the requested permissions
      */
     public PermissionResponse create(final List<PermissionRequest> requests) {
@@ -237,13 +237,39 @@ public class PermissionResource {
         if (ticket.getId() == null) {
             throw new IllegalArgumentException("Permission ticket must have an id");
         }
-        Callable callable = new Callable() {
+        Callable<Void> callable = new Callable<Void>() {
             @Override
-            public Object call() throws Exception {
-                http.<List>put(serverConfiguration.getPermissionEndpoint()+"/ticket")
+            public Void call() throws Exception {
+                http.<Void>put(serverConfiguration.getPermissionEndpoint()+"/ticket")
                         .json(JsonSerialization.writeValueAsBytes(ticket))
                         .authorizationBearer(pat.call())
-                        .response().json(List.class).execute();
+                        .response()
+                        .execute();
+                return null;
+            }
+        };
+        try {
+            callable.call();
+        } catch (Exception cause) {
+            Throwables.retryAndWrapExceptionIfNecessary(callable, pat, "Error updating permission ticket", cause);
+        }
+    }
+
+    /**
+     * Deletes a permission ticket by ID.
+     * @param ticketId the permission ticket ID
+     */
+    public void delete(final String ticketId) {
+        if (ticketId == null || ticketId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Permission ticket ID must not be null or empty");
+        }
+        Callable<Void> callable = new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                http.<Void>delete(serverConfiguration.getPermissionEndpoint() + "/ticket/" + ticketId)
+                        .authorizationBearer(pat.call())
+                        .response()
+                        .execute();
                 return null;
             }
         };

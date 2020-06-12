@@ -33,6 +33,16 @@ public class AesCbcHmacShaJWEEncryptionProvider extends AesCbcHmacShaEncryptionP
             expectedAesKeyLength = 16;
             hmacShaAlgorithm = "HMACSHA256";
             authenticationTagLength = 16;
+        } else if (JWEConstants.A192CBC_HS384.equals(jwaAlgorithmName)) {
+            expectedCEKLength = 48;
+            expectedAesKeyLength = 24;
+            hmacShaAlgorithm = "HMACSHA384";
+            authenticationTagLength = 24;
+        } else if (JWEConstants.A256CBC_HS512.equals(jwaAlgorithmName)) {
+            expectedCEKLength = 64;
+            expectedAesKeyLength = 32;
+            hmacShaAlgorithm = "HMACSHA512";
+            authenticationTagLength = 32;
         } else {
             expectedCEKLength = 0;
             expectedAesKeyLength = 0;

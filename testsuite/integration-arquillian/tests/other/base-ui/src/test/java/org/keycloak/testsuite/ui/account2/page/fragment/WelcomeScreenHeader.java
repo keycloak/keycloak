@@ -21,6 +21,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -41,11 +42,6 @@ public class WelcomeScreenHeader extends AbstractHeader {
     @FindBy(id = "landing-mobile-local-toggle")
     private WebElement localeBtnMobile;
 
-    @FindBy(id = "landing-locale-dropdown-list")
-    private WebElement localeDropdown;
-    @FindBy(id = "landingMobileDropdown") // the mobile locale menu is integrated with the generic mobile menu
-    private WebElement localeDropdownMobile;
-
     @FindBy(id = "landingReferrerLink")
     private WebElement referrerLink;
     @FindBy(id = "landingMobileReferrerLink")
@@ -53,6 +49,9 @@ public class WelcomeScreenHeader extends AbstractHeader {
 
     @FindBy(id = "landingMobileDropdown")
     private WebElement mobileKebab;
+
+    @FindBy(id = "landingLoggedInUser")
+    private WebElement toolbarLoggedInUser;
 
     @Override
     public void clickMobileKebab() {
@@ -68,16 +67,6 @@ public class WelcomeScreenHeader extends AbstractHeader {
     }
 
     @Override
-    protected WebElement getLocaleBtn() {
-        return isMobileLayout() ? localeBtnMobile : localeBtn;
-    }
-
-    @Override
-    protected WebElement getLocaleDropdown() {
-        return isMobileLayout() ? localeDropdownMobile : localeDropdown;
-    }
-
-    @Override
     protected WebElement getLogoutBtn() {
         return isMobileLayout() ? logoutBtnMobile : logoutBtn;
     }
@@ -90,5 +79,9 @@ public class WelcomeScreenHeader extends AbstractHeader {
     @Override
     protected String getLocaleElementIdPrefix() {
         return "landing-" + super.getLocaleElementIdPrefix();
+    }
+
+    public String getToolbarLoggedInUser() {
+        return getTextFromElement(toolbarLoggedInUser);
     }
 }

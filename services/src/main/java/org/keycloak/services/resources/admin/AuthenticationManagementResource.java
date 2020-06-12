@@ -255,6 +255,7 @@ public class AuthenticationManagementResource {
     @PUT
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response updateFlow(@PathParam("id") String id, AuthenticationFlowRepresentation flow) {
         auth.realm().requireManageRealm();
 
@@ -264,10 +265,32 @@ public class AuthenticationManagementResource {
             return ErrorResponse.exists("Failed to update flow with empty alias name");
         }
 
+        //check if updating a correct flow
+        AuthenticationFlowModel checkFlow = realm.getAuthenticationFlowById(id);
+        if (checkFlow == null) {
+            session.getTransactionManager().setRollbackOnly();
+            throw new NotFoundException("Illegal execution");
+        }
+
+        //if a different flow with the same name does already exist, throw an exception
+        if (realm.getFlowByAlias(flow.getAlias()) != null && !checkFlow.getAlias().equals(flow.getAlias())) {
+            return ErrorResponse.exists("Flow alias name already exists");
+        }
+
+        //if the name changed
+        if (!checkFlow.getAlias().equals(flow.getAlias())) {
+            checkFlow.setAlias(flow.getAlias());
+        }
+
+        //check if the description changed
+        if (!checkFlow.getDescription().equals(flow.getDescription())) {
+            checkFlow.setDescription(flow.getDescription());
+        }
+
+        //update the flow
         flow.setId(existingFlow.getId());
         realm.updateAuthenticationFlow(RepresentationToModel.toModel(flow));
         adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(flow).success();
-
         return Response.accepted(flow).build();
     }
 
@@ -533,6 +556,7 @@ public class AuthenticationManagementResource {
                     rep.getRequirementChoices().add(AuthenticationExecutionModel.Requirement.DISABLED.name());
                 }
                 rep.setDisplayName(flowRef.getAlias());
+                rep.setDescription(flowRef.getDescription());
                 rep.setConfigurable(false);
                 rep.setId(execution.getId());
                 rep.setAuthenticationFlow(execution.isAuthenticatorFlow());
@@ -571,16 +595,16 @@ public class AuthenticationManagementResource {
     }
 
     /**
-     * Update authentication executions of a flow
-     *
+     * Update authentication executions of a Flow
      * @param flowAlias Flow alias
-     * @param rep
+     * @param rep AuthenticationExecutionInfoRepresentation
      */
     @Path("/flows/{flowAlias}/executions")
     @PUT
     @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public void updateExecutions(@PathParam("flowAlias") String flowAlias, AuthenticationExecutionInfoRepresentation rep) {
+    public Response updateExecutions(@PathParam("flowAlias") String flowAlias, AuthenticationExecutionInfoRepresentation rep) {
         auth.realm().requireManageRealm();
 
         AuthenticationFlowModel flow = realm.getFlowByAlias(flowAlias);
@@ -599,7 +623,38 @@ public class AuthenticationManagementResource {
             model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));
             realm.updateAuthenticatorExecution(model);
             adminEvent.operation(OperationType.UPDATE).resource(ResourceType.AUTH_EXECUTION).resourcePath(session.getContext().getUri()).representation(rep).success();
+            return Response.accepted(flow).build();
         }
+
+        //executions can't have name and description updated
+        if (rep.getAuthenticationFlow() == null) { return Response.accepted(flow).build();}
+
+        //check if updating a correct flow
+        AuthenticationFlowModel checkFlow = realm.getAuthenticationFlowById(rep.getFlowId());
+        if (checkFlow == null) {
+            session.getTransactionManager().setRollbackOnly();
+            throw new NotFoundException("Illegal execution");
+        }
+
+        //if a different flow with the same name does already exist, throw an exception
+        if (realm.getFlowByAlias(rep.getDisplayName()) != null && !checkFlow.getAlias().equals(rep.getDisplayName())) {
+            return ErrorResponse.exists("Flow alias name already exists");
+        }
+
+        //if the name changed
+        if (!checkFlow.getAlias().equals(rep.getDisplayName())) {
+            checkFlow.setAlias(rep.getDisplayName());
+        }
+
+        //check if the description changed
+        if (!checkFlow.getDescription().equals(rep.getDescription())) {
+            checkFlow.setDescription(rep.getDescription());
+        }
+
+        //update the flow
+        realm.updateAuthenticationFlow(checkFlow);
+        adminEvent.operation(OperationType.UPDATE).resource(ResourceType.AUTH_EXECUTION).resourcePath(session.getContext().getUri()).representation(rep).success();
+        return Response.accepted(flow).build();
     }
 
     /**

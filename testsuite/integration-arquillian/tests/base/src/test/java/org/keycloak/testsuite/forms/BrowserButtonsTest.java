@@ -74,7 +74,7 @@ public class BrowserButtonsTest extends AbstractTestRealmKeycloakTest {
                 .requiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
                 .build();
 
-        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password", true);
         expectedMessagesCount = 0;
         getCleanup().addUserId(userId);
 

@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -160,7 +161,7 @@ public class PolicyService {
         Policy model = storeFactory.getPolicyStore().findByName(name, this.resourceServer.getId());
 
         if (model == null) {
-            return Response.status(Status.OK).build();
+            return Response.noContent().build();
         }
 
         return Response.ok(toRepresentation(model, fields, authorization)).build();
@@ -219,7 +220,7 @@ public class PolicyService {
                 Set<String> resources = resourceStore.findByResourceServer(resourceFilters, resourceServer.getId(), -1, 1).stream().map(Resource::getId).collect(Collectors.toSet());
 
                 if (resources.isEmpty()) {
-                    return Response.ok().build();
+                    return Response.noContent().build();
                 }
 
                 search.put("resource", resources.toArray(new String[resources.size()]));
@@ -240,7 +241,7 @@ public class PolicyService {
                 Set<String> scopes = scopeStore.findByResourceServer(scopeFilters, resourceServer.getId(), -1, 1).stream().map(Scope::getId).collect(Collectors.toSet());
 
                 if (scopes.isEmpty()) {
-                    return Response.ok().build();
+                    return Response.noContent().build();
                 }
 
                 search.put("scope", scopes.toArray(new String[scopes.size()]));

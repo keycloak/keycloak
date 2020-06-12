@@ -49,6 +49,8 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
+import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapper;
+import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPConfigDecorator;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapperFactory;
@@ -105,6 +107,9 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .add()
                 .property().name(LDAPConstants.VENDOR)
                 .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+                .property().name(LDAPConstants.USE_PASSWORD_MODIFY_EXTENDED_OP)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .add()
                 .property().name(LDAPConstants.USERNAME_LDAP_ATTRIBUTE)
                 .type(ProviderConfigProperty.STRING_TYPE)
@@ -253,6 +258,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     @Override
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {
         LDAPConfig cfg = new LDAPConfig(config.getConfig());
+        UserStorageProviderModel userStorageModel = new UserStorageProviderModel(config);
         String customFilter = cfg.getCustomUserSearchFilter();
         LDAPUtils.validateCustomLdapFilter(customFilter);
 
@@ -276,6 +282,10 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
         if(cfg.isStartTls() && cfg.getConnectionPooling() != null) {
             throw new ComponentValidationException("ldapErrorCantEnableStartTlsAndConnectionPooling");
+        }
+
+        if (!userStorageModel.isImportEnabled() && cfg.getEditMode() == UserStorageProvider.EditMode.UNSYNCED) {
+            throw new ComponentValidationException("ldapErrorCantEnableUnsyncedAndImportOff");
         }
     }
 
@@ -303,6 +313,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         UserStorageProvider.EditMode editMode = ldapConfig.getEditMode();
         String readOnly = String.valueOf(editMode == UserStorageProvider.EditMode.READ_ONLY || editMode == UserStorageProvider.EditMode.UNSYNCED);
         String usernameLdapAttribute = ldapConfig.getUsernameLdapAttribute();
+        boolean syncRegistrations = Boolean.valueOf(model.getConfig().getFirst(LDAPConstants.SYNC_REGISTRATIONS));
 
         String alwaysReadValueFromLDAP = String.valueOf(editMode== UserStorageProvider.EditMode.READ_ONLY || editMode== UserStorageProvider.EditMode.WRITABLE);
 
@@ -414,6 +425,15 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         if (Boolean.valueOf(allowKerberosCfg)) {
             CredentialHelper.setOrReplaceAuthenticationRequirement(session, realm, CredentialRepresentation.KERBEROS,
                     AuthenticationExecutionModel.Requirement.ALTERNATIVE, AuthenticationExecutionModel.Requirement.DISABLED);
+        }
+
+        // In case that "Sync Registration" is ON and the LDAP v3 Password-modify extension is ON, we will create hardcoded mapper to create
+        // random "userPassword" every time when creating user. Otherwise users won't be able to register and login
+        if (!activeDirectory && syncRegistrations && ldapConfig.useExtendedPasswordModifyOp()) {
+            mapperModel = KeycloakModelUtils.createComponentModel("random initial password", model.getId(), HardcodedLDAPAttributeMapperFactory.PROVIDER_ID,LDAPStorageMapper.class.getName(),
+                    HardcodedLDAPAttributeMapper.LDAP_ATTRIBUTE_NAME, LDAPConstants.USER_PASSWORD_ATTRIBUTE,
+                    HardcodedLDAPAttributeMapper.LDAP_ATTRIBUTE_VALUE, HardcodedLDAPAttributeMapper.RANDOM_ATTRIBUTE_VALUE);
+            realm.addComponentModel(mapperModel);
         }
     }
 

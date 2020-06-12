@@ -370,7 +370,7 @@ public abstract class AbstractKeycloakTest {
 
     private void modifySamlAttributes(ClientRepresentation cr) {
         if (cr.getProtocol() != null && cr.getProtocol().equals("saml")) {
-            log.info("Modifying attributes of SAML client: " + cr.getClientId());
+            log.debug("Modifying attributes of SAML client: " + cr.getClientId());
             for (Map.Entry<String, String> entry : cr.getAttributes().entrySet()) {
                 cr.getAttributes().put(entry.getKey(), replaceHttpValuesWithHttps(entry.getValue()));
             }

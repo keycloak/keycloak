@@ -117,7 +117,7 @@ public class SAMLLoginResponseHandlingTest extends AbstractSAMLServletAdapterTes
     @Test
     public void testErrorHandlingUnsigned() throws Exception {
         SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder()
-                .destination(employeeSigServletPage.toString() + "/saml")
+                .destination(employeeSigServletPage.toString() + "saml")
                 .issuer("http://localhost:" + System.getProperty("auth.server.http.port", "8180") + "/realms/demo")
                 .status(JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
         Document document = builder.buildDocument();
@@ -131,7 +131,7 @@ public class SAMLLoginResponseHandlingTest extends AbstractSAMLServletAdapterTes
     @Test
     public void testErrorHandlingSigned() throws Exception {
         SAML2ErrorResponseBuilder builder = new SAML2ErrorResponseBuilder()
-                .destination(employeeSigServletPage.toString() + "/saml")
+                .destination(employeeSigServletPage.toString() + "saml")
                 .issuer("http://localhost:" + System.getProperty("auth.server.http.port", "8180") + "/realms/demo")
                 .status(JBossSAMLURIConstants.STATUS_REQUEST_DENIED.get());
         Document document = builder.buildDocument();

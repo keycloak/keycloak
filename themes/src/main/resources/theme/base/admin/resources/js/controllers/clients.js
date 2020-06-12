@@ -136,7 +136,7 @@ module.controller('ClientCredentialsCtrl', function($scope, $location, realm, cl
     };
 });
 
-module.controller('ClientSecretCtrl', function($scope, $location, ClientSecret, Notifications,Dialog) {
+module.controller('ClientSecretCtrl', function($scope, $location, Client, ClientSecret, Notifications) {
     var secret = ClientSecret.get({ realm : $scope.realm.realm, client : $scope.client.id },
         function() {
             $scope.secret = secret.value;
@@ -158,6 +158,25 @@ module.controller('ClientSecretCtrl', function($scope, $location, ClientSecret, 
          },function(){
              Notifications.error("The secret was not changed.");
          });
+    };
+
+    $scope.tokenEndpointAuthSigningAlg = $scope.client.attributes['token.endpoint.auth.signing.alg'];
+
+    $scope.switchChange = function() {
+        $scope.changed = true;
+    }
+
+    $scope.save = function() {
+        $scope.client.attributes['token.endpoint.auth.signing.alg'] = $scope.tokenEndpointAuthSigningAlg;
+
+        Client.update({
+            realm : $scope.realm.realm,
+            client : $scope.client.id
+        }, $scope.client, function() {
+            $scope.changed = false;
+            $scope.clientCopy = angular.copy($scope.client);
+            Notifications.success("Client authentication configuration has been saved to the client.");
+        });
     };
 
     $scope.$watch(function() {
@@ -231,6 +250,8 @@ module.controller('ClientSignedJWTCtrl', function($scope, $location, Client, Cli
         }
     }, true);
 
+    $scope.tokenEndpointAuthSigningAlg = $scope.client.attributes['token.endpoint.auth.signing.alg'];
+
     if ($scope.client.attributes["use.jwks.url"]) {
         if ($scope.client.attributes["use.jwks.url"] == "true") {
             $scope.useJwksUrl = true;
@@ -244,6 +265,7 @@ module.controller('ClientSignedJWTCtrl', function($scope, $location, Client, Cli
     }
 
     $scope.save = function() {
+        $scope.client.attributes['token.endpoint.auth.signing.alg'] = $scope.tokenEndpointAuthSigningAlg;
 
         if ($scope.useJwksUrl == true) {
             $scope.client.attributes["use.jwks.url"] = "true";
@@ -1425,6 +1447,38 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.clientEdit.attributes['saml.assertion.lifespan'] = $scope.samlAssertionLifespan.toSeconds();
         } else {
             $scope.clientEdit.attributes['saml.assertion.lifespan'] = null;
+        }
+    }
+
+    $scope.updateClientSessionIdleTimeout = function() {
+        if ($scope.clientSessionIdleTimeout.time) {
+            $scope.clientEdit.attributes['client.session.idle.timeout'] = $scope.clientSessionIdleTimeout.toSeconds();
+        } else {
+            $scope.clientEdit.attributes['client.session.idle.timeout'] = null;
+        }
+    }
+
+    $scope.updateClientSessionMaxLifespan = function() {
+        if ($scope.clientSessionMaxLifespan.time) {
+            $scope.clientEdit.attributes['client.session.max.lifespan'] = $scope.clientSessionMaxLifespan.toSeconds();
+        } else {
+            $scope.clientEdit.attributes['client.session.max.lifespan'] = null;
+        }
+    }
+
+    $scope.updateClientOfflineSessionIdleTimeout = function() {
+        if ($scope.clientOfflineSessionIdleTimeout.time) {
+            $scope.clientEdit.attributes['client.offline.session.idle.timeout'] = $scope.clientOfflineSessionIdleTimeout.toSeconds();
+        } else {
+            $scope.clientEdit.attributes['client.offline.session.idle.timeout'] = null;
+        }
+    }
+
+    $scope.updateClientOfflineSessionMaxLifespan = function() {
+        if ($scope.clientOfflineSessionMaxLifespan.time) {
+            $scope.clientEdit.attributes['client.offline.session.max.lifespan'] = $scope.clientOfflineSessionMaxLifespan.toSeconds();
+        } else {
+            $scope.clientEdit.attributes['client.offline.session.max.lifespan'] = null;
         }
     }
 

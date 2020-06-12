@@ -45,6 +45,7 @@ public class LdapUserFederationTest extends AbstractConsoleTest {
         createLdapUserProvider.form().setLdapBindCredentialInput("secret");
 //        createLdapUserProvider.form().setAccountAfterPasswordUpdateEnabled(false);
         // enable kerberos
+        createLdapUserProvider.form().uncollapseKerberosIntegrationHeader();
         createLdapUserProvider.form().setAllowKerberosAuthEnabled(true);
         createLdapUserProvider.form().setKerberosRealmInput("KEYCLOAK.ORG");
         createLdapUserProvider.form().setServerPrincipalInput("HTTP/localhost@KEYCLOAK.ORG");

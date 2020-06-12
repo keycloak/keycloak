@@ -42,6 +42,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.error.KeycloakErrorHandler;
+import org.keycloak.services.filters.KeycloakSecurityHeadersFilter;
 import org.keycloak.services.filters.KeycloakTransactionCommitter;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
@@ -57,7 +58,6 @@ import org.keycloak.timer.TimerProvider;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 import org.keycloak.util.JsonSerialization;
 
-import javax.servlet.ServletContext;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.ws.rs.core.Application;
@@ -98,15 +98,10 @@ public class KeycloakApplication extends Application {
             logger.debugv("PlatformProvider: {0}", platform.getClass().getName());
             logger.debugv("RestEasy provider: {0}", Resteasy.getProvider().getClass().getName());
 
-            ServletContext context = Resteasy.getContextData(ServletContext.class);
-
             loadConfig();
-
-            this.sessionFactory = createSessionFactory();
 
             Resteasy.pushDefaultContextObject(KeycloakApplication.class, this);
             Resteasy.pushContext(KeycloakApplication.class, this); // for injection
-            context.setAttribute(KeycloakSessionFactory.class.getName(), this.sessionFactory);
 
             singletons.add(new RobotsResource());
             singletons.add(new RealmsResource());
@@ -114,6 +109,7 @@ public class KeycloakApplication extends Application {
             classes.add(ThemeResource.class);
             classes.add(JsResource.class);
 
+            classes.add(KeycloakSecurityHeadersFilter.class);
             classes.add(KeycloakTransactionCommitter.class);
             classes.add(KeycloakErrorHandler.class);
 
@@ -130,6 +126,7 @@ public class KeycloakApplication extends Application {
     }
 
     protected void startup() {
+        this.sessionFactory = createSessionFactory();
 
         ExportImportManager[] exportImportManager = new ExportImportManager[1];
 
@@ -270,7 +267,7 @@ public class KeycloakApplication extends Application {
     }
 
     public static void setupScheduledTasks(final KeycloakSessionFactory sessionFactory) {
-        long interval = Config.scope("scheduled").getLong("interval", 60L) * 1000;
+        long interval = Config.scope("scheduled").getLong("interval", 900L) * 1000;
 
         KeycloakSession session = sessionFactory.create();
         try {

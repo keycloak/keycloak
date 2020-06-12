@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
  * @version $Revision: 1 $
  */
 public class IdentityProviderMapperModel implements Serializable {
+    public static final String SYNC_MODE = "syncMode";
 
     private static final TypeReference<List<StringPair>> MAP_TYPE_REPRESENTATION = new TypeReference<List<StringPair>>() {
     };
@@ -74,6 +75,14 @@ public class IdentityProviderMapperModel implements Serializable {
 
     public void setIdentityProviderMapper(String identityProviderMapper) {
         this.identityProviderMapper = identityProviderMapper;
+    }
+
+    public IdentityProviderMapperSyncMode getSyncMode() {
+        return IdentityProviderMapperSyncMode.valueOf(getConfig().getOrDefault(SYNC_MODE, "LEGACY"));
+    }
+
+    public void setSyncMode(IdentityProviderMapperSyncMode syncMode) {
+        getConfig().put(SYNC_MODE, syncMode.toString());
     }
 
     public Map<String, String> getConfig() {

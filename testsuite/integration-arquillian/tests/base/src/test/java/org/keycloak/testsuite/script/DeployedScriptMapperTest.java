@@ -102,7 +102,7 @@ public class DeployedScriptMapperTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @EnableFeature(SCRIPTS)
+    @EnableFeature(value = SCRIPTS, skipRestart = true, executeAsLast = false)
     public void testTokenScriptMapping() {
         {
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");

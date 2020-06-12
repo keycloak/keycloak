@@ -36,7 +36,7 @@ public class CacheControlUtil {
     public static CacheControl getDefaultCacheControl() {
         CacheControl cacheControl = new CacheControl();
         cacheControl.setNoTransform(false);
-        Integer maxAge = Config.scope("theme").getInt("staticMaxAge");
+        Integer maxAge = Config.scope("theme").getInt("staticMaxAge", 2592000);
         if (maxAge != null && maxAge > 0) {
             cacheControl.setMaxAge(maxAge);
         } else {

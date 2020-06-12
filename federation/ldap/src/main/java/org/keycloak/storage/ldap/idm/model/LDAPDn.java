@@ -21,19 +21,21 @@ import javax.naming.ldap.Rdn;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class LDAPDn {
 
-    private final Deque<Entry> entries;
+    private final Deque<RDN> entries;
 
     private LDAPDn() {
         this.entries = new LinkedList<>();
     }
 
-    private LDAPDn(Deque<Entry> entries) {
+    private LDAPDn(Deque<RDN> entries) {
         this.entries = entries;
     }
 
@@ -46,18 +48,36 @@ public class LDAPDn {
         // Keycloak must be able to process it, properly, w/o throwing an ArrayIndexOutOfBoundsException
         if(dnString.trim().isEmpty())
             return dn;
-        
+
         String[] rdns = dnString.split("(?<!\\\\),");
         for (String entryStr : rdns) {
-            String[] rdn = entryStr.split("(?<!\\\\)=");
-            if (rdn.length >1) {
-                dn.addLast(rdn[0].trim(), rdn[1].trim());
+            if (entryStr.indexOf('+') == -1) {
+                // This is 99.9% of cases where RDN consists of single key-value pair
+                SubEntry subEntry = parseSingleSubEntry(dn, entryStr);
+                dn.addLast(new RDN(subEntry));
             } else {
-                dn.addLast(rdn[0].trim(), "");
+                // This is 0.1% of cases where RDN consists of more key-value pairs like "uid=foo+cn=bar"
+                String[] subEntries = entryStr.split("(?<!\\\\)\\+");
+                RDN entry = new RDN();
+                for (String subEntryStr : subEntries) {
+                    SubEntry subEntry = parseSingleSubEntry(dn, subEntryStr);
+                    entry.addSubEntry(subEntry);
+                }
+                dn.addLast(entry);
             }
         }
 
         return dn;
+    }
+
+    // parse single sub-entry and add it to the "dn" . Assumption is that subentry is something like "uid=bar" and does not contain + character
+    private static SubEntry parseSingleSubEntry(LDAPDn dn, String subEntryStr) {
+        String[] rdn = subEntryStr.split("(?<!\\\\)=");
+        if (rdn.length >1) {
+            return new SubEntry(rdn[0].trim(), rdn[1].trim());
+        } else {
+            return new SubEntry(rdn[0].trim(), "");
+        }
     }
 
     @Override
@@ -79,50 +99,37 @@ public class LDAPDn {
         return toString(entries);
     }
 
-    private static String toString(Collection<Entry> entries) {
+    private static String toString(Collection<RDN> entries) {
         StringBuilder builder = new StringBuilder();
 
         boolean first = true;
-        for (Entry rdn : entries) {
+        for (RDN rdn : entries) {
             if (first) {
                 first = false;
             } else {
                 builder.append(",");
             }
-            builder.append(rdn.attrName).append("=").append(rdn.attrValue);
+            builder.append(rdn.toString());
         }
 
         return builder.toString();
     }
 
     /**
-     * @return string like "uid=joe" from the DN like "uid=joe,dc=something,dc=org"
+     * @return first entry. Usually entry corresponding to something like "uid=joe" from the DN like "uid=joe,dc=something,dc=org"
      */
-    public String getFirstRdn() {
-        Entry firstEntry = entries.getFirst();
-        return firstEntry.attrName + "=" + unescapeValue(firstEntry.attrValue);
+    public RDN getFirstRdn() {
+        return entries.getFirst();
     }
 
-    /**
-     * @return string attribute name like "uid" from the DN like "uid=joe,dc=something,dc=org"
-     */
-    public String getFirstRdnAttrName() {
-        Entry firstEntry = entries.getFirst();
-        return firstEntry.attrName;
-    }
-
-    /**
-     * @return string attribute value like "joe" from the DN like "uid=joe,dc=something,dc=org"
-     */
-    public String getFirstRdnAttrValue() {
-        Entry firstEntry = entries.getFirst();
-        String dnEscaped = firstEntry.attrValue;
-        return unescapeValue(dnEscaped);
-    }
-
-    private String unescapeValue(String escaped) {
+    private static String unescapeValue(String escaped) {
         // Something needed to handle non-String types?
         return Rdn.unescapeValue(escaped).toString();
+    }
+
+    private static String escapeValue(String unescaped) {
+        // Something needed to handle non-String types?
+        return Rdn.escapeValue(unescaped);
     }
 
     /**
@@ -132,7 +139,7 @@ public class LDAPDn {
      *
      */
     public LDAPDn getParentDn() {
-        LinkedList<Entry> parentDnEntries = new LinkedList<>(entries);
+        LinkedList<RDN> parentDnEntries = new LinkedList<>(entries);
         parentDnEntries.remove();
         return new LDAPDn(parentDnEntries);
     }
@@ -140,7 +147,7 @@ public class LDAPDn {
     public boolean isDescendantOf(LDAPDn expectedParentDn) {
         int parentEntriesCount = expectedParentDn.entries.size();
 
-        Deque<Entry> myEntries = new LinkedList<>(this.entries);
+        Deque<RDN> myEntries = new LinkedList<>(this.entries);
         boolean someRemoved = false;
         while (myEntries.size() > parentEntriesCount) {
             myEntries.removeFirst();
@@ -153,21 +160,137 @@ public class LDAPDn {
     }
 
     public void addFirst(String rdnName, String rdnValue) {
-        rdnValue = Rdn.escapeValue(rdnValue);
-        entries.addFirst(new Entry(rdnName, rdnValue));
+        rdnValue = escapeValue(rdnValue);
+        entries.addFirst(new RDN(new SubEntry(rdnName, rdnValue)));
     }
 
-    private void addLast(String rdnName, String rdnValue) {
-        entries.addLast(new Entry(rdnName, rdnValue));
+    public void addFirst(RDN entry) {
+        entries.addFirst(entry);
     }
 
-    private static class Entry {
+    private void addLast(RDN entry) {
+        entries.addLast(entry);
+    }
+
+    /**
+     * Single RDN inside the DN. RDN usually consists of single item like "uid=john" . In some rare cases, it can have multiple
+     * sub-entries like "uid=john+sn=Doe"
+     */
+    public static class RDN {
+
+        private List<SubEntry> subs = new LinkedList<>();
+
+        private RDN() {
+        }
+
+        private RDN(SubEntry subEntry) {
+            subs.add(subEntry);
+        }
+
+        private void addSubEntry(SubEntry subEntry) {
+            subs.add(subEntry);
+        }
+
+        /**
+         * @return Keys in the RDN. Returned list is the copy, which is not linked to the original RDN
+         */
+        public List<String> getAllKeys() {
+            return subs.stream().map(SubEntry::getAttrName).collect(Collectors.toList());
+        }
+
+        /**
+         * Assume that RDN is something like "uid=john", then this method will return "john" in case that attrName is "uid" .
+         * This is useful in case that RDN is multi-key - something like "uid=john+cn=John Doe" and we want to return just "john" as the value of "uid"
+         *
+         * The returned value will be unescaped
+         *
+         * @param attrName
+         * @return
+         */
+        public String getAttrValue(String attrName) {
+            for (SubEntry sub : subs) {
+                if (attrName.equalsIgnoreCase(sub.attrName)) {
+                    return LDAPDn.unescapeValue(sub.attrValue);
+                }
+            }
+            return null;
+        }
+
+        public void setAttrValue(String attrName, String newAttrValue) {
+            for (SubEntry sub : subs) {
+                if (attrName.equalsIgnoreCase(sub.attrName)) {
+                    sub.attrValue = escapeValue(newAttrValue);
+                    return;
+                }
+            }
+            addSubEntry(new SubEntry(attrName, escapeValue(newAttrValue)));
+        }
+
+        public boolean removeAttrValue(String attrName) {
+            SubEntry toRemove = null;
+            for (SubEntry sub : subs) {
+                if (attrName.equalsIgnoreCase(sub.attrName)) {
+                    toRemove = sub;
+                    continue;
+                }
+            }
+
+            if (toRemove != null) {
+                subs.remove(toRemove);
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public String toString() {
+            return toString(true);
+        }
+
+        /**
+         *
+         * @param escaped indicates whether return escaped or unescaped values. EG. "uid=john,comma" VS "uid=john\,comma"
+         * @return
+         */
+        public String toString(boolean escaped) {
+            StringBuilder builder = new StringBuilder();
+
+            boolean first = true;
+            for (SubEntry subEntry : subs) {
+                if (first) {
+                    first = false;
+                } else {
+                    builder.append('+');
+                }
+                builder.append(subEntry.toString(escaped));
+            }
+
+            return builder.toString();
+        }
+    }
+
+    private static class SubEntry {
         private final String attrName;
-        private final String attrValue;
+        private String attrValue;
 
-        private Entry(String attrName, String attrValue) {
+        private SubEntry(String attrName, String attrValue) {
             this.attrName = attrName;
             this.attrValue = attrValue;
+        }
+
+        private String getAttrName() {
+            return attrName;
+        }
+
+        @Override
+        public String toString() {
+            return toString(true);
+        }
+
+        private String toString(boolean escaped) {
+            String val = escaped ? attrValue : unescapeValue(attrValue);
+            return attrName + '=' + val;
         }
     }
 }

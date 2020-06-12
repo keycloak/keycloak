@@ -93,20 +93,21 @@ public enum MembershipType {
             LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
             if (ldapConfig.getUsernameLdapAttribute().equals(ldapConfig.getRdnLdapAttribute())) {
                 for (LDAPDn userDn : dns) {
-                    String username = userDn.getFirstRdnAttrValue();
+                    String username = userDn.getFirstRdn().getAttrValue(ldapConfig.getRdnLdapAttribute());
                     usernames.add(username);
                 }
             } else {
                 LDAPQuery query = LDAPUtils.createQueryForUserSearch(ldapProvider, realm);
                 LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
-                Condition[] orSubconditions = new Condition[dns.size()];
-                int index = 0;
+                List<Condition> orSubconditions = new ArrayList<>();
                 for (LDAPDn userDn : dns) {
-                    Condition condition = conditionsBuilder.equal(userDn.getFirstRdnAttrName(), userDn.getFirstRdnAttrValue(), EscapeStrategy.DEFAULT);
-                    orSubconditions[index] = condition;
-                    index++;
+                    String firstRdnAttrValue = userDn.getFirstRdn().getAttrValue(ldapConfig.getRdnLdapAttribute());
+                    if (firstRdnAttrValue != null) {
+                        Condition condition = conditionsBuilder.equal(ldapConfig.getRdnLdapAttribute(), firstRdnAttrValue, EscapeStrategy.DEFAULT);
+                        orSubconditions.add(condition);
+                    }
                 }
-                Condition orCondition = conditionsBuilder.orCondition(orSubconditions);
+                Condition orCondition = conditionsBuilder.orCondition(orSubconditions.toArray(new Condition[] {}));
                 query.addWhereCondition(orCondition);
                 List<LDAPObject> ldapUsers = query.getResultList();
                 for (LDAPObject ldapUser : ldapUsers) {

@@ -20,8 +20,8 @@ package org.keycloak.models.jpa.entities;
 import org.hibernate.annotations.Nationalized;
 
 import javax.persistence.*;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -60,14 +60,13 @@ public class GroupEntity {
     @Column(name = "PARENT_GROUP")
     private String parentId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "REALM_ID")
-    private RealmEntity realm;
+    @Column(name = "REALM_ID")
+    private String realm;
 
     @OneToMany(
             cascade = CascadeType.REMOVE,
             orphanRemoval = true, mappedBy="group")
-    protected Collection<GroupAttributeEntity> attributes = new ArrayList<GroupAttributeEntity>();
+    protected Collection<GroupAttributeEntity> attributes;
 
     @Column(name = "HAS_CHILD")
     protected boolean hasChild;
@@ -81,6 +80,9 @@ public class GroupEntity {
     }
 
     public Collection<GroupAttributeEntity> getAttributes() {
+        if (attributes == null) {
+            attributes = new LinkedList<>();
+        }
         return attributes;
     }
 
@@ -96,11 +98,11 @@ public class GroupEntity {
         this.name = name;
     }
 
-    public RealmEntity getRealm() {
+    public String getRealm() {
         return realm;
     }
 
-    public void setRealm(RealmEntity realm) {
+    public void setRealm(String realm) {
         this.realm = realm;
     }
 

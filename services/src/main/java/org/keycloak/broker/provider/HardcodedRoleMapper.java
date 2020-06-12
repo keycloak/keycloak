@@ -18,6 +18,7 @@
 package org.keycloak.broker.provider;
 
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -26,14 +27,18 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class HardcodedRoleMapper extends AbstractIdentityProviderMapper {
-    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
+    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+    private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
 
     static {
         ProviderConfigProperty property;
@@ -66,6 +71,11 @@ public class HardcodedRoleMapper extends AbstractIdentityProviderMapper {
     public static final String PROVIDER_ID = "oidc-hardcoded-role-idp-mapper";
 
     @Override
+    public boolean supportsSyncMode(IdentityProviderSyncMode syncMode) {
+        return IDENTITY_PROVIDER_SYNC_MODES.contains(syncMode);
+    }
+
+    @Override
     public String getId() {
         return PROVIDER_ID;
     }
@@ -77,6 +87,10 @@ public class HardcodedRoleMapper extends AbstractIdentityProviderMapper {
 
     @Override
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+        grantUserRole(realm, user, mapperModel);
+    }
+
+    private void grantUserRole(RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel) {
         String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
         RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
         if (role == null) throw new IdentityBrokerException("Unable to find role: " + roleName);
@@ -85,7 +99,11 @@ public class HardcodedRoleMapper extends AbstractIdentityProviderMapper {
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+        grantUserRole(realm, user, mapperModel);
+    }
 
+    @Override
+    public void updateBrokeredUserLegacy(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
     }
 
     @Override

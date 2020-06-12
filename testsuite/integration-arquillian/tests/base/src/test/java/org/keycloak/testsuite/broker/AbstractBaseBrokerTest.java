@@ -222,11 +222,15 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     }
 
     protected void logInWithBroker(BrokerConfiguration bc) {
-        log.debug("Clicking social " + bc.getIDPAlias());
-        loginPage.clickSocial(bc.getIDPAlias());
+        logInWithIdp(bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
+    }
+
+    protected void logInWithIdp(String idpAlias, String username, String password) {
+        log.debug("Clicking social " + idpAlias);
+        loginPage.clickSocial(idpAlias);
         waitForPage(driver, "log in to", true);
         log.debug("Logging in");
-        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        loginPage.login(username, password);
     }
 
     /** Logs in the IDP and updates account information */

@@ -21,6 +21,7 @@ import org.keycloak.testsuite.console.page.fragment.KcPassword;
 import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.ui.Select;
 
 import static org.keycloak.testsuite.util.UIUtils.setTextInputValue;
 
@@ -34,6 +35,15 @@ public class IdentityProviderForm extends Form {
     @FindBy(id = "clientSecret")
     private KcPassword clientSecretInput;
 
+    @FindBy(id = "syncMode")
+    private Select syncMode;
+
+    @FindBy(linkText = "Mappers")
+    private WebElement mappersTab;
+
+    @FindBy(linkText = "Create")
+    private WebElement mapperCreateButton;
+
     public void setClientId(final String value) {
         setTextInputValue(clientIdInput, value);
     }
@@ -42,7 +52,20 @@ public class IdentityProviderForm extends Form {
         clientSecretInput.setValue(value);
     }
 
+    public void setSyncMode(final String value) {
+        syncMode.selectByVisibleText(value);
+    }
+
+    public String syncMode() {
+        return syncMode.getFirstSelectedOption().getText();
+    }
+
     public KcPassword clientSecret() {
         return clientSecretInput;
+    }
+
+    public void createMapper() {
+        mappersTab.click();
+        mapperCreateButton.click();
     }
 }

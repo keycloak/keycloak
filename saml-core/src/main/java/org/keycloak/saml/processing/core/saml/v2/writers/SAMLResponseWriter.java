@@ -64,17 +64,8 @@ public class SAMLResponseWriter extends BaseWriter {
      * @throws org.keycloak.saml.common.exceptions.ProcessingException
      */
     public void write(ResponseType response) throws ProcessingException {
-        write(response, false);
-    }
-
-    public void write(ResponseType response, boolean forceWriteDsigNamespace) throws ProcessingException {
-        Element sig = response.getSignature();
-
         StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, JBossSAMLConstants.RESPONSE__PROTOCOL.get(), JBossSAMLURIConstants.PROTOCOL_NSURI.get());
 
-        if (forceWriteDsigNamespace && sig != null && sig.getPrefix() != null && ! sig.hasAttribute("xmlns:" + sig.getPrefix())) {
-            StaxUtil.writeNameSpace(writer, sig.getPrefix(), XMLSignature.XMLNS);
-        }
         StaxUtil.writeNameSpace(writer, PROTOCOL_PREFIX, JBossSAMLURIConstants.PROTOCOL_NSURI.get());
         StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, JBossSAMLURIConstants.ASSERTION_NSURI.get());
 
@@ -85,9 +76,6 @@ public class SAMLResponseWriter extends BaseWriter {
             write(issuer, new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ISSUER.get(), ASSERTION_PREFIX));
         }
 
-        if (sig != null) {
-            StaxUtil.writeDOMElement(writer, sig);
-        }
         ExtensionsType extensions = response.getExtensions();
         if (extensions != null && extensions.getAny() != null && ! extensions.getAny().isEmpty()) {
             write(extensions);
@@ -101,7 +89,7 @@ public class SAMLResponseWriter extends BaseWriter {
             for (ResponseType.RTChoiceType choiceType : choiceTypes) {
                 AssertionType assertion = choiceType.getAssertion();
                 if (assertion != null) {
-                    assertionWriter.write(assertion, forceWriteDsigNamespace);
+                    assertionWriter.write(assertion);
                 }
 
                 EncryptedAssertionType encryptedAssertion = choiceType.getEncryptedAssertion();

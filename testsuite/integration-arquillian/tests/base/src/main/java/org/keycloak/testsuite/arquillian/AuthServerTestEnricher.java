@@ -121,6 +121,8 @@ public class AuthServerTestEnricher {
     public static final String AUTH_SERVER_BACKEND_PROPERTY = "auth.server.backend";
     public static final String AUTH_SERVER_BACKEND = System.getProperty(AUTH_SERVER_BACKEND_PROPERTY, AUTH_SERVER_BACKEND_DEFAULT);
 
+    public static final String AUTH_SERVER_LEGACY = "auth-server-legacy";
+
     public static final String AUTH_SERVER_BALANCER_DEFAULT = "auth-server-balancer";
     public static final String AUTH_SERVER_BALANCER_PROPERTY = "auth.server.balancer";
     public static final String AUTH_SERVER_BALANCER = System.getProperty(AUTH_SERVER_BALANCER_PROPERTY, AUTH_SERVER_BALANCER_DEFAULT);
@@ -157,6 +159,10 @@ public class AuthServerTestEnricher {
 
     public static boolean isAuthServerRemote() {
         return AUTH_SERVER_CONTAINER.equals("auth-server-remote");
+    }
+
+    public static boolean isAuthServerQuarkus() {
+        return AUTH_SERVER_CONTAINER.equals("auth-server-quarkus");
     }
 
     public static String getAuthServerContextRoot() {
@@ -293,6 +299,15 @@ public class AuthServerTestEnricher {
                     updateWithAuthServerInfo(c, portOffset);
                     suiteContext.addAuthServerBackendsInfo(0, c);
                 });
+
+            if (Boolean.parseBoolean(System.getProperty("auth.server.jboss.legacy"))) {
+                ContainerInfo legacy = containers.stream()
+                    .filter(c -> c.getQualifier().startsWith(AUTH_SERVER_LEGACY))
+                    .findAny()
+                    .orElseThrow(() -> new IllegalStateException("Not found legacy container: " + AUTH_SERVER_LEGACY));
+                updateWithAuthServerInfo(legacy, 500);
+                suiteContext.setLegacyAuthServerInfo(legacy);
+            }
 
             if (suiteContext.getAuthServerBackendsInfo().isEmpty()) {
                 throw new RuntimeException(String.format("No auth server container matching '%s' found in arquillian.xml.", AUTH_SERVER_BACKEND));

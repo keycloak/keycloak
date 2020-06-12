@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.testsuite.Assert;
 import org.openqa.selenium.NoSuchElementException;
 
 import static org.junit.Assert.assertEquals;
@@ -21,6 +22,28 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         return KcOidcBrokerConfiguration.INSTANCE;
     }
 
+    /**
+     * KEYCLOAK-10932
+     */
+    @Test
+    public void loginWithFirstnameLastnamePopulatedFromClaims() {
+
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+
+        String firstname = "Firstname";
+        String lastname = "Lastname";
+        String username = "firstandlastname";
+        createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, firstname, lastname, "firstnamelastname@example.org");
+
+        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        logInWithIdp(bc.getIDPAlias(), username, BrokerTestConstants.USER_PASSWORD);
+
+        accountUpdateProfilePage.assertCurrent();
+
+        assertEquals(username, accountUpdateProfilePage.getUsername());
+        assertEquals(firstname, accountUpdateProfilePage.getFirstName());
+        assertEquals(lastname, accountUpdateProfilePage.getLastName());
+    }
 
     /**
      * Tests that duplication is detected and user wants to link federatedIdentity with existing account. He will confirm link by reauthentication
@@ -57,6 +80,66 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             try {
                 this.loginPage.findSocialButton(bc.getIDPAlias());
                 org.junit.Assert.fail("Not expected to see social button with " + samlBrokerConfig.getIDPAlias());
+            } catch (NoSuchElementException expected) {
+            }
+
+            log.debug("Clicking social " + samlBrokerConfig.getIDPAlias());
+            loginPage.clickSocial(samlBrokerConfig.getIDPAlias());
+            waitForAccountManagementTitle();
+            accountUpdateProfilePage.assertCurrent();
+
+            assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 2);
+        } finally {
+            updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
+            removeUserByUsername(consumerRealm, "consumer");
+        }
+    }
+
+    @Test
+    public void testFilterMultipleBrokerWhenReauthenticating() {
+        KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
+        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients(suiteContext).get(0);
+        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider(suiteContext);
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+
+        // create another oidc broker
+        KcOidcBrokerConfiguration oidcBrokerConfig = KcOidcBrokerConfiguration.INSTANCE;
+        ClientRepresentation oidcClient = oidcBrokerConfig.createProviderClients(suiteContext).get(0);
+        IdentityProviderRepresentation oidcBroker = oidcBrokerConfig.setUpIdentityProvider(suiteContext);
+        oidcBroker.setAlias("kc-oidc-idp2");
+        oidcBroker.setDisplayName("kc-oidc-idp2");
+
+        try {
+            updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+            adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
+            adminClient.realm(bc.providerRealmName()).clients().create(oidcClient);
+            consumerRealm.identityProviders().create(samlBroker);
+            consumerRealm.identityProviders().create(oidcBroker);
+
+            driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+
+            logInWithBroker(samlBrokerConfig);
+            waitForAccountManagementTitle();
+            accountUpdateProfilePage.assertCurrent();
+            logoutFromRealm(bc.consumerRealmName());
+
+            logInWithBroker(bc);
+
+            waitForPage(driver, "account already exists", false);
+            assertTrue(idpConfirmLinkPage.isCurrent());
+            assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
+            idpConfirmLinkPage.clickLinkAccount();
+
+            assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+
+            // There have to be two idp showed on login page
+            // kc-saml-idp and kc-oidc-idp2 must be present but not kc-oidc-idp
+            this.loginPage.findSocialButton(samlBroker.getAlias());
+            this.loginPage.findSocialButton(oidcBroker.getAlias());
+
+            try {
+                this.loginPage.findSocialButton(bc.getIDPAlias());
+                org.junit.Assert.fail("Not expected to see social button with " + bc.getIDPAlias());
             } catch (NoSuchElementException expected) {
             }
 
@@ -158,4 +241,24 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         }
     }
 
+    @Test
+    public void testEditUsername() {
+        updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
+
+        createUser(bc.providerRealmName(), "no-first-name", "password", null, "LastName", "no-first-name@localhost.com");
+        driver.navigate().to(getAccountUrl(bc.consumerRealmName()));
+        log.debug("Clicking social " + bc.getIDPAlias());
+        loginPage.clickSocial(bc.getIDPAlias());
+        waitForPage(driver, "log in to", true);
+        Assert.assertTrue("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        log.debug("Logging in");
+        loginPage.login("no-first-name", "password");
+
+        waitForPage(driver, "update account information", false);
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation("", "no-first-name@localhost.com", "FirstName", "LastName");
+        updateAccountInformationPage.assertCurrent();
+        assertEquals("Please specify username.", accountUpdateProfilePage.getError());
+    }
 }

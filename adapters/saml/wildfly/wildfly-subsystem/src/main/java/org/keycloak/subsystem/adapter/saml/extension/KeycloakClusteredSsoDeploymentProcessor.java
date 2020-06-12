@@ -116,7 +116,7 @@ public class KeycloakClusteredSsoDeploymentProcessor implements DeploymentUnitPr
         // Update names from jboss-web.xml's <replicationConfig>
         if (webMetaData.getReplicationConfig() != null && webMetaData.getReplicationConfig().getCacheName() != null) {
             ServiceName sn = ServiceName.parse(webMetaData.getReplicationConfig().getCacheName());
-            cacheContainer = sn.getParent().getSimpleName();
+            cacheContainer = (sn.length() > 1) ? sn.getParent().getSimpleName() : sn.getSimpleName();
             deploymentSessionCacheName = sn.getSimpleName();
         }
         String ssoCacheName = deploymentSessionCacheName + ".ssoCache";

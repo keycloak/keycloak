@@ -16,8 +16,6 @@
  */
 package org.keycloak.testsuite.forms;
 
-import java.net.MalformedURLException;
-import java.net.URI;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
@@ -33,7 +31,6 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.BrowserSecurityHeaders;
-import org.keycloak.models.Constants;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -45,6 +42,7 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.console.page.AdminConsole;
+import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -59,6 +57,7 @@ import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 
@@ -148,6 +147,9 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected ErrorPage errorPage;
+
+    @Page
+    protected AccountUpdateProfilePage profilePage;
 
     @Page
     protected LoginPasswordUpdatePage updatePasswordPage;
@@ -350,6 +352,36 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
                     .assertEvent();
         } finally {
             setUserEnabled("login-test", true);
+        }
+    }
+
+    @Test
+    public void loginDifferentUserAfterDisabledUserThrownOut() {
+        String userId = adminClient.realm("test").users().search("test-user@localhost").get(0).getId();
+        try {
+            //profilePage.open();
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
+
+            //accountPage.assertCurrent();
+            appPage.assertCurrent();
+            appPage.openAccount();
+
+            profilePage.assertCurrent();
+
+            setUserEnabled(userId, false);
+
+            // force refresh token which results in redirecting to login page
+            profilePage.updateUsername("notPermitted");
+            WaitUtils.waitForPageToLoad();
+
+            loginPage.assertCurrent();
+
+            // try to log in as different user
+            loginPage.login("keycloak-user@localhost", "password");
+            profilePage.assertCurrent();
+        } finally {
+            setUserEnabled(userId, true);
         }
     }
 

@@ -25,8 +25,8 @@
         </form>
     </#if>
 
-    <script type="text/javascript" src="${url.resourcesPath}/node_modules/jquery/dist/jquery.min.js"></script>
-    <script type="text/javascript" src="${url.resourcesPath}/js/base64url.js"></script>
+    <script type="text/javascript" src="${url.resourcesCommonPath}/node_modules/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="${url.resourcesCommonPath}/js/base64url.js"></script>
     <script type="text/javascript">
 
         window.onload = () => {

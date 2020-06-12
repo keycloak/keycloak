@@ -28,6 +28,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -296,5 +297,30 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
     }
     protected String getIdTokenSignatureAlgorithm() {
         return this.idTokenSigAlgName;
+    }
+
+    /**
+     *  Validate "at_hash" claim in IDToken.
+     *  see KEYCLOAK-9635
+     * @param accessTokenHash
+     * @param accessToken
+     */
+    protected void assertValidAccessTokenHash(String accessTokenHash, String accessToken) {
+
+        Assert.assertNotNull(accessTokenHash);
+        Assert.assertNotNull(accessToken);
+        assertEquals(accessTokenHash, HashUtils.oidcHash(getIdTokenSignatureAlgorithm(), accessToken));
+    }
+
+    /**
+     * Validate  "c_hash" claim in IDToken.
+     * @param codeHash
+     * @param code
+     */
+    protected void assertValidCodeHash(String codeHash, String code) {
+
+        Assert.assertNotNull(codeHash);
+        Assert.assertNotNull(code);
+        Assert.assertEquals(codeHash, HashUtils.oidcHash(getIdTokenSignatureAlgorithm(), code));
     }
 }

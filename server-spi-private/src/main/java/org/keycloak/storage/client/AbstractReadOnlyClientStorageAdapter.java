@@ -23,6 +23,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.storage.ReadOnlyException;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -221,6 +222,11 @@ public abstract class AbstractReadOnlyClientStorageAdapter extends AbstractClien
 
     @Override
     public void addClientScope(ClientScopeModel clientScope, boolean defaultScope) {
+        throw new ReadOnlyException("client is read only for this update");
+    }
+
+    @Override
+    public void addClientScopes(Set<ClientScopeModel> clientScopes, boolean defaultScope) {
         throw new ReadOnlyException("client is read only for this update");
     }
 

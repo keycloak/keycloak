@@ -86,6 +86,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     // KEYCLOAK-7688 Offline Session Max for Offline Token
     protected boolean offlineSessionMaxLifespanEnabled;
     protected int offlineSessionMaxLifespan;
+    protected int clientSessionIdleTimeout;
+    protected int clientSessionMaxLifespan;
+    protected int clientOfflineSessionIdleTimeout;
+    protected int clientOfflineSessionMaxLifespan;
     protected int accessTokenLifespan;
     protected int accessTokenLifespanForImplicitFlow;
     protected int accessCodeLifespan;
@@ -197,6 +201,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         // KEYCLOAK-7688 Offline Session Max for Offline Token
         offlineSessionMaxLifespanEnabled = model.isOfflineSessionMaxLifespanEnabled();
         offlineSessionMaxLifespan = model.getOfflineSessionMaxLifespan();
+        clientSessionIdleTimeout = model.getClientSessionIdleTimeout();
+        clientSessionMaxLifespan = model.getClientSessionMaxLifespan();
+        clientOfflineSessionIdleTimeout = model.getClientOfflineSessionIdleTimeout();
+        clientOfflineSessionMaxLifespan = model.getClientOfflineSessionMaxLifespan();
         accessTokenLifespan = model.getAccessTokenLifespan();
         accessTokenLifespanForImplicitFlow = model.getAccessTokenLifespanForImplicitFlow();
         accessCodeLifespan = model.getAccessCodeLifespan();
@@ -445,6 +453,22 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public int getOfflineSessionMaxLifespan() {
         return offlineSessionMaxLifespan;
+    }
+
+    public int getClientSessionIdleTimeout() {
+        return clientSessionIdleTimeout;
+    }
+
+    public int getClientSessionMaxLifespan() {
+        return clientSessionMaxLifespan;
+    }
+
+    public int getClientOfflineSessionIdleTimeout() {
+        return clientOfflineSessionIdleTimeout;
+    }
+
+    public int getClientOfflineSessionMaxLifespan() {
+        return clientOfflineSessionMaxLifespan;
     }
 
     public int getAccessTokenLifespan() {

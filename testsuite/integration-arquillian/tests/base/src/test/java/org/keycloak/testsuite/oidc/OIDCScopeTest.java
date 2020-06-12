@@ -306,7 +306,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .removeDetail(Details.REDIRECT_URI).assertEvent();
 
         // Login with scope parameter. Just 'profile' is there
-        oauth.scope("openid profile email");
+        oauth.scope("openid profile");
         oauth.doLogin("john", "password");
         loginEvent = events.expectLogin()
                 .user(userId)

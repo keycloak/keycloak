@@ -16,8 +16,6 @@
  */
 package org.keycloak.testsuite.script;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.common.Profile.Feature.SCRIPTS;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
@@ -38,16 +36,12 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.mappers.ScriptBasedOIDCProtocolMapper;
-import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ContainerAssume;
-import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -94,7 +88,7 @@ public class UndeployedScriptMapperNotAvailableTest extends AbstractTestRealmKey
     }
 
     @Test
-    @EnableFeature(SCRIPTS)
+    @EnableFeature(value = SCRIPTS, skipRestart = true, executeAsLast = false)
     public void testMapperNotRecognizedWhenDisabled() throws Exception {
         ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
 

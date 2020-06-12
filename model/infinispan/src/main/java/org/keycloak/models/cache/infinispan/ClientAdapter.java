@@ -103,6 +103,13 @@ public class ClientAdapter implements ClientModel, CachedObject {
     }
 
     @Override
+    public void addClientScopes(Set<ClientScopeModel> clientScopes, boolean defaultScope) {
+        for (ClientScopeModel clientScope : clientScopes) {
+            addClientScope(clientScope, defaultScope);
+        }
+    }
+
+    @Override
     public void removeClientScope(ClientScopeModel clientScope) {
         getDelegateForUpdate();
         updated.removeClientScope(clientScope);

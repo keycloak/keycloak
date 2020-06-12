@@ -34,9 +34,4 @@ public interface HostnameProviderFactory extends ProviderFactory<HostnameProvide
     default void postInit(KeycloakSessionFactory factory) {
     }
 
-    @Override
-    default int order() {
-        return 0;
-    }
-
 }

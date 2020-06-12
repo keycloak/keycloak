@@ -481,6 +481,58 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public int getClientSessionIdleTimeout() {
+        if (isUpdated())
+            return updated.getClientSessionIdleTimeout();
+        return cached.getClientSessionIdleTimeout();
+    }
+
+    @Override
+    public void setClientSessionIdleTimeout(int seconds) {
+        getDelegateForUpdate();
+        updated.setClientSessionIdleTimeout(seconds);
+    }
+
+    @Override
+    public int getClientSessionMaxLifespan() {
+        if (isUpdated())
+            return updated.getClientSessionMaxLifespan();
+        return cached.getClientSessionMaxLifespan();
+    }
+
+    @Override
+    public void setClientSessionMaxLifespan(int seconds) {
+        getDelegateForUpdate();
+        updated.setClientSessionMaxLifespan(seconds);
+    }
+
+    @Override
+    public int getClientOfflineSessionIdleTimeout() {
+        if (isUpdated())
+            return updated.getClientOfflineSessionIdleTimeout();
+        return cached.getClientOfflineSessionIdleTimeout();
+    }
+
+    @Override
+    public void setClientOfflineSessionIdleTimeout(int seconds) {
+        getDelegateForUpdate();
+        updated.setClientOfflineSessionIdleTimeout(seconds);
+    }
+
+    @Override
+    public int getClientOfflineSessionMaxLifespan() {
+        if (isUpdated())
+            return updated.getClientOfflineSessionMaxLifespan();
+        return cached.getClientOfflineSessionMaxLifespan();
+    }
+
+    @Override
+    public void setClientOfflineSessionMaxLifespan(int seconds) {
+        getDelegateForUpdate();
+        updated.setClientOfflineSessionMaxLifespan(seconds);
+    }
+
+    @Override
     public int getAccessTokenLifespan() {
         if (isUpdated()) return updated.getAccessTokenLifespan();
         return cached.getAccessTokenLifespan();

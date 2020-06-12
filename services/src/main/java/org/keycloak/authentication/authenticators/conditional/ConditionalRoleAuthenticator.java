@@ -6,20 +6,26 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-
-import java.util.Set;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.jboss.logging.Logger;
 
 public class ConditionalRoleAuthenticator implements ConditionalAuthenticator {
     public static final ConditionalRoleAuthenticator SINGLETON = new ConditionalRoleAuthenticator();
+    private static final Logger logger = Logger.getLogger(ConditionalRoleAuthenticator.class);
 
     @Override
     public boolean matchCondition(AuthenticationFlowContext context) {
         UserModel user = context.getUser();
+        RealmModel realm = context.getRealm();
         AuthenticatorConfigModel authConfig = context.getAuthenticatorConfig();
         if (user != null && authConfig!=null && authConfig.getConfig()!=null) {
-            Set<RoleModel> roles = user.getRoleMappings();
             String requiredRole = authConfig.getConfig().get(ConditionalRoleAuthenticatorFactory.CONDITIONAL_USER_ROLE);
-            return roles.stream().anyMatch(r -> r.getName().equals(requiredRole));
+            RoleModel role = KeycloakModelUtils.getRoleFromString(realm, requiredRole);
+            if (role == null) {
+                logger.errorv("Invalid role name submitted: {0}", requiredRole);
+                return false;
+            }
+            return user.hasRole(role);
         }
         return false;
     }

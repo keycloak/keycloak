@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-auth-server-jboss</artifactId>
-        <version>9.0.4-SNAPSHOT</version>
+        <version>11.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -45,7 +45,7 @@
         <auth.server.overlay.version>${product.version}</auth.server.overlay.version>
         <overlaid.container.groupId>org.jboss.eap</overlaid.container.groupId>
         <overlaid.container.version>${eap.version}</overlaid.container.version>
-        <overlaid.container.unpacked.folder.name>jboss-eap-7.3</overlaid.container.unpacked.folder.name>
+        <overlaid.container.unpacked.folder.name>jboss-eap-7.4</overlaid.container.unpacked.folder.name>
     </properties>
 
     <build>

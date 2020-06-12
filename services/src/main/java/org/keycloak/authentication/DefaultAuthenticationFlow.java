@@ -28,6 +28,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
+import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
@@ -97,38 +98,42 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             throw new AuthenticationFlowException("Execution not found", AuthenticationFlowError.INTERNAL_ERROR);
         }
 
-        MultivaluedMap<String, String> inputData = processor.getRequest().getDecodedFormParameters();
-        String authExecId = inputData.getFirst(Constants.AUTHENTICATION_EXECUTION);
+        if (HttpMethod.POST.equals(processor.getRequest().getHttpMethod())) {
+            MultivaluedMap<String, String> inputData = processor.getRequest().getDecodedFormParameters();
+            String authExecId = inputData.getFirst(Constants.AUTHENTICATION_EXECUTION);
 
-        // User clicked on "try another way" link
-        if (inputData.containsKey("tryAnotherWay")) {
-            logger.trace("User clicked on link 'Try Another Way'");
+            // User clicked on "try another way" link
+            if (inputData.containsKey("tryAnotherWay")) {
+                logger.trace("User clicked on link 'Try Another Way'");
 
-            List<AuthenticationSelectionOption> selectionOptions = createAuthenticationSelectionList(model);
+                List<AuthenticationSelectionOption> selectionOptions = createAuthenticationSelectionList(model);
 
-            AuthenticationProcessor.Result result = processor.createAuthenticatorContext(model, null, null);
-            result.setAuthenticationSelections(selectionOptions);
-            return result.form().createSelectAuthenticator();
-        }
+                AuthenticationProcessor.Result result = processor.createAuthenticatorContext(model, null, null);
+                result.setAuthenticationSelections(selectionOptions);
+                return result.form().createSelectAuthenticator();
+            }
 
-        // check if the user has switched to a new authentication execution, and if so switch to it.
-        if (authExecId != null && !authExecId.isEmpty()) {
+            // check if the user has switched to a new authentication execution, and if so switch to it.
+            if (authExecId != null && !authExecId.isEmpty()) {
 
-            List<AuthenticationSelectionOption> selectionOptions = createAuthenticationSelectionList(model);
+                List<AuthenticationSelectionOption> selectionOptions = createAuthenticationSelectionList(model);
 
-            // Check if switch to the requested authentication execution is allowed
-            selectionOptions.stream()
-                    .filter(authSelectionOption -> authExecId.equals(authSelectionOption.getAuthExecId()))
-                    .findFirst()
-                    .orElseThrow(() -> new AuthenticationFlowException("Requested authentication execution is not allowed", AuthenticationFlowError.INTERNAL_ERROR)
-            );
+                // Check if switch to the requested authentication execution is allowed
+                selectionOptions.stream()
+                        .filter(authSelectionOption -> authExecId.equals(authSelectionOption.getAuthExecId()))
+                        .findFirst()
+                        .orElseThrow(() -> new AuthenticationFlowException("Requested authentication execution is not allowed",
+                                AuthenticationFlowError.INTERNAL_ERROR)
+                        );
 
-            model = processor.getRealm().getAuthenticationExecutionById(authExecId);
+                model = processor.getRealm().getAuthenticationExecutionById(authExecId);
 
-            Response response = processSingleFlowExecutionModel(model, false);
-            if (response == null) {
-                return continueAuthenticationAfterSuccessfulAction(model);
-            } else return response;
+                Response response = processSingleFlowExecutionModel(model, false);
+                if (response == null) {
+                    return continueAuthenticationAfterSuccessfulAction(model);
+                } else
+                    return response;
+            }
         }
 
         //handle case where execution is a flow - This can happen during user registration for example

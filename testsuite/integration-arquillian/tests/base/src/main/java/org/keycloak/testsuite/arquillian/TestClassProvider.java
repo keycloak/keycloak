@@ -23,6 +23,7 @@ public class TestClassProvider {
             "/org/jboss/resteasy/client",
             "/org/jboss/arquillian",
             "/org/jboss/shrinkwrap",
+            "/org/jboss/jandex",
             "/org/openqa/selenium"
     };
 

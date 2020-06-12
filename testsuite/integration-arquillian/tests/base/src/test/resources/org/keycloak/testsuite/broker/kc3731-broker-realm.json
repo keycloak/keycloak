@@ -64,6 +64,7 @@
     "authenticateByDefault" : false,
     "firstBrokerLoginFlowAlias" : "first broker login",
     "config" : {
+      "syncMode": "IMPORT",
       "nameIDPolicyFormat" : "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
       "postBindingAuthnRequest" : "true",
       "postBindingResponse" : "true",
@@ -78,6 +79,7 @@
     "identityProviderAlias" : "saml-leaf",
     "identityProviderMapper" : "saml-role-idp-mapper",
     "config" : {
+      "syncMode": "INHERIT",
       "attribute.value" : "manager",
       "role" : "${url.realm.consumer}/app/auth.manager",
       "attribute.name" : "Role"

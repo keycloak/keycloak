@@ -22,7 +22,6 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
-import javax.security.auth.x500.X500Principal;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -40,6 +39,7 @@ import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import javax.security.auth.x500.X500Principal;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>

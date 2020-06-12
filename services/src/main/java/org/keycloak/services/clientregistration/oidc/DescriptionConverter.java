@@ -121,6 +121,10 @@ public class DescriptionConverter {
             else configWrapper.setUseMtlsHoKToken(false);
         }
 
+        if (clientOIDC.getTlsClientAuthSubjectDn() != null) {
+            configWrapper.setTlsClientAuthSubjectDn(clientOIDC.getTlsClientAuthSubjectDn());
+        }
+
         if (clientOIDC.getIdTokenSignedResponseAlg() != null) {
             configWrapper.setIdTokenSignedResponseAlg(clientOIDC.getIdTokenSignedResponseAlg());
         }
@@ -132,6 +136,8 @@ public class DescriptionConverter {
         if (clientOIDC.getIdTokenEncryptedResponseEnc() != null) {
             configWrapper.setIdTokenEncryptedResponseEnc(clientOIDC.getIdTokenEncryptedResponseEnc());
         }
+
+        configWrapper.setTokenEndpointAuthSigningAlg(clientOIDC.getTokenEndpointAuthSigningAlg());
 
         return client;
     }
@@ -213,6 +219,9 @@ public class DescriptionConverter {
         } else {
             response.setTlsClientCertificateBoundAccessTokens(Boolean.FALSE);
         }
+        if (config.getTlsClientAuthSubjectDn() != null) {
+            response.setTlsClientAuthSubjectDn(config.getTlsClientAuthSubjectDn());
+        }
         if (config.getIdTokenSignedResponseAlg() != null) {
             response.setIdTokenSignedResponseAlg(config.getIdTokenSignedResponseAlg());
         }
@@ -221,6 +230,9 @@ public class DescriptionConverter {
         }
         if (config.getIdTokenEncryptedResponseEnc() != null) {
             response.setIdTokenEncryptedResponseEnc(config.getIdTokenEncryptedResponseEnc());
+        }
+        if (config.getTokenEndpointAuthSigningAlg() != null) {
+            response.setTokenEndpointAuthSigningAlg(config.getTokenEndpointAuthSigningAlg());
         }
 
         List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(client);

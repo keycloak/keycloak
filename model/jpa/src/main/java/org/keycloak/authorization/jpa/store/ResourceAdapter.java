@@ -241,7 +241,7 @@ public class ResourceAdapter extends AbstractAuthorizationModel implements Resou
 
     @Override
     public boolean isFetched(String association) {
-        return em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(this, association);
+        return em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(this.entity, association);
     }
 
 

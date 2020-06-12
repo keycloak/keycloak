@@ -17,8 +17,13 @@
 
 package org.keycloak.provider.wildfly;
 
+import org.keycloak.common.util.Resteasy;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.platform.PlatformProvider;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.resources.KeycloakApplication;
+
+import javax.servlet.ServletContext;
 
 public class WildflyPlatform implements PlatformProvider {
 
@@ -27,6 +32,9 @@ public class WildflyPlatform implements PlatformProvider {
     @Override
     public void onStartup(Runnable startupHook) {
         startupHook.run();
+        KeycloakApplication keycloakApplication = Resteasy.getContextData(KeycloakApplication.class);
+        ServletContext context = Resteasy.getContextData(ServletContext.class);
+        context.setAttribute(KeycloakSessionFactory.class.getName(),  keycloakApplication.getSessionFactory());
     }
 
     @Override

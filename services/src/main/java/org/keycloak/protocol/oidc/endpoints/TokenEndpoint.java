@@ -33,6 +33,7 @@ import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
+import org.keycloak.broker.provider.IdentityProviderMapperSyncModeDelegate;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
@@ -90,12 +91,14 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.ProfileHelper;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -159,11 +162,18 @@ public class TokenEndpoint {
         this.event = event;
     }
 
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @POST
     public Response processGrantRequest() {
         cors = Cors.add(request).auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
-        formParams = request.getDecodedFormParameters();
+        MultivaluedMap<String, String> formParameters = request.getDecodedFormParameters();
+
+        if (formParameters == null) {
+            formParameters = new MultivaluedHashMap<>();
+        }
+        
+        formParams = formParameters;
         grantType = formParams.getFirst(OIDCLoginProtocol.GRANT_TYPE_PARAM);
 
         // https://tools.ietf.org/html/rfc6749#section-5.1
@@ -413,7 +423,7 @@ public class TokenEndpoint {
         }
 
         if (TokenUtil.isOIDCRequest(scopeParam)) {
-            responseBuilder.generateIDToken();
+            responseBuilder.generateIDToken().generateAccessTokenHash();
         }
         
         AccessTokenResponse res = null;
@@ -567,7 +577,7 @@ public class TokenEndpoint {
             event.error(Errors.CONSENT_DENIED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Client requires user consent", Response.Status.BAD_REQUEST);
         }
-        String scope = formParams.getFirst(OAuth2Constants.SCOPE);
+        String scope = getRequestedScopes();
 
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
         AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
@@ -613,7 +623,7 @@ public class TokenEndpoint {
 
         String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
-            responseBuilder.generateIDToken();
+            responseBuilder.generateIDToken().generateAccessTokenHash();
         }
 
         // TODO : do the same as codeToToken()
@@ -657,7 +667,7 @@ public class TokenEndpoint {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "User '" + clientUsername + "' disabled", Response.Status.UNAUTHORIZED);
         }
 
-        String scope = formParams.getFirst(OAuth2Constants.SCOPE);
+        String scope = getRequestedScopes();
 
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
         AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
@@ -687,7 +697,7 @@ public class TokenEndpoint {
 
         String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
-            responseBuilder.generateIDToken();
+            responseBuilder.generateIDToken().generateAccessTokenHash();
         }
 
         // TODO : do the same as codeToToken()
@@ -696,6 +706,18 @@ public class TokenEndpoint {
         event.success();
 
         return cors.builder(Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).build();
+    }
+
+    private String getRequestedScopes() {
+        String scope = formParams.getFirst(OAuth2Constants.SCOPE);
+
+        if (!TokenManager.isValidScope(scope, client)) {
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, "Invalid scopes: " + scope,
+                    Status.BAD_REQUEST);
+        }
+
+        return scope;
     }
 
     public Response tokenExchange() {
@@ -912,7 +934,7 @@ public class TokenEndpoint {
 
         String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {
-            responseBuilder.generateIDToken();
+            responseBuilder.generateIDToken().generateAccessTokenHash();
         }
 
         AccessTokenResponse res = responseBuilder.build();
@@ -1065,7 +1087,7 @@ public class TokenEndpoint {
                 KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
                 for (IdentityProviderMapperModel mapper : mappers) {
                     IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
-                    target.updateBrokeredUser(session, realm, user, mapper, context);
+                    IdentityProviderMapperSyncModeDelegate.delegateUpdateBrokeredUser(session, realm, user, mapper, context, target);
                 }
             }
         }

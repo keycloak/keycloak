@@ -390,6 +390,11 @@ public class AdminEventPaths {
         return uri.toString();
     }
 
+    public static String authEditFlowPath(String flowId) {
+        URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "updateFlow")
+        .build(flowId);
+        return uri.toString();
+    }
     public static String authAddExecutionFlowPath(String flowAlias) {
         URI uri = UriBuilder.fromUri(authMgmtBasePath()).path(AuthenticationManagementResource.class, "addExecutionFlow")
                 .build(flowAlias);

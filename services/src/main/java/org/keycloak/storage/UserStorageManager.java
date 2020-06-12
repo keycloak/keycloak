@@ -50,13 +50,16 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
 
@@ -624,7 +627,14 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
             }
             return Collections.EMPTY_LIST;
         }, realm,0, Integer.MAX_VALUE - 1);
+        results = removeDuplicates(results);
         return importValidation(realm, results);
+    }
+
+    private static List<UserModel> removeDuplicates(List<UserModel> withDuplicates) {
+        Set<UserModel> withoutDuplicates  = new TreeSet<>(Comparator.comparing(UserModel::getId));
+        withoutDuplicates.addAll(withDuplicates);
+        return new ArrayList<>(withoutDuplicates);
     }
 
     @Override

@@ -17,8 +17,11 @@
 
 package org.keycloak.storage.ldap.idm.store;
 
+import java.util.Set;
+import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 
@@ -92,6 +95,17 @@ public interface IdentityStore {
 //    <V extends Relationship> List<V> fetchQueryResults(RelationshipQuery<V> query);
 //
 //    <V extends Relationship> int countQueryResults(RelationshipQuery<V> query);
+
+    /**
+     * Query the LDAP server <a href="https://ldapwiki.com/wiki/RootDSE">RootDSE</a> and extract the {@link LDAPCapabilityRepresentation}
+     * of all supported <i>extensions</i>, <i>controls</i> and <i>features</i> the server announces. The LDAP Wiki
+     * provides a <a href="https://ldapwiki.com/wiki/LDAP%20Extensions%20and%20Controls%20Listing">list of known capabilities</a>.
+     *
+     * Will throw a {@link ModelException} on any LDAP error, or when the searchResult is empty.
+     *
+     * @return a set of LDAPOid, each representing a server capability (control, extension or feature).
+     */
+    Set<LDAPCapabilityRepresentation> queryServerCapabilities();
 
     // Credentials
 

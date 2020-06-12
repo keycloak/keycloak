@@ -80,7 +80,7 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
                 .requiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
                 .build();
 
-        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password", true);
         getCleanup().addUserId(userId);
 
         oauth.clientId("test-app");

@@ -157,7 +157,7 @@ public class RealmTest extends AbstractAdminTest {
 
         Assert.assertNames(adminClient.realms().findAll(), "master", AuthRealm.TEST, REALM_NAME);
     }
-    
+
     @Test(expected = BadRequestException.class)
     public void createRealmRejectReservedChar() {
         RealmRepresentation rep = new RealmRepresentation();
@@ -620,6 +620,14 @@ public class RealmTest extends AbstractAdminTest {
         if (realm.getSsoSessionMaxLifespan() != null) assertEquals(realm.getSsoSessionMaxLifespan(), storedRealm.getSsoSessionMaxLifespan());
         if (realm.getSsoSessionIdleTimeoutRememberMe() != null) Assert.assertEquals(realm.getSsoSessionIdleTimeoutRememberMe(), storedRealm.getSsoSessionIdleTimeoutRememberMe());
         if (realm.getSsoSessionMaxLifespanRememberMe() != null) Assert.assertEquals(realm.getSsoSessionMaxLifespanRememberMe(), storedRealm.getSsoSessionMaxLifespanRememberMe());
+        if (realm.getClientSessionIdleTimeout() != null)
+            Assert.assertEquals(realm.getClientSessionIdleTimeout(), storedRealm.getClientSessionIdleTimeout());
+        if (realm.getClientSessionMaxLifespan() != null)
+            Assert.assertEquals(realm.getClientSessionMaxLifespan(), storedRealm.getClientSessionMaxLifespan());
+        if (realm.getClientOfflineSessionIdleTimeout() != null)
+            Assert.assertEquals(realm.getClientOfflineSessionIdleTimeout(), storedRealm.getClientOfflineSessionIdleTimeout());
+        if (realm.getClientOfflineSessionMaxLifespan() != null)
+            Assert.assertEquals(realm.getClientOfflineSessionMaxLifespan(), storedRealm.getClientOfflineSessionMaxLifespan());
         if (realm.getRequiredCredentials() != null) {
             assertNotNull(storedRealm.getRequiredCredentials());
             for (String cred : realm.getRequiredCredentials()) {

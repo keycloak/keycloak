@@ -136,7 +136,7 @@ public class JpaRealmProvider implements RealmProvider {
         em.flush();
 
         int num = em.createNamedQuery("deleteGroupRoleMappingsByRealm")
-                .setParameter("realm", realm).executeUpdate();
+                .setParameter("realm", realm.getId()).executeUpdate();
 
         TypedQuery<String> query = em.createNamedQuery("getClientIdsByRealm", String.class);
         query.setParameter("realm", realm.getId());
@@ -349,6 +349,10 @@ public class JpaRealmProvider implements RealmProvider {
             container.removeDefaultRoles(role.getName());
         }
         RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
+        if (roleEntity == null || !roleEntity.getRealmId().equals(realm.getId())) {
+            // Throw model exception to ensure transaction rollback and revert previous operations (removing default roles) as well
+            throw new ModelException("Role not found or trying to remove role from incorrect realm");
+        }
         String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
         em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
         realm.getClients().forEach(c -> c.deleteScopeMapping(role));
@@ -388,7 +392,7 @@ public class JpaRealmProvider implements RealmProvider {
     public GroupModel getGroupById(String id, RealmModel realm) {
         GroupEntity groupEntity = em.find(GroupEntity.class, id);
         if (groupEntity == null) return null;
-        if (!groupEntity.getRealm().getId().equals(realm.getId())) return null;
+        if (!groupEntity.getRealm().equals(realm.getId())) return null;
         GroupAdapter adapter =  new GroupAdapter(realm, em, groupEntity);
         return adapter;
     }
@@ -528,7 +532,7 @@ public class JpaRealmProvider implements RealmProvider {
             session.realms().removeGroup(realm, subGroup);
         }
         GroupEntity groupEntity = em.find(GroupEntity.class, group.getId(), LockModeType.PESSIMISTIC_WRITE);
-        if ((groupEntity == null) || (!groupEntity.getRealm().getId().equals(realm.getId()))) {
+        if ((groupEntity == null) || (!groupEntity.getRealm().equals(realm.getId()))) {
             return false;
         }
         em.createNamedQuery("deleteGroupRoleMappingsByGroup").setParameter("group", groupEntity).executeUpdate();
@@ -554,7 +558,7 @@ public class JpaRealmProvider implements RealmProvider {
         groupEntity.setId(id);
         groupEntity.setName(name);
         RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
-        groupEntity.setRealm(realmEntity);
+        groupEntity.setRealm(realmEntity.getId());
         groupEntity.setParentId(toParent == null? GroupEntity.TOP_PARENT_ID : toParent.getId());
         em.persist(groupEntity);
         em.flush();
@@ -775,20 +779,18 @@ public class JpaRealmProvider implements RealmProvider {
     @Override
     public ClientInitialAccessModel getClientInitialAccessModel(RealmModel realm, String id) {
         ClientInitialAccessEntity entity = em.find(ClientInitialAccessEntity.class, id);
-        if (entity == null) {
-            return null;
-        } else {
-            return entityToModel(entity);
-        }
+        if (entity == null) return null;
+        if (!entity.getRealm().getId().equals(realm.getId())) return null;
+        return entityToModel(entity);
     }
 
     @Override
     public void removeClientInitialAccessModel(RealmModel realm, String id) {
         ClientInitialAccessEntity entity = em.find(ClientInitialAccessEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
-        if (entity != null) {
-            em.remove(entity);
-            em.flush();
-        }
+        if (entity == null) return;
+        if (!entity.getRealm().getId().equals(realm.getId())) return;
+        em.remove(entity);
+        em.flush();
     }
 
     @Override

@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>9.0.4-SNAPSHOT</version>
+        <version>11.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-server-overlay</artifactId>
@@ -209,13 +209,6 @@
                 <profileExcludes>%regex[(docs/contrib.*)|(docs/examples.*)|(docs/schema.*)]</profileExcludes>
                 <readmeInclude></readmeInclude>
             </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.wildfly</groupId>
-                    <artifactId>wildfly-dist</artifactId>
-                    <type>zip</type>
-                </dependency>
-            </dependencies>
         </profile>
     </profiles>
 

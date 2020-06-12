@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-auth-server</artifactId>
-        <version>9.0.4-SNAPSHOT</version>
+        <version>11.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -653,6 +653,18 @@
                     </plugins>
                 </pluginManagement>
             </build>
+        </profile>
+
+        <profile>
+            <id>auth-server-legacy</id>
+            <activation>
+                <property>
+                    <name>auth.server.legacy.version</name>
+                </property>
+            </activation>
+            <modules>
+                <module>legacy</module>
+            </modules>
         </profile>
 
         <profile>

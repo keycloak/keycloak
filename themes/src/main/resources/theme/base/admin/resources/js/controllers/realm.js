@@ -900,6 +900,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         $scope.identityProvider.authenticateByDefault = false;
         $scope.identityProvider.firstBrokerLoginFlowAlias = 'first broker login';
         $scope.identityProvider.config.useJwksUrl = 'true';
+        $scope.identityProvider.config.syncMode = 'IMPORT';
         $scope.newIdentityProvider = true;
     }
 
@@ -1159,6 +1160,10 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
     $scope.realm.offlineSessionIdleTimeout = TimeUnit2.asUnit(realm.offlineSessionIdleTimeout);
     // KEYCLOAK-7688 Offline Session Max for Offline Token
     $scope.realm.offlineSessionMaxLifespan = TimeUnit2.asUnit(realm.offlineSessionMaxLifespan);
+    $scope.realm.clientSessionIdleTimeout = TimeUnit2.asUnit(realm.clientSessionIdleTimeout);
+    $scope.realm.clientSessionMaxLifespan = TimeUnit2.asUnit(realm.clientSessionMaxLifespan);
+    $scope.realm.clientOfflineSessionIdleTimeout = TimeUnit2.asUnit(realm.clientOfflineSessionIdleTimeout);
+    $scope.realm.clientOfflineSessionMaxLifespan = TimeUnit2.asUnit(realm.clientOfflineSessionMaxLifespan);
     $scope.realm.accessCodeLifespan = TimeUnit2.asUnit(realm.accessCodeLifespan);
     $scope.realm.accessCodeLifespanLogin = TimeUnit2.asUnit(realm.accessCodeLifespanLogin);
     $scope.realm.accessCodeLifespanUserAction = TimeUnit2.asUnit(realm.accessCodeLifespanUserAction);
@@ -1214,6 +1219,10 @@ module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, 
         $scope.realm.offlineSessionIdleTimeout = $scope.realm.offlineSessionIdleTimeout.toSeconds();
         // KEYCLOAK-7688 Offline Session Max for Offline Token
         $scope.realm.offlineSessionMaxLifespan = $scope.realm.offlineSessionMaxLifespan.toSeconds();
+        $scope.realm.clientSessionIdleTimeout = $scope.realm.clientSessionIdleTimeout.toSeconds();
+        $scope.realm.clientSessionMaxLifespan = $scope.realm.clientSessionMaxLifespan.toSeconds();
+        $scope.realm.clientOfflineSessionIdleTimeout = $scope.realm.clientOfflineSessionIdleTimeout.toSeconds();
+        $scope.realm.clientOfflineSessionMaxLifespan = $scope.realm.clientOfflineSessionMaxLifespan.toSeconds();
         $scope.realm.accessCodeLifespan = $scope.realm.accessCodeLifespan.toSeconds();
         $scope.realm.accessCodeLifespanUserAction = $scope.realm.accessCodeLifespanUserAction.toSeconds();
         $scope.realm.accessCodeLifespanLogin = $scope.realm.accessCodeLifespanLogin.toSeconds();
@@ -2090,6 +2099,7 @@ module.controller('IdentityProviderMapperCreateCtrl', function($scope, realm, id
     
     // make first type the default
     $scope.mapperType = mapperTypes[Object.keys(mapperTypes)[0]];
+    $scope.mapper.config.syncMode = 'INHERIT';
 
     $scope.$watch(function() {
         return $location.path();
@@ -2223,9 +2233,9 @@ module.controller('CreateExecutionCtrl', function($scope, realm, parentFlow, for
 
 
 module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flows, selectedFlow, LastFlowSelected, Dialog,
-                                                      AuthenticationFlows, AuthenticationFlowsCopy, AuthenticationFlowExecutions,
+                                                      AuthenticationFlows, AuthenticationFlowsCopy, AuthenticationFlowsUpdate, AuthenticationFlowExecutions,
                                                       AuthenticationExecution, AuthenticationExecutionRaisePriority, AuthenticationExecutionLowerPriority,
-                                                      $modal, Notifications, CopyDialog, $location) {
+                                                      $modal, Notifications, CopyDialog, UpdateDialog, $location) {
     $scope.realm = realm;
     $scope.flows = flows;
     
@@ -2336,6 +2346,18 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
 
     };
 
+    $scope.editFlow = function(flow) {
+        var copy = angular.copy(flow);
+        UpdateDialog.open('Update Authentication Flow', copy.alias, copy.description, function(name, desc) {
+            copy.alias = name;
+            copy.description = desc;
+            AuthenticationFlowsUpdate.update({realm: realm.realm, flow: flow.id}, copy, function() {
+                $location.url("/realms/" + realm.realm + '/authentication/flows/' + name);
+                Notifications.success("Flow updated");
+            });
+        })
+    };
+
     $scope.addFlow = function() {
         $location.url("/realms/" + realm.realm + '/authentication/flows/' + $scope.flow.id + '/create/flow/execution/' + $scope.flow.id);
 
@@ -2371,6 +2393,22 @@ module.controller('AuthenticationFlowsCtrl', function($scope, $route, realm, flo
             setupForm();
         });
 
+    };
+
+    $scope.editExecutionFlow = function(execution) {
+        var copy = angular.copy(execution);
+        delete copy.empties;
+        delete copy.levels;
+        delete copy.preLevels;
+        delete copy.postLevels;
+        UpdateDialog.open('Update Execution Flow', copy.displayName, copy.description, function(name, desc) {
+            copy.displayName = name;
+            copy.description = desc;
+            AuthenticationFlowExecutions.update({realm: realm.realm, alias: $scope.flow.alias}, copy, function() {
+                Notifications.success("Execution Flow updated");
+                setupForm();
+            });
+        })
     };
 
     $scope.removeExecution = function(execution) {
@@ -2674,13 +2712,13 @@ module.controller('ClientRegPoliciesCtrl', function($scope, realm, clientRegistr
 
 });
 
-module.controller('ClientRegPolicyDetailCtrl', function($scope, realm, clientRegistrationPolicyProviders, instance, Dialog, Notifications, Components, ComponentUtils, $route, $location) {
+module.controller('ClientRegPolicyDetailCtrl', function ($scope, realm, clientRegistrationPolicyProviders, instance, Dialog, Notifications, Components, ComponentUtils, $route, $location, $translate) {
     $scope.realm = realm;
     $scope.instance = instance;
     $scope.providerTypes = clientRegistrationPolicyProviders;
 
-    for (var i=0 ; i<$scope.providerTypes.length ; i++) {
-        var providerType = $scope.providerTypes[i];
+    for (let i = 0; i < $scope.providerTypes.length; i++) {
+        let providerType = $scope.providerTypes[i];
         if (providerType.id === instance.providerId) {
             $scope.providerType = providerType;
             break;
@@ -2705,15 +2743,22 @@ module.controller('ClientRegPolicyDetailCtrl', function($scope, realm, clientReg
         }
     }
 
+    $translate($scope.instance.providerId + ".label")
+        .then((translatedValue) => {
+            $scope.headerTitle = translatedValue;
+        }).catch(() => {
+            $scope.headerTitle = $scope.instance.providerId;
+    });
+
     if ($scope.create) {
-        $scope.instance.name = $scope.instance.providerId;
+        $scope.instance.name = "";
         $scope.instance.parentId = realm.id;
         $scope.instance.config = {};
 
         if ($scope.providerType.properties) {
 
-            for (var i = 0; i < $scope.providerType.properties.length; i++) {
-                var configProperty = $scope.providerType.properties[i];
+            for (let i = 0; i < $scope.providerType.properties.length; i++) {
+                let configProperty = $scope.providerType.properties[i];
                 $scope.instance.config[configProperty.name] = toDefaultValue(configProperty);
             }
         }
@@ -2724,7 +2769,7 @@ module.controller('ClientRegPolicyDetailCtrl', function($scope, realm, clientReg
         ComponentUtils.addMvOptionsToMultivaluedLists($scope.providerType.properties);
     }
 
-    var oldCopy = angular.copy($scope.instance);
+    let oldCopy = angular.copy($scope.instance);
     $scope.changed = false;
 
     $scope.$watch('instance', function() {
@@ -2734,8 +2779,10 @@ module.controller('ClientRegPolicyDetailCtrl', function($scope, realm, clientReg
     }, true);
     
     $scope.reset = function() {
-        $route.reload();
+        $scope.create ? window.history.back() : $route.reload();
     };
+
+    $scope.hasValidValues = () => $scope.changed && $scope.instance.name;
 
     $scope.save = function() {
         $scope.changed = false;

@@ -19,6 +19,7 @@ package org.keycloak.services.resources.account.resources;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -205,7 +206,11 @@ public class ResourceService extends AbstractResourceService {
         UserModel user = users.getUserByUsername(requester, provider.getRealm());
 
         if (user == null) {
-            user = users.getUserById(requester, provider.getRealm());
+            user = users.getUserByEmail(requester, provider.getRealm());
+        }
+
+        if (user == null) {
+            throw new NotFoundException("invalid_username_or_email");
         }
 
         return user;

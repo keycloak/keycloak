@@ -25,6 +25,7 @@ import io.undertow.servlet.api.FilterInfo;
 import io.undertow.servlet.api.ServletInfo;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
+import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.common.Version;
@@ -33,7 +34,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -401,15 +401,11 @@ public class KeycloakServer {
 
             di.setDefaultServletConfig(new DefaultServletConfig(true));
 
-            ServletInfo restEasyDispatcher = Servlets.servlet("Keycloak REST Interface", HttpServlet30Dispatcher.class);
-
-            restEasyDispatcher.addInitParam("resteasy.servlet.mapping.prefix", "/");
-            restEasyDispatcher.setAsyncSupported(true);
-
-            di.addServlet(restEasyDispatcher);
+            // Note that the ResteasyServlet is configured via server.undertowDeployment(...);
+            // KEYCLOAK-14178
+            deployment.setProperty(ResteasyContextParameters.RESTEASY_DISABLE_HTML_SANITIZER, true);
 
             FilterInfo filter = Servlets.filter("SessionFilter", TestKeycloakSessionServletFilter.class);
-
             filter.setAsyncSupported(true);
 
             di.addFilter(filter);

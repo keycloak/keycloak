@@ -35,6 +35,7 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -53,6 +54,7 @@ public abstract class AbstractResourceService {
     protected final PermissionTicketStore ticketStore;
     protected final ResourceStore resourceStore;
     protected final ScopeStore scopeStore;
+    protected final KeycloakUriInfo uriInfo;
     protected HttpRequest request;
     protected Auth auth;
 
@@ -64,6 +66,7 @@ public abstract class AbstractResourceService {
         ticketStore = provider.getStoreFactory().getPermissionTicketStore();
         resourceStore = provider.getStoreFactory().getResourceStore();
         scopeStore = provider.getStoreFactory().getScopeStore();
+        uriInfo = session.getContext().getUri();
     }
 
     protected Response cors(Response.ResponseBuilder response) {

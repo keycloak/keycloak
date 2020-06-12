@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc;
 
+import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.ClientModel;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -118,6 +119,14 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(OIDCConfigAttributes.USE_MTLS_HOK_TOKEN, val);
     }
 
+    public String getTlsClientAuthSubjectDn() {
+        return getAttribute(X509ClientAuthenticator.ATTR_SUBJECT_DN);
+     }
+
+    public void setTlsClientAuthSubjectDn(String tls_client_auth_subject_dn) {
+        setAttribute(X509ClientAuthenticator.ATTR_SUBJECT_DN, tls_client_auth_subject_dn);
+    }
+
     public String getPkceCodeChallengeMethod() {
         return getAttribute(OIDCConfigAttributes.PKCE_CODE_CHALLENGE_METHOD);
     }
@@ -147,6 +156,14 @@ public class OIDCAdvancedConfigWrapper {
 
     public void setIdTokenEncryptedResponseEnc(String encName) {
         setAttribute(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC, encName);
+    }
+
+    public String getTokenEndpointAuthSigningAlg() {
+        return getAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG);
+    }
+
+    public void setTokenEndpointAuthSigningAlg(String algName) {
+        setAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, algName);
     }
 
     private String getAttribute(String attrKey) {

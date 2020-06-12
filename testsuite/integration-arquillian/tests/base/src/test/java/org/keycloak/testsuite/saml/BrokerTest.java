@@ -35,10 +35,13 @@ import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SAML2LoginResponseBuilder;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.processing.core.parsers.saml.xmldsig.XmlDSigQNames;
+import org.keycloak.saml.processing.core.parsers.util.HasQName;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.keycloak.testsuite.updaters.IdentityProviderCreator;
@@ -46,17 +49,24 @@ import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import java.io.IOException;
 import java.net.URI;
+import java.security.KeyPair;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import javax.ws.rs.core.Response.Status;
 import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.namespace.QName;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
+import org.w3c.dom.DOMException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import static org.junit.Assert.assertThat;
+import static org.keycloak.saml.SignatureAlgorithm.RSA_SHA1;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_NAME;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.SAML_ASSERTION_CONSUMER_URL_SALES_POST;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.SAML_CLIENT_ID_SALES_POST;
@@ -189,6 +199,62 @@ public class BrokerTest extends AbstractSamlTest {
             assertThat(headers.length, Matchers.is(1));
             assertThat(headers[0].getValue(), Matchers.containsString("https://saml.idp/?service=name&serviceType=prod"));
             assertThat(headers[0].getValue(), Matchers.containsString("SAMLRequest"));
+        }
+    }
+
+    private static final String XMLNS_VETINARI = "vetinari";
+    private static final String NS_VETINARI = "urn:dw:am:havelock";
+
+    private static Element appendNewElement(Element parent, QName qName, String prefix) throws DOMException {
+        Document doc = parent.getOwnerDocument();
+        final Element res = doc.createElementNS(qName.getNamespaceURI(), prefix + ":" + qName.getLocalPart());
+        parent.appendChild(res);
+        return res;
+    }
+
+    private static void signAndAddCustomNamespaceElementToSignature(Document doc) {
+        doc.getDocumentElement().setAttribute("xmlns:" + XMLNS_VETINARI, NS_VETINARI);
+
+        BaseSAML2BindingBuilder<BaseSAML2BindingBuilder> sb = new BaseSAML2BindingBuilder();
+        try {
+            KeyPair keyPair = new KeyPair(SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY_PK, SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY_PK);
+            sb.signWith("kn", keyPair)
+              .signatureAlgorithm(RSA_SHA1)
+              .signAssertions()
+              .signAssertion(doc);
+        } catch (ProcessingException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        // KeyInfo has lax and can contain custom elements, see https://www.w3.org/TR/xmldsig-core1/#sec-KeyInfo
+        Element el = findFirstElement(doc, XmlDSigQNames.KEY_INFO);
+        appendNewElement(el, new QName(NS_VETINARI, "Patrician"), XMLNS_VETINARI);
+    }
+
+    private static Element findFirstElement(Document doc, HasQName qName) {
+        NodeList nl = doc.getElementsByTagNameNS(qName.getQName().getNamespaceURI(), qName.getQName().getLocalPart());
+        return (nl == null || nl.getLength() == 0) ? null : (Element) nl.item(0);
+    }
+
+    @Test
+    public void testAnyNamespacePreservedInContext() throws IOException {
+        final RealmResource realm = adminClient.realm(REALM_NAME);
+
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, addIdentityProvider("https://saml.idp/"))) {
+            new SamlClientBuilder()
+              .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST)
+                .build()
+              .login().idp(SAML_BROKER_ALIAS).build()
+              // Virtually perform login at IdP (return artificial SAML response)
+              .processSamlResponse(REDIRECT)
+                .transformObject(this::createAuthnResponse)
+                .transformDocument(BrokerTest::signAndAddCustomNamespaceElementToSignature)
+                .targetAttributeSamlResponse()
+                .targetUri(getSamlBrokerUrl(REALM_NAME))
+                .targetBinding(POST)
+                .build()
+              .assertResponse(org.keycloak.testsuite.util.Matchers.statusCodeIsHC(Status.OK))
+              .execute();
         }
     }
 

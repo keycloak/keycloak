@@ -254,7 +254,7 @@ public class InMemoryUserAdapter implements UserModel {
 
     @Override
     public Set<GroupModel> getGroups() {
-        if (groupIds.isEmpty()) return Collections.emptySet();
+        if (groupIds.isEmpty()) return new HashSet<>();
         Set<GroupModel> groups = new HashSet<>();
         for (String id : groupIds) {
             groups.add(realm.getGroupById(id));
@@ -350,7 +350,7 @@ public class InMemoryUserAdapter implements UserModel {
 
     @Override
     public Set<RoleModel> getRoleMappings() {
-        if (roleIds.isEmpty()) return Collections.emptySet();
+        if (roleIds.isEmpty()) return new HashSet<>();
         Set<RoleModel> roles = new HashSet<>();
         for (String id : roleIds) {
             roles.add(realm.getRoleById(id));

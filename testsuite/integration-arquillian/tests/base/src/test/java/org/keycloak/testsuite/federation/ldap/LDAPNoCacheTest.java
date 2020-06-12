@@ -24,7 +24,6 @@ import java.util.List;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
-import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
@@ -35,6 +34,8 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
@@ -52,7 +53,13 @@ import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.MailUtils;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assume.assumeThat;
 
 /**
  * Test for the scenarios with disabled cache for LDAP provider. This involves scenarios when something is changed directly in LDAP server
@@ -147,7 +154,6 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
         }
     }
 
-
     @Test
     public void resetPasswordLinkCheckOldAddressLast() throws IOException, MessagingException {
         // Trigger reset password from the login page
@@ -208,6 +214,36 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
             ldapUser.setSingleAttribute(LDAPConstants.EMAIL, newEmail);
             ctx.getLdapProvider().getLdapIdentityStore().update(ldapUser);
 
+        });
+    }
+
+    // KEYCLOAK-13817
+    @Test
+    public void lookupByAttributeAfterImportWithAttributeValueAlwaysReadFromLdapMustSucceed() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+            ctx.getLdapModel().setImportEnabled(true);
+            realm.updateComponent(ctx.getLdapModel());
+
+            UserProvider localStorage = session.userLocalStorage();
+            LDAPStorageProvider ldapProvider = ctx.getLdapProvider();
+
+            // assume no user imported
+            UserModel user = localStorage.getUserByUsername("johnkeycloak", realm);
+            assumeThat(user, is(nullValue()));
+
+            // trigger import
+            List<UserModel> byEmail = ldapProvider.searchForUserByUserAttribute("email", "john_old@email.org", realm);
+            assumeThat(byEmail, hasSize(1));
+
+            // assume that user has been imported
+            user = localStorage.getUserByUsername("johnkeycloak", realm);
+            assumeThat(user, is(not(nullValue())));
+
+            // search a second time
+            byEmail = ldapProvider.searchForUserByUserAttribute("email", "john_old@email.org", realm);
+            assertThat(byEmail, hasSize(1));
         });
     }
 

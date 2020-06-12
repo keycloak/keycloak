@@ -5,7 +5,7 @@ function run-server-tests() {
     mvn -s $TRAVIS_BUILD_DIR/maven-settings.xml install -B -nsu -Pauth-server-wildfly -DskipTests
 
     cd tests/base
-    mvn test -B -nsu -Pauth-server-wildfly "-Dtest=$1" $2 2>&1 | java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
+    mvn -s $TRAVIS_BUILD_DIR/maven-settings.xml test -B -nsu -Pauth-server-wildfly "-Dtest=$1" $2 2>&1 | java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
     exit ${PIPESTATUS[0]}
 }
 
@@ -69,9 +69,9 @@ kill $COMPILING_PID
 travis_fold end compile_keycloak
 
 if [ $1 == "unit" ]; then
-    mvn -B test -DskipTestsuite
+    mvn -s $TRAVIS_BUILD_DIR/maven-settings.xml test -B -DskipTestsuite
     # Generate documentation to catch potential issues earlier than during the release
-    mvn test -B -nsu -f services -Pjboss-release
+    mvn -s $TRAVIS_BUILD_DIR/maven-settings.xml test -B -nsu -f services -Pjboss-release
 fi
 
 if [ $1 == "server-group1" ]; then
@@ -103,7 +103,7 @@ if [ $1 == "crossdc-server" ]; then
     mvn -s $TRAVIS_BUILD_DIR/maven-settings.xml install -B -nsu -Pauth-servers-crossdc-jboss,auth-server-wildfly,cache-server-infinispan -DskipTests
 
     cd tests/base
-    mvn clean test -B -nsu -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly -Dtest=org.keycloak.testsuite.crossdc.**.* 2>&1 |
+    mvn -s $TRAVIS_BUILD_DIR/maven-settings.xml clean test -B -nsu -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly -Dtest=org.keycloak.testsuite.crossdc.**.* 2>&1 |
         java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
     exit ${PIPESTATUS[0]}
 fi
@@ -113,7 +113,7 @@ if [ $1 == "crossdc-adapter" ]; then
     mvn -s $TRAVIS_BUILD_DIR/maven-settings.xml install -B -nsu -Pauth-servers-crossdc-jboss,auth-server-wildfly,cache-server-infinispan,app-server-wildfly -DskipTests
 
     cd tests/base
-    mvn clean test -B -nsu -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,app-server-wildfly -Dtest=org.keycloak.testsuite.adapter.**.crossdc.**.* 2>&1 |
+    mvn -s $TRAVIS_BUILD_DIR/maven-settings.xml clean test -B -nsu -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,app-server-wildfly -Dtest=org.keycloak.testsuite.adapter.**.crossdc.**.* 2>&1 |
         java -cp ../../../utils/target/classes org.keycloak.testsuite.LogTrimmer
     exit ${PIPESTATUS[0]}
 fi

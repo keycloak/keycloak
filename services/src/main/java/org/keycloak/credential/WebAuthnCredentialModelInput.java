@@ -33,6 +33,7 @@ public class WebAuthnCredentialModelInput implements CredentialInput {
     private long count;
     private String credentialDBId;
     private final String credentialType;
+    private String attestationStatementFormat;
 
     public WebAuthnCredentialModelInput(String credentialType) {
         this.credentialType = credentialType;
@@ -106,16 +107,29 @@ public class WebAuthnCredentialModelInput implements CredentialInput {
         return credentialType;
     }
 
+    public String getAttestationStatementFormat() {
+        return attestationStatementFormat;
+    }
+
+    public void setAttestationStatementFormat(String attestationStatementFormat) {
+        this.attestationStatementFormat = attestationStatementFormat;
+    }
+
     public String toString() {
         StringBuilder sb = new StringBuilder("Credential Type = " + credentialType + ",");
         if (credentialDBId != null)
             sb.append("Credential DB Id = ")
               .append(credentialDBId)
               .append(",");
-        if (attestationStatement != null)
+        if (attestationStatement != null) {
             sb.append("Attestation Statement Format = ")
               .append(attestationStatement.getFormat())
               .append(",");
+        } else if (attestationStatementFormat != null) {
+            sb.append("Attestation Statement Format = ")
+              .append(attestationStatementFormat)
+              .append(",");
+        }
         if (attestedCredentialData != null) {
             sb.append("AAGUID = ")
               .append(attestedCredentialData.getAaguid().toString())

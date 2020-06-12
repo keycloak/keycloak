@@ -116,6 +116,14 @@ public class ClientTest extends AbstractAdminTest {
         rep.setRootUrl(null);
         rep.setBaseUrl("invalid");
         createClientExpectingValidationError(rep, "Invalid URL in baseUrl");
+
+        rep.setRootUrl(null);
+        rep.setBaseUrl("/valid");
+        createClientExpectingSuccessfulClientCreation(rep);
+
+        rep.setRootUrl("");
+        rep.setBaseUrl("/valid");
+        createClientExpectingSuccessfulClientCreation(rep);
     }
 
     @Test
@@ -136,6 +144,14 @@ public class ClientTest extends AbstractAdminTest {
         ClientRepresentation stored = realm.clients().get(rep.getId()).toRepresentation();
         assertNull(stored.getRootUrl());
         assertNull(stored.getBaseUrl());
+
+        rep.setRootUrl(null);
+        rep.setBaseUrl("/valid");
+        updateClientExpectingSuccessfulClientUpdate(rep, null, "/valid");
+
+        rep.setRootUrl("");
+        rep.setBaseUrl("/valid");
+        updateClientExpectingSuccessfulClientUpdate(rep, "", "/valid");
     }
 
     private void createClientExpectingValidationError(ClientRepresentation rep, String expectedError) {
@@ -151,6 +167,16 @@ public class ClientTest extends AbstractAdminTest {
         response.close();
     }
 
+    private void createClientExpectingSuccessfulClientCreation(ClientRepresentation rep) {
+        Response response = realm.clients().create(rep);
+        assertEquals(201, response.getStatus());
+
+        String id = ApiUtil.getCreatedId(response);
+        realm.clients().get(id).remove();
+
+        response.close();
+    }
+
     private void updateClientExpectingValidationError(ClientRepresentation rep, String expectedError) {
         try {
             realm.clients().get(rep.getId()).update(rep);
@@ -162,6 +188,15 @@ public class ClientTest extends AbstractAdminTest {
             assertEquals("invalid_input", error.getError());
             assertEquals(expectedError, error.getErrorDescription());
         }
+    }
+
+    private void updateClientExpectingSuccessfulClientUpdate(ClientRepresentation rep, String expectedRootUrl, String expectedBaseUrl) {
+
+        realm.clients().get(rep.getId()).update(rep);
+
+        ClientRepresentation stored = realm.clients().get(rep.getId()).toRepresentation();
+        assertEquals(expectedRootUrl, stored.getRootUrl());
+        assertEquals(expectedBaseUrl, stored.getBaseUrl());
     }
 
     @Test
@@ -625,6 +660,48 @@ public class ClientTest extends AbstractAdminTest {
         }
     }
 
+    @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
+    public void updateClientWithProtocolMapper() {
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setClientId("my-app");
+
+        ProtocolMapperRepresentation fooMapper = new ProtocolMapperRepresentation();
+        fooMapper.setName("foo");
+        fooMapper.setProtocol("openid-connect");
+        fooMapper.setProtocolMapper("oidc-hardcoded-claim-mapper");
+        rep.setProtocolMappers(Collections.singletonList(fooMapper));
+
+        Response response = realm.clients().create(rep);
+        response.close();
+        String id = ApiUtil.getCreatedId(response);
+        getCleanup().addClientUuid(id);
+
+        ClientResource clientResource = realm.clients().get(id);
+        assertNotNull(clientResource);
+        ClientRepresentation client = clientResource.toRepresentation();
+        List<ProtocolMapperRepresentation> protocolMappers = client.getProtocolMappers();
+        assertEquals(1, protocolMappers.size());
+        ProtocolMapperRepresentation mapper = protocolMappers.get(0);
+        assertEquals("foo", mapper.getName());
+
+        ClientRepresentation newClient = new ClientRepresentation();
+        newClient.setId(client.getId());
+        newClient.setClientId(client.getClientId());
+
+        ProtocolMapperRepresentation barMapper = new ProtocolMapperRepresentation();
+        barMapper.setName("bar");
+        barMapper.setProtocol("openid-connect");
+        barMapper.setProtocolMapper("oidc-hardcoded-role-mapper");
+        protocolMappers.add(barMapper);
+        newClient.setProtocolMappers(protocolMappers);
+
+        realm.clients().get(client.getId()).update(newClient);
+
+        ClientRepresentation storedClient = realm.clients().get(client.getId()).toRepresentation();
+        assertClient(client, storedClient);
+    }
+
     public static void assertClient(ClientRepresentation client, ClientRepresentation storedClient) {
         if (client.getClientId() != null) Assert.assertEquals(client.getClientId(), storedClient.getClientId());
         if (client.getName() != null) Assert.assertEquals(client.getName(), storedClient.getName());
@@ -679,6 +756,18 @@ public class ClientTest extends AbstractAdminTest {
             for (String val : storedClient.getWebOrigins()) {
                 storedSet.add(val);
             }
+
+            Assert.assertEquals(set, storedSet);
+        }
+
+        List<ProtocolMapperRepresentation> protocolMappers = client.getProtocolMappers();
+        if(protocolMappers != null){
+            Set<String> set = protocolMappers.stream()
+                    .map(ProtocolMapperRepresentation::getName)
+                    .collect(Collectors.toSet());
+            Set<String> storedSet = storedClient.getProtocolMappers().stream()
+                    .map(ProtocolMapperRepresentation::getName)
+                    .collect(Collectors.toSet());
 
             Assert.assertEquals(set, storedSet);
         }

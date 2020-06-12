@@ -140,7 +140,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         session.sessions().removeUserSession(realm, sessionModel);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @POST
@@ -150,7 +150,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         RealmModel realm = getRealmByName(realmName);
 
         session.sessions().removeUserSessions(realm);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -177,7 +177,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         session.authenticationSessions().removeExpired(realm);
         session.realms().removeExpiredClientInitialAccess();
 
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -251,7 +251,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearEventQueue() {
         EventsListenerProvider.clear();
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @POST
@@ -259,7 +259,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearAdminEventQueue() {
         EventsListenerProvider.clearAdminEvents();
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -268,7 +268,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearEventStore() {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clear();
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -277,7 +277,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearEventStore(@QueryParam("realmId") String realmId) {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clear(realmId);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -286,7 +286,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan) {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clear(realmId, olderThan);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     /**
@@ -398,7 +398,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearAdminEventStore() {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clearAdmin();
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -407,7 +407,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearAdminEventStore(@QueryParam("realmId") String realmId) {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clearAdmin(realmId);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @GET
@@ -416,7 +416,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response clearAdminEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan) {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clearAdmin(realmId, olderThan);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     /**
@@ -830,7 +830,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
     @Path("/javascript")
     public TestJavascriptResource getJavascriptResource() {
-        return new TestJavascriptResource();
+        return new TestJavascriptResource(session);
     }
 
     private void setFeatureInProfileFile(File file, Profile.Feature featureProfile, String newState) {
@@ -866,7 +866,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         if (Profile.isFeatureEnabled(featureProfile))
-            return Response.ok().build();
+            return Response.noContent().build();
 
         FeatureDeployerUtil.initBeforeChangeFeature(featureProfile);
 
@@ -883,7 +883,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         FeatureDeployerUtil.deployFactoriesAfterFeatureEnabled(featureProfile);
 
         if (Profile.isFeatureEnabled(featureProfile))
-            return Response.ok().build();
+            return Response.noContent().build();
         else
             return Response.status(Response.Status.NOT_FOUND).build();
     }
@@ -902,7 +902,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         if (!Profile.isFeatureEnabled(featureProfile))
-            return Response.ok().build();
+            return Response.noContent().build();
 
         FeatureDeployerUtil.initBeforeChangeFeature(featureProfile);
 
@@ -919,7 +919,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         FeatureDeployerUtil.undeployFactoriesAfterFeatureDisabled(featureProfile);
 
         if (!Profile.isFeatureEnabled(featureProfile))
-            return Response.ok().build();
+            return Response.noContent().build();
         else
             return Response.status(Response.Status.NOT_FOUND).build();
     }

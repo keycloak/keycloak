@@ -61,6 +61,9 @@ public class GroupMapperConfig extends CommonLDAPGroupMapperConfig {
     public static final String GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE = "GET_GROUPS_FROM_USER_MEMBEROF_ATTRIBUTE";
     public static final String LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY = "LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY";
 
+    // Keycloak group path the LDAP groups are added to (default: top level "/")
+    public static final String LDAP_GROUPS_PATH = "groups.path";
+
     public GroupMapperConfig(ComponentModel mapperModel) {
         super(mapperModel);
     }
@@ -123,5 +126,21 @@ public class GroupMapperConfig extends CommonLDAPGroupMapperConfig {
     public String getUserGroupsRetrieveStrategy() {
         String strategyString = mapperModel.getConfig().getFirst(USER_ROLES_RETRIEVE_STRATEGY);
         return strategyString!=null ? strategyString : LOAD_GROUPS_BY_MEMBER_ATTRIBUTE;
+    }
+
+    public String getGroupsPath() {
+        return mapperModel.getConfig().getFirst(LDAP_GROUPS_PATH);
+    }
+
+    public String getGroupsPathWithTrailingSlash() {
+        String path = getGroupsPath();
+        while (!path.endsWith("/")) {
+            path = getGroupsPath() + "/";
+        }
+        return path;
+    }
+
+    public boolean isTopLevelGroupsPath() {
+        return "/".equals(getGroupsPath());
     }
 }
