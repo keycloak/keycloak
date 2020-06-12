@@ -270,7 +270,31 @@ public class ClientsResource {
             allsResource.add(resourceRepresentation);
             alls.put(resource.getId(), resourceRepresentation);
         }
-        return toResource(allsResource, alls);
+        List<ResourceRepresentation> list = new ArrayList<ResourceRepresentation>(toResource(allsResource, alls));
+        //排序
+        sort(list);
+        return new LinkedHashSet<>(list);
+    }
+
+    /**
+     * 排序
+     *
+     * @param list
+     */
+    private void sort(List<ResourceRepresentation> list) {
+        if (list != null && list.size() > 0) {
+            Collections.sort(list, new Comparator<ResourceRepresentation>() {
+                @Override
+                public int compare(ResourceRepresentation arg0, ResourceRepresentation arg1) {
+                    return arg0.getSort().compareTo(arg1.getSort());
+                }
+            });
+            for (ResourceRepresentation resourceRepresentation : list) {
+                sort(resourceRepresentation.getSubResources());
+            }
+
+        }
+
     }
 
     /**

@@ -123,4 +123,11 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="liubinwang@govnet.com.cn" id="9.0.4.beta1">
+        <update tableName="RESOURCE_SERVER_RESOURCE">
+            <column name="SORT" value="0"/>
+            <where>SORT IS NULL</where>
+        </update>
+    </changeSet>
+
 </databaseChangeLog>

@@ -43,7 +43,7 @@ import javax.persistence.LockModeType;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
+public class GroupAdapter implements GroupModel, JpaModel<GroupEntity> {
 
     protected GroupEntity group;
     protected EntityManager em;
@@ -77,17 +77,17 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     @Override
     public GroupModel getParent() {
         String parentId = this.getParentId();
-        return parentId == null? null : realm.getGroupById(parentId);
+        return parentId == null ? null : realm.getGroupById(parentId);
     }
 
     @Override
     public String getParentId() {
-        return GroupEntity.TOP_PARENT_ID.equals(group.getParentId())? null : group.getParentId();
+        return GroupEntity.TOP_PARENT_ID.equals(group.getParentId()) ? null : group.getParentId();
     }
 
     public static GroupEntity toEntity(GroupModel model, EntityManager em) {
         if (model instanceof GroupAdapter) {
-            return ((GroupAdapter)model).getEntity();
+            return ((GroupAdapter) model).getEntity();
         }
         return em.getReference(GroupEntity.class, model.getId());
     }
@@ -117,13 +117,10 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public Long getUserAllCount() {
-        TypedQuery<String> query = em.createNamedQuery("getGroupIdsByParent", String.class);
-        query.setParameter("parent", group.getId());
-        List<String> ids = query.getResultList();
-        Set<GroupModel> set = new HashSet<>();
         Long count = getUserCount(getId());
-        for (String id : ids) {
-            count += getUserCount(id);
+        Set<GroupModel> children = getSubGroups();
+        for (GroupModel child : children) {
+            count += getUserCount(child.getId());
         }
         return count;
     }
