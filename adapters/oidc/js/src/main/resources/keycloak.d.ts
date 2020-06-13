@@ -215,6 +215,8 @@ declare namespace Keycloak {
 		redirectUri?: string;
 	}
 
+	interface KeycloakRegisterOptions extends Omit<KeycloakLoginOptions, 'action'> { }
+
 	type KeycloakPromiseCallback<T> = (result: T) => void;
 
 	class KeycloakPromise<TSuccess, TError> extends Promise<TSuccess> {
@@ -241,7 +243,7 @@ declare namespace Keycloak {
 	interface KeycloakAdapter {
 		login(options?: KeycloakLoginOptions): KeycloakPromise<void, void>;
 		logout(options?: KeycloakLogoutOptions): KeycloakPromise<void, void>;
-		register(options?: KeycloakLoginOptions): KeycloakPromise<void, void>;
+		register(options?: KeycloakRegisterOptions): KeycloakPromise<void, void>;
 		accountManagement(): KeycloakPromise<void, void>;
 		redirectUri(options: { redirectUri: string; }, encodeHash: boolean): string;
 	}
@@ -466,10 +468,9 @@ declare namespace Keycloak {
 
 		/**
 		 * Redirects to registration form.
-		 * @param options Supports same options as Keycloak#login but `action` is
-		 *                set to `'register'`.
+		 * @param options The options used for the registration.
 		 */
-		register(options?: any): KeycloakPromise<void, void>;
+		register(options?: KeycloakRegisterOptions): KeycloakPromise<void, void>;
 
 		/**
 		 * Redirects to the Account Management Console.
@@ -490,10 +491,9 @@ declare namespace Keycloak {
 
 		/**
 		 * Returns the URL to registration page.
-		 * @param options Supports same options as Keycloak#createLoginUrl but
-		 *                `action` is set to `'register'`.
+		 * @param options The options used for creating the registration URL.
 		 */
-		createRegisterUrl(options?: KeycloakLoginOptions): string;
+		createRegisterUrl(options?: KeycloakRegisterOptions): string;
 
 		/**
 		 * Returns the URL to the Account Management Console.
