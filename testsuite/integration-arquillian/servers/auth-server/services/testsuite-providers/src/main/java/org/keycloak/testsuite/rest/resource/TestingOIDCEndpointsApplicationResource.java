@@ -105,6 +105,7 @@ public class TestingOIDCEndpointsApplicationResource {
                     break;
                 case JWEConstants.RSA1_5:
                 case JWEConstants.RSA_OAEP:
+                case JWEConstants.RSA_OAEP_256:
                     // for JWE KEK Key Encryption
                     keyType = KeyType.RSA;
                     keyUse = KeyUse.ENC;
@@ -245,6 +246,7 @@ public class TestingOIDCEndpointsApplicationResource {
             case Algorithm.ES512:
             case JWEConstants.RSA1_5:
             case JWEConstants.RSA_OAEP:
+            case JWEConstants.RSA_OAEP_256:
                 ret = true;
         }
         return ret;

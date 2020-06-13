@@ -26,6 +26,7 @@ public class JWEConstants {
     public static final String A128KW = "A128KW";
     public static final String RSA1_5 = "RSA1_5";
     public static final String RSA_OAEP = "RSA-OAEP";
+    public static final String RSA_OAEP_256 = "RSA-OAEP-256";
 
     public static final String A128CBC_HS256 = "A128CBC-HS256";
     public static final String A192CBC_HS384 = "A192CBC-HS384";
