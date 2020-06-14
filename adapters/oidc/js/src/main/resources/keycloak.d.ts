@@ -29,7 +29,6 @@ export = Keycloak;
 declare function Keycloak(config?: Keycloak.KeycloakConfig | string): Keycloak.KeycloakInstance;
 
 declare namespace Keycloak {
-	type KeycloakAdapterName = 'cordova' | 'cordova-native' |'default' | any;
 	type KeycloakOnLoad = 'login-required'|'check-sso';
 	type KeycloakResponseMode = 'query'|'fragment';
 	type KeycloakResponseType = 'code'|'id_token token'|'code id_token token';
@@ -60,13 +59,33 @@ declare namespace Keycloak {
 		useNonce?: boolean;
 
 		/**
-		 * Allows to use different adapter:
 		 * 
-		 * - {string} default - using browser api for redirects
-		 * - {string} cordova - using cordova plugins 
-		 * - {function} - allows to provide custom function as adapter.
+		 * Allow usage of different types of adapters or a custom adapter to make Keycloak work in different environments.
+		 *
+		 * The following options are supported:
+		 * - `default` - Use default APIs that are available in browsers.
+		 * - `cordova` - Use a WebView in Cordova.
+		 * - `cordova-native` - Use Cordova native APIs, this is recommended over `cordova`.
+		 *
+		 * It's also possible to pass in a custom adapter for the environment you are running Keycloak in. In order to do so extend the `KeycloakAdapter` interface and implement the methods that are defined there.
+		 *
+		 * For example:
+		 *
+		 * ```ts
+		 * import Keycloak, { KeycloakAdapter } from 'keycloak-js';
+		 *
+		 * class MyCustomAdapter implements KeycloakAdapter {
+		 *   // Implement methods required by KeycloakAdapter here.
+		 * }
+		 *
+		 * const keycloak = new Keycloak();
+		 *
+		 * keycloak.init({
+		 *   adapter: MyCustomAdapter,
+		 * });
+		 * ```
 		 */
-		adapter?: KeycloakAdapterName;
+		adapter?: 'default' | 'cordova' | 'cordova-native' | KeycloakAdapter;
 		
 		/**
 		 * Specifies an action to do on load.
