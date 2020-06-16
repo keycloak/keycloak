@@ -14,6 +14,10 @@ image:{project_images}/brute-force.png[]
 
 There are 2 different configurations for brute force detection; permanent lockout and temporary lockout. Permanent lockout will disable a user's account after an attack is detected; the account will be disabled until an administrator renables it. Temporary lockout will disable a user's account for a time period after an attack is detected; the time period for which the account is disabled increases the longer the attack continues.
 
+NOTE: When user is temporarily locked and attempt to login, the default error message `Invalid username or password` is shown.
+This is the same error message as the message displayed when invalid username or invalid password is provided. This is by design as
+we do not want to reveal to the attacker that user is temporarily disabled.
+
 *Common Parameters*
 ====
 Max Login Failures::
