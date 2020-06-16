@@ -256,7 +256,7 @@ You can use this provider when your {project_name} server is behind an HAProxy r
 
 In this example configuration, the client certificate will be looked up from the HTTP header, `SSL_CLIENT_CERT`, and the other certificates from its chain will be looked up from HTTP headers like `CERT_CHAIN_0` , `CERT_CHAIN_1`, ..., `CERT_CHAIN_9` . The attribute `certificateChainLength` is the maximum length of the chain, so the last one tried attribute would be `CERT_CHAIN_9` .
 
-Consult the link:http://www.haproxy.org/#docs[HAProxy documentation] for the details of how the HTTP Headers for the client certificate and client certificate chain can be configured and their proper names.
+Consult the HAProxy documentation for the details of how the HTTP Headers for the client certificate and client certificate chain can be configured and their proper names.
 
 ===== Apache certificate lookup provider
 
