@@ -96,7 +96,12 @@ public class RealmManager {
     }
 
     public RealmModel createRealm(String id, String name) {
-        if (id == null) id = KeycloakModelUtils.generateId();
+        if (id == null) {
+            id = KeycloakModelUtils.generateId();
+        }
+        else {
+            ReservedCharValidator.validate(id);
+        }
         ReservedCharValidator.validate(name);
         RealmModel realm = model.createRealm(id, name);
         realm.setName(name);
@@ -501,6 +506,9 @@ public class RealmManager {
         String id = rep.getId();
         if (id == null) {
             id = KeycloakModelUtils.generateId();
+        }
+        else {
+            ReservedCharValidator.validate(id);
         }
         RealmModel realm = model.createRealm(id, rep.getRealm());
         ReservedCharValidator.validate(rep.getRealm());
