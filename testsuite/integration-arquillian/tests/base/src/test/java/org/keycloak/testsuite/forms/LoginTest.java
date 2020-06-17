@@ -68,7 +68,6 @@ import javax.ws.rs.core.UriBuilder;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -164,14 +163,14 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         Client client = ClientBuilder.newClient();
         Response response = client.target(oauth.getLoginFormUrl()).request().get();
         Assert.assertThat(response.getStatus(), is(equalTo(200)));
-        for (Map.Entry<String, String> entry : BrowserSecurityHeaders.defaultHeaders.entrySet()) {
-            String headerName = BrowserSecurityHeaders.headerAttributeMap.get(entry.getKey());
-            String headerValue = response.getHeaderString(headerName);
-            if (entry.getValue().isEmpty()) {
+        for (BrowserSecurityHeaders header : BrowserSecurityHeaders.values()) {
+            String headerValue = response.getHeaderString(header.getHeaderName());
+            String expectedValue = header.getDefaultValue();
+            if (expectedValue.isEmpty()) {
                 Assert.assertNull(headerValue);
             } else {
                 Assert.assertNotNull(headerValue);
-                Assert.assertThat(headerValue, is(equalTo(entry.getValue())));
+                Assert.assertThat(headerValue, is(equalTo(expectedValue)));
             }
         }
         response.close();
