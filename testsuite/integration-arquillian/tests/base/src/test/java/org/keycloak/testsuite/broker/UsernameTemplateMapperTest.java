@@ -13,6 +13,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 public class UsernameTemplateMapperTest extends AbstractBaseBrokerTest {
 
@@ -34,7 +35,7 @@ public class UsernameTemplateMapperTest extends AbstractBaseBrokerTest {
         log.debug("adding identity provider to realm " + bc.consumerRealmName());
 
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
-        IdentityProviderRepresentation idp = bc.setUpIdentityProvider(suiteContext);
+        IdentityProviderRepresentation idp = bc.setUpIdentityProvider();
         realm.identityProviders().create(idp).close();
 
         IdentityProviderResource idpResource = realm.identityProviders().get(idp.getAlias());
@@ -77,7 +78,7 @@ public class UsernameTemplateMapperTest extends AbstractBaseBrokerTest {
     public void usernameShouldBeDerivedFromAliasAndIdpSubClaim() {
 
         logInAsUserInIDP();
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
         UserRepresentation user = adminClient.realm(bc.consumerRealmName()).users().search(bc.getUserEmail(), 0, 1).get(0);
 
@@ -93,7 +94,7 @@ public class UsernameTemplateMapperTest extends AbstractBaseBrokerTest {
     public void userAttributeShouldBeDerivedFromIdpSubClaim() {
 
         logInAsUserInIDP();
-        logoutFromRealm(bc.consumerRealmName());
+        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
         UserRepresentation user = adminClient.realm(bc.consumerRealmName()).users().search(bc.getUserEmail(), 0, 1).get(0);
 
