@@ -223,8 +223,8 @@
           </div>
         </section>
         <section class="pf-c-page__main-section">
-          <div class="pf-l-gallery pf-m-gutter">
-            <div class="pf-l-gallery__item">
+          <div class="pf-l-level">
+            <div class="pf-l-level__item">
               <div class="pf-c-card">
                 <div class="pf-c-card__header pf-c-content">
                     <h2><i class="pf-icon pf-icon-user"></i>&nbsp${msg("personalInfoHtmlTitle")}</h2>
@@ -235,7 +235,7 @@
                 </div>
               </div>
             </div>
-            <div class="pf-l-gallery__item">
+            <div class="pf-l-level__item">
               <div class="pf-c-card">
                 <div class="pf-c-card__header pf-c-content">
                     <h2><i class="pf-icon pf-icon-security"></i>&nbsp${msg("accountSecurityTitle")}</h2>
@@ -248,7 +248,7 @@
                 </div>
               </div>
             </div>
-            <div class="pf-l-gallery__item">
+            <div class="pf-l-level__item">
               <div class="pf-c-card">
                 <div class="pf-c-card__header pf-c-content">
                     <h2><i class="pf-icon pf-icon-applications"></i>&nbsp${msg("applicationsHtmlTitle")}</h2>
@@ -259,7 +259,7 @@
                 </div>
               </div>
             </div>
-            <div class="pf-l-gallery__item" id="landingMyResourcesCard" style="display:none">
+            <div class="pf-l-level__item" id="landingMyResourcesCard" style="display:none">
               <div class="pf-c-card">
                 <div class="pf-c-card__header pf-c-content">
                     <h2><i class="pf-icon pf-icon-repository"></i>&nbsp${msg("myResources")}</h2>
