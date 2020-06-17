@@ -1,0 +1,53 @@
+name: Keycloak.X CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build
+        run: mvn clean install -B -e -DskipTests -Pquarkus,distribution
+      - name: Tar Maven Repo
+        shell: bash
+        run: tar -czvf maven-repo.tgz -C ~ .m2/repository
+      - name: Persist Maven Repo
+        uses: actions/upload-artifact@v1
+        with:
+          name: maven-repo
+          path: maven-repo.tgz
+
+  test:
+    name: Test
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      MAVEN_OPTS: -Xmx2048m
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Download Maven Repo
+        uses: actions/download-artifact@v1
+        with:
+          name: maven-repo
+          path: .
+      - name: Extract Maven Repo
+        shell: bash
+        run: tar -xzvf maven-repo.tgz -C ~
+      - name: Build testsuite
+        run: mvn clean install -B -Pquarkus,auth-server-quarkus -DskipTests -f testsuite/pom.xml
+      - name: Run base tests
+        run: mvn clean install -B -Pquarkus,auth-server-quarkus -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh; exit ${PIPESTATUS[0]}
