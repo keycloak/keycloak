@@ -160,7 +160,7 @@ public class BasicSamlTest extends AbstractSamlTest {
     }
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
+    @AuthServerContainerExclude({AuthServer.REMOTE, AuthServer.QUARKUS})
     public void testNoPortInDestination() throws Exception {
         // note that this test relies on settings of the login-protocol.saml.knownProtocols configuration option
         testWithOverriddenPort(-1, Response.Status.OK, containsString("login"));

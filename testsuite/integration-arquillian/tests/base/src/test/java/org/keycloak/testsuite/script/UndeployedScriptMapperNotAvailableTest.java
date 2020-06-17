@@ -67,6 +67,7 @@ public class UndeployedScriptMapperNotAvailableTest extends AbstractTestRealmKey
     @BeforeClass
     public static void verifyEnvironment() {
         ContainerAssume.assumeNotAuthServerUndertow();
+        ContainerAssume.assumeNotAuthServerQuarkus();
     }
 
     @ArquillianResource

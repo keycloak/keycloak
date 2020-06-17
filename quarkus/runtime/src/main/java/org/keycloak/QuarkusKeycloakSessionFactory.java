@@ -14,6 +14,7 @@ import org.keycloak.provider.KeycloakDeploymentInfo;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderLoader;
 import org.keycloak.provider.ProviderManager;
+import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.ServicesLogger;
@@ -81,6 +82,8 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
         }
 
         AdminPermissions.registerListener(this);
+        // make the session factory ready for hot deployment
+        ProviderManagerRegistry.SINGLETON.setDeployer(this);
     }
 
     private Set<Spi> loadRuntimeSpis(ProviderLoader runtimeLoader) {
@@ -97,16 +100,6 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
         spis.addAll(loaded);
 
         return spis;
-    }
-
-    @Override
-    public void deploy(ProviderManager pm) {
-        throw new RuntimeException("Not supported");
-    }
-
-    @Override
-    public void undeploy(ProviderManager pm) {
-        throw new RuntimeException("Not supported");
     }
 
     private ProviderLoader createUserProviderLoader() {

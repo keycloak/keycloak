@@ -1037,7 +1037,8 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                     return null;
                 }
 
-                return policies.stream().map(resourceId -> (R) findById(resourceId, resourceServerId)).collect(Collectors.toList());
+                return policies.stream().map(resourceId -> (R) findById(resourceId, resourceServerId))
+                        .filter(Objects::nonNull).collect(Collectors.toList());
             }
         }
     }

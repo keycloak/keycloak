@@ -39,6 +39,7 @@ import java.lang.annotation.Target;
 @Inherited
 public @interface AuthServerContainerExclude {
     AuthServer[] value();
+    String details() default "";
 
     public enum AuthServer {
         REMOTE,

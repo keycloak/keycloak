@@ -14,6 +14,7 @@
 
     <properties>
         <auth.server.home>${project.build.directory}/unpacked/keycloak.x-${project.version}</auth.server.home>
+        <common.resources>${basedir}/../jboss/common</common.resources>
         <session.cache.owners>2</session.cache.owners>
         <offline.session.cache.owners>2</offline.session.cache.owners>
         <login.failure.cache.owners>2</login.failure.cache.owners>
@@ -34,7 +35,55 @@
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>copy-conf</id>
+                        <id>copy-content</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${auth.server.home}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/content</directory>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                            <overwrite>true</overwrite>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-pki-root</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${auth.server.home}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${common.resources}/keystore</directory>
+                                    <includes>
+                                        <include>ca.crt</include>
+                                        <include>client.crt</include>
+                                        <include>client.key</include>
+                                        <include>*.crl</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <directory>${common.resources}/pki/root/ca</directory>
+                                    <includes>
+                                        <include>certs/clients/test-user-san@localhost.cert.pem</include>
+                                        <include>certs/clients/test-user@localhost.key.pem</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                            <overwrite>true</overwrite>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-pki-conf</id>
                         <phase>process-resources</phase>
                         <goals>
                             <goal>copy-resources</goal>
@@ -43,9 +92,18 @@
                             <outputDirectory>${auth.server.home}/conf</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>src/main/content/conf</directory>
+                                    <directory>${common.resources}/keystore</directory>
                                     <includes>
-                                        <include>**</include>
+                                        <include>keycloak.jks</include>
+                                        <include>keycloak.truststore</include>
+                                        <include>client.jks</include>
+                                        <include>client-ca.jks</include>
+                                        <include>ca.crt</include>
+                                        <include>client.crt</include>
+                                        <include>client.key</include>
+                                        <include>*.crl</include>
+                                        <!-- KEYCLOAK-6771 Certificate Bound Token -->
+                                        <include>other_client.jks</include>
                                     </includes>
                                 </resource>
                             </resources>

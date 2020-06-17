@@ -92,7 +92,7 @@ public class PolicyEntity {
     @MapKeyColumn(name = "NAME")
     @Column(name = "VALUE", columnDefinition = "TEXT")
     @CollectionTable(name = "POLICY_CONFIG", joinColumns = {@JoinColumn(name = "POLICY_ID")})
-    private Map<String, String> config = new HashMap();
+    private Map<String, String> config;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "RESOURCE_SERVER_ID")
@@ -100,15 +100,15 @@ public class PolicyEntity {
 
     @OneToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "ASSOCIATED_POLICY", joinColumns = @JoinColumn(name = "POLICY_ID"), inverseJoinColumns = @JoinColumn(name = "ASSOCIATED_POLICY_ID"))
-    private Set<PolicyEntity> associatedPolicies = new HashSet<>();
+    private Set<PolicyEntity> associatedPolicies;
 
     @OneToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "RESOURCE_POLICY", joinColumns = @JoinColumn(name = "POLICY_ID"), inverseJoinColumns = @JoinColumn(name = "RESOURCE_ID"))
-    private Set<ResourceEntity> resources = new HashSet<>();
+    private Set<ResourceEntity> resources;
 
     @OneToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "SCOPE_POLICY", joinColumns = @JoinColumn(name = "POLICY_ID"), inverseJoinColumns = @JoinColumn(name = "SCOPE_ID"))
-    private Set<ScopeEntity> scopes = new HashSet<>();
+    private Set<ScopeEntity> scopes;
 
     @Column(name = "OWNER")
     private String owner;
@@ -146,6 +146,9 @@ public class PolicyEntity {
     }
 
     public Map<String, String> getConfig() {
+        if (config == null) {
+            config = new HashMap<>();
+        }
         return this.config;
     }
 
@@ -178,6 +181,9 @@ public class PolicyEntity {
     }
 
     public Set<ResourceEntity> getResources() {
+        if (resources == null) {
+            resources = new HashSet<>();
+        }
         return this.resources;
     }
 
@@ -186,6 +192,9 @@ public class PolicyEntity {
     }
 
     public Set<ScopeEntity> getScopes() {
+        if (scopes == null) {
+            scopes = new HashSet<>();
+        }
         return this.scopes;
     }
 
@@ -194,6 +203,9 @@ public class PolicyEntity {
     }
 
     public Set<PolicyEntity> getAssociatedPolicies() {
+        if (associatedPolicies == null) {
+            associatedPolicies = new HashSet<>();
+        }
         return associatedPolicies;
     }
 

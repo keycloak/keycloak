@@ -31,7 +31,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <quarkus.version>1.5.0.CR1</quarkus.version>
+        <quarkus.version>1.5.1.Final</quarkus.version>
         <resteasy.version>4.5.3.Final</resteasy.version>
         <jackson.version>2.10.2</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>

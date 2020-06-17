@@ -48,7 +48,7 @@ public class VaultUtils {
     }
 
     public static void disableVault(SuiteContext suiteContext, EnableVault.PROVIDER_ID provider) throws IOException, CliException, TimeoutException, InterruptedException {
-        if (suiteContext.getAuthServerInfo().isUndertow()) {
+        if (suiteContext.getAuthServerInfo().isUndertow() || suiteContext.getAuthServerInfo().isQuarkus()) {
             System.setProperty("keycloak.vault." + provider.getName() + ".provider.enabled", "false");
         } else {
             OnlineManagementClient client = AuthServerTestEnricher.getManagementClient();

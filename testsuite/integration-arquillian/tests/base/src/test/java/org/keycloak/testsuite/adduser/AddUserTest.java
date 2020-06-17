@@ -64,6 +64,9 @@ public class AddUserTest extends AbstractKeycloakTest {
 
         // container auth-server-remote cannot be restarted
         ContainerAssume.assumeNotAuthServerRemote();
+
+        // don't run with auth-server-quarkus for now
+        ContainerAssume.assumeNotAuthServerQuarkus();
     }
 
     @Test

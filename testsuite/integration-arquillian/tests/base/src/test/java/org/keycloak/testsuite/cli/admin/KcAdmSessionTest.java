@@ -22,7 +22,7 @@ import static org.keycloak.testsuite.cli.KcAdmExec.execute;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
+@AuthServerContainerExclude({AuthServer.REMOTE, AuthServer.QUARKUS})
 public class KcAdmSessionTest extends AbstractAdmCliTest {
 
     static Class<? extends List<ObjectNode>> LIST_OF_JSON = new ArrayList<ObjectNode>() {}.getClass();
