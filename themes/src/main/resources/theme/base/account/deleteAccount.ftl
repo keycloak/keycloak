@@ -26,6 +26,12 @@
           </div>
         </div>
 
+         <div class="row">
+            <div class="col-md-10">
+               ${msg("initialDeletionInstruction")}
+            </div>
+         </div>
+
         <input type="text" id="username" name="username" value="${(account.username!'')}" autocomplete="username" readonly="readonly" style="display:none;">
 
         <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">

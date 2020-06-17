@@ -137,17 +137,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public boolean isUserDeleteOwnAccountAllowed() {
-        return Boolean.parseBoolean(getAttribute(Constants.ALLOW_DELETE_OWN_ACCOUNT_ATTRIBUTE));
-    }
-
-
-    @Override
-    public void setUserDeleteOwnAccountAllowed(boolean userDeleteOwnAccountAllowed) {
-        setAttribute(Constants.ALLOW_DELETE_OWN_ACCOUNT_ATTRIBUTE, userDeleteOwnAccountAllowed);
-    }
-
-    @Override
     public boolean isRegistrationAllowed() {
         return realm.isRegistrationAllowed();
     }

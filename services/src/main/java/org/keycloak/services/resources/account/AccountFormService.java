@@ -17,7 +17,9 @@
 package org.keycloak.services.resources.account;
 
 import java.util.Objects;
+
 import org.jboss.logging.Logger;
+import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
@@ -48,6 +50,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -209,10 +212,6 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 return session.getProvider(LoginFormsProvider.class).setError(Messages.NO_ACCESS).createErrorPage(Response.Status.FORBIDDEN);
             }
 
-            if (Objects.equals("deleteAccount", path) && !realm.isUserDeleteOwnAccountAllowed()) {
-                return account.setError(Status.FORBIDDEN, Messages.NO_ACCESS).createResponse(AccountPages.ACCOUNT);
-            }
-
             setReferrerOnPage();
 
             UserSessionModel userSession = auth.getSession();
@@ -339,11 +338,14 @@ public class AccountFormService extends AbstractSecuredLocalService {
     }
 
     @Path("deleteAccount")
+
     @GET
     public Response deleteAccountPage() {
         String path = "deleteAccount";
-        if (auth == null && !realm.isUserDeleteOwnAccountAllowed()) {
-            path = null;
+        if (auth == null) {
+            return login(null);
+        } else if (!clientHasDeleteAccountRole() || !realmHasDeleteActionEnabled()) {
+            return account.setError(Status.FORBIDDEN, Messages.NO_ACCESS).createResponse(AccountPages.ACCOUNT);
         }
         return forwardToPage(path, AccountPages.DELETE_ACCOUNT);
     }
@@ -766,34 +768,11 @@ public class AccountFormService extends AbstractSecuredLocalService {
     public Response processeDeleteAcount(final MultivaluedMap<String, String> formData) {
       if (auth == null) {
         return login("deleteAccount");
+      } else if (!clientHasDeleteAccountRole() || !realmHasDeleteActionEnabled()) {
+          return account.setError(Status.FORBIDDEN, Messages.DELETE_ACCOUNT_LACK_PRIVILEDGES).createResponse(AccountPages.ACCOUNT);
       }
 
-     EventBuilder eventBuilder = event.event(EventType.DELETE_ACCOUNT).client(auth.getClient()).user(auth.getUser())
-          .detail(Details.USERNAME, auth.getUser().getUsername());
-
-      try {
-
-          checkRealmAndClientRoles();
-          csrfCheck(formData);
-
-          session.sessions().removeUserSession(auth.getRealm(), auth.getSession());
-          session.userStorageManager().removeUser(auth.getRealm(), auth.getUser());
-
-          logger.debug("user " + auth.getUser().getId() + " deleted successfully");
-
-          eventBuilder.success();
-
-          return login(null);
-      } catch (ForbiddenException forbidden) {
-          return account.setError(Status.FORBIDDEN, Messages.DELETE_ACCOUNT_LACK_PRIVILEDGES).createResponse(AccountPages.DELETE_ACCOUNT);
-      } catch (Exception exception) {
-        event.clone().event(EventType.DELETE_ACCOUNT_ERROR)
-            .client(auth.getClient())
-            .user(auth.getSession().getUser())
-            .detail(Details.REASON, exception.getMessage())
-            .error(Errors.USER_DELETE_ERROR);
-        return account.setError(Status.INTERNAL_SERVER_ERROR, Messages.DELETE_ACCOUNT_ERROR).createResponse(AccountPages.DELETE_ACCOUNT);
-      }
+      return loginWithAIA("deleteAccount", DeleteAccount.PROVIDER_ID, true);
     }
 
     @Path("resource")
@@ -1143,12 +1122,12 @@ public class AccountFormService extends AbstractSecuredLocalService {
         }
     }
 
-    private void checkRealmAndClientRoles() {
-        auth.require(AccountRoles.DELETE_ACCOUNT);
-        if (!auth.hasRealmRole(AccountRoles.DELETE_ACCOUNT)) {
-            throw new ForbiddenException();
-        }
+    private boolean clientHasDeleteAccountRole() {
+        return client.getRole(AccountRoles.DELETE_ACCOUNT) != null;
     }
 
-
+    private boolean realmHasDeleteActionEnabled() {
+        RequiredActionProviderModel deleteAction = realm.getRequiredActionProviderByAlias("delete_account");
+        return Objects.nonNull(deleteAction) && deleteAction.isEnabled();
+    }
 }

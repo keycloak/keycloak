@@ -127,6 +127,16 @@ public class PlainTextVaultProviderFactoryTest {
         }
 
         @Override
+        public Set<RoleModel> getRoles(Integer firstResult, Integer maxResults) {
+            return null;
+        }
+
+        @Override
+        public Set<RoleModel> searchForRoles(String search, Integer first, Integer max) {
+            return null;
+        }
+
+        @Override
         public List<String> getDefaultRoles() {
             return null;
         }
@@ -244,16 +254,6 @@ public class PlainTextVaultProviderFactoryTest {
         @Override
         public void setUserManagedAccessAllowed(boolean userManagedAccessAllowed) {
           
-        }
-
-        @Override
-        public boolean isUserDeleteOwnAccountAllowed() {
-            return false;
-        }
-
-        @Override
-        public void setUserDeleteOwnAccountAllowed(boolean userDeleteOwnAccountAllowed) {
-
         }
 
         @Override
@@ -532,6 +532,46 @@ public class PlainTextVaultProviderFactoryTest {
         }
 
         @Override
+        public int getClientSessionIdleTimeout() {
+            return 0;
+        }
+
+        @Override
+        public void setClientSessionIdleTimeout(int seconds) {
+
+        }
+
+        @Override
+        public int getClientSessionMaxLifespan() {
+            return 0;
+        }
+
+        @Override
+        public void setClientSessionMaxLifespan(int seconds) {
+
+        }
+
+        @Override
+        public int getClientOfflineSessionIdleTimeout() {
+            return 0;
+        }
+
+        @Override
+        public void setClientOfflineSessionIdleTimeout(int seconds) {
+
+        }
+
+        @Override
+        public int getClientOfflineSessionMaxLifespan() {
+            return 0;
+        }
+
+        @Override
+        public void setClientOfflineSessionMaxLifespan(int seconds) {
+
+        }
+
+        @Override
         public void setAccessTokenLifespan(int seconds) {
           
         }
@@ -652,6 +692,16 @@ public class PlainTextVaultProviderFactoryTest {
         }
 
         @Override
+        public WebAuthnPolicy getWebAuthnPolicyPasswordless() {
+            return null;
+        }
+
+        @Override
+        public void setWebAuthnPolicyPasswordless(WebAuthnPolicy policy) {
+
+        }
+
+        @Override
         public RoleModel getRoleById(String id) {
             return null;
         }
@@ -678,6 +728,21 @@ public class PlainTextVaultProviderFactoryTest {
         }
 
         @Override
+        public List<ClientModel> getClients(Integer firstResult, Integer maxResults) {
+            return null;
+        }
+
+        @Override
+        public Long getClientsCount() {
+            return null;
+        }
+
+        @Override
+        public List<ClientModel> getAlwaysDisplayInConsoleClients() {
+            return null;
+        }
+
+        @Override
         public ClientModel addClient(String name) {
             return null;
         }
@@ -699,6 +764,11 @@ public class PlainTextVaultProviderFactoryTest {
 
         @Override
         public ClientModel getClientByClientId(String clientId) {
+            return null;
+        }
+
+        @Override
+        public List<ClientModel> searchClientByClientId(String clientId, Integer firstResult, Integer maxResults) {
             return null;
         }
 
@@ -826,6 +896,11 @@ public class PlainTextVaultProviderFactoryTest {
 
         @Override
         public AuthenticationExecutionModel getAuthenticationExecutionById(String id) {
+            return null;
+        }
+
+        @Override
+        public AuthenticationExecutionModel getAuthenticationExecutionByFlowId(String flowId) {
             return null;
         }
 
@@ -1172,6 +1247,11 @@ public class PlainTextVaultProviderFactoryTest {
 
         @Override
         public GroupModel createGroup(String id, String name) {
+            return null;
+        }
+
+        @Override
+        public GroupModel createGroup(String id, String name, GroupModel toParent) {
             return null;
         }
 

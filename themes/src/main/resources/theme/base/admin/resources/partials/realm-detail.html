@@ -56,14 +56,6 @@
             </div>
 
             <div class="form-group">
-              <label class="col-md-2 control-label" for="userDeleteOwnAccountAllowed">{{:: 'userDeleteOwnAccountAllowed' | translate}}</label>
-              <div class="col-md-6">
-                <input ng-model="realm.userDeleteOwnAccountAllowed" name="userDeleteOwnAccountAllowed" id="userDeleteOwnAccountAllowed" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
-              </div>
-              <kc-tooltip>{{:: 'realm-detail.userDeleteOwnAccountAllowed.tooltip' | translate}}</kc-tooltip>
-            </div>
-
-            <div class="form-group">
                 <label class="col-md-2 control-label">{{:: 'endpoints' | translate}}</label>
                 <div class="col-md-6">
                     <a class="form-control" ng-href="{{authServerUrl}}/realms/{{realm.realm}}/.well-known/openid-configuration" target="_blank">{{:: 'realm-detail.protocol-endpoints.oidc' | translate}}</a>
