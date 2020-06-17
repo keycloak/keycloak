@@ -1,7 +1,7 @@
 package org.keycloak.events.log;
 
 /**
- * TODO provide a reasonable default Anonymizer.
+ * TODO provide a reasonable default Anonymizer or a deidcated SPI to comply with country specific regulations.
  *
  * Allows to anonymize personal identifiable values
  *

@@ -129,7 +129,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
 
             if (userLoginFailure.getNumFailures() == realm.getFailureFactor()) {
 
-                EventBuilder eventBuilder = new EventBuilder(realm, session, NOOP_CONNECTION);
+                EventBuilder eventBuilder = new EventBuilder(realm, session, NULL_CONNECTION);
                 eventBuilder
                         .event(EventType.LOGIN_ERROR)
                         .user(event.userId)
@@ -267,7 +267,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
             return;
         }
 
-        EventBuilder eventBuilder = new EventBuilder(realm, session, NOOP_CONNECTION);
+        EventBuilder eventBuilder = new EventBuilder(realm, session, NULL_CONNECTION);
         eventBuilder
                 .event(EventType.LOGIN)
                 .user(event.userId)
@@ -277,7 +277,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         userLoginFailure.clearFailures();
     }
 
-    private static final ClientConnection NOOP_CONNECTION = new ClientConnection() {
+    private static final ClientConnection NULL_CONNECTION = new ClientConnection() {
         @Override
         public String getRemoteAddr() {
             return null;
@@ -306,7 +306,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
 
     protected void logFailure(KeycloakSession session, RealmModel realm, LoginEvent event) {
 
-        EventBuilder eventBuilder = new EventBuilder(realm, session, NOOP_CONNECTION);
+        EventBuilder eventBuilder = new EventBuilder(realm, session, NULL_CONNECTION);
         eventBuilder
                 .event(EventType.LOGIN_ERROR)
                 .user(event.userId)
