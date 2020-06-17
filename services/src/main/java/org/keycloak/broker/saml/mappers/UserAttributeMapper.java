@@ -153,7 +153,7 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper {
     }
 
     private void setIfNotEmptyAndDifferent(Consumer<String> consumer, Supplier<String> currentValueSupplier, List<String> values) {
-        if (values != null && !values.isEmpty() && !currentValueSupplier.get().equals(values.get(0))) {
+        if (values != null && !values.isEmpty() && !values.get(0).equals(currentValueSupplier.get())) {
             consumer.accept(values.get(0));
         }
     }
