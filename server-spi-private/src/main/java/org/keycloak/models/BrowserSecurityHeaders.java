@@ -21,125 +21,54 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
- */
-public class BrowserSecurityHeaders {
+public enum BrowserSecurityHeaders {
 
-    public static final String X_FRAME_OPTIONS = "X-Frame-Options";
+    X_FRAME_OPTIONS("xFrameOptions", "X-Frame-Options", "SAMEORIGIN"),
+    CONTENT_SECURITY_POLICY("contentSecurityPolicy", "Content-Security-Policy", ContentSecurityPolicyBuilder.create().build()),
+    CONTENT_SECURITY_POLICY_REPORT_ONLY("contentSecurityPolicyReportOnly", "Content-Security-Policy-Report-Only", ""),
+    X_CONTENT_TYPE_OPTIONS("xContentTypeOptions", "X-Content-Type-Options", "nosniff"),
+    X_ROBOTS_TAG("xRobotsTag", "X-Robots-Tag", "none"),
+    X_XSS_PROTECTION("xXSSProtection", "X-XSS-Protection", "1; mode=block"),
+    STRICT_TRANSPORT_SECURITY("strictTransportSecurity", "Strict-Transport-Security", "max-age=31536000; includeSubDomains"),
+    REFERRER_POLICY("referrerPolicy", "Referrer-Policy", "no-referrer"),
+    ;
 
-    public static final String X_FRAME_OPTIONS_DEFAULT = "SAMEORIGIN";
+    private final String key;
+    private final String headerName;
+    private final String defaultValue;
 
-    public static final String X_FRAME_OPTIONS_KEY = "xFrameOptions";
+    BrowserSecurityHeaders(String key, String headerName, String defaultValue) {
+        this.key = key;
+        this.headerName = headerName;
+        this.defaultValue = defaultValue;
+    }
 
-    public static final String CONTENT_SECURITY_POLICY = "Content-Security-Policy";
+    public String getKey() {
+        return key;
+    }
 
-    public static final String CONTENT_SECURITY_POLICY_DEFAULT = ContentSecurityPolicyBuilder.create().build();
+    public String getHeaderName() {
+        return headerName;
+    }
 
-    public static final String CONTENT_SECURITY_POLICY_KEY = "contentSecurityPolicy";
+    public String getDefaultValue() {
+        return defaultValue;
+    }
 
-    public static final String CONTENT_SECURITY_POLICY_REPORT_ONLY = "Content-Security-Policy-Report-Only";
-
-    public static final String CONTENT_SECURITY_POLICY_REPORT_ONLY_DEFAULT = "";
-
-    public static final String CONTENT_SECURITY_POLICY_REPORT_ONLY_KEY = "contentSecurityPolicyReportOnly";
-
-    public static final String X_CONTENT_TYPE_OPTIONS = "X-Content-Type-Options";
-
-    public static final String X_CONTENT_TYPE_OPTIONS_DEFAULT = "nosniff";
-
-    public static final String X_CONTENT_TYPE_OPTIONS_KEY = "xContentTypeOptions";
-
-    public static final String X_ROBOTS_TAG = "X-Robots-Tag";
-
-    public static final String X_ROBOTS_TAG_KEY = "xRobotsTag";
-
-    public static final String X_ROBOTS_TAG_DEFAULT = "none";
-
-    public static final String X_XSS_PROTECTION = "X-XSS-Protection";
-
-    public static final String X_XSS_PROTECTION_DEFAULT = "1; mode=block";
-
-    public static final String X_XSS_PROTECTION_KEY = "xXSSProtection";
-
-    public static final String STRICT_TRANSPORT_SECURITY = "Strict-Transport-Security";
-
-    public static final String STRICT_TRANSPORT_SECURITY_DEFAULT = "max-age=31536000; includeSubDomains";
-
-    public static final String STRICT_TRANSPORT_SECURITY_KEY = "strictTransportSecurity";
-
-    public static final Map<String, String> headerAttributeMap;
-    public static final Map<String, String> defaultHeaders;
+    @Deprecated // should be removed eventually
+    public static final Map<String, String> realmDefaultHeaders;
 
     static {
-        Map<String, String> headerMap = new HashMap<>();
-        headerMap.put(X_FRAME_OPTIONS_KEY, X_FRAME_OPTIONS);
-        headerMap.put(CONTENT_SECURITY_POLICY_KEY, CONTENT_SECURITY_POLICY);
-        headerMap.put(CONTENT_SECURITY_POLICY_REPORT_ONLY_KEY, CONTENT_SECURITY_POLICY_REPORT_ONLY);
-        headerMap.put(X_CONTENT_TYPE_OPTIONS_KEY, X_CONTENT_TYPE_OPTIONS);
-        headerMap.put(X_ROBOTS_TAG_KEY, X_ROBOTS_TAG);
-        headerMap.put(X_XSS_PROTECTION_KEY, X_XSS_PROTECTION);
-        headerMap.put(STRICT_TRANSPORT_SECURITY_KEY, STRICT_TRANSPORT_SECURITY);
 
         Map<String, String> dh = new HashMap<>();
-        dh.put(X_FRAME_OPTIONS_KEY, X_FRAME_OPTIONS_DEFAULT);
-        dh.put(CONTENT_SECURITY_POLICY_KEY, CONTENT_SECURITY_POLICY_DEFAULT);
-        dh.put(CONTENT_SECURITY_POLICY_REPORT_ONLY_KEY, CONTENT_SECURITY_POLICY_REPORT_ONLY_DEFAULT);
-        dh.put(X_CONTENT_TYPE_OPTIONS_KEY, X_CONTENT_TYPE_OPTIONS_DEFAULT);
-        dh.put(X_ROBOTS_TAG_KEY, X_ROBOTS_TAG_DEFAULT);
-        dh.put(X_XSS_PROTECTION_KEY, X_XSS_PROTECTION_DEFAULT);
-        dh.put(STRICT_TRANSPORT_SECURITY_KEY, STRICT_TRANSPORT_SECURITY_DEFAULT);
+        dh.put(X_FRAME_OPTIONS.getKey(), X_FRAME_OPTIONS.getDefaultValue());
+        dh.put(CONTENT_SECURITY_POLICY.getKey(), CONTENT_SECURITY_POLICY.getDefaultValue());
+        dh.put(CONTENT_SECURITY_POLICY_REPORT_ONLY.getKey(), CONTENT_SECURITY_POLICY_REPORT_ONLY.getDefaultValue());
+        dh.put(X_CONTENT_TYPE_OPTIONS.getKey(), X_CONTENT_TYPE_OPTIONS.getDefaultValue());
+        dh.put(X_ROBOTS_TAG.getKey(), X_ROBOTS_TAG.getDefaultValue());
+        dh.put(X_XSS_PROTECTION.getKey(), X_XSS_PROTECTION.getDefaultValue());
+        dh.put(STRICT_TRANSPORT_SECURITY.getKey(), STRICT_TRANSPORT_SECURITY.getDefaultValue());
 
-        defaultHeaders = Collections.unmodifiableMap(dh);
-        headerAttributeMap = Collections.unmodifiableMap(headerMap);
+        realmDefaultHeaders = Collections.unmodifiableMap(dh);
     }
-
-    public static class ContentSecurityPolicyBuilder {
-
-        private String frameSrc = "'self'";
-        private String frameAncestors = "'self'";
-        private String objectSrc = "'none'";
-
-        private boolean first;
-        private StringBuilder sb;
-
-        public static ContentSecurityPolicyBuilder create() {
-            return new ContentSecurityPolicyBuilder();
-        }
-
-        public ContentSecurityPolicyBuilder frameSrc(String frameSrc) {
-            this.frameSrc = frameSrc;
-            return this;
-        }
-
-        public ContentSecurityPolicyBuilder frameAncestors(String frameancestors) {
-            this.frameAncestors = frameancestors;
-            return this;
-        }
-
-        public String build() {
-            sb = new StringBuilder();
-            first = true;
-
-            build("frame-src", frameSrc);
-            build("frame-ancestors", frameAncestors);
-            build("object-src", objectSrc);
-
-            return sb.toString();
-        }
-
-        private void build(String k, String v) {
-            if (v != null) {
-                if (!first) {
-                    sb.append(" ");
-                }
-                first = false;
-
-                sb.append(k).append(" ").append(v).append(";");
-            }
-        }
-
-    }
-
 }

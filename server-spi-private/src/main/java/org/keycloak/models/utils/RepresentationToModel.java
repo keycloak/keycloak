@@ -387,7 +387,7 @@ public class RepresentationToModel {
         if (rep.getBrowserSecurityHeaders() != null) {
             newRealm.setBrowserSecurityHeaders(rep.getBrowserSecurityHeaders());
         } else {
-            newRealm.setBrowserSecurityHeaders(BrowserSecurityHeaders.defaultHeaders);
+            newRealm.setBrowserSecurityHeaders(BrowserSecurityHeaders.realmDefaultHeaders);
         }
 
         if (rep.getComponents() != null) {

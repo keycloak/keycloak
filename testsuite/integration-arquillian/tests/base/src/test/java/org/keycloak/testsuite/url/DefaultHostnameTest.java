@@ -255,7 +255,7 @@ public class DefaultHostnameTest extends AbstractHostnameTest {
             assertTrue(indexPage.contains("consoleBaseUrl = '" + new URI(expectedAdminUrl).getPath() +"/admin/" + realm + "/console/'"));
             assertTrue(indexPage.contains("resourceUrl = '" + new URI(expectedAdminUrl).getPath() +"/resources/"));
 
-            String cspHeader = response.getFirstHeader(BrowserSecurityHeaders.CONTENT_SECURITY_POLICY);
+            String cspHeader = response.getFirstHeader(BrowserSecurityHeaders.CONTENT_SECURITY_POLICY.getHeaderName());
 
             if (expectedFrontendUrl.equalsIgnoreCase(expectedAdminUrl)) {
                 assertEquals("frame-src 'self'; frame-ancestors 'self'; object-src 'none';", cspHeader);
