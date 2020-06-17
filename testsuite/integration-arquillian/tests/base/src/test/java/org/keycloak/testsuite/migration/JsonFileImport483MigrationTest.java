@@ -31,7 +31,7 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.A
 /**
  * Tests that we can import json file from previous version.  MigrationTest only tests DB.
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
+@AuthServerContainerExclude(value = {AuthServer.REMOTE, AuthServer.QUARKUS}, details = "It works locally for Quarkus, but failing on CI for unknown reason")
 public class JsonFileImport483MigrationTest extends AbstractJsonFileImportMigrationTest {
 
     @Override

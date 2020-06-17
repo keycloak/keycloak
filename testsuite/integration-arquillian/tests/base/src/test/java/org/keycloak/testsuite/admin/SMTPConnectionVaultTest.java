@@ -8,7 +8,7 @@ import org.keycloak.testsuite.arquillian.annotation.EnableVault;
  * @author Martin Kanis <mkanis@redhat.com>
  */
 @EnableVault
-@AuthServerContainerExclude(AuthServer.REMOTE)
+@AuthServerContainerExclude({AuthServer.REMOTE, AuthServer.QUARKUS})
 public class SMTPConnectionVaultTest extends SMTPConnectionTest {
 
     @Override

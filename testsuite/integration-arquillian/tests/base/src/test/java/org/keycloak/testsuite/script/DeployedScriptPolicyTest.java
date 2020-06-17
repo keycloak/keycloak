@@ -88,6 +88,7 @@ public class DeployedScriptPolicyTest extends AbstractAuthzTest {
     @BeforeClass
     public static void verifyEnvironment() {
         ContainerAssume.assumeNotAuthServerUndertow();
+        ContainerAssume.assumeNotAuthServerQuarkus();
     }
     @ArquillianResource
     private Deployer deployer;

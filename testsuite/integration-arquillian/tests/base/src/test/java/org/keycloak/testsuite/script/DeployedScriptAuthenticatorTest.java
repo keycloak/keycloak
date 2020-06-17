@@ -85,6 +85,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
     @BeforeClass
     public static void verifyEnvironment() {
         ContainerAssume.assumeNotAuthServerUndertow();
+        ContainerAssume.assumeNotAuthServerQuarkus();
     }
 
     @Rule

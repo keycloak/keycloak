@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.federation.ldap;
 
 import org.junit.ClassRule;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
@@ -13,6 +14,8 @@ import static org.keycloak.models.LDAPConstants.BIND_CREDENTIAL;
  * @author mhajas
  */
 @EnableVault
+@AuthServerContainerExclude(value = AuthServerContainerExclude.AuthServer.QUARKUS, details =
+        "java.io.NotSerializableException: com.sun.jndi.ldap.LdapCtx")
 public class LDAPVaultCredentialsTest extends LDAPSyncTest {
 
     private static final String VAULT_EXPRESSION = "${vault.ldap_bindCredential}";

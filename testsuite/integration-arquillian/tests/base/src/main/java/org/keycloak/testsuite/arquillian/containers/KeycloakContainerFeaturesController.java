@@ -88,6 +88,10 @@ public class KeycloakContainerFeaturesController {
          *
          */
         private void assertValid() {
+            // feature may be disabled after test method run, if trying to disable a disabled feature, ignore
+            if (FeatureAction.DISABLE.equals(action) && !ProfileAssume.isFeatureEnabled(feature)) {
+                return;
+            }
             assertThat("An annotation requested to " + action.name()
                             + " feature " + feature.name() + " however it was already in that state" ,
                     ProfileAssume.isFeatureEnabled(feature),

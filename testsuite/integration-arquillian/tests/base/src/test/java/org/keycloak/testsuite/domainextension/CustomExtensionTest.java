@@ -34,7 +34,7 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.A
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
+@AuthServerContainerExclude(value = {AuthServer.REMOTE, AuthServer.QUARKUS}, details = "For quarkus, custom entities not yet supported")
 // This is testing custom SPI which is, in case of remote server, deployed on container as part of testsuite providers.
 // It looks like the problem is, that in the time of loading spis during keycloak deployment, the deployment of Testsuite providers
 // is not processed yet, hence the spi is not present yet, which results in nullpointer exception because service provided by the spi

@@ -46,6 +46,7 @@ public class MetricsRestServiceTest extends AbstractKeycloakTest {
     @BeforeClass
     public static void enabled() {
         ContainerAssume.assumeNotAuthServerUndertow();
+        ContainerAssume.assumeNotAuthServerQuarkus();
     }
 
     @Test

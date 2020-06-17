@@ -491,6 +491,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
     @UncaughtServerErrorExpected
     public void testExportImport() throws Exception {
         ContainerAssume.assumeNotAuthServerRemote();
+        ContainerAssume.assumeNotAuthServerQuarkus();
 
         testExternalExchange();
         testingClient.testing().exportImport().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);

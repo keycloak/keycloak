@@ -141,6 +141,7 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
      * KEYCLOAK-5244
      */
     @Test
+    @AuthServerContainerExclude(value = AuthServer.QUARKUS, details = "test-password-blacklist.txt not in classpath")
     public void testBlacklistPasswordPolicyWithTestBlacklist() throws Exception {
 
         ContainerAssume.assumeNotAuthServerRemote();

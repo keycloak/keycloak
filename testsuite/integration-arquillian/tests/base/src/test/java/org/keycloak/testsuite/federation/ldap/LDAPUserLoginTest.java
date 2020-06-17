@@ -31,6 +31,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
@@ -214,6 +215,8 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
     // Test variant: Bind credential set to vault
     @Test
     @LDAPConnectionParameters(bindCredential=LDAPConnectionParameters.BindCredential.VAULT, bindType=LDAPConnectionParameters.BindType.SIMPLE, encryption=LDAPConnectionParameters.Encryption.NONE)
+    @AuthServerContainerExclude(value = AuthServerContainerExclude.AuthServer.QUARKUS, details =
+            "java.io.NotSerializableException: com.sun.jndi.ldap.LdapCtx")
     public void loginLDAPUserCredentialVaultAuthenticationSimpleEncryptionNone() {
         verifyConnectionUrlProtocolPrefix("ldap://");
         runLDAPLoginTest();
@@ -232,6 +235,8 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
     // Test variant: Bind credential set to vault
     @Test
     @LDAPConnectionParameters(bindCredential=LDAPConnectionParameters.BindCredential.VAULT, bindType=LDAPConnectionParameters.BindType.SIMPLE, encryption=LDAPConnectionParameters.Encryption.SSL)
+    @AuthServerContainerExclude(value = AuthServerContainerExclude.AuthServer.QUARKUS, details =
+            "java.io.NotSerializableException: com.sun.jndi.ldap.LdapCtx")
     public void loginLDAPUserCredentialVaultAuthenticationSimpleEncryptionSSL() {
         verifyConnectionUrlProtocolPrefix("ldaps://");
         runLDAPLoginTest();
@@ -250,6 +255,8 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
     // Test variant: Bind credential set to vault
     @Test
     @LDAPConnectionParameters(bindCredential=LDAPConnectionParameters.BindCredential.VAULT, bindType=LDAPConnectionParameters.BindType.SIMPLE, encryption=LDAPConnectionParameters.Encryption.STARTTLS)
+    @AuthServerContainerExclude(value = AuthServerContainerExclude.AuthServer.QUARKUS, details =
+            "java.io.NotSerializableException: com.sun.jndi.ldap.LdapCtx")
     public void loginLDAPUserCredentialVaultAuthenticationSimpleEncryptionStartTLS() {
         verifyConnectionUrlProtocolPrefix("ldap://");
         runLDAPLoginTest();

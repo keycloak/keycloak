@@ -29,6 +29,7 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
     private String keycloakConfigPropertyOverrides;
     private HashMap<String, Object> keycloakConfigPropertyOverridesMap;
     private String profile;
+    private String javaOpts;
 
     @Override
     public void validate() throws ConfigurationException {
@@ -126,5 +127,13 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
 
     public Map<String, Object> getKeycloakConfigPropertyOverridesMap() {
         return keycloakConfigPropertyOverridesMap;
+    }
+
+    public void setJavaOpts(String javaOpts) {
+        this.javaOpts = javaOpts;
+    }
+
+    public String getJavaOpts() {
+        return javaOpts;
     }
 }

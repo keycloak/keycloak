@@ -74,6 +74,7 @@ public class DeployedScriptMapperTest extends AbstractTestRealmKeycloakTest {
     @BeforeClass
     public static void verifyEnvironment() {
         ContainerAssume.assumeNotAuthServerUndertow();
+        ContainerAssume.assumeNotAuthServerQuarkus();
     }
 
     @ArquillianResource

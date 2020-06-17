@@ -234,7 +234,9 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
 
         //TODO cache RequestHeader Patterns
         //TODO how to deal with pattern syntax exceptions?
-        Pattern pattern = Pattern.compile(headerPattern, Pattern.DOTALL);
+        // need CASE_INSENSITIVE flag so that we also have matches when the underlying container use a different case than what
+        // is usually expected (e.g.: vertx)
+        Pattern pattern = Pattern.compile(headerPattern, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
 
         for (Map.Entry<String, List<String>> entry : requestHeaders.entrySet()) {
 

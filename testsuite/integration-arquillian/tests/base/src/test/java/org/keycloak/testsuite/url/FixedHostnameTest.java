@@ -61,9 +61,12 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_SCHEME;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
+
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
-@AuthServerContainerExclude(AuthServer.REMOTE)
+@AuthServerContainerExclude({REMOTE, QUARKUS})
 public class FixedHostnameTest extends AbstractHostnameTest {
 
     public static final String SAML_CLIENT_ID = "http://whatever.hostname:8280/app/";

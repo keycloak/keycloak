@@ -87,7 +87,7 @@ public class ResourceEntity {
     @ElementCollection(fetch = FetchType.LAZY)
     @Column(name = "VALUE")
     @CollectionTable(name = "RESOURCE_URIS", joinColumns = { @JoinColumn(name="RESOURCE_ID") })
-    private Set<String> uris = new HashSet<>();
+    private Set<String> uris;
 
     @Column(name = "TYPE")
     private String type;
@@ -107,16 +107,16 @@ public class ResourceEntity {
 
     @OneToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "RESOURCE_SCOPE", joinColumns = @JoinColumn(name = "RESOURCE_ID"), inverseJoinColumns = @JoinColumn(name = "SCOPE_ID"))
-    private List<ScopeEntity> scopes = new LinkedList<>();
+    private List<ScopeEntity> scopes;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "RESOURCE_POLICY", joinColumns = @JoinColumn(name = "RESOURCE_ID"), inverseJoinColumns = @JoinColumn(name = "POLICY_ID"))
-    private List<PolicyEntity> policies = new LinkedList<>();
+    private List<PolicyEntity> policies;
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="resource", fetch = FetchType.LAZY)
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
-    private Collection<ResourceAttributeEntity> attributes = new ArrayList<>();
+    private Collection<ResourceAttributeEntity> attributes;
 
     public String getId() {
         return id;
@@ -143,6 +143,9 @@ public class ResourceEntity {
     }
 
     public Set<String> getUris() {
+        if (uris == null) {
+            uris = new HashSet<>();
+        }
         return uris;
     }
 
@@ -159,6 +162,9 @@ public class ResourceEntity {
     }
 
     public List<ScopeEntity> getScopes() {
+        if (scopes == null) {
+            scopes = new LinkedList<>();
+        }
         return this.scopes;
     }
 
@@ -195,6 +201,9 @@ public class ResourceEntity {
     }
 
     public List<PolicyEntity> getPolicies() {
+        if (policies == null) {
+            policies = new LinkedList<>();
+        }
         return this.policies;
     }
 
@@ -204,6 +213,9 @@ public class ResourceEntity {
     }
 
     public Collection<ResourceAttributeEntity> getAttributes() {
+        if (attributes == null) {
+            attributes = new LinkedList<>();
+        }
         return attributes;
     }
 
