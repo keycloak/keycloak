@@ -186,15 +186,11 @@
               <button id="landingSignOutButton" tabindex="0" style="display:none" onclick="keycloak.logout();" class="pf-c-button pf-m-primary" type="button">${msg("doSignOut")}</button>
             </div>
 
-            <div class="pf-l-toolbar__group" style="margin-left: 10px;">
-                <span id="landingLoggedInUser"></span>
-            </div>
-
             <!-- Kebab for mobile -->
             <div class="pf-c-page__header-tools-group">
                 <div id="landingMobileKebab" class="pf-c-dropdown pf-m-mobile" onclick="toggleMobileDropdown();"> <!-- pf-m-expanded -->
                     <button aria-label="Actions" tabindex="0" id="landingMobileKebabButton" class="pf-c-dropdown__toggle pf-m-plain" type="button" aria-expanded="true" aria-haspopup="true">
-                        <i class="fas fa-ellipsis-v" aria-hidden="false"></i>
+                        <svg fill="currentColor" height="1em" width="1em" viewBox="0 0 192 512" aria-hidden="true" role="img" style="vertical-align: -0.125em;"><path d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z" transform=""></path></svg>
                     </button>
                     <ul id="landingMobileDropdown" aria-labelledby="landingMobileKebabButton" class="pf-c-dropdown__menu pf-m-align-right" role="menu" style="display:none">
                         <#if referrer?has_content && referrer_uri?has_content>
@@ -212,6 +208,8 @@
                     </ul>
                 </div>
             </div>
+
+            <span id="landingLoggedInUser"></span>
 
         </div> <!-- end header tools -->
       </header>
