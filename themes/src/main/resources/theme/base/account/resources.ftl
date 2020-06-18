@@ -265,7 +265,11 @@
                                         <#if resource.owner.email??>${resource.owner.email}<#else>${resource.owner.username}</#if>
                                     </td>
                                     <td>
-                                        <a href="${resource.resourceServer.baseUri}">${resource.resourceServer.name}</a>
+                                        <#if resource.resourceServer.baseUri??>
+                                            <a href="${resource.resourceServer.baseUri}">${resource.resourceServer.name}</a>
+                                        <#else>
+                                            ${resource.resourceServer.name}
+                                        </#if>
                                     </td>
                                     <td>
                                         <#if resource.permissions?size != 0>
