@@ -215,6 +215,13 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(result, "set-attribute", "Set user attribute",
                 "Set a user attribute");
 
+        addProviderInfo(result, "conditional-user-email", "Condition - user email",
+                "Flow is executed only if user's email valid configuration.");
+        addProviderInfo(result, "conditional-user-group", "Condition - User in group",
+                "Flow is executed only if user is member of group.");
+        addProviderInfo(result, "conditional-user-no-password", "Condition - User has no password",
+                "Flow is executed only if user has no password.");
+
         return result;
     }
 

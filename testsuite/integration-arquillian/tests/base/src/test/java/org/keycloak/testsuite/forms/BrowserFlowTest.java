@@ -16,6 +16,9 @@ import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFa
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalRoleAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalUserConfiguredAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.conditional.ConditionalUserEmailAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.conditional.ConditionalUserGroupAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.conditional.ConditionalUserNoPasswordAuthenticatorFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
@@ -1293,6 +1296,135 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
                                 )
                         )
                 ).defineAsBrowserFlow() // Activate this new flow
+        );
+    }
+
+    @Test
+    @AuthServerContainerExclude(REMOTE)
+    public void testConditionalGroupAuthenticator() {
+
+        String groupName = "goup";
+        testRealm().groups().add(GroupBuilder.create().name(groupName).build());
+
+        UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), "user-with-two-configured-otp");
+        userResource.joinGroup(testRealm().getGroupByPath("/" + groupName).getId());        
+        
+        configureBrowserFlowOTPNeedsGroup(groupName);
+
+        try {
+            provideUsernamePassword("user-with-two-configured-otp");
+            Assert.assertTrue(oneTimeCodePage.isOtpLabelPresent());
+            loginTotpPage.assertCurrent();
+            loginTotpPage.assertOtpCredentialSelectorAvailability(true);
+
+            provideUsernamePassword("user-with-one-configured-otp");
+            Assert.assertFalse(oneTimeCodePage.isOtpLabelPresent());
+            Assert.assertFalse(loginTotpPage.isCurrent());
+        } finally {
+            revertFlows("browser - rule");
+        }
+    }
+
+    private void configureBrowserFlowOTPNeedsGroup(String requiredGroup) {
+        final String newFlowAlias = "browser - rule";
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
+                .selectFlow(newFlowAlias)
+                .inForms(forms -> forms
+                        .clear()
+                        .addAuthenticatorExecution(Requirement.REQUIRED, UsernamePasswordFormFactory.PROVIDER_ID)
+                        .addSubFlowExecution(Requirement.CONDITIONAL, subFlow -> subFlow
+                                .addAuthenticatorExecution(Requirement.REQUIRED, ConditionalUserGroupAuthenticatorFactory.PROVIDER_ID,
+                                        config -> config.getConfig().put("group", requiredGroup))
+                                .addAuthenticatorExecution(Requirement.REQUIRED, OTPFormAuthenticatorFactory.PROVIDER_ID)
+                        )
+                )
+                .defineAsBrowserFlow()
+        );
+    }
+
+    @Test
+    @AuthServerContainerExclude(REMOTE)
+    public void testConditionalEmailAuthenticator() {
+    	
+        String requiredEmail = "otp2@redhat.com";
+        
+        configureBrowserFlowOTPConditionalEmail(requiredEmail);
+        
+        try {
+        	provideUsernamePassword("otp2@redhat.com");
+            Assert.assertTrue(oneTimeCodePage.isOtpLabelPresent());
+            loginTotpPage.assertCurrent();
+            loginTotpPage.assertOtpCredentialSelectorAvailability(true);
+
+            provideUsernamePassword("otp1@redhat.com");
+            Assert.assertFalse(oneTimeCodePage.isOtpLabelPresent());
+            Assert.assertFalse(loginTotpPage.isCurrent());
+        } finally {
+            revertFlows("browser - rule");
+        }
+    }
+
+    private void configureBrowserFlowOTPConditionalEmail(String requiredEmail) {
+        final String newFlowAlias = "browser - rule";
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
+                .selectFlow(newFlowAlias)
+                .inForms(forms -> forms
+                        .clear()
+                        .addAuthenticatorExecution(Requirement.REQUIRED, UsernamePasswordFormFactory.PROVIDER_ID)
+                        .addSubFlowExecution(Requirement.CONDITIONAL, subFlow -> subFlow
+                                .addAuthenticatorExecution(Requirement.REQUIRED, ConditionalUserEmailAuthenticatorFactory.PROVIDER_ID,
+                                        config -> config.getConfig().put("emails", requiredEmail + "##"))
+                                .addAuthenticatorExecution(Requirement.REQUIRED, OTPFormAuthenticatorFactory.PROVIDER_ID)
+                        )
+                )
+                .defineAsBrowserFlow()
+        );
+    }
+
+    @Test
+    @AuthServerContainerExclude(REMOTE)
+    public void testConditionalNoPasswordAuthenticator() {
+    	        
+        configureBrowserFlowOTPConditionalNoPassword();
+        
+        try {
+        	needsPassword("userWithoutPassword");
+            Assert.assertTrue(oneTimeCodePage.isOtpLabelPresent());
+            loginTotpPage.assertCurrent();
+
+            needsPassword("user-with-two-configured-otp");
+            Assert.assertFalse(oneTimeCodePage.isOtpLabelPresent());
+            Assert.assertFalse(loginTotpPage.isCurrent());
+        } finally {
+            revertFlows("browser - rule");
+        }
+    }
+
+    private void configureBrowserFlowOTPConditionalNoPassword() {
+        final String newFlowAlias = "browser - rule";
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
+                .selectFlow(newFlowAlias)
+                .inForms(forms -> forms
+                        .clear()
+                        .addAuthenticatorExecution(Requirement.REQUIRED, UsernameFormFactory.PROVIDER_ID)
+                        .addSubFlowExecution(Requirement.CONDITIONAL, subFlow -> subFlow
+                                .addAuthenticatorExecution(Requirement.REQUIRED, ConditionalUserNoPasswordAuthenticatorFactory.PROVIDER_ID)
+                                .addAuthenticatorExecution(Requirement.REQUIRED, OTPFormAuthenticatorFactory.PROVIDER_ID)
+                        )
+                        .addSubFlowExecution(Requirement.CONDITIONAL, subFlow -> subFlow
+                        		.addAuthenticatorExecution(Requirement.REQUIRED, ConditionalUserAttributeValueFactory.PROVIDER_ID,
+	                                config -> {
+	                                    config.getConfig().put(ConditionalUserAttributeValueFactory.CONF_ATTRIBUTE_NAME, "attribute");
+	                                    config.getConfig().put(ConditionalUserAttributeValueFactory.CONF_ATTRIBUTE_EXPECTED_VALUE, "value");
+	                                    config.getConfig().put(ConditionalUserAttributeValueFactory.CONF_NOT, Boolean.toString(true));
+	                                })
+                        		.addAuthenticatorExecution(Requirement.REQUIRED, PasswordFormFactory.PROVIDER_ID)
+                        )
+                )
+                .defineAsBrowserFlow()
         );
     }
 
