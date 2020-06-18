@@ -433,7 +433,7 @@ The name of the script file. This property is *mandatory* and should map to a fi
 
 ==== Deploy the Script JAR
 
-Once you have a JAR file with a descriptor and the scripts you want to deploy, you just need to copy the JAR to the to the {project_name} `standalone/deployments/` directory.
+Once you have a JAR file with a descriptor and the scripts you want to deploy, you just need to copy the JAR to the {project_name} `standalone/deployments/` directory.
 
 ==== Using {project_name} Administration Console to upload scripts
 
