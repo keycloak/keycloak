@@ -58,6 +58,21 @@ function loggedInUserName() {
     return userName;
 }
 
+var toggleMobileDropdown = function () {	
+    var mobileDropdown = document.getElementById("landingMobileDropdown");
+    var mobileKebab = document.getElementById("landingMobileKebab");
+    var mobileKebabButton = document.getElementById("landingMobileKebabButton");
+    if (mobileDropdown.style.display === 'none') {
+        mobileDropdown.style.display = 'block';
+        mobileKebab.classList.add("pf-m-expanded");
+        mobileKebabButton.setAttribute("aria-expanded", "true");
+    } else {
+        mobileDropdown.style.display = 'none';
+        mobileKebab.classList.remove("pf-m-expanded");
+        mobileKebabButton.setAttribute("aria-expanded", "false");
+    }
+}
+
 var loadjs = function (url, loadListener) {
     const script = document.createElement("script");
     script.src = resourceUrl + url;
