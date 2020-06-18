@@ -1,4 +1,4 @@
-Maintainers
+Maintainerss
 ===========
 
 * [Stian Thorgersen](https://github.com/stianst) (project lead)
