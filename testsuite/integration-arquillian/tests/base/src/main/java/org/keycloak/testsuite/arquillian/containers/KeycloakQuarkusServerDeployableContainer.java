@@ -107,13 +107,12 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         File wrkDir = configuration.getProvidersPath().resolve("bin").toFile();
         ProcessBuilder builder = pb.directory(wrkDir).inheritIO();
 
-        String javaOpts;
+        String javaOpts = configuration.getJavaOpts();
 
-        if ((javaOpts = configuration.getJavaOpts()) == null) {
-            javaOpts = "-Xms256m -Xmx256m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m -Djava.net.preferIPv4Stack=true";
+        if (javaOpts != null) {
+            builder.environment().put("JAVA_OPTS", javaOpts);
         }
-        
-        builder.environment().put("JAVA_OPTS", javaOpts);
+
         builder.environment().put("KEYCLOAK_ADMIN", "admin");
         builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
         
