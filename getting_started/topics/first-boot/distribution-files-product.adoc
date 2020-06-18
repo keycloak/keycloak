@@ -1,24 +1,35 @@
 
-=== Installing the Server
+[id="standalone-install"]
+=== Installing the {project_name} server
 
-Download the {project_name} Server:
+For this sample instance of {project_name}, this procedure involves installation in standalone mode. The server download ZIP file contains the scripts and binaries to run the {project_name} server. You can install the server on Linux or Windows.
 
-* *rh-sso-{project_version}.zip*
 
-NOTE: This file can be downloaded from https://access.redhat.com/jbossnetwork/restricted/listSoftware.html?downloadType=distributions&product=core.service.rhsso[the Red Hat customer portal].
+.Procedure
 
-The *rh-sso-{project_version}.zip* file is the server-only distribution. It contains only the scripts and binaries to run the {project_name} server.
+. Go to the https://access.redhat.com/jbossnetwork/restricted/listSoftware.html?downloadType=distributions&product=core.service.rhsso[Red Hat customer portal].
 
-Place the file in a directory you choose and use the `unzip` utility to unpack it, like this:
+. Download the {project_name} Server: *rh-sso-{project_version}.zip*
 
+. Place the file in a directory you choose.
+
+. Unpack the ZIP file using the appropriate `unzip` utility, such as jar, tar, or unzip.
+
++
 .Linux/Unix
 [source,bash,subs=+attributes]
 ----
-$ jar xf rh-sso-{project_version}.zip
+$ unzip rhsso-{project_version}.zip
+
+or
+
+$ tar -xvzf rh-sso-{project_version}.tar.gz
 ----
 
++
 .Windows
 [source,bash,subs=+attributes]
 ----
-> unzip rh-sso-{project_version}.zip
+$ unzip rhsso-{project_version}.zip
 ----
+

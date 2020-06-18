@@ -1,14 +1,23 @@
 
-=== Creating the Admin Account
+[id="create-admin"]
+=== Creating the admin account
 
-After the server boots, open http://localhost:8080/auth in your web browser. The welcome page will indicate that the server is running.
+Before you can use {project_name}, you need to create an admin account which you use to log in to the {project_name} admin console.
 
-Enter a username and password to create an initial admin user. 
+.Prerequisites
+* You saw no errors when you started the {project_name} server.
 
-This account will be permitted to log in to the `master` realm's administration console, from which you will create realms and users and register applications to be secured by {project_name}.
+.Procedure
 
-NOTE:  You can only create an initial admin user on the Welcome Page if you connect using `localhost`. This is a security
-       precaution. You can create the initial admin user at the command line with the `add-user-keycloak.sh` script. For more information, see the
-       link:{installguide_link}[{installguide_name}] and the link:{adminguide_link}[{adminguide_name}].
+. Open http://localhost:8080/auth in your web browser.
++
+The welcome page opens, confirming that the server is running.
++
+.Welcome page
+image:{project_images}/welcome.png[]
 
+. Enter a username and password to create an initial admin user.
 
+// Additional resources
+// For more information, see the
+// link:{installguide_link}[{installguide_name}] and the link:{adminguide_link}[{adminguide_name}].

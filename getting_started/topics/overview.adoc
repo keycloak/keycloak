@@ -1,7 +1,11 @@
 
-== Overview
+[id="basic-install"]
+== Installing a sample instance of {project_name} 
 
-This guide helps you get started with {project_name}. It covers server configuration and use of the default database. Advanced deployment options are not covered. For a deeper description of features or configuration options, consult the other reference guides.
+This section describes how to install and start a {project_name} server in standalone mode, set up the initial admin user, and log in to the {project_name} Admin Console.
+
+.Additional resources
+This installation is intended for practice use of {project_name}. For instructions on installation in a production environment and full details on all product features, see the other guides in the {project_name} documentation.
 
 ifeval::[{project_product}==true]
 {project_name} is based on the open source link:https://www.keycloak.org/[Keycloak] community project, which has its documentation link:https://www.keycloak.org/documentation.html[here].

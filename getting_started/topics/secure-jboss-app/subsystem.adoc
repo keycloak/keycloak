@@ -1,16 +1,26 @@
 
-=== Configuring the Subsystem
+[id="configure-appserver"]
+=== Modifying the {appserver_name} instance
 
-To configure the {appserver_name} instance that the application is deployed on so that this app is secured by {project_name}, complete the following steps.
+The {appserver_name} servlet application requires additional configuration before it is secured by {project_name}.
 
-. Open the `standalone/configuration/standalone.xml` file in the {appserver_name} instance that the application is deployed on and search for the following text:
+.Prerequisites
+
+* You created a client named *vanilla* in the *demo* realm.
+
+* You saved a template XML file for this client.
+
+.Procedure
+
+. Go to the `standalone/configuration` directory in your {appserver_name} root directory.
+. Open the `standalone.xml` file and search for the following text:
 +
 [source,xml]
 ----
 <subsystem xmlns="urn:jboss:domain:keycloak:1.1"/>
 ----
 
-. Modify this text to prepare the file for pasting in contents from the *Keycloak OIDC JBoss Subsystem XML* template we obtained from {project_name} admin console *Installation* tab by changing the XML entry from self-closing to using a pair of opening and closing tags:
+. Change the XML entry from self-closing to using a pair of opening and closing tags as shown here:
 +
 [source,xml]
 ----
@@ -18,7 +28,7 @@ To configure the {appserver_name} instance that the application is deployed on s
 </subsystem>
 ----
 
-. Paste the contents of the template within the `<subsystem>` element, as shown in this example:
+. Paste the contents of the XML template within the `<subsystem>` element, as shown in this example:
 +
 [source,xml]
 ----
@@ -33,7 +43,7 @@ To configure the {appserver_name} instance that the application is deployed on s
 </subsystem>
 ----
 
-. Change the `name` to `vanilla.war`:
+. Change `WAR MODULE NAME.war` to `vanilla.war`:
 +
 [source,xml]
 ----
@@ -44,7 +54,4 @@ To configure the {appserver_name} instance that the application is deployed on s
 ----
 
 . Reboot the application server.
-
-. Go to http://localhost:8080/vanilla and click *Login*. When the {project_name} login page opens, log in using the user you created in <<_create-new-user, Creating a New User>>.
-
 

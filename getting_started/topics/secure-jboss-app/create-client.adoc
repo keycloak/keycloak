@@ -1,33 +1,47 @@
 
-=== Creating and Registering the Client
+=== Registering the {appserver_name} application
 
-To define and register the client in the {project_name} admin console, complete the following steps:
+You can now define and register the client in the {project_name} admin console.
 
-. Log in to the admin console with your admin account.  
+.Prerequisites
 
-. In the top left drop-down menu select and manage the `Demo` realm. Click `Clients` in the left side menu to open the Clients page.
+* You installed a client adapter to work with {appserver_name}.
+
+.Procedure 
+
+. Log in to the admin console with your admin account: http://localhost:8180/auth/admin/
+
+. In the top left drop-down list, select the `Demo` realm.
+
+. Click `Clients` in the left side menu to open the Clients page.
 +
 .Clients
 image:{project_images}/clients.png[]
 
 . On the right side, click *Create*.  
 
-. Complete the fields as shown here:
+. On the Add Client dialog, create a client called *vanilla* by completing the fields as shown below:
 +
 .Add Client
 image:{project_images}/add-client.png[]
 
-. Click *Save* to create the client application entry.
+. Click *Save*.
 
-. Click the *Installation* tab in the {project_name} admin console to obtain a configuration template.
+. On the *Vanilla* client page that appears, click the *Installation* tab.
 
-. Select *Keycloak OIDC JBoss Subsystem XML* to generate an XML template. Copy the contents for use in the next section.
+. Select *Keycloak OIDC JSON* to generate a file that you need in a later procedure.
++
+.Keycloak.json file
+image:{project_images}/client-install-selected.png[]
+
+. Click *Download* to save *Keycloak.json* in a location that you can find later.
+
+
+. Select *Keycloak OIDC JBoss Subsystem XML* to generate an XML template.
 +
 .Template XML
 image:{project_images}/client-install-selected.png[]
 
-
-
-
+. Click *Download* to save a copy for use in the next procedure, which involves {appserver_name} configuration.
 
 

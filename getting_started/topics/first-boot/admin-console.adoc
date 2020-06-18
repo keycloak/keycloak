@@ -1,12 +1,30 @@
+[id="login-admin"]
+=== Logging into the admin console
 
-=== Log in to the Admin Console
+After you create the initial admin account, you can log in to the admin console.  In this console, you add users and register applications to be secured by {project_name}.
 
-After you create the initial admin account, use the following steps to log in to the admin console:
+.Prerequisites
 
-. Click the *Administration Console* link on the *Welcome* page or go directly to the console URL http://localhost:8080/auth/admin/
+* You have an admin account for the admin console.
 
-. Type the username and password you created on the *Welcome* page to open the *{project_name} Admin Console*.
+.Procedure
+. Click the *Administration Console* link on the *Welcome* page or go directly to http://localhost:8080/auth/admin/ (the console URL). 
 +
-.Admin Console
+[NOTE]
+====
+The Administration Console is generally referred to as the admin console for short in {project_name} documentation.
+====
+
+. Enter the username and password you created on the *Welcome* page to open the  *admin console*.
++
+.Admin console login screen
+image:images/admin-login.png[]
++
+The initial screen for the admin console appears.
++
+.Admin console
 image:{project_images}/admin-console.png[]
 
+.Next steps
+
+Now that you can log into the admin console, you can begin creating realms where administrators can create users and give them access to applications. For more details, see xref:_first-steps[Creating a realm and a user].

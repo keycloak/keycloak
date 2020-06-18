@@ -1,16 +1,31 @@
 [[_create-realm]]
+=== Creating a realm
 
-=== Creating a New Realm
+As the admin in the master realm, you create the realms where administrators create users and applications.
 
-To create a new realm, complete the following steps:
+.Prerequisites
 
-. Go to http://localhost:8080/auth/admin/ and log in to the {project_name} Admin Console using the account you created in <<_install-boot, Install and Boot>>.
+* {project_name} is installed.
+* You have the initial admin account for the admin console.
 
-. From the *Master* drop-down menu, click *Add Realm*. When you are logged in to the master realm this drop-down menu lists all existing realms.
+.Procedure
 
-. Type `demo` in the *Name* field and click *Create*.
+. Go to http://localhost:8080/auth/admin/ and log in to the {project_name} admin console using the admin account.
 
-When the realm is created, the main admin console page opens. Notice the current realm is now set to `demo`. Switch between managing the `master` realm and the realm you just created by clicking entries in the *Select realm* drop-down menu.
+. From the *Master* menu, click *Add Realm*. When you are logged in to the master realm, this menu lists all other realms.
 
+. Type `demo` in the *Name* field.
++
+.A new realm
+image:{project_images}/add-demo-realm.png[]
++
+NOTE: The realm name is case-sensitive, so make note of the case that you use.
 
+. Click *Create*.
++
+The main admin console page opens with realm set to `demo`.
++
+.Demo realm
+image:{project_images}/demo-realm.png[]
 
+. Switch between managing the `master` realm and the realm you just created by clicking entries in the *Select realm* drop-down list.

@@ -1,9 +1,9 @@
 
-== Securing a JBoss Servlet Application
+[id="_sample-application"]
+== Securing a sample application
 
-This section describes how to secure a Java servlet application on the {appserver_name} application server by:
+Now that you have an admin account, a realm, and a user, you can use {project_name} to secure a sample {appserver_name} servlet application. You install a {appserver_name} client adapter, register the application in the admin console, modify the {appserver_name} instance to work with {project_name}, and use {project_name} with some sample code to secure the application.
 
-* Installing the {project_name} client adapter on a {appserver_name} application server distribution
-* Creating and registering a client application in the {project_name} admin console
-* Configuring the application to be secured by {project_name}
+.Prerequisites
 
+* You need to adjust the port used by {project_name} to avoid port conflicts with {appserver_name}.

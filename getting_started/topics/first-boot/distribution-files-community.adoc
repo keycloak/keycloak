@@ -1,16 +1,17 @@
 
-=== Installing Distribution Files
+[id="standalone-keycloak-install"]
+=== Installing the Server
+You can install the server on Linux or Windows. The server download ZIP file contains the scripts and binaries to run the {project_name} server.
 
-Download the {project_name} Server:
+.Procedure
 
-* *keycloak-{project_version}.[zip|tar.gz]*
+. Download *keycloak-{project_version}.[zip|tar.gz]* from  https://www.keycloak.org/downloads.html[Keycloak downloads].
 
-NOTE: This file can be downloaded from https://www.keycloak.org/downloads.html[Keycloak downloads].
+. Place the file in a directory you choose.
 
-The *keycloak-{project_version}.[zip|tar.gz]* file is the server-only distribution. It contains only the scripts and binaries to run the {project_name} server.
+. Unpack the ZIP file using the appropriate `unzip` utility, such as jar, tar, or unzip.
 
-Place the file in a directory you choose and use either the `unzip` or `tar` utility to extract it.
-
++
 .Linux/Unix
 [source,bash,subs=+attributes]
 ----
@@ -21,6 +22,7 @@ or
 $ tar -xvzf keycloak-{project_version}.tar.gz
 ----
 
++
 .Windows
 [source,bash,subs=+attributes]
 ----

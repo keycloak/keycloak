@@ -1,94 +1,209 @@
 
-=== Installing the Client Adapter
+=== Installing the {appserver_name} client adapter
 
-Download the {appserver_name} distribution and extract it from the compressed file into a directory on your machine.
+When {appserver_name} and {project_name} are installed on the same machine, {appserver_name} requires some modification. To make this modification, you install a {project_name} client adapter.
 
+.Prerequisites
+
+* {appserver_name} is installed.
+
+* You have a backup of the `../standalone/configuration/standalone.xml` file if you have customized this file.
+
+.Procedure
 ifeval::[{project_community}==true]
-Download the WildFly OpenID Connect adapter distribution from link:https://www.keycloak.org/downloads.html[keycloak.org].
+. Download the *WildFly OpenID Connect Client Adapter* distribution from link:https://www.keycloak.org/downloads.html[keycloak.org].
 endif::[]
 
 ifeval::[{project_product}==true]
-Download the RH-SSO-{project_version}-eap7-adapter.zip distribution.
+. Download the *Client Adapter for EAP 7* from the https://access.redhat.com/jbossnetwork/restricted/listSoftware.html?downloadType=distributions&product=core.service.rhsso[Red Hat customer portal].
 endif::[]
 
-Extract the contents of this file into the root directory of your {appserver_name} distribution.
+. Change to the root directory of {appserver_name}.
 
-Run the appropriate script for your platform:
+. Unzip the downloaded client adapter in this directory.
++
+[source,bash,subs=+attributes]
+----
+$ unzip <filename>.zip
+----
+
+. Change to the bin directory.
++
+[source,bash,subs=+attributes]
+----
+$ cd bin
+----
+
+. Run the appropriate script for your platform.
++
+[NOTE]
+====
+If you receive a `file not found`, make sure that you used `unzip` in the previous step.  This method of extraction installs the files in the right place.
+====
 
 ifeval::[{project_product}==true]
-.EAP 6.3 and Linux/Unix
-[source,bash,subs=+attributes]
-----
-$ cd bin
-$ ./jboss-cli.sh --file=adapter-install-offline.cli
-----
-
-.EAP 6.3 and Windows
-[source,bash,subs=+attributes]
-----
-> cd bin
-> jboss-cli.bat --file=adapter-install-offline.cli
-----
-
-.EAP 7.2.5 and Linux/Unix
-[source,bash,subs=+attributes]
-----
-$ cd bin
-$ ./jboss-cli.sh --file=adapter-elytron-install-offline.cli
-----
-
-.EAP 7.2.5 and Windows
-[source,bash,subs=+attributes]
-----
-> cd bin
-> jboss-cli.bat --file=adapter-elytron-install-offline.cli
-----
-endif::[]
-
-ifeval::[{project_community}==true]
-.WildFly 10 and Linux/Unix
-[source,bash,subs=+attributes]
-----
-$ cd bin
-$ ./jboss-cli.sh --file=adapter-install-offline.cli
-----
-
-.WildFly 10 and Windows
-[source,bash,subs=+attributes]
-----
-> cd bin
-> jboss-cli.bat --file=adapter-install-offline.cli
-----
-
-.Wildfly 11+ and Linux/Unix
-[source,bash,subs=+attributes]
-----
-$ cd bin
-$ ./jboss-cli.sh --file=adapter-elytron-install-offline.cli
-----
-
-.Wildfly 11+ and Windows
-[source,bash,subs=+attributes]
-----
-> cd bin
-> jboss-cli.bat --file=adapter-elytron-install-offline.cli
-----
-endif::[]
-
-NOTE: This script will make the necessary edits to the `.../standalone/configuration/standalone.xml` file of your app server distribution and may take some time to complete.
-
-
-Start the application server.
-
++
 .Linux/Unix
 [source,bash,subs=+attributes]
 ----
-$ cd bin
-$ ./standalone.sh
+$ ./jboss-cli.sh --file=adapter-elytron-install-offline.cli
 ----
 
++
 .Windows
 [source,bash,subs=+attributes]
 ----
-> ...\bin\standalone.bat
+> jboss-cli.bat --file=adapter-elytron-install-offline.cli
+----
+endif::[]
+
+ifeval::[{project_community}==true]
++
+.WildFly 10 on Linux/Unix
+[source,bash,subs=+attributes]
+----
+$ ./jboss-cli.sh --file=adapter-install-offline.cli
+----
+
++
+.WildFly 10 on Windows
+[source,bash,subs=+attributes]
+----
+> jboss-cli.bat --file=adapter-install-offline.cli
+----
+
++
+.Wildfly 11 on Linux/Unix
+[source,bash,subs=+attributes]
+----
+$ ./jboss-cli.sh --file=adapter-elytron-install-offline.cli
+----
+
++
+.Wildfly 11 on Windows
+[source,bash,subs=+attributes]
+----
+> jboss-cli.bat --file=adapter-elytron-install-offline.cli
+----
+endif::[]
+
++
+[NOTE]
+====
+This script makes the necessary edits to the `.../standalone/configuration/standalone.xml` file. 
+====
+
+. Start the application server.
+
++
+.Linux/Unix
+[source,bash,subs=+attributes]
+----
+$ ./standalone.sh
+----
+
++
+.Windows
+[source,bash,subs=+attributes]
+----
+> ...\standalone.bat
+----
+
+ifeval::[{project_community}==true]
+. Download the *WildFly OpenID Connect Client Adapter* distribution from link:https://www.keycloak.org/downloads.html[keycloak.org].
+endif::[]
+
+ifeval::[{project_product}==true]
+. Download the *Client Adapter for EAP 7* from the https://access.redhat.com/jbossnetwork/restricted/listSoftware.html?downloadType=distributions&product=core.service.rhsso[Red Hat customer portal].
+endif::[]
+
+. Change to the root directory of {appserver_name}.
+
+. Unzip the downloaded client adapter in this directory.
++
+[source,bash,subs=+attributes]
+----
+$ unzip <filename>.zip
+----
+
+. Change to the bin directory.
++
+[source,bash,subs=+attributes]
+----
+$ cd bin
+----
+
+. Run the appropriate script for your platform.
++
+[NOTE]
+====
+If you receive a `file not found`, make sure you used `unzip` in the previous step.  This method of extraction installs the files in the right place.
+====
+
+ifeval::[{project_product}==true]
++
+.EAP 7.3 on Linux/Unix
+[source,bash,subs=+attributes]
+----
+$ ./jboss-cli.sh --file=adapter-elytron-install-offline.cli
+----
+
++
+.EAP 7.3 on Windows
+[source,bash,subs=+attributes]
+----
+> jboss-cli.bat --file=adapter-elytron-install-offline.cli
+----
+endif::[]
+
+ifeval::[{project_community}==true]
++
+.WildFly 10 on Linux/Unix
+[source,bash,subs=+attributes]
+----
+$ ./jboss-cli.sh --file=adapter-install-offline.cli
+----
+
++
+.WildFly 10 on Windows
+[source,bash,subs=+attributes]
+----
+> jboss-cli.bat --file=adapter-install-offline.cli
+----
+
++
+.Wildfly 11 on Linux/Unix
+[source,bash,subs=+attributes]
+----
+$ ./jboss-cli.sh --file=adapter-elytron-install-offline.cli
+----
+
++
+.Wildfly 11 on Windows
+[source,bash,subs=+attributes]
+----
+> jboss-cli.bat --file=adapter-elytron-install-offline.cli
+----
+endif::[]
+
++
+[NOTE]
+====
+This script makes the necessary edits to the `.../standalone/configuration/standalone.xml` file. 
+====
+
+. Start the application server.
+
++
+.Linux/Unix
+[source,bash,subs=+attributes]
+----
+$ ./standalone.sh
+----
+
++
+.Windows
+[source,bash,subs=+attributes]
+----
+> ...\standalone.bat
 ----
