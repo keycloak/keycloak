@@ -51,3 +51,26 @@ jobs:
         run: mvn clean install -B -Pquarkus,auth-server-quarkus -DskipTests -f testsuite/pom.xml
       - name: Run base tests
         run: mvn clean install -B -Pquarkus,auth-server-quarkus -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh; exit ${PIPESTATUS[0]}
+  test-cluster:
+    name: Test Clustering
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      MAVEN_OPTS: -Xmx2048m
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Download Maven Repo
+        uses: actions/download-artifact@v1
+        with:
+          name: maven-repo
+          path: .
+      - name: Extract Maven Repo
+        shell: bash
+        run: tar -xzvf maven-repo.tgz -C ~
+      - name: Build testsuite
+        run: mvn clean install -B -Pquarkus,auth-server-quarkus -DskipTests -f testsuite/pom.xml
+      - name: Run cluster tests
+        run: mvn clean install -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -f testsuite/integration-arquillian/pom.xml  | misc/log/trimmer.sh; exit ${PIPESTATUS[0]}
