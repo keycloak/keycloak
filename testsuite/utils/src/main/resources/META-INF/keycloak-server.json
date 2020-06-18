@@ -95,6 +95,10 @@
     "scripting": {
     },
 
+    "privacy":{
+        "provider": "${keycloak.privacy.provider:default}"
+    },
+
     "jta-lookup": {
         "provider": "${keycloak.jta.lookup.provider:}"
     },

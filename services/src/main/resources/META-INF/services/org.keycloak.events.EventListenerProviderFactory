@@ -17,4 +17,3 @@
 
 org.keycloak.events.email.EmailEventListenerProviderFactory
 org.keycloak.events.log.JBossLoggingEventListenerProviderFactory
-org.keycloak.events.log.PrivacyPreservingJBossLoggingEventListenerProviderFactory

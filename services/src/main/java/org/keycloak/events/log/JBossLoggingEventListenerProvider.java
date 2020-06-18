@@ -24,6 +24,8 @@ import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.privacy.PrivacyProvider;
+import org.keycloak.privacy.anonymize.Anonymizer;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.Cookie;
@@ -40,12 +42,14 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
     private final Logger logger;
     private final Logger.Level successLevel;
     private final Logger.Level errorLevel;
+    private final PrivacyProvider privacyProvider;
 
-    public JBossLoggingEventListenerProvider(KeycloakSession session, Logger logger, Logger.Level successLevel, Logger.Level errorLevel) {
+    public JBossLoggingEventListenerProvider(KeycloakSession session, Logger logger, Logger.Level successLevel, Logger.Level errorLevel, PrivacyProvider privacyProvider) {
         this.session = session;
         this.logger = logger;
         this.successLevel = successLevel;
         this.errorLevel = errorLevel;
+        this.privacyProvider = privacyProvider;
     }
 
     @Override
@@ -152,16 +156,16 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
      * @return
      */
     protected String getEventDetailValue(Event event, String key, String value) {
-        return value;
+        return privacyProvider.filter(key, value, key, event);
     }
 
     /**
-     * Enables subclasses to filter / mask or anonymize IP adresses.
+     * Enables subclasses to filter / mask or anonymize IP addresses.
      * @param event
      * @return
      */
     protected String getIpAddress(Event event) {
-        return event.getIpAddress();
+        return privacyProvider.filter(Anonymizer.IP_ADDRESS, event.getIpAddress(), Anonymizer.IP_ADDRESS, event);
     }
 
     /**
@@ -170,7 +174,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
      * @return
      */
     protected String getUserId(Event event) {
-        return event.getUserId();
+        return privacyProvider.filter(Anonymizer.USER_ID, event.getUserId(), Anonymizer.USER_ID, event);
     }
 
     @Override

@@ -23,6 +23,7 @@ import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.privacy.PrivacyProvider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -38,7 +39,10 @@ public class JBossLoggingEventListenerProviderFactory implements EventListenerPr
 
     @Override
     public EventListenerProvider create(KeycloakSession session) {
-        return new JBossLoggingEventListenerProvider(session, logger, successLevel, errorLevel);
+
+        PrivacyProvider privacyProvider = session.getProvider(PrivacyProvider.class);
+
+        return new JBossLoggingEventListenerProvider(session, logger, successLevel, errorLevel, privacyProvider);
     }
 
     @Override
