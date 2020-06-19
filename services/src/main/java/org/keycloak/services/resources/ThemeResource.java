@@ -17,6 +17,7 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.annotations.GZIP;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.models.KeycloakSession;
@@ -53,6 +54,7 @@ public class ThemeResource {
      * @return
      */
     @GET
+    @GZIP
     @Path("/{version}/{themeType}/{themeName}/{path:.*}")
     public Response getResource(@PathParam("version") String version, @PathParam("themeType") String themType, @PathParam("themeName") String themeName, @PathParam("path") String path) {
         if (!version.equals(Version.RESOURCES_VERSION)) {

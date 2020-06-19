@@ -74,7 +74,7 @@
         <link rel="icon" href="${resourceUrl}/public/favicon.ico" type="image/x-icon"/>
         </#if>
 
-        <script src="${authUrl}js/keycloak.js"></script>
+        <script src="${authUrl}js/keycloak.js" async></script>
 
         <#if properties.developmentMode?has_content && properties.developmentMode == "true">
         <!-- Don't use this in production: -->
@@ -95,7 +95,7 @@
 
         <#if properties.scripts?has_content>
             <#list properties.scripts?split(' ') as script>
-        <script type="text/javascript" src="${resourceUrl}/${script}"></script>
+        <script type="text/javascript" src="${resourceUrl}/${script}" async></script>
             </#list>
         </#if>
 
@@ -109,8 +109,8 @@
             </#list>
         </#if>
 
-        <link rel="stylesheet" type="text/css" href="${resourceUrl}/public/base.css"/>
-        <link rel="stylesheet" type="text/css" href="${resourceUrl}/public/app.css"/>
+        <link rel="stylesheet" type="text/css" href="${resourceUrl}/public/base.css" rel="preload"/>
+        <link rel="stylesheet" type="text/css" href="${resourceUrl}/public/app.css" rel="preload"/>
         <link href="${resourceUrl}/public/layout.css" rel="stylesheet"/>
     </head>
 

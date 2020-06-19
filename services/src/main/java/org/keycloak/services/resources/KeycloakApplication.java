@@ -18,6 +18,7 @@ package org.keycloak.services.resources;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.plugins.interceptors.encoding.GZIPEncodingInterceptor;
 import org.keycloak.Config;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.config.ConfigProviderFactory;
@@ -42,6 +43,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.error.KeycloakErrorHandler;
+import org.keycloak.services.filters.CachingGZIPEncodingInterceptor;
 import org.keycloak.services.filters.KeycloakSecurityHeadersFilter;
 import org.keycloak.services.filters.KeycloakTransactionCommitter;
 import org.keycloak.services.managers.ApplianceBootstrap;
@@ -107,6 +109,7 @@ public class KeycloakApplication extends Application {
             singletons.add(new RealmsResource());
             singletons.add(new AdminRoot());
             classes.add(ThemeResource.class);
+            classes.add(CachingGZIPEncodingInterceptor.class);
             classes.add(JsResource.class);
 
             classes.add(KeycloakSecurityHeadersFilter.class);

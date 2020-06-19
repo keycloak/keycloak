@@ -45,6 +45,7 @@ public class Profile {
     }
     public enum Feature {
         ACCOUNT2(Type.PREVIEW),
+        GZIP(Type.DEFAULT),
         ACCOUNT_API(Type.PREVIEW),
         ADMIN_FINE_GRAINED_AUTHZ(Type.PREVIEW),
         DOCKER(Type.DISABLED_BY_DEFAULT),
