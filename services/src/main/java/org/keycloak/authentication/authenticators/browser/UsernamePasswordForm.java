@@ -95,7 +95,7 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
     }
 
     @Override
-    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
+    public void setRequiredActions(AuthenticationFlowContext context) {
         // never called
     }
 

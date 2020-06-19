@@ -67,7 +67,7 @@ public class ValidatePassword extends AbstractDirectGrantAuthenticator {
     }
 
     @Override
-    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
+    public void setRequiredActions(AuthenticationFlowContext context) {
 
     }
 

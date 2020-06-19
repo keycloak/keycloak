@@ -105,7 +105,7 @@ public class CliUsernamePasswordAuthenticator extends AbstractUsernameFormAuthen
     }
 
     @Override
-    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
+    public void setRequiredActions(AuthenticationFlowContext context) {
     }
 
     @Override

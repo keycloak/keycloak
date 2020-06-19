@@ -232,7 +232,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         return session.userCredentialManager().isConfiguredFor(realm, user, getCredentialType());
     }
 
-    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
+    public void setRequiredActions(AuthenticationFlowContext context) {
+        UserModel user = context.getUser();
         // ask the user to do required action to register webauthn authenticator
         if (!user.getRequiredActions().contains(WebAuthnRegisterFactory.PROVIDER_ID)) {
             user.addRequiredAction(WebAuthnRegisterFactory.PROVIDER_ID);

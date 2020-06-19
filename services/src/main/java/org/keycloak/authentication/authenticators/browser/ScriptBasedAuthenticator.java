@@ -183,7 +183,7 @@ public class ScriptBasedAuthenticator implements Authenticator {
     }
 
     @Override
-    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
+    public void setRequiredActions(AuthenticationFlowContext context) {
         //TODO make RequiredActions configurable in the script
         //NOOP
     }

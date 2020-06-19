@@ -283,96 +283,34 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
         return false;
     }
 
-    private List<AuthenticatorConfigModel> getMatchingConfigModels(KeycloakSession session, RealmModel realm) {
-        // let's initialize our empty return list
-        List<AuthenticatorConfigModel> matchingConfigModels= new ArrayList<>();
-
-        // get the current context
-        KeycloakContext currentSessionContext = session.getContext();
-        // get the current auth session
-        AuthenticationSessionModel currentAuthenticationSession = currentSessionContext.getAuthenticationSession();
-        // get the status list of all executions in the current auth sessions
-        Map<String, CommonClientSessionModel.ExecutionStatus> currentAuthenticationExecutions = currentAuthenticationSession.getExecutionStatus();
-        // filter out the for us irrelevant executions
-        Map<String, CommonClientSessionModel.ExecutionStatus> possibleExecutions = currentAuthenticationExecutions
-                .entrySet()
-                .stream()
-                // since in DefaultAuthenticationFlow.java Line~487 this status is set 1 Line before setRequiredActions is called we are just looking for that kind of status
-                .filter(executionStatusEntry -> CommonClientSessionModel.ExecutionStatus.SETUP_REQUIRED.equals(executionStatusEntry.getValue()))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        // iterate over the possible executions
-        for (Map.Entry<String, CommonClientSessionModel.ExecutionStatus> possibleExecution : possibleExecutions.entrySet()) {
-            // try to get the concrete execution
-            AuthenticationExecutionModel possibleExecutionById = realm.getAuthenticationExecutionById(possibleExecution.getKey());
-            if (possibleExecutionById == null) {
-                continue;
-            }
-
-            // get the execution authenticator name
-            String authenticator = possibleExecutionById.getAuthenticator();
-            // check if the execution authenticator name is "ours"
-            if (!ConditionalOtpFormAuthenticatorFactory.PROVIDER_ID.equals(authenticator)) {
-                continue;
-            }
-
-            // try to get the config model
-            AuthenticatorConfigModel configModel = realm.getAuthenticatorConfigById(possibleExecutionById.getAuthenticatorConfig());
-            // we need this check because it's possible that someone added a conditionalOTPForm but didnt configure it and nevertheless activated it
-            if (configModel == null) {
-                continue;
-            }
-
-            // if all went well let's add that configModel to our return list
-            matchingConfigModels.add(configModel);
-        }
-
-        return matchingConfigModels;
-    }
-
-    private boolean isOTPRequired(KeycloakSession session, RealmModel realm, UserModel user) {
+    private boolean isOTPRequired(AuthenticationFlowContext context) {
+        KeycloakSession session = context.getSession();
+        UserModel user = context.getUser();
+        RealmModel realm = context.getRealm();
+        AuthenticatorConfigModel configModel = context.getAuthenticatorConfig();
         MultivaluedMap<String, String> requestHeaders = session.getContext().getRequestHeaders().getRequestHeaders();
-        /*
 
-           The previous codeblock (commit 39f40bc0054bd5a63d23b80c879a2bdc804faeb0 // [KEYCLOAK-3875] - Conditional OTP
-           Forms not working as expected )iterated over ALL Authenticator Configs in the current realm (realm.getAuthenticatorConfigs())
-           This is not what we want since it is absolutely possible that other Authenticator Configs exist which have
-           possible other settings to the for us in the current auth flow relevant ones
-           e.g. the most simple scenario:
-               * you have realm: TESTREALM
-               * you have 2 Clients: CLIENTA and CLIENTB
-               * you have defined 2 auth flows: FLOWA and FLOWB
-               * in both flows you have configured a ConditionalOTPForm with following settings
-                   - FLOWA: defaultOtpOutcome=skip
-                   - FLOWB: defaultOtpOutcome=force
-               * FLOWA is assigned to CLIENTA and FLOWB to CLIENTB
-               * if you iterated over ALL configs in one concrete auth session as before then you will not get the desired behaviour
-           hence we try now to find the matching config based on the current auth flow
-
-        */
-        for (AuthenticatorConfigModel configModel : getMatchingConfigModels(session,realm)) {
-            if (tryConcludeBasedOn(voteForUserOtpControlAttribute(user, configModel.getConfig()))) {
-                return true;
-            }
-            if (tryConcludeBasedOn(voteForUserRole(realm, user, configModel.getConfig()))) {
-                return true;
-            }
-            if (tryConcludeBasedOn(voteForHttpHeaderMatchesPattern(requestHeaders, configModel.getConfig()))) {
-                return true;
-            }
-            if (configModel.getConfig().get(DEFAULT_OTP_OUTCOME) != null
-                    && configModel.getConfig().get(DEFAULT_OTP_OUTCOME).equals(FORCE)
-                    && configModel.getConfig().size() <= 1) {
-                return true;
-            }
-            if (containsConditionalOtpConfig(configModel.getConfig())
-                && voteForUserOtpControlAttribute(user, configModel.getConfig()) == ABSTAIN
-                && voteForUserRole(realm, user, configModel.getConfig()) == ABSTAIN
-                && voteForHttpHeaderMatchesPattern(requestHeaders, configModel.getConfig()) == ABSTAIN
-                && (voteForDefaultFallback(configModel.getConfig()) == SHOW_OTP
-                    || voteForDefaultFallback(configModel.getConfig()) == ABSTAIN)) {
-                return true;
-            }
+        if (tryConcludeBasedOn(voteForUserOtpControlAttribute(user, configModel.getConfig()))) {
+            return true;
+        }
+        if (tryConcludeBasedOn(voteForUserRole(realm, user, configModel.getConfig()))) {
+            return true;
+        }
+        if (tryConcludeBasedOn(voteForHttpHeaderMatchesPattern(requestHeaders, configModel.getConfig()))) {
+            return true;
+        }
+        if (configModel.getConfig().get(DEFAULT_OTP_OUTCOME) != null
+                && configModel.getConfig().get(DEFAULT_OTP_OUTCOME).equals(FORCE)
+                && configModel.getConfig().size() <= 1) {
+            return true;
+        }
+        if (containsConditionalOtpConfig(configModel.getConfig())
+            && voteForUserOtpControlAttribute(user, configModel.getConfig()) == ABSTAIN
+            && voteForUserRole(realm, user, configModel.getConfig()) == ABSTAIN
+            && voteForHttpHeaderMatchesPattern(requestHeaders, configModel.getConfig()) == ABSTAIN
+            && (voteForDefaultFallback(configModel.getConfig()) == SHOW_OTP
+                || voteForDefaultFallback(configModel.getConfig()) == ABSTAIN)) {
+            return true;
         }
         return false;
     }
@@ -387,8 +325,9 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
     }
 
     @Override
-    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
-        if (!isOTPRequired(session, realm, user)) {
+    public void setRequiredActions(AuthenticationFlowContext context) {
+        UserModel user=context.getUser();
+        if (!isOTPRequired(context)) {
             user.removeRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
         } else if (!user.getRequiredActions().contains(UserModel.RequiredAction.CONFIGURE_TOTP.name())) {
             user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());

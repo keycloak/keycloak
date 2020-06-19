@@ -128,7 +128,8 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
     }
 
     @Override
-    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
+    public void setRequiredActions(AuthenticationFlowContext context) {
+        UserModel user = context.getUser();
         if (!user.getRequiredActions().contains(UserModel.RequiredAction.CONFIGURE_TOTP.name())) {
             user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
         }

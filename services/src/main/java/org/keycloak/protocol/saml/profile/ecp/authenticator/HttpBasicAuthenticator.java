@@ -138,7 +138,7 @@ public class HttpBasicAuthenticator implements Authenticator {
     }
 
     @Override
-    public void setRequiredActions(final KeycloakSession session, final RealmModel realm, final UserModel user) {
+    public void setRequiredActions(AuthenticationFlowContext context) {
 
     }
 
