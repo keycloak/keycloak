@@ -672,6 +672,12 @@
                     <artifactId>wildfly-cli</artifactId>
                     <scope>test</scope>
                     <version>2.0.10.Final</version>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>org.jboss.modules</groupId>
+                            <artifactId>jboss-modules</artifactId>  
+                        </exclusion>
+                    </exclusions>
                 </dependency>
             </dependencies>
             <build>
