@@ -257,6 +257,49 @@ Furthermore, we recommend the following steps to improve compatibility with the 
 
 There is an example app that shows how to use the native-mode: https://github.com/keycloak/keycloak/tree/master/examples/cordova-native
 
+[#custom-adapters]
+==== Custom Adapters
+
+Sometimes it's necessary to run the JavaScript client in environments that are not supported by default (such as Capacitor). To make it possible to use the JavasScript client in these kind of unknown environments is possible to pass a custom adapter. For example a 3rd party library could provide such an adapter to make it possible to run the JavaScript client without issues:
+
+[source,javascript]
+----
+import Keycloak from 'keycloak-js';
+import KeycloakCapacitorAdapter from 'keycloak-capacitor-adapter';
+
+const keycloak = new Keycloak();
+
+keycloak.init({
+    adapter: KeycloakCapacitorAdapter,
+});
+----
+
+This specific package does not exist, but it gives a pretty good example of how such an adapter could be passed into the client.
+
+It's also possible to make your own adapter, to do so you will have to implement the methods described in the `KeycloakAdapter` interface. For example the following TypeScript code ensures that all of the methods are properly implemented:
+
+[source,typescript]
+----
+import Keycloak, { KeycloakAdapter } from 'keycloak-js';
+
+// Implement the 'KeycloakAdapter' interface so that all required methods are guaranteed to be present.
+const MyCustomAdapter: KeycloakAdapter = {
+    login(options) {
+        // Write your own implementation here.
+    }
+
+    // The other methods go here...
+};
+
+const keycloak = new Keycloak();
+
+keycloak.init({
+    adapter: MyCustomAdapter,
+});
+----
+
+Naturally you can also do this without TypeScript by omitting the type information, but ensuring implementing the interface properly will then be left entirely up to you.
+
 ==== Earlier Browsers
 
 The JavaScript adapter depends on Base64 (window.btoa and window.atob), HTML5 History API and optionally the Promise API.
