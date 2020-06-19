@@ -128,8 +128,8 @@ public class SecretQuestionAuthenticator implements Authenticator, CredentialVal
     }
 
     @Override
-    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
-        user.addRequiredAction(SecretQuestionRequiredAction.PROVIDER_ID);
+    public void setRequiredActions(AuthenticationFlowContext context) {
+        context.getUser().addRequiredAction(SecretQuestionRequiredAction.PROVIDER_ID);
     }
 
     public List<RequiredActionFactory> getRequiredActions(KeycloakSession session) {

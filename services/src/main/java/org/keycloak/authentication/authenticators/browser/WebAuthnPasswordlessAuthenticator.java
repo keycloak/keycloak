@@ -29,7 +29,6 @@ import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.WebAuthnPasswordlessCredentialProvider;
 import org.keycloak.credential.WebAuthnPasswordlessCredentialProviderFactory;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
@@ -55,7 +54,8 @@ public class WebAuthnPasswordlessAuthenticator extends WebAuthnAuthenticator {
     }
 
     @Override
-    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
+    public void setRequiredActions(AuthenticationFlowContext context) {
+        UserModel user = context.getUser();
         // ask the user to do required action to register webauthn authenticator
         if (!user.getRequiredActions().contains(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID)) {
             user.addRequiredAction(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);

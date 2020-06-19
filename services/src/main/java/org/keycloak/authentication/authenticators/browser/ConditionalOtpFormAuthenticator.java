@@ -18,16 +18,14 @@
 package org.keycloak.authentication.authenticators.browser;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
-import org.keycloak.models.AuthenticatorConfigModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.CommonClientSessionModel;
 
 import javax.ws.rs.core.MultivaluedMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.OtpDecision.ABSTAIN;
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.OtpDecision.SHOW_OTP;
@@ -285,32 +283,34 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
         return false;
     }
 
-    private boolean isOTPRequired(KeycloakSession session, RealmModel realm, UserModel user) {
+    private boolean isOTPRequired(AuthenticationFlowContext context) {
+        KeycloakSession session = context.getSession();
+        UserModel user = context.getUser();
+        RealmModel realm = context.getRealm();
+        AuthenticatorConfigModel configModel = context.getAuthenticatorConfig();
         MultivaluedMap<String, String> requestHeaders = session.getContext().getRequestHeaders().getRequestHeaders();
-        for (AuthenticatorConfigModel configModel : realm.getAuthenticatorConfigs()) {
 
-            if (tryConcludeBasedOn(voteForUserOtpControlAttribute(user, configModel.getConfig()))) {
-                return true;
-            }
-            if (tryConcludeBasedOn(voteForUserRole(realm, user, configModel.getConfig()))) {
-                return true;
-            }
-            if (tryConcludeBasedOn(voteForHttpHeaderMatchesPattern(requestHeaders, configModel.getConfig()))) {
-                return true;
-            }
-            if (configModel.getConfig().get(DEFAULT_OTP_OUTCOME) != null
-                    && configModel.getConfig().get(DEFAULT_OTP_OUTCOME).equals(FORCE)
-                    && configModel.getConfig().size() <= 1) {
-                return true;
-            }
-            if (containsConditionalOtpConfig(configModel.getConfig())
-                && voteForUserOtpControlAttribute(user, configModel.getConfig()) == ABSTAIN
-                && voteForUserRole(realm, user, configModel.getConfig()) == ABSTAIN
-                && voteForHttpHeaderMatchesPattern(requestHeaders, configModel.getConfig()) == ABSTAIN
-                && (voteForDefaultFallback(configModel.getConfig()) == SHOW_OTP
-                    || voteForDefaultFallback(configModel.getConfig()) == ABSTAIN)) {
-                return true;
-            }
+        if (tryConcludeBasedOn(voteForUserOtpControlAttribute(user, configModel.getConfig()))) {
+            return true;
+        }
+        if (tryConcludeBasedOn(voteForUserRole(realm, user, configModel.getConfig()))) {
+            return true;
+        }
+        if (tryConcludeBasedOn(voteForHttpHeaderMatchesPattern(requestHeaders, configModel.getConfig()))) {
+            return true;
+        }
+        if (configModel.getConfig().get(DEFAULT_OTP_OUTCOME) != null
+                && configModel.getConfig().get(DEFAULT_OTP_OUTCOME).equals(FORCE)
+                && configModel.getConfig().size() <= 1) {
+            return true;
+        }
+        if (containsConditionalOtpConfig(configModel.getConfig())
+            && voteForUserOtpControlAttribute(user, configModel.getConfig()) == ABSTAIN
+            && voteForUserRole(realm, user, configModel.getConfig()) == ABSTAIN
+            && voteForHttpHeaderMatchesPattern(requestHeaders, configModel.getConfig()) == ABSTAIN
+            && (voteForDefaultFallback(configModel.getConfig()) == SHOW_OTP
+                || voteForDefaultFallback(configModel.getConfig()) == ABSTAIN)) {
+            return true;
         }
         return false;
     }
@@ -325,8 +325,9 @@ public class ConditionalOtpFormAuthenticator extends OTPFormAuthenticator {
     }
 
     @Override
-    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
-        if (!isOTPRequired(session, realm, user)) {
+    public void setRequiredActions(AuthenticationFlowContext context) {
+        UserModel user=context.getUser();
+        if (!isOTPRequired(context)) {
             user.removeRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP);
         } else if (!user.getRequiredActions().contains(UserModel.RequiredAction.CONFIGURE_TOTP.name())) {
             user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());

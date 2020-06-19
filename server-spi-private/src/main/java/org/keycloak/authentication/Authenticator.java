@@ -84,8 +84,9 @@ public interface Authenticator extends Provider {
     /**
      * Set actions to configure authenticator
      *
+     * @param context
      */
-    void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user);
+    void setRequiredActions(AuthenticationFlowContext context);
 
     /**
      * Overwrite this if the authenticator is associated with
