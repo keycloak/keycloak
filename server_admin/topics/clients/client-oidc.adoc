@@ -181,16 +181,16 @@ The client needs to pass their public key for encrypting CEK onto {project_name}
 * set ON to `JWKS URL` switch
 * input the client's public key providing URL on `JWKS URL` textbox
 
-Key Encryption's algorithms are defined in the https://tools.ietf.org/html/rfc7518#section-4.1[Json Web Algorithm (JWA)] specification. {project_name} supports RSAES-PKCS1-v1_5(RSA1_5) and RSAES OAEP using default parameters (RSA-OAEP). The detailed procedure to select this algorithm is as follows:
+Key Encryption's algorithms are defined in the https://tools.ietf.org/html/rfc7518#section-4.1[Json Web Algorithm (JWA)] specification. {project_name} supports RSAES-PKCS1-v1_5(RSA1_5), RSAES OAEP using default parameters (RSA-OAEP), and RSAES OAEP 256 using SHA-256 and MFG1 (RSA-OAEP-256). The detailed procedure to select this algorithm is as follows:
 
 * open the client's `Settings` tab
-* open `Advanced Settings`
-* select `RSA1_5` or `RSA-OAEP` from `ID Token Encryption Key Management Algorithm` pulldown menu
+* open `Fine Grain OpenID Connect Configuration`
+* select `RSA1_5`,  `RSA-OAEP`, or `RSA-OAEP-256` from `ID Token Encryption Key Management Algorithm` pulldown menu
 
 ID token encryption algorithms by CEK are also defined in the https://tools.ietf.org/html/rfc7518#section-5.1[JWA] specification. {project_name} supports AES_CBC_HMAC_SHA2 algorithms and AES GCM algorithms. The detailed procedure to select this algorithm is as follows:
 
 * open the client's `Settings` tab
-* open `Advanced Settings`
+* open `Fine Grain OpenID Connect Configuration`
 * select the algorithm from `ID Token Encryption Content Encryption Algorithm` pulldown menu
 
 
