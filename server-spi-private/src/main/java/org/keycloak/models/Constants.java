@@ -93,7 +93,6 @@ public final class Constants {
 
     // Prefix for user attributes used in various "context"data maps
     public static final String USER_ATTRIBUTES_PREFIX = "user.attributes.";
-    public static final String ALLOW_DELETE_OWN_ACCOUNT_ATTRIBUTE = "delete-own-account-allowed";
 
     // Indication to admin-rest-endpoint that realm keys should be re-generated
     public static final String GENERATE = "GENERATE";

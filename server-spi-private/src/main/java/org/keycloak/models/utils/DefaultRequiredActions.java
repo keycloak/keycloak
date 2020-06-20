@@ -87,7 +87,7 @@ public class DefaultRequiredActions {
 
         if (realm.getRequiredActionProviderByAlias("delete_account") == null) {
             RequiredActionProviderModel deleteAccount = new RequiredActionProviderModel();
-            deleteAccount.setEnabled(true);
+            deleteAccount.setEnabled(false);
             deleteAccount.setAlias("delete_account");
             deleteAccount.setName("Delete Account");
             deleteAccount.setProviderId("delete_account");

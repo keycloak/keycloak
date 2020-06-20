@@ -1427,6 +1427,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void deleteOwnAccountPageNotVisibleAndNotAccessibleWithoutClientRole() {
+        enableDeleteAccountRequiredAction();
         driver.navigate().to(profilePage.getPath());
         loginPage.login("test-user@localhost", "password");
         List<WebElement> accountLinks = driver.findElements(By.cssSelector("body > div > div.bs-sidebar > ul > li"));
@@ -1443,10 +1444,12 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(errorAlerts.get(0).getText(), "Access not allowed");
         //reset role back since realm is shared among tests
         addClientDeleteRole();
+        disableDeleteAccountRequiredAction();
     }
 
     @Test
     public void deleteOwnAccountForbiddenWithoutAccountClientRole() {
+        enableDeleteAccountRequiredAction();
         profilePage.open();
         loginPage.login("test-user@localhost", "password");
         driver.navigate().to(accountDeletePage.getPath());
@@ -1456,10 +1459,12 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals(accountDeletePage.getErrorMessage().getText(), "You do not have enough permissions to delete your own account, contact admin.");
         //reset role back since realm is shared among tests
         addClientDeleteRole();
+        disableDeleteAccountRequiredAction();
     }
 
     @Test
     public void deleteOwnAccountPageNotVisibleAndNotAccessibleWithoutDeleteAccountActionEnabled() {
+        enableDeleteAccountRequiredAction();
         driver.navigate().to(profilePage.getPath());
         loginPage.login("test-user@localhost", "password");
         List<WebElement> accountLinks = driver.findElements(By.cssSelector("body > div > div.bs-sidebar > ul > li"));
@@ -1474,12 +1479,11 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         List<WebElement> errorAlerts = driver.findElements(By.className("alert-error"));
         Assert.assertThat(errorAlerts, Matchers.hasSize(1));
         Assert.assertEquals(errorAlerts.get(0).getText(), "Access not allowed");
-        //reset action back since realm is shared among tests
-        enableDeleteAccountRequiredAction();
     }
 
    @Test
     public void deleteOwnAccountForbiddenWithoutDeleteAccountActionEnabled() {
+       enableDeleteAccountRequiredAction();
         profilePage.open();
         loginPage.login("test-user@localhost", "password");
         driver.navigate().to(accountDeletePage.getPath());
@@ -1487,12 +1491,11 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         accountDeletePage.getDeleteAccountButton().click();
         Assert.assertTrue(accountDeletePage.isCurrent());
         Assert.assertEquals(accountDeletePage.getErrorMessage().getText(), "You do not have enough permissions to delete your own account, contact admin.");
-        //reset action back since realm is shared among tests
-        enableDeleteAccountRequiredAction();
     }
 
     @Test
     public void deleteOwnAccountAIACancellationSucceeds() {
+        enableDeleteAccountRequiredAction();
         profilePage.open();
         loginPage.login("test-user@localhost", "password");
         driver.navigate().to(accountDeletePage.getPath());
@@ -1504,10 +1507,12 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         Assert.assertTrue(uri.getQuery().contains("execution=delete_account"));
         driver.findElement(By.cssSelector("button[name='cancel-aia']")).click();
         Assert.assertTrue(accountDeletePage.isCurrent());
+        disableDeleteAccountRequiredAction();
     }
 
     @Test
     public void deleteOwnAccountSucceeds() {
+        enableDeleteAccountRequiredAction();
         createUserToBeDeleted("test-user-to-be-deleted@localhost", "password");
         profilePage.open();
         loginPage.login("test-user-to-be-deleted@localhost", "password");
@@ -1519,6 +1524,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         events.expectAccount(EventType.DELETE_ACCOUNT);
         Assert.assertTrue(loginPage.isCurrent());
         Assert.assertTrue(testRealm().users().search("test-user-to-be-deleted@localhost").isEmpty());
+        disableDeleteAccountRequiredAction();
     }
 
     public String createUserToBeDeleted(String username, String password) {

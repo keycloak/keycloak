@@ -16,7 +16,6 @@
  */
 package org.keycloak.services.managers;
 
-import java.util.Objects;
 import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.migration.MigrationModelManager;

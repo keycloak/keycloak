@@ -63,7 +63,17 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
     KeycloakSession session = context.getSession();
     RealmModel realm = context.getRealm();
 
-    createChallengeResponse(context, session, realm);
+    Theme theme = null;
+
+    try {
+      theme = session.theme().getTheme(Theme.Type.LOGIN);
+    }
+    catch (IOException e) {
+      logger.error("failed to read theme: ", e);
+      context.failure();
+    }
+
+    context.challenge(context.form().setAttribute("url", new UrlBean(realm, theme, context.getUriInfo().getBaseUri(), context.getActionUrl())).createForm("delete-account-confirm.ftl"));
   }
 
 
@@ -107,20 +117,6 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
     if (Objects.isNull(clientModel.getRole(AccountRoles.DELETE_ACCOUNT))) {
       throw new ForbiddenException();
     }
-  }
-
-  private void createChallengeResponse(RequiredActionContext context, KeycloakSession session, RealmModel realm) {
-    Theme theme = null;
-
-    try {
-      theme = session.theme().getTheme(Theme.Type.LOGIN);
-    }
-    catch (IOException e) {
-      logger.error("failed to read theme: ", e);
-      context.failure();
-    }
-
-    context.challenge(context.form().setAttribute("url", new UrlBean(realm, theme, context.getUriInfo().getBaseUri(), context.getActionUrl())).createForm("delete-account-confirm.ftl"));
   }
 
   @Override
