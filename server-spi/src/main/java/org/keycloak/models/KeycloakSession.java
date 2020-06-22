@@ -113,6 +113,15 @@ public interface KeycloakSession {
      * @return
      * @throws IllegalStateException if transaction is not active
      */
+    ClientProvider clients();
+
+    /**
+     * Returns a managed provider instance.  Will start a provider transaction.  This transaction is managed by the KeycloakSession
+     * transaction.
+     *
+     * @return
+     * @throws IllegalStateException if transaction is not active
+     */
     UserSessionProvider sessions();
 
 

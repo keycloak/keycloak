@@ -57,7 +57,6 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
     @Override
     public List<ClientRepresentation> createProviderClients() {
         ClientRepresentation client = new ClientRepresentation();
-        client.setId(CLIENT_ID);
         client.setClientId(getIDPClientIdInProviderRealm());
         client.setName(CLIENT_ID);
         client.setSecret(CLIENT_SECRET);
@@ -155,7 +154,6 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
     @Override
     public List<ClientRepresentation> createConsumerClients() {
         ClientRepresentation client = new ClientRepresentation();
-        client.setId("broker-app");
         client.setClientId("broker-app");
         client.setName("broker-app");
         client.setSecret("broker-app-secret");

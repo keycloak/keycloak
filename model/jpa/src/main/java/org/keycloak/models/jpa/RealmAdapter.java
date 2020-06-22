@@ -17,6 +17,7 @@
 
 package org.keycloak.models.jpa;
 
+import org.keycloak.Config;
 import org.jboss.logging.Logger;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -829,27 +830,27 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
     @Override
     public List<ClientModel> getClients() {
-        return session.realms().getClients(this);
+        return session.clients().getClients(this);
     }
 
     @Override
     public List<ClientModel> getClients(Integer firstResult, Integer maxResults) {
-        return session.realms().getClients(this, firstResult, maxResults);
+        return session.clients().getClients(this, firstResult, maxResults);
     }
 
     @Override
     public List<ClientModel> getAlwaysDisplayInConsoleClients() {
-        return session.realms().getAlwaysDisplayInConsoleClients(this);
+        return session.clients().getAlwaysDisplayInConsoleClients(this);
     }
 
     @Override
     public ClientModel addClient(String name) {
-        return session.realms().addClient(this, name);
+        return session.clients().addClient(this, name);
     }
 
     @Override
     public ClientModel addClient(String id, String clientId) {
-        return session.realms().addClient(this, id, clientId);
+        return session.clients().addClient(this, id, clientId);
     }
 
     @Override
@@ -857,22 +858,22 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         if (id == null) return false;
         ClientModel client = getClientById(id);
         if (client == null) return false;
-        return session.realms().removeClient(id, this);
+        return session.clients().removeClient(this, id);
     }
 
     @Override
     public ClientModel getClientById(String id) {
-        return session.realms().getClientById(id, this);
+        return session.clients().getClientById(this, id);
     }
 
     @Override
     public ClientModel getClientByClientId(String clientId) {
-        return session.realms().getClientByClientId(clientId, this);
+        return session.clients().getClientByClientId(this, clientId);
     }
 
     @Override
     public List<ClientModel> searchClientByClientId(String clientId, Integer firstResult, Integer maxResults) {
-        return session.realms().searchClientsByClientId(clientId, firstResult, maxResults, this);
+        return session.clients().searchClientsByClientId(this, clientId, firstResult, maxResults);
     }
 
     private static final String BROWSER_HEADER_PREFIX = "_browser_header.";
@@ -1253,18 +1254,10 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         if (masterAdminClientId == null) {
             return null;
         }
-        ClientEntity masterAdminClient = em.find(ClientEntity.class, masterAdminClientId);
-        if (masterAdminClient == null) {
-            return null;
-        }
-        RealmModel masterRealm = null;
-        String masterAdminClientRealmId = masterAdminClient.getRealm().getId();
-        if (masterAdminClientRealmId.equals(getId())) {
-            masterRealm = this;
-        } else {
-            masterRealm = session.realms().getRealm(masterAdminClientRealmId);
-        }
-        return session.realms().getClientById(masterAdminClient.getId(), masterRealm);
+        RealmModel masterRealm = getName().equals(Config.getAdminRealm())
+          ? this
+          : session.realms().getRealm(Config.getAdminRealm());
+        return session.clients().getClientById(masterRealm, masterAdminClientId);
     }
 
     @Override

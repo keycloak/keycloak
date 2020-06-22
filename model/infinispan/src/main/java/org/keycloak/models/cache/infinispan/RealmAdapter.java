@@ -776,23 +776,23 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public boolean removeClient(String id) {
-        return cacheSession.removeClient(id, this);
+        return cacheSession.removeClient(this, id);
     }
 
     @Override
     public ClientModel getClientById(String id) {
         if (isUpdated()) return updated.getClientById(id);
-        return cacheSession.getClientById(id, this);
+        return cacheSession.getClientById(this, id);
     }
 
     @Override
     public ClientModel getClientByClientId(String clientId) {
-        return cacheSession.getClientByClientId(clientId, this);
+        return cacheSession.getClientByClientId(this, clientId);
     }
 
     @Override
     public List<ClientModel> searchClientByClientId(String clientId, Integer firstResult, Integer maxResults) {
-        return cacheSession.searchClientsByClientId(clientId, firstResult, maxResults, this);
+        return cacheSession.searchClientsByClientId(this, clientId, firstResult, maxResults);
     }
 
     @Override

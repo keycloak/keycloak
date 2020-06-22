@@ -68,10 +68,10 @@ public interface RoleByIdResource {
     @Produces(MediaType.APPLICATION_JSON)
     Set<RoleRepresentation> getRealmRoleComposites(@PathParam("role-id") String id);
 
-    @Path("{role-id}/composites/clients/{client}")
+    @Path("{role-id}/composites/clients/{clientUuid}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    Set<RoleRepresentation> getClientRoleComposites(@PathParam("role-id") String id, @PathParam("client") String client);
+    Set<RoleRepresentation> getClientRoleComposites(@PathParam("role-id") String id, @PathParam("clientUuid") String clientUuid);
 
     @Path("{role-id}/composites")
     @DELETE

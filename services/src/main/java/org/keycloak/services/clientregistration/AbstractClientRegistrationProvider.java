@@ -66,7 +66,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
         try {
             RealmModel realm = session.getContext().getRealm();
-            ClientModel clientModel = new ClientManager(new RealmManager(session)).createClient(session, realm, client, true);
+            ClientModel clientModel = ClientManager.createClient(session, realm, client, true);
 
             if (clientModel.isServiceAccountsEnabled()) {
                 new ClientManager(new RealmManager(session)).enableServiceAccount(clientModel);

@@ -185,7 +185,6 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
             .attribute(SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, getConsumerRoot() + "/sales-post/saml")
             .build(),
           ClientBuilder.create()
-            .id("broker-app")
             .clientId("broker-app")
             .name("broker-app")
             .secret("broker-app-secret")

@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -53,7 +54,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
     private void getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerClientInvalidation(cached.getId(), cached.getClientId(), cachedRealm.getId());
-            updated = cacheSession.getRealmDelegate().getClientById(cached.getId(), cachedRealm);
+            updated = cacheSession.getClientDelegate().getClientById(cachedRealm, cached.getId());
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }
@@ -65,7 +66,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getRealmDelegate().getClientById(cached.getId(), cachedRealm);
+        updated = cacheSession.getClientDelegate().getClientById(cachedRealm, cached.getId());
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }
@@ -253,14 +254,10 @@ public class ClientAdapter implements ClientModel, CachedObject {
 
     }
 
-    public Set<RoleModel> getScopeMappings() {
-        if (isUpdated()) return updated.getScopeMappings();
-        Set<RoleModel> roles = new HashSet<>();
-        for (String id : cached.getScope()) {
-            roles.add(cacheSession.getRoleById(id, getRealm()));
-
-        }
-        return roles;
+    public Stream<RoleModel> getScopeMappingsStream() {
+        if (isUpdated()) return updated.getScopeMappingsStream();
+        return cached.getScope().stream()
+          .map(id -> cacheSession.getRoleById(id, cachedRealm));
     }
 
     public void addScopeMapping(RoleModel role) {

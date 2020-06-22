@@ -99,12 +99,12 @@ public class FlowOverrideTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
 
-            ClientModel client = session.realms().getClientByClientId("test-app-flow", realm);
+            ClientModel client = session.clients().getClientByClientId(realm, "test-app-flow");
             if (client != null) {
                 return;
             }
 
-            client = session.realms().getClientByClientId("test-app", realm);
+            client = session.clients().getClientByClientId(realm, "test-app");
             client.setDirectAccessGrantsEnabled(true);
 
             // Parent flow

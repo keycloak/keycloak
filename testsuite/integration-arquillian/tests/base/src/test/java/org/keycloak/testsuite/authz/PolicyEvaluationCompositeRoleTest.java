@@ -69,7 +69,7 @@ public class PolicyEvaluationCompositeRoleTest extends AbstractAuthzTest {
 
         session.getContext().setRealm(realm);
 
-        ClientModel client = session.realms().addClient(realm, "myclient");
+        ClientModel client = session.clients().addClient(realm, "myclient");
         RoleModel role1 = client.addRole("client-role1");
 
 

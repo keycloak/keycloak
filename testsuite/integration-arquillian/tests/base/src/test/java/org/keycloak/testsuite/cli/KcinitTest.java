@@ -102,7 +102,7 @@ public class KcinitTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
 
-            ClientModel client = session.realms().getClientByClientId("kcinit", realm);
+            ClientModel client = session.clients().getClientByClientId(realm, "kcinit");
             if (client != null) {
                 return;
             }

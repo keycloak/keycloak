@@ -46,7 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -255,12 +255,11 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     }
 
     @Override
-    public Set<RoleModel> getScopeMappings() {
+    public Stream<RoleModel> getScopeMappingsStream() {
         return getEntity().getScopeMapping().stream()
                 .map(RoleEntity::getId)
                 .map(realm::getRoleById)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+                .filter(Objects::nonNull);
     }
 
     @Override

@@ -24,16 +24,13 @@ import org.keycloak.models.ClientProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.storage.client.ClientLookupProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderFactory;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -126,38 +123,38 @@ public class ClientStorageManager implements ClientProvider {
     }
 
     @Override
-    public ClientModel getClientById(String id, RealmModel realm) {
+    public ClientModel getClientById(RealmModel realm, String id) {
         StorageId storageId = new StorageId(id);
         if (storageId.getProviderId() == null) {
-            return session.clientLocalStorage().getClientById(id, realm);
+            return session.clientLocalStorage().getClientById(realm, id);
         }
         ClientLookupProvider provider = (ClientLookupProvider)getStorageProvider(session, realm, storageId.getProviderId());
         if (provider == null) return null;
         if (!isStorageProviderEnabled(realm, storageId.getProviderId())) return null;
-        return provider.getClientById(id, realm);
+        return provider.getClientById(realm, id);
     }
 
     @Override
-    public ClientModel getClientByClientId(String clientId, RealmModel realm) {
-        ClientModel client = session.clientLocalStorage().getClientByClientId(clientId, realm);
+    public ClientModel getClientByClientId(RealmModel realm, String clientId) {
+        ClientModel client = session.clientLocalStorage().getClientByClientId(realm, clientId);
         if (client != null) {
             return client;
         }
         for (ClientLookupProvider provider : getEnabledStorageProviders(session, realm, ClientLookupProvider.class)) {
-            client = provider.getClientByClientId(clientId, realm);
+            client = provider.getClientByClientId(realm, clientId);
             if (client != null) return client;
         }
         return null;
     }
 
     @Override
-    public List<ClientModel> searchClientsByClientId(String clientId, Integer firstResult, Integer maxResults, RealmModel realm) {
-        List<ClientModel> clients = session.clientLocalStorage().searchClientsByClientId(clientId,  firstResult, maxResults, realm);
+    public List<ClientModel> searchClientsByClientId(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
+        List<ClientModel> clients = session.clientLocalStorage().searchClientsByClientId(realm, clientId,  firstResult, maxResults);
         if (clients != null) {
             return clients;
         }
         for (ClientLookupProvider provider : getEnabledStorageProviders(session, realm, ClientLookupProvider.class)) {
-            clients = provider.searchClientsByClientId(clientId, firstResult, maxResults, realm);
+            clients = provider.searchClientsByClientId(realm, clientId, firstResult, maxResults);
             if (clients != null) return clients;
         }
         return null;
@@ -173,9 +170,6 @@ public class ClientStorageManager implements ClientProvider {
         return session.clientLocalStorage().addClient(realm, id, clientId);
     }
 
-
-
-
     @Override
     public List<ClientModel> getClients(RealmModel realm, Integer firstResult, Integer maxResults) {
        return session.clientLocalStorage().getClients(realm, firstResult, maxResults);
@@ -187,37 +181,8 @@ public class ClientStorageManager implements ClientProvider {
     }
 
     @Override
-    public RoleModel addClientRole(RealmModel realm, ClientModel client, String name) {
-        if (!StorageId.isLocalStorage(client.getId())) {
-            throw new RuntimeException("Federated clients do not support this operation");
-        }
-        return session.clientLocalStorage().addClientRole(realm, client, name);
-    }
-
-    @Override
-    public RoleModel addClientRole(RealmModel realm, ClientModel client, String id, String name) {
-        if (!StorageId.isLocalStorage(client.getId())) {
-            throw new RuntimeException("Federated clients do not support this operation");
-        }
-        return session.clientLocalStorage().addClientRole(realm, client, id, name);
-    }
-
-    @Override
-    public RoleModel getClientRole(RealmModel realm, ClientModel client, String name) {
-        if (!StorageId.isLocalStorage(client.getId())) {
-            //throw new RuntimeException("Federated clients do not support this operation");
-            return null;
-        }
-        return session.clientLocalStorage().getClientRole(realm, client, name);
-    }
-
-    @Override
-    public Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client) {
-        if (!StorageId.isLocalStorage(client.getId())) {
-            //throw new RuntimeException("Federated clients do not support this operation");
-            return Collections.EMPTY_SET;
-        }
-        return session.clientLocalStorage().getClientRoles(realm, client);
+    public long getClientsCount(RealmModel realm) {
+        return session.clientLocalStorage().getClientsCount(realm);
     }
 
     @Override
@@ -226,16 +191,21 @@ public class ClientStorageManager implements ClientProvider {
     }
 
     @Override
+    public void removeClients(RealmModel realm) {
+        session.clientLocalStorage().removeClients(realm);
+    }
+
+    @Override
     public void close() {
 
     }
 
     @Override
-    public boolean removeClient(String id, RealmModel realm) {
+    public boolean removeClient(RealmModel realm, String id) {
         if (!StorageId.isLocalStorage(id)) {
             throw new RuntimeException("Federated clients do not support this operation");
         }
-        return session.clientLocalStorage().removeClient(id, realm);
+        return session.clientLocalStorage().removeClient(realm, id);
     }
 
 
