@@ -99,6 +99,10 @@
             </#list>
         </#if>
 
+        <script>
+            var content = <#include "resources/content.json"/>
+        </script>
+
         <#if properties.styles?has_content>
             <#list properties.styles?split(' ') as style>
             <link href="${resourceUrl}/${style}" rel="stylesheet"/>
@@ -222,52 +226,26 @@
         </section>
         <section class="pf-c-page__main-section">
           <div class="pf-l-gallery pf-m-gutter">
-            <div class="pf-l-gallery__item">
-              <div class="pf-c-card">
-                <div class="pf-c-card__header pf-c-content">
-                    <h2><i class="pf-icon pf-icon-user"></i>&nbsp${msg("personalInfoHtmlTitle")}</h2>
-                    <h6>${msg("personalInfoIntroMessage")}</h6>
-                </div>
-                <div class="pf-c-card__body pf-c-content">
-                    <h5 id="landingPersonalInfoLink" onclick="toggleReact()"><a href="#personal-info">${msg("personalInfoHtmlTitle")}</a></h5>
-                </div>
-              </div>
-            </div>
-            <div class="pf-l-gallery__item">
-              <div class="pf-c-card">
-                <div class="pf-c-card__header pf-c-content">
-                    <h2><i class="pf-icon pf-icon-security"></i>&nbsp${msg("accountSecurityTitle")}</h2>
-                    <h6>${msg("accountSecurityIntroMessage")}</h6>
-                </div>
-                <div class="pf-c-card__body pf-c-content">
-                    <h5 id="landingSigningInLink" onclick="toggleReact()"><a href="#security/signingin">${msg("signingIn")}</a></h5>
-                    <h5 id="landingDeviceActivityLink" onclick="toggleReact()"><a href="#security/device-activity">${msg("deviceActivityHtmlTitle")}</a></h5>
-                    <h5 id="landingLinkedAccountsLink" style="display:none" onclick="toggleReact()"><a href="#security/linked-accounts">${msg("linkedAccountsHtmlTitle")}</a></h5>
+            <#assign content=theme.apply("/content.json")?eval>
+            <#list content as item>
+              <div class="pf-l-gallery__item">
+                <div class="pf-c-card" id="landing${item.id}Card">
+                  <div class="pf-c-card__header pf-c-content">
+                      <h2><i class="pf-icon ${item.icon}"></i>&nbsp${msg(item.label)}</h2>
+                      <h6>${msg(item.descriptionLabel)}</h6>
+                  </div>
+                  <div class="pf-c-card__body pf-c-content">
+                      <#if item.content??>
+                          <#list item.content as sub>
+                            <h5 id="landing${sub.id}Link" onclick="toggleReact()"><a href="#${sub.path}">${msg(sub.label)}</a></h5>
+                          </#list>
+                      <#else>
+                        <h5 id="landing${item.id}Link" onclick="toggleReact()"><a href="#${item.path}">${msg(item.label)}</a></h5>
+                      </#if>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="pf-l-gallery__item">
-              <div class="pf-c-card">
-                <div class="pf-c-card__header pf-c-content">
-                    <h2><i class="pf-icon pf-icon-applications"></i>&nbsp${msg("applicationsHtmlTitle")}</h2>
-                    <h6>${msg("applicationsIntroMessage")}</h6>
-                </div>
-                <div class="pf-c-card__body pf-c-content">
-                    <h5 id="landingApplicationsLink" onclick="toggleReact()"><a href="#applications">${msg("applicationsHtmlTitle")}</a></h5>
-                </div>
-              </div>
-            </div>
-            <div class="pf-l-gallery__item" id="landingMyResourcesCard" style="display:none">
-              <div class="pf-c-card">
-                <div class="pf-c-card__header pf-c-content">
-                    <h2><i class="pf-icon pf-icon-repository"></i>&nbsp${msg("myResources")}</h2>
-                    <h6>${msg("resourceIntroMessage")}</h6>
-                </div>
-                <div class="pf-c-card__body pf-c-content">
-                    <h5 id="landingMyResourcesLink" onclick="toggleReact()"><a href="#resources">${msg("myResources")}</a></h5>
-                </div>
-              </div>
-            </div>
+            </#list>
           </div>
         </section>
       </main>
@@ -275,13 +253,13 @@
 </div>
 
         <script>
-            if (features.isLinkedAccountsEnabled) {
-                document.getElementById("landingLinkedAccountsLink").style.display='block';
+            if (!features.isLinkedAccountsEnabled) {
+                document.getElementById("landinglinked-accountsLink").style.display='none';
             };
 
             // Hidden until feature is complete.
-            if (features.isMyResourcesEnabled) {
-                document.getElementById("landingMyResourcesCard").style.display='block';
+            if (!features.isMyResourcesEnabled) {
+                document.getElementById("landingresourcesCard").style.display='none';
             };
         </script>
 

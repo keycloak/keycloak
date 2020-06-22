@@ -64,14 +64,14 @@ public abstract class AbstractLoggedInPage extends AbstractAccountPage {
     }
 
     /**
-     * This is currently used only by navigation menu to identify nav items. See content.js in themes module for IDs.
+     * This is currently used only by navigation menu to identify nav items. See content.json in themes module for IDs.
      *
      * @return page ID
      */
     public abstract String getPageId();
 
     /**
-     * In case the page is placed is a subpage, i.e. placed in a subsection. See content.js in themes module for IDs.
+     * In case the page is placed is a subpage, i.e. placed in a subsection. See content.json in themes module for IDs.
      *
      * @return parent page ID
      */

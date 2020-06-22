@@ -41,21 +41,21 @@ public class WelcomeScreen extends AbstractAccountPage {
     @FindBy(xpath = "//*[@id='" + ROOT_ELEMENT_ID + "']//header")
     private WelcomeScreenHeader header;
 
-    @FindBy(xpath = "//*[@id='landingPersonalInfoLink']/a")
+    @FindBy(xpath = "//*[@id='landingpersonal-infoLink']/a")
     private WebElement personalInfoLink;
     @FindBy(xpath = "//*[@id='landingChangePasswordLink']/a")
     private WebElement changePasswordLink;
     @FindBy(xpath = "//*[@id='landingAuthenticatorLink']/a")
     private WebElement authenticatorLink;
-    @FindBy(xpath = "//*[@id='landingDeviceActivityLink']/a")
+    @FindBy(xpath = "//*[@id='landingdevice-activityLink']/a")
     private WebElement deviceActivityLink;
-    @FindBy(xpath = "//*[@id='landingLinkedAccountsLink']/a")
+    @FindBy(xpath = "//*[@id='landinglinked-accountsLink']/a")
     private WebElement linkedAccountsLink;
-    @FindBy(xpath = "//*[@id='landingApplicationsLink']/a")
+    @FindBy(xpath = "//*[@id='landingapplicationsLink']/a")
     private WebElement applicationsLink;
-    @FindBy(id = "landingMyResourcesCard")
+    @FindBy(id = "landingresourcesCard")
     private WebElement myResourcesCard;
-    @FindBy(xpath = "//*[@id='landingMyResourcesLink']/a")
+    @FindBy(xpath = "//*[@id='landingresourcesLink']/a")
     private WebElement myResourcesLink;
     @FindBy(id = "landingLogo")
     private WebElement logoLink;

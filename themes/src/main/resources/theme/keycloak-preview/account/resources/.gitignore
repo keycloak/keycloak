@@ -7,7 +7,7 @@
 
 # Don't ignore these
 !WelcomePageScripts.js
-!content.js
+!content.json
 
 public/app.css
 public/base.css
