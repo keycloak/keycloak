@@ -31,6 +31,7 @@ declare const keycloak: KeycloakClient;
 
 declare let isReactLoading: boolean;
 declare function toggleReact(): void;
+declare const features: { [key: string]: boolean; };
 
 export interface MainProps {}
 export class Main extends React.Component<MainProps> {
@@ -66,7 +67,7 @@ function removeHidden(items: ContentItem[]): ContentItem[] {
     const visible: ContentItem[] = [];
 
     for (let item of items) {
-        if (item.hidden) continue;
+        if (item.hidden && !features[item.hidden]) continue;
 
         if (isExpansion(item)) {
             visible.push(item);

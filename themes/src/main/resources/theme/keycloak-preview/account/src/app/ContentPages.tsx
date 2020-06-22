@@ -24,7 +24,7 @@ export interface ContentItem {
     id?: string;
     label: string;
     labelParams?: string[];
-    hidden?: boolean;
+    hidden?: string;
     groupId: string; // computed value
     itemId: string; // computed value
 };

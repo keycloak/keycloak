@@ -30,11 +30,14 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Scanner;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.ws.rs.core.UriInfo;
@@ -104,7 +107,15 @@ public class AccountConsole {
             map.put("msgJSON", messagesToJsonString(messages));
             map.put("supportedLocales", supportedLocales(messages));
             map.put("properties", theme.getProperties());
-            
+            map.put("theme", (Function<String, String>) file -> {
+                try {
+                    final InputStream resource = theme.getResourceAsStream(file);
+                    return new Scanner(resource, "UTF-8").useDelimiter("\\A").next();
+                } catch (IOException e) {
+                    throw new RuntimeException("could not load file", e);
+                }
+            });
+
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
             map.put("isEventsEnabled", eventStore != null && realm.isEventsEnabled());
             map.put("isAuthorizationEnabled", true);
