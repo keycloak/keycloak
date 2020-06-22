@@ -10,7 +10,9 @@ public class ClientRepresentation {
     private boolean userConsentRequired;
     private boolean inUse;
     private boolean offlineAccess;
+    private String rootUrl;
     private String baseUrl;
+    private String effectiveUrl;
     private ConsentRepresentation consent;
 
     public String getClientId() {
@@ -61,12 +63,28 @@ public class ClientRepresentation {
         this.offlineAccess = offlineAccess;
     }
 
+    public String getRootUrl() {
+        return rootUrl;
+    }
+
+    public void setRootUrl(String rootUrl) {
+        this.rootUrl = rootUrl;
+    }
+
     public String getBaseUrl() {
         return baseUrl;
     }
 
     public void setBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
+    }
+
+    public String getEffectiveUrl() {
+       return effectiveUrl;
+    }
+
+    public void setEffectiveUrl(String effectiveUrl) {
+        this.effectiveUrl = effectiveUrl;
     }
 
     public ConsentRepresentation getConsent() {

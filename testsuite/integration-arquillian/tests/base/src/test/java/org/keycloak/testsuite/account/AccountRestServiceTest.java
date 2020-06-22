@@ -53,6 +53,7 @@ import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentati
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.services.resources.account.AccountCredentialResource.PasswordUpdate;
+import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -643,8 +644,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
         Assert.assertThat(apps.keySet(), containsInAnyOrder("in-use-client", "always-display-client"));
 
-        assertClientRep(apps.get("in-use-client"), "In Use Client", null, false, true, false, inUseClientAppUri);
-        assertClientRep(apps.get("always-display-client"), "Always Display Client", null, false, false, false, alwaysDisplayClientAppUri);
+        assertClientRep(apps.get("in-use-client"), "In Use Client", null, false, true, false, null, inUseClientAppUri);
+        assertClientRep(apps.get("always-display-client"), "Always Display Client", null, false, false, false, null, alwaysDisplayClientAppUri);
     }
 
     @Test
@@ -666,7 +667,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
         Assert.assertThat(apps.keySet(), containsInAnyOrder("offline-client", "always-display-client"));
 
-        assertClientRep(apps.get("offline-client"), "Offline Client", null, false, true, true, offlineClientAppUri);
+        assertClientRep(apps.get("offline-client"), "Offline Client", null, false, true, true, null, offlineClientAppUri);
     }
 
     @Test
@@ -705,21 +706,44 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         Assert.assertThat(apps.keySet(), containsInAnyOrder(appId, "always-display-client"));
 
         ClientRepresentation app = apps.get(appId);
-        assertClientRep(app, null, "A third party application", true, false, false, "http://localhost:8180/auth/realms/master/app/auth");
+        assertClientRep(app, null, "A third party application", true, false, false, null, "http://localhost:8180/auth/realms/master/app/auth");
         assertFalse(app.getConsent().getGrantedScopes().isEmpty());
         ConsentScopeRepresentation grantedScope = app.getConsent().getGrantedScopes().get(0);
         assertEquals(clientScopeRepresentation.getId(), grantedScope.getId());
         assertEquals(clientScopeRepresentation.getName(), grantedScope.getName());
     }
 
-    private void assertClientRep(ClientRepresentation clientRep, String name, String description, boolean userConsentRequired, boolean inUse, boolean offlineAccess, String baseUrl) {
+    @Test
+    public void listApplicationsWithRootUrl() throws Exception {
+        oauth.clientId("root-url-client");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "view-applications-access", "password");
+        Assert.assertNull(tokenResponse.getErrorDescription());
+
+        TokenUtil token = new TokenUtil("view-applications-access", "password");
+        List<ClientRepresentation> applications = SimpleHttp
+                .doGet(getAccountUrl("applications"), httpClient)
+                .header("Accept", "application/json")
+                .auth(token.getToken())
+                .asJson(new TypeReference<List<ClientRepresentation>>() {
+                });
+        assertFalse(applications.isEmpty());
+
+        Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
+        Assert.assertThat(apps.keySet(), containsInAnyOrder("root-url-client", "always-display-client"));
+
+        assertClientRep(apps.get("root-url-client"), null, null, false, true, false, "http://localhost:8180/foo/bar", "/baz");
+    }
+
+    private void assertClientRep(ClientRepresentation clientRep, String name, String description, boolean userConsentRequired, boolean inUse, boolean offlineAccess, String rootUrl, String baseUrl) {
         assertNotNull(clientRep);
         assertEquals(name, clientRep.getClientName());
         assertEquals(description, clientRep.getDescription());
         assertEquals(userConsentRequired, clientRep.isUserConsentRequired());
         assertEquals(inUse, clientRep.isInUse());
         assertEquals(offlineAccess, clientRep.isOfflineAccess());
+        assertEquals(rootUrl, clientRep.getRootUrl());
         assertEquals(baseUrl, clientRep.getBaseUrl());
+        assertEquals(ResolveRelative.resolveRelativeUri(null, null, rootUrl, baseUrl), clientRep.getEffectiveUrl());
     }
 
     @Test

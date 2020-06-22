@@ -58,7 +58,7 @@ export interface Consent {
 }
 
 interface Application {
-  baseUrl: string;
+  effectiveUrl: string;
   clientId: string;
   clientName: string;
   consent: Consent;
@@ -117,7 +117,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
       <ContentPage title={Msg.localize('applicationsPageTitle')}>
         <DataList id="applications-list" aria-label={Msg.localize('applicationsPageTitle')}>
           {this.state.applications.map((application: Application, appIndex: number) => {
-            const appUrl: string = application.userConsentRequired ? application.baseUrl : '/auth' + application.baseUrl;
+            const appUrl: string = application.effectiveUrl;
 
             return (
               <DataListItem id={this.elementId("client-id", application)} key={'application-' + appIndex} aria-labelledby="applications-list" isExpanded={this.state.isRowOpen[appIndex]}>
@@ -140,11 +140,11 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                       <DataListCell id={this.elementId('status', application)} width={2} key={'status-' + appIndex}>
                         {application.inUse ? Msg.localize('inUse') : Msg.localize('notInUse')}
                       </DataListCell>,
-                      <DataListCell id={this.elementId('baseurl', application)} width={4} key={'baseUrl-' + appIndex}>
+                      <DataListCell id={this.elementId('effectiveurl', application)} width={4} key={'effectiveUrl-' + appIndex}>
                         <button className="pf-c-button pf-m-link" type="button" onClick={() => window.open(appUrl)}>
                           <span className="pf-c-button__icon">
                             <i className="fas fa-link" aria-hidden="true"></i>
-                          </span>{application.baseUrl}</button>
+                          </span>{application.effectiveUrl}</button>
                       </DataListCell>,
                     ]}
                   />
@@ -161,7 +161,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                       {application.description &&
                         <GridItem><strong>{Msg.localize('description') + ': '}</strong> {application.description}</GridItem>
                       }
-                      <GridItem><strong>{Msg.localize('baseUrl') + ': '}</strong> {application.baseUrl}</GridItem>
+                      <GridItem><strong>{Msg.localize('effectiveUrl') + ': '}</strong> {application.effectiveUrl}</GridItem>
                       {application.consent &&
                         <React.Fragment>
                           <GridItem span={12}>
