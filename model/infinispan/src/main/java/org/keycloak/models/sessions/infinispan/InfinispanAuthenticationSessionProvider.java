@@ -39,6 +39,7 @@ import org.keycloak.models.utils.RealmInfoUtil;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.infinispan.AdvancedCache;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -108,24 +109,14 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
         int expired = Time.currentTime() - RealmInfoUtil.getDettachedClientSessionLifespan(realm);
 
-
+        final AdvancedCache<String, RootAuthenticationSessionEntity> localCache = CacheDecorators.localCache(cache);
+        int localCacheSizePre = localCache.size();
         // Each cluster node cleanups just local sessions, which are those owned by himself (+ few more taking l1 cache into account)
-        Iterator<Map.Entry<String, RootAuthenticationSessionEntity>> itr = CacheDecorators.localCache(cache)
-                .entrySet()
-                .stream()
-                .filter(RootAuthenticationSessionPredicate.create(realm.getId()).expired(expired))
-                .iterator();
+        localCache.entrySet()
+                .removeIf(RootAuthenticationSessionPredicate.create(realm.getId()).expired(expired));
 
-        int counter = 0;
-        while (itr.hasNext()) {
-            counter++;
-            RootAuthenticationSessionEntity entity = itr.next().getValue();
-            tx.remove(cache, entity.getId());
-        }
-
-        log.debugf("Removed %d expired authentication sessions for realm '%s'", counter, realm.getName());
+        log.debugf("Removed %d expired authentication sessions for realm '%s'", localCache.size() - localCacheSizePre, realm.getName());
     }
-
 
     @Override
     public void onRealmRemoved(RealmModel realm) {
