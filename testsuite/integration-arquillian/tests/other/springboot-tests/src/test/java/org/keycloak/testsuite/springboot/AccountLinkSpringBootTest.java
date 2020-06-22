@@ -168,7 +168,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
 
     @Before
     public void createParentChild() {
-        BrokerTestTools.createKcOidcBroker(adminClient, REALM_NAME, PARENT_REALM, suiteContext);
+        BrokerTestTools.createKcOidcBroker(adminClient, REALM_NAME, PARENT_REALM);
 
         testRealmLoginPage.setAuthRealm(REALM_NAME);
     }
