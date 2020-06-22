@@ -238,7 +238,7 @@ declare namespace Keycloak {
 
 	type KeycloakPromiseCallback<T> = (result: T) => void;
 
-	class KeycloakPromise<TSuccess, TError> extends Promise<TSuccess> {
+	interface KeycloakPromise<TSuccess, TError> extends Promise<TSuccess> {
 		/**
 		 * Function to call if the promised action succeeds.
 		 * 
