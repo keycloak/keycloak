@@ -71,6 +71,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -317,12 +318,12 @@ public class RealmTest extends AbstractAdminTest {
         realm1 = adminClient.realms().realm("test-immutable").toRepresentation();
         realm1.setRealm("test-immutable-old");
         adminClient.realms().realm("test-immutable").update(realm1);
-        realm1 = adminClient.realms().realm("test-immutable-old").toRepresentation();
+        assertThat(adminClient.realms().realm("test-immutable-old").toRepresentation(), notNullValue());
 
         RealmRepresentation realm2 = new RealmRepresentation();
         realm2.setRealm("test-immutable");
         adminClient.realms().create(realm2);
-        realm2 = adminClient.realms().realm("test-immutable").toRepresentation();
+        assertThat(adminClient.realms().realm("test-immutable").toRepresentation(), notNullValue());
 
         adminClient.realms().realm("test-immutable-old").remove();
         adminClient.realms().realm("test-immutable").remove();

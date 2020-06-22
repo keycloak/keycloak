@@ -44,6 +44,17 @@
         "provider": "${keycloak.user.provider:jpa}"
     },
 
+    "client": {
+        "provider": "${keycloak.client.provider:jpa}"
+    },
+
+    "mapStorage": {
+        "provider": "${keycloak.mapStorage.provider:concurrenthashmap}",
+        "concurrenthashmap": {
+            "dir": "${project.build.directory:target}"
+        }
+    },
+
     "userFederatedStorage": {
         "provider": "${keycloak.userFederatedStorage.provider:jpa}"
     },
