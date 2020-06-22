@@ -200,6 +200,7 @@
         "http://localhost:8180/foo/bar/*",
         "https://localhost:8543/foo/bar/*"
       ],
+      "directAccessGrantsEnabled": true,
       "secret": "password"
     },
     {
