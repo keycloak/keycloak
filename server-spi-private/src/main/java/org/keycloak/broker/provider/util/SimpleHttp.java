@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.Header;
 import org.apache.http.HeaderIterator;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
@@ -204,8 +205,8 @@ public class SimpleHttp {
             if (params != null) {
                 ((HttpEntityEnclosingRequestBase) httpRequest).setEntity(getFormEntityFromParameter());
             } else if (entity != null) {
-                if (headers == null || !headers.containsKey("Content-Type")) {
-                    header("Content-Type", "application/json");
+                if (headers == null || !headers.containsKey(HttpHeaders.CONTENT_TYPE)) {
+                    header(HttpHeaders.CONTENT_TYPE, "application/json");
                 }
                 ((HttpEntityEnclosingRequestBase) httpRequest).setEntity(getJsonEntity());
             } else {
@@ -242,7 +243,7 @@ public class SimpleHttp {
     }
 
     private StringEntity getJsonEntity() throws IOException {
-        return new StringEntity(JsonSerialization.writeValueAsString(entity), ContentType.getByMimeType(headers.get("Content-Type")));
+        return new StringEntity(JsonSerialization.writeValueAsString(entity), ContentType.getByMimeType(headers.get(HttpHeaders.CONTENT_TYPE)));
     }
 
     private UrlEncodedFormEntity getFormEntityFromParameter() throws IOException{
