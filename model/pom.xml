@@ -33,5 +33,6 @@
     <modules>
         <module>jpa</module>
         <module>infinispan</module>
+        <module>map</module>
     </modules>
 </project>
