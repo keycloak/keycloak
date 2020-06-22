@@ -36,7 +36,7 @@ public class AnonymizingPrivacyFilterProvider implements PrivacyFilterProvider {
     }
 
     @Override
-    public String filter(String field, String input, String key, Event event) {
+    public String filter(String field, String input, Event event) {
         return anonymizer.anonymize(field, input);
     }
 

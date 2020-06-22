@@ -156,7 +156,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
      * @return
      */
     protected String getEventDetailValue(Event event, String key, String value) {
-        return privacyFilter.filter(key, value, key, event);
+        return privacyFilter.filter(key, value, event);
     }
 
     /**
@@ -165,7 +165,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
      * @return
      */
     protected String getIpAddress(Event event) {
-        return privacyFilter.filter(Anonymizer.IP_ADDRESS, event.getIpAddress(), Anonymizer.IP_ADDRESS, event);
+        return privacyFilter.filter(Anonymizer.IP_ADDRESS, event.getIpAddress(), event);
     }
 
     /**
@@ -174,7 +174,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
      * @return
      */
     protected String getUserId(Event event) {
-        return privacyFilter.filter(Anonymizer.USER_ID, event.getUserId(), Anonymizer.USER_ID, event);
+        return privacyFilter.filter(Anonymizer.USER_ID, event.getUserId(), event);
     }
 
     @Override

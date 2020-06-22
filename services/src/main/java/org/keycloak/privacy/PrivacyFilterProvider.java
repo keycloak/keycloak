@@ -42,11 +42,10 @@ public interface PrivacyFilterProvider extends Provider {
      *
      * @param field
      * @param input
-     * @param key   event detail key
      * @param event the keycloak event
      * @return the potentially filtered input value
      */
-    default String filter(String field, String input, String key, Event event) {
+    default String filter(String field, String input, Event event) {
         return filter(input);
     }
 
