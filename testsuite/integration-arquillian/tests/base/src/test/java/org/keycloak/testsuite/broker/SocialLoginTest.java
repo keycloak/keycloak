@@ -209,7 +209,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
     public static void setupClientExchangePermissions(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName(REALM);
-        ClientModel client = session.realms().getClientByClientId(EXCHANGE_CLIENT, realm);
+        ClientModel client = session.clients().getClientByClientId(realm, EXCHANGE_CLIENT);
         // lazy init
         if (client != null) return;
         client = realm.addClient(EXCHANGE_CLIENT);

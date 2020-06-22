@@ -97,7 +97,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
 
     protected List<ClientRepresentation> createProviderClients() {
         ClientRepresentation client = new ClientRepresentation();
-        client.setId(CLIENT_ID);
+        client.setClientId(CLIENT_ID);
         client.setName(CLIENT_ID);
         client.setSecret(CLIENT_SECRET);
         client.setEnabled(true);

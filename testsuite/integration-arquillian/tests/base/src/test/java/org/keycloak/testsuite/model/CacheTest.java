@@ -99,7 +99,7 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
 	       
 	            realm = session.realms().getRealmByName("test");
 	            Assert.assertEquals(200, realm.getAccessCodeLifespanLogin());
-	            testApp = session.realms().getClientById(appId, realm);
+	            testApp = session.clients().getClientById(realm, appId);
 	            Assert.assertFalse(testApp.isEnabled());
 	        
 	        }

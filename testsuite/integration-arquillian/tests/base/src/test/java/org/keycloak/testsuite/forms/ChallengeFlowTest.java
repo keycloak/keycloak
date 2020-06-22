@@ -84,7 +84,7 @@ public class ChallengeFlowTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
 
-            ClientModel client = session.realms().getClientByClientId("test-app-flow", realm);
+            ClientModel client = session.clients().getClientByClientId(realm, "test-app-flow");
             if (client != null) {
                 return;
             }

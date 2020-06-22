@@ -202,7 +202,7 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public String getContainerId() {
-        if (isClientRole()) return role.getClient().getId();
+        if (isClientRole()) return role.getClientId();
         else return realm.getId();
     }
 
@@ -210,7 +210,7 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
     @Override
     public RoleContainerModel getContainer() {
         if (role.isClientRole()) {
-            return realm.getClientById(role.getClient().getId());
+            return realm.getClientById(role.getClientId());
 
         } else {
             return realm;

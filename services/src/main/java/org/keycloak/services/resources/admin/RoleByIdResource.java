@@ -194,19 +194,19 @@ public class RoleByIdResource extends RoleResource {
      * Get client-level roles for the client that are in the role's composite
      *
      * @param id
-     * @param client
+     * @param clientUuid
      * @return
      */
-    @Path("{role-id}/composites/clients/{client}")
+    @Path("{role-id}/composites/clients/{clientUuid}")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Set<RoleRepresentation> getClientRoleComposites(final @PathParam("role-id") String id,
-                                                                final @PathParam("client") String client) {
+                                                                final @PathParam("clientUuid") String clientUuid) {
 
         RoleModel role = getRoleModel(id);
         auth.roles().requireView(role);
-        ClientModel clientModel = realm.getClientById(client);
+        ClientModel clientModel = realm.getClientById(clientUuid);
         if (clientModel == null) {
             throw new NotFoundException("Could not find client");
         }

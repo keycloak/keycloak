@@ -27,7 +27,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface RealmProvider extends Provider, ClientProvider {
+public interface RealmProvider extends Provider /* TODO: Remove in future version */, ClientProvider /* up to here */ {
 
     // Note: The reason there are so many query methods here is for layering a cache on top of an persistent KeycloakSession
     MigrationModel getMigrationModel();
@@ -42,7 +42,10 @@ public interface RealmProvider extends Provider, ClientProvider {
 
     Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups);
 
-    Long getClientsCount(RealmModel realm);
+    /**
+     * @deprecated Use the corresponding method from {@link ClientProvider}. */
+    @Override
+    long getClientsCount(RealmModel realm);
 
     Long getGroupsCountByNameContaining(RealmModel realm, String search);
     
@@ -101,7 +104,6 @@ public interface RealmProvider extends Provider, ClientProvider {
     List<RealmModel> getRealms();
     List<RealmModel> getRealmsWithProviderType(Class<?> type);
     boolean removeRealm(String id);
-    void close();
 
     ClientInitialAccessModel createClientInitialAccessModel(RealmModel realm, int expiration, int count);
     ClientInitialAccessModel getClientInitialAccessModel(RealmModel realm, String id);
@@ -109,5 +111,95 @@ public interface RealmProvider extends Provider, ClientProvider {
     List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm);
     void removeExpiredClientInitialAccess();
     void decreaseRemainingCount(RealmModel realm, ClientInitialAccessModel clientInitialAccess); // Separate provider method to ensure we decrease remainingCount atomically instead of doing classic update
+
+    /**
+     * TODO: To be @deprecated Use the corresponding method from {@link ??RoleProvider}. */
+    public Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client);
+
+    /**
+     * TODO: To be @deprecated Use the corresponding method from {@link ??RoleProvider}. */
+    public RoleModel getClientRole(RealmModel realm, ClientModel client, String name);
+
+    /**
+     * TODO: To be @deprecated Use the corresponding method from {@link ??RoleProvider}. */
+    public RoleModel addClientRole(RealmModel realm, ClientModel client, String id, String name);
+
+    /**
+     * TODO: To be @deprecated Use the corresponding method from {@link ??RoleProvider}. */
+    public RoleModel addClientRole(RealmModel realm, ClientModel client, String name);
+
+    // The methods below are going to be removed in future version of Keycloak
+    // Sadly, we have to copy-paste the declarations from the respective interfaces
+    // including the "default" body to be able to add a note on deprecation
+    
+    /**
+     * @deprecated Use the corresponding method from {@link ClientProvider}. */
+    @Override
+    public ClientModel addClient(RealmModel realm, String id, String clientId);
+
+    /**
+     * @deprecated Use the corresponding method from {@link ClientProvider}. */
+    @Override
+    default ClientModel addClient(RealmModel realm, String clientId) {
+        return addClient(realm, null, clientId);
+    }
+
+    /**
+     * @deprecated Use the corresponding method from {@link ClientProvider}. */
+    @Override
+    default List<ClientModel> getClients(RealmModel realm) {
+        return this.getClients(realm, null, null);
+    }
+
+    /**
+     * @deprecated Use the corresponding method from {@link ClientProvider}. */
+    @Override
+    public List<ClientModel> getClients(RealmModel realm, Integer firstResult, Integer maxResults);
+
+    /**
+     * @deprecated Use the corresponding method from {@link ClientProvider}. */
+    @Override
+    default List<ClientModel> searchClientsByClientId(String clientId, Integer firstResult, Integer maxResults, RealmModel realm) {
+        return searchClientsByClientId(realm, clientId, firstResult, maxResults);
+    }
+
+    /**
+     * @deprecated Use the corresponding method from {@link ClientProvider}. */
+    @Override
+    default ClientModel getClientByClientId(String clientId, RealmModel realm) { return getClientByClientId(realm, clientId); }
+
+    /**
+     * @deprecated Use the corresponding method from {@link ClientProvider}. */
+    @Override
+    default ClientModel getClientById(String id, RealmModel realm) { return getClientById(realm, id); }
+
+    /**
+     * @deprecated Use the corresponding method from {@link ClientProvider}. */
+    @Override
+    public List<ClientModel> searchClientsByClientId(RealmModel realm, String clientId, Integer firstResult, Integer maxResults);
+
+    /**
+     * @deprecated Use the corresponding method from {@link ClientProvider}. */
+    @Override
+    public ClientModel getClientByClientId(RealmModel realm, String clientId);
+
+    /**
+     * @deprecated Use the corresponding method from {@link ClientProvider}. */
+    @Override
+    public ClientModel getClientById(RealmModel realm, String id);
+
+    /**
+     * @deprecated Use the corresponding method from {@link ClientProvider}. */
+    @Override
+    public boolean removeClient(RealmModel realm, String id);
+
+    /**
+     * @deprecated Use the corresponding method from {@link ClientProvider}. */
+    default boolean removeClient(String id, RealmModel realm) { return this.removeClient(realm, id); }
+
+    /**
+     * @deprecated Use the corresponding method from {@link ClientProvider}. */
+    @Override
+    public List<ClientModel> getAlwaysDisplayInConsoleClients(RealmModel realm);
 
 }

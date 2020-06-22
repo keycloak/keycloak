@@ -1260,7 +1260,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
     private static void setupTokenExchange(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("master");
-        ClientModel client = session.realms().getClientByClientId("kcinit", realm);
+        ClientModel client = session.clients().getClientByClientId(realm, "kcinit");
         if (client != null) {
             return;
         }

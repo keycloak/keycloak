@@ -206,14 +206,16 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
     public void customScopes() {
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setProtocol("openid-connect");
-        clientScope.setId("user:info");
         clientScope.setName("user:info");
 
-        testRealm().clientScopes().create(clientScope);
+        String id;
+        try (Response r = testRealm().clientScopes().create(clientScope)) {
+            id = ApiUtil.getCreatedId(r);
+        }
 
         ClientRepresentation clientRep = testRealm().clients().findByClientId("test-app").get(0);
 
-        testRealm().clients().get(clientRep.getId()).addOptionalClientScope("user:info");
+        testRealm().clients().get(clientRep.getId()).addOptionalClientScope(id);
 
         try {
             oauth.scope("user:info");
@@ -221,7 +223,7 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
                     .invoke()
                     .assertSuccess().assertScope("openid", "user:info", "profile", "email");
         } finally {
-            testRealm().clients().get(clientRep.getId()).removeOptionalClientScope("user:info");
+            testRealm().clients().get(clientRep.getId()).removeOptionalClientScope(id);
         }
     }
 

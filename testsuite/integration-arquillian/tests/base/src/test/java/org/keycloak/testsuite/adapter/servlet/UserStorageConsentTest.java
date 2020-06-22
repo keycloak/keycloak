@@ -102,7 +102,7 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
 
     public static void setupConsent(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("demo");
-        ClientModel product = session.realms().getClientByClientId("product-portal", realm);
+        ClientModel product = session.clients().getClientByClientId(realm, "product-portal");
         product.setConsentRequired(true);
         ClientScopeModel clientScope = realm.addClientScope("clientScope");
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);

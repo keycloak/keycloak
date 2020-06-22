@@ -32,9 +32,7 @@ public interface ScopeContainerModel {
         return getScopeMappingsStream().collect(Collectors.toSet());
     }
 
-    default Stream<RoleModel> getScopeMappingsStream() {
-        return getScopeMappings().stream();
-    };
+    Stream<RoleModel> getScopeMappingsStream();
 
     /**
      * From the scope mappings returned by {@link #getScopeMappings()} returns only those

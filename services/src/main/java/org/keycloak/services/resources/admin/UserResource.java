@@ -357,13 +357,13 @@ public class UserResource {
      *
      * @return
      */
-    @Path("offline-sessions/{clientId}")
+    @Path("offline-sessions/{clientUuid}")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<UserSessionRepresentation> getOfflineSessions(final @PathParam("clientId") String clientId) {
+    public List<UserSessionRepresentation> getOfflineSessions(final @PathParam("clientUuid") String clientUuid) {
         auth.users().requireView(user);
-        ClientModel client = realm.getClientById(clientId);
+        ClientModel client = realm.getClientById(clientUuid);
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
@@ -373,7 +373,7 @@ public class UserResource {
             UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(session);
 
             // Update lastSessionRefresh with the timestamp from clientSession
-            AuthenticatedClientSessionModel clientSession = session.getAuthenticatedClientSessionByClient(clientId);
+            AuthenticatedClientSessionModel clientSession = session.getAuthenticatedClientSessionByClient(clientUuid);
 
             // Skip if userSession is not for this client
             if (clientSession == null) {

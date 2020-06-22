@@ -177,7 +177,7 @@ public class RealmManager {
     }
 
     protected void setupAdminConsoleLocaleMapper(RealmModel realm) {
-        ClientModel adminConsole = realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID);
+        ClientModel adminConsole = session.clients().getClientByClientId(realm, Constants.ADMIN_CONSOLE_CLIENT_ID);
         ProtocolMapperModel localeMapper = adminConsole.getProtocolMapperByName(OIDCLoginProtocol.LOGIN_PROTOCOL, OIDCLoginProtocolFactory.LOCALE);
 
         if (localeMapper == null) {
@@ -251,7 +251,7 @@ public class RealmManager {
         boolean removed = model.removeRealm(realm.getId());
         if (removed) {
             if (masterAdminClient != null) {
-                new ClientManager(this).removeClient(getKeycloakAdminstrationRealm(), masterAdminClient);
+                session.clients().removeClient(getKeycloakAdminstrationRealm(), masterAdminClient.getId());
             }
 
             UserSessionProvider sessions = session.sessions();
