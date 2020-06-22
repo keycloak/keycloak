@@ -24,7 +24,7 @@ import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.privacy.PrivacyProvider;
+import org.keycloak.privacy.PrivacyFilterProvider;
 import org.keycloak.privacy.anonymize.Anonymizer;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
@@ -42,14 +42,14 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
     private final Logger logger;
     private final Logger.Level successLevel;
     private final Logger.Level errorLevel;
-    private final PrivacyProvider privacyProvider;
+    private final PrivacyFilterProvider privacyFilter;
 
-    public JBossLoggingEventListenerProvider(KeycloakSession session, Logger logger, Logger.Level successLevel, Logger.Level errorLevel, PrivacyProvider privacyProvider) {
+    public JBossLoggingEventListenerProvider(KeycloakSession session, Logger logger, Logger.Level successLevel, Logger.Level errorLevel, PrivacyFilterProvider privacyFilter) {
         this.session = session;
         this.logger = logger;
         this.successLevel = successLevel;
         this.errorLevel = errorLevel;
-        this.privacyProvider = privacyProvider;
+        this.privacyFilter = privacyFilter;
     }
 
     @Override
@@ -156,7 +156,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
      * @return
      */
     protected String getEventDetailValue(Event event, String key, String value) {
-        return privacyProvider.filter(key, value, key, event);
+        return privacyFilter.filter(key, value, key, event);
     }
 
     /**
@@ -165,7 +165,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
      * @return
      */
     protected String getIpAddress(Event event) {
-        return privacyProvider.filter(Anonymizer.IP_ADDRESS, event.getIpAddress(), Anonymizer.IP_ADDRESS, event);
+        return privacyFilter.filter(Anonymizer.IP_ADDRESS, event.getIpAddress(), Anonymizer.IP_ADDRESS, event);
     }
 
     /**
@@ -174,7 +174,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
      * @return
      */
     protected String getUserId(Event event) {
-        return privacyProvider.filter(Anonymizer.USER_ID, event.getUserId(), Anonymizer.USER_ID, event);
+        return privacyFilter.filter(Anonymizer.USER_ID, event.getUserId(), Anonymizer.USER_ID, event);
     }
 
     @Override

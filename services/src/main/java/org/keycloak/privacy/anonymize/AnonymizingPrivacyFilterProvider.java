@@ -14,26 +14,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.privacy;
+package org.keycloak.privacy.anonymize;
 
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.events.Event;
+import org.keycloak.privacy.PrivacyFilterProvider;
 
 /**
- * Manages the {@link DefaultPrivacyProvider}.
- *
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
-public class DefaultPrivacyProviderFactory implements PrivacyProviderFactory {
+public class AnonymizingPrivacyFilterProvider implements PrivacyFilterProvider {
 
-    private static final DefaultPrivacyProvider INSTANCE = new DefaultPrivacyProvider();
+    private final Anonymizer anonymizer;
 
-    @Override
-    public PrivacyProvider create(KeycloakSession session) {
-        return INSTANCE;
+    public AnonymizingPrivacyFilterProvider(Anonymizer anonymizer) {
+        this.anonymizer = anonymizer;
     }
 
     @Override
-    public String getId() {
-        return "default";
+    public String filter(String field, String input) {
+        return anonymizer.anonymize(field, input);
+    }
+
+    @Override
+    public String filter(String field, String input, String key, Event event) {
+        return anonymizer.anonymize(field, input);
+    }
+
+    @Override
+    public String filter(String input) {
+        return anonymizer.anonymize(Anonymizer.NULL, input);
     }
 }

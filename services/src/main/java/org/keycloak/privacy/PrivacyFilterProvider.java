@@ -24,34 +24,34 @@ import org.keycloak.provider.Provider;
  *
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
-public interface PrivacyProvider extends Provider {
+public interface PrivacyFilterProvider extends Provider {
 
     /**
      * Filter the given input value according to rules governed by the given type hint.
      *
-     * @param type
+     * @param field
      * @param input
      * @return the potentially filtered input value
      */
-    default String filter(String type, String input) {
+    default String filter(String field, String input) {
         return filter(input);
     }
 
     /**
      * Filter the given input value according to rules governed by the given type hint in the context of an {@link Event}.
      *
-     * @param type
+     * @param field
      * @param input
      * @param key   event detail key
      * @param event the keycloak event
      * @return the potentially filtered input value
      */
-    default String filter(String type, String input, String key, Event event) {
+    default String filter(String field, String input, String key, Event event) {
         return filter(input);
     }
 
     /**
-     * Filter the given input value according to rules governed by this {@link PrivacyProvider}.
+     * Filter the given input value according to rules governed by this {@link PrivacyFilterProvider}.
      *
      * @param input
      * @return the potentially filtered input value

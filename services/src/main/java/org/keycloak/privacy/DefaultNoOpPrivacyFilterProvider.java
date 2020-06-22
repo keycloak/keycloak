@@ -14,34 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.privacy.anonymize;
-
-import org.keycloak.events.Event;
-import org.keycloak.privacy.PrivacyProvider;
+package org.keycloak.privacy;
 
 /**
+ * Default NO-OP {@link PrivacyFilterProvider} that returns the input as-is.
+ *
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
-public class AnonymizingPrivacyProvider implements PrivacyProvider {
-
-    private final Anonymizer anonymizer;
-
-    public AnonymizingPrivacyProvider(Anonymizer anonymizer) {
-        this.anonymizer = anonymizer;
-    }
-
-    @Override
-    public String filter(String type, String input) {
-        return anonymizer.anonymize(type, input);
-    }
-
-    @Override
-    public String filter(String type, String input, String key, Event event) {
-        return anonymizer.anonymize(type, input);
-    }
+public class DefaultNoOpPrivacyFilterProvider implements PrivacyFilterProvider {
 
     @Override
     public String filter(String input) {
-        return anonymizer.anonymize(Anonymizer.NULL, input);
+        return input;
     }
 }

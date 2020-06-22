@@ -1,0 +1,2 @@
+org.keycloak.privacy.DefaultNoOpPrivacyFilterProviderFactory
+org.keycloak.privacy.anonymize.AnonymizingPrivacyFilterProviderFactory

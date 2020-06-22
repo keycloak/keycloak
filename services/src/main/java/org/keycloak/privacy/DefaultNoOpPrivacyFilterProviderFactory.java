@@ -16,17 +16,24 @@
  */
 package org.keycloak.privacy;
 
-import org.keycloak.events.Event;
+import org.keycloak.models.KeycloakSession;
 
 /**
- * Default NO-OP {@link PrivacyProvider} that returns the input as-is.
+ * Manages the {@link DefaultNoOpPrivacyFilterProvider}.
  *
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
-public class DefaultPrivacyProvider implements PrivacyProvider {
+public class DefaultNoOpPrivacyFilterProviderFactory implements PrivacyFilterProviderFactory {
+
+    public static final DefaultNoOpPrivacyFilterProvider INSTANCE = new DefaultNoOpPrivacyFilterProvider();
 
     @Override
-    public String filter(String input) {
-        return input;
+    public PrivacyFilterProvider create(KeycloakSession session) {
+        return INSTANCE;
+    }
+
+    @Override
+    public String getId() {
+        return "default";
     }
 }

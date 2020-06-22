@@ -25,7 +25,7 @@ import org.keycloak.provider.Spi;
  *
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
-public class PrivacySpi implements Spi {
+public class PrivacyFilterSpi implements Spi {
 
     @Override
     public boolean isInternal() {
@@ -34,16 +34,16 @@ public class PrivacySpi implements Spi {
 
     @Override
     public String getName() {
-        return "privacy";
+        return "privacy-filter";
     }
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return PrivacyProvider.class;
+        return PrivacyFilterProvider.class;
     }
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return PrivacyProviderFactory.class;
+        return PrivacyFilterProviderFactory.class;
     }
 }

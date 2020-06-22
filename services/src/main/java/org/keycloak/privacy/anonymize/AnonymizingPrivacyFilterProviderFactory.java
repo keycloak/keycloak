@@ -18,8 +18,8 @@ package org.keycloak.privacy.anonymize;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.privacy.PrivacyProvider;
-import org.keycloak.privacy.PrivacyProviderFactory;
+import org.keycloak.privacy.PrivacyFilterProvider;
+import org.keycloak.privacy.PrivacyFilterProviderFactory;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -35,13 +35,13 @@ import static org.keycloak.privacy.anonymize.Anonymizer.USERNAME;
 import static org.keycloak.privacy.anonymize.Anonymizer.USER_ID;
 
 /**
- * {@link PrivacyProviderFactory} for {@link AnonymizingPrivacyProvider}.
+ * {@link PrivacyFilterProviderFactory} for {@link AnonymizingPrivacyFilterProvider}.
  *
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
-public class AnonymizingPrivacyProviderFactory implements PrivacyProviderFactory {
+public class AnonymizingPrivacyFilterProviderFactory implements PrivacyFilterProviderFactory {
 
-    public static final String PROVIDER_ID = "anonymize";
+    public static final String ID = "anonymize";
 
     public static final String DEFAULT_FIELDS;
 
@@ -51,10 +51,10 @@ public class AnonymizingPrivacyProviderFactory implements PrivacyProviderFactory
         DEFAULT_FIELDS = joiner.toString();
     }
 
-    private volatile AnonymizingPrivacyProvider provider;
+    protected volatile PrivacyFilterProvider provider;
 
     @Override
-    public PrivacyProvider create(KeycloakSession session) {
+    public PrivacyFilterProvider create(KeycloakSession session) {
         return provider;
     }
 
@@ -68,8 +68,8 @@ public class AnonymizingPrivacyProviderFactory implements PrivacyProviderFactory
         provider = createProvider(config);
     }
 
-    protected AnonymizingPrivacyProvider createProvider(Config.Scope config) {
-        return new AnonymizingPrivacyProvider(createAnonymizer(config));
+    protected AnonymizingPrivacyFilterProvider createProvider(Config.Scope config) {
+        return new AnonymizingPrivacyFilterProvider(createAnonymizer(config));
     }
 
     protected Anonymizer createAnonymizer(Config.Scope config) {
@@ -79,18 +79,10 @@ public class AnonymizingPrivacyProviderFactory implements PrivacyProviderFactory
         int suffixLength = config.getInt("suffixLength", 3);
         String placeHolder = config.get("placeHolder", "%");
 
-        // TODO think about field level anonymization policy mappings
-        // users can add additional fields that should be anonymized
         String fieldList = config.get("fields", DEFAULT_FIELDS);
 
         //  field that should be used if no field is provided
         String fallbackField = config.get("fallbackField");
-
-        // TODO think about adding support for creating custom anonymizer rules
-        // String anonymizerClass = config.get("anonymizerClass");
-        // custom anonymizer instances could be created via Reflection by invoking
-        // the constructor with the config object
-
         Set<String> fields = toFieldSet(fieldList);
 
         return new DefaultAnonymizer(minLength, prefixLength, suffixLength, placeHolder, fields, fallbackField);
@@ -106,6 +98,6 @@ public class AnonymizingPrivacyProviderFactory implements PrivacyProviderFactory
 
     @Override
     public String getId() {
-        return PROVIDER_ID;
+        return ID;
     }
 }

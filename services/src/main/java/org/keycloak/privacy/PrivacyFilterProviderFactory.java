@@ -23,7 +23,7 @@ import org.keycloak.provider.ProviderFactory;
 /**
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
-public interface PrivacyProviderFactory extends ProviderFactory<PrivacyProvider> {
+public interface PrivacyFilterProviderFactory extends ProviderFactory<PrivacyFilterProvider> {
 
     @Override
     default void close() {
