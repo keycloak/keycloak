@@ -19,6 +19,10 @@ package org.keycloak.models;
 
 import org.keycloak.provider.ProviderEvent;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -53,7 +57,26 @@ public interface RoleContainerModel {
 
     void addDefaultRole(String name);
 
-    void updateDefaultRoles(String... defaultRoles);
+    default void updateDefaultRoles(String... defaultRoles) {
+        List<String> defaultRolesArray = Arrays.asList(defaultRoles);
+        Collection<String> entities = getDefaultRoles();
+        Set<String> already = new HashSet<>();
+        ArrayList<String> remove = new ArrayList<>();
+        for (String rel : entities) {
+            if (! defaultRolesArray.contains(rel)) {
+                remove.add(rel);
+            } else {
+                already.add(rel);
+            }
+        }
+        removeDefaultRoles(remove.toArray(new String[] {}));
+
+        for (String roleName : defaultRoles) {
+            if (!already.contains(roleName)) {
+                addDefaultRole(roleName);
+            }
+        }
+    }
 
     void removeDefaultRoles(String... defaultRoles);
 
