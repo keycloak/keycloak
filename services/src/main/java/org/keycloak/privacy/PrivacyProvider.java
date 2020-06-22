@@ -33,7 +33,9 @@ public interface PrivacyProvider extends Provider {
      * @param input
      * @return the potentially filtered input value
      */
-    String filter(String type, String input);
+    default String filter(String type, String input) {
+        return filter(input);
+    }
 
     /**
      * Filter the given input value according to rules governed by the given type hint in the context of an {@link Event}.
@@ -44,8 +46,21 @@ public interface PrivacyProvider extends Provider {
      * @param event the keycloak event
      * @return the potentially filtered input value
      */
-    String filter(String type, String input, String key, Event event);
+    default String filter(String type, String input, String key, Event event) {
+        return filter(input);
+    }
 
+    /**
+     * Filter the given input value according to rules governed by this {@link PrivacyProvider}.
+     *
+     * @param input
+     * @return the potentially filtered input value
+     */
+    String filter(String input);
+
+    /**
+     * Potentially releases resources held by this provider.
+     */
     default void close() {
         // NOOP
     }

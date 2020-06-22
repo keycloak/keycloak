@@ -21,6 +21,8 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
 /**
+ * An {@link Spi} which provides means to filter privacy relevant information in strings.
+ *
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
 public class PrivacySpi implements Spi {

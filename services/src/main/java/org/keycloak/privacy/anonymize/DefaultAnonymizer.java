@@ -33,8 +33,9 @@ import java.util.Set;
  *     <li>email</li>
  *     <li>phoneNumber</li>
  *     <li>mobile</li>
+ *     <li>null</li>
  * </ul>
- *
+ *  Note that th fieldname {@code null} is used to control default handling for unknown fields.
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
 public class DefaultAnonymizer implements Anonymizer {
@@ -49,16 +50,30 @@ public class DefaultAnonymizer implements Anonymizer {
 
     private final Set<String> fields;
 
+    private final String fallbackField;
+
+    /**
+     * Creates a new {@link DefaultAnonymizer}
+     *
+     * @param minLength min length of input to be anonymized
+     * @param prefixLength prefix length to keep from input
+     * @param suffixLength suffix length to keep from input
+     * @param placeHolder placeholder to use between prefix and suffix
+     * @param fields set of fields that should be anonymized
+     * @param fallbackField field that should be used if no field is provided
+     */
     public DefaultAnonymizer(int minLength,
                              int prefixLength,
                              int suffixLength,
                              String placeHolder,
-                             Set<String> fields) {
+                             Set<String> fields,
+                             String fallbackField) {
         this.minLength = minLength;
         this.prefixLength = prefixLength;
         this.suffixLength = suffixLength;
         this.placeHolder = placeHolder;
         this.fields = fields;
+        this.fallbackField = fallbackField;
     }
 
     /**
@@ -67,6 +82,10 @@ public class DefaultAnonymizer implements Anonymizer {
      * @return
      */
     public String anonymize(String field, String input) {
+
+        if (field == null) {
+            field = fallbackField;
+        }
 
         if (field == null || field.isEmpty() || input == null || input.isEmpty()) {
             return input;

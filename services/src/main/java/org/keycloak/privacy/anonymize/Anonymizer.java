@@ -24,17 +24,41 @@ package org.keycloak.privacy.anonymize;
 public interface Anonymizer {
 
     // Note: fields are defined as strings instead of an enum, to ease adding own fields in custom implementations.
+
+    /**
+     * Denotes a USER_ID field
+     */
     String USER_ID = "userId";
 
+    /**
+     * Denotes an UP_ADDRESS field
+     */
     String IP_ADDRESS = "ipAddress";
 
+    /**
+     * Denotes an USERNAME field
+     */
     String USERNAME = "username";
 
+    /**
+     * Denotes an EMAIL address field
+     */
     String EMAIL = "email";
 
+    /**
+     * Denotes an PHONE_NUMBER field
+     */
     String PHONE_NUMBER = "phoneNumber";
 
+    /**
+     * Denotes an MOBILE field
+     */
     String MOBILE = "mobile";
+
+    /**
+     * Placeholder for missing field information
+     */
+    String NULL = "null";
 
     /**
      * Anonymizes the given input string according to the rules provided for the given field.

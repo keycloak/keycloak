@@ -29,24 +29,29 @@ import java.util.StringJoiner;
 import static org.keycloak.privacy.anonymize.Anonymizer.EMAIL;
 import static org.keycloak.privacy.anonymize.Anonymizer.IP_ADDRESS;
 import static org.keycloak.privacy.anonymize.Anonymizer.MOBILE;
+import static org.keycloak.privacy.anonymize.Anonymizer.NULL;
 import static org.keycloak.privacy.anonymize.Anonymizer.PHONE_NUMBER;
 import static org.keycloak.privacy.anonymize.Anonymizer.USERNAME;
 import static org.keycloak.privacy.anonymize.Anonymizer.USER_ID;
 
 /**
+ * {@link PrivacyProviderFactory} for {@link AnonymizingPrivacyProvider}.
+ *
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
 public class AnonymizingPrivacyProviderFactory implements PrivacyProviderFactory {
 
-    static final String DEFAULT_FIELDS;
+    public static final String PROVIDER_ID = "anonymize";
+
+    public static final String DEFAULT_FIELDS;
 
     static {
         StringJoiner joiner = new StringJoiner(",");
-        Arrays.asList(USER_ID, IP_ADDRESS, USERNAME, EMAIL, PHONE_NUMBER, MOBILE).forEach(joiner::add);
+        Arrays.asList(USER_ID, IP_ADDRESS, USERNAME, EMAIL, PHONE_NUMBER, MOBILE, NULL).forEach(joiner::add);
         DEFAULT_FIELDS = joiner.toString();
     }
 
-    private AnonymizingPrivacyProvider provider;
+    private volatile AnonymizingPrivacyProvider provider;
 
     @Override
     public PrivacyProvider create(KeycloakSession session) {
@@ -60,6 +65,15 @@ public class AnonymizingPrivacyProviderFactory implements PrivacyProviderFactory
             return;
         }
 
+        provider = createProvider(config);
+    }
+
+    protected AnonymizingPrivacyProvider createProvider(Config.Scope config) {
+        return new AnonymizingPrivacyProvider(createAnonymizer(config));
+    }
+
+    protected Anonymizer createAnonymizer(Config.Scope config) {
+
         int minLength = config.getInt("minLength", 6);
         int prefixLength = config.getInt("prefixLength", 2);
         int suffixLength = config.getInt("suffixLength", 3);
@@ -69,6 +83,9 @@ public class AnonymizingPrivacyProviderFactory implements PrivacyProviderFactory
         // users can add additional fields that should be anonymized
         String fieldList = config.get("fields", DEFAULT_FIELDS);
 
+        //  field that should be used if no field is provided
+        String fallbackField = config.get("fallbackField");
+
         // TODO think about adding support for creating custom anonymizer rules
         // String anonymizerClass = config.get("anonymizerClass");
         // custom anonymizer instances could be created via Reflection by invoking
@@ -76,8 +93,7 @@ public class AnonymizingPrivacyProviderFactory implements PrivacyProviderFactory
 
         Set<String> fields = toFieldSet(fieldList);
 
-        Anonymizer anonymizer = new DefaultAnonymizer(minLength, prefixLength, suffixLength, placeHolder, fields);
-        provider = new AnonymizingPrivacyProvider(anonymizer);
+        return new DefaultAnonymizer(minLength, prefixLength, suffixLength, placeHolder, fields, fallbackField);
     }
 
     protected Set<String> toFieldSet(String fieldList) {
@@ -90,6 +106,6 @@ public class AnonymizingPrivacyProviderFactory implements PrivacyProviderFactory
 
     @Override
     public String getId() {
-        return "anonymize";
+        return PROVIDER_ID;
     }
 }

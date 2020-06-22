@@ -26,12 +26,7 @@ import org.keycloak.events.Event;
 public class DefaultPrivacyProvider implements PrivacyProvider {
 
     @Override
-    public String filter(String type, String input) {
-        return input;
-    }
-
-    @Override
-    public String filter(String type, String input, String key, Event event) {
+    public String filter(String input) {
         return input;
     }
 }
