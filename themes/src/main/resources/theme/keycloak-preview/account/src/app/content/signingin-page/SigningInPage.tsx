@@ -29,6 +29,10 @@ import {
         StackItem,
         Title,
         TitleLevel,
+        DataListActionVisibility,
+        Dropdown,
+        DropdownPosition,
+        KebabToggle,
     } from '@patternfly/react-core';
 
 import {AIACommand} from '../../util/AIACommand';
@@ -42,6 +46,7 @@ import {ContentPage} from '../ContentPage';
 import {ContentAlert} from '../ContentAlert';
 import { KeycloakContext } from '../../keycloak-service/KeycloakContext';
 import { KeycloakService } from '../../keycloak-service/keycloak.service';
+import { css } from '@patternfly/react-styles';
 
 declare const features: Features;
 
@@ -81,6 +86,7 @@ interface SigningInPageProps extends RouteComponentProps {
 interface SigningInPageState {
     // Credential containers organized by category then type
     credentialContainers: CredContainerMap;
+    toggle: boolean
 }
 
 /**
@@ -95,7 +101,8 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
         this.context = context;
     
         this.state = {
-            credentialContainers: new Map()
+            credentialContainers: new Map(),
+            toggle: false
         }
 
         this.getCredentialContainers();
@@ -278,7 +285,33 @@ class SigningInPage extends React.Component<SigningInPageProps, SigningInPageSta
 
                             ]}/>
                         {credContainer.createAction &&
-                        <DataListAction aria-labelledby='foo' aria-label='foo action' id={'setUpAction-' + credContainer.type}>
+                        <DataListAction
+                            aria-labelledby='create'
+                            aria-label='create action'
+                            id={'mob-setUpAction-' + credContainer.type}
+                            className={DataListActionVisibility.hiddenOnLg}
+                        >
+                            <Dropdown
+                                isPlain
+                                position={DropdownPosition.right}
+                                toggle={<KebabToggle onToggle={isOpen => this.setState({ toggle: isOpen })} />}
+                                isOpen={this.state.toggle}
+                                dropdownItems={[
+                                    <button id={`mob-${credContainer.type}-set-up`} className="pf-c-button pf-m-link" type="button" onClick={() => setupAction.execute()}>
+                                        <span className="pf-c-button__icon">
+                                            <i className="fas fa-plus-circle" aria-hidden="true"></i>
+                                        </span>
+                                        <Msg msgKey='setUpNew' params={[credContainerDisplayName]} />
+                                    </button>]}
+                            />
+                        </DataListAction>}
+                        {credContainer.createAction &&
+                        <DataListAction
+                            aria-labelledby='create'
+                            aria-label='create action'
+                            id={'setUpAction-' + credContainer.type}
+                            className={css(DataListActionVisibility.visibleOnLg, DataListActionVisibility.hidden)}
+                        >
                             <button id={`${credContainer.type}-set-up`} className="pf-c-button pf-m-link" type="button" onClick={()=> setupAction.execute()}>
                                 <span className="pf-c-button__icon">
                                     <i className="fas fa-plus-circle" aria-hidden="true"></i>
