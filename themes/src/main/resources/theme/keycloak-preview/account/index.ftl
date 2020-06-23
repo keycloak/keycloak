@@ -231,8 +231,17 @@
               <div class="pf-l-gallery__item">
                 <div class="pf-c-card" id="landing${item.id}Card">
                   <div class="pf-c-card__header pf-c-content">
-                      <h2><i class="pf-icon ${item.icon}"></i>&nbsp${msg(item.label)}</h2>
-                      <h6>${msg(item.descriptionLabel)}</h6>
+                      <h2>
+                        <#if item.icon??>
+                          <i class="pf-icon ${item.icon}"></i>&nbsp;
+                        <#elseif item.iconSvg??>
+                          <img src="${item.iconSvg}" alt="icon"/>&nbsp;
+                        </#if>
+                        ${msg(item.label)}
+                      </h2>
+                      <#if item.descriptionLabel??>
+                        <h6>${msg(item.descriptionLabel)}</h6>
+                      </#if>
                   </div>
                   <div class="pf-c-card__body pf-c-content">
                       <#if item.content??>
