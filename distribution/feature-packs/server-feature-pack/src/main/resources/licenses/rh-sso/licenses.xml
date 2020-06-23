@@ -521,7 +521,7 @@
     <dependency>
       <groupId>com.webauthn4j</groupId>
       <artifactId>webauthnj4-core</artifactId>
-      <version>0.10.2.RELEASE-redhat-00002</version>
+      <version>0.12.0.RELEASE-redhat-00001</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
@@ -532,7 +532,7 @@
     <dependency>
       <groupId>com.webauthn4j</groupId>
       <artifactId>webauthnj4-util</artifactId>
-      <version>0.10.2.RELEASE-redhat-00002</version>
+      <version>0.12.0.RELEASE-redhat-00001</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
