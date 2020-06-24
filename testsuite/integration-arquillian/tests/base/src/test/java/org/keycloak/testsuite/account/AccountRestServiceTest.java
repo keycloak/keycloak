@@ -1147,4 +1147,35 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .asResponse();
         assertEquals(403, response.getStatus());
     }
+
+    //KEYCLOAK-14344
+    @Test
+    public void revokeOfflineAccess() throws Exception {
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.clientId("offline-client");
+        OAuthClient.AccessTokenResponse offlineTokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
+        Assert.assertNull(offlineTokenResponse.getErrorDescription());
+
+        TokenUtil token = new TokenUtil("view-applications-access", "password");
+
+        SimpleHttp.Response response = SimpleHttp
+                .doDelete(getAccountUrl("applications/offline-client/consent"), httpClient)
+                .header("Accept", "application/json")
+                .auth(token.getToken())
+                .asResponse();
+        assertEquals(204, response.getStatus());
+
+        List<ClientRepresentation> applications = SimpleHttp
+                .doGet(getAccountUrl("applications"), httpClient)
+                .header("Accept", "application/json")
+                .auth(token.getToken())
+                .asJson(new TypeReference<List<ClientRepresentation>>() {
+                });
+        assertFalse(applications.isEmpty());
+
+        Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
+        Assert.assertThat(apps.keySet(), containsInAnyOrder("offline-client", "always-display-client"));
+
+        assertClientRep(apps.get("offline-client"), "Offline Client", null, false, true, false, null, offlineClientAppUri);
+    }
 }

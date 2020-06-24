@@ -39,6 +39,7 @@ import org.keycloak.representations.account.ConsentScopeRepresentation;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.Auth;
+import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.account.resources.ResourcesService;
@@ -372,6 +373,7 @@ public class AccountRestService {
         }
 
         session.users().revokeConsentForClient(realm, user.getId(), client.getId());
+        new UserSessionManager(session).revokeOfflineToken(user, client);
         event.success();
 
         return Cors.add(request, Response.noContent()).build();
