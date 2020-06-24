@@ -34,7 +34,7 @@
         "label": "linkedAccountsHtmlTitle",
         "modulePath": "/content/linked-accounts-page/LinkedAccountsPage.js",
         "componentName": "LinkedAccountsPage",
-        "hidden": "isLinkedAccountsEnabled"
+        "hidden": "!features.isLinkedAccountsEnabled"
       }
     ]
   },
@@ -55,6 +55,6 @@
     "descriptionLabel": "resourceIntroMessage",
     "modulePath": "/content/my-resources-page/MyResourcesPage.js",
     "componentName": "MyResourcesPage",
-    "hidden": "isMyResourcesEnabled"
+    "hidden": "!features.isMyResourcesEnabled"
   }
 ]
