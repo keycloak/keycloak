@@ -24,6 +24,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -167,6 +168,15 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         Assert.assertNull(execution.getAuthenticationConfig());
     }
 
+    @Test
+    public void testNullsafetyIterationOverProperties() {
+        String providerId = "auth-cookie";
+        String providerName = "Cookie";
+        AuthenticatorConfigInfoRepresentation description = authMgmtResource.getAuthenticatorConfigDescription(providerId);
+
+        Assert.assertEquals(providerName, description.getName());
+        Assert.assertTrue(description.getProperties().isEmpty());
+    }
 
     private String createConfig(String executionId, AuthenticatorConfigRepresentation cfg) {
         Response resp = authMgmtResource.newExecutionConfig(executionId, cfg);
