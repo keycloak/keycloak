@@ -188,9 +188,9 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                       }
                     </div>
                   </Grid>
-                  <Grid gutter='sm'>
-                    <hr />
-                    {application.consent &&
+                  {(application.consent || application.offlineAccess) &&
+                    <Grid gutter='sm'>
+                      <hr />
                       <GridItem>
                         <React.Fragment>
                           <ContinueCancelModal
@@ -203,9 +203,9 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                           />
                         </React.Fragment>
                       </GridItem>
-                    }
-                    <GridItem><InfoAltIcon /> {Msg.localize('infoMessage')}</GridItem>
-                  </Grid>
+                      <GridItem><InfoAltIcon /> {Msg.localize('infoMessage')}</GridItem>
+                    </Grid>
+                  }
                 </DataListContent>
               </DataListItem>
             )
