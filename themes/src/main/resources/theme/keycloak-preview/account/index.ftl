@@ -228,8 +228,8 @@
           <div class="pf-l-gallery pf-m-gutter">
             <#assign content=theme.apply("/content.json")?eval>
             <#list content as item>
-              <div class="pf-l-gallery__item">
-                <div class="pf-c-card" id="landing${item.id}Card">
+              <div class="pf-l-gallery__item" id="landing-${item.id}">
+                <div class="pf-c-card">
                   <div class="pf-c-card__header pf-c-content">
                       <h2>
                         <#if item.icon??>
@@ -246,10 +246,10 @@
                   <div class="pf-c-card__body pf-c-content">
                       <#if item.content??>
                           <#list item.content as sub>
-                            <h5 id="landing${sub.id}Link" onclick="toggleReact()"><a href="#${sub.path}">${msg(sub.label)}</a></h5>
+                            <h5 id="landing-${sub.id}" onclick="toggleReact()"><a href="#${sub.path}">${msg(sub.label)}</a></h5>
                           </#list>
                       <#else>
-                        <h5 id="landing${item.id}Link" onclick="toggleReact()"><a href="#${item.path}">${msg(item.label)}</a></h5>
+                        <h5 id="landing-${item.id}" onclick="toggleReact()"><a href="#${item.path}">${msg(item.label)}</a></h5>
                       </#if>
                   </div>
                 </div>
@@ -261,16 +261,17 @@
     </div>
 </div>
 
-        <script>
-            if (!features.isLinkedAccountsEnabled) {
-                document.getElementById("landinglinked-accountsLink").style.display='none';
-            };
-
-            // Hidden until feature is complete.
-            if (!features.isMyResourcesEnabled) {
-                document.getElementById("landingresourcesCard").style.display='none';
-            };
-        </script>
+    <script>
+      const removeHidden = (content) => {
+        content.forEach(c => {
+          if (c.hidden && eval(c.hidden)) {
+            document.getElementById('landing-' + c.id).remove();
+          }
+          if (c.content) removeHidden(c.content);
+        });
+      }
+      removeHidden(content);
+    </script>
 
     </body>
 </html>

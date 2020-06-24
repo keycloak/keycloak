@@ -67,7 +67,7 @@ function removeHidden(items: ContentItem[]): ContentItem[] {
     const visible: ContentItem[] = [];
 
     for (let item of items) {
-        if (item.hidden && !features[item.hidden]) continue;
+        if (item.hidden && eval(item.hidden)) continue;
 
         if (isExpansion(item)) {
             visible.push(item);
