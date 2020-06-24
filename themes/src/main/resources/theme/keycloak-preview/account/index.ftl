@@ -226,7 +226,7 @@
         </section>
         <section class="pf-c-page__main-section">
           <div class="pf-l-gallery pf-m-gutter">
-            <#assign content=theme.apply("/content.json")?eval>
+            <#assign content=theme.apply("content.json")?eval>
             <#list content as item>
               <div class="pf-l-gallery__item" id="landing-${item.id}">
                 <div class="pf-c-card">
