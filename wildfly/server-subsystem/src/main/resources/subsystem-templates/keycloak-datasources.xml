@@ -36,6 +36,9 @@
                     <user-name>sa</user-name>
                     <password>sa</password>
                 </security>
+                <pool>
+                    <max-pool-size>100</max-pool-size>
+                </pool>
             </datasource>
             <drivers>
                 <driver name="h2" module="com.h2database.h2">

@@ -774,6 +774,26 @@ if (result != fixed) of /subsystem=keycloak-server/spi=hostname/:read-attribute(
     end-try
 end-if
 
+# Migrate from 8.0.0 to 9.0.5
+
+if (result == 120000 || result == undefined) of /subsystem=undertow/server=default-server/http-listener=default/:read-attribute(name=read-timeout)
+    echo Updating value of http listener read-timeout.
+    /subsystem=undertow/server=default-server/http-listener=default/:write-attribute(name=read-timeout,value=30000)
+    echo
+end-if
+
+if (result == 120000 || result == undefined) of /subsystem=undertow/server=default-server/https-listener=https/:read-attribute(name=read-timeout)
+    echo Updating value of https listener read-timeout.
+    /subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=read-timeout,value=30000)
+    echo
+end-if
+
+if (result == 20 || result == undefined) of /subsystem=datasources/data-source=KeycloakDS/:read-attribute(name=max-pool-size)
+    echo Updating value of datasource max-pool-size.
+    /subsystem=datasources/data-source=KeycloakDS/:write-attribute(name=max-pool-size,value=100)
+    echo
+end-if
+
 # Migrate from 10.0.2 to 11.0.0 (migration changes for infinispan update from 9.4.18.Final to 10.1.8.Final)
 
 if (result != org.keycloak.keycloak-model-infinispan) of /subsystem=infinispan/cache-container=keycloak:read-attribute(name=module)
