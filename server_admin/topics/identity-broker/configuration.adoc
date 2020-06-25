@@ -17,7 +17,7 @@ configuration page for that identity provider type.
 .Add Identity Provider
 image:{project_images}/add-identity-provider.png[]
 
-Above is an example of configuring a Google social login provider.  Once you configure an IDP, it will appear on the {project_name}
+Above is an example of configuring a Facebook social login provider.  Once you configure an IDP, it will appear on the {project_name}
 login page as an option.
 
 .IDP login page
