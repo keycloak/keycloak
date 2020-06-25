@@ -537,7 +537,7 @@ public class AccountRestService {
 
         List<ClientRepresentation> apps = new LinkedList<ClientRepresentation>();
         for (ClientModel client : clients) {
-            if (client.isBearerOnly() || client.getBaseUrl() == null) {
+            if (client.isBearerOnly() || client.getBaseUrl() == null || client.getBaseUrl().isEmpty()) {
                 continue;
             }
             apps.add(modelToRepresentation(client, inUseClients, offlineClients, consentModels));
