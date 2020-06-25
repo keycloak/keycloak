@@ -2343,4 +2343,9 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         if (!c.getRealm().equals(getEntity())) return null;
         return c;
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s@%08x", getId(), hashCode());
+    }
 }
