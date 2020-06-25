@@ -1597,7 +1597,7 @@ public class RepresentationToModel {
     }
 
     public static ClientScopeModel createClientScope(KeycloakSession session, RealmModel realm, ClientScopeRepresentation resourceRep) {
-        logger.debug("Create client scope: {0}" + resourceRep.getName());
+        logger.debugv("Create client scope: {0}", resourceRep.getName());
 
         ClientScopeModel clientScope = resourceRep.getId() != null ? realm.addClientScope(resourceRep.getId(), resourceRep.getName()) : realm.addClientScope(resourceRep.getName());
         if (resourceRep.getName() != null) clientScope.setName(resourceRep.getName());

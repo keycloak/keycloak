@@ -1681,4 +1681,8 @@ public class RealmAdapter implements CachedRealmModel {
         return cached.getAttributes();
     }
 
+    @Override
+    public String toString() {
+        return String.format("%s@%08x", getId(), hashCode());
+    }
 }
