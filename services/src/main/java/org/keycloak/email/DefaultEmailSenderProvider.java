@@ -202,7 +202,7 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
     private static String getSupportedSslProtocols() {
         try {
-            String[] protocols = SSLContext.getDefault().getSupportedSSLParameters().getProtocols();
+            String[] protocols = SSLContext.getDefault().getDefaultSSLParameters().getProtocols();
             if (protocols != null) {
                 return String.join(" ", protocols);
             }
