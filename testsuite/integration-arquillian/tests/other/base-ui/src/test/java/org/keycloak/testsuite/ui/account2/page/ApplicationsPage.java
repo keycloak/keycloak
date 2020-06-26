@@ -58,7 +58,7 @@ public class ApplicationsPage extends AbstractLoggedInPage {
         String clientName = UIUtils.getTextFromElement(app.findElement(By.xpath("//div[@id='application-name-" + clientId + "']")));
         boolean userConsentRequired = !UIUtils.getTextFromElement(app.findElement(By.xpath("//div[@id='application-internal-" + clientId + "']"))).equals("Internal");
         boolean inUse = UIUtils.getTextFromElement(app.findElement(By.xpath("//div[@id='application-status-" + clientId + "']"))).equals("In use");
-        String baseURL = UIUtils.getTextFromElement(app.findElement(By.xpath("//div[@id='application-baseurl-" + clientId + "']")));
+        String baseURL = UIUtils.getTextFromElement(app.findElement(By.xpath("//div[@id='application-effectiveurl-" + clientId + "']")));
         boolean applicationDetailsVisible = app.findElement(By.xpath("//section[@id='application-expandable-" + clientId + "']")).isDisplayed();
         return new ClientRepresentation(clientId, clientName, userConsentRequired, inUse, baseURL, applicationDetailsVisible);
     }

@@ -88,7 +88,7 @@ public class ApplicationsTest extends BaseAccountPageTest {
         assertFalse(applications.isEmpty());
         Map<String, ApplicationsPage.ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
         assertThat(apps.keySet(), containsInAnyOrder("always-display-client", "account-console"));
-        assertClientRep(apps.get("account-console"), "Account Console", false, true, "/realms/test/account/", false);
+        assertClientRep(apps.get("account-console"), "Account Console", false, true, "https://localhost:8543/auth/realms/test/account/", false);
         assertClientRep(apps.get("always-display-client"), "Always Display Client", false, false, "https://localhost:8543/auth/realms/master/app/always-display-client", false);
     }
 
@@ -99,7 +99,7 @@ public class ApplicationsTest extends BaseAccountPageTest {
         assertFalse(applications.isEmpty());
         Map<String, ApplicationsPage.ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
         assertThat(apps.keySet(), containsInAnyOrder("always-display-client", "account-console"));
-        assertClientRep(apps.get("account-console"), "Account Console", false, true, "/realms/test/account/", true);
+        assertClientRep(apps.get("account-console"), "Account Console", false, true, "https://localhost:8543/auth/realms/test/account/", true);
         assertClientRep(apps.get("always-display-client"), "Always Display Client", false, false, "https://localhost:8543/auth/realms/master/app/always-display-client", false);
 
         applicationsPage.toggleApplicationDetails("account-console");
@@ -107,7 +107,7 @@ public class ApplicationsTest extends BaseAccountPageTest {
         assertFalse(applications.isEmpty());
         apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
         assertThat(apps.keySet(), containsInAnyOrder("always-display-client", "account-console"));
-        assertClientRep(apps.get("account-console"), "Account Console", false, true, "/realms/test/account/", false);
+        assertClientRep(apps.get("account-console"), "Account Console", false, true, "https://localhost:8543/auth/realms/test/account/", false);
         assertClientRep(apps.get("always-display-client"), "Always Display Client", false, false, "https://localhost:8543/auth/realms/master/app/always-display-client", false);
     }
 
