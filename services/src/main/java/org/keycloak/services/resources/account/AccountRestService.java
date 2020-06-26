@@ -214,12 +214,26 @@ public class AccountRestService {
             user.setLastName(userRep.getLastName());
 
             if (userRep.getAttributes() != null) {
-                for (String k : user.getAttributes().keySet()) {
+                Set<String> attributeKeys = new HashSet<>(user.getAttributes().keySet());
+                // We store username and other attributes as attributes (for future UserProfile)
+                // but don't propagate them to the UserRepresentation, so userRep will never contain them
+                // if the user did not explicitly add them
+                attributeKeys.remove(UserModel.FIRST_NAME);
+                attributeKeys.remove(UserModel.LAST_NAME);
+                attributeKeys.remove(UserModel.EMAIL);
+                attributeKeys.remove(UserModel.USERNAME);
+                for (String k : attributeKeys) {
                     if (!userRep.getAttributes().containsKey(k)) {
                         user.removeAttribute(k);
                     }
                 }
 
+                Map<String, List<String>> attributes = userRep.getAttributes();
+                // Make sure we don't accidentally update any of the fields through attributes
+                attributes.remove(UserModel.FIRST_NAME);
+                attributes.remove(UserModel.LAST_NAME);
+                attributes.remove(UserModel.EMAIL);
+                attributes.remove(UserModel.USERNAME);
                 for (Map.Entry<String, List<String>> e : userRep.getAttributes().entrySet()) {
                     user.setAttribute(e.getKey(), e.getValue());
                 }
