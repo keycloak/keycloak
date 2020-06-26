@@ -28,7 +28,6 @@ import {
     Stack,
     StackItem,
     Title,
-    TitleLevel,
     DataListItem,
 } from '@patternfly/react-core';
 
@@ -128,10 +127,10 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
 
         return (
             <ContentPage title={Msg.localize('linkedAccountsTitle')} introMessage={Msg.localize('linkedAccountsIntroMessage')}>
-                <Stack gutter='md'>
+                <Stack hasGutter>
                     <StackItem isFilled>
-                        <Title headingLevel={TitleLevel.h2} size='2xl'>
-                            <Msg msgKey='linkedLoginProviders'/>
+                        <Title headingLevel="h2" size="2xl">
+                            <Msg msgKey="linkedLoginProviders"/>
                         </Title>
                         <DataList id="linked-idps" aria-label='foo'>
                             {this.makeRows(this.state.linkedAccounts, true)}
@@ -139,10 +138,10 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
                     </StackItem>
                     <StackItem isFilled/>
                     <StackItem isFilled>
-                        <Title headingLevel={TitleLevel.h2} size='2xl'>
-                            <Msg msgKey='unlinkedLoginProviders'/>
+                        <Title headingLevel="h2" size="2xl">
+                            <Msg msgKey="unlinkedLoginProviders"/>
                         </Title>
-                        <DataList id="unlinked-idps" aria-label='foo'>
+                        <DataList id="unlinked-idps" aria-label="foo">
                             {this.makeRows(this.state.unLinkedAccounts, false)}
                         </DataList>
                     </StackItem>

@@ -11,12 +11,11 @@
     "noImplicitAny": true,
     "strictNullChecks": true,
     "jsx": "react",
+    "skipLibCheck": true,
     "suppressImplicitAnyIndexErrors": true
   },
   "include": [
-    "./app/**/*.ts?"
-  ],
-  "files": [
+    "./app/**/*.ts?",
     "../../../../../../../../adapters/oidc/js/src/main/resources/keycloak.d.ts"
   ]
 }

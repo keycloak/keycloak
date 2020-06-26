@@ -179,18 +179,18 @@
         </div>
         <div class="pf-c-page__header-tools">
             <#if referrer?has_content && referrer_uri?has_content>
-            <div class="pf-c-page__header-tools-group pf-m-icons">
+            <div class="pf-c-page__header-tools-group pf-m-hidden pf-m-visible-on-lg pf-m-icons">
               <a id="landingReferrerLink" href="${referrer_uri}" id="referrer" tabindex="0"><span class="pf-icon pf-icon-arrow"></span>${msg("backTo",referrerName)}</a>
             </div>
             </#if>
 
-            <div class="pf-c-page__header-tools-group pf-m-icons">
+            <div class="pf-c-page__header-tools-group pf-m-hidden pf-m-visible-on-lg pf-m-icons">
               <button id="landingSignInButton" tabindex="0" style="display:none" onclick="keycloak.login();" class="pf-c-button pf-m-primary" type="button">${msg("doSignIn")}</button>
               <button id="landingSignOutButton" tabindex="0" style="display:none" onclick="keycloak.logout();" class="pf-c-button pf-m-primary" type="button">${msg("doSignOut")}</button>
             </div>
 
             <!-- Kebab for mobile -->
-            <div class="pf-c-page__header-tools-group">
+            <div class="pf-c-page__header-tools-group pf-m-hidden-on-lg">
                 <div id="landingMobileKebab" class="pf-c-dropdown pf-m-mobile" onclick="toggleMobileDropdown();"> <!-- pf-m-expanded -->
                     <button aria-label="Actions" tabindex="0" id="landingMobileKebabButton" class="pf-c-dropdown__toggle pf-m-plain" type="button" aria-expanded="true" aria-haspopup="true">
                         <svg fill="currentColor" height="1em" width="1em" viewBox="0 0 192 512" aria-hidden="true" role="img" style="vertical-align: -0.125em;"><path d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z" transform=""></path></svg>
@@ -212,7 +212,9 @@
                 </div>
             </div>
 
-            <span id="landingLoggedInUser"></span>
+            <div class="pf-c-page__header-tools-item">
+                <span class="pf-c-avatar" id="landingLoggedInUser"></span>
+            </div>
 
         </div> <!-- end header tools -->
       </header>
@@ -224,39 +226,40 @@
           </div>
         </section>
         <section class="pf-c-page__main-section">
-          <div class="pf-l-gallery pf-m-gutter">
-            <#assign content=theme.apply("content.json")?eval>
-            <#list content as item>
-              <div class="pf-l-gallery__item pf-c-card" id="landing-${item.id}">
-                <div>
-                  <div class="pf-c-card__header pf-c-content">
-                      <h2>
-                        <#if item.icon??>
-                          <i class="pf-icon ${item.icon}"></i>&nbsp;
-                        <#elseif item.iconSvg??>
-                          <img src="${item.iconSvg}" alt="icon"/>&nbsp;
-                        </#if>
-                        ${msg(item.label)}
-                      </h2>
-                      <#if item.descriptionLabel??>
-                        <p>${msg(item.descriptionLabel)}</p>
-                      </#if>
+        <div class="pf-l-gallery pf-m-gutter">
+          <#assign content=theme.apply("content.json")?eval>
+          <#list content as item>
+          <div class="pf-l-gallery__item pf-c-card" id="landing-${item.id}">
+            <div class="pf-c-empty-state pf-m-sm">
+              <div class="pf-c-empty-state__content">
+                <#if item.icon??>
+                  <i class="pf-icon ${item.icon} pf-c-empty-state__icon"></i>&nbsp;
+                <#elseif item.iconSvg??>
+                  <img src="${item.iconSvg}" alt="icon"/>&nbsp;
+                </#if>
+                <h4 class="pf-c-title pf-m-lg">${msg(item.label)}</h4>
+                <#if item.descriptionLabel??>
+                  <div class="pf-c-empty-state__body">
+                    ${msg(item.descriptionLabel)}
                   </div>
-                  <div class="pf-c-card__body pf-c-content">
-                    <#if item.content??>
+                </#if>
+                <div class="pf-c-empty-state__secondary">
+                  <#if item.content??>
                       <#list item.content as sub>
-                        <div id="landing-${sub.id}">
+                        <button id="landing-${sub.id}" onclick="toggleReact(); window.location.hash = '${sub.path}'" class="pf-c-button pf-m-tertiary" type="button">${msg(sub.label)}</button>
                           <a onclick="toggleReact(); window.location.hash='${sub.path}'">${msg(sub.label)}</a>
                         </div>
                       </#list>
-                    <#else>
-                      <a id="landing-${item.id}" onclick="toggleReact(); window.location.hash = '${item.path}'">${msg(item.label)}</a>
-                    </#if>
-                  </div>
+                  <#else>
+                    <button id="landing-${item.id}" onclick="toggleReact(); window.location.hash = '${item.path}'" class="pf-c-button pf-m-tertiary" type="button">${msg(item.label)}</button>
+                  </#if>
                 </div>
               </div>
-            </#list>
+            </div>
           </div>
+          </#list>
+        </div>
+
         </section>
       </main>
     </div>

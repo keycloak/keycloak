@@ -91,7 +91,7 @@ export class EditTheResource extends React.Component<EditTheResourceProps, EditT
 
                 <Modal
                     title={'Edit the resource - ' + this.props.resource.name}
-                    isLarge
+                    variant="large"
                     isOpen={this.state.isOpen}
                     onClose={this.handleToggleDialog}
                     actions={[

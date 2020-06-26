@@ -5,7 +5,7 @@ import { Scope } from './resource-model';
 
 interface PermissionSelectState {
   selected: ScopeValue[];
-  isExpanded: boolean;
+  isOpen: boolean;
   scopes: JSX.Element[];
 }
 
@@ -41,7 +41,7 @@ export class PermissionSelect extends React.Component<PermissionSelectProps, Per
     }
 
     this.state = {
-      isExpanded: false,
+      isOpen: false,
       selected: values,
       scopes: this.props.scopes.map((option, index) => (
         <SelectOption key={index} value={values.find(s => s.compareTo(option)) || new ScopeValue(option)} />
@@ -65,22 +65,22 @@ export class PermissionSelect extends React.Component<PermissionSelectProps, Per
     }
   }
 
-  private onToggle = (isExpanded: boolean) => {
+  private onToggle = (isOpen: boolean) => {
     this.setState({
-      isExpanded
+      isOpen: isOpen
     });
   }
 
   private clearSelection = () => {
     this.setState({
       selected: [],
-      isExpanded: false
+      isOpen: false
     });
     this.props.onSelect([]);
   };
 
   render() {
-    const { isExpanded, selected } = this.state;
+    const { isOpen, selected } = this.state;
     const titleId = 'permission-id';
 
     return (
@@ -91,13 +91,13 @@ export class PermissionSelect extends React.Component<PermissionSelectProps, Per
         <Select
           direction={this.props.direction || 'down'}
           variant={SelectVariant.typeaheadMulti}
-          ariaLabelTypeAhead="Select the permissions"
+          typeAheadAriaLabel="Select the permissions"
           onToggle={this.onToggle}
           onSelect={this.onSelect}
           onClear={this.clearSelection}
           selections={selected}
-          isExpanded={isExpanded}
-          ariaLabelledBy={titleId}
+          isOpen={isOpen}
+          aria-labelledby={titleId}
           placeholderText="Select the permissions"
         >
           {this.state.scopes}

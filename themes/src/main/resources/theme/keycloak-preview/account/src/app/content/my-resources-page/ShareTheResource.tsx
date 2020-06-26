@@ -20,7 +20,6 @@ import {
     Button,
     Chip,
     ChipGroup,
-    ChipGroupToolbarItem,
     Form,
     FormGroup,
     Gallery,
@@ -166,7 +165,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
 
                 <Modal
                 title={'Share the resource - ' + this.props.resource.name}
-                isLarge={true}
+                variant="large"
                 isOpen={this.state.isOpen}
                 onClose={this.handleToggleDialog}
                 actions={[
@@ -178,7 +177,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
                     </Button>
                 ]}
                 >
-                    <Stack gutter='md'>
+                    <Stack hasGutter>
                         <StackItem isFilled>
                         <Form>
                             <FormGroup
@@ -187,13 +186,13 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
                                 helperTextInvalid={Msg.localize('resourceAlreadyShared')}
                                 fieldId="username"
                                 isRequired
-                                isValid={!this.isAlreadyShared()}
+                                validated={this.isAlreadyShared() ? 'error' : 'default'}
                                 >
-                                    <Gallery gutter='sm'>
+                                    <Gallery hasGutter>
                                         <GalleryItem>
                                             <TextInput
                                                 value={this.state.usernameInput}
-                                                isValid={!this.isAlreadyShared()}
+                                                validated={this.isAlreadyShared() ? 'error' : 'default'}
                                                 id="username"
                                                 aria-describedby="username-helper"
                                                 placeholder="Username or email"
@@ -208,14 +207,12 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
                                         </GalleryItem>
 
                                 </Gallery>
-                                <ChipGroup withToolbar>
-                                    <ChipGroupToolbarItem key='users-selected' categoryName='Share with '>
+                                <ChipGroup key='users-selected' categoryName='Share with'>
                                     {this.state.usernames.map((currentChip: string) => (
                                         <Chip key={currentChip} onClick={() => this.handleDeleteUsername(currentChip)}>
                                             {currentChip}
                                         </Chip>
                                     ))}
-                                    </ChipGroupToolbarItem>
                                 </ChipGroup>
                             </FormGroup>
                             <FormGroup

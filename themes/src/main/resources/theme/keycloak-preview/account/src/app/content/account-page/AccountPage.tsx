@@ -142,7 +142,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                             isRequired
                             fieldId="user-name"
                             helperTextInvalid={this.state.errors.username}
-                            isValid={this.state.errors.username === ''}
+                            validated={this.state.errors.username !== '' ? 'error' : 'default'}
                         >
                             {this.isEditUserNameAllowed && <this.UsernameInput />}
                             {!this.isEditUserNameAllowed && <this.RestrictedUsernameInput />}
@@ -153,7 +153,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                         isRequired
                         fieldId="email-address"
                         helperTextInvalid={this.state.errors.email}
-                        isValid={this.state.errors.email === ''}
+                        validated={this.state.errors.email !== '' ? 'error' : 'default'}
                     >
                         <TextInput
                             isRequired
@@ -163,7 +163,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                             maxLength={254}
                             value={fields.email}
                             onChange={this.handleChange}
-                            isValid={this.state.errors.email === ''}
+                            validated={this.state.errors.email !== '' ? 'error' : 'default'}
                         >
                         </TextInput>
                     </FormGroup>
@@ -172,7 +172,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                         isRequired
                         fieldId="first-name"
                         helperTextInvalid={this.state.errors.firstName}
-                        isValid={this.state.errors.firstName === ''}
+                        validated={this.state.errors.firstName !== '' ? 'error' : 'default'}
                     >
                         <TextInput
                             isRequired
@@ -182,7 +182,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                             maxLength={254}
                             value={fields.firstName}
                             onChange={this.handleChange}
-                            isValid={this.state.errors.firstName === ''}
+                            validated={this.state.errors.firstName !== '' ? 'error' : 'default'}
                         >
                         </TextInput>
                     </FormGroup>
@@ -191,7 +191,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                         isRequired
                         fieldId="last-name"
                         helperTextInvalid={this.state.errors.lastName}
-                        isValid={this.state.errors.lastName === ''}
+                        validated={this.state.errors.lastName !== '' ? 'error' : 'default'}
                     >
                         <TextInput
                             isRequired
@@ -201,7 +201,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                             maxLength={254}
                             value={fields.lastName}
                             onChange={this.handleChange}
-                            isValid={this.state.errors.lastName === ''}
+                            validated={this.state.errors.lastName !== '' ? 'error' : 'default'}
                         >
                         </TextInput>
                     </FormGroup>
@@ -249,7 +249,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
             maxLength={254}
             value={this.state.formFields.username}
             onChange={this.handleChange}
-            isValid={this.state.errors.username === ''}
+            validated={this.state.errors.username !== '' ? 'error' : 'default'}
         >
         </TextInput>
     );

@@ -16,18 +16,20 @@
 
 import * as React from 'react';
 
-import {Dropdown, KebabToggle, Toolbar, ToolbarGroup, ToolbarItem} from '@patternfly/react-core';
+import { Dropdown, KebabToggle, PageHeaderTools, PageHeaderToolsGroup, PageHeaderToolsItem } from '@patternfly/react-core';
 
-import {ReferrerDropdownItem} from './widgets/ReferrerDropdownItem';
-import {ReferrerLink} from './widgets/ReferrerLink';
-import {Features} from './widgets/features';
-import {LogoutButton,LogoutDropdownItem} from './widgets/Logout';
+import { ReferrerDropdownItem } from './widgets/ReferrerDropdownItem';
+import { ReferrerLink } from './widgets/ReferrerLink';
+import { Features } from './widgets/features';
+import { LogoutButton, LogoutDropdownItem } from './widgets/Logout';
 
 declare const referrerName: string;
 declare const features: Features;
 
-interface PageToolbarProps {}
-interface PageToolbarState {isKebabDropdownOpen: boolean}
+interface PageToolbarProps { 
+    avatar: React.ReactNode;
+}
+interface PageToolbarState { isKebabDropdownOpen: boolean }
 export class PageToolbar extends React.Component<PageToolbarProps, PageToolbarState> {
     private hasReferrer: boolean = typeof referrerName !== 'undefined';
 
@@ -49,28 +51,33 @@ export class PageToolbar extends React.Component<PageToolbarProps, PageToolbarSt
         const kebabDropdownItems = [];
         if (this.hasReferrer) {
             kebabDropdownItems.push(
-                <ReferrerDropdownItem key='referrerDropdownItem'/>
+                <ReferrerDropdownItem key='referrerDropdownItem' />
             )
         }
 
-        kebabDropdownItems.push(<LogoutDropdownItem key='LogoutDropdownItem'/>);
+        kebabDropdownItems.push(<LogoutDropdownItem key='LogoutDropdownItem' />);
 
         return (
-            <Toolbar>
-                {this.hasReferrer &&
-                    <ToolbarGroup key='referrerGroup'>
-                        <ToolbarItem className="pf-m-icons" key='referrer'>
-                            <ReferrerLink/>
-                        </ToolbarItem>
-                    </ToolbarGroup>
-                }
+            <PageHeaderTools>
+                <PageHeaderToolsGroup visibility={{ default: 'hidden', lg: 'visible' }}>
+                    {this.hasReferrer &&
+                        <PageHeaderToolsItem>
+                            <ReferrerLink />
+                        </PageHeaderToolsItem>
+                    }
+                </PageHeaderToolsGroup>
+                <PageHeaderToolsGroup visibility={{ default: 'hidden', lg: 'visible' }}>
+                    <PageHeaderToolsItem>
+                        <LogoutButton />
+                    </PageHeaderToolsItem>
+                    <PageHeaderToolsItem>
+                        {this.props.avatar}
+                    </PageHeaderToolsItem>
+                </PageHeaderToolsGroup>
 
-                <ToolbarGroup key='secondGroup'>
-                    <ToolbarItem className="pf-m-icons" key='logout'>
-                        <LogoutButton/>
-                    </ToolbarItem>
 
-                    <ToolbarItem key='kebab' className="pf-m-mobile">
+                <PageHeaderToolsGroup key='secondGroup' visibility={{ lg: 'hidden' }}>
+                    <PageHeaderToolsItem key='kebab' className="pf-m-mobile">
                         <Dropdown
                             isPlain
                             position="right"
@@ -78,9 +85,12 @@ export class PageToolbar extends React.Component<PageToolbarProps, PageToolbarSt
                             isOpen={this.state.isKebabDropdownOpen}
                             dropdownItems={kebabDropdownItems}
                         />
-                    </ToolbarItem>
-                </ToolbarGroup>
-            </Toolbar>
+                    </PageHeaderToolsItem>
+                    <PageHeaderToolsItem>
+                        {this.props.avatar}
+                    </PageHeaderToolsItem>
+                </PageHeaderToolsGroup>
+            </PageHeaderTools>
         );
     }
 }
