@@ -91,8 +91,7 @@ It has no other task than sending the received tokens to the main application an
 
 Please keep in mind that this page at the specified location must be provided by the application itself and is _not_ part of the JavaScript adapter!
 
-WARNING: Starting with Chrome version 80 (released on February 2020), silent `check-sso` functionality will work only
-when the SSL / TLS connection is configured on the {project_name} side.
+WARNING: _Silent_ `check-sso` functionality is limited in some modern browsers. Please see link:#_modern_browsers[Modern Browsers with Tracking Protection Section].
 
 To enable `login-required` set `onLoad` to `login-required` and pass to the init method:
 
@@ -154,10 +153,7 @@ This feature can be disabled by setting `checkLoginIframe: false` in the options
 You should not rely on looking at this cookie directly. Its format can change and it's also associated with the URL of the {project_name} server, not
 your application.
 
-WARNING: Starting with Chrome version 80 (released on February 2020), status iframe will only be able to see the special
-cookie over the SSL / TLS connection configured on the {project_name} side. Using an insecure connection may lead to redirecting
-to {project_name} every time iframe checks the status. You can avoid this behavior by disabling iframe
-or link:{installguide_link}#_setting_up_ssl[configuring the SSL / TLS] on the {project_name} side.
+WARNING: Session Status iframe functionality is limited in some modern browsers. Please see link:#_modern_browsers[Modern Browsers with Tracking Protection Section].
 
 [[_javascript_implicit_flow]]
 ==== Implicit and Hybrid Flow
@@ -272,6 +268,40 @@ Example polyfill libraries:
 * HTML5 History - https://github.com/devote/HTML5-History-API
 * Promise - https://github.com/stefanpenner/es6-promise
 
+[[_modern_browsers]]
+==== Modern Browsers with Tracking Protection
+In the latest versions of some browsers various cookies policies are applied to prevent tracking of the users by third-parties,
+like SameSite in Chrome or completely blocked third-party cookies. It is expected that those policies will become even
+more restrictive and adopted by other browsers over time, eventually leading to cookies in third-party contexts to be
+completely unsupported and blocked by the browsers. The adapter features affected by this might get deprecated in the
+future.
+
+Javascript adapter relies on third-party cookies for Session Status iframe, _silent_ `check-sso` and partially also for
+regular (non-silent) `check-sso`. Those features have limited functionality or are completely disabled based on how
+the browser is restrictive regarding cookies. The adapter tries to detect this setting and reacts accordingly.
+
+===== Browsers with "SameSite=Lax by Default" Policy
+All features are supported if SSL / TLS connection is configured on the {project_name} side as well as on the application
+side. See link:{installguide_link}#_setting_up_ssl[configuring the SSL / TLS]. Affected is e.g. Chrome starting with
+version 84.
+
+===== Browsers with Blocked Third-Party Cookies
+Session Status iframe is not supported and is automatically disabled if such browser behavior is detected by the JS adapter.
+This means the adapter cannot use session cookie for Single Sign-Out detection and have to rely purely on tokens. This
+implies that when user logs out in another window, the application using JavaScript adapter won't be logged out until it
+tries to refresh the Access Token. Therefore, it is recommended to set Access Token Lifespan to relatively short time, so
+that the logout is detected rather sooner than later. Please see link:{adminguide_link}#_timeouts[Session and Token Timeouts].
+
+_Silent_ `check-sso` is not supported and falls back to regular (non-silent) `check-sso` by default. This behaviour can
+be changed by setting `silentCheckSsoFallback: false` in the options passed to the `init` method. In this case, `check-sso`
+will be completely disabled if restrictive browser behavior is detected.
+
+Regular `check-sso` is affected as well. Since Session Status iframe is unsupported, an additional redirect to {project_name}
+has to be made when the adapter is initialized to check user's login status. This is different from standard behavior when
+the iframe is used to tell whether the user is logged in, and the redirect is performed only when logged out.
+
+An affected browser is e.g. Safari starting with version 13.1.
+
 ==== JavaScript Adapter Reference
 
 ===== Constructor
@@ -344,9 +374,10 @@ Called to initialize the adapter.
 
 Options is an Object, where:
 
-* useNonce - Adds a cryptographic nonce to verify that the authentication response matches the request (default is true).
+* useNonce - Adds a cryptographic nonce to verify that the authentication response matches the request (default is `true`).
 * onLoad - Specifies an action to do on load. Supported values are `login-required` or `check-sso`.
 * silentCheckSsoRedirectUri - Set the redirect uri for silent authentication check if onLoad is set to 'check-sso'.
+* silentCheckSsoFallback - Enables fall back to regular `check-sso` when _silent_ `check-sso` is not supported by the browser (default is `true`).
 * token - Set an initial value for the token.
 * refreshToken - Set an initial value for the refresh token.
 * idToken - Set an initial value for the id token (only together with token or refreshToken).
