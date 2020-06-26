@@ -180,6 +180,32 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
     }
 
+    @Test
+    public void testUpdateProfileCannotChangeThroughAttributes() throws IOException {
+        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        String originalUsername = user.getUsername();
+        Map<String, List<String>> originalAttributes = new HashMap<>(user.getAttributes());
+
+        try {
+            user.getAttributes().put("username", Collections.singletonList("Username"));
+            user.getAttributes().put("attr2", Collections.singletonList("val2"));
+
+            user = updateAndGet(user);
+
+            assertEquals(user.getUsername(), originalUsername);
+        } finally {
+            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            realmRep.setEditUsernameAllowed(true);
+            adminClient.realm("test").update(realmRep);
+
+            user.setUsername(originalUsername);
+            user.setAttributes(originalAttributes);
+            SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
+            System.out.println(response.asString());
+            assertEquals(204, response.getStatus());
+        }
+    }
+
     // KEYCLOAK-7572
     @Test
     public void testUpdateProfileWithRegistrationEmailAsUsername() throws IOException {
