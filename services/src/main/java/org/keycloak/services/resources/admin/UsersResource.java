@@ -229,7 +229,7 @@ public class UsersResource {
                 }
                 return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult, maxResults, false);
             }
-        } else if (last != null || first != null || email != null || username != null) {
+        } else if (last != null || first != null || email != null || username != null || enabled != null || exact != null) {
             Map<String, String> attributes = new HashMap<>();
             if (last != null) {
                 attributes.put(UserModel.LAST_NAME, last);
