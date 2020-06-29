@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.arquillian.provider;
 
+import org.apache.http.client.utils.URIBuilder;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider;
 import org.jboss.arquillian.core.api.Instance;
@@ -33,66 +34,42 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContext;
 
 import java.lang.annotation.Annotation;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
+import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.URLUtils;
+
+import static org.keycloak.testsuite.util.ServerURLs.APP_SERVER_HOST;
+import static org.keycloak.testsuite.util.ServerURLs.APP_SERVER_PORT;
+import static org.keycloak.testsuite.util.ServerURLs.APP_SERVER_SCHEME;
 
 public class URLProvider extends URLResourceProvider {
 
     protected final Logger log = Logger.getLogger(this.getClass());
-
-    public static final String BOUND_TO_ALL = "0.0.0.0";
-    public static final String LOCALHOST_ADDRESS = "127.0.0.1";
-    public static final String LOCALHOST_HOSTNAME = "localhost";
-
-    private final boolean appServerSslRequired = Boolean.parseBoolean(System.getProperty("app.server.ssl.required"));
 
     @Inject
     Instance<SuiteContext> suiteContext;
     @Inject
     Instance<TestContext> testContext;
 
-    private static final Set<String> fixedUrls = new HashSet<>();
-
     @Override
     public Object doLookup(ArquillianResource resource, Annotation... qualifiers) {
         URL url = (URL) super.doLookup(resource, qualifiers);
 
         if (url == null) {
-            String port = appServerSslRequired ? 
-                                System.getProperty("app.server.https.port", "8643") : 
-                                System.getProperty("app.server.http.port", "8280");
-            String protocol = appServerSslRequired ? "https" : "http";
-
+            String appServerContextRoot = ServerURLs.getAppServerContextRoot();
             try {
                 for (Annotation a : qualifiers) {
                     if (OperateOnDeployment.class.isAssignableFrom(a.annotationType())) {
-                        return new URL(protocol + "://localhost:" + port + "/" + ((OperateOnDeployment) a).value() + "/");
+                        return new URL(appServerContextRoot + "/" + ((OperateOnDeployment) a).value() + "/");
                     }
                 }
             } catch (MalformedURLException ex) {
                 throw new RuntimeException(ex);
-            }
-        }
-        
-        // fix injected URL
-        if (url != null) {
-            try {
-                url = fixLocalhost(url);
-                url = fixBoundToAll(url);
-                if (appServerSslRequired) {
-                    url = fixSsl(url);
-                }
-            } catch (MalformedURLException ex) {
-                log.log(Level.FATAL, null, ex);
-            }
-
-            if (!fixedUrls.contains(url.toString())) {
-                fixedUrls.add(url.toString());
-                log.debug("Fixed injected @ArquillianResource URL to: " + url);
             }
         }
 
@@ -128,29 +105,19 @@ public class URLProvider extends URLResourceProvider {
             }
         }
 
+        // fix injected URL
+        if (url != null) {
+                        try {
+                url = new URIBuilder(url.toURI())
+                        .setScheme(APP_SERVER_SCHEME)
+                        .setHost(APP_SERVER_HOST)
+                        .setPort(Integer.parseInt(APP_SERVER_PORT))
+                        .build().toURL();
+            } catch (URISyntaxException | MalformedURLException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
         return url;
     }
-
-    public URL fixBoundToAll(URL url) throws MalformedURLException {
-        URL fixedUrl = url;
-        if (url.getHost().contains(BOUND_TO_ALL)) {
-            fixedUrl = new URL(fixedUrl.toExternalForm().replace(BOUND_TO_ALL, LOCALHOST_HOSTNAME));
-        }
-        return fixedUrl;
-    }
-
-    public URL fixLocalhost(URL url) throws MalformedURLException {
-        URL fixedUrl = url;
-        if (url.getHost().contains(LOCALHOST_ADDRESS)) {
-            fixedUrl = new URL(fixedUrl.toExternalForm().replace(LOCALHOST_ADDRESS, LOCALHOST_HOSTNAME));
-        }
-        return fixedUrl;
-    }
-
-    public URL fixSsl(URL url) throws MalformedURLException {
-        URL fixedUrl = url;
-        String urlString = fixedUrl.toExternalForm().replace("http", "https").replace(System.getProperty("app.server.http.port", "8280"), System.getProperty("app.server.https.port", "8643"));
-        return new URL(urlString);
-    }
-
 }

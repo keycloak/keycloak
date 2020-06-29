@@ -363,7 +363,7 @@
                                     <goal>copy-resources</goal>
                                 </goals>
                                 <configuration>
-                                    <outputDirectory>${app.server.tomcat.home}/conf</outputDirectory>
+                                    <outputDirectory>${app.server.tomcat.home}/lib</outputDirectory>
                                     <resources>
                                         <resource>
                                             <directory>${common.resources}/keystore</directory>

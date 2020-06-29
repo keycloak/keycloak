@@ -41,7 +41,8 @@ public class TomcatAppServerConfigurationUtils {
         createChild(configuration, "pass", pass);
         createChild(configuration, "javaVmArguments",
                         System.getProperty("adapter.test.props", " ") + " " +
-                        System.getProperty("app.server.jboss.jvm.debug.args", " "));
+                        System.getProperty("app.server.jboss.jvm.debug.args", " ") + " " +
+                        System.getProperty("tomcat.javax.net.ssl.properties", " "));
         createChild(configuration,"startupTimeoutInSeconds", startupTimeoutInSeconds);
 
         return container;

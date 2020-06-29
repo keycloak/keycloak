@@ -40,6 +40,7 @@ import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.HawtioPage;
 import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.arquillian.containers.SelfManagedAppContainerLifecycle;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
@@ -79,6 +80,7 @@ public class EAP6Fuse6HawtioAdapterTest extends AbstractExampleAdapterTest imple
     @BeforeClass
     public static void enabled() {
         Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
+        ContainerAssume.assumeNotAppServerSSL();
     }
 
     @Before

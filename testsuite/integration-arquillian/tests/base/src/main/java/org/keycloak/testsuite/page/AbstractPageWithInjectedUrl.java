@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.page;
 
+import org.keycloak.testsuite.util.ServerURLs;
+
 import javax.ws.rs.core.UriBuilder;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -36,10 +38,7 @@ public abstract class AbstractPageWithInjectedUrl extends AbstractPage {
             return null;
         }
         try {
-            if(Boolean.parseBoolean(System.getProperty("app.server.ssl.required"))) {
-                return new URL("https://localhost:" + System.getProperty("app.server.https.port", "8643") + "/" + url);
-            };
-            return new URL("http://localhost:" + System.getProperty("app.server.http.port", "8280") + "/" + url);
+            return new URL(ServerURLs.getAppServerContextRoot() + "/" + url);
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }

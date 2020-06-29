@@ -1000,3 +1000,10 @@ because this is not UI testing). For debugging purposes you can override the hea
                       -Pfirefox-strict-cookies \
                       -Dtest=**.javascript.** \
                       -Dauth.server.host=[some_host] -Dauth.server.host2=[some_other_host]
+                      
+**General adapter tests**
+
+    mvn clean install -f testsuite/integration-arquillian/tests/base \
+                       -Pfirefox-strict-cookies \
+                       -Dtest=**.adapter.** \
+                       -Dauth.server.host=[some_host] -Dauth.server.host2=[some_other_host]

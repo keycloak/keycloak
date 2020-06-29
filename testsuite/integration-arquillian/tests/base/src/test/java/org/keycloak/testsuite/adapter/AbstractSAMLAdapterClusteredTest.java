@@ -25,7 +25,11 @@ import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+
 import org.apache.http.client.methods.HttpGet;
 import org.jboss.arquillian.container.test.api.*;
 import org.jboss.arquillian.test.api.ArquillianResource;
@@ -39,6 +43,7 @@ import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
+import org.keycloak.testsuite.util.ServerURLs;
 
 /**
  *
@@ -49,6 +54,29 @@ public abstract class AbstractSAMLAdapterClusteredTest extends AbstractAdapterCl
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(loadRealm("/adapter-test/keycloak-saml/testsaml-behind-lb.json"));
+
+        if (!"localhost".equals(ServerURLs.APP_SERVER_HOST)) {
+            for (RealmRepresentation realm : testRealms) {
+                Optional<ClientRepresentation> clientRepresentation = realm.getClients().stream()
+                        .filter(c -> c.getClientId().equals("http://localhost:8580/employee-distributable/"))
+                        .findFirst();
+
+                clientRepresentation.ifPresent(cr -> {
+                    cr.setBaseUrl(cr.getBaseUrl().replace("localhost", ServerURLs.APP_SERVER_HOST));
+                    cr.setRedirectUris(cr.getRedirectUris()
+                            .stream()
+                            .map(url -> url.replace("localhost", ServerURLs.APP_SERVER_HOST))
+                            .collect(Collectors.toList())
+                    );
+                    cr.setAttributes(cr.getAttributes().entrySet().stream()
+                            .collect(Collectors.toMap(Map.Entry::getKey,
+                                    entry -> entry.getValue().replace("localhost", ServerURLs.APP_SERVER_HOST))
+                            )
+                    );
+
+                });
+            }
+        }
     }
 
     @Override

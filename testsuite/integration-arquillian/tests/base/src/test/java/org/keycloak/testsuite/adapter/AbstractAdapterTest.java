@@ -21,7 +21,12 @@ import org.apache.commons.io.IOUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.rules.TestName;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
@@ -29,6 +34,7 @@ import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
 import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.util.ServerURLs;
 import org.wildfly.extras.creaper.commands.undertow.AddUndertowListener;
 import org.wildfly.extras.creaper.commands.undertow.RemoveUndertowListener;
 import org.wildfly.extras.creaper.commands.undertow.UndertowListenerType;
@@ -50,6 +56,9 @@ import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.APP_SERVER_SSL_REQUIRED;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.CURRENT_APP_SERVER;
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.enableHTTPSForAppServer;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
@@ -66,8 +75,6 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
     @Page
     protected AppServerContextRoot appServerContextRootPage;
 
-    protected static final String APP_SERVER_CONTAINER = System.getProperty("app.server", "");
-
     public static final String JBOSS_DEPLOYMENT_STRUCTURE_XML = "jboss-deployment-structure.xml";
     public static final URL jbossDeploymentStructure = AbstractServletsAdapterTest.class
             .getResource("/adapter-test/" + JBOSS_DEPLOYMENT_STRUCTURE_XML);
@@ -78,11 +85,24 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
     public static final URL tomcatContext = AbstractServletsAdapterTest.class
             .getResource("/adapter-test/" + TOMCAT_CONTEXT_XML);
 
-    @BeforeClass
-    public static void setUpAppServer() throws Exception {
-        if (APP_SERVER_SSL_REQUIRED && (APP_SERVER_CONTAINER.contains("eap") || APP_SERVER_CONTAINER.contains("wildfly"))) { // Other containers need some external configuraiton to run SSL tests
+    protected static boolean sslConfigured = false;
+
+    @Before
+    public void setUpAppServer() throws Exception {
+        if (!sslConfigured && shouldConfigureSSL()) { // Other containers need some external configuraiton to run SSL tests
             enableHTTPSForAppServer();
+
+            sslConfigured = true;
         }
+    }
+
+    @AfterClass
+    public static void resetSSLConfig() {
+        sslConfigured = false;
+    }
+
+    protected boolean shouldConfigureSSL() {
+        return APP_SERVER_SSL_REQUIRED && (CURRENT_APP_SERVER.contains("eap") || CURRENT_APP_SERVER.contains("wildfly"));
     }
 
     @Override
@@ -93,30 +113,25 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
 
             modifyClientRedirectUris(tr, "http://localhost:8080", "");
             modifyClientRedirectUris(tr, "^((?:/.*|)/\\*)",
-                  "http://localhost:" + System.getProperty("app.server.http.port", "8280") + "$1",
-                  "http://localhost:" + System.getProperty("auth.server.http.port", "8180") + "$1",
-                  "https://localhost:" + System.getProperty("app.server.https.port", "8643") + "$1",
-                  "https://localhost:" + System.getProperty("auth.server.http.port", "8543") + "$1");
+                  ServerURLs.getAppServerContextRoot() + "$1",
+                    ServerURLs.getAuthServerContextRoot() + "$1");
 
-            modifyClientWebOrigins(tr, "http://localhost:8080",
-                  "http://localhost:" + System.getProperty("app.server.http.port", "8280"),
-                  "http://localhost:" + System.getProperty("auth.server.http.port", "8180"),
-                  "https://localhost:" + System.getProperty("app.server.https.port", "8643"),
-                  "https://localhost:" + System.getProperty("auth.server.http.port", "8543"));
+            modifyClientWebOrigins(tr, "http://localhost:8080", ServerURLs.getAppServerContextRoot(),
+                    ServerURLs.getAuthServerContextRoot());
 
             modifyClientUrls(tr, "http://localhost:8080", "");
             modifySamlMasterURLs(tr, "http://localhost:8080", "");
             modifySAMLClientsAttributes(tr, "http://localhost:8080", "");
 
             if (isRelative()) {
-                modifyClientUrls(tr, appServerContextRootPage.toString(), "");
-                modifySamlMasterURLs(tr, "/", "http://localhost:" + System.getProperty("auth.server.http.port", null) + "/");
-                modifySAMLClientsAttributes(tr, "8080", System.getProperty("auth.server.http.port", "8180"));
+                modifyClientUrls(tr, ServerURLs.getAppServerContextRoot().toString(), "");
+                modifySamlMasterURLs(tr, "/", ServerURLs.getAppServerContextRoot() + "/");
+                modifySAMLClientsAttributes(tr, "8080", AUTH_SERVER_PORT);
             } else {
-                modifyClientUrls(tr, "^(/.*)", appServerContextRootPage.toString() + "$1");
-                modifySamlMasterURLs(tr, "^(/.*)", appServerContextRootPage.toString() + "$1");
-                modifySAMLClientsAttributes(tr, "^(/.*)",  appServerContextRootPage.toString() + "$1");
-                modifyClientJWKSUrl(tr, "^(/.*)", appServerContextRootPage.toString() + "$1");
+                modifyClientUrls(tr, "^(/.*)", ServerURLs.getAppServerContextRoot() + "$1");
+                modifySamlMasterURLs(tr, "^(/.*)", ServerURLs.getAppServerContextRoot() + "$1");
+                modifySAMLClientsAttributes(tr, "^(/.*)",  ServerURLs.getAppServerContextRoot() + "$1");
+                modifyClientJWKSUrl(tr, "^(/.*)", ServerURLs.getAppServerContextRoot() + "$1");
             }
             if (AUTH_SERVER_SSL_REQUIRED) {
                 tr.setSslRequired("all");
@@ -265,47 +280,4 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
             throw new RuntimeException(ex);
         }
     }
-
-    private static void enableHTTPSForAppServer() throws CommandFailedException, InterruptedException, TimeoutException, IOException, CliException, OperationException {
-        try (OnlineManagementClient client = AppServerTestEnricher.getManagementClient()) {
-            Administration administration = new Administration(client);
-            Operations operations = new Operations(client);
-            
-            if(!operations.exists(Address.coreService("management").and("security-realm", "UndertowRealm"))) {
-                client.execute("/core-service=management/security-realm=UndertowRealm:add()");
-                client.execute("/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=adapter.jks");
-            }
-            
-            client.execute("/system-property=javax.net.ssl.trustStore:add(value=${jboss.server.config.dir}/keycloak.truststore)");
-            client.execute("/system-property=javax.net.ssl.trustStorePassword:add(value=secret)");
-            
-            if (APP_SERVER_CONTAINER.contains("eap6")) {
-                if(!operations.exists(Address.subsystem("web").and("connector", "https"))) {
-                    client.apply(new AddConnector.Builder("https")
-                            .protocol("HTTP/1.1")
-                            .scheme("https")
-                            .socketBinding("https")
-                            .secure(true)
-                            .build());
-                    
-                    client.apply(new AddConnectorSslConfig.Builder("https")
-                            .password("secret")
-                            .certificateKeyFile("${jboss.server.config.dir}/adapter.jks")
-                            .build());
-                }
-            } else {
-                client.apply(new RemoveUndertowListener.Builder(UndertowListenerType.HTTPS_LISTENER, "https")
-                        .forDefaultServer());
-                
-                administration.reloadIfRequired();
-                
-                client.apply(new AddUndertowListener.HttpsBuilder("https", "default-server", "https")
-                        .securityRealm("UndertowRealm")
-                        .build());
-            }
-
-            administration.reloadIfRequired();
-        }
-    }
-
 }

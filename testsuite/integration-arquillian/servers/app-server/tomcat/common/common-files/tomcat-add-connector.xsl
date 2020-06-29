@@ -29,8 +29,8 @@
             <Connector port="8643" maxThreads="500"
                        server="Apache"
                        scheme="https" secure="true" SSLEnabled="true" acceptCount="500"
-                       keystoreFile="conf/adapter.jks" keystorePass="secret"
-                       truststoreFile="conf/keycloak.truststore" truststorePass="secret"/>
+                       keystoreFile="lib/adapter.jks" keystorePass="secret"
+                       truststoreFile="lib/keycloak.truststore" truststorePass="secret"/>
         </xsl:copy>
     </xsl:template>
 
