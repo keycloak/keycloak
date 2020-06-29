@@ -86,6 +86,12 @@ assigned to the principal will be `roleC`, `roleX`, `roleY` and `roleZ` because 
 and `roleY`, `roleB` was mapped into an empty role - thus being discarded, `roleC` is used as is and finally an additional role
 was added to the `kc_user` principal (`roleZ`).
 
+Note: to use spaces in role names for mappings, use unicode replacements for space. For example, incoming 'role A' would appear as:
+[source]
+----
+role\u0020A=roleX,roleY
+----
+
 ====== Adding Your Own Role Mappings Provider
 
 To add a custom role mappings provider one simply needs to implement the `org.keycloak.adapters.saml.RoleMappingsProvider` SPI.
