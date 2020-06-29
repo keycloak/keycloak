@@ -15,7 +15,7 @@ public class PasswordCredentialModel extends CredentialModel {
     private final PasswordCredentialData credentialData;
     private final PasswordSecretData secretData;
 
-    private PasswordCredentialModel(PasswordCredentialData credentialData, PasswordSecretData secretData) {
+    public PasswordCredentialModel(PasswordCredentialData credentialData, PasswordSecretData secretData) {
         this.credentialData = credentialData;
         this.secretData = secretData;
     }
