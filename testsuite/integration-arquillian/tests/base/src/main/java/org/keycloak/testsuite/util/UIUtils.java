@@ -18,7 +18,7 @@ import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+import static org.keycloak.testsuite.util.WaitUtils.waitForDomContentToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElementClassContains;
 
@@ -58,7 +58,7 @@ public final class UIUtils {
      */
     public static void performOperationWithPageReload(Runnable operation) {
         operation.run();
-        waitForPageToLoad();
+        waitForDomContentToLoad();
     }
 
     public static void refreshPageAndWaitForLoad() {
