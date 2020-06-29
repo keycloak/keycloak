@@ -18,7 +18,8 @@
 var module = angular.module('product', []);
 
 function getAuthServerUrl() {
-    var url = 'https://localhost-auth-127.0.0.1.nip.io:8543';
+    let authUrl = auth.authz.authServerUrl
+    var url = authUrl.substring(0, authUrl.length - 5);
 
     return url;
 }

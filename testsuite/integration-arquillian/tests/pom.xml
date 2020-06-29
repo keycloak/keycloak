@@ -94,11 +94,12 @@
         <auth.server.feature/>
 
         <auth.server.host2>${auth.server.host}</auth.server.host2> <!-- for broker and JS adapter tests; defaults to auth.server.host -->
+        <app.server.host>localhost</app.server.host>
 
         <app.server.skip.unpack>true</app.server.skip.unpack>
         <app.server.artifactId>integration-arquillian-servers-app-server-${app.server}</app.server.artifactId>
         <app.server.home>${containers.home}/app-server-${app.server}</app.server.home>
-        <app.server.config.dir>${app.server.home}/standalone/configuration</app.server.config.dir>
+        <app.server.keystore.dir>${app.server.home}/standalone/configuration</app.server.keystore.dir>
         <app.server.port.offset>200</app.server.port.offset>
         <app.server.http.port>8280</app.server.http.port>
         <app.server.https.port>8643</app.server.https.port>
@@ -117,11 +118,12 @@
         <app.server.memory.Xmx>512m</app.server.memory.Xmx>
         <app.server.memory.settings>-Xms${app.server.memory.Xms} -Xmx${app.server.memory.Xmx} -XX:MetaspaceSize=${surefire.memory.metaspace} -XX:MaxMetaspaceSize=${surefire.memory.metaspace.max}</app.server.memory.settings>
         <app.server.ssl.required>false</app.server.ssl.required>
-        <app.server.truststore>${app.server.config.dir}/keycloak.truststore</app.server.truststore>
+        <app.server.truststore>${app.server.keystore.dir}/keycloak.truststore</app.server.truststore>
         <app.server.truststore.password>secret</app.server.truststore.password>
-        <app.server.keystore>${app.server.config.dir}/adapter.jks</app.server.keystore>
+        <app.server.keystore>${app.server.keystore.dir}/adapter.jks</app.server.keystore>
         <app.server.keystore.password>secret</app.server.keystore.password>
         <app.server.jvm.args.extra/>
+        <tomcat.javax.net.ssl.properties/>
 
         <cache.server>undefined</cache.server>
         <cache.server.container>cache-server-${cache.server}</cache.server.container>
@@ -162,6 +164,11 @@
             -Dapp.server.ssl.required=${app.server.ssl.required}
             -Dauth.server.ssl.base.url=https://localhost:${auth.server.https.port}
             -Dauth.server.ssl.required=${auth.server.ssl.required}
+            -Dauth.server.host=${auth.server.host}
+            -Dauth.server.host2=${auth.server.host2}
+            -Dapp.server.host=${app.server.host}
+            -Dapp.server.http.port=${app.server.http.port}
+            -Dapp.server.https.port=${app.server.https.port}
             -Dmy.host.name=localhost
             -Djava.security.krb5.conf=${project.build.directory}/dependency/kerberos/test-krb5.conf
         </adapter.test.props>
@@ -516,7 +523,7 @@
 
                             <app.server>${app.server}</app.server>
                             <app.server.home>${app.server.home}</app.server.home>
-                            <app.server.config.dir>${app.server.config.dir}</app.server.config.dir>
+                            <app.server.keystore.dir>${app.server.keystore.dir}</app.server.keystore.dir>
                             <app.server.java.home>${app.server.java.home}</app.server.java.home>
                             <app.server.memory.settings>${app.server.memory.settings}</app.server.memory.settings>
                             <app.server.port.offset>${app.server.port.offset}</app.server.port.offset>
@@ -536,6 +543,7 @@
                             <app.server.keystore>${app.server.keystore}</app.server.keystore>
                             <app.server.keystore.password>${app.server.keystore.password}</app.server.keystore.password>
                             <app.server.jvm.args.extra>${app.server.jvm.args.extra}</app.server.jvm.args.extra>
+                            <tomcat.javax.net.ssl.properties>${tomcat.javax.net.ssl.properties}</tomcat.javax.net.ssl.properties>
 
                             <frontend.console.output>${frontend.console.output}</frontend.console.output>
                             <backends.console.output>${backend.console.output}</backends.console.output>
@@ -1985,6 +1993,17 @@
             </properties>
         </profile>
 
+        <profile>
+            <id>set-javax.net.ssl-properties-for-tomcat</id>
+            <activation>
+                <property>
+                    <name>app.server.ssl.required</name>
+                </property>
+            </activation>
+            <properties>
+                <tomcat.javax.net.ssl.properties>-Djavax.net.ssl.trustStore=${app.server.home}/lib/keycloak.truststore -Djavax.net.ssl.trustStorePassword=secret</tomcat.javax.net.ssl.properties>
+            </properties>
+        </profile>
     </profiles>
 
 </project>

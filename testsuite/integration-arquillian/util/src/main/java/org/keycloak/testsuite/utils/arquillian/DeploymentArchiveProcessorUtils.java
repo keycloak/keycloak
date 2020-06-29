@@ -39,6 +39,7 @@ import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import sun.applet.AppletSecurity;
 
 import static org.keycloak.testsuite.utils.io.IOUtil.modifyDocElementAttribute;
 import static org.keycloak.testsuite.util.ServerURLs.getAppServerContextRoot;
@@ -58,6 +59,7 @@ public class DeploymentArchiveProcessorUtils {
     private static final String APP_SERVER_SCHEMA = APP_SERVER_SSL_REQUIRED ? "https" : "http";
     private static final String APP_SERVER_PORT_PROPERTY = "auth.server." + APP_SERVER_SCHEMA + ".port";
     private static final String AUTH_SERVER_REPLACED_URL = "http://localhost:8080";
+    private static final String APP_SERVER_CONTAINER = System.getProperty("app.server", "");
 
     public static final String WEBXML_PATH = "/WEB-INF/web.xml";
     public static final String ADAPTER_CONFIG_PATH = "/WEB-INF/keycloak.json";
@@ -216,9 +218,17 @@ public class DeploymentArchiveProcessorUtils {
                 }
                 adapterConfig.setTruststore(trustStorePathInDeployment);
                 adapterConfig.setTruststorePassword(TRUSTSTORE_PASSWORD);
-                File truststorePath = new File(DeploymentArchiveProcessorUtils.class.getResource("/keystore/keycloak.truststore").getFile());
-                ((WebArchive) archive).addAsResource(truststorePath);
-                log.debugf("Adding Truststore to the deployment, path %s, password %s, adapter path %s", truststorePath.getAbsolutePath(), TRUSTSTORE_PASSWORD, trustStorePathInDeployment);
+
+                String truststoreUrl = System.getProperty("dependency.keystore.root", "") + "/keycloak.truststore";
+                File truststore = new File(truststoreUrl);
+
+                if (!truststore.exists()) {
+                    truststore = new File(DeploymentArchiveProcessorUtils.class.getResource("/keystore/keycloak.truststore").getFile());
+                }
+
+                ((WebArchive) archive).addAsResource(truststore);
+
+                log.debugf("Adding Truststore to the deployment, path %s, password %s, adapter path %s", truststore.getAbsolutePath(), TRUSTSTORE_PASSWORD, trustStorePathInDeployment);
             }
 
             archive.add(new StringAsset(JsonSerialization.writeValueAsPrettyString(adapterConfig)),
@@ -240,7 +250,14 @@ public class DeploymentArchiveProcessorUtils {
 
         archive.add(new StringAsset(IOUtil.documentToString(doc)), adapterConfigPath);
 
-        ((WebArchive) archive).addAsResource(new File(DeploymentArchiveProcessorUtils.class.getResource("/keystore/keycloak.truststore").getFile()));
+        String truststoreUrl = System.getProperty("dependency.keystore.root", "") + "/keycloak.truststore";
+        File truststore = new File(truststoreUrl);
+
+        if (!truststore.exists()) {
+            truststore = new File(DeploymentArchiveProcessorUtils.class.getResource("/keystore/keycloak.truststore").getFile());
+        }
+
+        ((WebArchive) archive).addAsResource(truststore);
     }
 
     private static String getAuthServerUrl() {

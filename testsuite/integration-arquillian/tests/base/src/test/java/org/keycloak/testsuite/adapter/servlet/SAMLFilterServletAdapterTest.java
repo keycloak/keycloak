@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.adapter.servlet;
 
+import org.jboss.arquillian.test.spi.execution.SkippedTestExecutionException;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
@@ -7,6 +8,8 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.util.ContainerAssume;
+import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.utils.annotation.UseServletFilter;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
@@ -27,6 +30,10 @@ public class SAMLFilterServletAdapterTest extends SAMLServletAdapterTest {
     public static void enabled() {
         String appServerJavaHome = System.getProperty("app.server.java.home", "");
         Assume.assumeFalse(appServerJavaHome.contains("1.7") || appServerJavaHome.contains("ibm-java-70"));
+
+        // SAMLServletAdapterTest has too many deployments, with so many deployments (with filter dependency in each
+        // of them) it is impossible to reload container after TLS is enabled, GC time limit exceeds
+        ContainerAssume.assumeNotAppServerSSL();
     }
 
     @Before

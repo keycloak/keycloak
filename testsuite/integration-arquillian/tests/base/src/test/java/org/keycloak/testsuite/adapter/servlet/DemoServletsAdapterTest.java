@@ -76,6 +76,7 @@ import org.keycloak.testsuite.adapter.page.TokenMinTTLPage;
 import org.keycloak.testsuite.adapter.page.TokenRefreshPage;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
@@ -220,7 +221,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
     @Deployment(name = CustomerPortalNoConf.DEPLOYMENT_NAME)
     protected static WebArchive customerPortalNoConf() {
-        return servletDeployment(CustomerPortalNoConf.DEPLOYMENT_NAME, CustomerServletNoConf.class, ErrorServlet.class);
+        return servletDeployment(CustomerPortalNoConf.DEPLOYMENT_NAME, CustomerServletNoConf.class, ErrorServlet.class, ServletTestUtils.class);
     }
 
     @Deployment(name = SecurePortal.DEPLOYMENT_NAME)
@@ -799,7 +800,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         BasicCookieStore cookieStore = new BasicCookieStore();
         BasicClientCookie jsessionid = new BasicClientCookie("JSESSIONID", driver.manage().getCookieNamed("JSESSIONID").getValue());
 
-        jsessionid.setDomain("localhost");
+        jsessionid.setDomain(ServerURLs.APP_SERVER_HOST);
         jsessionid.setPath("/");
         cookieStore.addCookie(jsessionid);
 
@@ -1113,13 +1114,6 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
             serverLogPath = System.getProperty("app.server.home") + "/standalone-test/log/server.log";
         }
 
-        String appServerUrl;
-        if (Boolean.parseBoolean(System.getProperty("app.server.ssl.required"))) {
-            appServerUrl = "https://localhost:" + System.getProperty("app.server.https.port", "8543") + "/";
-        } else {
-            appServerUrl = "http://localhost:" + System.getProperty("app.server.http.port", "8280") + "/";
-        }
-
         if (serverLogPath != null) {
             log.info("Checking app server log at: " + serverLogPath);
             File serverLog = new File(serverLogPath);
@@ -1127,7 +1121,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
             UserRepresentation bburke = ApiUtil.findUserByUsername(testRealmResource(), "bburke@redhat.com");
 
             //the expected log message has DEBUG level
-            assertThat(serverLogContent, containsString("User '" + bburke.getId() + "' invoking '" + appServerUrl + "customer-db/' on client 'customer-db'"));
+            assertThat(serverLogContent, containsString("User '" + bburke.getId() + "' invoking '" + ServerURLs.getAppServerContextRoot() + "/customer-db/' on client 'customer-db'"));
         } else {
             log.info("Checking app server log on app-server: \"" + System.getProperty("app.server") + "\" is not supported.");
         }

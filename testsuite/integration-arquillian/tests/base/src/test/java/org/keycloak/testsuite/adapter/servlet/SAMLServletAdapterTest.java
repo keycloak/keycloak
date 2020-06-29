@@ -143,6 +143,7 @@ import org.keycloak.testsuite.adapter.page.*;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.auth.page.login.SAMLIDPInitiatedLogin;
@@ -785,14 +786,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
         ClientRepresentation clientRep = testRealmResource().convertClientDescription(IOUtil.documentToString(doc));
 
-        String appServerUrl;
-        if (Boolean.parseBoolean(System.getProperty("app.server.ssl.required"))) {
-            appServerUrl = "https://localhost:" + System.getProperty("app.server.https.port", "8543") + "/";
-        } else {
-            appServerUrl = "http://localhost:" + System.getProperty("app.server.http.port", "8280") + "/";
-        }
-
-        clientRep.setAdminUrl(appServerUrl + "sales-metadata/saml");
+        clientRep.setAdminUrl(ServerURLs.getAppServerContextRoot() + "/sales-metadata/saml");
 
         try (Response response = testRealmResource().clients().create(clientRep)) {
             Assert.assertEquals(201, response.getStatus());
@@ -1363,8 +1357,13 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
     @Test
     public void idpMetadataValidation() throws Exception {
-        driver.navigate().to(authServerPage.toString() + "/realms/" + SAMLSERVLETDEMO + "/protocol/saml/descriptor");
-        validateXMLWithSchema(driver.getPageSource(), "/adapter-test/keycloak-saml/metadata-schema/saml-schema-metadata-2.0.xsd");
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpGet httpGet = new HttpGet(authServerPage.toString() + "/realms/" + SAMLSERVLETDEMO + "/protocol/saml/descriptor");
+            try (CloseableHttpResponse response = client.execute(httpGet)) {
+                String stringResponse = EntityUtils.toString(response.getEntity());
+                validateXMLWithSchema(stringResponse, "/adapter-test/keycloak-saml/metadata-schema/saml-schema-metadata-2.0.xsd");
+            }
+        }
     }
 
     @Test
@@ -1673,7 +1672,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         Assert.assertThat(resourceResponse.readEntity(String.class), containsString("pedroigor"));
     }
 
-    @AuthServerContainerExclude(value = AuthServerContainerExclude.AuthServer.QUARKUS, details = 
+    @AuthServerContainerExclude(value = AuthServerContainerExclude.AuthServer.QUARKUS, details =
     "Exclude Quarkus because when running on Java 9+ you get CNF exceptions due to the fact that javax.xml.soap was removed (as well as other JEE modules). Need to discuss how we are going to solve this for both main dist and Quarkus")
     @Test
     public void testInvalidCredentialsEcpFlow() throws Exception {
