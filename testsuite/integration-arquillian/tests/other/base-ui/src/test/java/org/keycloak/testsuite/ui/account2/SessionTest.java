@@ -65,11 +65,9 @@ public class SessionTest extends AbstractAccountTest {
     public void reactPageSsoTimeoutTest() {
         deviceActivityPage.navigateToUsingSidebar();
         deviceActivityPage.assertCurrent();
-        personalInfoPage.navigateToUsingSidebar();
-        personalInfoPage.assertCurrent();
 
         waitForSessionToExpire();
-        deviceActivityPage.navigateToUsingSidebar();
+        personalInfoPage.navigateToUsingSidebar();
         assertCurrentUrlStartsWithLoginUrlOf(accountWelcomeScreen);
     }
 
