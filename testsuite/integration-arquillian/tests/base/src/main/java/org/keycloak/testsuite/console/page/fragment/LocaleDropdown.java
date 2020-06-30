@@ -51,7 +51,8 @@ public class LocaleDropdown {
         else {
             Actions actions = new Actions(driver);
             log.info("Moving mouse cursor to the localization menu");
-            actions.moveToElement(currentLocaleLink).perform();
+            actions.moveToElement(currentLocaleLink, -10, 0)
+                    .moveToElement(currentLocaleLink).perform();
         }
 
         // click desired locale
