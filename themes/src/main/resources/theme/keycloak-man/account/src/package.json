@@ -1,0 +1,39 @@
+{
+  "name": "keycloak-man",
+  "version": "1.0.0",
+  "description": "Sample theme showing how to extend and modify the Account Console",
+  "scripts": {
+    "build": "snowpack --optimize && npm run check-types && npm run babel",
+    "babel": "babel --source-maps --extensions \".js,.ts,.tsx\" app/ --out-dir ../resources/",
+    "babel:watch": "npm run babel -- --watch",
+    "check-types": "tsc --noImplicitAny --strictNullChecks --jsx react -p ./",
+    "check-types:watch": "npm run check-types -- -w"
+  },
+  "keywords": [],
+  "author": "Stan Silvert",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@patternfly/react-core": "^3.153.3",
+    "@patternfly/react-icons": "^3.15.16",
+    "@patternfly/react-styles": "^3.7.14",
+    "react": "npm:@pika/react@^16.13.1",
+    "react-dom": "npm:@pika/react-dom@^16.13.1",
+    "react-router-dom": "^4.3.1"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.8.7",
+    "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/preset-env": "^7.8.7",
+    "@babel/preset-react": "^7.8.3",
+    "@babel/preset-typescript": "^7.8.3",
+    "@types/node": "^13.9.8",
+    "@types/react": "^16.9.23",
+    "@types/react-dom": "^16.9.5",
+    "@types/react-router-dom": "^4.3.1",
+    "rollup-plugin-postcss": "^2.5.0",
+    "snowpack": "^1.7.0",
+    "typescript": "^3.8.3"
+  },
+  "repository": {}
+}

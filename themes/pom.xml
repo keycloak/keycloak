@@ -77,6 +77,33 @@
                     <installDirectory>${project.basedir}</installDirectory>
                 </configuration>
             </plugin>
+
+            <!-- Use copy-resources goal because three files below are excluded. (excludes have precedence over includes) -->
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/classes/theme/keycloak-man/account/src</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/resources/theme/keycloak-man/account/src</directory>
+                                    <includes>
+                                        <include>package.json</include>
+                                        <include>package-lock.json</include>
+                                        <include>.babelrc</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
 
         <resources>
@@ -123,11 +150,16 @@
                     <exclude>**/Gruntfile.js</exclude>
                     <exclude>**/Gemfile*</exclude>
                     <exclude>**/.*</exclude>
-                    
+
                     <!-- Remove once rcue stops shipping this file -->
                     <exclude>**/git-Logo.svg</exclude>
-                    
+
                     <exclude>**/keycloak-preview/account/src/**</exclude>
+                    <exclude>**/keycloak-man/account/resources/content/keycloak-man/KeycloakManLovesJsx.js</exclude>
+                    <exclude>**/keycloak-man/account/resources/content/keycloak-man/KeycloakManLovesJsx.js.map</exclude>
+                    <exclude>**/keycloak-man/account/src/node_modules/**</exclude>
+                    <exclude>**/keycloak-man/account/src/web_modules/**</exclude>
+                    <exclude>**/keycloak-man/account/resources/public/app.css</exclude>
                 </excludes>
             </resource>
         </resources>

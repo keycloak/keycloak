@@ -1,0 +1,19 @@
+body {
+  --pf-global--FontFamily--sans-serif: Comic Sans MS;
+  --pf-global--FontFamily--heading--sans-serif: Comic Sans MS;
+
+  --pf-global--BackgroundColor--dark-100: #2B9AF3;
+
+  --pf-global--Color--100: #004080;
+
+}
+
+.pf-c-nav__list .pf-c-nav__link {
+  --pf-c-nav__list-link--Color: #2B9AF3;
+  --pf-c-nav__list-link--m-current--Color: #004080;
+}
+
+.pf-c-nav__simple-list .pf-c-nav__link {
+  --pf-c-nav__simple-list-link--Color: #2B9AF3;
+  --pf-c-nav__simple-list-link--m-current--Color: #004080;
+}
