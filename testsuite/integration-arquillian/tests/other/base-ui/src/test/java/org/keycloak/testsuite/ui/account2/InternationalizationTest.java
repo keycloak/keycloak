@@ -21,8 +21,10 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.ui.account2.page.PersonalInfoPage;
+import org.keycloak.testsuite.ui.account2.page.SigningInPage;
 import org.keycloak.testsuite.ui.account2.page.WelcomeScreen;
 import org.keycloak.testsuite.util.WaitUtils;
 
@@ -32,6 +34,8 @@ import java.util.Map;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -43,6 +47,10 @@ public class InternationalizationTest extends AbstractAccountTest {
     @Page
     private PersonalInfoPage personalInfoPage;
 
+    @Page
+    private SigningInPage signingInPage;
+    private SigningInPage.CredentialType passwordCredentialType;
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         super.addTestRealms(testRealms);
@@ -52,6 +60,7 @@ public class InternationalizationTest extends AbstractAccountTest {
     @Before
     public void beforeI18nTest() {
         assertTestUserLocale(null);
+        passwordCredentialType = signingInPage.getCredentialType(PasswordCredentialModel.TYPE);
     }
 
     @Test
@@ -91,6 +100,23 @@ public class InternationalizationTest extends AbstractAccountTest {
         assertEquals(DEFAULT_LOCALE_NAME, loginPage.localeDropdown().getSelected());
         loginToAccount();
         assertCustomLocalePersonalInfo();
+    }
+
+    @Test
+    public void shouldDisplayTimeUsingSelectedLocale() {
+        signingInPage.navigateTo();
+        loginToAccount();
+        SigningInPage.UserCredential passwordCred =
+                passwordCredentialType.getUserCredential(testUserResource().credentials().get(0).getId());
+
+        assertTrue(passwordCred.getCreatedAtStr().endsWith("M"));
+
+        signingInPage.header().clickLogoutBtn();
+        signingInPage.navigateTo();
+        loginPage.localeDropdown().selectAndAssert("Nederlands");
+        loginPage.form().login(testUser);
+
+        assertFalse(passwordCred.getCreatedAtStr().endsWith("M"));
     }
 
     private void assertCustomLocaleWelcomeScreen() {
