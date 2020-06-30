@@ -24,6 +24,7 @@ import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.privacy.DefaultNoOpPrivacyFilterProviderFactory;
 import org.keycloak.privacy.PrivacyFilterProvider;
 import org.keycloak.privacy.anonymize.Anonymizer;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -34,6 +35,8 @@ import javax.ws.rs.core.UriInfo;
 import java.util.Map;
 
 /**
+ * Propagates {@link Event Event's} to the JBoss-Logging Subsystem.
+ *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class JBossLoggingEventListenerProvider implements EventListenerProvider {
@@ -44,6 +47,29 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
     private final Logger.Level errorLevel;
     private final PrivacyFilterProvider privacyFilter;
 
+    /**
+     * Creates a new {@link JBossLoggingEventListenerProvider}
+     *
+     * @param session
+     * @param logger
+     * @param successLevel
+     * @param errorLevel
+     * @deprecated use {@link JBossLoggingEventListenerProvider#JBossLoggingEventListenerProvider(KeycloakSession, Logger, Logger.Level, Logger.Level, PrivacyFilterProvider)}
+     */
+    @Deprecated // constructor for backwards compatibility
+    public JBossLoggingEventListenerProvider(KeycloakSession session, Logger logger, Logger.Level successLevel, Logger.Level errorLevel) {
+        this(session, logger, successLevel, errorLevel, DefaultNoOpPrivacyFilterProviderFactory.INSTANCE);
+    }
+
+    /**
+     * Creates a new {@link JBossLoggingEventListenerProvider}
+     * @param session
+     * @param logger
+     * @param successLevel
+     * @param errorLevel
+     * @param privacyFilter
+     * @since 11.0
+     */
     public JBossLoggingEventListenerProvider(KeycloakSession session, Logger logger, Logger.Level successLevel, Logger.Level errorLevel, PrivacyFilterProvider privacyFilter) {
         this.session = session;
         this.logger = logger;

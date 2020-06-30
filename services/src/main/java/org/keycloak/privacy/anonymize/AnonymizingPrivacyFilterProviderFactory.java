@@ -46,9 +46,7 @@ public class AnonymizingPrivacyFilterProviderFactory implements PrivacyFilterPro
     public static final String DEFAULT_FIELDS;
 
     static {
-        StringJoiner joiner = new StringJoiner(",");
-        Arrays.asList(USER_ID, IP_ADDRESS, USERNAME, EMAIL, PHONE_NUMBER, MOBILE, NULL).forEach(joiner::add);
-        DEFAULT_FIELDS = joiner.toString();
+        DEFAULT_FIELDS = String.join(",", Arrays.asList(USER_ID, IP_ADDRESS, USERNAME, EMAIL, PHONE_NUMBER, MOBILE, NULL));
     }
 
     protected volatile PrivacyFilterProvider provider;
