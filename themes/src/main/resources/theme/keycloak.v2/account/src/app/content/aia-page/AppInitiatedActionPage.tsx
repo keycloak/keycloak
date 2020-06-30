@@ -41,6 +41,7 @@ import { KeycloakContext } from '../../keycloak-service/KeycloakContext';
 //    PageDef interface.
 interface ActionPageDef extends PageDef {
     kcAction: string;
+    prompt: 'none'|'login';
 }
 
 // Extend RouteComponentProps to get access to router information such as
@@ -50,25 +51,41 @@ interface AppInitiatedActionPageProps extends RouteComponentProps {
     pageDef: ActionPageDef;
 }
 
+interface AppInitiatedActionPageState {
+    pageDef: ActionPageDef;
+}
+
 /**
  * @author Stan Silvert
  */
-class ApplicationInitiatedActionPage extends React.Component<AppInitiatedActionPageProps> {
+class ApplicationInitiatedActionPage extends React.Component<AppInitiatedActionPageProps, AppInitiatedActionPageState> {
 
     public constructor(props: AppInitiatedActionPageProps) {
         super(props);
+        this.state = this.props.location.state || {}
     }
 
     private handleClick = (keycloak: KeycloakService): void => {
-        new AIACommand(keycloak, this.props.pageDef.kcAction).execute();
+        new AIACommand(keycloak, this.state.pageDef.kcAction, this.state.pageDef.prompt, `${keycloak.authServerUrl()}/realms/${keycloak.realm()}/account`).execute();
     }
 
     public render(): React.ReactNode {
+        //just in case we are coming to this page directly from the browser without defining a kcAction
+        if (!this.state.pageDef || !this.state.pageDef.kcAction || this.state.pageDef.kcAction === "") {
+            return (
+                <EmptyState variant={EmptyStateVariant.full}>
+                    <EmptyStateIcon icon={PassportIcon} />
+                    <EmptyStateBody>
+                      <Msg msgKey="actionNotDefined"/>
+                    </EmptyStateBody>               
+                </EmptyState>
+            );
+        }
         return (
             <EmptyState variant={EmptyStateVariant.full}>
                 <EmptyStateIcon icon={PassportIcon} />
                 <Title headingLevel={TitleLevel.h5} size="lg">
-                  <Msg msgKey={this.props.pageDef.label} params={this.props.pageDef.labelParams}/>
+                  <Msg msgKey={this.state.pageDef.label} params={this.state.pageDef.labelParams}/>
                 </Title>
                 <EmptyStateBody>
                   <Msg msgKey="actionRequiresIDP"/>

@@ -45,7 +45,8 @@
                 isLinkedAccountsEnabled : ${realm.identityFederationEnabled?c},
                 isEventsEnabled : ${isEventsEnabled?c},
                 isMyResourcesEnabled : ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c},
-                isTotpConfigured : ${isTotpConfigured?c}
+                isTotpConfigured : ${isTotpConfigured?c},
+                deleteAccountAllowed : ${deleteAccountAllowed?c}
             }
 
             var availableLocales = [];
