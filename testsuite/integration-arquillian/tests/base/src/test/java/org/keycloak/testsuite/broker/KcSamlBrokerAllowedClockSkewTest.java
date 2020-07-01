@@ -29,6 +29,8 @@ import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
+
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 import org.keycloak.testsuite.util.SamlClient;
@@ -48,7 +50,7 @@ public class KcSamlBrokerAllowedClockSkewTest extends AbstractInitializedBaseBro
 
     @Test
     public void loginClientExpiredResponseFromIdP() throws Exception {
-        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST, AbstractSamlTest.SAML_ASSERTION_CONSUMER_URL_SALES_POST, null);
+        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST, getConsumerRoot() + "/sales-post/saml", null);
 
         Document doc = SAML2Request.convert(loginRep);
 
@@ -74,7 +76,7 @@ public class KcSamlBrokerAllowedClockSkewTest extends AbstractInitializedBaseBro
                 .setAttribute(SAMLIdentityProviderConfig.ALLOWED_CLOCK_SKEW, "60")
                 .update()) {
 
-            AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST, AbstractSamlTest.SAML_ASSERTION_CONSUMER_URL_SALES_POST, null);
+            AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST, getConsumerRoot() + "/sales-post/saml", null);
 
             Document doc = SAML2Request.convert(loginRep);
 
