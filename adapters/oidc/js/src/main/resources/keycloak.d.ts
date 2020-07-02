@@ -74,14 +74,19 @@ declare namespace Keycloak {
 		 * ```ts
 		 * import Keycloak, { KeycloakAdapter } from 'keycloak-js';
 		 *
-		 * class MyCustomAdapter implements KeycloakAdapter {
-		 *   // Implement methods required by KeycloakAdapter here.
-		 * }
+		 * // Implement the 'KeycloakAdapter' interface so that all required methods are guaranteed to be present.
+		 * const MyCustomAdapter: KeycloakAdapter = {
+		 * 	login(options) {
+		 * 		// Write your own implementation here.
+		 * 	}
+		 *
+		 * 	// The other methods go here...
+		 * };
 		 *
 		 * const keycloak = new Keycloak();
 		 *
 		 * keycloak.init({
-		 *   adapter: MyCustomAdapter,
+		 * 	adapter: MyCustomAdapter,
 		 * });
 		 * ```
 		 */
