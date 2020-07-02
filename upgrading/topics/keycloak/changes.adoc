@@ -23,6 +23,18 @@ Users of the policy evaluation feature have to adapt their policies if they use 
 The public API of `UserModel` has not changed, so no changes to frontend resources or SPIs accessing user data should be necessary.
 The database has also not changed, yet.
 
+==== Instagram IdP migrated to new the API
+
+Instagram IdP now uses new API as the old legacy API was deprecated. This requires getting new API credentials. For details,
+please refer to the link:{adminguide_link}#instagram[{adminguide_name}].
+
+Special attention is required for existing users that use Instagram IdP, specially the ones for whom it is the only authentication
+option. Such users have to login to Keycloak using Instagram IdP before September 30th, 2020. After that day they'll have
+to use a different authentication method (like password) to login to manually update their Instagram social link, or create
+a new account in Keycloak. This is because Instagram user IDs are not compatible between the old and new API, however the
+new API temporarily returns both new and old user IDs to allow migration. Keycloak automatically migrates the ID once user
+logs in.
+
 === Migrating to 9.0.1
 
 ==== Legacy promise in JavaScript adapter
