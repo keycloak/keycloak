@@ -324,7 +324,7 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
                         <configuration>
-                            <mainClass>org.keycloak.util.ldap.KerberosEmbeddedServer</mainClass>
+                            <mainClass>org.keycloak.testsuite.KerberosEmbeddedServer</mainClass>
                             <classpathScope>test</classpathScope>
                         </configuration>
                     </plugin>

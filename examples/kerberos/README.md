@@ -31,11 +31,6 @@ You can also move the file to another location if you want.
 and configured LDAP federation provider with Kerberos/SPNEGO authentication support enabled and with `gss delegation credential` protocol mapper 
 added to the application.
 
-**WARNING:** It's recommended to use JDK8 to run Keycloak server. For JDK7 you may be faced with the bug described [here](http://darranl.blogspot.cz/2014/09/kerberos-encrypteddata-null-key-keytype.html) . 
-Alternatively you can use OpenJDK7 but in this case you will need to use aes256-cts-hmac-sha1-96 for both KDC and Kerberos client configuration. For server, 
-you can add system property to the command when running ApacheDS Kerberos server `-Dkerberos.encTypes=aes256-cts-hmac-sha1-96` (see below) and for 
-client add encryption types to configuration file like `/etc/krb5.conf` (but they should be already available. See below).
-
 Also if you are on Linux, make sure that record like:
 ```
 127.0.0.1       localhost
@@ -51,6 +46,8 @@ See [this file](../../testsuite/integration-arquillian/tests/base/src/test/resou
 On OS X the file to edit (or create) is `/Library/Preferences/edu.mit.Kerberos` with the same syntax as `krb5.conf`.
 On Windows the file to edit (or create) is `c:\Windows\krb5.ini` with the same syntax as `krb5.conf`.
 
+**WARNING**: `test-krb5.conf` is just a sample configuration which contains insecure algorithms. Therefore it shouldn't be used in production.
+
 **6)**  Run ApacheDS based LDAP server. You can run the command like this (assuming you're in the `kerberos` directory with this example):
 
 ```
@@ -60,6 +57,8 @@ mvn exec:java -Pkerberos
 This will also automatically import the LDIF from `kerberos-example-users.ldif` of kerberos example into the LDAP server. Replace with your own LDIF file if you want different users.
 
 A bit more details about embedded Kerberos server in [Executing Tests](https://github.com/keycloak/keycloak/blob/master/docs/tests.md#kerberos-server).
+
+**WARNING**: ApacheDS kerberos server shouldn't be used in production.
 
   
 **7)** Configure browser (Firefox, Chrome or other) and enable SPNEGO authentication and credential delegation for `localhost` . 
