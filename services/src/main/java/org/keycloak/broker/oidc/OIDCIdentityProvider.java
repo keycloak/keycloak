@@ -605,16 +605,20 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         String requestedIssuer = params.getFirst(OAuth2Constants.SUBJECT_ISSUER);
         if (requestedIssuer == null) requestedIssuer = issuer;
         if (requestedIssuer.equals(getConfig().getAlias())) return true;
+        
+        String trustedIssuers = getConfig().getIssuer();
 
-        String[] issuers = getConfig().getIssuer().split(",");
+        if (trustedIssuers != null && trustedIssuers.length() > 0) {
+            String[] issuers = trustedIssuers.split(",");
 
-        for (String trustedIssuer : issuers) {
-            if (requestedIssuer.equals(trustedIssuer.trim())) {
-                return true;
+            for (String trustedIssuer : issuers) {
+                if (requestedIssuer.equals(trustedIssuer.trim())) {
+                    return true;
+                }
             }
         }
+        
         return false;
-
     }
 
     protected boolean supportsExternalExchange() {
