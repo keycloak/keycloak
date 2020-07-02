@@ -1,6 +1,6 @@
 /**
- * @license AngularJS v1.7.9
- * (c) 2010-2018 Google, Inc. http://angularjs.org
+ * @license AngularJS v1.8.0
+ * (c) 2010-2020 Google, Inc. http://angularjs.org
  * License: MIT
  */
 (function(window) {'use strict';
@@ -37,7 +37,7 @@ var minErrConfig = {
  *   non-positive or non-numeric value, removes the max depth limit.
  *   Default: 5
  *
- * * `urlErrorParamsEnabled`  **{Boolean}** - Specifies wether the generated error url will
+ * * `urlErrorParamsEnabled`  **{Boolean}** - Specifies whether the generated error url will
  *   contain the parameters of the thrown error. Disabling the parameters can be useful if the
  *   generated error url is very long.
  *
@@ -87,7 +87,7 @@ function isValidObjectMaxDepth(maxDepth) {
  * Since data will be parsed statically during a build step, some restrictions
  * are applied with respect to how minErr instances are created and called.
  * Instances should have names of the form namespaceMinErr for a minErr created
- * using minErr('namespace') . Error codes, namespaces and template strings
+ * using minErr('namespace'). Error codes, namespaces and template strings
  * should all be static strings, not variables or general expressions.
  *
  * @param {string} module The namespace to use for the new minErr instance.
@@ -99,7 +99,7 @@ function isValidObjectMaxDepth(maxDepth) {
 function minErr(module, ErrorConstructor) {
   ErrorConstructor = ErrorConstructor || Error;
 
-  var url = 'https://errors.angularjs.org/1.7.9/';
+  var url = 'https://errors.angularjs.org/1.8.0/';
   var regex = url.replace('.', '\\.') + '[\\s\\S]*';
   var errRegExp = new RegExp(regex, 'g');
 
@@ -232,6 +232,7 @@ function minErr(module, ErrorConstructor) {
   hasOwnProperty,
   createMap,
   stringify,
+  UNSAFE_restoreLegacyJqLiteXHTMLReplacement,
 
   NODE_TYPE_ELEMENT,
   NODE_TYPE_ATTRIBUTE,
@@ -959,8 +960,8 @@ function arrayRemove(array, value) {
  * - [`MediaStream`](https://developer.mozilla.org/docs/Web/API/MediaStream)
  * - [`Set`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Set)
  * - [`WeakMap`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/WeakMap)
- * - ['getter'](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/get)/
- *   [`setter`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/set)`
+ * - [`getter`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/get)/
+ *   [`setter`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/set)
  *
  * @param {*} source The source that will be used to make a copy. Can be any type, including
  *     primitives, `null`, and `undefined`.
@@ -2089,6 +2090,26 @@ function bindJQuery() {
 }
 
 /**
+ * @ngdoc function
+ * @name angular.UNSAFE_restoreLegacyJqLiteXHTMLReplacement
+ * @module ng
+ * @kind function
+ *
+ * @description
+ * Restores the pre-1.8 behavior of jqLite that turns XHTML-like strings like
+ * `<div /><span />` to `<div></div><span></span>` instead of `<div><span></span></div>`.
+ * The new behavior is a security fix. Thus, if you need to call this function, please try to adjust
+ * your code for this change and remove your use of this function as soon as possible.
+
+ * Note that this only patches jqLite. If you use jQuery 3.5.0 or newer, please read the
+ * [jQuery 3.5 upgrade guide](https://jquery.com/upgrade-guide/3.5/) for more details
+ * about the workarounds.
+ */
+function UNSAFE_restoreLegacyJqLiteXHTMLReplacement() {
+  JQLite.legacyXHTMLReplacement = true;
+}
+
+/**
  * throw error if the argument is falsy.
  */
 function assertArg(arg, name, reason) {
@@ -2807,11 +2828,11 @@ function toDebugString(obj, maxDepth) {
 var version = {
   // These placeholder strings will be replaced by grunt's `build` task.
   // They need to be double- or single-quoted.
-  full: '1.7.9',
+  full: '1.8.0',
   major: 1,
-  minor: 7,
-  dot: 9,
-  codeName: 'pollution-eradication'
+  minor: 8,
+  dot: 0,
+  codeName: 'nested-vaccination'
 };
 
 
@@ -2844,6 +2865,7 @@ function publishExternalAPI(angular) {
     'callbacks': {$$counter: 0},
     'getTestability': getTestability,
     'reloadWithDebugInfo': reloadWithDebugInfo,
+    'UNSAFE_restoreLegacyJqLiteXHTMLReplacement': UNSAFE_restoreLegacyJqLiteXHTMLReplacement,
     '$$minErr': minErr,
     '$$csp': csp,
     '$$encodeUriSegment': encodeUriSegment,
@@ -2961,7 +2983,7 @@ function publishExternalAPI(angular) {
       });
     }
   ])
-  .info({ angularVersion: '1.7.9' });
+  .info({ angularVersion: '1.8.0' });
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -3054,6 +3076,16 @@ function publishExternalAPI(angular) {
  * - [`val()`](http://api.jquery.com/val/)
  * - [`wrap()`](http://api.jquery.com/wrap/)
  *
+ * jqLite also provides a method restoring pre-1.8 insecure treatment of XHTML-like tags.
+ * This legacy behavior turns input like `<div /><span />` to `<div></div><span></span>`
+ * instead of `<div><span></span></div>` like version 1.8 & newer do. To restore it, invoke:
+ * ```js
+ * angular.UNSAFE_restoreLegacyJqLiteXHTMLReplacement();
+ * ```
+ * Note that this only patches jqLite. If you use jQuery 3.5.0 or newer, please read the
+ * [jQuery 3.5 upgrade guide](https://jquery.com/upgrade-guide/3.5/) for more details
+ * about the workarounds.
+ *
  * ## jQuery/jqLite Extras
  * AngularJS also provides the following additional methods and events to both jQuery and jqLite:
  *
@@ -3133,20 +3165,36 @@ var HTML_REGEXP = /<|&#?\w+;/;
 var TAG_NAME_REGEXP = /<([\w:-]+)/;
 var XHTML_TAG_REGEXP = /<(?!area|br|col|embed|hr|img|input|link|meta|param)(([\w:-]+)[^>]*)\/>/gi;
 
+// Table parts need to be wrapped with `<table>` or they're
+// stripped to their contents when put in a div.
+// XHTML parsers do not magically insert elements in the
+// same way that tag soup parsers do, so we cannot shorten
+// this by omitting <tbody> or other required elements.
 var wrapMap = {
-  'option': [1, '<select multiple="multiple">', '</select>'],
-
-  'thead': [1, '<table>', '</table>'],
-  'col': [2, '<table><colgroup>', '</colgroup></table>'],
-  'tr': [2, '<table><tbody>', '</tbody></table>'],
-  'td': [3, '<table><tbody><tr>', '</tr></tbody></table>'],
-  '_default': [0, '', '']
+  thead: ['table'],
+  col: ['colgroup', 'table'],
+  tr: ['tbody', 'table'],
+  td: ['tr', 'tbody', 'table']
 };
 
-wrapMap.optgroup = wrapMap.option;
 wrapMap.tbody = wrapMap.tfoot = wrapMap.colgroup = wrapMap.caption = wrapMap.thead;
 wrapMap.th = wrapMap.td;
 
+// Support: IE <10 only
+// IE 9 requires an option wrapper & it needs to have the whole table structure
+// set up in advance; assigning `"<td></td>"` to `tr.innerHTML` doesn't work, etc.
+var wrapMapIE9 = {
+  option: [1, '<select multiple="multiple">', '</select>'],
+  _default: [0, '', '']
+};
+
+for (var key in wrapMap) {
+  var wrapMapValueClosing = wrapMap[key];
+  var wrapMapValue = wrapMapValueClosing.slice().reverse();
+  wrapMapIE9[key] = [wrapMapValue.length, '<' + wrapMapValue.join('><') + '>', '</' + wrapMapValueClosing.join('></') + '>'];
+}
+
+wrapMapIE9.optgroup = wrapMapIE9.option;
 
 function jqLiteIsTextNode(html) {
   return !HTML_REGEXP.test(html);
@@ -3167,7 +3215,7 @@ function jqLiteHasData(node) {
 }
 
 function jqLiteBuildFragment(html, context) {
-  var tmp, tag, wrap,
+  var tmp, tag, wrap, finalHtml,
       fragment = context.createDocumentFragment(),
       nodes = [], i;
 
@@ -3178,13 +3226,30 @@ function jqLiteBuildFragment(html, context) {
     // Convert html into DOM nodes
     tmp = fragment.appendChild(context.createElement('div'));
     tag = (TAG_NAME_REGEXP.exec(html) || ['', ''])[1].toLowerCase();
-    wrap = wrapMap[tag] || wrapMap._default;
-    tmp.innerHTML = wrap[1] + html.replace(XHTML_TAG_REGEXP, '<$1></$2>') + wrap[2];
+    finalHtml = JQLite.legacyXHTMLReplacement ?
+      html.replace(XHTML_TAG_REGEXP, '<$1></$2>') :
+      html;
 
-    // Descend through wrappers to the right content
-    i = wrap[0];
-    while (i--) {
-      tmp = tmp.lastChild;
+    if (msie < 10) {
+      wrap = wrapMapIE9[tag] || wrapMapIE9._default;
+      tmp.innerHTML = wrap[1] + finalHtml + wrap[2];
+
+      // Descend through wrappers to the right content
+      i = wrap[0];
+      while (i--) {
+        tmp = tmp.firstChild;
+      }
+    } else {
+      wrap = wrapMap[tag] || [];
+
+      // Create wrappers & descend into them
+      i = wrap.length;
+      while (--i > -1) {
+        tmp.appendChild(window.document.createElement(wrap[i]));
+        tmp = tmp.firstChild;
+      }
+
+      tmp.innerHTML = finalHtml;
     }
 
     nodes = concat(nodes, tmp.childNodes);
@@ -8283,7 +8348,7 @@ function $TemplateCacheProvider() {
  *
  * When the original node and the replace template declare the same directive(s), they will be
  * {@link guide/compiler#double-compilation-and-how-to-avoid-it compiled twice} because the compiler
- * does not deduplicate them. In many cases, this is not noticable, but e.g. {@link ngModel} will
+ * does not deduplicate them. In many cases, this is not noticeable, but e.g. {@link ngModel} will
  * attach `$formatters` and `$parsers` twice.
  *
  * See issue [#2573](https://github.com/angular/angular.js/issues/2573).
@@ -33606,7 +33671,7 @@ var ngRefDirective = ['$parse', function($parse) {
  *     For example: `item in items | filter:x as results` will store the fragment of the repeated items as `results`, but only after
  *     the items have been processed through the filter.
  *
- *     Please note that `as [variable name] is not an operator but rather a part of ngRepeat
+ *     Please note that `as [variable name]` is not an operator but rather a part of ngRepeat
  *     micro-syntax so it can be used only after all filters (and not as operator, inside an expression).
  *
  *     For example: `item in items | filter : x | orderBy : order | limitTo : limit as results track by item.id` .
@@ -34415,11 +34480,11 @@ var ngHideDirective = ['$animate', function($animate) {
        var colorSpan = element(by.css('span'));
 
        it('should check ng-style', function() {
-         expect(colorSpan.getCssValue('color')).toBe('rgba(0, 0, 0, 1)');
+         expect(colorSpan.getCssValue('color')).toMatch(/rgba\(0, 0, 0, 1\)|rgb\(0, 0, 0\)/);
          element(by.css('input[value=\'set color\']')).click();
-         expect(colorSpan.getCssValue('color')).toBe('rgba(255, 0, 0, 1)');
+         expect(colorSpan.getCssValue('color')).toMatch(/rgba\(255, 0, 0, 1\)|rgb\(255, 0, 0\)/);
          element(by.css('input[value=clear]')).click();
-         expect(colorSpan.getCssValue('color')).toBe('rgba(0, 0, 0, 1)');
+         expect(colorSpan.getCssValue('color')).toMatch(/rgba\(0, 0, 0, 1\)|rgb\(0, 0, 0\)/);
        });
      </file>
    </example>
@@ -36428,4 +36493,4 @@ $provide.value("$locale", {
 
 })(window);
 
-!window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
+!window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend(window.angular.element('<style>').text('@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}'));

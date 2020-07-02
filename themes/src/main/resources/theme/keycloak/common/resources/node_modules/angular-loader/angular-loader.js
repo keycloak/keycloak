@@ -1,6 +1,6 @@
 /**
- * @license AngularJS v1.7.9
- * (c) 2010-2018 Google, Inc. http://angularjs.org
+ * @license AngularJS v1.8.0
+ * (c) 2010-2020 Google, Inc. http://angularjs.org
  * License: MIT
  */
 
@@ -101,7 +101,7 @@ var minErrConfig = {
  *   non-positive or non-numeric value, removes the max depth limit.
  *   Default: 5
  *
- * * `urlErrorParamsEnabled`  **{Boolean}** - Specifies wether the generated error url will
+ * * `urlErrorParamsEnabled`  **{Boolean}** - Specifies whether the generated error url will
  *   contain the parameters of the thrown error. Disabling the parameters can be useful if the
  *   generated error url is very long.
  *
@@ -151,7 +151,7 @@ function isValidObjectMaxDepth(maxDepth) {
  * Since data will be parsed statically during a build step, some restrictions
  * are applied with respect to how minErr instances are created and called.
  * Instances should have names of the form namespaceMinErr for a minErr created
- * using minErr('namespace') . Error codes, namespaces and template strings
+ * using minErr('namespace'). Error codes, namespaces and template strings
  * should all be static strings, not variables or general expressions.
  *
  * @param {string} module The namespace to use for the new minErr instance.
@@ -163,7 +163,7 @@ function isValidObjectMaxDepth(maxDepth) {
 function minErr(module, ErrorConstructor) {
   ErrorConstructor = ErrorConstructor || Error;
 
-  var url = 'https://errors.angularjs.org/1.7.9/';
+  var url = 'https://errors.angularjs.org/1.8.0/';
   var regex = url.replace('.', '\\.') + '[\\s\\S]*';
   var errRegExp = new RegExp(regex, 'g');
 
