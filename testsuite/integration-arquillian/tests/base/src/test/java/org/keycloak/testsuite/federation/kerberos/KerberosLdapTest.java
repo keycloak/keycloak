@@ -38,7 +38,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.testsuite.util.KerberosRule;
-import org.keycloak.util.ldap.KerberosEmbeddedServer;
+import org.keycloak.testsuite.KerberosEmbeddedServer;
 
 /**
  * Test for the LDAPStorageProvider with kerberos enabled (kerberos with LDAP integration)

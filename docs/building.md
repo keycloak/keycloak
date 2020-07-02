@@ -27,6 +27,12 @@ To build only the server run:
 
     mvn -Pdistribution -pl distribution/server-dist -am -Dmaven.test.skip clean install
 
+---
+**NOTE**
+
+Classes from `org.keycloak.testsuite.*` packages aren't suitable to be used in production.
+
+---
 
 ## Starting Keycloak
 
