@@ -49,10 +49,14 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import java.net.URI;
 import java.security.KeyPair;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+
+import static java.util.Optional.ofNullable;
 
 /**
  * @author Pedro Igor
@@ -120,6 +124,10 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             for(Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext(); ) {
                 authnRequest = it.next().beforeSendingLoginRequest(authnRequest, request.getAuthenticationSession());
             }
+
+            destinationUrl = ofNullable(authnRequest.getDestination())
+                    .map(URI::toString)
+                    .orElseThrow(() -> new IdentityBrokerException("No destination in login request"));
 
             if (postBinding) {
                 return binding.postBinding(authnRequestBuilder.toDocument()).request(destinationUrl);
@@ -211,6 +219,9 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         }
         for (Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext();) {
             logoutRequest = it.next().beforeSendingLogoutRequest(logoutRequest, userSession, null);
+        }
+        if (logoutRequest.getDestination() == null) {
+            throw new IdentityBrokerException("No destination in logout request");
         }
         return logoutRequest;
     }

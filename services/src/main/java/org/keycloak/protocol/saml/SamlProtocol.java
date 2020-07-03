@@ -538,6 +538,10 @@ public class SamlProtocol implements LoginProtocol {
             response = (ResponseType) it.next().beforeSendingResponse(response, clientSessionCtx.getClientSession());
         }
 
+        if (response.getDestination() == null) {
+            throw new RuntimeException("No destination in login response");
+        }
+
         return response;
     }
 
@@ -744,6 +748,9 @@ public class SamlProtocol implements LoginProtocol {
         LogoutRequestType logoutRequest = logoutBuilder.createLogoutRequest();
         for (Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext();) {
             logoutRequest = it.next().beforeSendingLogoutRequest(logoutRequest, clientSession.getUserSession(), clientSession);
+        }
+        if (logoutRequest.getDestination() == null) {
+            throw new RuntimeException("No destination in logout request");
         }
         
         return logoutRequest;

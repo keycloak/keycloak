@@ -334,6 +334,12 @@ public class SAMLEndpoint {
                 }
             }
 
+            if (request.getDestination() == null) {
+                event.detail(Details.REASON, "no_destination_in_logout_request");
+                event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+            }
+
             String issuerURL = getEntityId(session.getContext().getUri(), realm);
             SAML2LogoutResponseBuilder builder = new SAML2LogoutResponseBuilder();
             builder.logoutRequestID(request.getID());

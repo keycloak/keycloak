@@ -523,6 +523,9 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             for(Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext();) {
                 loginResponse = it.next().beforeProcessingLoginResponse(loginResponse, authenticationSession);
             }
+            if (loginResponse.getDestination() == null) {
+                throw new RuntimeException("No destination in login response");
+            }
         }
 
         session.getContext().setClient(authenticationSession.getClient());
