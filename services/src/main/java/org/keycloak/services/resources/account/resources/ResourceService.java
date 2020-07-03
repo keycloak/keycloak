@@ -56,7 +56,7 @@ public class ResourceService extends AbstractResourceService {
             Auth auth, HttpRequest request) {
         super(session, user, auth, request);
         this.resource = resource;
-        this.resourceServer = resource.getResourceServer();
+        this.resourceServer = provider.getStoreFactory().getResourceServerStore().findById(resource.getResourceServer());
     }
 
     /**
@@ -122,7 +122,6 @@ public class ResourceService extends AbstractResourceService {
             throw new BadRequestException("invalid_permissions");    
         }
         
-        ResourceServer resourceServer = resource.getResourceServer();
         Map<String, String> filters = new HashMap<>();
 
         filters.put(PermissionTicket.RESOURCE, resource.getId());
@@ -132,7 +131,7 @@ public class ResourceService extends AbstractResourceService {
 
             filters.put(PermissionTicket.REQUESTER, user.getId());
 
-            List<PermissionTicket> tickets = ticketStore.find(filters, resource.getResourceServer().getId(), -1, -1);
+            List<PermissionTicket> tickets = ticketStore.find(filters, resource.getResourceServer(), -1, -1);
 
             // grants all requested permissions
             if (tickets.isEmpty()) {

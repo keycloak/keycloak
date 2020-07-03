@@ -56,7 +56,7 @@ public class CachedResource extends AbstractRevisioned implements InResourceServ
         this.type = resource.getType();
         this.owner = resource.getOwner();
         this.iconUri = resource.getIconUri();
-        this.resourceServerId = resource.getResourceServer().getId();
+        this.resourceServerId = resource.getResourceServer();
         ownerManagedAccess = resource.isOwnerManagedAccess();
 
         if (resource.isFetched("uris")) {

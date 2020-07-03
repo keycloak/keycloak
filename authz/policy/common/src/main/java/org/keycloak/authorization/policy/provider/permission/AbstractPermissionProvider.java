@@ -40,7 +40,7 @@ public abstract class AbstractPermissionProvider implements PolicyProvider {
         Policy policy = evaluation.getPolicy();
         ResourcePermission permission = evaluation.getPermission();
 
-        policy.getAssociatedPolicies().forEach(associatedPolicy -> {
+        for (Policy associatedPolicy : policy.getAssociatedPolicies()) {
             Map<Object, Decision.Effect> decisions = decisionCache.computeIfAbsent(associatedPolicy, p -> new HashMap<>());
             Decision.Effect effect = decisions.get(permission);
 
@@ -59,7 +59,7 @@ public abstract class AbstractPermissionProvider implements PolicyProvider {
             } else {
                 defaultEvaluation.setEffect(effect);
             }
-        });
+        }
     }
 
     @Override

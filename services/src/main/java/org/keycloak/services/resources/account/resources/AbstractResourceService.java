@@ -89,8 +89,7 @@ public abstract class AbstractResourceService {
 
             setScopes(resource.getScopes().stream().map(Scope::new).collect(Collectors.toSet()));
 
-            ResourceServer resourceServer = resource.getResourceServer();
-            this.client = new Client(provider.getRealm().getClientById(resourceServer.getId()));
+            this.client = new Client(provider.getRealm().getClientById(resource.getResourceServer()));
         }
 
         Resource(org.keycloak.authorization.model.Resource resource, AuthorizationProvider provider) {

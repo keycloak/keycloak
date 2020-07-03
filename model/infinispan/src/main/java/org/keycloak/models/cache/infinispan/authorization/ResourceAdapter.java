@@ -133,8 +133,9 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     }
 
     @Override
-    public ResourceServer getResourceServer() {
-        return cacheSession.getResourceServerStore().findById(cached.getResourceServerId());
+    public String getResourceServer() {
+        if (isUpdated()) return updated.getResourceServer();
+        return cached.getResourceServerId();
     }
 
     @Override
@@ -203,7 +204,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
         for (Scope scope : updated.getScopes()) {
             if (!scopes.contains(scope)) {
                 PermissionTicketStore permissionStore = cacheSession.getPermissionTicketStore();
-                List<PermissionTicket> permissions = permissionStore.findByScope(scope.getId(), getResourceServer().getId());
+                List<PermissionTicket> permissions = permissionStore.findByScope(scope.getId(), getResourceServer());
 
                 for (PermissionTicket permission : permissions) {
                     permissionStore.delete(permission.getId());
@@ -215,7 +216,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
 
         for (Scope scope : updated.getScopes()) {
             if (!scopes.contains(scope)) {
-                policyStore.findByResource(getId(), getResourceServer().getId(), policy -> policy.removeScope(scope));
+                policyStore.findByResource(getId(), getResourceServer(), policy -> policy.removeScope(scope));
             }
         }
 

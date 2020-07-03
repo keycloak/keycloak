@@ -21,6 +21,7 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.PolicyStore;
@@ -822,7 +823,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 filters.put(PermissionTicket.GRANTED, Boolean.FALSE.toString());
             }
 
-            List<PermissionTicket> tickets = ticketStore.find(filters, resource.getResourceServer().getId(), -1, -1);
+            List<PermissionTicket> tickets = ticketStore.find(filters, resource.getResourceServer(), -1, -1);
             Iterator<PermissionTicket> iterator = tickets.iterator();
 
             while (iterator.hasNext()) {
@@ -876,6 +877,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
         Resource resource = authorization.getStoreFactory().getResourceStore().findById(resourceId, null);
+        ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findById(resource.getResourceServer());
 
         if (resource == null) {
             return ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
@@ -908,21 +910,21 @@ public class AccountFormService extends AbstractSecuredLocalService {
             filters.put(PermissionTicket.OWNER, auth.getUser().getId());
             filters.put(PermissionTicket.REQUESTER, user.getId());
 
-            List<PermissionTicket> tickets = ticketStore.find(filters, resource.getResourceServer().getId(), -1, -1);
+            List<PermissionTicket> tickets = ticketStore.find(filters, resource.getResourceServer(), -1, -1);
 
             if (tickets.isEmpty()) {
                 if (scopes != null && scopes.length > 0) {
                     for (String scope : scopes) {
-                        PermissionTicket ticket = ticketStore.create(resourceId, scope, user.getId(), resource.getResourceServer());
+                        PermissionTicket ticket = ticketStore.create(resourceId, scope, user.getId(), resourceServer);
                         ticket.setGrantedTimestamp(System.currentTimeMillis());
                     }
                 } else {
                     if (resource.getScopes().isEmpty()) {
-                        PermissionTicket ticket = ticketStore.create(resourceId, null, user.getId(), resource.getResourceServer());
+                        PermissionTicket ticket = ticketStore.create(resourceId, null, user.getId(), resourceServer);
                         ticket.setGrantedTimestamp(System.currentTimeMillis());
                     } else {
                         for (Scope scope : resource.getScopes()) {
-                            PermissionTicket ticket = ticketStore.create(resourceId, scope.getId(), user.getId(), resource.getResourceServer());
+                            PermissionTicket ticket = ticketStore.create(resourceId, scope.getId(), user.getId(), resourceServer);
                             ticket.setGrantedTimestamp(System.currentTimeMillis());
                         }
                     }
@@ -939,7 +941,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 }
 
                 for (String grantScope : grantScopes) {
-                    PermissionTicket ticket = ticketStore.create(resourceId, grantScope, user.getId(), resource.getResourceServer());
+                    PermissionTicket ticket = ticketStore.create(resourceId, grantScope, user.getId(), resourceServer);
                     ticket.setGrantedTimestamp(System.currentTimeMillis());
                 }
             }
@@ -983,7 +985,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 filters.put(PermissionTicket.GRANTED, Boolean.FALSE.toString());
             }
 
-            for (PermissionTicket ticket : ticketStore.find(filters, resource.getResourceServer().getId(), -1, -1)) {
+            for (PermissionTicket ticket : ticketStore.find(filters, resource.getResourceServer(), -1, -1)) {
                 ticketStore.delete(ticket.getId());
             }
         }

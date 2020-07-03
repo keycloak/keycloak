@@ -128,7 +128,7 @@ public class ResourceSetService {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Resource with name [" + resource.getName() + "] already exists.", Status.CONFLICT);
         }
 
-        return toRepresentation(toModel(resource, this.resourceServer, authorization), resourceServer, authorization);
+        return toRepresentation(toModel(resource, this.resourceServer, authorization), resourceServer.getId(), authorization);
     }
 
     @Path("{id}")
@@ -166,7 +166,7 @@ public class ResourceSetService {
 
         storeFactory.getResourceStore().delete(id);
 
-        audit(toRepresentation(resource, resourceServer, authorization), OperationType.DELETE);
+        audit(toRepresentation(resource, resourceServer.getId(), authorization), OperationType.DELETE);
 
         return Response.noContent().build();
     }
@@ -176,7 +176,7 @@ public class ResourceSetService {
     @NoCache
     @Produces("application/json")
     public Response findById(@PathParam("id") String id) {
-        return findById(id, resource -> toRepresentation(resource, resourceServer, authorization, true));
+        return findById(id, resource -> toRepresentation(resource, resourceServer.getId(), authorization, true));
     }
 
     public Response findById(String id, Function<Resource, ? extends ResourceRepresentation> toRepresentation) {
@@ -322,7 +322,7 @@ public class ResourceSetService {
             return Response.status(Status.NO_CONTENT).build();
         }
 
-        return Response.ok(toRepresentation(model, this.resourceServer, authorization)).build();
+        return Response.ok(toRepresentation(model, this.resourceServer.getId(), authorization)).build();
     }
 
     @GET
@@ -339,7 +339,7 @@ public class ResourceSetService {
                          @QueryParam("deep") Boolean deep,
                          @QueryParam("first") Integer firstResult,
                          @QueryParam("max") Integer maxResult) {
-        return find(id, name, uri, owner, type, scope, matchingUri, exactName, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer, authorization, deep1));
+        return find(id, name, uri, owner, type, scope, matchingUri, exactName, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer.getId(), authorization, deep1));
     }
 
     public Response find(@QueryParam("_id") String id,
