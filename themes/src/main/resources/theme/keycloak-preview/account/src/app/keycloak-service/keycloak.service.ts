@@ -24,8 +24,6 @@ export class KeycloakService {
 
     public constructor(keycloak: KeycloakClient) {
         this.keycloakAuth = keycloak;
-        this.keycloakAuth.onTokenExpired = () => this.getToken(true).catch(() => this.logout());
-        this.keycloakAuth.onAuthRefreshError = () => this.logout();
     }
 
     public authenticated(): boolean {
@@ -53,11 +51,11 @@ export class KeycloakService {
         return this.keycloakAuth.realm;
     }
 
-    public getToken(force: boolean = false): Promise<string> {
+    public getToken(): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             if (this.keycloakAuth.token) {
                 this.keycloakAuth
-                    .updateToken(force ? -1 : 5)
+                    .updateToken(5)
                     .success(() => {
                         resolve(this.keycloakAuth.token as string);
                     })
