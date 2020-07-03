@@ -10,6 +10,9 @@ import javax.inject.Inject;
 import javax.persistence.EntityManagerFactory;
 import javax.ws.rs.ApplicationPath;
 
+import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
+import org.jboss.resteasy.spi.ResteasyDeployment;
+import org.keycloak.common.util.Resteasy;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resources.QuarkusWelcomeResource;
@@ -30,6 +33,10 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
 
     @Override
     public Set<Object> getSingletons() {
+        //TODO: a temporary hack for https://github.com/quarkusio/quarkus/issues/9647, we need to disable the sanitizer to avoid
+        // escaping text/html responses from the server
+        Resteasy.getContextData(ResteasyDeployment.class).setProperty(ResteasyContextParameters.RESTEASY_DISABLE_HTML_SANITIZER, Boolean.TRUE);
+
         HashSet<Object> singletons = new HashSet<>(super.getSingletons().stream().filter(new Predicate<Object>() {
             @Override
             public boolean test(Object o) {

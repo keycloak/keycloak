@@ -56,7 +56,6 @@ import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
-import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
@@ -106,14 +105,7 @@ public class ClientResource {
     protected KeycloakSession session;
 
     @Context
-    protected KeycloakApplication keycloak;
-
-    @Context
     protected ClientConnection clientConnection;
-
-    protected KeycloakApplication getKeycloakApplication() {
-        return keycloak;
-    }
 
     public ClientResource(RealmModel realm, AdminPermissionEvaluator auth, ClientModel clientModel, KeycloakSession session, AdminEventBuilder adminEvent) {
         this.realm = realm;

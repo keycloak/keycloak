@@ -21,9 +21,11 @@ import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
-import javax.inject.Inject;
 
+import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
+import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.Config;
+import org.keycloak.common.util.Resteasy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransactionManager;
@@ -38,18 +40,13 @@ public class QuarkusLifecycleObserver {
     private static final String KEYCLOAK_ADMIN_ENV_VAR = "KEYCLOAK_ADMIN";
     private static final String KEYCLOAK_ADMIN_PASSWORD_ENV_VAR = "KEYCLOAK_ADMIN_PASSWORD";
 
-    @Inject
-    KeycloakApplication application;
-
     void onStartupEvent(@Observes StartupEvent event) {
-
         Runnable startupHook = ((QuarkusPlatform) Platform.getPlatform()).startupHook;
 
         if (startupHook != null) {
             startupHook.run();
             createAdminUser();
         }
-
     }
 
     void onShutdownEvent(@Observes ShutdownEvent event) {
@@ -70,7 +67,7 @@ public class QuarkusLifecycleObserver {
             return;
         }
 
-        KeycloakSessionFactory sessionFactory = application.getSessionFactory();
+        KeycloakSessionFactory sessionFactory = KeycloakApplication.getSessionFactory();
         KeycloakSession session = sessionFactory.create();
         KeycloakTransactionManager transaction = session.getTransactionManager();
 
