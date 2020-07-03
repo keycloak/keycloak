@@ -29,7 +29,7 @@ public class KeycloakSpringBootConfigResolver implements org.keycloak.adapters.K
 
     private KeycloakDeployment keycloakDeployment;
 
-    @Autowired
+    @Autowired(required=false)
     private AdapterConfig adapterConfig;
 
     @Override
