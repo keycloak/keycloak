@@ -31,11 +31,11 @@
     <packaging>pom</packaging>
 
     <properties>
-        <quarkus.version>1.5.1.Final</quarkus.version>
-        <resteasy.version>4.5.3.Final</resteasy.version>
-        <jackson.version>2.10.2</jackson.version>
+        <quarkus.version>1.6.0.CR1</quarkus.version>
+        <resteasy.version>4.5.5.Final</resteasy.version>
+        <jackson.version>2.10.4</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
-        <hibernate.version>5.4.16.Final</hibernate.version>
+        <hibernate.version>5.4.18.Final</hibernate.version>
         <snakeyaml.version>1.20</snakeyaml.version>
 
         <surefire-plugin.version>2.22.0</surefire-plugin.version>

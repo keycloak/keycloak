@@ -118,12 +118,7 @@ public class DefaultKeycloakContext implements KeycloakContext {
 
     @Override
     public ClientConnection getConnection() {
-        return connection;
-    }
-
-    @Override
-    public void setConnection(ClientConnection connection) {
-        this.connection = connection;
+        return getContextObject(ClientConnection.class);
     }
 
     @Override
@@ -140,4 +135,5 @@ public class DefaultKeycloakContext implements KeycloakContext {
     public void setAuthenticationSession(AuthenticationSessionModel authenticationSession) {
         this.authenticationSession = authenticationSession;
     }
+
 }

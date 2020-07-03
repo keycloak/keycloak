@@ -405,7 +405,7 @@ public class KeycloakServer {
             // KEYCLOAK-14178
             deployment.setProperty(ResteasyContextParameters.RESTEASY_DISABLE_HTML_SANITIZER, true);
 
-            FilterInfo filter = Servlets.filter("SessionFilter", TestKeycloakSessionServletFilter.class);
+            FilterInfo filter = Servlets.filter("SessionFilter", UndertowClientConnectionServletFilter.class);
             filter.setAsyncSupported(true);
 
             di.addFilter(filter);
@@ -413,7 +413,7 @@ public class KeycloakServer {
 
             server.deploy(di);
 
-            sessionFactory = ((KeycloakApplication) deployment.getApplication()).getSessionFactory();
+            sessionFactory = KeycloakApplication.getSessionFactory();
 
             setupDevConfig();
 

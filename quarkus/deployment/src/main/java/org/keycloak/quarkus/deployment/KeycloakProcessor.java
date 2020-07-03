@@ -20,6 +20,7 @@ import org.keycloak.provider.KeycloakDeploymentInfo;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
+import org.keycloak.provider.quarkus.QuarkusClientConnectionFilter;
 import org.keycloak.runtime.KeycloakRecorder;
 import org.keycloak.transaction.JBossJtaTransactionManagerLookup;
 
@@ -30,6 +31,7 @@ import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.hibernate.orm.deployment.PersistenceUnitDescriptorBuildItem;
+import io.quarkus.vertx.http.deployment.FilterBuildItem;
 
 class KeycloakProcessor {
 
@@ -57,9 +59,12 @@ class KeycloakProcessor {
     }
 
     /**
-     * <p>Load the built-in provider factories during build time so we don't spend time looking up them at runtime.
+     * <p>
+     * Load the built-in provider factories during build time so we don't spend time looking up them at runtime.
      * 
-     * <p>User-defined providers are going to be loaded at startup</p>
+     * <p>
+     * User-defined providers are going to be loaded at startup
+     * </p>
      */
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
@@ -69,7 +74,8 @@ class KeycloakProcessor {
 
     private Map<Spi, Set<Class<? extends ProviderFactory>>> loadBuiltInFactories() {
         ProviderManager pm = new ProviderManager(
-                KeycloakDeploymentInfo.create().services(), Thread.currentThread().getContextClassLoader(), Config.scope().getArray("providers"));
+                KeycloakDeploymentInfo.create().services(), Thread.currentThread().getContextClassLoader(),
+                Config.scope().getArray("providers"));
         Map<Spi, Set<Class<? extends ProviderFactory>>> result = new HashMap<>();
 
         for (Spi spi : pm.loadSpis()) {
@@ -91,5 +97,10 @@ class KeycloakProcessor {
         }
 
         return result;
+    }
+
+    @BuildStep
+    void initializeRouter(BuildProducer<FilterBuildItem> routes) {
+        routes.produce(new FilterBuildItem(new QuarkusClientConnectionFilter(), FilterBuildItem.AUTHORIZATION - 10));
     }
 }

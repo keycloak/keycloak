@@ -22,9 +22,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.quarkus.runtime.configuration.DeploymentProfileConfigSource;
-import io.quarkus.runtime.configuration.ExpandingConfigSource;
-
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.jboss.logging.Logger;
@@ -58,23 +55,16 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
         }
 
         if (filePath != null) {
-            sources.add(wrap(new KeycloakPropertiesConfigSource.InFileSystem(filePath)));
+            sources.add(new KeycloakPropertiesConfigSource.InFileSystem(filePath));
         }
 
         // fall back to the default configuration within the server classpath
         if (sources.isEmpty()) {
             log.debug("Loading the default server configuration");
-            sources.add(wrap(new KeycloakPropertiesConfigSource.InJar()));
+            sources.add(new KeycloakPropertiesConfigSource.InJar());
         }
 
         return sources;
 
     }
-
-    private ConfigSource wrap(ConfigSource source) {
-        return ExpandingConfigSource.wrapper(new ExpandingConfigSource.Cache())
-            .compose(DeploymentProfileConfigSource.wrapper())
-            .apply(source);
-    }
-
 }

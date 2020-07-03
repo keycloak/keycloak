@@ -61,6 +61,11 @@
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-vertx-web-deployment</artifactId>
+            <version>${quarkus.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
             <artifactId>quarkus-bootstrap-core</artifactId>
             <version>${quarkus.version}</version>
         </dependency>

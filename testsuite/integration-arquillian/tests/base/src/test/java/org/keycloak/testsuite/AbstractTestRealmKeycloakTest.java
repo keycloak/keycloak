@@ -19,6 +19,8 @@ package org.keycloak.testsuite;
 
 import org.junit.After;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Resteasy;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.events.Details;
 import org.keycloak.models.KeycloakSession;
@@ -120,7 +122,7 @@ public abstract class AbstractTestRealmKeycloakTest extends AbstractKeycloakTest
 
     /** KEYCLOAK-12065 Inherit Client Connection from parent session **/
     public static KeycloakSession inheritClientConnection(KeycloakSession parentSession, KeycloakSession currentSession) {
-        currentSession.getContext().setConnection(parentSession.getContext().getConnection());
+        Resteasy.pushContext(ClientConnection.class, parentSession.getContext().getConnection());
         return currentSession;
     }
 }
