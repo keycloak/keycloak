@@ -41,6 +41,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -151,6 +152,12 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper {
         }
     }
 
+    private void setIfNotEmptyAndDifferent(Consumer<String> consumer, Supplier<String> currentValueSupplier, List<String> values) {
+        if (values != null && !values.isEmpty() && !values.get(0).equals(currentValueSupplier.get())) {
+            consumer.accept(values.get(0));
+        }
+    }
+
     private Predicate<AttributeStatementType.ASTChoiceType> elementWith(String attributeName) {
         return attributeType -> {
             AttributeType attribute = attributeType.getAttribute();
@@ -181,11 +188,11 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper {
         String attributeName = getAttributeNameFromMapperModel(mapperModel);
         List<String> attributeValuesInContext = findAttributeValuesInContext(attributeName, context);
         if (attribute.equalsIgnoreCase(EMAIL)) {
-            setIfNotEmpty(user::setEmail, attributeValuesInContext);
+            setIfNotEmptyAndDifferent(user::setEmail, user::getEmail, attributeValuesInContext);
         } else if (attribute.equalsIgnoreCase(FIRST_NAME)) {
-            setIfNotEmpty(user::setFirstName, attributeValuesInContext);
+            setIfNotEmptyAndDifferent(user::setFirstName, user::getFirstName, attributeValuesInContext);
         } else if (attribute.equalsIgnoreCase(LAST_NAME)) {
-            setIfNotEmpty(user::setLastName, attributeValuesInContext);
+            setIfNotEmptyAndDifferent(user::setLastName, user::getLastName, attributeValuesInContext);
         } else {
             List<String> currentAttributeValues = user.getAttributes().get(attribute);
             if (attributeValuesInContext == null) {
