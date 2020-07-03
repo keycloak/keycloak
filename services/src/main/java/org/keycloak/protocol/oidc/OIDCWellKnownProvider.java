@@ -112,7 +112,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
         config.setClaimsSupported(DEFAULT_CLAIMS_SUPPORTED);
         config.setClaimTypesSupported(DEFAULT_CLAIM_TYPES_SUPPORTED);
-        config.setClaimsParameterSupported(false);
+        config.setClaimsParameterSupported(true);
 
         List<ClientScopeModel> scopes = realm.getClientScopes();
         List<String> scopeNames = new LinkedList<>();
