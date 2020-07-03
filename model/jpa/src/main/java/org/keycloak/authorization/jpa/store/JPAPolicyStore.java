@@ -213,10 +213,11 @@ public class JPAPolicyStore implements PolicyStore {
         query.setParameter("resourceId", resourceId);
         query.setParameter("serverId", resourceServerId);
 
-        StoreFactory storeFactory = provider.getStoreFactory();
+        PolicyStore storeFactory = provider.getStoreFactory().getPolicyStore();
 
-        query.getResultList().stream()
-                .map(entity -> new PolicyAdapter(entity, entityManager, storeFactory))
+        query.getResultStream()
+                .map(entity -> storeFactory.findById(entity.getId(), resourceServerId))
+                .filter(Objects::nonNull)
                 .forEach(consumer::accept);
     }
 
@@ -237,8 +238,9 @@ public class JPAPolicyStore implements PolicyStore {
         query.setParameter("type", resourceType);
         query.setParameter("serverId", resourceServerId);
 
-        query.getResultList().stream()
+        query.getResultStream()
                 .map(id -> new PolicyAdapter(id, entityManager, provider.getStoreFactory()))
+                .filter(Objects::nonNull)
                 .forEach(consumer::accept);
     }
 
@@ -256,10 +258,10 @@ public class JPAPolicyStore implements PolicyStore {
         query.setParameter("serverId", resourceServerId);
 
         List<Policy> list = new LinkedList<>();
-        StoreFactory storeFactory = provider.getStoreFactory();
+        PolicyStore storeFactory = provider.getStoreFactory().getPolicyStore();
 
         for (PolicyEntity entity : query.getResultList()) {
-            list.add(new PolicyAdapter(entity, entityManager, storeFactory));
+            list.add(storeFactory.findById(entity.getId(), resourceServerId));
         }
 
         return list;
@@ -292,8 +294,9 @@ public class JPAPolicyStore implements PolicyStore {
 
         StoreFactory storeFactory = provider.getStoreFactory();
 
-        query.getResultList().stream()
+        query.getResultStream()
                 .map(id -> new PolicyAdapter(id, entityManager, storeFactory))
+                .filter(Objects::nonNull)
                 .forEach(consumer::accept);
     }
 

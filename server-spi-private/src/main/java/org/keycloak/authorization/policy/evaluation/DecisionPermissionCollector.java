@@ -56,10 +56,13 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
     public void onComplete(Result result) {
         ResourcePermission permission = result.getPermission();
         Resource resource = permission.getResource();
-        List<Scope> requestedScopes = permission.getScopes();
+        Collection<Scope> requestedScopes = permission.getScopes();
 
         if (Effect.PERMIT.equals(result.getEffect())) {
-            grantPermission(authorizationProvider, permissions, permission, resource != null ? resource.getScopes() : requestedScopes, resourceServer, request, result);
+            if (permission.getScopes().isEmpty() && !resource.getScopes().isEmpty()) {
+                return;
+            }
+            grantPermission(authorizationProvider, permissions, permission, requestedScopes, resourceServer, request, result);
         } else {
             Set<Scope> grantedScopes = new HashSet<>();
             Set<Scope> deniedScopes = new HashSet<>();

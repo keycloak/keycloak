@@ -16,15 +16,18 @@
  * limitations under the License.
  */
 
-package org.keycloak.authorization.util;
+package org.keycloak.authorization.permission;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.keycloak.authorization.AuthorizationProvider;
@@ -33,7 +36,6 @@ import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
-import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
@@ -58,8 +60,7 @@ public final class Permissions {
      * @param authorization
      * @return
      */
-    public static List<ResourcePermission> all(ResourceServer resourceServer, Identity identity, AuthorizationProvider authorization, AuthorizationRequest request) {
-        List<ResourcePermission> permissions = new ArrayList<>();
+    public static void all(ResourceServer resourceServer, Identity identity, AuthorizationProvider authorization, AuthorizationRequest request, Consumer<ResourcePermission> evaluator) {
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
         Metadata metadata = request.getMetadata();
@@ -74,7 +75,7 @@ public final class Permissions {
         // obtain all resources where owner is the resource server
         resourceStore.findByOwner(resourceServer.getId(), resourceServer.getId(), resource -> {
             if (limit.decrementAndGet() >= 0) {
-                permissions.add(createResourcePermissions(resource, authorization, request));
+                evaluator.accept(createResourcePermissions(resource, resourceServer, resource.getScopes(), authorization, request));
             }
         });
 
@@ -83,7 +84,7 @@ public final class Permissions {
             // obtain all resources where owner is the current user
             resourceStore.findByOwner(identity.getId(), resourceServer.getId(), resource -> {
                 if (limit.decrementAndGet() >= 0) {
-                    permissions.add(createResourcePermissions(resource, authorization, request));
+                    evaluator.accept(createResourcePermissions(resource, resourceServer, resource.getScopes(), authorization, request));
                 }
             });
         }
@@ -95,59 +96,56 @@ public final class Permissions {
             Map<String, ResourcePermission> userManagedPermissions = new HashMap<>();
 
             for (PermissionTicket ticket : tickets) {
-                ResourcePermission permission = userManagedPermissions.get(ticket.getResource().getId());
-
-                if (permission == null) {
-                    userManagedPermissions.put(ticket.getResource().getId(), new ResourcePermission(ticket.getResource(), new ArrayList<>(), resourceServer, request.getClaims()));
-                    limit.decrementAndGet();
-                }
-
-                if (limit.decrementAndGet() <= 0) {
+                if (limit.get() < 0) {
                     break;
                 }
+                ResourcePermission permission = userManagedPermissions.computeIfAbsent(ticket.getResource().getId(),
+                        s -> {
+                            limit.decrementAndGet();
+                            ResourcePermission resourcePermission = new ResourcePermission(ticket.getResource(),
+                                    new ArrayList<>(), resourceServer,
+                                    request.getClaims());
+                            resourcePermission.setGranted(true);
+                            return resourcePermission;
+                        });
+
+                permission.addScope(ticket.getScope());
             }
 
-            permissions.addAll(userManagedPermissions.values());
+            for (ResourcePermission permission : userManagedPermissions.values()) {
+                evaluator.accept(permission);
+            }
         }
-
-        return permissions;
     }
 
-    public static ResourcePermission createResourcePermissions(Resource resource, Collection<Scope> requestedScopes, AuthorizationProvider authorization, AuthorizationRequest request) {
-        List<Scope> scopes;
-
+    public static ResourcePermission createResourcePermissions(Resource resource,
+            ResourceServer resourceServer, Collection<Scope> requestedScopes,
+            AuthorizationProvider authorization, AuthorizationRequest request) {
+        Set<Scope> scopes = resolveScopes(resource, resourceServer, requestedScopes, authorization);
+        return new ResourcePermission(resource, scopes, resourceServer, request.getClaims());
+    }
+    
+    public static Set<Scope> resolveScopes(Resource resource, ResourceServer resourceServer,
+            Collection<Scope> requestedScopes, AuthorizationProvider authorization) {
         if (requestedScopes.isEmpty()) {
-            scopes = populateTypedScopes(resource, authorization);
-        } else {
-            scopes = populateTypedScopes(resource, requestedScopes.stream().filter(scope -> resource.getScopes().contains(scope)).collect(Collectors.toList()), authorization);
+            return populateTypedScopes(resource, resourceServer, authorization);
         }
-
-        return new ResourcePermission(resource, scopes, resource.getResourceServer(), request.getClaims());
+        return populateTypedScopes(resource, resourceServer, resource.getScopes(), authorization).stream()
+                .filter(scope -> requestedScopes.contains(scope)).collect(Collectors.toSet());
     }
 
-    public static ResourcePermission createResourcePermissions(Resource resource, AuthorizationProvider authorization, AuthorizationRequest request) {
-        List<Scope> requestedScopes = resource.getScopes();
-
-        if (requestedScopes.isEmpty()) {
-            return new ResourcePermission(resource, populateTypedScopes(resource, authorization), resource.getResourceServer(), request.getClaims());
-        }
-
-        return new ResourcePermission(resource, resource.getResourceServer(), request.getClaims());
+    private static Set<Scope> populateTypedScopes(Resource resource,
+            ResourceServer resourceServer, AuthorizationProvider authorization) {
+        return populateTypedScopes(resource, resourceServer, resource.getScopes(), authorization);
     }
 
-    private static List<Scope> populateTypedScopes(Resource resource, AuthorizationProvider authorization) {
-        return populateTypedScopes(resource, resource.getScopes(), authorization);
-    }
-
-    private static List<Scope> populateTypedScopes(Resource resource, List<Scope> defaultScopes, AuthorizationProvider authorization) {
+    private static Set<Scope> populateTypedScopes(Resource resource, ResourceServer resourceServer, List<Scope> defaultScopes, AuthorizationProvider authorization) {
         String type = resource.getType();
-        ResourceServer resourceServer = resource.getResourceServer();
-
         if (type == null || resource.getOwner().equals(resourceServer.getId())) {
-            return new ArrayList<>(defaultScopes);
+            return new LinkedHashSet<>(defaultScopes);
         }
 
-        List<Scope> scopes = new ArrayList<>(defaultScopes);
+        Set<Scope> scopes = new LinkedHashSet<>(defaultScopes);
 
         // check if there is a typed resource whose scopes are inherited by the resource being requested. In this case, we assume that parent resource
         // is owned by the resource server itself

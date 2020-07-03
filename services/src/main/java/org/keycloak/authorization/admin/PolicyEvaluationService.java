@@ -47,13 +47,13 @@ import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.permission.Permissions;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.DecisionPermissionCollector;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.authorization.util.Permissions;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
@@ -125,7 +125,13 @@ public class PolicyEvaluationService {
     }
 
     private EvaluationDecisionCollector evaluate(PolicyEvaluationRequest evaluationRequest, EvaluationContext evaluationContext, AuthorizationRequest request) {
-        return authorization.evaluators().from(createPermissions(evaluationRequest, evaluationContext, authorization, request), evaluationContext).evaluate(new EvaluationDecisionCollector(authorization, resourceServer, request));
+        List<ResourcePermission> permissions = createPermissions(evaluationRequest, evaluationContext, authorization, request);
+        
+        if (permissions.isEmpty()) {
+            return authorization.evaluators().from(evaluationContext, resourceServer, request).evaluate(new EvaluationDecisionCollector(authorization, resourceServer, request));
+        }
+        
+        return authorization.evaluators().from(permissions, evaluationContext).evaluate(new EvaluationDecisionCollector(authorization, resourceServer, request));
     }
 
     private EvaluationContext createEvaluationContext(PolicyEvaluationRequest representation, KeycloakIdentity identity) {
@@ -170,12 +176,14 @@ public class PolicyEvaluationService {
 
             if (resource.getId() != null) {
                 Resource resourceModel = storeFactory.getResourceStore().findById(resource.getId(), resourceServer.getId());
-                return new ArrayList<>(Arrays.asList(Permissions.createResourcePermissions(resourceModel, scopes, authorization, request))).stream();
+                return new ArrayList<>(Arrays.asList(
+                        Permissions.createResourcePermissions(resourceModel, resourceServer, scopes, authorization, request))).stream();
             } else if (resource.getType() != null) {
-                return storeFactory.getResourceStore().findByType(resource.getType(), resourceServer.getId()).stream().map(resource1 -> Permissions.createResourcePermissions(resource1, scopes, authorization, request));
+                return storeFactory.getResourceStore().findByType(resource.getType(), resourceServer.getId()).stream().map(resource1 -> Permissions.createResourcePermissions(resource1,
+                        resourceServer, scopes, authorization, request));
             } else {
                 if (scopes.isEmpty()) {
-                    return Permissions.all(resourceServer, evaluationContext.getIdentity(), authorization, request).stream();
+                    return Stream.empty();
                 }
 
                 List<Resource> resources = storeFactory.getResourceStore().findByScope(scopes.stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId());
@@ -185,7 +193,8 @@ public class PolicyEvaluationService {
                 }
 
 
-                return resources.stream().map(resource12 -> Permissions.createResourcePermissions(resource12, scopes, authorization, request));
+                return resources.stream().map(resource12 -> Permissions.createResourcePermissions(resource12, resourceServer,
+                        scopes, authorization, request));
             }
         }).collect(Collectors.toList());
     }
