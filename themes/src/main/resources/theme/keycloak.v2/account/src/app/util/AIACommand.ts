@@ -21,13 +21,12 @@ import {KeycloakService} from '../keycloak-service/keycloak.service';
  */
 export class AIACommand {
 
-    constructor(private keycloak: KeycloakService, private action: string, private prompt: 'none'|'login' = 'none', private redirectUri?: string) {}
+    constructor(private keycloak: KeycloakService, private action: string, private prompt: 'none'|'login' = 'none') {}
 
     public execute(): void {
         this.keycloak.login({
             action: this.action,
-            prompt: this.prompt,
-            redirectUri: this.redirectUri
+            prompt: this.prompt
         })
 
     }

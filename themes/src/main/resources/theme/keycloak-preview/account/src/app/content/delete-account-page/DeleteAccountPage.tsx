@@ -2,20 +2,20 @@ import * as React from 'react';
 import { ContentPage } from '../ContentPage';
 import { Msg } from '../../widgets/Msg';
 import { Stack, Alert, Button } from '@patternfly/react-core';
-import { MinusIcon, MinusCircleIcon } from '@patternfly/react-icons'
-import { Link } from 'react-router-dom';
-import { AppInitiatedActionPage } from '../aia-page/AppInitiatedActionPage';
+import { MinusIcon } from '@patternfly/react-icons'
+import { AIACommand } from '../../util/AIACommand';
+import { KeycloakContext } from '../../keycloak-service/KeycloakContext';
+import { KeycloakService } from '../../keycloak-service/keycloak.service';
 
 
 export class DeleteAccountPage extends React.Component {
 
     constructor(props:any) {
         super(props);
-        console.log("----------hehehe delete accout", props)
       } 
 
-      handleDeleteAccount() {
-        console.log("test")
+      handleDeleteAccount(keycloak: KeycloakService) {
+        new AIACommand(keycloak, "delete_account", 'login').execute();
       }
 
       render() {
@@ -34,9 +34,12 @@ export class DeleteAccountPage extends React.Component {
                     </ul>
 
                <p> <Msg msgKey="initialDeletionInstruction" /></p>
-               <Link to={{pathname: "/aia", state: {pageDef: {kcAction:"delete_account", prompt: "login", label: "deleteAccount", labelParams: ""}}}} > 
-               <Button onClick={this.handleDeleteAccount} variant="danger" style={{display:'block', width:'30%', margin:'auto'}}>Delete</Button>
-               </Link>
+               <KeycloakContext.Consumer>
+                { (keycloak: KeycloakService) => (
+                  <Button onClick={() => this.handleDeleteAccount(keycloak)} variant="danger" style={{display:'block', width:'30%', margin:'auto'}}>Delete</Button>
+                )}
+                </KeycloakContext.Consumer>
+               
             </Stack>
           </ContentPage>
         );
