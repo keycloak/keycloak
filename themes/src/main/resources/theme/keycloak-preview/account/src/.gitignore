@@ -1,2 +1,3 @@
 # Do not commit, installed at compile time
 node_modules
+dist/

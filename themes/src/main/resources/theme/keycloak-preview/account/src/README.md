@@ -62,3 +62,47 @@ mvn clean verify -f testsuite/integration-arquillian/tests/other/base-ui -Dtest=
 Use `chrome` or `firefox` as the browser, other browsers are currently broken for the testsuite.
 
 **You need to rebuild the `themes` module prior to running tests every time you make a change to the Account Console**
+
+Embedding
+---------
+
+The account console can also be used as a component library that you can embed into your own application.
+
+```
+npm install keycloak-console --save
+```
+or yarn
+```
+yarn add keycloak-console
+```
+
+```tsx
+import React from 'react';
+import './App.css';
+
+import { AccountServiceClient, AccountServiceContext, AccountPage, KeycloakContext, KeycloakService, KeycloakClient } from 'keycloak-preview';
+
+// if you want and keep the "look and feel" then you need to add:
+import 'keycloak-preview/dist/index.css';
+// the styles are based on patternfly so we need these as well
+import '@patternfly/react-core/dist/styles/base.css';
+
+// global keycloak variable
+declare const keycloak: KeycloakClient;
+
+function App() {
+  const keycloakService = new KeycloakService(keycloak);
+  return (
+    <div>
+      <h1 className="title">Embedded keycloak console page</h1>
+      <KeycloakContext.Provider value={keycloakService}>
+        <AccountServiceContext.Provider value={new AccountServiceClient(keycloakService)}>
+          <AccountPage />
+        </AccountServiceContext.Provider>
+      </KeycloakContext.Provider>
+    </div>
+  );
+}
+
+export default App;
+```

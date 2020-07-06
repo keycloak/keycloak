@@ -1,22 +1,29 @@
 {
   "compilerOptions": {
     "target": "es5",
-    "module": "commonjs",
+    "module": "ESNext",
+    "declaration": true,
+    "skipLibCheck": true,
     "noEmit": true,
     "moduleResolution": "node",
     "sourceMap": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "lib": [ "es2015", "dom", "dom.iterable" ],
+    "lib": [
+      "es2015",
+      "dom",
+      "dom.iterable"
+    ],
     "noImplicitAny": true,
     "strictNullChecks": true,
     "jsx": "react",
     "suppressImplicitAnyIndexErrors": true
   },
   "include": [
-    "./app/**/*.ts?"
-  ],
-  "files": [
+    "./app/**/*.ts?",
     "../../../../../../../../adapters/oidc/js/src/main/resources/keycloak.d.ts"
+  ],
+  "exclude": [
+    "./node_modules"
   ]
 }
