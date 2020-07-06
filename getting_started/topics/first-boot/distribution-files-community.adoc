@@ -9,7 +9,7 @@ You can install the server on Linux or Windows. The server download ZIP file con
 
 . Place the file in a directory you choose.
 
-. Unpack the ZIP file using the appropriate `unzip` utility, such as jar, tar, or unzip.
+. Unpack the ZIP file using the appropriate `unzip` utility, such as unzip, tar, or Expand-Archive.
 
 +
 .Linux/Unix
@@ -26,5 +26,5 @@ $ tar -xvzf keycloak-{project_version}.tar.gz
 .Windows
 [source,bash,subs=+attributes]
 ----
-> unzip keycloak-{project_version}.zip
+> Expand-Archive -Path 'C:Downloads\keycloak-{project_version}.zip` -DestinationPath 'C:\Downloads'
 ----

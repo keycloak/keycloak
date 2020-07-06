@@ -20,7 +20,7 @@ endif::[]
 
 . Change to the root directory of {appserver_name}.
 
-. Unzip the downloaded client adapter in this directory.
+. Unzip the downloaded client adapter in this directory.  For example:
 +
 [source,bash,subs=+attributes]
 ----

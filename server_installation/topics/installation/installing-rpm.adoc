@@ -63,3 +63,7 @@ subscription-manager repos --enable=rh-sso-{project_versionDoc}-for-rhel-8-x86_6
  dnf groupinstall rh-sso7
 
 Your installation is complete. The default RH-SSO_HOME path for the RPM installation is /opt/rh/rh-sso7/root/usr/share/keycloak.
+
+.Additional resources
+
+For details on installing the {project_version} patch for {project_name}, see link:https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/{project_version_base}/html/upgrading_guide/upgrading#rpm-patching[RPM patching].
