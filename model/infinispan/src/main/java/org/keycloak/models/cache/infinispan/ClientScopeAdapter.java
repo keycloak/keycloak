@@ -17,7 +17,6 @@
 
 package org.keycloak.models.cache.infinispan;
 
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -239,7 +238,7 @@ public class ClientScopeAdapter implements ClientScopeModel {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof ClientModel)) return false;
+        if (!(o instanceof ClientScopeModel)) return false;
 
         ClientScopeModel that = (ClientScopeModel) o;
         return that.getId().equals(getId());
