@@ -25,6 +25,8 @@ spec:
     enabled: True
 ```
 
+You can package and deploy themes in the same way as any other extensions. See {developerguide_deploying_themes}[Deploying Themes] manual entry for more information.
+
 .Prerequisites
 
 * You have a YAML file for the Keycloak custom resource.

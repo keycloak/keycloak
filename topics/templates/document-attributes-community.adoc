@@ -57,6 +57,7 @@ endif::[]
 :developerguide_name_short: Server Developer
 :developerguide_link: {project_doc_base_url}/server_development/
 :developerguide_link_latest: {project_doc_base_url_latest}/server_development/
+:developerguide_deploying_themes: {developerguide_link}#deploying-themes
 :developerguide_actiontoken_name: Action Token SPI
 :developerguide_actiontoken_link: {developerguide_link}#_action_token_spi
 :developerguide_jsproviders_name: JavaScript Providers
