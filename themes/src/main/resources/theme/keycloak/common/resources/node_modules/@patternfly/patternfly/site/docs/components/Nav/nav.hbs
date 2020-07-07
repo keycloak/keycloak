@@ -1,0 +1,19 @@
+<nav class="pf-c-nav{{#if nav--modifier}} {{nav--modifier}}{{/if}}{{#if nav--IsHorizontal}}{{#unless nav--IsTertiary}} pf-m-horizontal{{/unless}}{{/if}}{{#if nav--IsTertiary}} pf-m-tertiary{{/if}}{{#if nav--IsScrollable}} pf-m-scrollable{{/if}}"
+  {{#if aria-label}}
+    aria-label="{{aria-label}}"
+  {{/if}}
+  {{#if nav--attribute}}
+    {{{nav--attribute}}}
+  {{/if}}>
+  {{#if nav--IsHorizontal}}
+    {{> nav-scroll-button nav-scroll-button--attribute="disabled" nav-scroll-button--IsLeft="true"}}
+    {{> @partial-block}}
+    {{#if nav--IsScrollable}}
+      {{> nav-scroll-button nav-scroll-button--IsRight="true"}}
+    {{else}}
+      {{> nav-scroll-button nav-scroll-button--attribute="disabled" nav-scroll-button--IsRight="true"}}
+    {{/if}}
+  {{else}}
+    {{> @partial-block}}
+  {{/if}}
+</nav>

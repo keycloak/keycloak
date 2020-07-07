@@ -1,0 +1,21 @@
+{{#> drawer-body}}
+  {{#> l-flex l-flex--modifier="pf-m-column"}}
+    {{#> l-flex-item}}
+      {{#> drawer-head}}
+        {{#> drawer-actions}}
+          {{#unless drawer-panel--NoCloseButton}}
+            {{> drawer-close}}
+          {{/unless}}
+        {{/drawer-actions}}
+        {{#> title titleType="h2" title--modifier="pf-m-lg" title--attribute=(concat 'id="' master-detail-template--id '-drawer-label"')}}
+          {{{master-detail-panel-header--title}}}
+        {{/title}}
+      {{/drawer-head}}
+    {{/l-flex-item}}
+    {{#if master-detail-panel-header--sub-title}}
+      {{#> l-flex-item}}
+        {{{master-detail-panel-header--sub-title}}}
+      {{/l-flex-item}}
+    {{/if}}
+  {{/l-flex}}
+{{/drawer-body}}

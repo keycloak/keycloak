@@ -1,0 +1,51 @@
+
+
+@font-face {
+  font-family: 'overpass-mono';
+  src: url('overpass-mono-light.eot');
+  src: url('overpass-mono-light.eot?#iefix') format('embedded-opentype'),
+       url('overpass-mono-light.woff2') format('woff2'),
+       url('overpass-mono-light.woff') format('woff'),
+       url('overpass-mono-light.ttf')  format('truetype');
+       font-weight: 300;
+       font-style: normal;
+}
+
+
+
+@font-face {
+  font-family: 'overpass-mono';
+  src: url('overpass-mono-regular.eot');
+  src: url('overpass-mono-regular.eot?#iefix') format('embedded-opentype'),
+       url('overpass-mono-regular.woff2') format('woff2'),
+       url('overpass-mono-regular.woff') format('woff'),
+       url('overpass-mono-regular.ttf')  format('truetype');
+       font-weight: 400;
+       font-style: normal;
+}
+
+
+
+@font-face {
+  font-family: 'overpass-mono';
+  src: url('overpass-mono-semibold.eot');
+  src: url('overpass-mono-semibold.eot?#iefix') format('embedded-opentype'),
+       url('overpass-mono-semibold.woff2') format('woff2'),
+       url('overpass-mono-semibold.woff') format('woff'),
+       url('overpass-mono-semibold.ttf')  format('truetype');
+       font-weight: 500;
+       font-style: normal;
+}
+
+
+
+@font-face {
+  font-family: 'overpass-mono';
+  src: url('overpass-mono-bold.eot');
+  src: url('overpass-mono-bold.eot?#iefix') format('embedded-opentype'),
+       url('overpass-mono-bold.woff2') format('woff2'),
+       url('overpass-mono-bold.woff') format('woff'),
+       url('overpass-mono-bold.ttf')  format('truetype');
+       font-weight: 600;
+       font-style: normal;
+}

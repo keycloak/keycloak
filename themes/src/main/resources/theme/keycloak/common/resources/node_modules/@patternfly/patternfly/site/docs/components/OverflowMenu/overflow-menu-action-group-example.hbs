@@ -1,0 +1,39 @@
+{{#> overflow-menu overflow-menu-button--aria-label="Action group options" overflow-menu-dropdown-button-aria-expanded="{{overflow-menu-dropdown-button-aria-expanded}}"}}
+  {{#> overflow-menu-content}}
+    {{#> overflow-menu-group overflow-menu-group--modifier="pf-m-button-group"}}
+      {{#> overflow-menu-item}}
+        {{#> button button--modifier="pf-m-primary"}}
+          Primary
+        {{/button}}
+      {{/overflow-menu-item}}
+
+      {{#unless overflow-menu--IsSingle}}
+      {{#> overflow-menu-item}}
+        {{#> button button--modifier="pf-m-link"}}
+          Secondary
+        {{/button}}
+      {{/overflow-menu-item}}
+      {{/unless}}
+    {{/overflow-menu-group}}
+  {{/overflow-menu-content}}
+
+  {{!-- Control --}}
+  {{#> overflow-menu-control}}
+    {{#> overflow-menu-dropdown-item overflow-menu-dropdown-item--IsShared="true"}}
+      Primary
+    {{/overflow-menu-dropdown-item}}
+
+    {{#unless overflow-menu--IsSingle}}
+    {{#> overflow-menu-dropdown-item overflow-menu-dropdown-item--IsShared="true"}}
+      Secondary
+    {{/overflow-menu-dropdown-item}}
+    {{/unless}}
+
+    {{#> overflow-menu-dropdown-item}}
+      Next Action
+    {{/overflow-menu-dropdown-item}}
+    {{#> overflow-menu-dropdown-item}}
+      Another Action
+    {{/overflow-menu-dropdown-item}}
+  {{/overflow-menu-control}}
+{{/overflow-menu}}

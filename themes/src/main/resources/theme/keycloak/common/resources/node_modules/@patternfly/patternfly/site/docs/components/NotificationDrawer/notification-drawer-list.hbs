@@ -1,0 +1,11 @@
+<ul class="pf-c-notification-drawer__list{{#if notification-drawer-list--modifier}} {{notification-drawer-list--modifier}}{{/if}}"
+  {{#if notification-drawer-group--IsGroup}}
+    {{#unless notification-drawer-group--IsExpanded}}
+      hidden
+    {{/unless}}
+  {{/if}}
+  {{#if notification-drawer-list--attribute}}
+    {{{notification-drawer-list--attribute}}}
+  {{/if}}>
+  {{> @partial-block}}
+</ul>

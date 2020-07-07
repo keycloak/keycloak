@@ -1,0 +1,299 @@
+//
+// Fonts
+// --------------------------------------------------
+// PatternFly uses RedHatText - https://github.com/RedHatOfficial/RedHatFont
+//
+
+// stylelint-disable font-family-name-quotes
+
+@font-face {
+  font-family: "RedHatDisplay";
+  src: url("#{$pf-global--font-path}/RedHatDisplay/RedHatDisplay-Regular.eot");
+  src: url("#{$pf-global--font-path}/RedHatDisplay/RedHatDisplay-Regular.eot?#iefix") format("embedded-opentype"), url("#{$pf-global--font-path}/RedHatDisplay/RedHatDisplay-Regular.woff") format("woff");
+  font-style: normal;
+  font-weight: 300;
+  text-rendering: optimizeLegibility;
+}
+
+@font-face {
+  font-family: "RedHatDisplay";
+  src: url("#{$pf-global--font-path}/RedHatDisplay/RedHatDisplay-Medium.eot");
+  src: url("#{$pf-global--font-path}/RedHatDisplay/RedHatDisplay-Medium.eot?#iefix") format("embedded-opentype"), url("#{$pf-global--font-path}/RedHatDisplay/RedHatDisplay-Medium.woff") format("woff");
+  font-style: normal;
+  font-weight: 400;
+  text-rendering: optimizeLegibility;
+}
+
+@font-face {
+  font-family: "RedHatDisplay";
+  src: url("#{$pf-global--font-path}/RedHatDisplay/RedHatDisplay-Bold.eot");
+  src: url("#{$pf-global--font-path}/RedHatDisplay/RedHatDisplay-Bold.eot?#iefix") format("embedded-opentype"), url("#{$pf-global--font-path}/RedHatDisplay/RedHatDisplay-Bold.woff") format("woff");
+  font-style: normal;
+  font-weight: 700;
+  text-rendering: optimizeLegibility;
+}
+
+@font-face {
+  font-family: "RedHatText";
+  src: url("#{$pf-global--font-path}/RedHatText/RedHatText-Regular.eot");
+  src: url("#{$pf-global--font-path}/RedHatText/RedHatText-Regular.eot?#iefix") format("embedded-opentype"), url("#{$pf-global--font-path}/RedHatText/RedHatText-Regular.woff") format("woff");
+  font-style: normal;
+  font-weight: 400;
+  text-rendering: optimizeLegibility;
+}
+
+@font-face {
+  font-family: "RedHatText";
+  src: url("#{$pf-global--font-path}/RedHatText/RedHatText-Medium.eot");
+  src: url("#{$pf-global--font-path}/RedHatText/RedHatText-Medium.eot?#iefix") format("embedded-opentype"), url("#{$pf-global--font-path}/RedHatText/RedHatText-Medium.woff") format("woff");
+  font-style: normal;
+  font-weight: 700;
+  text-rendering: optimizeLegibility;
+}
+
+@if $pf-global--enable-font-overpass-cdn {
+  @import url("https://fonts.googleapis.com/css?family=Overpass|Overpass+Mono");
+} @else {
+  @font-face {
+    font-family: "overpass";
+    font-style: normal;
+    font-weight: 200;
+    src: url("#{$pf-global--font-path}/overpass-webfont/overpass-thin.eot"); // IE9 Compat Modes
+    src:
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-thin.eot?#iefix") format("embedded-opentype"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-thin.woff2") format("woff2"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-thin.woff") format("woff"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-thin.ttf")  format("truetype"); // Safari, Android, iOS
+  }
+
+  @font-face {
+    font-family: "overpass";
+    font-style: italic;
+    font-weight: 200;
+    src: url("#{$pf-global--font-path}/overpass-webfont/overpass-thin-italic.eot");
+    src:
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-thin-italic.eot?#iefix") format("embedded-opentype"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-thin-italic.woff2") format("woff2"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-thin-italic.woff") format("woff"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-thin-italic.ttf")  format("truetype");
+  }
+
+  @font-face {
+    font-family: "overpass";
+    font-style: normal;
+    font-weight: 300;
+    src: url("#{$pf-global--font-path}/overpass-webfont/overpass-extralight.eot");
+    src:
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-extralight.eot?#iefix") format("embedded-opentype"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-extralight.woff2") format("woff2"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-extralight.woff") format("woff"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-extralight.ttf")  format("truetype");
+  }
+
+  @font-face {
+    font-family: "overpass";
+    font-style: italic;
+    font-weight: 300;
+    src: url("#{$pf-global--font-path}/overpass-webfont/overpass-extralight-italic.eot");
+    src:
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-extralight-italic.eot?#iefix") format("embedded-opentype"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-extralight-italic.woff2") format("woff2"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-extralight-italic.woff") format("woff"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-extralight-italic.ttf")  format("truetype");
+  }
+
+  @font-face {
+    font-family: "overpass";
+    font-style: normal;
+    font-weight: 400;
+    src: url("#{$pf-global--font-path}/overpass-webfont/overpass-light.eot");
+    src:
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-light.eot?#iefix") format("embedded-opentype"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-light.woff2") format("woff2"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-light.woff") format("woff"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-light.ttf")  format("truetype");
+  }
+
+  @font-face {
+    font-family: "overpass";
+    font-style: italic;
+    font-weight: 400;
+    src: url("#{$pf-global--font-path}/overpass-webfont/overpass-light-italic.eot");
+    src:
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-light-italic.eot?#iefix") format("embedded-opentype"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-light-italic.woff2") format("woff2"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-light-italic.woff") format("woff"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-light-italic.ttf")  format("truetype");
+  }
+
+  @font-face {
+    font-family: "overpass";
+    font-style: normal;
+    font-weight: 500;
+    src: url("#{$pf-global--font-path}/overpass-webfont/overpass-regular.eot");
+    src:
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-regular.eot?#iefix") format("embedded-opentype"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-regular.woff2") format("woff2"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-regular.woff") format("woff"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-regular.ttf")  format("truetype");
+  }
+
+  @font-face {
+    font-family: "overpass";
+    font-style: italic;
+    font-weight: 500;
+    src: url("#{$pf-global--font-path}/overpass-webfont/overpass-italic.eot");
+    src:
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-italic.eot?#iefix") format("embedded-opentype"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-italic.woff2") format("woff2"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-italic.woff") format("woff"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-italic.ttf")  format("truetype");
+  }
+
+  @font-face {
+    font-family: "overpass";
+    font-style: normal;
+    font-weight: 600;
+    src: url("#{$pf-global--font-path}/overpass-webfont/overpass-semibold.eot");
+    src:
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-semibold.eot?#iefix") format("embedded-opentype"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-semibold.woff2") format("woff2"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-semibold.woff") format("woff"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-semibold.ttf")  format("truetype");
+  }
+
+  @font-face {
+    font-family: "overpass";
+    font-style: italic;
+    font-weight: 600;
+    src: url("#{$pf-global--font-path}/overpass-webfont/overpass-semibold-italic.eot");
+    src:
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-semibold-italic.eot?#iefix") format("embedded-opentype"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-semibold-italic.woff2") format("woff2"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-semibold-italic.woff") format("woff"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-semibold-italic.ttf")  format("truetype");
+  }
+
+  @font-face {
+    font-family: "overpass";
+    font-style: normal;
+    font-weight: 700;
+    src: url("#{$pf-global--font-path}/overpass-webfont/overpass-bold.eot");
+    src:
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-bold.eot?#iefix") format("embedded-opentype"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-bold.woff2") format("woff2"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-bold.woff") format("woff"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-bold.ttf")  format("truetype");
+  }
+
+  @font-face {
+    font-family: "overpass";
+    font-style: italic;
+    font-weight: 700;
+    src: url("#{$pf-global--font-path}/overpass-webfont/overpass-bold-italic.eot");
+    src:
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-bold-italic.eot?#iefix") format("embedded-opentype"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-bold-italic.woff2") format("woff2"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-bold-italic.woff") format("woff"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-bold-italic.ttf")  format("truetype");
+  }
+
+  @font-face {
+    font-family: "overpass";
+    font-style: normal;
+    font-weight: 800;
+    src: url("#{$pf-global--font-path}/overpass-webfont/overpass-extrabold.eot");
+    src:
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-extrabold.eot?#iefix") format("embedded-opentype"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-extrabold.woff2") format("woff2"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-extrabold.woff") format("woff"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-extrabold.ttf")  format("truetype");
+  }
+
+  @font-face {
+    font-family: "overpass";
+    font-style: italic;
+    font-weight: 800;
+    src: url("#{$pf-global--font-path}/overpass-webfont/overpass-extrabold-italic.eot");
+    src:
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-extrabold-italic.eot?#iefix") format("embedded-opentype"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-extrabold-italic.woff2") format("woff2"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-extrabold-italic.woff") format("woff"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-extrabold-italic.ttf")  format("truetype");
+  }
+
+  @font-face {
+    font-family: "overpass";
+    font-style: normal;
+    font-weight: 900;
+    src: url("#{$pf-global--font-path}/overpass-webfont/overpass-heavy.eot");
+    src:
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-heavy.eot?#iefix") format("embedded-opentype"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-heavy.woff2") format("woff2"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-heavy.woff") format("woff"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-heavy.ttf")  format("truetype");
+  }
+
+  @font-face {
+    font-family: "overpass";
+    font-style: italic;
+    font-weight: 900;
+    src: url("#{$pf-global--font-path}/overpass-webfont/overpass-heavy-italic.eot");
+    src:
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-heavy-italic.eot?#iefix") format("embedded-opentype"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-heavy-italic.woff2") format("woff2"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-heavy-italic.woff") format("woff"),
+      url("#{$pf-global--font-path}/overpass-webfont/overpass-heavy-italic.ttf")  format("truetype");
+  }
+
+
+  // Overpass Mono
+  @font-face {
+    font-family: "overpass-mono";
+    font-style: normal;
+    font-weight: 300;
+    src: url("#{$pf-global--font-path}/overpass-mono-webfont/overpass-mono-light.eot");
+    src:
+      url("#{$pf-global--font-path}/overpass-mono-webfont/overpass-mono-light.eot?#iefix") format("embedded-opentype"),
+      url("#{$pf-global--font-path}/overpass-mono-webfont/overpass-mono-light.woff2") format("woff2"),
+      url("#{$pf-global--font-path}/overpass-mono-webfont/overpass-mono-light.woff") format("woff"),
+      url("#{$pf-global--font-path}/overpass-mono-webfont/overpass-mono-light.ttf")  format("truetype");
+  }
+
+  @font-face {
+    font-family: "overpass-mono";
+    font-style: normal;
+    font-weight: 400;
+    src: url("#{$pf-global--font-path}/overpass-mono-webfont/overpass-mono-regular.eot");
+    src:
+      url("#{$pf-global--font-path}/overpass-mono-webfont/overpass-mono-regular.eot?#iefix") format("embedded-opentype"),
+      url("#{$pf-global--font-path}/overpass-mono-webfont/overpass-mono-regular.woff2") format("woff2"),
+      url("#{$pf-global--font-path}/overpass-mono-webfont/overpass-mono-regular.woff") format("woff"),
+      url("#{$pf-global--font-path}/overpass-mono-webfont/overpass-mono-regular.ttf")  format("truetype");
+  }
+
+  @font-face {
+    font-family: "overpass-mono";
+    font-style: normal;
+    font-weight: 500;
+    src: url("#{$pf-global--font-path}/overpass-mono-webfont/overpass-mono-semibold.eot");
+    src:
+      url("#{$pf-global--font-path}/overpass-mono-webfont/overpass-mono-semibold.eot?#iefix") format("embedded-opentype"),
+      url("#{$pf-global--font-path}/overpass-mono-webfont/overpass-mono-semibold.woff2") format("woff2"),
+      url("#{$pf-global--font-path}/overpass-mono-webfont/overpass-mono-semibold.woff") format("woff"),
+      url("#{$pf-global--font-path}/overpass-mono-webfont/overpass-mono-semibold.ttf")  format("truetype");
+  }
+
+  @font-face {
+    font-family: "overpass-mono";
+    font-style: normal;
+    font-weight: 600;
+    src: url("#{$pf-global--font-path}/overpass-mono-webfont/overpass-mono-bold.eot");
+    src:
+      url("#{$pf-global--font-path}/overpass-mono-webfont/overpass-mono-bold.eot?#iefix") format("embedded-opentype"),
+      url("#{$pf-global--font-path}/overpass-mono-webfont/overpass-mono-bold.woff2") format("woff2"),
+      url("#{$pf-global--font-path}/overpass-mono-webfont/overpass-mono-bold.woff") format("woff"),
+      url("#{$pf-global--font-path}/overpass-mono-webfont/overpass-mono-bold.ttf")  format("truetype");
+  }
+}
+// stylelint-enable

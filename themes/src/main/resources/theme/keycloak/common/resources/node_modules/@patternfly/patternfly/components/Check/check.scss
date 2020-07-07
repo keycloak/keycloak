@@ -1,0 +1,49 @@
+.pf-c-check {
+  --pf-c-check--GridGap: var(--pf-global--spacer--xs) var(--pf-global--spacer--sm);
+  --pf-c-check__label--disabled--Color: var(--pf-global--disabled-color--100);
+  --pf-c-check__label--Color: var(--pf-global--Color--100);
+  --pf-c-check__label--FontWeight: var(--pf-global--FontWeight--normal);
+  --pf-c-check__label--FontSize: var(--pf-global--FontSize--md);
+  --pf-c-check__label--LineHeight: var(--pf-global--LineHeight--sm);
+  --pf-c-check__input--MarginTop: #{pf-size-prem(-3px)};
+  --pf-c-check__description--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-check__description--Color: var(--pf-global--Color--200);
+
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-gap: var(--pf-c-check--GridGap);
+  align-items: center;
+  justify-items: start;
+}
+
+.pf-c-check__label {
+  font-size: var(--pf-c-check__label--FontSize);
+  font-weight: var(--pf-c-check__label--FontWeight);
+  line-height: var(--pf-c-check__label--LineHeight);
+  color: var(--pf-c-check__label--Color);
+}
+
+.pf-c-check__input {
+  margin-top: var(--pf-c-check__input--MarginTop);
+}
+
+.pf-c-check__description {
+  grid-column: 2;
+  font-size: var(--pf-c-check__description--FontSize);
+  color: var(--pf-c-check__description--Color);
+}
+
+.pf-c-check__label,
+.pf-c-check__input {
+  @at-root label.pf-c-check,
+  & {
+    cursor: pointer;
+  }
+
+  &:disabled,
+  &.pf-m-disabled {
+    --pf-c-check__label--Color: var(--pf-c-check__label--disabled--Color);
+
+    cursor: not-allowed;
+  }
+}

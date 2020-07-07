@@ -1,0 +1,17 @@
+{{#> tabs tabs--id=(concat master-detail-template--id '-tabs') tabs--modifier="pf-m-box pf-m-fill"}}
+  {{#> tabs-scroll-button tabs-scroll-button--IsLeft="true"}}{{/tabs-scroll-button}}
+  {{#> tabs-list}}
+    {{> __tabs-item
+      __tabs-item--current="true"
+      __tabs-item--id="overview"
+      __tabs-item--aria-label="Overview"
+      __tabs-item--text="Overview"
+      }}
+    {{> __tabs-item
+      __tabs-item--id="activity"
+      __tabs-item--aria-label="Activity"
+      __tabs-item--text="Activity"
+      }}
+  {{/tabs-list}}
+  {{#> tabs-scroll-button tabs-scroll-button--IsRight="true"}}{{/tabs-scroll-button}}
+{{/tabs}}

@@ -1,0 +1,295 @@
+{{#> table table--id=(concat master-detail-template--id "-table") table--grid="true" table--modifier="pf-m-grid-lg" table--attribute='aria-label="This is a table with checkboxes"'}}
+  {{#> table-thead}}
+    {{#> table-tr}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="{{table--id}}-check-all" aria-label="Select all rows">
+      {{/table-td}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Repositories
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Branches
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Pull requests
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Workspaces
+      {{/table-th}}
+      {{#> table-td table-td--IsEmpty="true"}}{{/table-td}}
+    {{/table-tr}}
+  {{/table-thead}}
+
+  {{#> table-tbody}}
+    {{#> table-tr}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="{{table--id}}-checkrow1" aria-labelledby="{{concat table--id '-node1'}}">
+      {{/table-td}}
+      {{#> table-th table-th--data-label="Repository name"}}
+        <div>
+          <div id="{{table--id}}-node1">Node 1</div>
+          <a href="#">siemur/test-space</a>
+        </div>
+      {{/table-th}}
+      {{#> table-td table-td--data-label="Branches"}}
+        10
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Pull requests"}}
+        25
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Workspaces"}}
+        5
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-1") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="{{table--id}}-checkrow2" aria-labelledby="{{concat table--id '-node2'}}">
+      {{/table-td}}
+      {{#> table-th table-th--data-label="Repository name"}}
+        <div>
+          <div id="{{table--id}}-node2">Node 2</div>
+          <a href="#">siemur/test-space</a>
+        </div>
+      {{/table-th}}
+      {{#> table-td table-td--data-label="Branches"}}
+        10
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Pull requests"}}
+        25
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Workspaces"}}
+        5
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-2") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="{{table--id}}-checkrow3" aria-labelledby="{{concat table--id '-node3'}}">
+      {{/table-td}}
+      {{#> table-th table-th--data-label="Repository name"}}
+        <div>
+          <div id="{{table--id}}-node3">Node 3</div>
+          <a href="#">siemur/test-space</a>
+        </div>
+      {{/table-th}}
+      {{#> table-td table-td--data-label="Branches"}}
+        10
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Pull requests"}}
+        25
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Workspaces"}}
+        5
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-3") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="{{table--id}}-checkrow4" aria-labelledby="{{concat table--id '-node4'}}">
+      {{/table-td}}
+      {{#> table-th table-th--data-label="Repository name"}}
+        <div>
+          <div id="{{table--id}}-node4">Node 4</div>
+          <a href="#">siemur/test-space</a>
+        </div>
+      {{/table-th}}
+      {{#> table-td table-td--data-label="Branches"}}
+        10
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Pull requests"}}
+        25
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Workspaces"}}
+        5
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-4") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="{{table--id}}-checkrow5" aria-labelledby="{{concat table--id '-node5'}}">
+      {{/table-td}}
+      {{#> table-th table-th--data-label="Repository name"}}
+        <div>
+          <div id="{{table--id}}-node5">Node 5</div>
+          <a href="#">siemur/test-space</a>
+        </div>
+      {{/table-th}}
+      {{#> table-td table-td--data-label="Branches"}}
+        10
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Pull requests"}}
+        25
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Workspaces"}}
+        5
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-5") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="{{table--id}}-checkrow6" aria-labelledby="{{concat table--id '-node6'}}">
+      {{/table-td}}
+      {{#> table-th table-th--data-label="Repository name"}}
+        <div>
+          <div id="{{table--id}}-node6">Node 6</div>
+          <a href="#">siemur/test-space</a>
+        </div>
+      {{/table-th}}
+      {{#> table-td table-td--data-label="Branches"}}
+        10
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Pull requests"}}
+        25
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Workspaces"}}
+        5
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-6") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="{{table--id}}-checkrow7" aria-labelledby="{{concat table--id '-node7'}}">
+      {{/table-td}}
+      {{#> table-th table-th--data-label="Repository name"}}
+        <div>
+          <div id="{{table--id}}-node7">Node 7</div>
+          <a href="#">siemur/test-space</a>
+        </div>
+      {{/table-th}}
+      {{#> table-td table-td--data-label="Branches"}}
+        10
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Pull requests"}}
+        25
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Workspaces"}}
+        5
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-7") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="{{table--id}}-checkrow8" aria-labelledby="{{concat table--id '-node8'}}">
+      {{/table-td}}
+      {{#> table-th table-th--data-label="Repository name"}}
+        <div>
+          <div id="{{table--id}}-node8">Node 8</div>
+          <a href="#">siemur/test-space</a>
+        </div>
+      {{/table-th}}
+      {{#> table-td table-td--data-label="Branches"}}
+        10
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Pull requests"}}
+        25
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Workspaces"}}
+        5
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-8") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="{{table--id}}-checkrow9" aria-labelledby="{{concat table--id '-node9'}}">
+      {{/table-td}}
+      {{#> table-th table-th--data-label="Repository name"}}
+        <div>
+          <div id="{{table--id}}-node9">Node 9</div>
+          <a href="#">siemur/test-space</a>
+        </div>
+      {{/table-th}}
+      {{#> table-td table-td--data-label="Branches"}}
+        10
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Pull requests"}}
+        25
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Workspaces"}}
+        5
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-9") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="{{table--id}}-checkrow10" aria-labelledby="{{concat table--id '-node10'}}">
+      {{/table-td}}
+      {{#> table-th table-th--data-label="Repository name"}}
+        <div>
+          <div id="{{table--id}}-node10">Node 10</div>
+          <a href="#">siemur/test-space</a>
+        </div>
+      {{/table-th}}
+      {{#> table-td table-td--data-label="Branches"}}
+        10
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Pull requests"}}
+        25
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Workspaces"}}
+        5
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-10") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+  {{/table-tbody}}
+{{/table}}
+
+{{#> pagination pagination--attribute='aria-label="Element pagination"' pagination--modifier="pf-m-bottom"}}
+  {{#> pagination-nav}}
+    {{#> button button--modifier="pf-m-plain pf-m-disabled" button--attribute='aria-label="Go to first page" aria-disabled="true"'}}
+      <i class="fas fa-angle-double-left" aria-hidden="true"></i>
+    {{/button}}
+    {{#> button button--modifier="pf-m-plain pf-m-disabled" button--attribute='aria-label="Go to previous page" aria-disabled="true"'}}
+      <i class="fas fa-angle-left" aria-hidden="true"></i>
+    {{/button}}
+    {{#> pagination-nav-page-select pagination-nav-page-select--attribute='aria-label="Current page 1 of 4"'}}
+      {{> form-control input="true" controlType="input" form-control--attribute='aria-label="Current page" type="number" min="1" max="4" value="1"'}}
+      <span aria-hidden="true">of 4</span>
+    {{/pagination-nav-page-select}}
+    {{#> button button--modifier="pf-m-plain" button--attribute='aria-label="Go to next page"'}}
+      <i class="fas fa-angle-right" aria-hidden="true"></i>
+    {{/button}}
+    {{#> button button--modifier="pf-m-plain" button--attribute='aria-label="Go to last page"'}}
+      <i class="fas fa-angle-double-right" aria-hidden="true"></i>
+    {{/button}}
+  {{/pagination-nav}}
+{{/pagination}}

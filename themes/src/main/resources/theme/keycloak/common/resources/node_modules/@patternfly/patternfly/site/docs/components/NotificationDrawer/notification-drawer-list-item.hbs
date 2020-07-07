@@ -1,0 +1,24 @@
+<li class="pf-c-notification-drawer__list-item
+  {{#if notification-drawer-list-item--IsRead}}
+    pf-m-read
+  {{else}}
+    pf-m-hoverable
+  {{/if}}
+  {{#if notification-drawer-list-item--IsInfo}}
+    pf-m-info
+  {{else if notification-drawer-list-item--IsWarning}}
+    pf-m-warning
+  {{else if notification-drawer-list-item--IsDanger}}
+    pf-m-danger
+  {{else if notification-drawer-list-item--IsSuccess}}
+    pf-m-success
+  {{/if}}
+  {{#if notification-drawer-list-item--modifier}} {{notification-drawer-list-item--modifier}}{{/if}}"
+  {{#unless notification-drawer-list-item--IsRead}}
+    tabindex="0"
+  {{/unless}}
+  {{#if notification-drawer-list-item--attribute}}
+    {{{notification-drawer-list-item--attribute}}}
+  {{/if}}>
+  {{> @partial-block}}
+</li>

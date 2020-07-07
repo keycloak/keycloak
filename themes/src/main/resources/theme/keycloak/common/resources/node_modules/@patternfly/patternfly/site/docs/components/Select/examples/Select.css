@@ -1,0 +1,48 @@
+#ws-core-c-select-single-with-top-expanded,
+#ws-core-c-select-single-expanded,
+#ws-core-c-select-single-expanded-and-selected,
+#ws-core-c-select-single-with-typeahead-expanded-and-selected,
+#ws-core-c-select-plain-expanded {
+  min-height: 330px;
+}
+
+#ws-core-c-select-single-with-top-expanded {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+}
+
+#ws-core-c-select-single-with-typeahead-expanded,
+#ws-core-c-select-multi-with-typeahead-chip-group-collapsed {
+  min-height: 210px;
+}
+
+#ws-core-c-select-checkbox-expanded,
+#ws-core-c-select-checkbox-expanded-without-badge {
+  min-height: 270px;
+}
+
+#ws-core-c-select-multi-with-typeahead-chip-group-expanded {
+  min-height: 365px;
+}
+
+#ws-core-c-select-checkbox-expanded-and-selected-with-groups {
+  min-height: 460px;
+}
+
+#ws-core-c-select-checkbox-expanded-and-selected-with-groups-and-filter {
+  min-height: 530px;
+}
+
+#ws-core-c-select-panel {
+  min-height: 120px;
+}
+
+#ws-core-c-select-with-description,
+#ws-core-c-select-checkbox-with-description {
+  min-height: 350px;
+}
+
+#ws-core-c-select-favorites {
+  min-height: 650px;
+}

@@ -1,0 +1,87 @@
+.pf-c-overflow-menu {
+  // Base spacer - shared value
+  --pf-c-overflow-menu--spacer--base: var(--pf-global--spacer--md);
+
+  // Spacer values
+  --pf-c-overflow-menu--spacer: var(--pf-global--spacer--sm);
+  --pf-c-overflow-menu__group--spacer: var(--pf-c-overflow-menu--spacer--base);
+  --pf-c-overflow-menu__item--spacer: var(--pf-c-overflow-menu--spacer--base);
+  --pf-c-overflow-menu--c-divider--m-vertical--spacer: var(--pf-c-overflow-menu--spacer--base);
+
+  // Button group
+  --pf-c-overflow-menu__group--m-button-group--spacer: var(--pf-c-overflow-menu--spacer--base);
+  --pf-c-overflow-menu__group--m-button-group--space-items: var(--pf-global--spacer--sm);
+
+  // Icon button group
+  --pf-c-overflow-menu__group--m-icon-button-group--spacer: var(--pf-c-overflow-menu--spacer--base);
+  --pf-c-overflow-menu__group--m-icon-button-group--space-items: 0;
+
+  display: inline-flex;
+  align-items: center;
+}
+
+// Content
+.pf-c-overflow-menu__content {
+  display: flex;
+  align-items: center;
+}
+
+// Group
+.pf-c-overflow-menu__group {
+  --pf-c-overflow-menu--spacer: var(--pf-c-overflow-menu__group--spacer);
+
+  display: flex;
+  align-items: center;
+
+  // Button group
+  &.pf-m-button-group {
+    --pf-c-overflow-menu--spacer: var(--pf-c-overflow-menu__group--m-button-group--spacer);
+
+    > * {
+      --pf-c-overflow-menu--spacer: var(--pf-c-overflow-menu__group--m-button-group--space-items);
+    }
+  }
+
+  // Icon button group
+  &.pf-m-icon-button-group {
+    --pf-c-overflow-menu--spacer: var(--pf-c-overflow-menu__group--m-icon-button-group--spacer);
+
+    > * {
+      --pf-c-overflow-menu--spacer: var(--pf-c-overflow-menu__group--m-icon-button-group--space-items);
+    }
+  }
+}
+
+// Item
+.pf-c-overflow-menu__item {
+  // reset spacer
+  --pf-c-overflow-menu--spacer: var(--pf-c-overflow-menu__item--spacer);
+}
+
+.pf-c-overflow-menu__content,
+.pf-c-overflow-menu__control,
+.pf-c-overflow-menu__group,
+.pf-c-overflow-menu__item {
+  margin-right: var(--pf-c-overflow-menu--spacer);
+
+  &:last-child {
+    --pf-c-overflow-menu--spacer: 0;
+  }
+}
+
+// Divider
+.pf-c-overflow-menu,
+.pf-c-overflow-menu__group {
+  // set this var here so specificity is 20
+  > .pf-c-divider {
+    --pf-c-overflow-menu--spacer: var(--pf-c-overflow-menu--c-divider--m-vertical--spacer);
+  }
+
+  > .pf-c-divider.pf-m-vertical {
+    margin-right: var(--pf-c-overflow-menu--spacer);
+
+    &:last-child {
+      --pf-c-overflow-menu--spacer: 0;
+    }
+  }
+}

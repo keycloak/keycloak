@@ -1,0 +1,9 @@
+<div class="pf-c-toolbar__item{{#if toolbar-item--modifier}} {{toolbar-item--modifier}}{{/if}}"
+  {{#if toolbar-item--id}}
+    id="{{toolbar-item--id}}"
+  {{/if}}
+  {{#if toolbar-item--attribute}}
+    {{{toolbar-item--attribute}}}
+  {{/if}}>
+  {{> @partial-block}}
+</div>

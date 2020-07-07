@@ -1,0 +1,49 @@
+{{#> table table--id="empty-state-table-demo" table--grid="true" table--modifier="pf-m-grid-xl" table--attribute='aria-label="This is a table showing an empty state"'}}
+  {{#> table-thead}}
+    {{#> table-tr}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="check-all" aria-label="Select all rows">
+      {{/table-td}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Repositories
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Branches
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Pull requests
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Workspaces
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Last commit
+      {{/table-th}}
+      {{#> table-td}}{{/table-td}}
+      {{#> table-td}}{{/table-td}}
+    {{/table-tr}}
+  {{/table-thead}}
+
+  {{#> table-tbody}}
+    {{#> table-tr table-tr--modifier="pf-m-height-auto"}}
+      {{#> table-td table-td--attribute='colspan="8"'}}
+        {{#> bullseye}}
+          {{#> empty-state empty-state--modifier="pf-m-sm"}}
+            {{#> empty-state-icon empty-state-icon--type="search"}}{{/empty-state-icon}}
+            {{#> title titleType="h2" title--modifier="pf-m-lg"}}
+              No results found
+            {{/title}}
+            {{#> empty-state-body}}
+              No results match the filter criteria. Remove all filters or clear all filters to show results.
+            {{/empty-state-body}}
+            {{#> empty-state-primary}}
+              {{#> button button--modifier="pf-m-link"}}
+                Clear all filters
+              {{/button}}
+            {{/empty-state-primary}}
+          {{/empty-state}}
+        {{/bullseye}}
+      {{/table-td}}
+    {{/table-tr}}
+  {{/table-tbody}}
+{{/table}}

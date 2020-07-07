@@ -1,0 +1,9 @@
+<div class="pf-c-card{{#if card--modifier}} {{card--modifier}}{{/if}}"
+  {{#if card--attribute}}
+    {{{card--attribute}}}
+  {{/if}}
+  {{#if card--id}}
+    id="{{{card--id}}}"
+  {{/if}}>
+  {{> @partial-block}}
+</div>

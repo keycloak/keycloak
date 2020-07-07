@@ -1,0 +1,12 @@
+<{{#if l-flex--type}}{{l-flex--type}}{{else}}div{{/if}} class="pf-l-flex{{#if l-flex--modifier}} {{l-flex--modifier}}{{/if}}"
+  {{#if l-flex--attribute}}
+    {{{l-flex--attribute}}}
+  {{/if}}
+  {{#if l-flex--id}}
+    id="{{{l-flex--id}}}"
+  {{/if}}
+  {{#if example--label}}
+    data-label="{{{example--label}}}"
+  {{/if}}>
+  {{> @partial-block}}
+</{{#if l-flex--type}}{{l-flex--type}}{{else}}div{{/if}}>

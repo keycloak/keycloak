@@ -1,0 +1,19 @@
+{{#if page-header-tools--IsNotification}}
+  {{#if page-header-tools--IsNotificationSelected}}
+    {{#> page-header-tools-item page-header-tools-item--modifier=(concat 'pf-m-selected ' page-template-header-tools-notification-badge--item--modifier)}}
+      {{#> button button--modifier="pf-m-plain" button--attribute='aria-label="Unread notifications" aria-expanded="true"'}}
+        {{#> notification-badge notification-badge--modifier="pf-m-unread"}}
+          <i class="fas fa-bell" aria-hidden="true"></i>
+        {{/notification-badge}}
+      {{/button}}
+    {{/page-header-tools-item}}
+  {{else}}
+    {{#> page-header-tools-item  page-header-tools-item--modifier=page-template-header-tools-notification-badge--item--modifier}}
+      {{#> button button--modifier="pf-m-plain" button--attribute='aria-label="Unread notifications" aria-expanded="false"'}}
+        {{#> notification-badge notification-badge--modifier="pf-m-unread"}}
+          <i class="fas fa-bell" aria-hidden="true"></i>
+        {{/notification-badge}}
+      {{/button}}
+    {{/page-header-tools-item}}
+  {{/if}}
+{{/if}}

@@ -1,0 +1,21 @@
+{{#> l-flex l-flex--modifier="pf-m-column pf-m-space-items-lg"}}
+  {{#> l-flex-item}}
+    <p>The content of the drawer really is up to you. It could have form fields, definition lists, text lists, labels, charts, progress bars, etc. Spacing recommendation is 24px margins. You can put tabs in here, and can also make the drawer scrollable.</p>
+  {{/l-flex-item}}
+  {{#> l-flex-item}}
+    {{#> progress
+      progress__value="33"
+      progress__description="Title"
+      progress__id=(concat master-detail-template--id "-progress-example1")
+    }}
+    {{/progress}}
+  {{/l-flex-item}}
+  {{#> l-flex-item}}
+    {{#> progress
+      progress__value="66"
+      progress__description="Title"
+      progress__id=(concat master-detail-template--id "-progress-example2")
+    }}
+    {{/progress}}
+  {{/l-flex-item}}
+{{/l-flex}}

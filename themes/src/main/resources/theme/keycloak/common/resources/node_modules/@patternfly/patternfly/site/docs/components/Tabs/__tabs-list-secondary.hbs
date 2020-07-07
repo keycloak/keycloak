@@ -1,0 +1,95 @@
+{{!--
+------------------------------------
+Tabs list content options
+------------------------------------
+__tabs-list-secondary--HasIcons: bool
+__tabs-list-secondary--IsScrollable: bool
+__tabs-list-secondary--IsShort: bool
+__tabs-list-secondary--IsLong: bool
+__tabs-item--NoText: bool
+------------------------------------
+--}}
+
+{{#unless __tabs-list-secondary--NoScrollButtons}}
+  {{#if __tabs-list-secondary--DisabledFirstScrollButton}}
+    {{> tabs-scroll-button tabs-scroll-button--IsLeft="true" tabs-scroll-button--IsDisabled="true"}}
+  {{else if __tabs-list-secondary--IsScrollable}}
+    {{> tabs-scroll-button tabs-scroll-button--IsLeft="true"}}
+  {{else}}
+    {{> tabs-scroll-button tabs-scroll-button--IsLeft="true" tabs-scroll-button--IsDisabled="true" tabs-scroll-button--IsHidden="true"}}
+  {{/if}}
+{{/unless}}
+
+{{#> tabs-list}}
+  {{> __tabs-item
+    __tabs-item--id="sub-1"
+    __tabs-item--icon-name="address-card"
+    __tabs-item--aria-label="Item 1"
+    __tabs-item--text="Item 1"
+    }}
+  {{> __tabs-item
+    __tabs-item--id="sub-2"
+    __tabs-item--icon-name="anchor"
+    __tabs-item--aria-label="Item 2"
+    __tabs-item--text="Item 2"
+    }}
+  {{> __tabs-item
+    __tabs-item--current="true"
+    __tabs-item--id="sub-3"
+    __tabs-item--icon-name="arrow-alt-circle-right"
+    __tabs-item--aria-label="Item 3"
+    __tabs-item--text="Item 3"
+    }}
+
+  {{#unless __tabs-list-secondary--IsShort}}
+    {{> __tabs-item
+      __tabs-item--id="sub-4"
+      __tabs-item--icon-name="balance-scale"
+      __tabs-item--aria-label="Item 4"
+      __tabs-item--text="Item 4"
+      }}
+    {{> __tabs-item
+      __tabs-item--id="sub-5"
+      __tabs-item--icon-name="bell"
+      __tabs-item--aria-label="Item 5"
+      __tabs-item--text="Item 5"
+      }}
+    {{> __tabs-item
+      __tabs-item--id="sub-6"
+      __tabs-item--icon-name="book"
+      __tabs-item--aria-label="Item 6"
+      __tabs-item--text="Item 6"
+      }}
+
+    {{#if __tabs-list-secondary--IsLong}}
+      {{> __tabs-item
+        __tabs-item--id="sub-7"
+        __tabs-item--icon-name="chart-pie"
+        __tabs-item--aria-label="Item 7"
+        __tabs-item--text="Item 7"
+        }}
+      {{> __tabs-item
+        __tabs-item--id="sub-8"
+        __tabs-item--icon-name="coffee"
+        __tabs-item--aria-label="Item 8"
+        __tabs-item--text="Item 8"
+        }}
+      {{> __tabs-item
+        __tabs-item--id="sub-9"
+        __tabs-item--icon-name="dot-circle"
+        __tabs-item--aria-label="Item 9"
+        __tabs-item--text="Item 9"
+        }}
+    {{/if}}
+  {{/unless}}
+{{/tabs-list}}
+
+{{#unless __tabs-list-secondary--NoScrollButtons}}
+  {{#if __tabs-list-secondary--DisabledLastScrollButton}}
+    {{> tabs-scroll-button tabs-scroll-button--IsRight="true" tabs-scroll-button--IsDisabled="true"}}
+  {{else if __tabs-list-secondary--IsScrollable}}
+    {{> tabs-scroll-button tabs-scroll-button--IsRight="true"}}
+  {{else}}
+    {{> tabs-scroll-button tabs-scroll-button--IsRight="true" tabs-scroll-button--IsDisabled="true" tabs-scroll-button--IsHidden="true"}}
+  {{/if}}
+{{/unless}}

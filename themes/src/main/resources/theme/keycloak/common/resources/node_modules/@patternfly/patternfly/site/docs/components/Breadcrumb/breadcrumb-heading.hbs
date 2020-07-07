@@ -1,0 +1,9 @@
+<h1 class="pf-c-breadcrumb__heading{{#if breadcrumb-heading--modifier}} {{breadcrumb-heading--modifier}}{{/if}}"
+  {{#if breadcrumb-heading--attribute}}
+    {{{breadcrumb-heading--attribute}}}
+  {{/if}}
+  {{#if breadcrumb-heading--current}}
+    aria-current="page"
+  {{/if}}>
+  {{> @partial-block}}
+</h1>

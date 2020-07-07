@@ -1,0 +1,34 @@
+<div class="pf-c-select__menu{{#if select-multi--modifier}} {{select-multi--modifier}}{{/if}}"
+  {{#unless select--IsExpanded}}hidden{{/unless}}
+  {{#if select-multi--attribute}}
+    {{{select-multi-attribute}}}
+  {{/if}}>
+  {{#if select--IsFilterable}}
+    {{#> select-menu-search}}
+      {{> select-menu-search-input}}
+    {{/select-menu-search}}
+    {{> divider}}
+  {{/if}}
+  {{#> select-menu-fieldset select-menu-fieldset--attribute='aria-label="Select input"'}}
+    {{#> check check--type="label" check--attribute=(concat 'for="' id '-active"') check--modifier="pf-c-select__menu-item"}}
+      {{#> check-input check-input--attribute=(concat 'type="checkbox" id="' id '-active" name="' id '-active"')}}{{/check-input}}
+      {{#> check-label check-label--type="span"}}Active{{/check-label}}
+    {{/check}}
+    {{#> check check--type="label" check--attribute=(concat 'for="' id '-cancelled"') check--modifier="pf-c-select__menu-item"}}
+      {{#> check-input check-input--attribute=(concat 'type="checkbox" id="' id '-cancelled" name="' id '-cancelled" checked')}}{{/check-input}}
+      {{#> check-label check-label--type="span"}}Cancelled{{/check-label}}
+    {{/check}}
+    {{#> check check--type="label" check--attribute=(concat 'for="' id '-paused"') check--modifier="pf-c-select__menu-item"}}
+      {{#> check-input check-input--attribute=(concat 'type="checkbox" id="' id '-paused" name="' id '-paused" checked')}}{{/check-input}}
+      {{#> check-label check-label--type="span"}}Paused{{/check-label}}
+    {{/check}}
+    {{#> check check--type="label" check--attribute=(concat 'for="' id '-warning"') check--modifier="pf-c-select__menu-item"}}
+      {{#> check-input check-input--attribute=(concat 'type="checkbox" id="' id '-warning" name="' id '-warning"')}}{{/check-input}}
+      {{#> check-label check-label--type="span"}}Warning{{/check-label}}
+    {{/check}}
+    {{#> check check--type="label" check--attribute=(concat 'for="' id '-restarted"') check--modifier="pf-c-select__menu-item"}}
+      {{#> check-input check-input--attribute=(concat 'type="checkbox" id="' id '-restarted" name="' id '-restarted" checked')}}{{/check-input}}
+      {{#> check-label check-label--type="span"}}Restarted{{/check-label}}
+    {{/check}}
+  {{/select-menu-fieldset}}
+</div>

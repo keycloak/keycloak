@@ -1,0 +1,23 @@
+<span class="pf-c-search-input__nav{{#if search-input-nav--modifier}} {{search-input-nav--modifier}}{{/if}}"
+  {{#if search-input-nav--attribute}}
+    {{search-input-nav--attribute}}
+  {{/if}}>
+  {{#if search-input--IsFirstMatch}}
+    {{#> button button--modifier="pf-m-plain" button--attribute='disabled aria-label="Previous"'}}
+      <i class="fas fa-angle-down fa-fw" aria-hidden="true"></i>
+    {{/button}}
+  {{else}}
+    {{#> button button--modifier="pf-m-plain" button--attribute='aria-label="Previous"'}}
+      <i class="fas fa-angle-down fa-fw" aria-hidden="true"></i>
+    {{/button}}
+  {{/if}}
+  {{#if search-input--IsLastMatch}}
+    {{#> button button--modifier="pf-m-plain" button--attribute='disabled aria-label="Next"'}}
+      <i class="fas fa-angle-up fa-fw" aria-hidden="true"></i>
+    {{/button}}
+  {{else}}
+    {{#> button button--modifier="pf-m-plain" button--attribute='aria-label="Next"'}}
+      <i class="fas fa-angle-up fa-fw" aria-hidden="true"></i>
+    {{/button}}
+  {{/if}}
+</span>

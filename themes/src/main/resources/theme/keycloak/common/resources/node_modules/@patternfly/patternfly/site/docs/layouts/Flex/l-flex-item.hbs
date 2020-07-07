@@ -1,0 +1,9 @@
+<{{#if l-flex-item--type}}{{l-flex-item--type}}{{else}}div{{/if}} class="pf-l-flex__item{{#if l-flex-item--modifier}} {{l-flex-item--modifier}}{{/if}}"
+  {{#if l-flex-item--id}}
+    id="{{{l-flex-item--id}}}"
+  {{/if}}
+  {{#if l-flex-item--attribute}}
+    {{{l-flex-item--attribute}}}
+  {{/if}}>
+  {{> @partial-block}}
+</{{#if l-flex-item--type}}{{l-flex-item--type}}{{else}}div{{/if}}>

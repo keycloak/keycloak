@@ -1,0 +1,8 @@
+<nav class="pf-c-app-launcher{{#if app-launcher--IsExpanded}} pf-m-expanded{{/if}}{{#if app-launcher--modifier}} {{app-launcher--modifier}}{{/if}}"
+  aria-label="Application launcher"
+  {{#if app-launcher--attribute}}
+    {{{app-launcher--attribute}}}
+  {{/if}}>
+  {{> app-launcher-toggle}}
+  {{> @partial-block}}
+</nav>

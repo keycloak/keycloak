@@ -1,0 +1,74 @@
+// URL.com/guidelines#layout
+// Generate smart grid layout
+// @parameter {Suffix} xs, sm, md, lg, xl, null
+@mixin pf-smart-grid($suffix: null) {
+  @for $col-num from 1 through 12 {
+    &.pf-m-all-#{$col-num}-col#{$suffix} {
+      > * {
+        --pf-l-grid__item--GridColumnEnd: span #{$col-num};
+      }
+    }
+  }
+}
+
+// Creates grid item
+// @parameter {Suffix} xs, sm, md, lg, xl, null
+@mixin pf-grid-item-modifier($suffix: null) {
+  // generate column span modifier
+  @for $col-num from 1 through 12 {
+    > .pf-m-#{$col-num}-col#{$suffix} {
+      --pf-l-grid__item--GridColumnEnd: span #{$col-num};
+    }
+  }
+
+  // generate column offset modfiers
+  @for $col-num from 1 through 12 {
+    > .pf-m-offset-#{$col-num}-col#{$suffix} {
+      --pf-l-grid__item--GridColumnStart: col-start calc(#{$col-num} + 1);
+    }
+  }
+
+  // generate row span modfiers
+  @for $row-num from 1 through 12 {
+    > .pf-m-#{$row-num}-row#{$suffix} {
+      grid-row: span #{$row-num};
+    }
+  }
+}
+
+
+// Grid base
+.pf-l-grid {
+  --pf-l-grid--m-gutter--GridGap: var(--pf-global--gutter);
+  --pf-l-grid__item--GridColumnStart: auto;
+  --pf-l-grid__item--GridColumnEnd: span 12;
+
+  display: grid;
+  grid-template-columns: repeat(12, [col-start] 1fr);
+
+  > *,
+  .pf-l-grid__item {
+    grid-column-start: var(--pf-l-grid__item--GridColumnStart);
+    grid-column-end: var(--pf-l-grid__item--GridColumnEnd);
+    min-width: 0;
+    min-height: 0;
+  }
+
+  // Loop through $breakpoints map to generate responsive classes
+  @each $breakpoint, $value in $pf-global--breakpoint-map {
+    @include pf-media-query($breakpoint) {
+      @include pf-smart-grid($value);
+    }
+  }
+
+  // Loop through $breakpoints map to generate responsive classes
+  @each $breakpoint, $value in $pf-global--breakpoint-map {
+    @include pf-media-query($breakpoint) {
+      @include pf-grid-item-modifier($value);
+    }
+  }
+
+  &.pf-m-gutter {
+    grid-gap: var(--pf-l-grid--m-gutter--GridGap);
+  }
+}

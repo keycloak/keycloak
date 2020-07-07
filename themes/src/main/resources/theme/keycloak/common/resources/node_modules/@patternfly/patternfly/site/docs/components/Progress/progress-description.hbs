@@ -1,0 +1,11 @@
+<div class="pf-c-progress__description{{#if progress-description--modifier}} {{progress-description--modifier}}{{/if}}"
+  {{~#if progress__id}}
+    id="{{progress__id}}-description"
+  {{/if}}
+  {{#if progress-description--attribute}}
+    {{{progress-description--attribute}}}
+  {{/if}}>
+  {{#unless progress--no-description}}
+    {{progress__description}}
+  {{/unless}}
+</div>

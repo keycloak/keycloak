@@ -1,0 +1,15 @@
+<button class="pf-c-options-menu__toggle-button{{#if options-menu-toggle-button--modifier}} {{options-menu-toggle-button--modifier}}{{/if}}"
+  id="{{id}}-toggle"
+  aria-haspopup="listbox"
+  aria-expanded="{{#if options-menu--IsExpanded}}true{{else}}false{{/if}}"
+  {{#if aria-label}}
+    aria-label="{{aria-label}}"
+  {{/if}}
+  {{#if options-menu-toggle--IsDisabled}}
+    disabled
+  {{/if}}
+  {{#if options-menu-toggle-button--attribute}}
+    {{{options-menu-toggle-button--attribute}}}
+  {{/if}}>
+  {{> options-menu-toggle-button-icon}}
+</button>

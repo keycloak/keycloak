@@ -1,0 +1,9 @@
+<{{# if inline-edit--type}}{{inline-edit--type}}{{else}}div{{/if}} class="pf-c-inline-edit{{#if inline-edit--modifier}} {{inline-edit--modifier}}{{/if}}"
+  {{#if inline-edit--id}}
+    id="{{inline-edit--id}}"
+  {{/if}}
+  {{#if inline-edit--attribute}}
+    {{{inline-edit--attribute}}}
+  {{/if}}>
+  {{> @partial-block}}
+</{{# if inline-edit--type}}{{inline-edit--type}}{{else}}div{{/if}}>

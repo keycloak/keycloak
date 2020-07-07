@@ -1,0 +1,9 @@
+<tr class="{{#if table-tr--expandable}}pf-c-table__expandable-row{{/if}}{{#if table-tr--IsExpanded}} pf-m-expanded{{/if}}{{#if table-tr--modifier}} {{table-tr--modifier}}{{/if}}"
+  {{#if table--grid}}
+    role="row"
+  {{/if}}
+  {{#if table-tr--attribute}}
+    {{{table-tr--attribute}}}
+  {{/if}}>
+  {{> @partial-block}}
+</tr>

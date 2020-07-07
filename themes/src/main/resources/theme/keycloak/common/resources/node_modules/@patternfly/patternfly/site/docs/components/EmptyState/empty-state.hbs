@@ -1,0 +1,8 @@
+<div class="pf-c-empty-state{{#if empty-state--modifier}} {{empty-state--modifier}}{{/if}}"
+  {{#if empty-state--attribute}}
+    {{{empty-state--attribute}}}
+  {{/if}}>
+  {{#> empty-state-content}}
+    {{> @partial-block}}
+  {{/empty-state-content}}
+</div>

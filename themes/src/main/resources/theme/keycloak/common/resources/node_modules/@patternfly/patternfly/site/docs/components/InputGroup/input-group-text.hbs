@@ -1,0 +1,18 @@
+<{{inputGroupTextType}} class="pf-c-input-group__text{{#if input-group-text--modifier}} {{input-group-text--modifier}}{{/if}}"
+  {{#if aria-label}}
+    aria-label="{{aria-label}}"
+  {{/if}}
+  {{#if input-group-text--attribute}}
+    {{{input-group-text--attribute}}}
+  {{/if}}>
+	{{> @partial-block}}
+	{{#if input-group-text--HasDollarSignIcon}}
+    <i class="fas fa-dollar-sign" aria-hidden="true"></i>
+	{{/if}}
+	{{#if input-group-text--HasAtIcon}}
+    <i class="fas fa-at" aria-hidden="true"></i>
+  {{/if}}
+  {{#if input-group-text--HasCalendarIcon}}
+    <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+  {{/if}}
+</{{inputGroupTextType}}>

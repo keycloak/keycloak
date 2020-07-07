@@ -1,0 +1,175 @@
+.pf-c-progress {
+  // Component variables
+  --pf-c-progress--GridGap: var(--pf-global--spacer--md);
+
+  // Element variables
+  --pf-c-progress__bar--before--BackgroundColor: var(--pf-global--primary-color--100);
+  --pf-c-progress__bar--Height: var(--pf-global--spacer--md);
+  --pf-c-progress__bar--BackgroundColor: var(--pf-global--BackgroundColor--light-100); // the bar always needs white under it so that the semi-transparent color shows correctly
+  --pf-c-progress__status-icon--Color: var(--pf-global--Color--100); // the status icon default color is the default text color
+  --pf-c-progress__status-icon--MarginLeft: var(--pf-global--spacer--sm);
+  --pf-c-progress__bar--before--Opacity: .2; // one-off change in opacity to allow progress bar to automatically coordinate with the indicator color
+  --pf-c-progress__indicator--Height: var(--pf-c-progress__bar--Height);
+  --pf-c-progress__indicator--BackgroundColor: var(--pf-c-progress__bar--before--BackgroundColor);
+
+  // Modifier variables
+  --pf-c-progress--m-danger__bar--BackgroundColor: var(--pf-global--danger-color--100);
+  --pf-c-progress--m-success__bar--BackgroundColor: var(--pf-global--success-color--100);
+  --pf-c-progress--m-danger__status-icon--Color: var(--pf-global--danger-color--100);
+  --pf-c-progress--m-success__status-icon--Color: var(--pf-global--success-color--100);
+  --pf-c-progress--m-inside__indicator--MinWidth: var(--pf-global--spacer--xl);
+  --pf-c-progress--m-inside__measure--Color: var(--pf-global--Color--light-100); // the measure needs to be white when moved inside the progress bar indicator
+  --pf-c-progress--m-success--m-inside__measure--Color: var(--pf-global--Color--dark-100); // the measure still needs to be dark when in success state
+  --pf-c-progress--m-inside__measure--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-progress--m-outside__measure--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-progress--m-sm__bar--Height: var(--pf-global--spacer--sm);
+  --pf-c-progress--m-sm__description--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-progress--m-sm__measure--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-progress--m-lg__bar--Height: var(--pf-global--spacer--lg);
+
+  // Component styles
+  display: grid;
+  grid-gap: var(--pf-c-progress--GridGap);
+  grid-template-columns: 1fr auto;
+  grid-template-rows: 1fr auto;
+
+  // Modifiers
+  // size modifiers
+  &.pf-m-sm {
+    --pf-c-progress__bar--Height: var(--pf-c-progress--m-sm__bar--Height); // set height to the small height
+
+    .pf-c-progress__description {
+      font-size: var(--pf-c-progress--m-sm__description--FontSize);
+    }
+
+    .pf-c-progress__measure {
+      font-size: var(--pf-c-progress--m-sm__measure--FontSize);
+    }
+  }
+
+  &.pf-m-lg {
+    --pf-c-progress__bar--Height: var(--pf-c-progress--m-lg__bar--Height); // set height to the large height
+  }
+
+  // an inside-style progress component shows the measure inside the indicator
+  &.pf-m-inside {
+    .pf-c-progress__indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: var(--pf-c-progress--m-inside__indicator--MinWidth);
+    }
+
+    .pf-c-progress__measure {
+      font-size: var(--pf-c-progress--m-inside__measure--FontSize);
+      color: var(--pf-c-progress--m-inside__measure--Color);
+      text-align: center;
+    }
+  }
+
+  // an outside-style progress component shows the measure and status icon to the right of the bar
+  &.pf-m-outside {
+    .pf-c-progress__description {
+      grid-column: 1 / 3;
+    }
+
+    .pf-c-progress__status {
+      grid-column: 2 / 3;
+      grid-row: 2 / 3;
+      align-self: center;
+    }
+
+    .pf-c-progress__measure {
+      font-size: var(--pf-c-progress--m-outside__measure--FontSize);
+    }
+
+    .pf-c-progress__bar,
+    .pf-c-progress__indicator {
+      grid-column: 1 / 2;
+    }
+  }
+
+  // No Description. If a measure or status is needed, use with inside or outside measure modifier.
+  &.pf-m-singleline {
+    grid-template-rows: 1fr;
+
+    .pf-c-progress__description {
+      display: none;
+      visibility: hidden;
+    }
+
+    .pf-c-progress__bar {
+      grid-row: 1 / 2;
+      grid-column: 1 / 2;
+    }
+
+    .pf-c-progress__status {
+      grid-row: 1 / 2;
+      grid-column: 2 / 3;
+    }
+  }
+
+  // status modifiers
+  &.pf-m-success { // set color variables to the success colors
+    --pf-c-progress__bar--before--BackgroundColor: var(--pf-c-progress--m-success__bar--BackgroundColor);
+    --pf-c-progress__status-icon--Color: var(--pf-c-progress--m-success__status-icon--Color);
+    --pf-c-progress--m-inside__measure--Color: var(--pf-c-progress--m-success--m-inside__measure--Color);
+  }
+
+  &.pf-m-danger { // set color variables to the danger colors
+    --pf-c-progress__bar--before--BackgroundColor: var(--pf-c-progress--m-danger__bar--BackgroundColor);
+    --pf-c-progress__status-icon--Color: var(--pf-c-progress--m-danger__status-icon--Color);
+  }
+}
+
+// Elements
+
+// the progress__description is displayed above the progress bar on the left
+.pf-c-progress__description {
+  grid-column: 1 / 2;
+}
+
+// the progress__status is displayed in the upper right
+.pf-c-progress__status {
+  grid-column: 2 / 3;
+  grid-row: 1 / 2;
+  align-self: end;
+}
+
+// the progress__status-icon is an icon displayed always in the upper right
+.pf-c-progress__status-icon {
+  margin-left: var(--pf-c-progress__status-icon--MarginLeft);
+  color: var(--pf-c-progress__status-icon--Color);
+}
+
+// The progress__bar is a white underlay with a semi-transparent color on top, which matches the progress__indicator color
+.pf-c-progress__bar {
+  position: relative;
+  grid-column: 1 / 3;
+  grid-row: 2 / 3;
+  align-self: center;
+  height: var(--pf-c-progress__bar--Height);
+  background-color: var(--pf-c-progress__bar--BackgroundColor);
+
+  &::before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    content: "";
+    background-color: var(--pf-c-progress__bar--before--BackgroundColor);
+    opacity: var(--pf-c-progress__bar--before--Opacity);
+  }
+}
+
+// the progress__indicator is the part that advances (widens) as progress is made
+// It is assumed that the width of the progress__indicator is set inline or via Javascript
+.pf-c-progress__indicator {
+  position: absolute; // position absolute to bring above the semi-transparent bar overlay
+  top: 0;
+  left: 0;
+  height: var(--pf-c-progress__indicator--Height);
+  background-color: var(--pf-c-progress__indicator--BackgroundColor);
+}
+

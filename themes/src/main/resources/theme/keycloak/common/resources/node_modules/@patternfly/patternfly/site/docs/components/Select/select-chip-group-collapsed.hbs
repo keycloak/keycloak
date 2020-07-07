@@ -1,0 +1,41 @@
+{{#> chip-group}}
+  {{#> chip-group-list chip-group-list--attribute='aria-label="Chip group list"'}}
+    {{#> chip-group-list-item}}
+      {{#> chip}}
+        {{#> chip-text chip-text--attribute=(concat 'id="' id '-chip_one"')}}
+          Arkansas
+        {{/chip-text}}
+        {{#> button button--modifier="pf-m-plain" button--attribute=(concat 'aria-labelledby="remove_' id '_chip_one ' id '-chip_one" aria-label="Remove" id="remove_' id '_chip_one"')}}
+          <i class="fas fa-times" aria-hidden="true"></i>
+        {{/button}}
+      {{/chip}}
+    {{/chip-group-list-item}}
+    {{#> chip-group-list-item}}
+      {{#> chip}}
+        {{#> chip-text chip-text--attribute=(concat 'id="' id '-chip_two"')}}
+          Massachusetts
+        {{/chip-text}}
+        {{#> button button--modifier="pf-m-plain" button--attribute=(concat 'aria-labelledby="remove_' id '_chip_two ' id '-chip_two" aria-label="Remove" id="remove_' id '_chip_two"')}}
+          <i class="fas fa-times" aria-hidden="true"></i>
+        {{/button}}
+      {{/chip}}
+    {{/chip-group-list-item}}
+    {{#> chip-group-list-item}}
+      {{#> chip}}
+        {{#> chip-text chip-text--attribute=(concat 'id="' id '-chip_three"')}}
+          New Mexico
+        {{/chip-text}}
+        {{#> button button--modifier="pf-m-plain" button--attribute=(concat 'aria-labelledby="remove_' id '_chip_three ' id '-chip_three" aria-label="Remove" id="remove_' id '_chip_three"')}}
+          <i class="fas fa-times" aria-hidden="true"></i>
+        {{/button}}
+      {{/chip}}
+    {{/chip-group-list-item}}
+    {{#> chip-group-list-item}}
+      {{#> chip chip--type="button" chip--modifier="pf-m-overflow"}}
+        {{#> chip-text}}
+          2 more
+        {{/chip-text}}
+      {{/chip}}
+    {{/chip-group-list-item}}
+  {{/chip-group-list}}
+{{/chip-group}}

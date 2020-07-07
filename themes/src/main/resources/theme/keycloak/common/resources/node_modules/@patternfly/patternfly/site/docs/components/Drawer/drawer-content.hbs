@@ -1,0 +1,12 @@
+<div class="pf-c-drawer__content{{#if drawer-content--modifier}} {{drawer-content--modifier}}{{/if}}"
+  {{#if drawer-content--attribute}}
+    {{{drawer-content--attribute}}}
+  {{/if}}>
+  {{#if drawer-content--NoBody}}
+    {{> @partial-block}}
+  {{else}}
+    {{#> drawer-body}}
+      {{> @partial-block}}
+    {{/drawer-body}}
+  {{/if}}
+</div>

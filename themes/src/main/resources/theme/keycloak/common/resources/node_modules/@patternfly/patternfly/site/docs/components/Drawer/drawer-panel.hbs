@@ -1,0 +1,17 @@
+<{{#if drawer-panel--type}}{{{drawer-panel--type}}}{{else}}div{{/if}} class="pf-c-drawer__panel{{#if drawer-panel--modifier}} {{drawer-panel--modifier}}{{/if}}"
+  {{#unless drawer-IsStatic}}
+    {{#unless drawer-panel--IsOpen}}
+      hidden
+    {{/unless}}
+  {{/unless}}
+  {{#if drawer-panel--attribute}}
+    {{{drawer-panel--attribute}}}
+  {{/if}}>
+  {{#if drawer-panel--NoBody}}
+    {{> @partial-block}}
+  {{else}}
+    {{#> drawer-body}}
+      {{> @partial-block}}
+    {{/drawer-body}}
+  {{/if}}
+</{{#if drawer-panel--type}}{{{drawer-panel--type}}}{{else}}div{{/if}}>

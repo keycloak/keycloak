@@ -1,0 +1,133 @@
+.pf-c-divider {
+  --pf-c-divider--Height: var(--pf-global--BorderWidth--sm);
+  --pf-c-divider--BackgroundColor: var(--pf-global--BorderColor--100);
+  --pf-c-divider--after--Height: var(--pf-c-divider--Height);
+  --pf-c-divider--after--BackgroundColor: var(--pf-c-divider--BackgroundColor);
+  --pf-c-divider--after--FlexBasis: 100%;
+  --pf-c-divider--after--Inset: 0%;
+  --pf-c-divider--m-vertical--after--FlexBasis: 100%;
+  --pf-c-divider--m-vertical--after--Width: var(--pf-global--BorderWidth--sm);
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  justify-content: center;
+  width: 100%;
+  border: 0; }
+  .pf-c-divider::after {
+    flex-basis: calc(var(--pf-c-divider--after--FlexBasis) - calc(var(--pf-c-divider--after--Inset) * 2));
+    align-self: stretch;
+    height: var(--pf-c-divider--after--Height);
+    content: "";
+    background-color: var(--pf-c-divider--after--BackgroundColor);
+    justify-self: center; }
+  .pf-c-divider.pf-m-vertical {
+    display: inline-flex;
+    flex-direction: column;
+    width: auto;
+    height: inherit;
+    min-height: 100%;
+    max-height: 100%; }
+    .pf-c-divider.pf-m-vertical::after {
+      flex-basis: calc(var(--pf-c-divider--m-vertical--after--FlexBasis) - var(--pf-c-divider--after--Inset));
+      width: var(--pf-c-divider--m-vertical--after--Width); }
+  .pf-c-divider.pf-m-inset-none {
+    --pf-c-divider--after--Inset: 0%; }
+  .pf-c-divider.pf-m-inset-xs {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--xs); }
+  .pf-c-divider.pf-m-inset-sm {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--sm); }
+  .pf-c-divider.pf-m-inset-md {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--md); }
+  .pf-c-divider.pf-m-inset-lg {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--lg); }
+  .pf-c-divider.pf-m-inset-xl {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--xl); }
+  .pf-c-divider.pf-m-inset-2xl {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--2xl); }
+  .pf-c-divider.pf-m-inset-3xl {
+    --pf-c-divider--after--Inset: var(--pf-global--spacer--3xl); }
+  @media (min-width: 576px) {
+    .pf-c-divider.pf-m-inset-none-on-sm {
+      --pf-c-divider--after--Inset: 0%; }
+    .pf-c-divider.pf-m-inset-xs-on-sm {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--xs); }
+    .pf-c-divider.pf-m-inset-sm-on-sm {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--sm); }
+    .pf-c-divider.pf-m-inset-md-on-sm {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--md); }
+    .pf-c-divider.pf-m-inset-lg-on-sm {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--lg); }
+    .pf-c-divider.pf-m-inset-xl-on-sm {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--xl); }
+    .pf-c-divider.pf-m-inset-2xl-on-sm {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--2xl); }
+    .pf-c-divider.pf-m-inset-3xl-on-sm {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--3xl); } }
+  @media (min-width: 768px) {
+    .pf-c-divider.pf-m-inset-none-on-md {
+      --pf-c-divider--after--Inset: 0%; }
+    .pf-c-divider.pf-m-inset-xs-on-md {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--xs); }
+    .pf-c-divider.pf-m-inset-sm-on-md {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--sm); }
+    .pf-c-divider.pf-m-inset-md-on-md {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--md); }
+    .pf-c-divider.pf-m-inset-lg-on-md {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--lg); }
+    .pf-c-divider.pf-m-inset-xl-on-md {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--xl); }
+    .pf-c-divider.pf-m-inset-2xl-on-md {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--2xl); }
+    .pf-c-divider.pf-m-inset-3xl-on-md {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--3xl); } }
+  @media (min-width: 992px) {
+    .pf-c-divider.pf-m-inset-none-on-lg {
+      --pf-c-divider--after--Inset: 0%; }
+    .pf-c-divider.pf-m-inset-xs-on-lg {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--xs); }
+    .pf-c-divider.pf-m-inset-sm-on-lg {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--sm); }
+    .pf-c-divider.pf-m-inset-md-on-lg {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--md); }
+    .pf-c-divider.pf-m-inset-lg-on-lg {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--lg); }
+    .pf-c-divider.pf-m-inset-xl-on-lg {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--xl); }
+    .pf-c-divider.pf-m-inset-2xl-on-lg {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--2xl); }
+    .pf-c-divider.pf-m-inset-3xl-on-lg {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--3xl); } }
+  @media (min-width: 1200px) {
+    .pf-c-divider.pf-m-inset-none-on-xl {
+      --pf-c-divider--after--Inset: 0%; }
+    .pf-c-divider.pf-m-inset-xs-on-xl {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--xs); }
+    .pf-c-divider.pf-m-inset-sm-on-xl {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--sm); }
+    .pf-c-divider.pf-m-inset-md-on-xl {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--md); }
+    .pf-c-divider.pf-m-inset-lg-on-xl {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--lg); }
+    .pf-c-divider.pf-m-inset-xl-on-xl {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--xl); }
+    .pf-c-divider.pf-m-inset-2xl-on-xl {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--2xl); }
+    .pf-c-divider.pf-m-inset-3xl-on-xl {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--3xl); } }
+  @media (min-width: 1450px) {
+    .pf-c-divider.pf-m-inset-none-on-2xl {
+      --pf-c-divider--after--Inset: 0%; }
+    .pf-c-divider.pf-m-inset-xs-on-2xl {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--xs); }
+    .pf-c-divider.pf-m-inset-sm-on-2xl {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--sm); }
+    .pf-c-divider.pf-m-inset-md-on-2xl {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--md); }
+    .pf-c-divider.pf-m-inset-lg-on-2xl {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--lg); }
+    .pf-c-divider.pf-m-inset-xl-on-2xl {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--xl); }
+    .pf-c-divider.pf-m-inset-2xl-on-2xl {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--2xl); }
+    .pf-c-divider.pf-m-inset-3xl-on-2xl {
+      --pf-c-divider--after--Inset: var(--pf-global--spacer--3xl); } }

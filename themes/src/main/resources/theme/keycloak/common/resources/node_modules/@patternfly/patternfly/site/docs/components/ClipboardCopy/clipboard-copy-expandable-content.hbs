@@ -1,0 +1,7 @@
+<div class="pf-c-clipboard-copy__expandable-content{{#if clipboard-copy-expandable-content--modifier}} {{clipboard-copy-expandable-content--modifier}}{{/if}}"
+  {{#unless clipboard-copy--IsExpanded}}hidden{{/unless}}
+  {{#if clipboard-copy-expandable-content--attribute}}
+    {{{clipboard-copy-expandable-content--attribute}}}
+  {{/if}}>
+  {{> @partial-block}}
+</div>

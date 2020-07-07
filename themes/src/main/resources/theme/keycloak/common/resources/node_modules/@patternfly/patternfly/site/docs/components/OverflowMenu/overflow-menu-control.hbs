@@ -1,0 +1,26 @@
+<div class="pf-c-overflow-menu__control{{#if overflow-menu-control--modifier}} {{overflow-menu-control--modifier}}{{/if}}"
+  {{#if overflow-menu-control--attribute}}
+    {{{overflow-menu-control--attribute}}}
+  {{/if}}>
+
+  <div class="pf-c-dropdown{{#if dropdown--IsExpanded}} pf-m-expanded{{/if}}{{#if dropdown--modifier}} {{dropdown--modifier}}{{/if}}"
+    {{#if dropdown--attribute}}
+      {{{dropdown--attribute}}}
+    {{/if}}>
+    {{#> button button--modifier="pf-c-dropdown__toggle pf-m-plain" button--attribute=(concat 'id="' overflow-menu--id '-dropdown-toggle" aria-label="' overflow-menu-button--aria-label '" ' overflow-menu-dropdown-button-aria-expanded '')}}
+      {{#if dropdown-icon}}
+        <i class="fas {{dropdown--icon}}" aria-hidden="true"></i>
+      {{else}}
+        {{> dropdown-kebab-icon}}
+      {{/if}}
+    {{/button}}
+    <ul class="pf-c-dropdown__menu{{#if dropdown-menu--modifier}} {{dropdown-menu--modifier}}{{/if}}"
+      aria-labelledby="{{overflow-menu--id}}-dropdown-toggle"
+      {{#unless dropdown--IsExpanded}}hidden{{/unless}}
+      {{#if dropdown-menu--attribute}}
+        {{{dropdown-menu--attribute}}}
+      {{/if}}>
+      {{> @partial-block}}
+    </ul>
+  </div>
+</div>

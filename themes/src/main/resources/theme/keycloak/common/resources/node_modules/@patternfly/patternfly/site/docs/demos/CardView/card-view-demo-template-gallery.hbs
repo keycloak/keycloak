@@ -1,0 +1,193 @@
+{{#> gallery gallery--modifier="pf-m-gutter"}}
+    {{#> card card--id="card-1" card--modifier="pf-m-hoverable pf-m-compact"}}
+      {{#> card-header}}
+        <img src="/assets/images/pf-logo-small.svg" alt="PatternFly logo">
+        {{#> card-actions}}
+          {{#> dropdown id=(concat card--id "-dropdown-kebab-right-aligned") dropdown--IsActionMenu="true" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+          {{/dropdown}}
+          <input type="checkbox" id="{{card--id}}-check" name="{{card--id}}-check" aria-labelledby="{{card--id}}-check-label">
+        {{/card-actions}}
+      {{/card-header}}
+      {{#> card-title}}
+        <p id="{{card--id}}-check-label">Patternfly</p>
+        {{#> content}}
+          <small>Provided by Red Hat</small>
+        {{/content}}
+      {{/card-title}}
+      {{#> card-body}}
+          PatternFly is a community project that promotes design commonality and improves user experience.
+      {{/card-body}}
+    {{/card}}
+    {{#> card card--id="card-2" card--modifier="pf-m-hoverable pf-m-compact"}}
+      {{#> card-header}}
+        <img src="/assets/images/activemq-core_200x150.png" width="60px" alt="Logo">
+        {{#> card-actions}}
+          {{#> dropdown id=(concat card--id "-dropdown-kebab-right-aligned") dropdown--IsActionMenu="true" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+          {{/dropdown}}
+          <input type="checkbox" id="{{card--id}}-check" name="{{card--id}}-check" aria-labelledby="{{card--id}}-check-label">
+        {{/card-actions}}
+      {{/card-header}}
+      {{#> card-title}}
+        <p id="{{card--id}}-check-label">ActiveMQ</p>
+        {{#> content}}
+          <small>Provided by Red Hat</small>
+        {{/content}}
+      {{/card-title}}
+      {{#> card-body}}
+        The ActiveMQ component allows messages to be sent to a JMS Queue or Topic; or messages to be consumed from a JMS Queue or Topic using Apache ActiveMQ.
+      {{/card-body}}
+    {{/card}}
+    {{#> card card--id="card-3" card--modifier="pf-m-hoverable pf-m-compact"}}
+      {{#> card-header}}
+        <img src="/assets/images/camel-spark_200x150.png" width="60px" alt="Logo">
+        {{#> card-actions}}
+          {{#> dropdown id=(concat card--id "-dropdown-kebab-right-aligned") dropdown--IsActionMenu="true" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+          {{/dropdown}}
+          <input type="checkbox" id="{{card--id}}-check" name="{{card--id}}-check" aria-labelledby="{{card--id}}-check-label">
+        {{/card-actions}}
+      {{/card-header}}
+      {{#> card-title}}
+        <p id="{{card--id}}-check-label">Apache Spark</p>
+        {{#> content}}
+          <small>Provided by Red Hat</small>
+        {{/content}}
+      {{/card-title}}
+      {{#> card-body}}
+        This documentation page covers the Apache Spark component for the Apache Camel.
+      {{/card-body}}
+    {{/card}}
+    {{#> card card--id="card-4" card--modifier="pf-m-hoverable pf-m-compact"}}
+      {{#> card-header}}
+        <img src="/assets/images/camel-avro_200x150.png" width="60px" alt="Logo">
+        {{#> card-actions}}
+          {{#> dropdown id=(concat card--id "-dropdown-kebab-right-aligned") dropdown--IsActionMenu="true" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+          {{/dropdown}}
+          <input type="checkbox" id="{{card--id}}-check" name="{{card--id}}-check" aria-labelledby="{{card--id}}-check-label">
+        {{/card-actions}}
+      {{/card-header}}
+      {{#> card-title}}
+        <p id="{{card--id}}-check-label">Avro</p>
+        {{#> content}}
+          <small>Provided by Red Hat</small>
+        {{/content}}
+      {{/card-title}}
+      {{#> card-body}}
+        This component provides a dataformat for avro, which allows serialization and deserialization of messages using Apache Avro’s binary dataformat. Moreover, it provides support for Apache Avro’s rpc, by providing producers and consumers endpoint for using avro over netty or http.
+      {{/card-body}}
+    {{/card}}
+    {{#> card card--id="card-5" card--modifier="pf-m-hoverable pf-m-compact"}}
+    {{#> card-header}}
+      <img src="/assets/images/FuseConnector_Icons_AzureServices.png" width="60px" alt="Logo">
+      {{#> card-actions}}
+        {{#> dropdown id=(concat card--id "-dropdown-kebab-right-aligned") dropdown--IsActionMenu="true" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+        <input type="checkbox" id="{{card--id}}-check" name="{{card--id}}-check" aria-labelledby="{{card--id}}-check-label">
+      {{/card-actions}}
+    {{/card-header}}
+    {{#> card-title}}
+      <p id="{{card--id}}-check-label">Azure Services</p>
+      {{#> content}}
+        <small>Provided by Red Hat</small>
+      {{/content}}
+    {{/card-title}}
+    {{#> card-body}}
+      The Camel Components for Windows Azure Services provide connectivity to Azure services from Camel.
+    {{/card-body}}
+    {{/card}}
+    {{#> card card--id="card-6" card--modifier="pf-m-hoverable pf-m-compact"}}
+    {{#> card-header}}
+        <img src="/assets/images/camel-saxon_200x150.png" width="60px" alt="Logo">
+        {{#> card-actions}}
+          {{#> dropdown id=(concat card--id "-dropdown-kebab-right-aligned") dropdown--IsActionMenu="true" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+          {{/dropdown}}
+          <input type="checkbox" id="{{card--id}}-check" name="{{card--id}}-check" aria-labelledby="{{card--id}}-check-label">
+        {{/card-actions}}
+      {{/card-header}}
+      {{#> card-title}}
+        <p id="{{card--id}}-check-label">Crypto</p>
+        {{#> content}}
+          <small>Provided by Red Hat</small>
+        {{/content}}
+      {{/card-title}}
+      {{#> card-body}}
+      For providing flexible endpoints to sign and verify exchanges using the Signature Service of the Java Cryptographic Extension.
+      {{/card-body}}
+    {{/card}}
+    {{#> card card--id="card-7" card--modifier="pf-m-hoverable pf-m-compact"}}
+      {{#> card-header}}
+        <img src="/assets/images/camel-dropbox_200x150.png" width="60px" alt="Logo">
+        {{#> card-actions}}
+          {{#> dropdown id=(concat card--id "-dropdown-kebab-right-aligned") dropdown--IsActionMenu="true" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+          {{/dropdown}}
+          <input type="checkbox" id="{{card--id}}-check" name="{{card--id}}-check" aria-labelledby="{{card--id}}-check-label">
+        {{/card-actions}}
+      {{/card-header}}
+      {{#> card-title}}
+        <p id="{{card--id}}-check-label">DropBox</p>
+        {{#> content}}
+          <small>Provided by Red Hat</small>
+        {{/content}}
+      {{/card-title}}
+      {{#> card-body}}
+        The dropbox: component allows you to treat Dropbox remote folders as a producer or consumer of messages.
+      {{/card-body}}
+    {{/card}}
+    {{#> card card--id="card-8" card--modifier="pf-m-hoverable pf-m-compact"}}
+      {{#> card-header}}
+        <img src="/assets/images/camel-infinispan_200x150.png" width="60px" alt="Logo">
+        {{#> card-actions}}
+          {{#> dropdown id=(concat card--id "-dropdown-kebab-right-aligned") dropdown--IsActionMenu="true" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+          {{/dropdown}}
+          <input type="checkbox" id="{{card--id}}-check" name="{{card--id}}-check" aria-labelledby="{{card--id}}-check-label">
+        {{/card-actions}}
+      {{/card-header}}
+      {{#> card-title}}
+        <p id="{{card--id}}-check-label">JBoss Data Grid</p>
+        {{#> content}}
+          <small>Provided by Red Hat</small>
+        {{/content}}
+      {{/card-title}}
+      {{#> card-body}}
+        Read or write to a fully-supported distributed cache and data grid for faster integration services.
+      {{/card-body}}
+    {{/card}}
+    {{#> card card--id="card-9" card--modifier="pf-m-hoverable pf-m-compact"}}
+      {{#> card-header}}
+        <img src="/assets/images/FuseConnector_Icons_REST.png" width="60px" alt="Logo">
+        {{#> card-actions}}
+          {{#> dropdown id=(concat card--id "-dropdown-kebab-right-aligned") dropdown--IsActionMenu="true" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+          {{/dropdown}}
+          <input type="checkbox" id="{{card--id}}-check" name="{{card--id}}-check" aria-labelledby="{{card--id}}-check-label">
+        {{/card-actions}}
+      {{/card-header}}
+      {{#> card-title}}
+        <p id="{{card--id}}-check-label">REST</p>
+        {{#> content}}
+          <small>Provided by Red Hat</small>
+        {{/content}}
+      {{/card-title}}
+      {{#> card-body}}
+        The rest component allows to define REST endpoints (consumer) using the Rest DSL and plugin to other Camel components as the REST transport.
+        From Camel 2.18 onwards the rest component can also be used as a client (producer) to call REST services.
+      {{/card-body}}
+    {{/card}}
+    {{#> card card--id="card-10" card--modifier="pf-m-hoverable pf-m-compact"}}
+      {{#> card-header}}
+        <img src="/assets/images/camel-swagger-java_200x150.png" width="60px" alt="Logo">
+        {{#> card-actions}}
+          {{#> dropdown id=(concat card--id "-dropdown-kebab-right-aligned") dropdown--IsActionMenu="true" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+          {{/dropdown}}
+          <input type="checkbox" id="{{card--id}}-check" name="{{card--id}}-check" aria-labelledby="{{card--id}}-check-label">
+        {{/card-actions}}
+      {{/card-header}}
+      {{#> card-title}}
+        <p id="{{card--id}}-check-label">SWAGGER</p>
+        {{#> content}}
+          <small>Provided by Red Hat</small>
+        {{/content}}
+      {{/card-title}}
+      {{#> card-body}}
+        Expose REST services and their APIs using Swagger specification.
+      {{/card-body}}
+    {{/card}}
+{{/gallery}}

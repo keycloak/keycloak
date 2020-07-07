@@ -1,0 +1,11 @@
+// stylelint-disable
+
+$pf-u-alignment-options: (
+  float-left: (float left),
+  float-right: (float right)
+);
+
+// Text utilities
+@include pf-utility-builder($pf-u-alignment-options, $pf-global--breakpoint-list);
+
+// stylelint-enable

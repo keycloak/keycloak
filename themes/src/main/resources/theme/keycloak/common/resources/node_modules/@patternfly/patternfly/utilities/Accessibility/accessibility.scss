@@ -1,0 +1,22 @@
+// screen-reader - visually hide, but expose to screen readers
+@each $breakpoint, $breakpoint-value in $pf-global--breakpoint-map {
+  .pf-u-screen-reader#{$breakpoint-value} {
+    @include pf-media-query($breakpoint) {
+      @include pf-u-screen-reader;
+    }
+  }
+
+  .pf-u-visible#{$breakpoint-value} {
+    @include pf-media-query($breakpoint) {
+      @include pf-u-visible;
+    }
+  }
+
+  .pf-u-hidden#{$breakpoint-value} {
+    @include pf-media-query($breakpoint) {
+      // stylelint-disable
+      display: none !important;
+      // stylelint-enable
+    }
+  }
+}

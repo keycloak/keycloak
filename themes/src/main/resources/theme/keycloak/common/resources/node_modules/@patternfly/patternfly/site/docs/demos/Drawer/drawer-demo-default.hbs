@@ -1,0 +1,58 @@
+{{#> page page--id=id}}
+  {{#> skip-to-content skip-to-content--attribute=(concat 'href="#main-content-' page--id '"')}}
+    Skip to content
+  {{/skip-to-content}}
+  {{#> page-header}}
+    {{!-- Brand --}}
+    {{#> page-header-brand}}
+      {{#> page-header-brand-toggle}}
+        {{#> button button--modifier="pf-m-plain" button--attribute=(concat 'id="' page--id '-nav-toggle" aria-label="Global navigation" aria-expanded="true" aria-controls="' page--id '-primary-nav"')}}
+          <i class="fas fa-bars" aria-hidden="true"></i>
+        {{/button}}
+      {{/page-header-brand-toggle}}
+      {{#> page-header-brand-link page-header-brand-link--href="#"}}
+        {{#> brand brand--attribute='src="/assets/images/PF-Masthead-Logo.svg" alt="PatternFly logo"'}}{{/brand}}
+      {{/page-header-brand-link}}
+    {{/page-header-brand}}
+    {{#if drawer-panel--IsOpen}}
+      {{> page-template-header-tools-elements page-header-tools--IsNotification="true" page-header-tools--IsNotificationSelected="true"}}
+    {{else}}
+      {{> page-template-header-tools-elements page-header-tools--IsNotification="true"}}
+    {{/if}}
+  {{/page-header}}
+  {{!-- Nav --}}
+  {{#> page-sidebar}}
+    {{#> nav nav--attribute=(concat 'id="' page--id '-primary-nav" aria-label="Global"')}}
+      {{#> nav-list}}
+        {{#> nav-item}}
+          {{#> nav-link nav-link--href="#" nav-link--current="true"}}
+            System panel
+          {{/nav-link}}
+        {{/nav-item}}
+        {{#> nav-item}}
+          {{#> nav-link nav-link--href="#"}}
+            Policy
+          {{/nav-link}}
+        {{/nav-item}}
+        {{#> nav-item}}
+          {{#> nav-link nav-link--href="#"}}
+            Authentication
+          {{/nav-link}}
+        {{/nav-item}}
+        {{#> nav-item}}
+          {{#> nav-link nav-link--href="#"}}
+            Network services
+          {{/nav-link}}
+        {{/nav-item}}
+        {{#> nav-item}}
+          {{#> nav-link nav-link--href="#"}}
+            Server
+          {{/nav-link}}
+        {{/nav-item}}
+      {{/nav-list}}
+    {{/nav}}
+  {{/page-sidebar}}
+  {{#> page-drawer}}
+    {{> drawer-demo-content}}
+  {{/page-drawer}}
+{{/page}}

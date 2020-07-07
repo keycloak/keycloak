@@ -1,0 +1,98 @@
+//
+// PatternFly functions
+// --------------------------------------------------
+
+// Transform px to rems
+@function pf-strip-unit($num) {
+  @return $num / ($num * 0 + 1);
+}
+
+@function pf-size-prem($pxval, $base: $pf-global--space-size-root) {
+  @return pf-strip-unit($pxval) / $base * 1rem;
+}
+
+@function pf-font-prem($pxval, $base: $pf-global--font-size-root) {
+  @return pf-strip-unit($pxval) / $base * 1rem;
+}
+
+@function pf-bg-svg($svg-coordinates, $viewBox: "512", $svg-color: "currentColor") {
+  $color: str-slice(#{$svg-color}, 2);
+
+  @return url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 #{$viewBox} 512'%3E%3Cpath fill='%23#{$color}' d='#{$svg-coordinates}'/%3E%3C/svg%3E");
+}
+
+// Return breakpoint value if it exists
+@function pf-breakpoint-value($breakpoint, $breakpoint-map: $pf-global--breakpoint-name-map) {
+  $breakpoint-value: if(map-has-key($breakpoint-map, #{$breakpoint}), map-get($breakpoint-map, #{$breakpoint}), false);
+
+  @return #{$breakpoint-value};
+}
+
+// Build breakpoint map
+// Based on $pf-global--breakpoint-name-map
+@function build-breakpoint-map($map-items...) {
+  $map: ();
+
+  @if length($map-items) == 0 {
+    $map: ("base": null);
+    $map: map-merge($map, $pf-global--breakpoint-name-map);
+  }
+
+  @else {
+    @each $breakpoint in $map-items {
+      @if not map-has-key($pf-global--breakpoint-name-map, $breakpoint) and $breakpoint != "base" {
+        $map: map-merge($map, ("invalid breakpoint #{$breakpoint}": null));
+      }
+
+      @else if $breakpoint == "base" {
+        $map: map-merge($map, ($breakpoint: null));
+      }
+
+      @else {
+        $map: map-merge($map, ($breakpoint: map-get($pf-global--breakpoint-name-map, #{$breakpoint})));
+      }
+    }
+  }
+
+  @return $map;
+}
+
+// Build spacer map
+// Based on $pf-global--spacer-map
+@function build-spacer-map($map-items...) {
+  $map: ();
+
+  @if length($map-items) == 0 {
+    $map: ("none": 0);
+    $map: map-merge($map, $pf-global--spacer-map);
+    $map: map-remove($map, "auto", "0");
+  }
+
+  @each $spacer in $map-items {
+    @if not map-has-key($pf-global--spacer-map, $spacer) and $spacer != "none" {
+      $map: map-merge($map, ("invalid spacer #{$spacer}": null));
+    }
+
+    @else if $spacer == "none" {
+      $map: map-merge($map, ($spacer: 0));
+    }
+
+    @else {
+      $map: map-merge($map, ($spacer: map-get($pf-global--spacer-map, #{$spacer})));
+    }
+  }
+
+  @return $map;
+}
+
+// Build variable map
+// Based on custom map
+@function build-variable-map($namespace, $map: ()) {
+  $new-map: ();
+
+  @each $size, $value in $map {
+    $new-map: map-merge($new-map, (map-get($map, $size): --#{$namespace}--#{$size}));
+  }
+
+  @return $new-map;
+}

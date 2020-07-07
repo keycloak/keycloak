@@ -1,0 +1,118 @@
+.pf-c-inline-edit {
+  // Group
+  --pf-c-inline-edit__group--item--MarginRight: var(--pf-global--spacer--sm);
+
+  // Valid action
+  --pf-c-inline-edit__action--c-button--m-valid--m-plain--Color: var(--pf-global--link--Color);
+  --pf-c-inline-edit__action--c-button--m-valid--m-plain--hover--Color: var(--pf-global--link--Color--hover);
+
+  // Icon button
+  --pf-c-inline-edit__action--m-icon-group--item--MarginRight: 0;
+
+  // Footer group
+  --pf-c-inline-edit__group--m-footer--MarginTop: var(--pf-global--spacer--xl);
+
+  // Label
+  --pf-c-inline-edit__label--m-bold--FontWeight: var(--pf-global--FontWeight--semi-bold);
+}
+
+// Group
+.pf-c-inline-edit__group {
+  display: flex;
+  align-items: baseline;
+
+  > * {
+    margin-right: var(--pf-c-inline-edit__group--item--MarginRight);
+  }
+
+  &.pf-m-icon-group {
+    --pf-c-inline-edit__group--item--MarginRight: var(--pf-c-inline-edit__action--m-icon-group--item--MarginRight);
+  }
+
+  // Footer
+  &.pf-m-footer {
+    margin-top: var(--pf-c-inline-edit__group--m-footer--MarginTop);
+  }
+
+  // Column
+  &.pf-m-column {
+    --pf-c-inline-edit__group--item--MarginRight: 0;
+
+    flex-direction: column;
+  }
+
+  > :last-child {
+    --pf-c-inline-edit__group--item--MarginRight: 0;
+  }
+}
+
+// Input and input group
+.pf-c-inline-edit__input {
+  flex: 1;
+}
+
+// Valid icon action button
+.pf-c-inline-edit__action.pf-m-valid .pf-c-button.pf-m-plain {
+  --pf-c-button--m-plain--Color: var(--pf-c-inline-edit__action--c-button--m-valid--m-plain--Color);
+
+  &:hover {
+    --pf-c-button--m-plain--Color: var(--pf-c-inline-edit__action--c-button--m-valid--m-plain--hover--Color);
+  }
+}
+
+// Input and input group
+.pf-c-inline-edit__input,
+.pf-c-inline-edit__action,
+.pf-c-inline-edit__group.pf-m-action-group {
+  display: none;
+  visibility: hidden;
+}
+
+// Enable groups
+.pf-c-inline-edit__action.pf-m-enable-editable {
+  display: inline-block;
+  visibility: visible;
+}
+
+// Editable
+.pf-c-inline-edit.pf-m-inline-editable,
+.pf-c-inline-edit .pf-m-inline-editable {
+  // Expose inputs, input groups, actions and action groups
+  .pf-c-inline-edit__input,
+  .pf-c-inline-edit__action,
+  .pf-c-inline-edit__group.pf-m-action-group {
+    visibility: visible;
+  }
+
+  // Input
+  .pf-c-inline-edit__input {
+    display: block;
+  }
+
+  // Action
+  .pf-c-inline-edit__action {
+    display: inline-block;
+  }
+
+  // Action group
+  .pf-c-inline-edit__group.pf-m-action-group {
+    display: inline-flex;
+  }
+
+  // Hide value, value group and enable actions
+  .pf-c-inline-edit__value,
+  .pf-c-inline-edit__action.pf-m-enable-editable {
+    display: none;
+    visibility: hidden;
+  }
+}
+
+// offset button by top padding
+.pf-c-inline-edit__label + .pf-c-inline-edit__action.pf-m-enable > .pf-c-button {
+  margin-top: calc(var(--pf-c-button--PaddingTop) * -1);
+  margin-bottom: calc(var(--pf-c-button--PaddingBottom) * -1);
+}
+
+.pf-c-inline-edit__label.pf-m-bold {
+  font-weight: var(--pf-c-inline-edit__label--m-bold--FontWeight);
+}

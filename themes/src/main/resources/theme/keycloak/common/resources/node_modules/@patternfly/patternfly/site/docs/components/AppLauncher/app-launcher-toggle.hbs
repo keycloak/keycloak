@@ -1,0 +1,13 @@
+<button class="pf-c-app-launcher__toggle{{#if app-launcher-toggle--modifier}} {{app-launcher-toggle--modifier}}{{/if}}"
+  type="button"
+  id="{{id}}-button"
+  aria-expanded="{{#if app-launcher--IsExpanded}}true{{else}}false{{/if}}"
+  aria-label="Application launcher"
+  {{#if app-launcher-toggle--attribute}}
+    {{{app-launcher-toggle--attribute}}}
+  {{/if}}
+  {{#if app-launcher--IsDisabled}}
+    disabled
+  {{/if}}>
+    {{> app-launcher-toggle-icon}}
+</button>

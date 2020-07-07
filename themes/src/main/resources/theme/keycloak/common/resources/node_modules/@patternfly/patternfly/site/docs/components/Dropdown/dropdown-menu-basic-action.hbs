@@ -1,0 +1,10 @@
+<ul class="pf-c-dropdown__menu{{#if dropdown-menu--modifier}} {{dropdown-menu--modifier}}{{/if}}"
+  aria-labelledby="{{id}}-button"
+  {{#unless dropdown--IsExpanded}}hidden{{/unless}}
+  {{#if dropdown-menu--attribute}}
+	  {{{dropdown-menu--attribute}}}
+  {{/if}}>
+  <li>{{#> dropdown-menu-item}}Action 1{{/dropdown-menu-item}}</li>
+  <li>{{#> dropdown-menu-item}}Action 2{{/dropdown-menu-item}}</li>
+  <li>{{#> dropdown-menu-item}}Action 3{{/dropdown-menu-item}}</li>
+</ul>

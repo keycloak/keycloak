@@ -1,0 +1,6 @@
+{{#> toolbar-item toolbar-item--modifier="pf-m-bulk-select"}}
+  {{#> dropdown dropdown--IsBulkSelect="true" dropdown--IsSplitButton="true" dropdown-toggle--type="div" dropdown-toggle--modifier="pf-m-split-button" id=(concat toolbar--id '-bulk-select')}}
+    {{> dropdown-toggle-check aria-label="Select all"}}
+    {{> dropdown-toggle-button dropdown--IsToggleButton="true" aria-label="Select"}}
+  {{/dropdown}}
+{{/toolbar-item}}

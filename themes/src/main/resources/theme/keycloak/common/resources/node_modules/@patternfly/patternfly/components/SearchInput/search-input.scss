@@ -1,0 +1,115 @@
+.pf-c-search-input {
+  // Base border
+  --pf-c-search-input__text--before--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-search-input__text--before--BorderColor: var(--pf-global--BorderColor--300);
+
+  // Bottom border
+  --pf-c-search-input__text--after--BorderBottomWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-search-input__text--after--BorderBottomColor: var(--pf-global--BorderColor--200);
+  --pf-c-search-input--hover__text--after--BorderBottomColor: var(--pf-global--primary-color--100);
+  --pf-c-search-input__text--focus-within--after--BorderBottomWidth: var(--pf-global--BorderWidth--md);
+  --pf-c-search-input__text--focus-within--after--BorderBottomColor: var(--pf-global--primary-color--100);
+
+  // Search input
+  --pf-c-search-input__text-input--PaddingTop: var(--pf-global--spacer--form-element);
+  --pf-c-search-input__text-input--PaddingRight: var(--pf-global--spacer--sm);
+  --pf-c-search-input__text-input--PaddingBottom: var(--pf-global--spacer--form-element);
+  --pf-c-search-input__text-input--PaddingLeft: var(--pf-global--spacer--xl);
+  --pf-c-search-input__text-input--MinWidth: 6ch;
+
+  // Icon
+  --pf-c-search-input__icon--Left: var(--pf-global--spacer--sm);
+  --pf-c-search-input__icon--Color: var(--pf-global--Color--200);
+  --pf-c-search-input__text--hover__icon--Color: var(--pf-global--Color--100);
+  --pf-c-search-input__icon--TranslateY: -50%;
+
+  // Utilities
+  --pf-c-search-input__utilities--MarginRight: var(--pf-global--spacer--sm);
+  --pf-c-search-input__utilities--MarginLeft: var(--pf-global--spacer--xs);
+  --pf-c-search-input__utilities--child--MarginLeft: var(--pf-global--spacer--xs);
+  --pf-c-search-input__utilities--c-button--PaddingRight: var(--pf-global--spacer--xs);
+  --pf-c-search-input__utilities--c-button--PaddingLeft: var(--pf-global--spacer--xs);
+
+  position: relative;
+  display: flex;
+  padding: var(--pf-c-search-input--PaddingTop) var(--pf-c-search-input--PaddingRight) var(--pf-c-search-input--PaddingBottom) var(--pf-c-search-input--PaddingLeft);
+
+  &:hover {
+    --pf-c-search-input__text--after--BorderBottomColor: var(--pf-c-search-input--hover__text--after--BorderBottomColor);
+  }
+}
+
+.pf-c-search-input__text {
+  flex: 1;
+
+  &::before,
+  &::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    pointer-events: none;
+    content: "";
+  }
+
+  &::before {
+    border: var(--pf-c-search-input__text--before--BorderWidth) solid var(--pf-c-search-input__text--before--BorderColor);
+  }
+
+  &::after {
+    border-bottom: var(--pf-c-search-input__text--after--BorderBottomWidth) solid var(--pf-c-search-input__text--after--BorderBottomColor);
+  }
+
+  &:hover,
+  &:focus-within {
+    --pf-c-search-input__icon--Color: var(--pf-c-search-input__text--hover__icon--Color);
+  }
+
+  &:focus-within {
+    --pf-c-search-input__text--after--BorderBottomWidth: var(--pf-c-search-input__text--focus-within--after--BorderBottomWidth);
+    --pf-c-search-input__text--after--BorderBottomColor: var(--pf-c-search-input__text--focus-within--after--BorderBottomColor);
+  }
+}
+
+.pf-c-search-input__icon {
+  position: absolute;
+  top: 50%;
+  left: var(--pf-c-search-input__icon--Left);
+  color: var(--pf-c-search-input__icon--Color);
+  transform: translateY(var(--pf-c-search-input__icon--TranslateY));
+}
+
+.pf-c-search-input__text-input {
+  @include pf-text-overflow;
+
+  position: relative;
+  width: 100%;
+  min-width: var(--pf-c-search-input__text-input--MinWidth);
+  padding: var(--pf-c-search-input__text-input--PaddingTop) var(--pf-c-search-input__text-input--PaddingRight) var(--pf-c-search-input__text-input--PaddingBottom) var(--pf-c-search-input__text-input--PaddingLeft);
+  border: 0;
+}
+
+.pf-c-search-input__utilities {
+  display: flex;
+  margin-right: var(--pf-c-search-input__utilities--MarginRight);
+  margin-left: var(--pf-c-search-input__utilities--MarginLeft);
+
+  > * + * {
+    margin-left: var(--pf-c-search-input__utilities--child--MarginLeft);
+  }
+
+  .pf-c-button {
+    --pf-c-button--PaddingRight: var(--pf-c-search-input__utilities--c-button--PaddingRight);
+    --pf-c-button--PaddingLeft: var(--pf-c-search-input__utilities--c-button--PaddingLeft);
+  }
+}
+
+.pf-c-search-input__nav {
+  display: flex;
+}
+
+.pf-c-search-input__count {
+  display: flex;
+  align-items: center;
+}

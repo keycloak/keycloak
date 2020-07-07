@@ -1,0 +1,7 @@
+<div class="pf-c-context-selector{{#if context-selector--IsExpanded}} pf-m-expanded{{/if}}{{#if context-selector--modifier}} {{context-selector--modifier}}{{/if}}"
+  {{#if context-selector--attribute}}
+    {{{context-selector--attribute}}}
+  {{/if}}>
+  <span id="{{context-selector--id}}-label" hidden>{{context-selector--label-text}}:</span>
+  {{> @partial-block}}
+</div>

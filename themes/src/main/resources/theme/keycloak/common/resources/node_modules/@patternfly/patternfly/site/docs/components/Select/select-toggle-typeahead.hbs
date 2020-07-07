@@ -1,0 +1,21 @@
+{{#if select--ItemIsSelected}}
+  {{#> form-control controlType="input"
+    input="true"
+    form-control--modifier="pf-c-select__toggle-typeahead"
+    form-control--attribute=(concat 'type="text" id="' id '-typeahead" aria-label="Type to filter" value="' select-typeahead--Placeholder '"')}}
+  {{/form-control}}
+{{else}}
+  {{#if select--IsDisabled}}
+    {{#> form-control controlType="input"
+      input="true"
+      form-control--modifier="pf-c-select__toggle-typeahead"
+      form-control--attribute=(concat 'type="text" id="' id '-typeahead" aria-label="Type to filter" placeholder="' select-typeahead--Placeholder '" disabled')}}
+    {{/form-control}}
+  {{else}}
+    {{#> form-control controlType="input"
+      input="true"
+      form-control--modifier="pf-c-select__toggle-typeahead"
+      form-control--attribute=(concat 'type="text" id="' id '-typeahead" aria-label="Type to filter" placeholder="' select-typeahead--Placeholder '"')}}
+    {{/form-control}}
+  {{/if}}
+{{/if}}

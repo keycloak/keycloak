@@ -1,0 +1,49 @@
+{{#> toolbar-item toolbar-item--modifier="pf-m-overflow-menu"}}
+  {{#> overflow-menu overflow-menu-button--aria-label="Expand overflow menu" overflow-menu--id=(concat toolbar--id '-overflow-menu') dropdown--IsExpanded=toolbar-overflow-menu-example--IsExpanded overflow-menu--modifier=toolbar-demo-overflow-menu--modifier overflow-menu--attribute=toolbar-demo-overflow-menu--attribute}}
+
+    {{#if toolbar-overflow-menu-example--content}}
+      {{#> overflow-menu-content}}
+        {{#> overflow-menu-group overflow-menu-group--modifier="pf-m-button-group"}}
+          {{#> overflow-menu-item}}
+            {{#> button button--modifier="pf-m-primary"}}
+              Primary
+            {{/button}}
+          {{/overflow-menu-item}}
+          {{#> overflow-menu-item}}
+            {{#> button button--modifier="pf-m-secondary"}}
+              Secondary
+            {{/button}}
+          {{/overflow-menu-item}}
+        {{/overflow-menu-group}}
+      {{/overflow-menu-content}}
+    {{/if}}
+
+    {{#if toolbar-overflow-menu-example--persistent}}
+      {{#> overflow-menu-content}}
+        {{#> overflow-menu-group overflow-menu-group--modifier="pf-m-button-group"}}
+          {{#> overflow-menu-item}}
+            {{#> button button--modifier="pf-m-primary"}}
+              Primary
+            {{/button}}
+          {{/overflow-menu-item}}
+        {{/overflow-menu-group}}
+      {{/overflow-menu-content}}
+    {{/if}}
+
+    {{#if toolbar-overflow-menu-example--control}}
+      {{#> overflow-menu-control overflow-menu-button--aria-label="Overflow menu"}}
+        {{#unless toolbar-overflow-menu-example--content}}
+          {{#> overflow-menu-dropdown-item}}
+            Primary
+          {{/overflow-menu-dropdown-item}}
+          {{#> overflow-menu-dropdown-item}}
+            Secondary
+          {{/overflow-menu-dropdown-item}}
+        {{/unless}}
+        {{#> overflow-menu-dropdown-item}}
+          Tertiary
+        {{/overflow-menu-dropdown-item}}
+      {{/overflow-menu-control}}
+    {{/if}}
+  {{/overflow-menu}}
+{{/toolbar-item}}

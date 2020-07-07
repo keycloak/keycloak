@@ -1,0 +1,46 @@
+{{#> options-menu-menu options-menu-menu--type="div"}}
+  {{#> options-menu-group}}
+    <ul>
+      {{#> options-menu-menu-item}}
+        Option 1
+      {{/options-menu-menu-item}}
+      {{#> options-menu-menu-item options-menu-menu-item--IsSelected="true"}}
+        Option 2
+      {{/options-menu-menu-item}}
+      {{#if options-menu--HasDividersItems}}
+        {{> divider divider--type="li"}}
+      {{/if}}
+    </ul>
+  {{/options-menu-group}}
+  {{#if options-menu--HasDividersGroups}}
+    {{> divider}}
+  {{/if}}
+  {{#> options-menu-group}}
+    {{#> options-menu-group-title}}Group 1{{/options-menu-group-title}}
+    <ul>
+      {{#> options-menu-menu-item}}
+        Option 1
+      {{/options-menu-menu-item}}
+      {{#> options-menu-menu-item}}
+        Option 2
+      {{/options-menu-menu-item}}
+      {{#if options-menu--HasDividersItems}}
+        {{> divider divider--type="li"}}
+      {{/if}}
+    </ul>
+  {{/options-menu-group}}
+  {{#if options-menu--HasDividersGroups}}
+    {{> divider}}
+  {{/if}}
+  {{#> options-menu-group}}
+    {{#> options-menu-group-title}}Group 2{{/options-menu-group-title}}
+    <ul>
+      {{#> options-menu-menu-item}}
+        Option 1
+      {{/options-menu-menu-item}}
+      {{#> options-menu-menu-item}}
+        Option 2
+      {{/options-menu-menu-item}}
+    </ul>
+  {{/options-menu-group}}
+{{/options-menu-menu}}

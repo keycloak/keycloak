@@ -1,0 +1,151 @@
+// Reset
+// Based on minireset.css v0.0.3 | MIT License github.com/jgthms/minireset.css
+
+@if $pf-global--enable-reset {
+  // stylelint-disable at-rule-no-vendor-prefix, declaration-no-important, selector-no-qualifying-type, property-no-vendor-prefix
+
+  html,
+  body,
+  p,
+  ol,
+  ul,
+  li,
+  dl,
+  dt,
+  dd,
+  blockquote,
+  figure,
+  fieldset,
+  legend,
+  textarea,
+  pre,
+  iframe,
+  hr,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    padding: 0;
+    margin: 0;
+  }
+
+  html,
+  body {
+    height: 100%;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-size: 100%;
+    font-weight: var(--pf-global--FontWeight--normal);
+  }
+
+  ul {
+    list-style: none;
+  }
+
+  button,
+  input,
+  optgroup,
+  select,
+  textarea {
+    margin: 0;
+    font-family: inherit;
+    font-size: 100%;
+    line-height: var(--pf-global--LineHeight--md);
+    color: var(--pf-global--Color--100);
+  }
+
+  img,
+  embed,
+  iframe,
+  object,
+  audio,
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  iframe {
+    border: 0;
+  }
+
+  table {
+    border-spacing: 0;
+    border-collapse: collapse;
+  }
+
+  td,
+  th {
+    padding: 0;
+    text-align: left;
+  }
+
+  // Patternfly base styles
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: sans-serif;
+    line-height: 1.15;
+  }
+
+  body {
+    font-family: var(--pf-global--FontFamily--sans-serif);
+    font-size: var(--pf-global--FontSize--md);
+    font-weight: var(--pf-global--FontWeight--normal);
+    line-height: var(--pf-global--LineHeight--md);
+    text-align: left;
+    background-color: var(--pf-global--BackgroundColor--100);
+  }
+
+  // Links styles
+
+  a {
+    font-weight: var(--pf-global--link--FontWeight);
+    color: var(--pf-global--link--Color);
+    text-decoration: var(--pf-global--link--TextDecoration);
+
+    &:hover {
+      --pf-global--link--Color: var(--pf-global--link--Color--hover);
+      --pf-global--link--TextDecoration: var(--pf-global--link--TextDecoration--hover);
+    }
+  }
+
+  button,
+  a {
+    cursor: pointer;
+  }
+
+  button,
+  [type="button"],
+  [type="reset"],
+  [type="submit"] {
+    // Remove the inner border and padding in Firefox.
+    &::-moz-focus-inner {
+      padding: 0;
+      border-style: none;
+    }
+
+    // Restore the focus styles unset by the previous rule.
+    &:-moz-focusring {
+      outline: 1px dotted ButtonText;
+    }
+  }
+
+  @include pf-m-overpass-font {
+    a {
+      font-weight: var(--pf-global--FontWeight--semi-bold);
+    }
+  }
+}

@@ -1,0 +1,11 @@
+<label class="pf-c-form__label{{#if form-label--modifier}} {{form-label--modifier}}{{/if}}"
+  {{#if form-label--attribute}}
+    {{{form-label--attribute}}}
+  {{/if}}>
+  {{#> form-label-text}}
+    {{>@partial-block}}
+  {{/form-label-text}}
+  {{#if required}}
+    {{> form-label-required}}
+  {{/if}}
+</label>

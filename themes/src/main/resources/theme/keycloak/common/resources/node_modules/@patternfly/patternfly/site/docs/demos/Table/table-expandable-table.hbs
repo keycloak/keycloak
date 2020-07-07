@@ -1,0 +1,272 @@
+{{#> table table--id=(concat page--id '-table') table--grid="true" table--modifier="pf-m-grid-xl" table--expandable="true" table--attribute='aria-label="Expandable table example"'}}
+  {{#> table-thead}}
+    {{#> table-tr}}
+      {{#> table-td}}{{/table-td}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="check-all" aria-label="Select all rows">
+      {{/table-td}}
+      {{#> table-th table-th--attribute='scope="col"' table-th--modifier="pf-m-width-30"}}
+        Repositories
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Branches
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Pull requests
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Work spaces
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Last commit
+      {{/table-th}}
+      {{#> table-td}}{{/table-td}}
+      {{#> table-td}}{{/table-td}}
+    {{/table-tr}}
+  {{/table-thead}}
+
+  {{#> table-tbody}}
+    {{#> table-tr}}
+      {{#> table-td table-td--toggle="true" table-td--button--attribute=(concat 'aria-labelledby="' table--id '-node1 expandable-toggle1" id="expandable-toggle1" aria-label="Details" aria-controls="' table--id '-content1"')}}{{/table-td}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="checkrow1" aria-labelledby="{{table--id}}-node1">
+      {{/table-td}}
+      {{#> table-th table-th--data-label="Repository name"}}
+        <div>
+          <div id="{{table--id}}-node1">Node 1</div>
+          <a href="#">siemur/test-space</a>
+        </div>
+      {{/table-th}}
+      {{#> table-td table-td--data-label="Branches"}}
+        <span><i class="fas fa-code-branch"></i> 10</span>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Pull requests"}}
+        <span><i class="fas fa-code"></i> 25</span>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Work spaces"}}
+        <span><i class="fas fa-cube"></i> 5</span>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Last commit"}}
+        2 days ago
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Action"}}
+        <a href="#">Action link</a>
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-right-aligned-1") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr table-tr--expandable="true"}}
+      {{#> table-td}}{{/table-td}}
+      {{#> table-td}}{{/table-td}}
+      {{#> table-td table-td--attribute=(concat 'colspan="7" id="' table--id '-content1"')}}
+        <div class="pf-c-table__expandable-row-content">
+          Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
+          tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+          quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+          consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
+          cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+          proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+        </div>
+      {{/table-td}}
+      {{#> table-td}}
+      {{/table-td}}
+    {{/table-tr}}
+  {{/table-tbody}}
+
+  {{#> table-tbody table-tbody--modifier="pf-m-expanded"}}
+    {{#> table-tr table-tr--expanded="true"}}
+      {{#> table-td table-td--toggle="true" table-td--button--attribute=(concat 'aria-labelledby="' table--id '-node2 expandable-toggle2" id="expandable-toggle2" aria-label="Details" aria-controls="' table--id '-content2"')}}{{/table-td}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="checkrow2" aria-labelledby="{{table--id}}-node2">
+      {{/table-td}}
+      {{#> table-th table-th--data-label="Repository name"}}
+        <div>
+          <div id="{{table--id}}-node2">Node 2</div>
+          <a href="#">siemur/test-space</a>
+        </div>
+      {{/table-th}}
+      {{#> table-td table-td--data-label="Branches"}}
+        <span><i class="fas fa-code-branch"></i> 10</span>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Pull requests"}}
+        <span><i class="fas fa-code"></i> 5</span>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Work spaces"}}
+        <span><i class="fas fa-cube"></i> 8</span>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Last commit"}}
+        2 days ago
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Action"}}
+        <a href="#">Action link</a>
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-right-aligned-3") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr table-tr--expandable="true" table-tr--IsExpanded="true"}}
+      {{#> table-td}}{{/table-td}}
+      {{#> table-td}}{{/table-td}}
+      {{#> table-td table-td--attribute=(concat 'colspan="5" id="' table--id '-content2"')}}
+        <div class="pf-c-table__expandable-row-content">
+          {{#> content}}
+            <p>Git URL: <small>http://github.com/mindreeper2420/rhuxd.git</small></p>
+            <p>Latest commit SHA1 <small>64ae92893d7a98c71b3ef56835ed1c96354526be</small></p>
+            <p>Status <small>20 total files changed</small></p>
+            <p>License <small>Apache License 2.9</small></p>
+          {{/content}}
+        </div>
+      {{/table-td}}
+      {{#> table-td}}
+      {{/table-td}}
+      {{#> table-td}}
+      {{/table-td}}
+    {{/table-tr}}
+  {{/table-tbody}}
+
+  {{#> table-tbody}}
+    {{#> table-tr}}
+      {{#> table-td table-td--toggle="true" table-td--button--attribute=(concat 'aria-labelledby="' table--id '-node3 expandable-toggle3" id="expandable-toggle3" aria-label="Details" aria-controls="' table--id '-content3"')}}{{/table-td}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="checkrow3" aria-labelledby="{{table--id}}-node3">
+      {{/table-td}}
+      {{#> table-th table-th--data-label="Repository name"}}
+        <div>
+          <div id="{{table--id}}-node3">Node 3</div>
+          <a href="#">siemur/test-space</a>
+        </div>
+      {{/table-th}}
+      {{#> table-td table-td--data-label="Branches"}}
+        <span><i class="fas fa-code-branch"></i> 10</span>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Pull requests"}}
+        <span><i class="fas fa-code"></i> 25</span>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Work spaces"}}
+        <span><i class="fas fa-cube"></i> 5</span>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Last commit"}}
+        2 days ago
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Action"}}
+        <a href="#">Action link</a>
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-right-aligned-4") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr table-tr--expandable="true"}}
+      {{#> table-td table-td--attribute=(concat 'colspan="9" id="' table--id '-content3"')}}
+        <div class="pf-c-table__expandable-row-content">
+          Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
+          tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+          quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+          consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
+          cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+          proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+        </div>
+      {{/table-td}}
+    {{/table-tr}}
+  {{/table-tbody}}
+
+  {{#> table-tbody}}
+    {{#> table-tr}}
+      {{#> table-td table-td--toggle="true" table-td--button--attribute=(concat 'aria-labelledby="' table--id '-node4 expandable-toggle4" id="expandable-toggle4" aria-label="Details" aria-controls="' table--id '-content4"')}}{{/table-td}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="checkrow4" aria-labelledby="{{table--id}}-node4">
+      {{/table-td}}
+      {{#> table-th table-th--data-label="Repository name"}}
+        <div>
+          <div id="{{table--id}}-node4">Node 4</div>
+          <a href="#">siemur/test-space</a>
+        </div>
+      {{/table-th}}
+      {{#> table-td table-td--data-label="Branches"}}
+        <span><i class="fas fa-code-branch"></i> 10</span>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Pull requests"}}
+        <span><i class="fas fa-code"></i> 25</span>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Work spaces"}}
+        <span><i class="fas fa-cube"></i> 5</span>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Last commit"}}
+        2 days ago
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Action"}}
+        <a href="#">Action link</a>
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-right-aligned-5") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr table-tr--expandable="true"}}
+      {{#> table-td table-td--attribute=(concat 'colspan="9" id="' table--id '-content4"')}}
+        <div class="pf-c-table__expandable-row-content">
+          Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
+          tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+          quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+          consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
+          cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+          proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+        </div>
+      {{/table-td}}
+    {{/table-tr}}
+  {{/table-tbody}}
+
+  {{#> table-tbody}}
+    {{#> table-tr}}
+      {{#> table-td table-td--toggle="true" table-td--button--attribute=(concat 'aria-labelledby="' table--id '-node5 expandable-toggle5" id="expandable-toggle5" aria-label="Details" aria-controls="' table--id '-content5"')}}{{/table-td}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="checkrow5" aria-labelledby="{{table--id}}-node5">
+      {{/table-td}}
+      {{#> table-th table-th--data-label="Repository name"}}
+        <div>
+          <div id="{{table--id}}-node5">Node 5</div>
+          <a href="#">siemur/test-space</a>
+        </div>
+      {{/table-th}}
+      {{#> table-td table-td--data-label="Branches"}}
+        <span><i class="fas fa-code-branch"></i> 10</span>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Pull requests"}}
+        <span><i class="fas fa-code"></i> 25</span>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Work spaces"}}
+        <span><i class="fas fa-cube"></i> 5</span>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Last commit"}}
+        2 days ago
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Action"}}
+        <a href="#">Action link</a>
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-right-aligned-6") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr table-tr--expandable="true"}}
+      {{#> table-td table-td--attribute=(concat 'colspan="9" id="' table--id '-content5"')}}
+        <div class="pf-c-table__expandable-row-content">
+          Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
+          tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+          quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+          consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
+          cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+          proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+        </div>
+      {{/table-td}}
+    {{/table-tr}}
+  {{/table-tbody}}
+{{/table}}

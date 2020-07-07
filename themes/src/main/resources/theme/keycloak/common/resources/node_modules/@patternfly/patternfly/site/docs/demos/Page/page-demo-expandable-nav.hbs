@@ -1,0 +1,113 @@
+{{#> page page--id=page-demo-expandable--id}}
+  {{#> skip-to-content skip-to-content--attribute=(concat 'href="#main-content-' page--id '"')}}
+    Skip to content
+  {{/skip-to-content}}
+  {{#> page-header}}
+    {{!-- Brand --}}
+    {{#> page-header-brand}}
+      {{#> page-header-brand-toggle}}
+        {{#> button button--modifier="pf-m-plain" button--attribute=(concat 'id="' page--id '-nav-toggle" aria-label="Global navigation" aria-expanded="true" aria-controls="' page--id '-expandable-nav"')}}
+          <i class="fas fa-bars" aria-hidden="true"></i>
+        {{/button}}
+      {{/page-header-brand-toggle}}
+      {{#> page-header-brand-link page-header-brand-link--href="#"}}
+        {{#> brand brand--attribute='src="/assets/images/PF-Masthead-Logo.svg" alt="PatternFly logo"'}}{{/brand}}
+      {{/page-header-brand-link}}
+    {{/page-header-brand}}
+    {{#> page-template-header-tools-elements}}
+    {{/page-template-header-tools-elements}}
+  {{/page-header}}
+
+  {{#> page-sidebar}}
+    {{#> nav nav--expandable="true" nav--attribute=(concat 'id="' page--id '-expandable-nav" aria-label="Global"')}}
+      {{#> nav-list}}
+        {{#> nav-item nav-item--expandable="true" nav-item--expanded="true" nav-item--current="true"}}
+          {{#> nav-link nav-link--href="#" nav-link--attribute=(concat 'id="' page--id '-expandable-nav-link1"')}}
+            System panel
+          {{/nav-link}}
+          {{#> nav-subnav nav-subnav--attribute=(concat 'aria-labelledby="' page--id '-expandable-nav-link1"')}}
+            {{#> nav-list}}
+              {{#> nav-item newcontent}}
+                {{#> nav-link nav-link--href="#"}}
+                  Overview
+                {{/nav-link}}
+              {{/nav-item}}
+              {{#> nav-item newcontent}}
+                {{#> nav-link nav-link--href="#" nav-link--current="true"}}
+                  Resource usage
+                {{/nav-link}}
+              {{/nav-item}}
+              {{#> nav-item newcontent}}
+                {{#> nav-link nav-link--href="#"}}
+                  Hypervisors
+                {{/nav-link}}
+              {{/nav-item}}
+              {{#> divider divider--type="li"}}{{/divider}}
+              {{#> nav-item newcontent}}
+                {{#> nav-link nav-link--href="#"}}
+                  Instances
+                {{/nav-link}}
+              {{/nav-item}}
+              {{#> nav-item newcontent}}
+                {{#> nav-link nav-link--href="#"}}
+                  Volumes
+                {{/nav-link}}
+              {{/nav-item}}
+              {{#> nav-item newcontent}}
+                {{#> nav-link nav-link--href="#"}}
+                  Networks
+                {{/nav-link}}
+              {{/nav-item}}
+            {{/nav-list}}
+          {{/nav-subnav}}
+        {{/nav-item}}
+        {{#> nav-item nav-item--expandable="true"}}
+          {{#> nav-link nav-link--href="#" nav-link--attribute=(concat 'id="' page--id '-expandable-nav-link2"')}}
+            Policy
+          {{/nav-link}}
+          {{#> nav-subnav nav-subnav--attribute=(concat 'aria-labelledby="' page--id '-expandable-nav-link2"')}}
+            {{#> nav-list}}
+              {{#> nav-item newcontent}}
+                {{#> nav-link nav-link--href="#"}}
+                  Subnav link 1
+                {{/nav-link}}
+              {{/nav-item}}
+              {{#> nav-item newcontent}}
+                {{#> nav-link nav-link--href="#"}}
+                  Subnav link 2
+                {{/nav-link}}
+              {{/nav-item}}
+            {{/nav-list}}
+          {{/nav-subnav}}
+        {{/nav-item}}
+        {{#> nav-item nav-item--expandable="true"}}
+          {{#> nav-link nav-link--href="#" nav-link--attribute=(concat 'id="' page--id '-expandable-nav-link3"')}}
+            Authentication
+          {{/nav-link}}
+          {{#> nav-subnav nav-subnav--attribute=(concat 'aria-labelledby="' page--id '-expandable-nav-link3"')}}
+            {{#> nav-list}}
+              {{#> nav-item newcontent}}
+                {{#> nav-link nav-link--href="#"}}
+                  Subnav link 1
+                {{/nav-link}}
+              {{/nav-item}}
+              {{#> nav-item newcontent}}
+                {{#> nav-link nav-link--href="#"}}
+                  Subnav link 2
+                {{/nav-link}}
+              {{/nav-item}}
+            {{/nav-list}}
+          {{/nav-subnav}}
+        {{/nav-item}}
+      {{/nav-list}}
+    {{/nav}}
+  {{/page-sidebar}}
+  {{#> page-main page-main--attribute=(concat 'id="main-content-' page--id '"')}}
+    {{#> page-template-breadcrumb}}
+    {{/page-template-breadcrumb}}
+    {{#> page-template-title}}
+    {{/page-template-title}}
+    {{#> page-template-gallery}}
+    {{/page-template-gallery}}
+  {{/page-main}}
+{{/page}}

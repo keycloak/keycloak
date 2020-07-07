@@ -1,0 +1,63 @@
+<ul class="pf-c-dropdown__menu{{#if dropdown-menu--modifier}} {{dropdown-menu--modifier}}{{/if}}"
+  aria-labelledby="{{id}}-button"
+  {{#unless dropdown--IsExpanded}}hidden{{/unless}}
+  {{#if dropdown-menu--attribute}}
+	  {{{dropdown-menu--attribute}}}
+  {{/if}}>
+  <li>
+    {{#> dropdown-menu-item dropdown-menu-item--modifier="pf-m-description"}}
+      {{#> dropdown-menu-item-main}}
+        Menu item default
+      {{/dropdown-menu-item-main}}
+      {{#> dropdown-menu-item-description}}
+        This is a description
+      {{/dropdown-menu-item-description}}
+    {{/dropdown-menu-item}}
+  </li>
+  <li>
+    {{#> dropdown-menu-item dropdown-menu-item--modifier="pf-m-description"}}
+      {{#> dropdown-menu-item-main}}
+        Menu item with long description
+      {{/dropdown-menu-item-main}}
+      {{#> dropdown-menu-item-description}}
+        This is a really long description that describes the menu item.
+      {{/dropdown-menu-item-description}}
+    {{/dropdown-menu-item}}
+  </li>
+  <li>
+    {{#> dropdown-menu-item dropdown-menu-item--attribute='disabled' dropdown-menu-item--modifier="pf-m-description"}}
+      {{#> dropdown-menu-item-main}}
+        Menu item disabled
+      {{/dropdown-menu-item-main}}
+      {{#> dropdown-menu-item-description}}
+        This is a description
+      {{/dropdown-menu-item-description}}
+    {{/dropdown-menu-item}}
+  </li>
+  <li>
+    {{#> dropdown-menu-item dropdown-menu-item--type="a" dropdown-menu-item--attribute='href="#"' dropdown-menu-item--modifier="pf-m-icon pf-m-description"}}
+      {{#> dropdown-menu-item-main}}
+        {{#> dropdown-menu-item-icon}}
+          <img src="/assets/images/pf-logo-small.svg" alt="PatternFly logo">
+        {{/dropdown-menu-item-icon}}
+        Link
+      {{/dropdown-menu-item-main}}
+      {{#> dropdown-menu-item-description}}
+        This is a description
+      {{/dropdown-menu-item-description}}
+      {{/dropdown-menu-item}}
+  </li>
+  <li>
+    {{#> dropdown-menu-item dropdown-menu-item--modifier="pf-m-icon pf-m-description"}}
+      {{#> dropdown-menu-item-main}}
+        {{#> dropdown-menu-item-icon}}
+          <i class="fas fa-cog" aria-hidden="true"></i>
+        {{/dropdown-menu-item-icon}}
+        Action
+      {{/dropdown-menu-item-main}}
+      {{#> dropdown-menu-item-description}}
+        This is a description
+      {{/dropdown-menu-item-description}}
+      {{/dropdown-menu-item}}
+  </li>
+</ul>

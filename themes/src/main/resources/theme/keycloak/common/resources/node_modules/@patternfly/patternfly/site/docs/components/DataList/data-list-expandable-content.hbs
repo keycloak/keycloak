@@ -1,0 +1,9 @@
+<section class="pf-c-data-list__expandable-content{{#if data-list-expandable-content--modifier}} {{data-list-expandable-content--modifier}}{{/if}}"
+  {{#if data-list-expandable-content--attribute}}
+    {{{data-list-expandable-content--attribute}}}
+  {{/if}}
+  {{#unless data-list-item--expanded}}
+    hidden
+  {{/unless}}>
+    {{> @partial-block}}
+</section>

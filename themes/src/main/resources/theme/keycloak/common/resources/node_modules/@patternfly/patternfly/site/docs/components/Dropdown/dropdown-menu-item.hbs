@@ -1,0 +1,9 @@
+<{{#if dropdown-menu-item--type}}{{dropdown-menu-item--type}}{{else}}button{{/if}} class="pf-c-dropdown__menu-item{{#if dropdown-menu-item--modifier}} {{dropdown-menu-item--modifier}}{{/if}}"
+  {{#unless dropdown-menu-item--type}}
+    type="button"
+  {{/unless}}
+  {{#if dropdown-menu-item--attribute}}
+    {{{dropdown-menu-item--attribute}}}
+  {{/if}}>
+  {{> @partial-block}}
+</{{#if dropdown-menu-item--type}}{{dropdown-menu-item--type}}{{else}}button{{/if}}>

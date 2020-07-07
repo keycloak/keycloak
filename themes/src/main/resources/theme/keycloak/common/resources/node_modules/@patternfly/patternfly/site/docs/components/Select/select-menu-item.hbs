@@ -1,0 +1,39 @@
+<button class="pf-c-select__menu-item{{#if select-menu-item--IsSelected}} pf-m-selected{{/if}}{{#if select-menu-item--IsAction}} pf-m-action{{/if}}{{#if select-menu-item--IsFavoriteAction}} pf-m-favorite-action{{/if}}{{#if select-menu-item--IsLink}} pf-m-link{{/if}}{{#if select-menu-item--Description}} pf-m-description{{/if}}{{#if select-menu-item--modifier}} {{select-menu-item--modifier}}{{/if}}"
+  {{#if select-menu-item--IsSelected}}
+    aria-selected="true"
+  {{/if}}
+  {{#if select-menu-item--IsDisabled}}
+    disabled
+  {{/if}}
+  {{#if select-menu-wrapper--IsFavorite}}
+    {{#if select-menu-item--IsFavoriteAction}}
+      aria-label="Starred"
+    {{else}}
+      aria-label="Not starred"
+    {{/if}}
+  {{/if}}
+  {{#if select-menu-item--attribute}}
+    {{{select-menu-item--attribute}}}
+  {{/if}}>
+  {{#if select-menu-item--IsAction}}
+    {{#> select-menu-item-action-icon}}
+      {{> @partial-block}}
+    {{/select-menu-item-action-icon}}
+  {{else}}
+    {{#if select-menu-item--Description}}
+      {{#> select-menu-item-main}}
+        {{> @partial-block}}
+      {{/select-menu-item-main}}
+      {{#> select-menu-item-description}}
+        {{select-menu-item--Description}}
+      {{/select-menu-item-description}}
+    {{else}}
+      {{> @partial-block}}
+    {{/if}}
+  {{/if}}
+  {{#if select-menu-item--IsSelected}}
+    {{#unless select-menu-item--Description}}
+      {{> select-menu-item-icon}}
+    {{/unless}}
+  {{/if}}
+</button>

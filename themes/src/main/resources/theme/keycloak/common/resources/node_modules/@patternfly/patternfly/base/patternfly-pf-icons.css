@@ -1,0 +1,339 @@
+@charset "UTF-8";
+@font-face {
+  font-family: "pficon";
+  src: url("./assets/pficon/pficon.eot");
+  src: url("./assets/pficon/pficon.eot?#iefix") format("eot"), url("./assets/pficon/pficon.woff2") format("woff2"), url("./assets/pficon/pficon.woff") format("woff"), url("./assets/pficon/pficon.ttf") format("truetype"), url("./assets/pficon/pficon.svg#pficon") format("svg"); }
+
+.pf-icon-add-circle-o:before, .pf-icon-applications:before, .pf-icon-arrow:before, .pf-icon-asleep:before, .pf-icon-automation:before, .pf-icon-blueprint:before, .pf-icon-build:before, .pf-icon-builder-image:before, .pf-icon-bundle:before, .pf-icon-catalog:before, .pf-icon-chat:before, .pf-icon-close:before, .pf-icon-cloud-security:before, .pf-icon-cloud-tenant:before, .pf-icon-cluster:before, .pf-icon-connected:before, .pf-icon-container-node:before, .pf-icon-cpu:before, .pf-icon-degraded:before, .pf-icon-disconnected:before, .pf-icon-domain:before, .pf-icon-edit:before, .pf-icon-enhancement:before, .pf-icon-enterprise:before, .pf-icon-equalizer:before, .pf-icon-error-circle-o:before, .pf-icon-export:before, .pf-icon-filter:before, .pf-icon-flavor:before, .pf-icon-folder-close:before, .pf-icon-folder-open:before, .pf-icon-globe-route:before, .pf-icon-help:before, .pf-icon-history:before, .pf-icon-home:before, .pf-icon-import:before, .pf-icon-in-progress:before, .pf-icon-info:before, .pf-icon-infrastructure:before, .pf-icon-integration:before, .pf-icon-key:before, .pf-icon-locked:before, .pf-icon-maintenance:before, .pf-icon-memory:before, .pf-icon-messages:before, .pf-icon-middleware:before, .pf-icon-migration:before, .pf-icon-monitoring:before, .pf-icon-network:before, .pf-icon-off:before, .pf-icon-ok:before, .pf-icon-on-running:before, .pf-icon-on:before, .pf-icon-optimize:before, .pf-icon-orders:before, .pf-icon-os-image:before, .pf-icon-paused:before, .pf-icon-pending:before, .pf-icon-pficon-dragdrop:before, .pf-icon-pficon-history:before, .pf-icon-pficon-network-range:before, .pf-icon-pficon-satellite:before, .pf-icon-pficon-sort-common-asc:before, .pf-icon-pficon-sort-common-desc:before, .pf-icon-pficon-template:before, .pf-icon-pficon-vcenter:before, .pf-icon-plugged:before, .pf-icon-port:before, .pf-icon-print:before, .pf-icon-private:before, .pf-icon-process-automation:before, .pf-icon-project:before, .pf-icon-rebalance:before, .pf-icon-rebooting:before, .pf-icon-regions:before, .pf-icon-registry:before, .pf-icon-remove2:before, .pf-icon-replicator:before, .pf-icon-repository:before, .pf-icon-resource-pool:before, .pf-icon-resources-almost-empty:before, .pf-icon-resources-almost-full:before, .pf-icon-resources-full:before, .pf-icon-save:before, .pf-icon-screen:before, .pf-icon-security:before, .pf-icon-server-group:before, .pf-icon-server:before, .pf-icon-service-catalog:before, .pf-icon-service:before, .pf-icon-services:before, .pf-icon-spinner:before, .pf-icon-spinner2:before, .pf-icon-storage-domain:before, .pf-icon-tenant:before, .pf-icon-thumb-tack:before, .pf-icon-topology:before, .pf-icon-trend-down:before, .pf-icon-trend-up:before, .pf-icon-unknown:before, .pf-icon-unlocked:before, .pf-icon-unplugged:before, .pf-icon-user:before, .pf-icon-users:before, .pf-icon-virtual-machine:before, .pf-icon-volume:before, .pf-icon-warning-triangle:before, .pf-icon-zone:before {
+  font-family: "pficon";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-decoration: none;
+  text-transform: none; }
+
+.pf-icon-add-circle-o:before {
+  content: ""; }
+
+.pf-icon-applications:before {
+  content: ""; }
+
+.pf-icon-arrow:before {
+  content: ""; }
+
+.pf-icon-asleep:before {
+  content: ""; }
+
+.pf-icon-automation:before {
+  content: ""; }
+
+.pf-icon-blueprint:before {
+  content: ""; }
+
+.pf-icon-build:before {
+  content: ""; }
+
+.pf-icon-builder-image:before {
+  content: ""; }
+
+.pf-icon-bundle:before {
+  content: ""; }
+
+.pf-icon-catalog:before {
+  content: ""; }
+
+.pf-icon-chat:before {
+  content: ""; }
+
+.pf-icon-close:before {
+  content: ""; }
+
+.pf-icon-cloud-security:before {
+  content: ""; }
+
+.pf-icon-cloud-tenant:before {
+  content: ""; }
+
+.pf-icon-cluster:before {
+  content: ""; }
+
+.pf-icon-connected:before {
+  content: ""; }
+
+.pf-icon-container-node:before {
+  content: ""; }
+
+.pf-icon-cpu:before {
+  content: ""; }
+
+.pf-icon-degraded:before {
+  content: ""; }
+
+.pf-icon-disconnected:before {
+  content: ""; }
+
+.pf-icon-domain:before {
+  content: ""; }
+
+.pf-icon-edit:before {
+  content: ""; }
+
+.pf-icon-enhancement:before {
+  content: ""; }
+
+.pf-icon-enterprise:before {
+  content: ""; }
+
+.pf-icon-equalizer:before {
+  content: ""; }
+
+.pf-icon-error-circle-o:before {
+  content: ""; }
+
+.pf-icon-export:before {
+  content: ""; }
+
+.pf-icon-filter:before {
+  content: ""; }
+
+.pf-icon-flavor:before {
+  content: ""; }
+
+.pf-icon-folder-close:before {
+  content: ""; }
+
+.pf-icon-folder-open:before {
+  content: ""; }
+
+.pf-icon-globe-route:before {
+  content: ""; }
+
+.pf-icon-help:before {
+  content: ""; }
+
+.pf-icon-history:before {
+  content: ""; }
+
+.pf-icon-home:before {
+  content: ""; }
+
+.pf-icon-import:before {
+  content: ""; }
+
+.pf-icon-in-progress:before {
+  content: ""; }
+
+.pf-icon-info:before {
+  content: ""; }
+
+.pf-icon-infrastructure:before {
+  content: ""; }
+
+.pf-icon-integration:before {
+  content: ""; }
+
+.pf-icon-key:before {
+  content: ""; }
+
+.pf-icon-locked:before {
+  content: ""; }
+
+.pf-icon-maintenance:before {
+  content: ""; }
+
+.pf-icon-memory:before {
+  content: ""; }
+
+.pf-icon-messages:before {
+  content: ""; }
+
+.pf-icon-middleware:before {
+  content: ""; }
+
+.pf-icon-migration:before {
+  content: ""; }
+
+.pf-icon-monitoring:before {
+  content: ""; }
+
+.pf-icon-network:before {
+  content: ""; }
+
+.pf-icon-off:before {
+  content: ""; }
+
+.pf-icon-ok:before {
+  content: ""; }
+
+.pf-icon-on-running:before {
+  content: ""; }
+
+.pf-icon-on:before {
+  content: ""; }
+
+.pf-icon-optimize:before {
+  content: ""; }
+
+.pf-icon-orders:before {
+  content: ""; }
+
+.pf-icon-os-image:before {
+  content: ""; }
+
+.pf-icon-paused:before {
+  content: ""; }
+
+.pf-icon-pending:before {
+  content: ""; }
+
+.pf-icon-pficon-dragdrop:before {
+  content: ""; }
+
+.pf-icon-pficon-history:before {
+  content: ""; }
+
+.pf-icon-pficon-network-range:before {
+  content: ""; }
+
+.pf-icon-pficon-satellite:before {
+  content: ""; }
+
+.pf-icon-pficon-sort-common-asc:before {
+  content: ""; }
+
+.pf-icon-pficon-sort-common-desc:before {
+  content: ""; }
+
+.pf-icon-pficon-template:before {
+  content: ""; }
+
+.pf-icon-pficon-vcenter:before {
+  content: ""; }
+
+.pf-icon-plugged:before {
+  content: ""; }
+
+.pf-icon-port:before {
+  content: ""; }
+
+.pf-icon-print:before {
+  content: ""; }
+
+.pf-icon-private:before {
+  content: ""; }
+
+.pf-icon-process-automation:before {
+  content: ""; }
+
+.pf-icon-project:before {
+  content: ""; }
+
+.pf-icon-rebalance:before {
+  content: ""; }
+
+.pf-icon-rebooting:before {
+  content: ""; }
+
+.pf-icon-regions:before {
+  content: ""; }
+
+.pf-icon-registry:before {
+  content: ""; }
+
+.pf-icon-remove2:before {
+  content: ""; }
+
+.pf-icon-replicator:before {
+  content: ""; }
+
+.pf-icon-repository:before {
+  content: ""; }
+
+.pf-icon-resource-pool:before {
+  content: ""; }
+
+.pf-icon-resources-almost-empty:before {
+  content: ""; }
+
+.pf-icon-resources-almost-full:before {
+  content: ""; }
+
+.pf-icon-resources-full:before {
+  content: ""; }
+
+.pf-icon-save:before {
+  content: ""; }
+
+.pf-icon-screen:before {
+  content: ""; }
+
+.pf-icon-security:before {
+  content: ""; }
+
+.pf-icon-server-group:before {
+  content: ""; }
+
+.pf-icon-server:before {
+  content: ""; }
+
+.pf-icon-service-catalog:before {
+  content: ""; }
+
+.pf-icon-service:before {
+  content: ""; }
+
+.pf-icon-services:before {
+  content: ""; }
+
+.pf-icon-spinner:before {
+  content: ""; }
+
+.pf-icon-spinner2:before {
+  content: ""; }
+
+.pf-icon-storage-domain:before {
+  content: ""; }
+
+.pf-icon-tenant:before {
+  content: ""; }
+
+.pf-icon-thumb-tack:before {
+  content: ""; }
+
+.pf-icon-topology:before {
+  content: ""; }
+
+.pf-icon-trend-down:before {
+  content: ""; }
+
+.pf-icon-trend-up:before {
+  content: ""; }
+
+.pf-icon-unknown:before {
+  content: ""; }
+
+.pf-icon-unlocked:before {
+  content: ""; }
+
+.pf-icon-unplugged:before {
+  content: ""; }
+
+.pf-icon-user:before {
+  content: ""; }
+
+.pf-icon-users:before {
+  content: ""; }
+
+.pf-icon-virtual-machine:before {
+  content: ""; }
+
+.pf-icon-volume:before {
+  content: ""; }
+
+.pf-icon-warning-triangle:before {
+  content: ""; }
+
+.pf-icon-zone:before {
+  content: ""; }

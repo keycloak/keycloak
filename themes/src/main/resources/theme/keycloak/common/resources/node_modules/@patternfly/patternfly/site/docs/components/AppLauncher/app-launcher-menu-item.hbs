@@ -1,0 +1,9 @@
+<{{# if app-launcher-menu-item--type}}{{app-launcher-menu-item--type}}{{else}}a{{/if}} class="pf-c-app-launcher__menu-item{{#if app-launcher-menu-item--modifier}} {{app-launcher-menu-item--modifier}}{{/if}}"
+  {{#if app-launcher-menu-item--type}}
+    type="button"
+  {{/if}}
+  {{#if app-launcher-menu-item--attribute}}
+	  {{{app-launcher-menu-item--attribute}}}
+  {{/if}}>
+  {{> @partial-block}}
+</{{# if app-launcher-menu-item--type}}{{app-launcher-menu-item--type}}{{else}}a{{/if}}>

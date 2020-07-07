@@ -1,0 +1,8 @@
+[class*="pf-c-"], [class*="pf-c-"]::before, [class*="pf-c-"]::after,
+[class*="pf-l-"],
+[class*="pf-l-"]::before,
+[class*="pf-l-"]::after {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  background-color: transparent; }

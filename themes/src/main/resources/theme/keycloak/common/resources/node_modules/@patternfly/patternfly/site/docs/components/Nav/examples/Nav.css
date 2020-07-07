@@ -1,0 +1,34 @@
+#ws-core-c-nav-default,
+#ws-core-c-nav-basic,
+#ws-core-c-nav-grouped,
+#ws-core-c-nav-grouped-nav,
+#ws-core-c-nav-expanded,
+#ws-core-c-nav-expanded-with-subnav-titles,
+#ws-core-c-nav-mixed,
+#ws-core-c-nav-horizontal,
+#ws-core-c-nav-horizontal-overflow {
+  background-color: var(--pf-global--BackgroundColor--dark-300);
+}
+
+#ws-core-c-nav-horizontal-in-masthead,
+#ws-core-c-nav-horizontal-in-masthead-overflow {
+  padding: 0;
+  grid-template-rows: auto;
+}
+
+#ws-core-c-nav-horizontal-in-masthead .pf-c-page__header,
+#ws-core-c-nav-horizontal-in-masthead-overflow .pf-c-page__header {
+  min-height: 0;
+}
+
+@media screen and (min-width: 1200px) {
+  #ws-core-c-nav-horizontal-in-masthead .pf-c-page__header,
+  #ws-core-c-nav-horizontal-in-masthead-overflow .pf-c-page__header {
+    min-height: var(--pf-c-page__header--MinHeight);
+  }
+}
+
+#ws-core-c-nav-horizontal-in-masthead .pf-c-page__header-nav,
+#ws-core-c-nav-horizontal-in-masthead-overflow .pf-c-page__header-nav {
+  grid-row: 1;
+}

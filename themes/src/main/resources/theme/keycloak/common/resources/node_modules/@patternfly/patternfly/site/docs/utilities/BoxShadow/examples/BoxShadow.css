@@ -1,0 +1,25 @@
+.ws-core-u-box-shadow [class*="pf-u-box-shadow"],
+.ws-core-u-boxshadow [class*="pf-u-box-shadow"] {
+  padding: var(--pf-global--spacer--lg);
+  margin-bottom: var(--pf-global--spacer--md);
+}
+
+#ws-core-u-box-shadow-small [class*="pf-u-box-shadow"]:not(:last-child),
+#ws-core-u-boxshadow-small [class*="pf-u-box-shadow"]:not(:last-child) {
+  margin-bottom: var(--pf-global--spacer--lg);
+}
+
+#ws-core-u-box-shadow-medium [class*="pf-u-box-shadow"]:not(:last-child),
+#ws-core-u-boxshadow-medium [class*="pf-u-box-shadow"]:not(:last-child) {
+  margin-bottom: var(--pf-global--spacer--xl);
+}
+
+#ws-core-u-box-shadow-large [class*="pf-u-box-shadow"]:not(:last-child),
+#ws-core-u-boxshadow-large [class*="pf-u-box-shadow"]:not(:last-child) {
+  margin-bottom: var(--pf-global--spacer--2xl);
+}
+
+#ws-core-u-box-shadow-extra-large [class*="pf-u-box-shadow"]:not(:last-child),
+#ws-core-u-boxshadow-extra-large [class*="pf-u-box-shadow"]:not(:last-child) {
+  margin-bottom: var(--pf-global--spacer--3xl);
+}

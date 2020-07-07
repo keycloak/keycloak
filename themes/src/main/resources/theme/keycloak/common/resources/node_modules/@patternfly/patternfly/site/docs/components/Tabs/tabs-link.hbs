@@ -1,0 +1,9 @@
+<{{#if tabs-link--isLink}}a{{else}}button{{/if}} class="pf-c-tabs__link{{#if tabs-link--modifier}} {{tabs-link--modifier}}{{/if}}"
+  {{#if tabs-link--isLink}}
+    href="#"
+  {{/if}}
+  {{#if tabs-link--attribute}}
+    {{{tabs-link--attribute}}}
+  {{/if}}>
+  {{> @partial-block}}
+</{{#if tabs-link--isLink}}a{{else}}button{{/if}}>

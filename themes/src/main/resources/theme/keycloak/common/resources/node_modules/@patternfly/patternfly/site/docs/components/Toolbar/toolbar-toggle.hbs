@@ -1,0 +1,8 @@
+<div class="pf-c-toolbar__toggle{{#if toolbar-toggle--modifier}} {{toolbar-toggle--modifier}}{{/if}}"
+  {{#if toolbar-toggle--attribute}}
+    {{{toolbar-toggle--attribute}}}
+  {{/if}}>
+  {{#> button button--modifier="pf-m-plain" button--attribute=(concat 'aria-label="Show filters" aria-expanded="' toolbar-toggle--IsExpanded '" aria-controls="' toolbar--id '-expandable-content"')}}
+    <i class="fas fa-filter" aria-hidden="true"></i>
+  {{/button}}
+</div>

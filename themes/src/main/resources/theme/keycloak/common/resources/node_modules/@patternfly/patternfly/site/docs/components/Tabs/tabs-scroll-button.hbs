@@ -1,0 +1,23 @@
+<button class="pf-c-tabs__scroll-button{{#if tabs-scroll-button--modifier}} {{tabs-scroll-button--modifier}}{{/if}}"
+  {{#if tabs-scroll-button--attribute}}
+    {{{tabs-scroll-button--attribute}}}
+  {{/if}}
+  {{#if tabs-scroll-button--IsDisabled}}
+    disabled
+  {{/if}}
+  {{#if tabs-scroll-button--IsHidden}}
+    aria-hidden="true"
+  {{/if}}
+  {{#if tabs-scroll-button--IsLeft}}
+    aria-label="Scroll left"
+  {{/if}}
+  {{#if tabs-scroll-button--IsRight}}
+    aria-label="Scroll right"
+  {{/if}}>
+  {{#if tabs-scroll-button--IsLeft}}
+    <i class="fas fa-angle-left" aria-hidden="true"></i>
+  {{/if}}
+  {{#if tabs-scroll-button--IsRight}}
+    <i class="fas fa-angle-right" aria-hidden="true"></i>
+  {{/if}}
+</button>

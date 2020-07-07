@@ -1,0 +1,194 @@
+{{#> table table--id=(concat page--id '-table') table--grid="true" table--modifier="pf-m-grid-xl" table--expandable="true" table--attribute='aria-label="Compound expandable table example"'}}
+  {{#> table-thead}}
+    {{#> table-tr}}
+      {{#> table-th table-th--attribute='scope="col"' table-th--sortable="true" table-th--selected="true" table-th--asc="true" table-th--modifier="pf-m-width-30"}}
+        Repositories
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"' table-th--sortable="true"}}
+        Branches
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"' table-th--sortable="true"}}
+        Pull requests
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Work spaces
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Last commit
+      {{/table-th}}
+      {{#> table-td}}{{/table-td}}
+      {{#> table-td}}{{/table-td}}
+    {{/table-tr}}
+  {{/table-thead}}
+
+  {{#> table-tbody table-tbody--modifier="pf-m-expanded"}}
+    {{#> table-tr}}
+      {{#> table-th table-th--data-label="Repository name"}}
+        <a href="#">siemur/test-space</a>
+      {{/table-th}}
+      {{#> table-td table-td--compound-expansion-toggle="true" table-td--modifier="pf-m-expanded" table-td--data-label="Branches" table-td--button--attribute=(concat 'aria-expanded="true" aria-controls="' table--id '-nested-table-1"')}}
+        {{#> button-icon button-icon--modifier="pf-m-start"}}
+          <i class="fas fa-code-branch" aria-hidden="true"></i>
+        {{/button-icon}}
+        10
+      {{/table-td}}
+      {{#> table-td table-td--compound-expansion-toggle="true" table-td--data-label="Pull requests" table-td--button--attribute=(concat 'aria-expanded="false" aria-controls="' table--id '-nested-table-2"')}}
+        {{#> button-icon button-icon--modifier="pf-m-start"}}
+          <i class="fas fa-code" aria-hidden="true"></i>
+        {{/button-icon}}
+          4
+      {{/table-td}}
+      {{#> table-td table-td--compound-expansion-toggle="true" table-td--data-label="Work spaces" table-td--button--attribute=(concat 'aria-expanded="false" aria-controls="' table--id '-nested-table-3"')}}
+        {{#> button-icon button-icon--modifier="pf-m-start"}}
+          <i class="fas fa-cube" aria-hidden="true"></i>
+        {{/button-icon}}
+        4
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Last commit"}}
+        <span>20 minutes</span>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Action"}}
+        <a href="#">Open in Github</a>
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-right-aligned-1") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr table-tr--expandable="true" table-tr--IsExpanded="true"}}
+      {{#> table-td table-td--attribute='colspan="7"' table-td--modifier="pf-m-no-padding"}}
+        {{#> table-nested table--id=(concat table--id '-nested-table-1')}}
+        {{/table-nested}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr table-tr--expandable="true"}}
+      {{#> table-td table-td--attribute='colspan="7"' table-td--modifier="pf-m-no-padding"}}
+        {{#> table-nested table--id=(concat table--id '-nested-table-2')}}
+        {{/table-nested}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr table-tr--expandable="true"}}
+      {{#> table-td table-td--attribute='colspan="7"' table-td--modifier="pf-m-no-padding"}}
+        {{#> table-nested table--id=(concat table--id '-nested-table-3')}}
+        {{/table-nested}}
+      {{/table-td}}
+    {{/table-tr}}
+  {{/table-tbody}}
+
+  {{#> table-tbody}}
+    {{#> table-tr}}
+      {{#> table-th table-th--data-label="Repository name"}}
+        <a href="#">siemur/test-space</a>
+      {{/table-th}}
+      {{#> table-td table-td--compound-expansion-toggle="true" table-td--data-label="Branches" table-td--button--attribute=(concat 'aria-expanded="false" aria-controls="' table--id '-nested-table-4"')}}
+        {{#> button-icon button-icon--modifier="pf-m-start"}}
+          <i class="fas fa-code-branch" aria-hidden="true"></i>
+        {{/button-icon}}
+        3
+      {{/table-td}}
+      {{#> table-td table-td--compound-expansion-toggle="true" table-td--data-label="Pull requests" table-td--button--attribute=(concat 'aria-expanded="false" aria-controls="' table--id '-nested-table-5"')}}
+        {{#> button-icon button-icon--modifier="pf-m-start"}}
+          <i class="fas fa-code" aria-hidden="true"></i>
+        {{/button-icon}}
+        4
+      {{/table-td}}
+      {{#> table-td table-td--compound-expansion-toggle="true" table-td--data-label="Work spaces" table-td--button--attribute=(concat 'aria-expanded="false" aria-controls="' table--id '-nested-table-6"')}}
+        {{#> button-icon button-icon--modifier="pf-m-start"}}
+          <i class="fas fa-cube" aria-hidden="true"></i>
+        {{/button-icon}}
+        2
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Last commit"}}
+        <span>1 day ago</span>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Action"}}
+        <a href="#">Open in Github</a>
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-right-aligned-2") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr table-tr--expandable="true"}}
+      {{#> table-td table-td--attribute='colspan="7"' table-td--modifier="pf-m-no-padding"}}
+        {{#> table-nested table--id=(concat table--id '-nested-table-4')}}
+        {{/table-nested}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr table-tr--expandable="true"}}
+      {{#> table-td table-td--attribute='colspan="7"' table-td--modifier="pf-m-no-padding"}}
+        {{#> table-nested table--id=(concat table--id '-nested-table-5')}}
+        {{/table-nested}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr table-tr--expandable="true"}}
+      {{#> table-td table-td--attribute='colspan="7"' table-td--modifier="pf-m-no-padding"}}
+        {{#> table-nested table--id=(concat table--id '-nested-table-6')}}
+        {{/table-nested}}
+      {{/table-td}}
+    {{/table-tr}}
+  {{/table-tbody}}
+
+  {{#> table-tbody}}
+    {{#> table-tr}}
+      {{#> table-th table-th--data-label="Repository name"}}
+        <a href="#">siemur/test-space</a>
+      {{/table-th}}
+      {{#> table-td table-td--compound-expansion-toggle="true" table-td--data-label="Branches" table-td--button--attribute=(concat 'aria-expanded="false" aria-controls="' table--id '-nested-table-7"')}}
+        {{#> button-icon button-icon--modifier="pf-m-start"}}
+          <i class="fas fa-code-branch" aria-hidden="true"></i>
+        {{/button-icon}}
+        70
+      {{/table-td}}
+      {{#> table-td table-td--compound-expansion-toggle="true" table-td--data-label="Pull requests" table-td--button--attribute=(concat 'aria-expanded="false" aria-controls="' table--id '-nested-table-8"')}}
+        {{#> button-icon button-icon--modifier="pf-m-start"}}
+          <i class="fas fa-code" aria-hidden="true"></i>
+        {{/button-icon}}
+        15
+      {{/table-td}}
+      {{#> table-td table-td--compound-expansion-toggle="true" table-td--data-label="Work spaces" table-td--button--attribute=(concat 'aria-expanded="false" aria-controls="' table--id '-nested-table-9"')}}
+        {{#> button-icon button-icon--modifier="pf-m-start"}}
+          <i class="fas fa-cube" aria-hidden="true"></i>
+        {{/button-icon}}
+        12
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Last commit"}}
+        <span>2 days ago</span>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Action"}}
+        <a href="#">Open in Github</a>
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-right-aligned-3") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr table-tr--expandable="true"}}
+      {{#> table-td table-td--attribute='colspan="7"' table-td--modifier="pf-m-no-padding"}}
+        {{#> table-nested table--id=(concat table--id '-nested-table-7')}}
+        {{/table-nested}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr table-tr--expandable="true"}}
+      {{#> table-td table-td--attribute='colspan="7"' table-td--modifier="pf-m-no-padding"}}
+        {{#> table-nested table--id=(concat table--id '-nested-table-8')}}
+        {{/table-nested}}
+      {{/table-td}}
+    {{/table-tr}}
+
+    {{#> table-tr table-tr--expandable="true"}}
+      {{#> table-td table-td--attribute='colspan="7"' table-td--modifier="pf-m-no-padding"}}
+        {{#> table-nested table--id=(concat table--id '-nested-table-9')}}
+        {{/table-nested}}
+      {{/table-td}}
+    {{/table-tr}}
+  {{/table-tbody}}
+{{/table}}

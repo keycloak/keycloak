@@ -1,0 +1,22 @@
+<button type="button" class="pf-c-expandable-section__toggle{{#if expandable-section-toggle--modifier}} {{expandable-section-toggle--modifier}}{{/if}}"
+  {{#if expandable-section-toggle--attribute}}
+    {{{expandable-section-toggle--attribute}}}
+  {{/if}}
+  {{#if expandable-section--IsExpanded}}
+  aria-expanded="true"
+  {{else}}
+  aria-expanded="false"
+  {{/if}}
+  >
+  {{> @partial-block}}
+  {{> expandable-section-toggle-icon}}
+  {{#if expandable-section--IsExpanded}}
+   {{#> expandable-section-toggle-text}}
+      Show less
+    {{/expandable-section-toggle-text}}
+  {{else}}
+    {{#> expandable-section-toggle-text}}
+      Show more
+    {{/expandable-section-toggle-text}}
+  {{/if}}
+</button>

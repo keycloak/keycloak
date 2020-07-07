@@ -1,0 +1,12 @@
+<input class="pf-c-search-input__text-input{{#if search-input-text-input--modifier}} {{search-input-text-input--modifier}}{{/if}}"
+  type="text"
+  {{#if search-input--placeholder}}
+    placeholder="{{search-input--placeholder}}"
+    aria-label="{{search-input--placeholder}}"
+  {{/if}}
+  {{#if search-input--value}}
+    value="{{search-input--value}}"
+  {{/if}}
+  {{#if search-input-text-input--attribute}}
+    {{search-input-text-input--attribute}}
+  {{/if}}>

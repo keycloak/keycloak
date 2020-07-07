@@ -1,0 +1,224 @@
+.pf-c-about-modal-box {
+  --pf-global--Color--100: var(--pf-global--Color--light-100);
+  --pf-global--Color--200: var(--pf-global--Color--light-200);
+  --pf-global--BorderColor--100: var(--pf-global--BorderColor--light-100);
+  --pf-global--primary-color--100: var(--pf-global--primary-color--light-100);
+  --pf-global--link--Color: var(--pf-global--link--Color--light);
+  --pf-global--link--Color--hover: var(--pf-global--link--Color--light);
+  --pf-global--BackgroundColor--100: var(--pf-global--BackgroundColor--dark-100); }
+  .pf-c-about-modal-box .pf-c-card {
+    --pf-c-card--BackgroundColor: var(--pf-global--BackgroundColor--dark-transparent-200); }
+  .pf-c-about-modal-box .pf-c-button {
+    --pf-c-button--m-primary--Color: var(--pf-global--primary-color--dark-100);
+    --pf-c-button--m-primary--hover--Color: var(--pf-global--primary-color--dark-100);
+    --pf-c-button--m-primary--focus--Color: var(--pf-global--primary-color--dark-100);
+    --pf-c-button--m-primary--active--Color: var(--pf-global--primary-color--dark-100);
+    --pf-c-button--m-primary--BackgroundColor: var(--pf-global--BackgroundColor--light-100);
+    --pf-c-button--m-primary--hover--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+    --pf-c-button--m-primary--focus--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+    --pf-c-button--m-primary--active--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+    --pf-c-button--m-secondary--Color: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--hover--Color: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--focus--Color: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--active--Color: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--BorderColor: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--hover--BorderColor: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--focus--BorderColor: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--active--BorderColor: var(--pf-global--Color--light-100); }
+
+.pf-c-about-modal-box {
+  --pf-c-about-modal-box--BackgroundColor: var(--pf-global--palette--black-1000);
+  --pf-c-about-modal-box--BoxShadow: 0 0 100px 0 rgba(255, 255, 255, .05);
+  --pf-c-about-modal-box--ZIndex: var(--pf-global--ZIndex--xl);
+  --pf-c-about-modal-box--Height: 100%;
+  --pf-c-about-modal-box--lg--Height: 47.625rem;
+  --pf-c-about-modal-box--lg--MaxHeight: calc(100% - var(--pf-global--spacer--xl));
+  --pf-c-about-modal-box--Width: 100vw;
+  --pf-c-about-modal-box--lg--Width: calc(100% - (var(--pf-global--spacer--3xl) * 2));
+  --pf-c-about-modal-box--lg--MaxWidth: 77rem;
+  --pf-c-about-modal-box--PaddingTop: var(--pf-global--spacer--xl);
+  --pf-c-about-modal-box--PaddingRight: var(--pf-global--spacer--xl);
+  --pf-c-about-modal-box--PaddingBottom: var(--pf-global--spacer--xl);
+  --pf-c-about-modal-box--PaddingLeft: var(--pf-global--spacer--xl);
+  --pf-c-about-modal-box--sm--PaddingTop: var(--pf-global--spacer--3xl);
+  --pf-c-about-modal-box--sm--PaddingRight: var(--pf-global--spacer--3xl);
+  --pf-c-about-modal-box--sm--PaddingBottom: var(--pf-global--spacer--3xl);
+  --pf-c-about-modal-box--sm--PaddingLeft: var(--pf-global--spacer--3xl);
+  --pf-c-about-modal-box--sm--grid-template-columns: 5fr 1fr;
+  --pf-c-about-modal-box--lg--grid-template-columns: 1fr .6fr;
+  --pf-c-about-modal-box__brand--PaddingTop: var(--pf-global--spacer--2xl);
+  --pf-c-about-modal-box__brand--PaddingRight: var(--pf-global--spacer--xl);
+  --pf-c-about-modal-box__brand--PaddingLeft: var(--pf-global--spacer--xl);
+  --pf-c-about-modal-box__brand--PaddingBottom: var(--pf-global--spacer--xl);
+  --pf-c-about-modal-box__brand--sm--PaddingRight: var(--pf-global--spacer--3xl);
+  --pf-c-about-modal-box__brand--sm--PaddingLeft: var(--pf-global--spacer--3xl);
+  --pf-c-about-modal-box__brand--sm--PaddingBottom: var(--pf-global--spacer--3xl);
+  --pf-c-about-modal-box__close--ZIndex: var(--pf-global--ZIndex--2xl);
+  --pf-c-about-modal-box__close--PaddingTop: var(--pf-global--spacer--2xl);
+  --pf-c-about-modal-box__close--PaddingRight: var(--pf-global--spacer--xl);
+  --pf-c-about-modal-box__close--PaddingBottom: var(--pf-global--spacer--xl);
+  --pf-c-about-modal-box__close--sm--PaddingBottom: var(--pf-global--spacer--3xl);
+  --pf-c-about-modal-box__close--sm--PaddingRight: 0;
+  --pf-c-about-modal-box__close--lg--PaddingRight: var(--pf-global--spacer--3xl);
+  --pf-c-about-modal-box__close--c-button--Color: var(--pf-global--Color--100);
+  --pf-c-about-modal-box__close--c-button--FontSize: var(--pf-global--FontSize--xl);
+  --pf-c-about-modal-box__close--c-button--BorderRadius: var(--pf-global--BorderRadius--lg);
+  --pf-c-about-modal-box__close--c-button--Width: calc(var(--pf-c-about-modal-box__close--c-button--FontSize) * 2);
+  --pf-c-about-modal-box__close--c-button--Height: calc(var(--pf-c-about-modal-box__close--c-button--FontSize) * 2);
+  --pf-c-about-modal-box__close--c-button--BackgroundColor: var(--pf-global--palette--black-1000);
+  --pf-c-about-modal-box__close--c-button--hover--BackgroundColor: rgba(3, 3, 3, 0.4);
+  --pf-c-about-modal-box__hero--sm--BackgroundImage: url("../../assets/images/pfbg_992@2x.jpg");
+  --pf-c-about-modal-box__hero--sm--BackgroundPosition: top left;
+  --pf-c-about-modal-box__hero--sm--BackgroundSize: cover;
+  --pf-c-about-modal-box__brand-image--Height: 2.5rem;
+  --pf-c-about-modal-box__header--PaddingRight: var(--pf-global--spacer--xl);
+  --pf-c-about-modal-box__header--PaddingBottom: var(--pf-global--spacer--sm);
+  --pf-c-about-modal-box__header--PaddingLeft: var(--pf-global--spacer--xl);
+  --pf-c-about-modal-box__header--sm--PaddingRight: var(--pf-global--spacer--3xl);
+  --pf-c-about-modal-box__header--sm--PaddingLeft: var(--pf-global--spacer--3xl);
+  --pf-c-about-modal-box__strapline--PaddingTop: var(--pf-global--spacer--xl);
+  --pf-c-about-modal-box__strapline--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-about-modal-box__strapline--sm--PaddingTop: var(--pf-global--spacer--2xl);
+  --pf-c-about-modal-box__content--MarginTop: var(--pf-global--spacer--xl);
+  --pf-c-about-modal-box__content--MarginRight: var(--pf-global--spacer--xl);
+  --pf-c-about-modal-box__content--MarginBottom: var(--pf-global--spacer--xl);
+  --pf-c-about-modal-box__content--MarginLeft: var(--pf-global--spacer--xl);
+  --pf-c-about-modal-box__content--sm--MarginTop: var(--pf-global--spacer--2xl);
+  --pf-c-about-modal-box__content--sm--MarginRight: var(--pf-global--spacer--3xl);
+  --pf-c-about-modal-box__content--sm--MarginBottom: var(--pf-global--spacer--2xl);
+  --pf-c-about-modal-box__content--sm--MarginLeft: var(--pf-global--spacer--3xl);
+  color: var(--pf-global--Color--100);
+  position: relative;
+  z-index: var(--pf-c-about-modal-box--ZIndex);
+  display: grid;
+  grid-template-rows: max-content max-content auto;
+  grid-template-areas: "brand close" "header header" "content content";
+  width: var(--pf-c-about-modal-box--Width);
+  height: var(--pf-c-about-modal-box--Height);
+  overflow-x: hidden;
+  overflow-y: auto;
+  background-color: var(--pf-c-about-modal-box--BackgroundColor);
+  box-shadow: var(--pf-c-about-modal-box--BoxShadow); }
+  @media screen and (min-width: 576px) {
+    .pf-c-about-modal-box {
+      --pf-c-about-modal-box--PaddingTop: var(--pf-c-about-modal-box--sm--PaddingTop);
+      --pf-c-about-modal-box--PaddingRight: var(--pf-c-about-modal-box--sm--PaddingRight);
+      --pf-c-about-modal-box--PaddingBottom: var(--pf-c-about-modal-box--sm--PaddingBottom);
+      --pf-c-about-modal-box--PaddingLeft: var(--pf-c-about-modal-box--sm--PaddingLeft); } }
+  @media screen and (min-width: 576px) {
+    .pf-c-about-modal-box {
+      --pf-c-about-modal-box__brand--PaddingRight: var(--pf-c-about-modal-box__brand--sm--PaddingRight);
+      --pf-c-about-modal-box__brand--PaddingLeft: var(--pf-c-about-modal-box__brand--sm--PaddingLeft);
+      --pf-c-about-modal-box__brand--PaddingBottom: var(--pf-c-about-modal-box__brand--sm--PaddingBottom); } }
+  @media only screen and (min-width: 576px) {
+    .pf-c-about-modal-box {
+      --pf-c-about-modal-box__close--PaddingRight: var(--pf-c-about-modal-box__close--sm--PaddingRight);
+      --pf-c-about-modal-box__close--PaddingBottom: var(--pf-c-about-modal-box__close--sm--PaddingBottom); } }
+  @media only screen and (min-width: 992px) {
+    .pf-c-about-modal-box {
+      --pf-c-about-modal-box__close--PaddingRight: var(--pf-c-about-modal-box__close--lg--PaddingRight); } }
+  @media only screen and (min-width: 576px) {
+    .pf-c-about-modal-box {
+      --pf-c-about-modal-box__header--PaddingRight: var(--pf-c-about-modal-box__header--sm--PaddingRight);
+      --pf-c-about-modal-box__header--PaddingLeft: var(--pf-c-about-modal-box__header--sm--PaddingLeft); } }
+  @media only screen and (min-width: 576px) {
+    .pf-c-about-modal-box {
+      --pf-c-about-modal-box__strapline--PaddingTop: var(--pf-c-about-modal-box__strapline--sm--PaddingTop); } }
+  @media only screen and (min-width: 576px) {
+    .pf-c-about-modal-box {
+      --pf-c-about-modal-box__content--MarginTop: var(--pf-c-about-modal-box__content--sm--MarginTop);
+      --pf-c-about-modal-box__content--MarginRight: var(--pf-c-about-modal-box__content--sm--MarginRight);
+      --pf-c-about-modal-box__content--MarginBottom: var(--pf-c-about-modal-box__content--sm--MarginBottom);
+      --pf-c-about-modal-box__content--MarginLeft: var(--pf-c-about-modal-box__content--sm--MarginLeft); } }
+  @media only screen and (min-width: 576px) {
+    .pf-c-about-modal-box {
+      grid-template-columns: var(--pf-c-about-modal-box--sm--grid-template-columns);
+      grid-template-areas: "brand          hero" "header         hero" "content        hero"; } }
+  @media only screen and (min-width: 992px) {
+    .pf-c-about-modal-box {
+      --pf-c-about-modal-box--Height: var(--pf-c-about-modal-box--lg--Height);
+      --pf-c-about-modal-box--Width: var(--pf-c-about-modal-box--lg--Width);
+      grid-template-columns: var(--pf-c-about-modal-box--lg--grid-template-columns);
+      grid-template-rows: max-content max-content auto;
+      max-width: var(--pf-c-about-modal-box--lg--MaxWidth);
+      max-height: var(--pf-c-about-modal-box--lg--MaxHeight); } }
+
+.pf-c-about-modal-box__brand {
+  grid-area: brand;
+  display: flex;
+  padding: var(--pf-c-about-modal-box__brand--PaddingTop) var(--pf-c-about-modal-box__brand--PaddingRight) var(--pf-c-about-modal-box__brand--PaddingBottom) var(--pf-c-about-modal-box__brand--PaddingLeft); }
+
+.pf-c-about-modal-box__brand-image {
+  height: var(--pf-c-about-modal-box__brand-image--Height); }
+
+.pf-c-about-modal-box__header {
+  grid-area: header;
+  display: flex;
+  flex-direction: column;
+  padding-right: var(--pf-c-about-modal-box__header--PaddingRight);
+  padding-bottom: var(--pf-c-about-modal-box__header--PaddingBottom);
+  padding-left: var(--pf-c-about-modal-box__header--PaddingLeft); }
+
+.pf-c-about-modal-box__strapline {
+  padding-top: var(--pf-c-about-modal-box__strapline--PaddingTop);
+  margin-top: auto;
+  font-size: var(--pf-c-about-modal-box__strapline--FontSize); }
+
+.pf-c-about-modal-box__content {
+  display: flex;
+  flex-direction: column;
+  grid-area: content;
+  margin: var(--pf-c-about-modal-box__content--MarginTop) var(--pf-c-about-modal-box__content--MarginRight) var(--pf-c-about-modal-box__content--MarginBottom) var(--pf-c-about-modal-box__content--MarginLeft);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  word-break: break-word; }
+  @media screen and (min-width: 576px) {
+    .pf-c-about-modal-box__content {
+      overflow: visible;
+      overscroll-behavior: auto; } }
+
+.pf-c-about-modal-box__close {
+  grid-area: close;
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding-top: var(--pf-c-about-modal-box__close--PaddingTop);
+  padding-right: var(--pf-c-about-modal-box__close--PaddingRight);
+  padding-bottom: var(--pf-c-about-modal-box__close--PaddingBottom); }
+  @media only screen and (min-width: 576px) {
+    .pf-c-about-modal-box__close {
+      grid-area: 1 / 2;
+      justify-content: center; } }
+  @media only screen and (min-width: 992px) {
+    .pf-c-about-modal-box__close {
+      justify-content: flex-end; } }
+  .pf-c-about-modal-box__close .pf-c-button.pf-m-plain {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--pf-c-about-modal-box__close--c-button--Width);
+    height: var(--pf-c-about-modal-box__close--c-button--Height);
+    font-size: var(--pf-c-about-modal-box__close--c-button--FontSize);
+    color: var(--pf-c-about-modal-box__close--c-button--Color);
+    background-color: var(--pf-c-about-modal-box__close--c-button--BackgroundColor);
+    border-radius: var(--pf-c-about-modal-box__close--c-button--BorderRadius); }
+    .pf-c-about-modal-box__close .pf-c-button.pf-m-plain:hover {
+      --pf-c-about-modal-box__close--c-button--BackgroundColor: var(--pf-c-about-modal-box__close--c-button--hover--BackgroundColor); }
+
+.pf-c-about-modal-box__hero {
+  display: none;
+  visibility: hidden; }
+  @media only screen and (min-width: 576px) {
+    .pf-c-about-modal-box__hero {
+      display: block;
+      visibility: visible;
+      background-image: var(--pf-c-about-modal-box__hero--sm--BackgroundImage);
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-position: var(--pf-c-about-modal-box__hero--sm--BackgroundPosition);
+      background-size: var(--pf-c-about-modal-box__hero--sm--BackgroundSize);
+      grid-area: hero; } }

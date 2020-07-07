@@ -1,0 +1,6 @@
+<section class="pf-c-notification-drawer__group{{#if notification-drawer-group--IsExpanded}} pf-m-expanded{{/if}}{{#if notification-drawer-group--modifier}} {{notification-drawer-group--modifier}}{{/if}}"
+  {{#if notification-drawer-group--attribute}}
+    {{{notification-drawer-group--attribute}}}
+  {{/if}}>
+  {{> @partial-block notification-drawer-group--IsGroup="true"}}
+</section>

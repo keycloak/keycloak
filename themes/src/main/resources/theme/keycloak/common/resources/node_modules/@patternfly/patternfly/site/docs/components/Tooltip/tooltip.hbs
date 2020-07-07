@@ -1,0 +1,8 @@
+<div class="pf-c-tooltip{{#if tooltip--modifier}} {{tooltip--modifier}}{{/if}}"
+  {{#if tooltip--attribute}}
+    {{{tooltip--attribute}}} 
+  {{/if}}
+  role="tooltip">
+  {{#> tooltip-arrow}}{{/tooltip-arrow}}
+  {{> @partial-block}}
+</div>

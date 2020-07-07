@@ -1,0 +1,14 @@
+<span class="pf-c-notification-drawer__list-item-header-icon{{#if notification-drawer-list-item-header-icon--modifier}} {{notification-drawer-list-item-header-icon--modifier}}{{/if}}"
+  {{#if notification-drawer-list-item-header-icon--attribute}}
+    {{{notification-drawer-list-item-header-icon--attribute}}}
+  {{/if}}>
+  {{#if notification-drawer-list-item--IsInfo}}
+    <i class="fas fa-info-circle" aria-hidden="true"></i>
+  {{else if notification-drawer-list-item--IsWarning}}
+    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+  {{else if notification-drawer-list-item--IsDanger}}
+    <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+  {{else if notification-drawer-list-item--IsSuccess}}
+    <i class="fas fa-check-circle" aria-hidden="true"></i>
+  {{/if}}
+</span>

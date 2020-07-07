@@ -1,0 +1,11 @@
+{{#> check check--type="label" check--attribute=(concat 'for="' id '-' select-menu-item-check--name '"') check--modifier=(concat 'pf-c-select__menu-item' select-menu-item-check--modifier)}}
+  {{#> check-input check-input--attribute=(concat 'type="checkbox" id="' id '-' select-menu-item-check--name '" name="' id '-' select-menu-item-check--name '"')}}{{/check-input}}
+  {{#> check-label check-label--type="span"}}
+    {{>@partial-block}}
+  {{/check-label}}
+  {{#if select-menu-item-check--description}}
+    {{#> check-description}}
+      {{select-menu-item-check--description}}
+    {{/check-description}}
+  {{/if}}
+{{/check}}

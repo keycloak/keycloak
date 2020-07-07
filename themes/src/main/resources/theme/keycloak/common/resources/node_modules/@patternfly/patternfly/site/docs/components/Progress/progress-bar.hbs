@@ -1,0 +1,18 @@
+<div class="pf-c-progress__bar{{#if progress-bar--modifier}} {{progress-bar--modifier}}{{/if}}"
+  {{#if progress-bar--attribute}}
+      {{{progress-bar--attribute}}}
+  {{/if}}
+  role="progressbar"
+  aria-valuemin="0"
+  {{~#if progress__valuemax}}
+    aria-valuemax="{{progress__valuemax}}"
+  {{else}}
+    aria-valuemax="100"
+  {{/if}}
+  aria-valuenow="{{progress__value}}"
+  {{~#if progress--dynamic}}
+    aria-valuetext="{{progress__valuetext}}"
+  {{/if}}
+  {{~#if progress__id}} aria-describedby="{{progress__id}}-description"{{/if}}>
+  {{> progress-indicator}}
+</div>

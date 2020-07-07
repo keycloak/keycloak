@@ -1,0 +1,6 @@
+<{{#if screen-reader--element}}{{screen-reader--element}}{{else}}span{{/if}} class="pf-screen-reader{{#if screen-reader--modifier}} {{screen-reader--modifier}}{{/if}}"
+  {{#if screen-reader--attribute}}
+    {{{screen-reader--attribute}}}
+  {{/if}}>
+  {{> @partial-block}}
+</{{#if screen-reader--element}}{{screen-reader--element}}{{else}}span{{/if}}>

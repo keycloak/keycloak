@@ -1,0 +1,8 @@
+{{!-- This provides the measure with a % --}}
+{{#if progress__value}}
+  {{~#if progress--dynamic}}
+    <span class="pf-c-progress__measure">{{progress__valuetext}}</span>
+  {{else}}
+    <span class="pf-c-progress__measure">{{progress__value}}%</span>
+  {{/if}}
+{{/if}}

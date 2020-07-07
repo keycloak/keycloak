@@ -1,0 +1,100 @@
+.pf-t-light {
+  --pf-global--Color--100: var(--pf-global--Color--dark-100);
+  --pf-global--Color--200: var(--pf-global--Color--dark-200);
+  --pf-global--BorderColor--100: var(--pf-global--BorderColor--dark-100);
+  --pf-global--primary-color--100: var(--pf-global--primary-color--dark-100);
+  --pf-global--link--Color: var(--pf-global--link--Color--dark);
+  --pf-global--link--Color--hover: var(--pf-global--link--Color--dark--hover);
+  --pf-global--BackgroundColor--100: var(--pf-global--BackgroundColor--light-100); }
+
+.pf-t-dark {
+  --pf-global--Color--100: var(--pf-global--Color--light-100);
+  --pf-global--Color--200: var(--pf-global--Color--light-200);
+  --pf-global--BorderColor--100: var(--pf-global--BorderColor--light-100);
+  --pf-global--primary-color--100: var(--pf-global--primary-color--light-100);
+  --pf-global--link--Color: var(--pf-global--link--Color--light);
+  --pf-global--link--Color--hover: var(--pf-global--link--Color--light);
+  --pf-global--BackgroundColor--100: var(--pf-global--BackgroundColor--dark-100); }
+  .pf-t-dark .pf-c-card {
+    --pf-c-card--BackgroundColor: var(--pf-global--BackgroundColor--dark-transparent-200); }
+  .pf-t-dark .pf-c-button {
+    --pf-c-button--m-primary--Color: var(--pf-global--primary-color--dark-100);
+    --pf-c-button--m-primary--hover--Color: var(--pf-global--primary-color--dark-100);
+    --pf-c-button--m-primary--focus--Color: var(--pf-global--primary-color--dark-100);
+    --pf-c-button--m-primary--active--Color: var(--pf-global--primary-color--dark-100);
+    --pf-c-button--m-primary--BackgroundColor: var(--pf-global--BackgroundColor--light-100);
+    --pf-c-button--m-primary--hover--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+    --pf-c-button--m-primary--focus--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+    --pf-c-button--m-primary--active--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+    --pf-c-button--m-secondary--Color: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--hover--Color: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--focus--Color: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--active--Color: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--BorderColor: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--hover--BorderColor: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--focus--BorderColor: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--active--BorderColor: var(--pf-global--Color--light-100); }
+
+.pf-t-light {
+  --pf-global--Color--100: var(--pf-global--Color--dark-100);
+  --pf-global--Color--200: var(--pf-global--Color--dark-200);
+  --pf-global--BorderColor--100: var(--pf-global--BorderColor--dark-100);
+  --pf-global--primary-color--100: var(--pf-global--primary-color--dark-100);
+  --pf-global--link--Color: var(--pf-global--link--Color--dark);
+  --pf-global--link--Color--hover: var(--pf-global--link--Color--dark--hover);
+  --pf-global--BackgroundColor--100: var(--pf-global--BackgroundColor--light-100); }
+
+.pf-t-dark {
+  --pf-global--Color--100: var(--pf-global--Color--light-100);
+  --pf-global--Color--200: var(--pf-global--Color--light-200);
+  --pf-global--BorderColor--100: var(--pf-global--BorderColor--light-100);
+  --pf-global--primary-color--100: var(--pf-global--primary-color--light-100);
+  --pf-global--link--Color: var(--pf-global--link--Color--light);
+  --pf-global--link--Color--hover: var(--pf-global--link--Color--light);
+  --pf-global--BackgroundColor--100: var(--pf-global--BackgroundColor--dark-100); }
+  .pf-t-dark .pf-c-card {
+    --pf-c-card--BackgroundColor: var(--pf-global--BackgroundColor--dark-transparent-200); }
+  .pf-t-dark .pf-c-button {
+    --pf-c-button--m-primary--Color: var(--pf-global--primary-color--dark-100);
+    --pf-c-button--m-primary--hover--Color: var(--pf-global--primary-color--dark-100);
+    --pf-c-button--m-primary--focus--Color: var(--pf-global--primary-color--dark-100);
+    --pf-c-button--m-primary--active--Color: var(--pf-global--primary-color--dark-100);
+    --pf-c-button--m-primary--BackgroundColor: var(--pf-global--BackgroundColor--light-100);
+    --pf-c-button--m-primary--hover--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+    --pf-c-button--m-primary--focus--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+    --pf-c-button--m-primary--active--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+    --pf-c-button--m-secondary--Color: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--hover--Color: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--focus--Color: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--active--Color: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--BorderColor: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--hover--BorderColor: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--focus--BorderColor: var(--pf-global--Color--light-100);
+    --pf-c-button--m-secondary--active--BorderColor: var(--pf-global--Color--light-100); }
+
+.pf-t-dark.pf-m-transparent {
+  background-color: transparent; }
+
+.pf-t-dark.pf-m-transparent-100 {
+  background-color: rgba(3, 3, 3, 0.42); }
+
+.pf-t-dark.pf-m-transparent-200 {
+  background-color: rgba(3, 3, 3, 0.6); }
+
+.pf-t-dark.pf-m-opaque-100 {
+  background-color: #3c3f42; }
+
+.pf-t-dark.pf-m-opaque-200 {
+  background-color: #151515; }
+
+.pf-t-light.pf-m-transparent {
+  background-color: transparent; }
+
+.pf-t-light.pf-m-opaque-100 {
+  background-color: #fff; }
+
+.pf-t-light.pf-m-opaque-200 {
+  background-color: #fafafa; }
+
+.pf-t-light.pf-m-opaque-300 {
+  background-color: #f0f0f0; }

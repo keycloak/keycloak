@@ -1,0 +1,51 @@
+{{#> toolbar toolbar--id=(concat master-detail-template--id "-toolbar")}}
+  {{#> toolbar-content}}
+    {{#> toolbar-content-section}}
+      {{#> toolbar-group toolbar-group--modifier="pf-m-toggle-group pf-m-show"}}
+        {{> toolbar-toggle toolbar-toggle--IsExpanded="false"}}
+        {{#> toolbar-item}}
+          {{#> select select--attribute="style='width: 150px'" id=(concat toolbar--id '-select-status') select-toggle--icon="fas fa-filter"}}
+            Status
+          {{/select}}
+        {{/toolbar-item}}
+      {{/toolbar-group}}
+      {{#> toolbar-item}}
+        {{#> button button--modifier="pf-m-plain" button--attribute='aria-label="Sort"'}}
+          <i class="fas fa-sort-amount-down" aria-hidden="true"></i>
+        {{/button}}
+      {{/toolbar-item}}
+      {{> toolbar-overflow-menu-example toolbar-overflow-menu-example--content="true" toolbar-overflow-menu-example--control="true"}}
+      {{#if master-detail-toolbar--HasViewToggle}}
+        {{#> toolbar-group toolbar-group--modifier="pf-m-icon-button-group pf-m-align-right"}}
+          {{#> toolbar-item}}
+            {{#> button button--modifier="pf-m-plain pf-m-active" button--attribute='aria-label="Grid view"'}}
+              <i class="fas fa-th" aria-hidden="true"></i>
+            {{/button}}
+          {{/toolbar-item}}
+          {{#> toolbar-item}}
+            {{#> button button--modifier="pf-m-plain" button--attribute='aria-label="List view"'}}
+              <i class="fas fa-list-ul" aria-hidden="true"></i>
+            {{/button}}
+          {{/toolbar-item}}
+        {{/toolbar-group}}
+      {{/if}}
+      {{#> toolbar-item toolbar-item--modifier=(concat 'pf-m-pagination ' toolbar-item-pagination--modifier)}}
+        {{#> pagination}}
+          {{#> pagination-total-items}}
+            <b>1 - 10</b> of <b>37</b>
+          {{/pagination-total-items}}
+          {{> pagination-options-menu id=(concat toolbar--id '-pagination-options-menu') options-menu--IsText="true"}}
+          {{#> pagination-nav pagination-nav--attribute='aria-label="Pagination top"'}}
+            {{#> button button--modifier="pf-m-plain" button--attribute='disabled aria-label="Go to previous page"'}}
+              <i class="fas fa-angle-left" aria-hidden="true"></i>
+            {{/button}}
+            {{#> button button--modifier="pf-m-plain" button--attribute='aria-label="Go to next page"'}}
+              <i class="fas fa-angle-right" aria-hidden="true"></i>
+            {{/button}}
+          {{/pagination-nav}}
+        {{/pagination}}
+      {{/toolbar-item}}
+    {{/toolbar-content-section}}
+    {{#> toolbar-expandable-content}}{{/toolbar-expandable-content}}
+  {{/toolbar-content}}
+{{/toolbar}}

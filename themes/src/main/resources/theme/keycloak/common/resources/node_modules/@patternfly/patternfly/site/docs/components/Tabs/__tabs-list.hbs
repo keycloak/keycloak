@@ -1,0 +1,95 @@
+{{!--
+------------------------------------
+Tabs list content options
+------------------------------------
+__tabs-list--HasIcons: bool
+__tabs-list--IsScrollable: bool
+__tabs-list--IsShort: bool
+__tabs-list--IsLong: bool
+__tabs-item--NoText: bool
+------------------------------------
+--}}
+
+{{#unless __tabs-list--NoScrollButtons}}
+  {{#if __tabs-list--DisabledFirstScrollButton}}
+    {{> tabs-scroll-button tabs-scroll-button--IsLeft="true" tabs-scroll-button--IsDisabled="true"}}
+  {{else if __tabs-list--IsScrollable}}
+    {{> tabs-scroll-button tabs-scroll-button--IsLeft="true"}}
+  {{else}}
+    {{> tabs-scroll-button tabs-scroll-button--IsLeft="true" tabs-scroll-button--IsDisabled="true" tabs-scroll-button--IsHidden="true"}}
+  {{/if}}
+{{/unless}}
+
+{{#> tabs-list}}
+  {{> __tabs-item
+    __tabs-item--id="users"
+    __tabs-item--icon-name="fas fa-users"
+    __tabs-item--aria-label="Users"
+    __tabs-item--text="Users"
+    }}
+  {{> __tabs-item
+    __tabs-item--current="true"
+    __tabs-item--id="containers"
+    __tabs-item--icon-name="fas fa-box"
+    __tabs-item--aria-label="Containers"
+    __tabs-item--text="Containers"
+    }}
+  {{> __tabs-item
+    __tabs-item--id="database"
+    __tabs-item--icon-name="database"
+    __tabs-item--aria-label="Database"
+    __tabs-item--text="Database"
+    }}
+
+  {{#unless __tabs-list--IsShort}}
+    {{> __tabs-item
+      __tabs-item--id="server"
+      __tabs-item--icon-name="server"
+      __tabs-item--aria-label="Server"
+      __tabs-item--text="Server"
+      }}
+    {{> __tabs-item
+      __tabs-item--id="system"
+      __tabs-item--icon-name="laptop"
+      __tabs-item--aria-label="System"
+      __tabs-item--text="System"
+      }}
+    {{> __tabs-item
+      __tabs-item--id="network-wired"
+      __tabs-item--icon-name="project-diagram"
+      __tabs-item--aria-label="Network"
+      __tabs-item--text="Network"
+      }}
+
+    {{#if __tabs-list--IsLong}}
+      {{> __tabs-item
+        __tabs-item--id="cloud"
+        __tabs-item--icon-name="cloud"
+        __tabs-item--aria-label="Hybrid Cloud"
+        __tabs-item--text="Hybrid Cloud"
+        }}
+      {{> __tabs-item
+        __tabs-item--id="automation"
+        __tabs-item--icon-name="magic"
+        __tabs-item--aria-label="Automation"
+        __tabs-item--text="Automation"
+        }}
+      {{> __tabs-item
+        __tabs-item--id="files"
+        __tabs-item--icon-name="file"
+        __tabs-item--aria-label="files"
+        __tabs-item--text="Files"
+        }}
+    {{/if}}
+  {{/unless}}
+{{/tabs-list}}
+
+{{#unless __tabs-list--NoScrollButtons}}
+  {{#if __tabs-list--DisabledLastScrollButton}}
+    {{> tabs-scroll-button tabs-scroll-button--IsRight="true" tabs-scroll-button--IsDisabled="true"}}
+  {{else if __tabs-list--IsScrollable}}
+    {{> tabs-scroll-button tabs-scroll-button--IsRight="true"}}
+  {{else}}
+    {{> tabs-scroll-button tabs-scroll-button--IsRight="true" tabs-scroll-button--IsDisabled="true" tabs-scroll-button--IsHidden="true"}}
+  {{/if}}
+{{/unless}}

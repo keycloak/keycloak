@@ -1,0 +1,93 @@
+{{#> title title--modifier="pf-m-xl" titleType="h3" title--attribute=(concat 'id="' inline-edit--id '-label" aria-hidden="true"')}}
+  Bulk edit description list title
+{{/title}}
+{{#> inline-edit-toggle}}
+  {{#> button button--modifier="pf-m-link" button--attribute=(concat 'id="' inline-edit--id '-edit-button" aria-labelledby="' inline-edit--id '-edit-button ' inline-edit--id '-label"')}}
+    {{#> button-icon button-icon--modifier="pf-m-start"}}
+      <i class="fas fa-pencil-alt" aria-hidden="true"></i>
+    {{/button-icon}}
+    Edit
+  {{/button}}
+{{/inline-edit-toggle}}
+
+{{#> list list--type="dl" list--attribute=(concat 'aria-labelledby="' inline-edit--id '-label"')}}
+  <dt>
+    <label for="{{inline-edit--id}}-text-input">
+      Text input label
+    </label>
+  </dt>
+  <dd>
+    {{#> inline-edit-value}}
+      Text input description content
+    {{/inline-edit-value}}
+    {{#> inline-edit-input}}
+      {{> form-control controlType="input" input="true" form-control--attribute=(concat 'type="text" value="Text input description content" id="' inline-edit--id '-text-input"')}}
+    {{/inline-edit-input}}
+  </dd>
+  <dt>
+    <label for="{{inline-edit--id}}-text-input-disabled">
+      Text input label, disabled
+    </label>
+  </dt>
+  <dd>
+    {{#> inline-edit-value}}
+      Text input disabled, description content
+    {{/inline-edit-value}}
+    {{#> inline-edit-input}}
+      {{> form-control controlType="input" input="true" form-control--attribute=(concat 'type="text" value="Text input disabled, description content" id="' inline-edit--id '-text-input-disabled" disabled')}}
+    {{/inline-edit-input}}
+  </dd>
+  <dt>Checkboxes</dt>
+  <dd>
+    {{#> inline-edit-value}}
+      Check 1, Check 2
+    {{/inline-edit-value}}
+    {{#> inline-edit-group inline-edit-group--modifier="pf-m-input-group pf-m-column"}}
+      {{#> inline-edit-input}}
+        {{#> check}}
+          {{#> check-input check-input--attribute=(concat 'id="' inline-edit--id '-check1" name="' inline-edit--id '-example-check"')}}{{/check-input}}
+          {{#> check-label check-label--attribute=(concat 'for="' inline-edit--id '-check1"')}}Check 1{{/check-label}}
+        {{/check}}
+      {{/inline-edit-input}}
+      {{#> inline-edit-input}}
+        {{#> check}}
+          {{#> check-input check-input--attribute=(concat 'id="' inline-edit--id '-check2" name="' inline-edit--id '-example-check2"')}}{{/check-input}}
+          {{#> check-label check-label--attribute=(concat 'for="' inline-edit--id '-check2"')}}Check 2{{/check-label}}
+        {{/check}}
+      {{/inline-edit-input}}
+    {{/inline-edit-group}}
+  </dd>
+  <dt>Radios</dt>
+  <dd>
+    {{#> inline-edit-value}}
+      True
+    {{/inline-edit-value}}
+    {{#> inline-edit-group inline-edit-group--attribute='role="radiogroup" aria-label="Radio group example"' inline-edit-group--modifier="pf-m-input-group pf-m-column"}}
+      {{#> inline-edit-input}}
+        {{#> radio}}
+          {{#> radio-input radio-input--attribute=(concat 'id="' inline-edit--id '-radio1" name="' inline-edit--id '-example-radio"')}}{{/radio-input}}
+          {{#> radio-label radio-label--attribute=(concat 'for="' inline-edit--id '-radio1"')}}True{{/radio-label}}
+        {{/radio}}
+      {{/inline-edit-input}}
+      {{#> inline-edit-input}}
+        {{#> radio}}
+          {{#> radio-input radio-input--attribute=(concat 'id="' inline-edit--id '-radio2" name="' inline-edit--id '-example-radio"')}}{{/radio-input}}
+          {{#> radio-label radio-label--attribute=(concat 'for="' inline-edit--id '-radio2"')}}False{{/radio-label}}
+        {{/radio}}
+      {{/inline-edit-input}}
+    {{/inline-edit-group}}
+  </dd>
+  <dt>Number</dt>
+  <dd>
+    {{#> inline-edit-value}}
+      1
+    {{/inline-edit-value}}
+    {{#> inline-edit-input}}
+      {{> form-control controlType="input" input="true" form-control--attribute='type="number" value="Input static value" aria-label="Editable text input"'}}
+    {{/inline-edit-input}}
+  </dd>
+{{/list}}
+{{#> inline-edit-group inline-edit-group--modifier="pf-m-action-group pf-m-footer"}}
+  {{> inline-edit-action-save}}
+  {{> inline-edit-action-cancel}}
+{{/inline-edit-group}}

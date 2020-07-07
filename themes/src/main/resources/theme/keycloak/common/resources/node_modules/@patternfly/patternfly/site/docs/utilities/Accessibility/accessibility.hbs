@@ -1,0 +1,6 @@
+<{{#if accessibility--element}}{{accessibility--element}}{{else}}span{{/if}} class="pf-u-{{accessibility--type}}{{#if accessibility--modifier}} {{accessibility--modifier}}{{/if}}"
+  {{#if accessibility--attribute}}
+    {{{accessibility--attribute}}}
+  {{/if}}>
+  {{> @partial-block}}
+</{{#if accessibility--element}}{{accessibility--element}}{{else}}span{{/if}}>

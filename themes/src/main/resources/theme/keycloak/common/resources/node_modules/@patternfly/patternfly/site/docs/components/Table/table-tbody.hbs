@@ -1,0 +1,9 @@
+<tbody{{#if table-tbody--modifier}} class="{{table-tbody--modifier}}"{{/if}}
+  {{#if table--grid}}
+    role="rowgroup"
+  {{/if}}
+  {{#if table-tbody--attribute}}
+    {{{table-tbody--attribute}}}
+  {{/if}}>
+  {{> @partial-block}}
+</tbody>

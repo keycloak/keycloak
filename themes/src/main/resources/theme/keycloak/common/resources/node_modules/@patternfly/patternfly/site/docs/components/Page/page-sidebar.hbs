@@ -1,0 +1,8 @@
+<div class="pf-c-page__sidebar{{#if page-sidebar--modifier}} {{page-sidebar--modifier}}{{/if}}"
+  {{#if page-sidebar--attribute}}
+    {{{page-sidebar--attribute}}}
+  {{/if}}>
+  {{#> page-sidebar-body}}
+    {{> @partial-block}}
+  {{/page-sidebar-body}}
+</div>

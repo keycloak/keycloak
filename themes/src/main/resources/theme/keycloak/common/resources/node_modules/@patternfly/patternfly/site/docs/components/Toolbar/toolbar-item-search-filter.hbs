@@ -1,0 +1,11 @@
+{{#> toolbar-item toolbar-item--modifier=(concat 'pf-m-search-filter ' toolbar-item-search-filter--modifier)}}
+  {{#> input-group input-group--attribute=(concat 'aria-label="search filter" role="group"')}}
+    {{#> dropdown id=(concat toolbar--id '-' button--id) dropdown--HasToggleIcon="true"}}
+      {{#> dropdown-toggle-text}}
+        Name
+      {{/dropdown-toggle-text}}
+    {{/dropdown}}
+    {{#> form-control controlType="input" input="true" form-control--attribute=(concat 'type="search" id="' toolbar--id '-' button--id '-search-filter-input" name="' toolbar--id '-search-filter-input" aria-label="input with dropdown and button" aria-describedby="' toolbar--id '-' button--id '-button"')}}
+    {{/form-control}}
+  {{/input-group}}
+{{/toolbar-item}}

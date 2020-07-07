@@ -1,0 +1,14 @@
+<{{# if label--type}}{{label--type}}{{else}}span{{/if}} class="pf-c-label{{#if label--modifier}} {{label--modifier}}{{/if}}"
+  {{#if label--attribute}}
+    {{{label--attribute}}}
+  {{/if}}>
+  {{#> label-content}}
+    {{> @partial-block}}
+  {{/label-content}}
+  {{#if label--isRemovable}}
+    {{#> button button--modifier="pf-m-plain" button--attribute=(concat 'id="' label--id '-button"
+  aria-label="Remove" aria-labelledby="' label--id '-button ' label--id '-text"')}}
+      <i class="fas fa-times" aria-hidden="true"></i>
+    {{/button}}
+  {{/if}}
+</span>

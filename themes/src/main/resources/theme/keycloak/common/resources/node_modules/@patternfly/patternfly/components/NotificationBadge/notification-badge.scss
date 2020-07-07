@@ -1,0 +1,55 @@
+.pf-c-notification-badge {
+  --pf-c-notification-badge--after--BorderColor: var(--pf-global--BackgroundColor--100);
+  --pf-c-notification-badge--after--BorderRadius: var(--pf-global--BorderRadius--lg);
+  --pf-c-notification-badge--after--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-notification-badge--after--Top: 0;
+  --pf-c-notification-badge--after--Right: 0;
+  --pf-c-notification-badge--after--Width: calc(var(--pf-global--spacer--sm) + var(--pf-c-notification-badge--after--BorderWidth) + var(--pf-c-notification-badge--after--BorderWidth));
+  --pf-c-notification-badge--after--Height: calc(var(--pf-global--spacer--sm) + var(--pf-c-notification-badge--after--BorderWidth) + var(--pf-c-notification-badge--after--BorderWidth));
+  --pf-c-notification-badge--after--BackgroundColor: transparent;
+
+  // This translation works for the Bell icon, although adjusted for a happy medium between FF and Chrome.
+  // If other icons are used, a modifier may need to be created to allow for proper positioning on that icon.
+  --pf-c-notification-badge--after--TranslateX: 50%;
+  --pf-c-notification-badge--after--TranslateY: calc(var(--pf-c-notification-badge--after--BorderWidth) * -1);
+
+  // The icon is normalized to be square in order to facilitate consistency in positioning
+  --pf-c-notification-badge__i--Width: var(--pf-global--spacer--md);
+  --pf-c-notification-badge__i--Height: var(--pf-global--spacer--md);
+
+  // Modifiers
+  --pf-c-notification-badge--m-read--after--BackgroundColor: transparent;
+  --pf-c-notification-badge--m-read--after--BorderColor: transparent;
+  --pf-c-notification-badge--m-unread--after--BackgroundColor: var(--pf-global--active-color--400);
+
+  position: relative;
+  display: inline-block;
+  line-height: 1;
+
+  &::after {
+    position: absolute;
+    top: var(--pf-c-notification-badge--after--Top);
+    right: var(--pf-c-notification-badge--after--Right);
+    width: var(--pf-c-notification-badge--after--Width);
+    height: var(--pf-c-notification-badge--after--Height);
+    content: "";
+    background-color: var(--pf-c-notification-badge--after--BackgroundColor);
+    border: var(--pf-c-notification-badge--after--BorderWidth) solid var(--pf-c-notification-badge--after--BorderColor);
+    border-radius: var(--pf-c-notification-badge--after--BorderRadius);
+    transform: translate(var(--pf-c-notification-badge--after--TranslateX), var(--pf-c-notification-badge--after--TranslateY));
+  }
+
+  & > i {
+    width: var(--pf-c-notification-badge__i--Width);
+    height: var(--pf-c-notification-badge__i--Height);
+  }
+
+  &.pf-m-unread::after {
+    --pf-c-notification-badge--after--BackgroundColor: var(--pf-c-notification-badge--m-unread--after--BackgroundColor);
+  }
+
+  &.pf-m-read::after {
+    --pf-c-notification-badge--after--BackgroundColor: var(--pf-c-notification-badge--m-read--after--BackgroundColor);
+    --pf-c-notification-badge--after--BorderColor: var(--pf-c-notification-badge--m-read--after--BorderColor);
+  }
+}

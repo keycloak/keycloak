@@ -1,0 +1,10 @@
+<span class="pf-c-progress__status-icon{{#if progress-status-icon--modifier}} {{progress-status-icon--modifier}}{{/if}}"
+  {{#if progress-status-icon--attribute}}
+    {{{progress-status-icon--attribute}}}
+  {{/if}}>
+  {{#if progress-status-icon--type}}
+    <i class="fas fa-{{progress-status-icon--type}}" aria-hidden="true"></i>
+  {{else}}
+    {{> @partial-block}}
+  {{/if}}
+</span>

@@ -1,0 +1,20 @@
+<{{# if dropdown-toggle--type}}{{dropdown-toggle--type}}{{else}}button{{/if}} class="pf-c-dropdown__toggle{{#if dropdown--IsSplitButton}}{{#if dropdown-toggle--IsDisabled}} pf-m-disabled{{/if}}{{/if}}{{#if dropdown-toggle--modifier}} {{dropdown-toggle--modifier}}{{/if}}"
+  {{#unless dropdown--IsSplitButton}}
+    type="button"
+    id="{{id}}-button"
+    aria-expanded="{{#if dropdown--IsExpanded}}true{{else}}false{{/if}}"
+    {{#if dropdown-toggle--IsDisabled}}
+      disabled
+    {{/if}}
+  {{/unless}}
+  {{#if aria-label}}
+    aria-label="{{aria-label}}"
+  {{/if}}>
+  {{> @partial-block}}
+  {{#if dropdown--HasToggleIcon}}
+    {{> dropdown-toggle-icon}}
+  {{/if}}
+  {{#if dropdown--HasKebabIcon}}
+    {{> dropdown-kebab-icon}}
+  {{/if}}
+</{{# if dropdown-toggle--type}}{{dropdown-toggle--type}}{{else}}button{{/if}}>

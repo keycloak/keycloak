@@ -1,0 +1,17 @@
+<div class="pf-c-file-upload__file-details{{#if file-upload-file-details--modifier}} {{file-upload-file-details--modifier}}{{/if}}"
+  {{#if file-upload-file-details--attribute}}
+    {{{file-upload-file-details--attribute}}}
+  {{/if}}>
+  {{#> form-control
+    controlType="textarea"
+    form-control--modifier="pf-m-resize-vertical"
+    form-control--attribute=(concat 'id="' file-upload--id '-file-details" name="' file-upload--id '-file-details" aria-label="' file-upload-file-details--aria-label '" ' file-upload-file-details--attribute)
+    }}{{> @partial-block}}
+  {{/form-control}}
+
+  {{#if file-upload-file-details--HasSpinner}}
+    {{#> file-upload-file-details-spinner}}
+      {{#> spinner spinner--modifier="pf-m-lg"}}Loading...{{/spinner}}
+    {{/file-upload-file-details-spinner}}
+  {{/if}}
+</div>

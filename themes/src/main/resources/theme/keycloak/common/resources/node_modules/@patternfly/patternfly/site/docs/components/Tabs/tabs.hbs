@@ -1,0 +1,9 @@
+<{{#if tabs--type}}{{tabs--type}}{{else}}div{{/if}} class="pf-c-tabs{{#if tabs--IsSecondary}} pf-m-secondary{{/if}}{{#if tabs--modifier}} {{tabs--modifier}}{{/if}}"
+  {{#if tabs--attribute}}
+    {{{tabs--attribute}}}
+  {{/if}}
+  {{#if tabs--id}}
+    id="{{{tabs--id}}}"
+  {{/if}}>
+  {{> @partial-block}}
+</{{#if tabs--type}}{{tabs--type}}{{else}}div{{/if}}>

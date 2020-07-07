@@ -1,0 +1,9 @@
+<a href="#" class="pf-c-breadcrumb__link{{#if breadcrumb-link--modifier}} {{breadcrumb-link--modifier}}{{/if}}{{#if breadcrumb-link--current}} pf-m-current{{/if}}"
+  {{#if breadcrumb-link--attribute}}
+    {{{breadcrumb-link--attribute}}}
+  {{/if}}
+  {{#if breadcrumb-link--current}}
+    aria-current="page"
+  {{/if}}>
+  {{> @partial-block}}
+</a>

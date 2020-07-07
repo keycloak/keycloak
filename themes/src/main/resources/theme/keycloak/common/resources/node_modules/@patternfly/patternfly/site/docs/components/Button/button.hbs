@@ -1,0 +1,16 @@
+<button class="pf-c-button{{#if button--IsExpanded}} pf-m-expanded{{/if}}{{#if button--modifier}} {{button--modifier}}{{/if}}"
+  {{#if button--IsSubmit}} 
+    type="submit"
+  {{else if button--IsReset}}
+    type="reset"
+  {{else}}
+    type="button"
+  {{/if}}
+  {{#if button--IsExpanded}}
+    aria-expanded="true"
+  {{/if}}
+  {{#if button--attribute}}
+    {{{button--attribute}}}
+  {{/if}}>
+  {{> @partial-block}}
+</button>

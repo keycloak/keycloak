@@ -1,0 +1,10 @@
+<div class="pf-c-progress__indicator{{#if progress-indicator--modifier}} {{progress-indicator--modifier}}{{/if}}" style="width: {{~#if progress__width}}{{progress__width}}{{else}}{{progress__value}}{{/if}}%;"
+  {{#if progress-indicator--attribute}}
+    {{{progress-indicator--attribute}}}
+  {{/if}}>
+  {{#if progress--inside}}
+    {{#unless progress--no-measure}}
+      {{> progress-measure}}
+    {{/unless}}
+  {{/if}}    
+</div>

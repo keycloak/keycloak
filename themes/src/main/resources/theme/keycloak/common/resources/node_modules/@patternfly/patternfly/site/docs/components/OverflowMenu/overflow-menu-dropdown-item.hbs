@@ -1,0 +1,8 @@
+<li{{#if overflow-menu-dropdown-item--modifier}} class="{{overflow-menu-dropdown-item--modifier}}"{{/if}}
+  {{#if overflow-menu-dropdown-item--attribute}}
+    {{{overflow-menu-dropdown-item--attribute}}}
+  {{/if}}>
+  <{{#if overflow-menu-dropdown-item--IsAnchorLink}}a{{else}}button{{/if}} class="pf-c-dropdown__menu-item{{#if overflow-menu-dropdown-item--modifier}} {{overflow-menu-dropdown-items--modifier}}{{/if}}">
+    {{> @partial-block}}
+  </{{#if overflow-menu-dropdown-item--IsAnchorLink}}a{{else}}button{{/if}}>
+</li>

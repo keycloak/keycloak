@@ -1,0 +1,151 @@
+{{#> table table--id="compact-table-demo-data-list" table--grid="true" table--modifier="pf-m-compact pf-m-grid-lg pf-m-no-border-rows" table--attribute='aria-label="This is a compact table example"'}}
+  {{#> table-thead}}
+    {{#> table-tr}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="check-all" aria-label="Select all rows">
+      {{/table-td}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Contributor
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Position
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Location
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Last seen
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Numbers
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"' table-th--icon="true"}}
+        Icons
+      {{/table-th}}
+      {{#> table-th}}{{/table-th}}
+      {{#> table-th}}{{/table-th}}
+    {{/table-tr}}
+  {{/table-thead}}
+  {{#> table-tbody}}
+    {{#> table-tr}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="checkrow1" aria-labelledby="{{concat table--id "-name1"}}">
+      {{/table-td}}
+      {{#> table-th table-th--data-label="Contributor"}}
+        <span id="{{concat table--id "-name1"}}">Sam Jones</span>
+      {{/table-th}}
+      {{#> table-td table-td--data-label="Position"}}
+        CSS guru
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Location"}}
+        Not too sure
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Last seen"}}
+        May 9, 2018
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Numbers"}}
+        0556
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Icon" table-td--icon="true"}}
+        <i class="fas fa-check"></i>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Action"}}
+        <a href="#">Action link</a>
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-right-aligned-1") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+    {{#> table-tr}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="checkrow2" aria-labelledby="{{concat table--id "-name2"}}">
+      {{/table-td}}
+      {{#> table-th table-th--data-label="Contributor"}}
+        <span id="{{concat table--id "-name2"}}">Amy Miller</span>
+      {{/table-th}}
+      {{#> table-td table-td--data-label="Position"}}
+        Visual design
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Location"}}
+        Raleigh
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Last seen"}}
+        May 9, 2018
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Numbers"}}
+        9492
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Icon" table-td--icon="true"}}
+        <i class="fas fa-check"></i>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Action"}}
+        <a href="#">Action link</a>
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-right-aligned-2") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+    {{#> table-tr}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="checkrow3" aria-labelledby="{{concat table--id "-name3"}}">
+      {{/table-td}}
+      {{#> table-th table-th--data-label="Contributor"}}
+        <span id="{{concat table--id "-name3"}}">Steve Wilson</span>
+      {{/table-th}}
+      {{#> table-td table-td--data-label="Position"}}
+        Visual design lead
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Location"}}
+        Westford
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Last seen"}}
+        May 9, 2018
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Numbers"}}
+        9929
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Icon" table-td--icon="true"}}
+        <i class="fas fa-check"></i>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Action"}}
+        <a href="#">Action link</a>
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-right-aligned-3") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+    {{#> table-tr}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="checkrow4" aria-labelledby="{{concat table--id "-name4"}}">
+      {{/table-td}}
+      {{#> table-th table-th--data-label="Contributor name"}}
+        <span id="{{concat table--id "-name4"}}">Emma Jackson</span>
+      {{/table-th}}
+      {{#> table-td table-td--data-label="Position"}}
+        Interaction design
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Location"}}
+        Westford
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Workspaces"}}
+        May 9, 2018
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Last commit"}}
+        2217
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Icon" table-td--icon="true"}}
+        <i class="fas fa-check"></i>
+      {{/table-td}}
+      {{#> table-td table-td--data-label="Action"}}
+        <a href="#">Action link</a>
+      {{/table-td}}
+      {{#> table-td table-td--action="true"}}
+        {{#> dropdown id=(concat table--id "-dropdown-kebab-right-aligned-4") dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+        {{/dropdown}}
+      {{/table-td}}
+    {{/table-tr}}
+  {{/table-tbody}}
+{{/table}}

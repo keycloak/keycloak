@@ -1,0 +1,189 @@
+@font-face {
+  font-family: 'overpass';
+  src: url('overpass-thin.eot');
+  src: url('overpass-thin.eot?#iefix') format('embedded-opentype'),
+       url('overpass-thin.woff2') format('woff2'),
+       url('overpass-thin.woff') format('woff'),
+       url('overpass-thin.ttf')  format('truetype');
+       font-weight: 200;
+       font-style: normal;
+}
+
+@font-face {
+  font-family: 'overpass';
+  src: url('overpass-thin-italic.eot');
+  src: url('overpass-thin-italic.eot?#iefix') format('embedded-opentype'),
+       url('overpass-thin-italic.woff2') format('woff2'),
+       url('overpass-thin-italic.woff') format('woff'),
+       url('overpass-thin-italic.ttf')  format('truetype');
+       font-weight: 200;
+       font-style: italic;
+}
+
+
+@font-face {
+  font-family: 'overpass';
+  src: url('overpass-extralight.eot');
+  src: url('overpass-extralight.eot?#iefix') format('embedded-opentype'),
+       url('overpass-extralight.woff2') format('woff2'),
+       url('overpass-extralight.woff') format('woff'),
+       url('overpass-extralight.ttf')  format('truetype');
+       font-weight: 300;
+       font-style: normal;
+}
+
+@font-face {
+  font-family: 'overpass';
+  src: url('overpass-extralight-italic.eot');
+  src: url('overpass-extralight-italic.eot?#iefix') format('embedded-opentype'),
+       url('overpass-extralight-italic.woff2') format('woff2'),
+       url('overpass-extralight-italic.woff') format('woff'),
+       url('overpass-extralight-italic.ttf')  format('truetype');
+       font-weight: 300;
+       font-style: italic;
+}
+
+
+
+@font-face {
+  font-family: 'overpass';
+  src: url('overpass-light.eot');
+  src: url('overpass-light.eot?#iefix') format('embedded-opentype'),
+       url('overpass-light.woff2') format('woff2'),
+       url('overpass-light.woff') format('woff'),
+       url('overpass-light.ttf')  format('truetype');
+       font-weight: 400;
+       font-style: normal;
+}
+
+@font-face {
+  font-family: 'overpass';
+  src: url('overpass-light-italic.eot');
+  src: url('overpass-light-italic.eot?#iefix') format('embedded-opentype'),
+       url('overpass-light-italic.woff2') format('woff2'),
+       url('overpass-light-italic.woff') format('woff'),
+       url('overpass-light-italic.ttf')  format('truetype');
+       font-weight: 400;
+       font-style: italic;
+}
+
+
+
+@font-face {
+  font-family: 'overpass';
+  src: url('overpass-regular.eot');
+  src: url('overpass-regular.eot?#iefix') format('embedded-opentype'),
+       url('overpass-regular.woff2') format('woff2'),
+       url('overpass-regular.woff') format('woff'),
+       url('overpass-regular.ttf')  format('truetype');
+       font-weight: 500;
+       font-style: normal;
+}
+
+@font-face {
+  font-family: 'overpass';
+  src: url('overpass-italic.eot');
+  src: url('overpass-italic.eot?#iefix') format('embedded-opentype'),
+       url('overpass-italic.woff2') format('woff2'),
+       url('overpass-italic.woff') format('woff'),
+       url('overpass-italic.ttf')  format('truetype');
+       font-weight: 500;
+       font-style: italic;
+}
+
+
+
+
+@font-face {
+  font-family: 'overpass';
+  src: url('overpass-semibold.eot');
+  src: url('overpass-semibold.eot?#iefix') format('embedded-opentype'),
+       url('overpass-semibold.woff2') format('woff2'),
+       url('overpass-semibold.woff') format('woff'),
+       url('overpass-semibold.ttf')  format('truetype');
+       font-weight: 600;
+       font-style: normal;
+}
+
+@font-face {
+  font-family: 'overpass';
+  src: url('overpass-semibold-italic.eot');
+  src: url('overpass-semibold-italic.eot?#iefix') format('embedded-opentype'),
+       url('overpass-semibold-italic.woff2') format('woff2'),
+       url('overpass-semibold-italic.woff') format('woff'),
+       url('overpass-semibold-italic.ttf')  format('truetype');
+       font-weight: 600;
+       font-style: italic;
+}
+
+
+
+
+@font-face {
+  font-family: 'overpass';
+  src: url('overpass-bold.eot');
+  src: url('overpass-bold.eot?#iefix') format('embedded-opentype'),
+       url('overpass-bold.woff2') format('woff2'),
+       url('overpass-bold.woff') format('woff'),
+       url('overpass-bold.ttf')  format('truetype');
+       font-weight: 700;
+       font-style: normal;
+}
+
+@font-face {
+  font-family: 'overpass';
+  src: url('overpass-bold-italic.eot');
+  src: url('overpass-bold-italic.eot?#iefix') format('embedded-opentype'),
+       url('overpass-bold-italic.woff2') format('woff2'),
+       url('overpass-bold-italic.woff') format('woff'),
+       url('overpass-bold-italic.ttf')  format('truetype');
+       font-weight: 700;
+       font-style: italic;
+}
+
+
+
+@font-face {
+  font-family: 'overpass';
+  src: url('overpass-extrabold.eot');
+  src: url('overpass-extrabold.eot?#iefix') format('embedded-opentype'),
+       url('overpass-extrabold.woff2') format('woff2'),
+       url('overpass-extrabold.woff') format('woff'),
+       url('overpass-extrabold.ttf')  format('truetype');
+       font-weight: 800;
+       font-style: normal;
+}
+
+@font-face {
+  font-family: 'overpass';
+  src: url('overpass-extrabold-italic.eot');
+  src: url('overpass-extrabold-italic.eot?#iefix') format('embedded-opentype'),
+       url('overpass-extrabold-italic.woff2') format('woff2'),
+       url('overpass-extrabold-italic.woff') format('woff'),
+       url('overpass-extrabold-italic.ttf')  format('truetype');
+       font-weight: 800;
+       font-style: italic;
+}
+
+
+@font-face {
+  font-family: 'overpass';
+  src: url('overpass-heavy.eot');
+  src: url('overpass-heavy.eot?#iefix') format('embedded-opentype'),
+       url('overpass-heavy.woff2') format('woff2'),
+       url('overpass-heavy.woff') format('woff'),
+       url('overpass-heavy.ttf')  format('truetype');
+       font-weight: 900;
+       font-style: normal;
+}
+
+@font-face {
+  font-family: 'overpass';
+  src: url('overpass-heavy-italic.eot');
+  src: url('overpass-heavy-italic.eot?#iefix') format('embedded-opentype'),
+       url('overpass-heavy-italic.woff2') format('woff2'),
+       url('overpass-heavy-italic.woff') format('woff'),
+       url('overpass-heavy-italic.ttf')  format('truetype');
+       font-weight: 900;
+       font-style: italic;
+}

@@ -1,0 +1,30 @@
+{{#> page-header-tools}}
+  {{#> page-header-tools-group}}
+    {{> page-template-header-tools-notification-badge page-template-header-tools-notification-badge--item--modifier="pf-m-hidden pf-m-visible-on-lg"}}
+    {{#> page-header-tools-item page-header-tools-item--modifier="pf-m-hidden pf-m-visible-on-lg"}}
+      {{#> button button--modifier="pf-m-plain" button--attribute='aria-label="Settings"'}}
+          <i class="fas fa-cog" aria-hidden="true"></i>
+      {{/button}}
+    {{/page-header-tools-item}}
+    {{#> page-header-tools-item page-header-tools-item--modifier="pf-m-hidden pf-m-visible-on-lg"}}
+      {{#> button button--modifier="pf-m-plain" button--attribute='aria-label="Help"'}}
+          <i class="pf-icon pf-icon-help" aria-hidden="true"></i>
+      {{/button}}
+    {{/page-header-tools-item}}
+  {{/page-header-tools-group}}
+  {{#> page-header-tools-group}}
+    {{> page-template-header-tools-notification-badge page-template-header-tools-notification-badge--item--modifier="pf-m-hidden-on-lg"}}
+    {{#> page-header-tools-item page-header-tools-item--modifier="pf-m-hidden-on-lg"}}
+      {{#> dropdown id=(concat page--id '-dropdown-kebab-right-aligned-1') dropdown--IsActionMenu="true" dropdown-menu--modifier="pf-m-align-right" dropdown-toggle--modifier="pf-m-plain" dropdown--HasKebabIcon="true" aria-label="Actions"}}
+      {{/dropdown}}
+    {{/page-header-tools-item}}
+    {{#> page-header-tools-item page-header-tools-item--modifier="pf-m-hidden pf-m-visible-on-md"}}
+      {{#> dropdown id=(concat page--id '-dropdown') dropdown-toggle--modifier="pf-m-plain" dropdown--HasToggleIcon="true"}}
+        {{#> dropdown-toggle-text}}
+          John Smith
+        {{/dropdown-toggle-text}}
+      {{/dropdown}}
+    {{/page-header-tools-item}}
+  {{/page-header-tools-group}}
+  {{#> avatar avatar--attribute='src="/assets/images/img_avatar.svg" alt="Avatar image"'}}{{/avatar}}
+{{/page-header-tools}}

@@ -1,0 +1,21 @@
+<button class="pf-c-dropdown__toggle-button{{#if dropdown-toggle-button--modifier}} {{dropdown-toggle-button--modifier}}{{/if}}"
+  type="button"
+  {{#if dropdown--IsToggleButton}}
+    aria-expanded="{{#if dropdown--IsExpanded}}true{{else}}false{{/if}}"
+    id="{{id}}-toggle-button"
+  {{/if}}
+  {{#if aria-label}}
+    aria-label="{{aria-label}}"
+  {{/if}}
+  {{#if dropdown-toggle--IsDisabled}}
+    disabled
+  {{/if}}
+  {{#if dropdown-toggle-button--attribute}}
+    {{{dropdown-toggle-button--attribute}}}
+  {{/if}}>
+  {{#if @partial-block}}
+    {{> @partial-block}}
+  {{else}}
+    <i class="fas fa-caret-down" aria-hidden="true"></i>
+  {{/if}}
+</button>

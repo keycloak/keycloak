@@ -1,0 +1,60 @@
+.pf-c-banner {
+  --pf-c-banner--PaddingTop: var(--pf-global--spacer--xs);
+  --pf-c-banner--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-banner--md--PaddingRight: var(--pf-global--spacer--lg);
+  --pf-c-banner--PaddingBottom: var(--pf-global--spacer--xs);
+  --pf-c-banner--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-banner--md--PaddingLeft: var(--pf-global--spacer--lg);
+  --pf-c-banner--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-banner--Color: var(--pf-global--Color--100);
+  --pf-c-banner--BackgroundColor: var(--pf-global--BackgroundColor--dark-400);
+
+  @media (min-width: $pf-global--breakpoint--md) {
+    --pf-c-banner--PaddingRight: var(--pf-c-banner--md--PaddingRight);
+    --pf-c-banner--PaddingLeft: var(--pf-c-banner--md--PaddingLeft);
+  }
+
+  --pf-c-banner--m-info--BackgroundColor: var(--pf-global--palette--blue-200);
+  --pf-c-banner--m-danger--BackgroundColor: var(--pf-global--danger-color--100);
+  --pf-c-banner--m-success--BackgroundColor: var(--pf-global--success-color--100);
+  --pf-c-banner--m-warning--BackgroundColor: var(--pf-global--warning-color--100);
+  --pf-c-banner--m-sticky--ZIndex: var(--pf-global--ZIndex--md);
+  --pf-c-banner--m-sticky--BoxShadow: var(--pf-global--BoxShadow--md-bottom);
+
+  @include pf-t-dark;
+  @include pf-text-overflow;
+
+  padding: var(--pf-c-banner--PaddingTop) var(--pf-c-banner--PaddingRight) var(--pf-c-banner--PaddingBottom) var(--pf-c-banner--PaddingLeft);
+  flex-shrink: 0;
+  font-size: var(--pf-c-banner--FontSize);
+  color: var(--pf-c-banner--Color);
+  white-space: nowrap;
+  background-color: var(--pf-c-banner--BackgroundColor);
+
+  &.pf-m-info {
+    @include pf-t-light;
+
+    --pf-c-banner--BackgroundColor: var(--pf-c-banner--m-info--BackgroundColor);
+  }
+
+  &.pf-m-danger {
+    --pf-c-banner--BackgroundColor: var(--pf-c-banner--m-danger--BackgroundColor);
+  }
+
+  &.pf-m-success {
+    --pf-c-banner--BackgroundColor: var(--pf-c-banner--m-success--BackgroundColor);
+  }
+
+  &.pf-m-warning {
+    @include pf-t-light;
+
+    --pf-c-banner--BackgroundColor: var(--pf-c-banner--m-warning--BackgroundColor);
+  }
+
+  &.pf-m-sticky {
+    position: sticky;
+    top: 0;
+    z-index: var(--pf-c-banner--m-sticky--ZIndex);
+    box-shadow: var(--pf-c-banner--m-sticky--BoxShadow);
+  }
+}

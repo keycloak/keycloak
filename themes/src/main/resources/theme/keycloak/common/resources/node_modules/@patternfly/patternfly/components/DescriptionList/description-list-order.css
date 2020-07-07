@@ -1,0 +1,204 @@
+.pf-c-description-list__group .pf-m-order-0 {
+  order: 0; }
+
+.pf-c-description-list__group .pf-m-order-1 {
+  order: 1; }
+
+.pf-c-description-list__group .pf-m-order-2 {
+  order: 2; }
+
+.pf-c-description-list__group .pf-m-order-3 {
+  order: 3; }
+
+.pf-c-description-list__group .pf-m-order-4 {
+  order: 4; }
+
+.pf-c-description-list__group .pf-m-order-5 {
+  order: 5; }
+
+.pf-c-description-list__group .pf-m-order-6 {
+  order: 6; }
+
+.pf-c-description-list__group .pf-m-order-7 {
+  order: 7; }
+
+.pf-c-description-list__group .pf-m-order-8 {
+  order: 8; }
+
+.pf-c-description-list__group .pf-m-order-9 {
+  order: 9; }
+
+.pf-c-description-list__group .pf-m-order-10 {
+  order: 10; }
+
+.pf-c-description-list__group .pf-m-order-11 {
+  order: 11; }
+
+.pf-c-description-list__group .pf-m-order-12 {
+  order: 12; }
+
+.pf-c-description-list__group .pf-m-order-first {
+  order: -1; }
+
+.pf-c-description-list__group .pf-m-order-last {
+  order: 13; }
+
+@media (min-width: 576px) {
+  .pf-c-description-list__group .pf-m-order-0-on-sm {
+    order: 0; }
+  .pf-c-description-list__group .pf-m-order-1-on-sm {
+    order: 1; }
+  .pf-c-description-list__group .pf-m-order-2-on-sm {
+    order: 2; }
+  .pf-c-description-list__group .pf-m-order-3-on-sm {
+    order: 3; }
+  .pf-c-description-list__group .pf-m-order-4-on-sm {
+    order: 4; }
+  .pf-c-description-list__group .pf-m-order-5-on-sm {
+    order: 5; }
+  .pf-c-description-list__group .pf-m-order-6-on-sm {
+    order: 6; }
+  .pf-c-description-list__group .pf-m-order-7-on-sm {
+    order: 7; }
+  .pf-c-description-list__group .pf-m-order-8-on-sm {
+    order: 8; }
+  .pf-c-description-list__group .pf-m-order-9-on-sm {
+    order: 9; }
+  .pf-c-description-list__group .pf-m-order-10-on-sm {
+    order: 10; }
+  .pf-c-description-list__group .pf-m-order-11-on-sm {
+    order: 11; }
+  .pf-c-description-list__group .pf-m-order-12-on-sm {
+    order: 12; }
+  .pf-c-description-list__group .pf-m-order-first-on-sm {
+    order: -1; }
+  .pf-c-description-list__group .pf-m-order-last-on-sm {
+    order: 13; } }
+
+@media (min-width: 768px) {
+  .pf-c-description-list__group .pf-m-order-0-on-md {
+    order: 0; }
+  .pf-c-description-list__group .pf-m-order-1-on-md {
+    order: 1; }
+  .pf-c-description-list__group .pf-m-order-2-on-md {
+    order: 2; }
+  .pf-c-description-list__group .pf-m-order-3-on-md {
+    order: 3; }
+  .pf-c-description-list__group .pf-m-order-4-on-md {
+    order: 4; }
+  .pf-c-description-list__group .pf-m-order-5-on-md {
+    order: 5; }
+  .pf-c-description-list__group .pf-m-order-6-on-md {
+    order: 6; }
+  .pf-c-description-list__group .pf-m-order-7-on-md {
+    order: 7; }
+  .pf-c-description-list__group .pf-m-order-8-on-md {
+    order: 8; }
+  .pf-c-description-list__group .pf-m-order-9-on-md {
+    order: 9; }
+  .pf-c-description-list__group .pf-m-order-10-on-md {
+    order: 10; }
+  .pf-c-description-list__group .pf-m-order-11-on-md {
+    order: 11; }
+  .pf-c-description-list__group .pf-m-order-12-on-md {
+    order: 12; }
+  .pf-c-description-list__group .pf-m-order-first-on-md {
+    order: -1; }
+  .pf-c-description-list__group .pf-m-order-last-on-md {
+    order: 13; } }
+
+@media (min-width: 992px) {
+  .pf-c-description-list__group .pf-m-order-0-on-lg {
+    order: 0; }
+  .pf-c-description-list__group .pf-m-order-1-on-lg {
+    order: 1; }
+  .pf-c-description-list__group .pf-m-order-2-on-lg {
+    order: 2; }
+  .pf-c-description-list__group .pf-m-order-3-on-lg {
+    order: 3; }
+  .pf-c-description-list__group .pf-m-order-4-on-lg {
+    order: 4; }
+  .pf-c-description-list__group .pf-m-order-5-on-lg {
+    order: 5; }
+  .pf-c-description-list__group .pf-m-order-6-on-lg {
+    order: 6; }
+  .pf-c-description-list__group .pf-m-order-7-on-lg {
+    order: 7; }
+  .pf-c-description-list__group .pf-m-order-8-on-lg {
+    order: 8; }
+  .pf-c-description-list__group .pf-m-order-9-on-lg {
+    order: 9; }
+  .pf-c-description-list__group .pf-m-order-10-on-lg {
+    order: 10; }
+  .pf-c-description-list__group .pf-m-order-11-on-lg {
+    order: 11; }
+  .pf-c-description-list__group .pf-m-order-12-on-lg {
+    order: 12; }
+  .pf-c-description-list__group .pf-m-order-first-on-lg {
+    order: -1; }
+  .pf-c-description-list__group .pf-m-order-last-on-lg {
+    order: 13; } }
+
+@media (min-width: 1200px) {
+  .pf-c-description-list__group .pf-m-order-0-on-xl {
+    order: 0; }
+  .pf-c-description-list__group .pf-m-order-1-on-xl {
+    order: 1; }
+  .pf-c-description-list__group .pf-m-order-2-on-xl {
+    order: 2; }
+  .pf-c-description-list__group .pf-m-order-3-on-xl {
+    order: 3; }
+  .pf-c-description-list__group .pf-m-order-4-on-xl {
+    order: 4; }
+  .pf-c-description-list__group .pf-m-order-5-on-xl {
+    order: 5; }
+  .pf-c-description-list__group .pf-m-order-6-on-xl {
+    order: 6; }
+  .pf-c-description-list__group .pf-m-order-7-on-xl {
+    order: 7; }
+  .pf-c-description-list__group .pf-m-order-8-on-xl {
+    order: 8; }
+  .pf-c-description-list__group .pf-m-order-9-on-xl {
+    order: 9; }
+  .pf-c-description-list__group .pf-m-order-10-on-xl {
+    order: 10; }
+  .pf-c-description-list__group .pf-m-order-11-on-xl {
+    order: 11; }
+  .pf-c-description-list__group .pf-m-order-12-on-xl {
+    order: 12; }
+  .pf-c-description-list__group .pf-m-order-first-on-xl {
+    order: -1; }
+  .pf-c-description-list__group .pf-m-order-last-on-xl {
+    order: 13; } }
+
+@media (min-width: 1450px) {
+  .pf-c-description-list__group .pf-m-order-0-on-2xl {
+    order: 0; }
+  .pf-c-description-list__group .pf-m-order-1-on-2xl {
+    order: 1; }
+  .pf-c-description-list__group .pf-m-order-2-on-2xl {
+    order: 2; }
+  .pf-c-description-list__group .pf-m-order-3-on-2xl {
+    order: 3; }
+  .pf-c-description-list__group .pf-m-order-4-on-2xl {
+    order: 4; }
+  .pf-c-description-list__group .pf-m-order-5-on-2xl {
+    order: 5; }
+  .pf-c-description-list__group .pf-m-order-6-on-2xl {
+    order: 6; }
+  .pf-c-description-list__group .pf-m-order-7-on-2xl {
+    order: 7; }
+  .pf-c-description-list__group .pf-m-order-8-on-2xl {
+    order: 8; }
+  .pf-c-description-list__group .pf-m-order-9-on-2xl {
+    order: 9; }
+  .pf-c-description-list__group .pf-m-order-10-on-2xl {
+    order: 10; }
+  .pf-c-description-list__group .pf-m-order-11-on-2xl {
+    order: 11; }
+  .pf-c-description-list__group .pf-m-order-12-on-2xl {
+    order: 12; }
+  .pf-c-description-list__group .pf-m-order-first-on-2xl {
+    order: -1; }
+  .pf-c-description-list__group .pf-m-order-last-on-2xl {
+    order: 13; } }

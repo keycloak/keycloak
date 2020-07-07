@@ -1,0 +1,7 @@
+<{{#if dropdown-menu--type}}{{dropdown-menu--type}}{{else}}div{{/if}} class="pf-c-dropdown__menu{{#if dropdown-menu--modifier}} {{dropdown-menu--modifier}}{{/if}}"
+  {{#if dropdown-menu--attribute}}
+    {{{dropdown-menu--attribute}}}
+  {{/if}}
+  {{#unless dropdown--IsExpanded}}hidden{{/unless}}>
+  [Panel contents here]
+</{{#if dropdown-menu--type}}{{dropdown-menu--type}}{{else}}div{{/if}}>

@@ -1,0 +1,43 @@
+{{#> table table--id="table-loading-table" table--grid="true" table--modifier="pf-m-grid-xl" table--attribute='aria-label="This is a table showing a loading state"'}}
+  {{#> table-thead}}
+    {{#> table-tr}}
+      {{#> table-td table-td--check="true"}}
+        <input type="checkbox" name="check-all" aria-label="Select all rows">
+      {{/table-td}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Repositories
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Branches
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Pull requests
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Workspaces
+      {{/table-th}}
+      {{#> table-th table-th--attribute='scope="col"'}}
+        Last commit
+      {{/table-th}}
+      {{#> table-td}}{{/table-td}}
+      {{#> table-td}}{{/table-td}}
+    {{/table-tr}}
+  {{/table-thead}}
+
+  {{#> table-tbody}}
+    {{#> table-tr table-tr--modifier="pf-m-height-auto"}}
+      {{#> table-td table-td--attribute='colspan="8"'}}
+        {{#> bullseye}}
+          {{#> empty-state empty-state--modifier="pf-m-sm"}}
+            {{#> empty-state-icon}}
+              {{#> spinner}}Loading...{{/spinner}}
+            {{/empty-state-icon}}
+            {{#> title titleType="h2" title--modifier="pf-m-lg"}}
+              No results found
+            {{/title}}
+          {{/empty-state}}
+        {{/bullseye}}
+      {{/table-td}}
+    {{/table-tr}}
+  {{/table-tbody}}
+{{/table}}

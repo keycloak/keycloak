@@ -1,0 +1,33 @@
+<td{{#if table-td--toggle}} class="pf-c-table__toggle"
+    {{else if table-td--check}} class="pf-c-table__check"
+    {{else if table-td--action}} class="pf-c-table__action"
+    {{else if table-td--icon}} class="pf-c-table__icon"
+    {{else if table-td--compound-expansion-toggle}} class="pf-c-table__compound-expansion-toggle {{table-td--modifier}}"
+    {{else if table-td--action}} class="pf-c-table__action"
+    {{else if table-td--modifier}} class="{{table-td--modifier}}"
+    {{/if}}
+    {{#unless table-td--IsEmpty}}
+      role="cell"
+    {{/unless}}
+  {{#if table-td--attribute}}
+    {{{table-td--attribute}}}
+  {{/if}}
+  {{#if table-td--data-label}}
+    data-label="{{table-td--data-label}}"
+  {{/if}}>
+  {{#unless table-td--IsEmpty}}
+    {{#if table-td--toggle}}
+      <button class="pf-c-button pf-m-plain{{#if table-tr--expanded}} pf-m-expanded{{/if}}" {{#if table-td--button--attribute}}{{{table-td--button--attribute}}}{{/if}} {{#if table-tr--expanded}}aria-expanded="true"{{/if}}>
+        {{#> table-toggle-icon}}{{/table-toggle-icon}}
+      </button>
+    {{else if table-td--compound-expansion-toggle}}
+      {{#> table-button table-button--attribute=table-th--button--attribute}}
+        {{#> table-text}}
+          {{> @partial-block}}
+        {{/table-text}}
+      {{/table-button}}
+    {{else}}
+      {{> @partial-block}}
+    {{/if}}
+  {{/unless}}
+</td>

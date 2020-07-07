@@ -1,0 +1,6 @@
+<{{#if nav-subnav-title--type}}{{nav-subnav-title--type}}{{else}}h2{{/if}} class="pf-c-nav__subnav-title{{#if nav-subnav-title--modifier}} {{nav-subnav-title--modifier}}{{/if}} pf-screen-reader"
+  {{#if nav-subnav-title--attribute}}
+    {{{nav-subnav-title--attribute}}}
+  {{/if}}>
+  {{> @partial-block}}
+</{{#if nav-subnav-title--type}}/{{nav-subnav-title--type}}{{else}}h2{{/if}}>

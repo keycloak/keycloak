@@ -1,0 +1,11 @@
+<section class="pf-c-tab-content{{#if tab-content--modifier}} {{tab-content--modifier}}{{/if}}"
+  {{#if tab-content--attribute}}
+    {{{tab-content--attribute}}}
+  {{/if}}
+  role="tabpanel"
+  tabindex="0"
+  {{#unless tab-content--IsActive}}
+    hidden
+  {{/unless}}>
+  {{> @partial-block}}
+</section>

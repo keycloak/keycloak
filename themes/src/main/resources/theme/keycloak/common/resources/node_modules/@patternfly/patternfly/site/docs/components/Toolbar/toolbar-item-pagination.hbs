@@ -1,0 +1,30 @@
+{{#> toolbar-item toolbar-item--modifier=(concat 'pf-m-pagination ' toolbar-item-pagination--modifier)}}
+  {{#> pagination pagination--attribute='aria-label="Element pagination"'}}
+    {{#> pagination-total-items}}
+      37 items
+    {{/pagination-total-items}}
+
+    {{> pagination-options-menu id=(concat toolbar--id '-pagination-options-menu')  options-menu--IsText="true"}}
+
+    {{#> pagination-nav}}
+      {{#> button button--modifier="pf-m-plain pf-m-disabled" button--attribute='aria-label="Go to first page" aria-disabled="true"'}}
+        <i class="fas fa-angle-double-left" aria-hidden="true"></i>
+      {{/button}}
+      {{#> button button--modifier="pf-m-plain pf-m-disabled" button--attribute='aria-label="Go to previous page" aria-disabled="true"'}}
+        <i class="fas fa-angle-left" aria-hidden="true"></i>
+      {{/button}}
+
+      {{#> pagination-nav-page-select pagination-nav-page-select--attribute='aria-label="Current page 1 of 4"'}}
+        {{> form-control input="true" controlType="input" form-control--attribute='aria-label="Current page" type="number" min="1" max="4" value="1"'}}
+        <span aria-hidden="true">of 4</span>
+      {{/pagination-nav-page-select}}
+
+      {{#> button button--modifier="pf-m-plain" button--attribute='aria-label="Go to next page"'}}
+        <i class="fas fa-angle-right" aria-hidden="true"></i>
+      {{/button}}
+      {{#> button button--modifier="pf-m-plain" button--attribute='aria-label="Go to last page"'}}
+        <i class="fas fa-angle-double-right" aria-hidden="true"></i>
+      {{/button}}
+    {{/pagination-nav}}
+  {{/pagination}}
+{{/toolbar-item}}

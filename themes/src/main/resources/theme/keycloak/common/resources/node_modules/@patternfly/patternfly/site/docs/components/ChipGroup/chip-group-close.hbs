@@ -1,0 +1,8 @@
+<div class="pf-c-chip-group__close{{#if chip-group-close--modifier}} {{chip-group-close--modifier}}{{/if}}"
+  {{#if chip-group-close--attribute}}
+    {{{chip-group-close--attribute}}}
+  {{/if}}>
+  {{#> button button--modifier="pf-m-plain" button--attribute=(concat 'aria-labelledby="' chip-group--id '-button ' chip-group--id '-label" aria-label="Close chip group" id="' chip-group--id '-button"')}}
+    <i class="fas fa-times-circle" aria-hidden="true"></i>
+  {{/button}}
+</div>

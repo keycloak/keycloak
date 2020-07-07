@@ -1,0 +1,10 @@
+<div class="pf-c-toolbar__expandable-content{{#if toolbar-expandable-content--modifier}} {{toolbar-expandable-content--modifier}}{{/if}}{{#if toolbar-expandable-content--IsExpanded}} pf-m-expanded{{/if}}{{#unless toolbar-expandable-content--IsExpanded}} pf-m-hidden{{/unless}}"
+  id="{{toolbar--id}}-expandable-content"
+  {{#if toolbar-expandable-content--attribute}}
+    {{{toolbar-expandable-content--attribute}}}
+  {{/if}}
+  {{#unless toolbar-expandable-content--IsExpanded}}
+    hidden
+  {{/unless}}>
+  {{> @partial-block}}
+</div>

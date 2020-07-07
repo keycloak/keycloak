@@ -1,0 +1,12 @@
+<li>
+  <button class="pf-c-options-menu__menu-item{{#if options-menu-menu-item--modifier}} {{options-menu-menu-item--modifier}}{{/if}}"
+    type="button"
+    {{#if options-menu-menu-item--attribute}}
+      {{{options-menu-menu-item--attribute}}}
+    {{/if}}>
+    {{> @partial-block}}
+    {{#if options-menu-menu-item--IsSelected}}
+      {{> options-menu-menu-item-icon}}
+    {{/if}}
+  </button>
+</li>

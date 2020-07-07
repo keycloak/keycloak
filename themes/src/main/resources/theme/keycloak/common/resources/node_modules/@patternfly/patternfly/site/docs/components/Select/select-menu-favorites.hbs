@@ -1,0 +1,90 @@
+<div class="pf-c-select__menu{{#if select-menu--modifier}} {{select-menu--modifier}}{{/if}}"
+  aria-labelledby="{{id}}-label"
+  {{#unless select--IsExpanded}}hidden{{/unless}}
+  {{#if select--attribute}}
+    {{{select--attribute}}}
+  {{/if}}>
+  {{#> select-menu-search}}
+    {{> select-menu-search-input}}
+  {{/select-menu-search}}
+  {{> divider}}
+  {{#> select-menu-group}}
+    {{#> select-menu-group-title}}
+      Favorites
+    {{/select-menu-group-title}}
+    <ul>
+      {{#> select-menu-wrapper select-menu-wrapper--IsFavorite="true"}}
+        {{#> select-menu-item select-menu-item--Description="This is a description." select-menu-item--IsLink="true"}}
+          Item 1
+        {{/select-menu-item}}
+        {{#> select-menu-item select-menu-item--IsAction="true" select-menu-item--IsFavoriteAction="true"}}
+          {{> select-menu-item-favorite-icon}}
+        {{/select-menu-item}}
+      {{/select-menu-wrapper}}
+      {{#> select-menu-wrapper select-menu-wrapper--IsFavorite="true"}}
+        {{#> select-menu-item select-menu-item--IsLink="true"}}
+          Item 4
+        {{/select-menu-item}}
+        {{#> select-menu-item select-menu-item--IsAction="true" select-menu-item--IsFavoriteAction="true"}}
+          {{> select-menu-item-favorite-icon}}
+        {{/select-menu-item}}
+      {{/select-menu-wrapper}}
+    </ul>
+  {{/select-menu-group}}
+  {{> divider}}
+  {{#> select-menu-group}}
+    {{#> select-menu-group-title}}
+      Group 1
+    {{/select-menu-group-title}}
+    <ul>
+      {{#> select-menu-wrapper select-menu-wrapper--IsFavorite="true"}}
+        {{#> select-menu-item select-menu-item--Description="This is a description." select-menu-item--IsLink="true"}}
+          Item 1
+        {{/select-menu-item}}
+        {{#> select-menu-item select-menu-item--IsAction="true" select-menu-item--IsFavoriteAction="true"}}
+          {{> select-menu-item-favorite-icon}}
+        {{/select-menu-item}}
+      {{/select-menu-wrapper}}
+      {{#> select-menu-wrapper}}
+        {{#> select-menu-item select-menu-item--IsLink="true" select-menu-item--IsSelected="true"}}
+          Item 2
+        {{/select-menu-item}}
+        {{#> select-menu-item select-menu-item--IsAction="true" select-menu-item--IsFavoriteAction="true"}}
+          {{> select-menu-item-favorite-icon}}
+        {{/select-menu-item}}
+      {{/select-menu-wrapper}}
+      {{#> select-menu-wrapper select-menu-item--IsDisabled="true"}}
+        {{#> select-menu-item select-menu-item--IsLink="true"}}
+          Item 3 (disabled)
+        {{/select-menu-item}}
+        {{#> select-menu-item select-menu-item--IsAction="true" select-menu-item--IsFavoriteAction="true"}}
+          {{> select-menu-item-favorite-icon}}
+        {{/select-menu-item}}
+      {{/select-menu-wrapper}}
+    </ul>
+  {{/select-menu-group}}
+  {{> divider}}
+  {{#> select-menu-group}}
+    {{#> select-menu-group-title}}
+      Group 2
+    {{/select-menu-group-title}}
+    <ul>
+      {{#> select-menu-wrapper select-menu-wrapper--IsFavorite="true"}}
+        {{#> select-menu-item select-menu-item--IsLink="true"}}
+          Item 4
+        {{/select-menu-item}}
+        {{#> select-menu-item select-menu-item--IsAction="true" select-menu-item--IsFavoriteAction="true"}}
+          {{> select-menu-item-favorite-icon}}
+        {{/select-menu-item}}
+      {{/select-menu-wrapper}}
+      {{#> select-menu-wrapper}}
+        {{#> select-menu-item select-menu-item--Description="This is a description." select-menu-item--IsLink="true"}}
+            Item 5
+        {{/select-menu-item}}
+        {{#> select-menu-item select-menu-item--IsAction="true" select-menu-item--IsFavoriteAction="true"}}
+          {{> select-menu-item-favorite-icon}}
+        {{/select-menu-item}}
+      {{/select-menu-wrapper}}
+    </ul>
+  {{/select-menu-group}}
+</div>

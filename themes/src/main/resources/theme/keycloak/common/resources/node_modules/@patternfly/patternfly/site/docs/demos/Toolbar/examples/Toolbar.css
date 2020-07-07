@@ -1,0 +1,10 @@
+#ws-core-d-toolbar-toolbar-attribute-value-single-select-filter-desktop,
+#ws-core-d-toolbar-toolbar-attribute-value-single-select-filter-mobile,
+#ws-core-d-toolbar-toolbar-attribute-value-checkbox-select-filter-desktop,
+#ws-core-d-toolbar-toolbar-attribute-value-checkbox-select-filter-mobile {
+  min-height: 400px;
+}
+
+#ws-core-d-toolbar-toolbar-attribute-value-search-filter-mobile {
+  min-height: 175px;
+}

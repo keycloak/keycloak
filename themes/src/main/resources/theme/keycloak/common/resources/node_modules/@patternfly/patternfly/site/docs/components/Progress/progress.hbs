@@ -1,0 +1,26 @@
+{{!--   This builds a progress bar. The handlebars parameters below provide options:
+  progress__value The percentage of progress 
+  progress__description Description to show above the progress bar 
+  progress__id ID for the component
+  progress--modifier Other modifiers: pf-m-lg, pf-m-sm
+  progress--inside Modifies to have measure shown inside the progress bar
+  progress--success Indicates success
+  progress--danger Indicates danger/failure
+  progress--no-measure Does not output a measure
+  progress--dynamic If the description is dynamically updated, use aria-valuetext instead of aria-describedby
+ --}}
+ 
+<div class="pf-c-progress{{~#if progress--modifier}} {{progress--modifier}}{{/if}}
+  {{~#if progress--inside}} pf-m-inside{{/if}}
+  {{~#if progress--outside}} pf-m-outside{{/if}}
+  {{~#if progress--success}} pf-m-success{{/if}}
+  {{~#if progress--danger}} pf-m-danger{{/if}}"
+  {{#if progress__id}}id="{{progress__id}}"{{/if}}
+  {{#if progress--attribute}}
+    {{{progress--attribute}}}
+  {{/if}}>
+  {{> progress-description}}
+  {{> progress-status}}
+  {{> progress-bar}}
+  {{> @partial-block}}
+</div>

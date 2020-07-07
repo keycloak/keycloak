@@ -1,0 +1,15 @@
+<table class="pf-c-table{{#if table--expandable}} pf-m-expandable{{/if}}{{#if table--modifier}} {{table--modifier}}{{/if}}"
+  {{#if table--grid}}
+    role="grid"
+  {{/if}}
+  {{#if table--attribute}}
+    {{{table--attribute}}}
+  {{/if}}
+  {{#if table--id}}
+    id="{{table--id}}"
+  {{/if}}
+  {{#if table-nested--attribute}}
+    {{{table-nested--attribute}}}
+  {{/if}}>
+  {{> @partial-block}}
+</table>

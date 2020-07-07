@@ -1,0 +1,97 @@
+// stylelint-disable
+
+// Flex direction options
+$pf-u-flex-direction-options: (
+  flex-direction-column:            (flex-direction column),
+  flex-direction-column-reverse:    (flex-direction column-reverse),
+  flex-direction-row:               (flex-direction row),
+  flex-direction-row-reverse:       (flex-direction row-reverse)
+);
+
+@include pf-utility-builder($pf-u-flex-direction-options, $pf-global--breakpoint-list);
+
+// Flex wrap options
+$pf-u-flex-wrap-options: (
+  flex-wrap:                (flex-wrap wrap),
+  flex-nowrap:              (flex-wrap nowrap),
+  flex-wrap-reverse:        (flex-wrap wrap-reverse)
+);
+
+@include pf-utility-builder($pf-u-flex-wrap-options, $pf-global--breakpoint-list);
+
+// Align item options
+$pf-u-align-items-options: (
+  align-items-flex-start:   (align-items flex-start),
+  align-items-flex-end:     (align-items flex-end),
+  align-items-center:       (align-items center),
+  align-items-baseline:     (align-items baseline),
+  align-items-stretch:      (align-items stretch)
+);
+
+@include pf-utility-builder($pf-u-align-items-options, $pf-global--breakpoint-list);
+
+// Align self options
+$pf-u-align-self-options: (
+  align-self-flex-start:    (align-self flex-start),
+  align-self-flex-end:      (align-self flex-end),
+  align-self-center:        (align-self center),
+  align-self-baseline:      (align-self baseline),
+  align-self-stretch:       (align-self stretch)
+);
+
+@include pf-utility-builder($pf-u-align-self-options, $pf-global--breakpoint-list);
+
+// Align content options
+$pf-u-align-content-options: (
+  align-content-flex-start:    (align-content flex-start),
+  align-content-flex-end:      (align-content flex-end),
+  align-content-center:        (align-content center),
+  align-content-space-between: (align-content space-between),
+  align-content-space-around:  (align-content space-around),
+  align-content-stretch:       (align-content stretch)
+);
+
+@include pf-utility-builder($pf-u-align-content-options, $pf-global--breakpoint-list);
+
+// Justify content options
+$pf-u-justify-content-options: (
+  justify-content-flex-start:    (justify-content flex-start),
+  justify-content-flex-end:      (justify-content flex-end),
+  justify-content-center:        (justify-content center),
+  justify-content-space-between: (justify-content space-between),
+  justify-content-space-around:  (justify-content space-around),
+  justify-content-stretch:       (justify-content stretch)
+);
+
+@include pf-utility-builder($pf-u-justify-content-options, $pf-global--breakpoint-list);
+
+// Justify content options
+$pf-u-flex-shrink-grow-options: (
+  flex-shrink-1:    (flex-shrink 1),
+  flex-grow-1:      (flex-grow 1),
+  flex-shrink-0:    (flex-shrink 0),
+  flex-grow-0:      (flex-grow 0)
+);
+
+@include pf-utility-builder($pf-u-flex-shrink-grow-options, $pf-global--breakpoint-list);
+
+// Flex basis options
+$pf-u-flex-basis-options: (
+  flex-basis-0:     (flex-basis 0),
+  flex-basis-auto:  (flex-basis auto)
+);
+
+@include pf-utility-builder($pf-u-flex-basis-options, $pf-global--breakpoint-list);
+
+// Justify content options
+$pf-u-flex-options: (
+  flex-none:  (flex none),
+  flex-1:     (flex 1)
+);
+
+@include pf-utility-builder($pf-u-flex-options, $pf-global--breakpoint-list);
+
+// Flex fill
+@include pf-utility-builder(flex-fill flex "1 1 auto", $pf-global--breakpoint-list);
+
+// stylelint-enable

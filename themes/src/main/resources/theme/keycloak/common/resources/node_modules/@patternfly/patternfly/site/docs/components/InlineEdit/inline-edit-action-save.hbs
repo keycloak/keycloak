@@ -1,0 +1,27 @@
+{{#if inline-edit-action-save--IsIcon}}
+  {{#if inline-edit-action-save--IsInvalid}}
+    {{#> inline-edit-action}}
+      {{#> button button--modifier="pf-m-plain" button--attribute='disabled aria-label="Save edits"'}}
+        <i class="fas fa-check" aria-hidden="true" />
+      {{/button}}
+    {{/inline-edit-action}}
+  {{else}}
+    {{#> inline-edit-action inline-edit-action--modifier="pf-m-valid"}}
+      {{#> button button--modifier="pf-m-plain" button--attribute='aria-label="Save edits"'}}
+        <i class="fas fa-check" aria-hidden="true" />
+      {{/button}}
+    {{/inline-edit-action}}
+  {{/if}}
+{{else}}
+  {{#> inline-edit-action}}
+    {{#if inline-edit-action-save--IsInvalid}}
+      {{#> button button--modifier="pf-m-primary" button--attribute="disabled"}}
+        Primary disabled
+      {{/button}}
+    {{else}}
+      {{#> button button--modifier="pf-m-primary"}}
+        Save
+      {{/button}}
+    {{/if}}
+  {{/inline-edit-action}}
+{{/if}}

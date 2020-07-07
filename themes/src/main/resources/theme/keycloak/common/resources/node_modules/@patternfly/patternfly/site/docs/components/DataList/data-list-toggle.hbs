@@ -1,0 +1,9 @@
+<div class="pf-c-data-list__toggle{{#if data-list-toggle--modifier}} {{data-list-toggle--modifier}}{{/if}}"
+  {{#if data-list-toggle--attribute}}
+    {{{data-list-toggle--attribute}}}
+  {{/if}}>
+  {{!-- use 'button--attribute' param on parent to set attributes on button --}}
+  {{#> button button--modifier="pf-m-plain"}}
+    {{#> data-list-toggle-icon}}{{/data-list-toggle-icon}}
+  {{/button}}
+</div>

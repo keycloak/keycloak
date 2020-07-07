@@ -1,0 +1,17 @@
+<button class="pf-c-nav__scroll-button{{#if nav-scroll-button--modifier}} {{nav-scroll-button--modifier}}{{/if}}"  
+  {{#if nav-scroll-button--attribute}}
+    {{{nav-scroll-button--attribute}}}
+  {{/if}}
+  {{#if nav-scroll-button--IsLeft}}
+    aria-label="Scroll left"
+  {{/if}}
+  {{#if nav-scroll-button--IsRight}}
+    aria-label="Scroll right"
+  {{/if}}>
+  {{#if nav-scroll-button--IsLeft}}
+    <i class="fas fa-angle-left" aria-hidden="true"></i>
+  {{/if}}
+  {{#if nav-scroll-button--IsRight}}
+    <i class="fas fa-angle-right" aria-hidden="true"></i>
+  {{/if}}
+</button>

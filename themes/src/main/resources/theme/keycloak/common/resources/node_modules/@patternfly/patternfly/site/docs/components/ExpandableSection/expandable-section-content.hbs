@@ -1,0 +1,7 @@
+<div class="pf-c-expandable-section__content{{#if expandable-section-content--modifier}} {{expandable-section-content--modifier}}{{/if}}"
+  {{#unless expandable-section--IsExpanded}}hidden{{/unless}}
+  {{#if expandable-section-content--attribute}}
+    {{{expandable-section-content--attribute}}}
+  {{/if}}>
+  {{> @partial-block}}
+</div>

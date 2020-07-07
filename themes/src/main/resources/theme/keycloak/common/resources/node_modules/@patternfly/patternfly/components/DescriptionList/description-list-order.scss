@@ -1,0 +1,26 @@
+$pf-c-description-list-order--breakpoint-map: build-breakpoint-map();
+$pf-c-description-list-order--limit: 12;
+
+// stylelint-disable max-nesting-depth
+.pf-c-description-list__group {
+  @each $breakpoint, $breakpoint-value in $pf-c-description-list-order--breakpoint-map {
+    $breakpoint-name: if($breakpoint != "base", -on-#{$breakpoint}, "");
+
+    @include pf-apply-breakpoint($breakpoint, $pf-c-description-list-order--breakpoint-map) {
+      @for $i from 0 through $pf-c-description-list-order--limit {
+        .pf-m-order-#{$i}#{$breakpoint-name} {
+          order: #{$i};
+        }
+      }
+
+      .pf-m-order-first#{$breakpoint-name} {
+        order: -1;
+      }
+
+      .pf-m-order-last#{$breakpoint-name} {
+        order: #{$pf-c-description-list-order--limit + 1};
+      }
+    }
+  }
+}
+// stylelint-enable

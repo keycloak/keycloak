@@ -1,0 +1,18 @@
+<{{#if options-menu-toggle--type}}{{options-menu-toggle--type}}{{else}}button{{/if}} class="pf-c-options-menu__toggle{{#if options-menu--IsText}} pf-m-text{{#if options-menu-toggle--IsDisabled}} pf-m-disabled{{/if}}{{/if}}{{#if options-menu-toggle--modifier}} {{options-menu-toggle--modifier}}{{/if}}"
+  {{#unless options-menu--IsText}}
+    type="button"
+    id="{{id}}-toggle"
+    aria-haspopup="listbox"
+    aria-expanded="{{#if options-menu--IsExpanded}}true{{else}}false{{/if}}"
+    {{#if options-menu-toggle--IsDisabled}}
+      disabled
+    {{/if}}
+  {{/unless}}
+	{{#if options-menu-toggle--attribute}}
+		{{{options-menu-toggle--attribute}}}
+	{{/if}}>
+  {{> @partial-block}}
+  {{#if options-menu--HasToggleIcon}}
+    {{> options-menu-toggle-icon}}
+  {{/if}}
+</{{#if options-menu-toggle--type}}{{options-menu-toggle--type}}{{else}}button{{/if}}>

@@ -1,0 +1,36 @@
+<div class="pf-c-dropdown__menu{{#if dropdown-menu--modifier}} {{dropdown-menu--modifier}}{{/if}}"
+  aria-labelledby="{{id}}-button"
+  {{#unless dropdown--IsExpanded}}hidden{{/unless}}
+  {{#if dropdown-menu--attribute}}
+    {{{dropdown-menu--attribute}}}
+  {{/if}}>
+
+  {{#> dropdown-group}}
+    {{#> dropdown-menu-item dropdown-menu-item--type="div" dropdown-menu-item--modifier="pf-m-text"}}
+      Text
+    {{/dropdown-menu-item}}
+    {{#> dropdown-menu-item dropdown-menu-item--type="div" dropdown-menu-item--modifier="pf-m-text"}}
+      More text
+    {{/dropdown-menu-item}}
+  {{/dropdown-group}}
+  {{> divider}}
+  {{#> dropdown-group}}
+    <ul>
+      <li>
+        {{#> dropdown-menu-item dropdown-menu-item--type="a" dropdown-menu-item--attribute='href="#"'}}
+          My profile
+        {{/dropdown-menu-item}}
+      </li>
+      <li>
+        {{#> dropdown-menu-item dropdown-menu-item--type="a" dropdown-menu-item--attribute='href="#"'}}
+          User management
+        {{/dropdown-menu-item}}
+      </li>
+      <li>
+        {{#> dropdown-menu-item dropdown-menu-item--type="a" dropdown-menu-item--attribute='href="#"'}}
+          Logout
+        {{/dropdown-menu-item}}
+      </li>
+    </ul>
+  {{/dropdown-group}}
+</div>

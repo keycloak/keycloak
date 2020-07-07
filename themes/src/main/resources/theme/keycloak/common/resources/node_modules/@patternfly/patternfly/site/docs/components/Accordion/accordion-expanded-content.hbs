@@ -1,0 +1,9 @@
+<{{#if accordion--IsDefinitionList}}dd{{else}}div{{/if}} class="pf-c-accordion__expanded-content{{#if accordion-expanded-content--IsExpanded}} pf-m-expanded{{/if}}{{#if accordion-expanded-content--IsFixed}} pf-m-fixed{{/if}}{{#if accordion-expanded-content--modifier}} {{accordion-expanded-content--modifier}}{{/if}}"
+  {{#unless accordion-expanded-content--IsExpanded}}hidden{{/unless}}
+  {{#if accordion-expanded-content--attribute}}
+    {{{accordion-expanded-content--attribute}}}
+  {{/if}}>
+  {{#> accordion-expanded-content-body}}
+    {{> @partial-block}}
+  {{/accordion-expanded-content-body}}
+</{{#if accordion--IsDefinitionList}}dd{{else}}div{{/if}}>

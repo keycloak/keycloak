@@ -1,0 +1,11 @@
+<button class="pf-c-form__group-label-help{{#if form-group-label-help--modifier}} {{form-group-label-help--modifier}}{{/if}}"
+  aria-label="More info"
+  {{#if form-group-label-help--attribute}}
+    {{{form-group-label-help--attribute}}}
+  {{/if}}>
+  {{#if @partial-block}}
+    {{> @partial-block}}
+  {{else}}
+    <i class="pficon pf-icon-help" aria-hidden="true"></i>
+  {{/if}}
+</button>

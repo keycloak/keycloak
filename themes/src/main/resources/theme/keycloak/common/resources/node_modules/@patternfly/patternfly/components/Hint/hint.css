@@ -1,0 +1,51 @@
+.pf-c-hint {
+  --pf-c-hint--GridRowGap: var(--pf-global--spacer--md);
+  --pf-c-hint--PaddingTop: var(--pf-global--spacer--lg);
+  --pf-c-hint--PaddingRight: var(--pf-global--spacer--lg);
+  --pf-c-hint--PaddingBottom: var(--pf-global--spacer--lg);
+  --pf-c-hint--PaddingLeft: var(--pf-global--spacer--lg);
+  --pf-c-hint--BackgroundColor: var(--pf-global--palette--blue-50);
+  --pf-c-hint--BorderColor: var(--pf-global--palette--blue-100);
+  --pf-c-hint--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-hint--BoxShadow: var(--pf-global--BoxShadow--sm);
+  --pf-c-hint--Color: var(--pf-global--Color--100);
+  --pf-c-hint__title--FontSize: var(--pf-global--FontSize--lg);
+  --pf-c-hint__body--FontSize: var(--pf-global--FontSize--md);
+  --pf-c-hint__footer--child--MarginRight: var(--pf-global--spacer--md);
+  --pf-c-hint__actions--MarginLeft: var(--pf-global--spacer--2xl);
+  --pf-c-hint__actions--c-dropdown--MarginTop: calc(var(--pf-global--spacer--form-element) * -1);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-row-gap: var(--pf-c-hint--GridRowGap);
+  padding: var(--pf-c-hint--PaddingTop) var(--pf-c-hint--PaddingRight) var(--pf-c-hint--PaddingBottom) var(--pf-c-hint--PaddingLeft);
+  color: var(--pf-c-hint--Color);
+  background-color: var(--pf-c-hint--BackgroundColor);
+  border: var(--pf-c-hint--BorderWidth) solid var(--pf-c-hint--BorderColor);
+  box-shadow: var(--pf-c-hint--BoxShadow); }
+  .pf-c-hint .pf-c-button.pf-m-link.pf-m-inline {
+    text-align: left;
+    white-space: normal; }
+
+.pf-c-hint__actions {
+  display: inline-grid;
+  grid-auto-flow: column;
+  margin-left: var(--pf-c-hint__actions--MarginLeft);
+  text-align: right;
+  grid-column: 2;
+  grid-row: 1; }
+  .pf-c-hint__actions .pf-c-dropdown .pf-c-dropdown__toggle.pf-m-plain {
+    margin-top: var(--pf-c-hint__actions--c-dropdown--MarginTop); }
+  .pf-c-hint__actions + .pf-c-hint__body {
+    grid-column: 1; }
+
+.pf-c-hint__title {
+  font-size: var(--pf-c-hint__title--FontSize); }
+
+.pf-c-hint__body {
+  grid-column: 1 / -1;
+  font-size: var(--pf-c-hint__body--FontSize); }
+
+.pf-c-hint__footer {
+  grid-column: 1 / -1; }
+  .pf-c-hint__footer > :not(:last-child) {
+    margin-right: var(--pf-c-hint__footer--child--MarginRight); }

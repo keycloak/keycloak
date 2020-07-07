@@ -1,0 +1,29 @@
+{{#> options-menu-menu}}
+<li>
+  <ul aria-label="Sort by">
+    {{#> options-menu-menu-item}}
+      Name
+    {{/options-menu-menu-item}}
+    {{#> options-menu-menu-item options-menu-menu-item--IsSelected="true"}}
+      Date
+    {{/options-menu-menu-item}}
+    {{#> options-menu-menu-item options-menu-menu-item--attribute="disabled"}}
+      Disabled
+    {{/options-menu-menu-item}}
+    {{#> options-menu-menu-item}}
+      Size
+    {{/options-menu-menu-item}}
+  </ul>
+</li>
+{{> divider divider--type="li"}}
+<li>
+  <ul aria-label="Sort direction">
+    {{#> options-menu-menu-item options-menu-menu-item--IsSelected="true"}}
+      Ascending
+    {{/options-menu-menu-item}}
+    {{#> options-menu-menu-item}}
+      Descending
+    {{/options-menu-menu-item}}
+  </ul>
+</li>
+{{/options-menu-menu}}

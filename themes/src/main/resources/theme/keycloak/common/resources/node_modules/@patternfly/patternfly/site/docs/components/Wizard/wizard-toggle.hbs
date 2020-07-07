@@ -1,0 +1,7 @@
+<button aria-label="Wizard Header Toggle" class="pf-c-wizard__toggle{{#if wizard--IsExpanded}} pf-m-expanded{{/if}}{{#if wizard-toggle--modifier}} {{wizard-toggle--modifier}}{{/if}}"
+  aria-expanded="{{#if wizard--IsExpanded}}true{{else}}false{{/if}}"
+  {{#if wizard-toggle--attribute}}
+    {{{wizard-toggle--attribute}}}
+  {{/if}}>
+  {{> @partial-block}}
+</button>

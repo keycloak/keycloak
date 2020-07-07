@@ -1,0 +1,48 @@
+{{#> pagination-nav}}
+  {{#unless pagination--IsCompact}}
+    {{#> pagination-nav-control pagination-nav-control--modifier="pf-m-first"}}
+      {{#> button button--modifier="pf-m-plain" button--attribute='disabled aria-label="Go to first page"'}}
+        <i class="fas fa-angle-double-left" aria-hidden="true"></i>
+      {{/button}}
+    {{/pagination-nav-control}}
+  {{/unless}}
+  {{#> pagination-nav-control pagination-nav-control--modifier="pf-m-prev"}}
+    {{#> button button--modifier="pf-m-plain" button--attribute='disabled aria-label="Go to previous page"'}}
+      <i class="fas fa-angle-left" aria-hidden="true"></i>
+    {{/button}}
+  {{/pagination-nav-control}}
+  {{#unless pagination--IsCompact}}
+    {{#> pagination-nav-page-select}}
+      {{#if pagination-nav-content--IsDisabled}}
+        {{> form-control input="true" controlType="input" form-control--attribute='disabled aria-label="Current page" type="number" min="1" max="4" value="1"'}}
+      {{else}}
+        {{> form-control input="true" controlType="input" form-control--attribute='aria-label="Current page" type="number" min="1" max="4" value="1"'}}
+      {{/if}}
+      <span aria-hidden="true">of 4</span>
+    {{/pagination-nav-page-select}}
+  {{/unless}}
+  {{#> pagination-nav-control pagination-nav-control--modifier="pf-m-next"}}
+    {{#if pagination-nav-content--IsDisabled}}
+      {{#> button button--modifier="pf-m-plain" button--attribute='disabled aria-label="Go to next page"'}}
+        <i class="fas fa-angle-right" aria-hidden="true"></i>
+      {{/button}}
+    {{else}}
+      {{#> button button--modifier="pf-m-plain" button--attribute='aria-label="Go to next page"'}}
+        <i class="fas fa-angle-right" aria-hidden="true"></i>
+      {{/button}}
+    {{/if}}
+  {{/pagination-nav-control}}
+  {{#unless pagination--IsCompact}}
+    {{#> pagination-nav-control pagination-nav-control--modifier="pf-m-last"}}
+      {{#if pagination-nav-content--IsDisabled}}
+        {{#> button button--modifier="pf-m-plain" button--attribute='disabled aria-label="Go to last page"'}}
+          <i class="fas fa-angle-double-right" aria-hidden="true"></i>
+        {{/button}}
+      {{else}}
+        {{#> button button--modifier="pf-m-plain" button--attribute='aria-label="Go to last page"'}}
+          <i class="fas fa-angle-double-right" aria-hidden="true"></i>
+        {{/button}}
+      {{/if}}
+    {{/pagination-nav-control}}
+  {{/unless}}
+{{/pagination-nav}}

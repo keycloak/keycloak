@@ -1,0 +1,10 @@
+<ul class="pf-c-data-list{{#if data-list--modifier}} {{data-list--modifier}}{{/if}}"
+  role="list"
+  {{#if data-list--attribute}}
+    {{{data-list--attribute}}}
+  {{/if}}
+  {{#if data-list--id}}
+    id="{{{data-list--id}}}"
+  {{/if}}>
+  {{> @partial-block}}
+</ul>

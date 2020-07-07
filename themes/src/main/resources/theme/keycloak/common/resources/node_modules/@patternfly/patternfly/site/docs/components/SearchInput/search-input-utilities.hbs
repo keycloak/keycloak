@@ -1,0 +1,14 @@
+{{#if search-input--value}}
+  <span class="pf-c-search-input__utilities{{#if search-input-utilities--modifier}} {{search-input-utilities--modifier}}{{/if}}"
+    {{#if search-input-utilities--attribute}}
+      {{search-input-utilities--attribute}}
+    {{/if}}>
+    {{#if search-input--count}}
+      {{> search-input-count}}
+    {{/if}}
+    {{#if search-input--IsNavigable}}
+      {{> search-input-nav}}
+    {{/if}}
+    {{> search-input-clear}}
+  </span>
+{{/if}}

@@ -1,0 +1,17 @@
+<h2 class="pf-c-notification-drawer__list-item-header-title{{#if notification-drawer-list-item-header-title--modifier}} {{notification-drawer-list-item-header-title--modifier}}{{/if}}"
+  {{#if notification-drawer-list-item-header-title--attribute}}
+    {{{notification-drawer-list-item-header-title--attribute}}}
+  {{/if}}>
+  <span class="pf-screen-reader">
+    {{#if notification-drawer-list-item--IsInfo}}
+      Info notification:
+    {{else if notification-drawer-list-item--IsWarning}}
+      Warning notification:
+    {{else if notification-drawer-list-item--IsDanger}}
+      Danger notification:
+    {{else if notification-drawer-list-item--IsSuccess}}
+      Success notification:
+    {{/if}}
+  </span>
+  {{> @partial-block}}
+</h2>

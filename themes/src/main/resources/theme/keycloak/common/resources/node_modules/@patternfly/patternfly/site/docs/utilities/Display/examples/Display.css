@@ -1,0 +1,11 @@
+.ws-core-u-display .pf-u-display-inline-block,
+.ws-core-u-display .pf-u-display-block,
+.ws-core-u-display .pf-u-display-flex,
+.ws-core-u-display .pf-u-display-inline-flex,
+.ws-core-u-display .pf-u-display-grid,
+.ws-core-u-display .pf-u-display-inline,
+.ws-core-u-display .pf-u-display-table,
+.ws-core-u-display .pf-u-display-table-cell {
+  padding: .5rem !important;
+  border: 2px dashed #393f44;
+}

@@ -1,0 +1,10 @@
+<div class="pf-c-popover{{#if popover--modifier}} {{popover--modifier}}{{/if}}"
+  role="dialog"
+  aria-modal="true"
+  {{#if popover--attribute}}
+    {{{popover--attribute}}} 
+  {{/if}}>
+  {{#> popover-arrow}}
+  {{/popover-arrow}}
+  {{> @partial-block}}
+</div>

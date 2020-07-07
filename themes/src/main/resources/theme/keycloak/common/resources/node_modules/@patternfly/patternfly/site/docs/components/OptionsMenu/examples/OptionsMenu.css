@@ -1,0 +1,25 @@
+#ws-core-c-optionsmenu-single-option,
+#ws-core-c-optionsmenu-plain,
+#ws-core-c-optionsmenu-align-right,
+#ws-core-c-optionsmenu-align-top {
+  min-height: 215px;
+}
+
+#ws-core-c-optionsmenu-multiple-options {
+  min-height: 350px;
+}
+
+#ws-core-c-optionsmenu-plain-with-text {
+  min-height: 280px;
+}
+
+#ws-core-c-optionsmenu-align-top {
+  display: flex;
+  align-items: flex-end;
+}
+
+#ws-core-c-optionsmenu-with-groups,
+#ws-core-c-optionsmenu-with-groups-and-dividers-between-groups,
+#ws-core-c-optionsmenu-with-groups-and-dividers-between-items {
+  min-height: 450px;
+}

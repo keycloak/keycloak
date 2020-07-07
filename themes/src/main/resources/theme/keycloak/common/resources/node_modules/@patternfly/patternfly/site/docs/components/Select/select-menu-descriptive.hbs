@@ -1,0 +1,43 @@
+<{{#if select-menu--type}}{{select-menu--type}}{{else}}ul{{/if}} class="pf-c-select__menu{{#if select-menu--modifier}} {{select-menu--modifier}}{{/if}}"
+  aria-labelledby="{{id}}-label"
+  {{#unless select--IsExpanded}}hidden{{/unless}}
+  {{#if select--attribute}}
+    {{{select--attribute}}}
+  {{/if}}>
+  {{#if select--IsEmptyMenu}}
+    [Panel contents here]
+  {{else}}
+    <li>
+      {{#> select-menu-item}}
+        Menu item
+      {{/select-menu-item}}
+    </li>
+    <li>
+      {{#> select-menu-item select-menu-item--IsSelected="true"}}
+        Menu item selected
+      {{/select-menu-item}}
+    </li>
+    <li>
+      {{#> select-menu-item select-menu-item--Description="This is a description."}}
+        Menu item description
+      {{/select-menu-item}}
+    </li>
+    <li>
+      {{#> select-menu-item select-menu-item--Description="This is a description." select-menu-item--IsDisabled="true"}}
+        {{#> select-menu-item-main}}
+          Menu item description disabled
+        {{/select-menu-item-main}}
+      {{/select-menu-item}}
+    </li>
+    <li>
+      {{#> select-menu-item select-menu-item--Description="This is a description." select-menu-item--IsSelected="true"}}
+        Menu item description selected
+      {{/select-menu-item}}
+    </li>
+    <li>
+      {{#> select-menu-item select-menu-item--Description="This is a really long description that describes the menu item. This is a really long description that describes the menu item." select-menu-item--IsSelected="true"}}
+        Menu item long description
+      {{/select-menu-item}}
+    </li>
+  {{/if}}
+</{{#if select-menu--type}}{{select-menu--type}}{{else}}ul{{/if}}>
