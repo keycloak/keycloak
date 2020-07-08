@@ -461,6 +461,12 @@ public class RealmAdminResource {
     @DELETE
     public void deleteRealm() {
         auth.realm().requireManageRealm();
+        
+		AdminAuth adminAuth = auth.adminAuth();
+		RealmRepresentation realmRepresentation = new RealmRepresentation();
+		realmRepresentation.setRealm(realm.getName());
+		new AdminEventBuilder(realm, adminAuth, session, connection).operation(OperationType.DELETE)
+				.resource(ResourceType.REALM).representation(realmRepresentation).success();
 
         if (!new RealmManager(session).removeRealm(realm)) {
             throw new NotFoundException("Realm doesn't exist");
