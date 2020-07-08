@@ -204,10 +204,10 @@
                         </#if>
 
                         <li id="landingSignInLink" role="none" style="display:none">
-                            <a href="#" onclick="keycloak.login();" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${msg("doLogIn")}</a>
+                            <a onclick="keycloak.login();" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${msg("doLogIn")}</a>
                         </li>
                         <li id="landingSignOutLink" role="none" style="display:none">
-                            <a href="#" onclick="keycloak.logout();" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${msg("doSignOut")}</a>
+                            <a onclick="keycloak.logout();" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${msg("doSignOut")}</a>
                         </li>
                     </ul>
                 </div>
@@ -228,8 +228,8 @@
           <div class="pf-l-gallery pf-m-gutter">
             <#assign content=theme.apply("content.json")?eval>
             <#list content as item>
-              <div class="pf-l-gallery__item" id="landing-${item.id}">
-                <div class="pf-c-card">
+              <div class="pf-l-gallery__item pf-c-card" id="landing-${item.id}">
+                <div>
                   <div class="pf-c-card__header pf-c-content">
                       <h2>
                         <#if item.icon??>
@@ -240,17 +240,19 @@
                         ${msg(item.label)}
                       </h2>
                       <#if item.descriptionLabel??>
-                        <h6>${msg(item.descriptionLabel)}</h6>
+                        <p>${msg(item.descriptionLabel)}</p>
                       </#if>
                   </div>
                   <div class="pf-c-card__body pf-c-content">
-                      <#if item.content??>
-                          <#list item.content as sub>
-                            <h5 id="landing-${sub.id}" onclick="toggleReact()"><a href="#${sub.path}">${msg(sub.label)}</a></h5>
-                          </#list>
-                      <#else>
-                        <h5 id="landing-${item.id}" onclick="toggleReact()"><a href="#${item.path}">${msg(item.label)}</a></h5>
-                      </#if>
+                    <#if item.content??>
+                      <#list item.content as sub>
+                        <div id="landing-${sub.id}">
+                          <a onclick="toggleReact(); window.location.hash='${sub.path}'">${msg(sub.label)}</a>
+                        </div>
+                      </#list>
+                    <#else>
+                      <a id="landing-${item.id}" onclick="toggleReact(); window.location.hash = '${item.path}'">${msg(item.label)}</a>
+                    </#if>
                   </div>
                 </div>
               </div>
