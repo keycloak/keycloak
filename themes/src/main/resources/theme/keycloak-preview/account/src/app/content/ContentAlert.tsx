@@ -90,9 +90,10 @@ export class ContentAlert extends React.Component<ContentAlertProps, ContentAler
 
     public render(): React.ReactNode {
         return (
-            <AlertGroup isToast>
+            <AlertGroup isToast aria-live="assertive">
                 {this.state.alerts.map(({ key, variant, message }) => (
                     <Alert
+                        aria-details={message}
                         isLiveRegion
                         variant={variant}
                         title={message}
