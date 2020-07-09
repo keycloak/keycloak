@@ -1,5 +1,6 @@
 package org.keycloak;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -13,7 +14,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.provider.KeycloakDeploymentInfo;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderLoader;
-import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
@@ -37,23 +37,25 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
     }
 
     private static QuarkusKeycloakSessionFactory INSTANCE;
-    private Map<Spi, Set<Class<? extends ProviderFactory>>> factories;
+    private final Boolean reaugmented;
+    private final Map<Spi, Set<Class<? extends ProviderFactory>>> factories;
 
-    public QuarkusKeycloakSessionFactory(Map<Spi, Set<Class<? extends ProviderFactory>>> factories) {
+    public QuarkusKeycloakSessionFactory(Map<Spi, Set<Class<? extends ProviderFactory>>> factories, Boolean reaugmented) {
         this.factories = factories;
+        this.reaugmented = reaugmented;
     }
 
     private QuarkusKeycloakSessionFactory() {
+        reaugmented = false;
+        factories = Collections.emptyMap();
     }
 
     @Override
     public void init() {
         serverStartupTimestamp = System.currentTimeMillis();
-        ProviderLoader userProviderLoader = createUserProviderLoader();
-        spis = loadRuntimeSpis(userProviderLoader);
+        spis = factories.keySet();
 
         for (Spi spi : spis) {
-            loadUserProviders(spi, userProviderLoader);
             for (Class<? extends ProviderFactory> factoryClazz : factories.get(spi)) {
                 ProviderFactory factory = lookupProviderFactory(factoryClazz);
                 Config.Scope scope = Config.scope(spi.getName(), factory.getId());
@@ -84,27 +86,6 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
         AdminPermissions.registerListener(this);
         // make the session factory ready for hot deployment
         ProviderManagerRegistry.SINGLETON.setDeployer(this);
-    }
-
-    private Set<Spi> loadRuntimeSpis(ProviderLoader runtimeLoader) {
-        // most of the time SPIs loaded at build time are enough but under certain circumstances (e.g.: testsuite) we may
-        // want to load additional SPIs at runtime only from the JARs deployed at the providers dir
-        List<Spi> loaded = runtimeLoader.loadSpis();
-
-        if (loaded.isEmpty()) {
-            return factories.keySet();
-        }
-
-        Set<Spi> spis = new HashSet<>(factories.keySet());
-
-        spis.addAll(loaded);
-
-        return spis;
-    }
-
-    private ProviderLoader createUserProviderLoader() {
-        return UserProviderLoader
-                .create(KeycloakDeploymentInfo.create().services(), Thread.currentThread().getContextClassLoader());
     }
 
     private ProviderFactory lookupProviderFactory(Class<? extends ProviderFactory> factoryClazz) {
@@ -152,21 +133,6 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
             logger.debugv("Set default provider for {0} to {1}", spi.getName(), defaultProvider);
         } else {
             logger.debugv("No default provider for {0}", spi.getName());
-        }
-    }
-
-    private void loadUserProviders(Spi spi, ProviderLoader loader) {
-        //TODO: support loading providers from CDI. We should probably consider writing providers using CDI for Quarkus, much easier
-        // to develop and integrate with
-        List<ProviderFactory> load = loader.load(spi);
-
-        for (ProviderFactory factory : load) {
-            factories.computeIfAbsent(spi, new Function<Spi, Set<Class<? extends ProviderFactory>>>() {
-                @Override
-                public Set<Class<? extends ProviderFactory>> apply(Spi spi) {
-                    return new HashSet<>();
-                }
-            }).add(factory.getClass());
         }
     }
 }

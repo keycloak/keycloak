@@ -30,6 +30,7 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
     private HashMap<String, Object> keycloakConfigPropertyOverridesMap;
     private String profile;
     private String javaOpts;
+    private boolean reaugmentBeforeStart;
 
     @Override
     public void validate() throws ConfigurationException {
@@ -135,5 +136,13 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
 
     public String getJavaOpts() {
         return javaOpts;
+    }
+
+    public boolean isReaugmentBeforeStart() {
+        return reaugmentBeforeStart;
+    }
+
+    public void setReaugmentBeforeStart(boolean reaugmentBeforeStart) {
+        this.reaugmentBeforeStart = reaugmentBeforeStart;
     }
 }

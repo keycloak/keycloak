@@ -29,10 +29,6 @@ public class KeycloakRecorder {
         CONFIG = (SmallRyeConfig) SmallRyeConfigProviderResolver.instance().getConfig();
     }
 
-    public static String getDatabaseDialect() {
-        return CONFIG.getRawValue("quarkus.datasource.dialect");
-    }
-
     public void configureLiquibase(Map<String, List<String>> services) {
         LogFactory.setInstance(new LogFactory() {
             KeycloakLogger logger = new KeycloakLogger();
@@ -57,19 +53,7 @@ public class KeycloakRecorder {
         ServiceLocator.setInstance(new FastServiceLocator(services));
     }
 
-    public BeanContainerListener configureDataSource() {
-        return new BeanContainerListener() {
-            @Override
-            public void created(BeanContainer container) {
-                String driver = CONFIG.getRawValue("quarkus.datasource.driver");
-                DataSourceSupport instance = container.instance(DataSourceSupport.class);
-                DataSourceSupport.Entry entry = instance.entries.get(DataSourceUtil.DEFAULT_DATASOURCE_NAME);
-                entry.resolvedDriverClass = driver;
-            }
-        };
-    }
-
-    public void configSessionFactory(Map<Spi, Set<Class<? extends ProviderFactory>>> factories) {
-        QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories));
+    public void configSessionFactory(Map<Spi, Set<Class<? extends ProviderFactory>>> factories, Boolean reaugmented) {
+        QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, reaugmented));
     }
 }

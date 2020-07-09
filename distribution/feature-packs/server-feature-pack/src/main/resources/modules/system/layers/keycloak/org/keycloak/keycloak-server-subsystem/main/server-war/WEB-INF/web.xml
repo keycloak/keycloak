@@ -49,7 +49,7 @@
 
     <filter>
         <filter-name>Client Connection Filter</filter-name>
-        <filter-class>org.keycloak.provider.wildfly.WildFlyClientConnectionServletFilter</filter-class>
+        <filter-class>org.keycloak.provider.wildfly.WildFlyRequestFilter</filter-class>
         <async-supported>true</async-supported>
     </filter>
 

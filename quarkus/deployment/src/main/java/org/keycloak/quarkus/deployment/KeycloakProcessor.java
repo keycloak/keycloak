@@ -1,5 +1,6 @@
 package org.keycloak.quarkus.deployment;
 
+import javax.persistence.spi.PersistenceUnitTransactionType;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -7,24 +8,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.persistence.spi.PersistenceUnitTransactionType;
-
+import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
 import org.hibernate.cfg.AvailableSettings;
-import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
+import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
-import org.keycloak.connections.jpa.DelegatingDialect;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProviderFactory;
 import org.keycloak.connections.jpa.updater.liquibase.conn.DefaultLiquibaseConnectionProvider;
 import org.keycloak.provider.KeycloakDeploymentInfo;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
-import org.keycloak.provider.quarkus.QuarkusClientConnectionFilter;
+import org.keycloak.provider.quarkus.QuarkusRequestFilter;
 import org.keycloak.runtime.KeycloakRecorder;
 import org.keycloak.transaction.JBossJtaTransactionManagerLookup;
 
-import io.quarkus.arc.deployment.BeanContainerListenerBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.ExecutionTime;
@@ -32,6 +30,7 @@ import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.hibernate.orm.deployment.PersistenceUnitDescriptorBuildItem;
 import io.quarkus.vertx.http.deployment.FilterBuildItem;
+import org.keycloak.util.Environment;
 
 class KeycloakProcessor {
 
@@ -40,41 +39,50 @@ class KeycloakProcessor {
         return new FeatureBuildItem("keycloak");
     }
 
-    @Record(ExecutionTime.STATIC_INIT)
-    @BuildStep
-    void configureHibernate(KeycloakRecorder recorder, List<PersistenceUnitDescriptorBuildItem> descriptors) {
-        // TODO: ORM extension is going to provide build items that we can rely on to create our own PU instead of relying
-        // on the parsed descriptor and assume that the order that build steps are executed is always the same (although dialect 
-        // is only created during runtime)
-        ParsedPersistenceXmlDescriptor unit = descriptors.get(0).getDescriptor();
-        unit.setTransactionType(PersistenceUnitTransactionType.JTA);
-        unit.getProperties().setProperty(AvailableSettings.DIALECT, DelegatingDialect.class.getName());
-        unit.getProperties().setProperty(AvailableSettings.QUERY_STARTUP_CHECKING, Boolean.FALSE.toString());
-    }
-
-    @Record(ExecutionTime.STATIC_INIT)
-    @BuildStep
-    void configureDataSource(KeycloakRecorder recorder, BuildProducer<BeanContainerListenerBuildItem> container) {
-        container.produce(new BeanContainerListenerBuildItem(recorder.configureDataSource()));
-    }
-
     /**
-     * <p>
-     * Load the built-in provider factories during build time so we don't spend time looking up them at runtime.
+     * <p>Configures the persistence unit for Quarkus.
      * 
-     * <p>
-     * User-defined providers are going to be loaded at startup
-     * </p>
+     * <p>The main reason we have this build step is because we re-use the same persistence unit from {@code keycloak-model-jpa} 
+     * module, the same used by the Wildfly distribution. The {@code hibernate-orm} extension expects that the dialect is statically
+     * set to the persistence unit if there is any from the classpath and use this method to obtain the dialect from the configuration
+     * file so that we can re-augment the application with whatever dialect we want. In addition to the dialect, we should also be 
+     * allowed to set any additional defaults that we think that makes sense.
+     * 
+     * @param recorder
+     * @param config
+     * @param descriptors
      */
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
-    void configureBuiltInProviders(KeycloakRecorder recorder) {
-        recorder.configSessionFactory(loadBuiltInFactories());
+    void configureHibernate(KeycloakRecorder recorder, HibernateOrmConfig config, List<PersistenceUnitDescriptorBuildItem> descriptors) {
+        PersistenceUnitDescriptor unit = descriptors.get(0).asOutputPersistenceUnitDefinition().getActualHibernateDescriptor();
+        
+        unit.getProperties().setProperty(AvailableSettings.DIALECT, config.dialect.get());
+        unit.getProperties().setProperty(AvailableSettings.JPA_TRANSACTION_TYPE, PersistenceUnitTransactionType.JTA.name());
+        unit.getProperties().setProperty(AvailableSettings.QUERY_STARTUP_CHECKING, Boolean.FALSE.toString());
     }
 
-    private Map<Spi, Set<Class<? extends ProviderFactory>>> loadBuiltInFactories() {
+    /**
+     * <p>Load the built-in provider factories during build time so we don't spend time looking up them at runtime.
+     * 
+     * <p>User-defined providers are going to be loaded at startup</p>
+     * 
+     * @param recorder
+     */
+    @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep
+    void configureProviders(KeycloakRecorder recorder) {
+        recorder.configSessionFactory(loadFactories(), Environment.isRebuild());
+    }
+
+    @BuildStep
+    void initializeRouter(BuildProducer<FilterBuildItem> routes) {
+        routes.produce(new FilterBuildItem(new QuarkusRequestFilter(), FilterBuildItem.AUTHORIZATION - 10));
+    }
+
+    private Map<Spi, Set<Class<? extends ProviderFactory>>> loadFactories() {
         ProviderManager pm = new ProviderManager(
-                KeycloakDeploymentInfo.create().services(), Thread.currentThread().getContextClassLoader(),
+                KeycloakDeploymentInfo.create().services(), new BuildClassLoader(),
                 Config.scope().getArray("providers"));
         Map<Spi, Set<Class<? extends ProviderFactory>>> result = new HashMap<>();
 
@@ -97,10 +105,5 @@ class KeycloakProcessor {
         }
 
         return result;
-    }
-
-    @BuildStep
-    void initializeRouter(BuildProducer<FilterBuildItem> routes) {
-        routes.produce(new FilterBuildItem(new QuarkusClientConnectionFilter(), FilterBuildItem.AUTHORIZATION - 10));
     }
 }
