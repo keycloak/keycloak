@@ -745,6 +745,7 @@ public class SamlProtocol implements LoginProtocol {
         for (Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext();) {
             logoutRequest = it.next().beforeSendingLogoutRequest(logoutRequest, clientSession.getUserSession(), clientSession);
         }
+
         return logoutRequest;
     }
 
