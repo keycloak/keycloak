@@ -20,6 +20,7 @@ package org.keycloak.utils;
 import java.util.Objects;
 
 import org.keycloak.models.AccountRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
@@ -28,7 +29,7 @@ import org.keycloak.services.ForbiddenException;
 public class UserHelper {
 
   public static boolean hasDeleteAccountRole(UserModel user) {
-    return Objects.nonNull(user.getRoleMappings()) && user.getRoleMappings().stream().anyMatch((role) -> Objects.equals(role.getName(), AccountRoles.DELETE_ACCOUNT));
+    return Objects.nonNull(user.getRoleMappings()) && user.getRoleMappings().stream().anyMatch((role) -> Objects.equals(role.getName(), Constants.DELETE_ACCOUNT_ROLE));
   }
 
   public static boolean isDeleteAccountAllowed(RealmModel realm, UserModel user) {
