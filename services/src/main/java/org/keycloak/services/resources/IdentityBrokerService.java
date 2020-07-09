@@ -386,7 +386,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             if (identityProviderModel.isLinkOnly()) {
                 throw new IdentityBrokerException("Identity Provider [" + providerId + "] is not allowed to perform a login.");
             }
-            if (clientSessionCode != null && clientSessionCode.getClientSession() != null) {
+            if (clientSessionCode != null && clientSessionCode.getClientSession() != null && loginHint != null) {
                 clientSessionCode.getClientSession().setClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
             }
 

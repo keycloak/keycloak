@@ -892,7 +892,8 @@ public class IdentityProviderTest extends AbstractAdminTest {
           "singleSignOnServiceUrl",
           "wantAuthnRequestsSigned",
           "signingCertificate",
-          "addExtensionsElementWithKeyInfo"
+          "addExtensionsElementWithKeyInfo",
+          "loginHint"
         ));
         assertThat(config, hasEntry("validateSignature", "true"));
         assertThat(config, hasEntry("singleLogoutServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml"));
