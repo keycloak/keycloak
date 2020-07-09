@@ -1053,8 +1053,8 @@
         function decodeToken(str) {
             str = str.split('.')[1];
 
-            str = str.replace('/-/g', '+');
-            str = str.replace('/_/g', '/');
+            str = str.replace(/-/g, '+');
+            str = str.replace(/_/g, '/');
             switch (str.length % 4) {
                 case 0:
                     break;
