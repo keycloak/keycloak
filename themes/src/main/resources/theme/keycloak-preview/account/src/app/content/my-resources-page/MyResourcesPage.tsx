@@ -23,6 +23,7 @@ import { Button, Level, LevelItem, Stack, StackItem, Tab, Tabs, TextInput } from
 import {HttpResponse} from '../../account-service/account.service';
 import {AccountServiceContext} from '../../account-service/AccountServiceContext';
 
+import { PaginatedResources, Resource, Scope, Permission } from './resource-model';
 import {ResourcesTable} from './ResourcesTable';
 import {ContentPage} from '../ContentPage';
 import {Msg} from '../../widgets/Msg';
@@ -37,47 +38,6 @@ export interface MyResourcesPageState {
     nameFilter: string;
     myResources: PaginatedResources;
     sharedWithMe: PaginatedResources;
-}
-
-export interface Resource {
-    _id: string;
-    name: string;
-    client: Client;
-    scopes: Scope[];
-    uris: string[];
-    shareRequests: Permission[];
-}
-
-export interface Client {
-    baseUrl: string;
-    clientId: string;
-    name?: string;
-}
-
-export class Scope {
-    public constructor(public name: string, public displayName?: string) {}
-
-    public toString(): string {
-        if (this.hasOwnProperty('displayName') && (this.displayName)) {
-            return this.displayName;
-        } else {
-            return this.name;
-        }
-    }
-}
-
-export interface PaginatedResources {
-    nextUrl: string;
-    prevUrl: string;
-    data: Resource[];
-}
-
-export interface Permission {
-    email?: string;
-    firstName?: string;
-    lastName?: string;
-    scopes: Scope[] | string[];  // this should be Scope[] - fix API
-    username: string;
 }
 
 const MY_RESOURCES_TAB = 0;

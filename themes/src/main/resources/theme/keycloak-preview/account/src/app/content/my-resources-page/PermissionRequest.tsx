@@ -35,7 +35,7 @@ import { HttpResponse } from '../../account-service/account.service';
 import { AccountServiceContext } from '../../account-service/AccountServiceContext';
 import { Msg } from '../../widgets/Msg';
 import { ContentAlert } from '../ContentAlert';
-import { Resource, Scope, Permission } from './MyResourcesPage';
+import { Resource, Scope, Permission } from './resource-model';
 
 
 interface PermissionRequestProps {

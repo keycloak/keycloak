@@ -42,7 +42,7 @@ import { HttpResponse } from '../../account-service/account.service';
 import { AccountServiceContext } from '../../account-service/AccountServiceContext';
 import { PermissionRequest } from "./PermissionRequest";
 import { ShareTheResource } from "./ShareTheResource";
-import { Permission, Resource } from "./MyResourcesPage";
+import { Permission, Resource } from "./resource-model";
 import { Msg } from '../../widgets/Msg';
 import { ResourcesTableState, ResourcesTableProps, AbstractResourcesTable } from './AbstractResourceTable';
 import { EditTheResource } from './EditTheResource';
