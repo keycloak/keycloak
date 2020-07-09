@@ -50,7 +50,7 @@ import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.testsuite.JsonConfigProviderFactory;
 import org.keycloak.testsuite.KeycloakServer;
-import org.keycloak.testsuite.UndertowClientConnectionServletFilter;
+import org.keycloak.testsuite.UndertowRequestFilter;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.testsuite.utils.undertow.UndertowDeployerHelper;
 import org.keycloak.testsuite.utils.undertow.UndertowWarClassLoader;
@@ -99,7 +99,7 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
         di.setDefaultServletConfig(new DefaultServletConfig(true));
         di.addWelcomePage("theme/keycloak/welcome/resources/index.html");
 
-        FilterInfo filter = Servlets.filter("SessionFilter", UndertowClientConnectionServletFilter.class);
+        FilterInfo filter = Servlets.filter("SessionFilter", UndertowRequestFilter.class);
         di.addFilter(filter);
         di.addFilterUrlMapping("SessionFilter", "/*", DispatcherType.REQUEST);
         filter.setAsyncSupported(true);

@@ -125,6 +125,13 @@ public abstract class KeycloakPropertiesConfigSource extends PropertiesConfigSou
         return result;
     }
 
+    /**
+     * We need a better namespace resolution so that we don't need to add Quarkus extensions manually. Maybe the easiest 
+     * path is to just have the "keycloak" namespace for Keycloak-specific properties.
+     * 
+     * @param key the key to transform
+     * @return the same key but prefixed with the namespace
+     */
     private static String transformKey(String key) {
         String namespace;
         String[] keyParts = key.split("\\.");
@@ -138,6 +145,7 @@ public abstract class KeycloakPropertiesConfigSource extends PropertiesConfigSou
         }
 
         switch (extension) {
+            case "hibernate-orm":
             case "datasource":
             case "http":
             case "log":

@@ -18,8 +18,6 @@ package org.keycloak.services.filters;
  */
 
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Resteasy;
@@ -29,9 +27,9 @@ import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.services.resources.KeycloakApplication;
 
 
-public abstract class AbstractClientConnectionFilter {
+public abstract class AbstractRequestFilter {
 
-    public void filter(ClientConnection clientConnection, Consumer<KeycloakSession> next) {
+    protected void filter(ClientConnection clientConnection, Consumer<KeycloakSession> next) {
         KeycloakSessionFactory sessionFactory = KeycloakApplication.getSessionFactory();
         KeycloakSession session = sessionFactory.create();
 
@@ -47,11 +45,13 @@ public abstract class AbstractClientConnectionFilter {
             tx.setRollbackOnly();
             throw new RuntimeException(e);
         } finally {
-            close(session);
+            if (isAutoClose()) {
+                close(session);
+            }
         }
     }
 
-    public void close(KeycloakSession session) {
+    protected void close(KeycloakSession session) {
         KeycloakTransactionManager tx = session.getTransactionManager();
         if (tx.isActive()) {
             if (tx.getRollbackOnly()) {
@@ -62,5 +62,15 @@ public abstract class AbstractClientConnectionFilter {
         }
 
         session.close();
+    }
+
+    /**
+     * <p>Indicates whether or not resources should be close as part of the execution of the {@link #filter(ClientConnection, Consumer)}
+     * method.
+     * 
+     * @return true if resources should be close automatically. Otherwise, false.
+     */
+    protected boolean isAutoClose() {
+        return true;
     }
 }

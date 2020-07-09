@@ -25,6 +25,11 @@
             <version>${quarkus.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-vertx-web-deployment</artifactId>
+            <version>${quarkus.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-quarkus-server</artifactId>
             <version>${project.version}</version>

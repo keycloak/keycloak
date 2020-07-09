@@ -57,7 +57,7 @@ public class DatasetTest extends EntityTest<Dataset> implements Loggable {
         };
         ObjectMapper mapper = new ObjectMapper();
         mapper.setSerializationInclusion(Include.NON_NULL);
-        Map<String, Object> map = mapper.convertValue(realm, typeRef);
+        Map<String, Object> map = (Map<String, Object>) mapper.convertValue(realm, typeRef);
         map.put("index", 1000);
 
         logger().info("MAP:");
