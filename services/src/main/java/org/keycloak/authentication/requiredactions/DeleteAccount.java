@@ -41,6 +41,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.theme.Theme;
 import org.keycloak.utils.UserHelper;
 
@@ -109,7 +110,7 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
           .detail(Details.REASON, "does not have the required roles for user deletion")
           .error(Errors.USER_DELETE_ERROR);
       //deletingAccountForbidden
-      context.challenge(context.form().setError("deletingAccountForbidden").createForm("delete-account-confirm.ftl"));
+      context.challenge(context.form().setError(Messages.DELETE_ACCOUNT_LACK_PRIVILEDGES).createForm("delete-account-confirm.ftl"));
     } catch (Exception exception) {
       logger.error("unexpected error happened during account deletion", exception);
       eventBuilder.event(EventType.DELETE_ACCOUNT_ERROR)
@@ -117,7 +118,7 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
           .user(keycloakContext.getAuthenticationSession().getAuthenticatedUser())
           .detail(Details.REASON, exception.getMessage())
           .error(Errors.USER_DELETE_ERROR);
-      context.challenge(context.form().setError("errorDeletingAccount").createForm("delete-account-confirm.ftl"));
+      context.challenge(context.form().setError(Messages.DELETE_ACCOUNT_ERROR).createForm("delete-account-confirm.ftl"));
     }
   }
 
