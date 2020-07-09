@@ -117,12 +117,12 @@
     <body>
 
         <script>
-            var keycloak = Keycloak({
+            const keycloak = Keycloak({
                 authServerUrl: authUrl,
                 realm: realm,
                 clientId: 'account-console'
             });
-            keycloak.init({onLoad: 'check-sso', pkceMethod: 'S256'}).success(function(authenticated) {
+            keycloak.init({onLoad: 'check-sso', pkceMethod: 'S256', promiseType: 'native'}).then((authenticated) => {
                 isReactLoading = true;
                 toggleReact();
                 if (!keycloak.authenticated) {
@@ -135,8 +135,7 @@
                 }
 
                 loadjs("/Main.js");
-
-            }).error(function() {
+            }).catch(() => {
                 alert('failed to initialize keycloak');
             });
         </script>
