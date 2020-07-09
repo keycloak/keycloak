@@ -86,7 +86,7 @@ public class RedirectUtils {
         if (redirectUri != null) {
             try {
                 URI uri = URI.create(redirectUri);
-                redirectUri = uri.normalize().toString();
+                redirectUri = uri.toString();
             } catch (IllegalArgumentException cause) {
                 logger.debug("Invalid redirect uri", cause);
                 return null;
