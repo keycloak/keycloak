@@ -29,7 +29,7 @@ import {
 import { RepositoryIcon } from '@patternfly/react-icons';
 
 
-import {PaginatedResources, Resource, Scope} from "./MyResourcesPage";
+import { PaginatedResources, Resource, Scope } from "./resource-model";
 import { Msg } from '../../widgets/Msg';
 import { AbstractResourcesTable, ResourcesTableState } from './AbstractResourceTable';
 import EmptyMessageState from '../../widgets/EmptyMessageState';

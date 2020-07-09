@@ -32,7 +32,7 @@ import {
 } from '@patternfly/react-core';
 
 import { AccountServiceContext } from '../../account-service/AccountServiceContext';
-import { Resource, Permission, Scope } from './MyResourcesPage';
+import { Resource, Permission, Scope } from './resource-model';
 import { Msg } from '../../widgets/Msg';
 import {ContentAlert} from '../ContentAlert';
 import { PermissionSelect } from './PermissionSelect';

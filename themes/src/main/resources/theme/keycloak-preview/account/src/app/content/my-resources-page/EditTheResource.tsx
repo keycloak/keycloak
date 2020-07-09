@@ -26,7 +26,7 @@ import {
 } from '@patternfly/react-core';
 import { OkIcon } from '@patternfly/react-icons';
 
-import { Resource, Permission, Scope } from './MyResourcesPage';
+import { Resource, Permission, Scope } from './resource-model';
 import { Msg } from '../../widgets/Msg';
 import { AccountServiceContext } from '../../account-service/AccountServiceContext';
 import { ContentAlert } from '../ContentAlert';

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Permission, PaginatedResources, Client } from './MyResourcesPage';
+import { Permission, PaginatedResources, Client } from './resource-model';
 import { Msg } from '../../widgets/Msg';
 
 export interface ResourcesTableProps {
