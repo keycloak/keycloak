@@ -448,4 +448,62 @@ public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
         }, producerSignDocument, producerSignAssertions, producerEncryptAssertions);
     }
 
+    @Test
+    public void testSignatureDataWhenWantsRequestsSigned() throws Exception {
+        // Verifies that an AuthnRequest contains the KeyInfo/X509Data element when
+        // client AuthnRequest signature is requested
+        String providerCert = KeyUtils.getActiveKey(adminClient.realm(bc.providerRealmName()).keys().getKeyMetadata(), Algorithm.RS256).getCertificate();
+        Assert.assertThat(providerCert, Matchers.notNullValue());
+
+        String consumerCert = KeyUtils.getActiveKey(adminClient.realm(bc.consumerRealmName()).keys().getKeyMetadata(), Algorithm.RS256).getCertificate();
+        Assert.assertThat(consumerCert, Matchers.notNullValue());
+
+        try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+            .setAttribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.toString(true))
+            .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, Boolean.toString(true))
+            .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_ENCRYPTED, Boolean.toString(false))
+            .setAttribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "true")
+            .setAttribute(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, AbstractSamlTest.SAML_CLIENT_SALES_POST_SIG_EXPIRED_CERTIFICATE)
+            .update();
+          Closeable clientUpdater = ClientAttributeUpdater.forClient(adminClient, bc.providerRealmName(), bc.getIDPClientIdInProviderRealm())
+            .setAttribute(SamlConfigAttributes.SAML_ENCRYPT, Boolean.toString(false))
+            .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "true")
+            .setAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, Boolean.toString(true))
+            .setAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false")
+            .update())
+        {
+            // Build the login request document
+            AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted", getConsumerRoot() + "/sales-post/saml", null);
+            Document doc = SAML2Request.convert(loginRep);
+            new SamlClientBuilder()
+                .authnRequest(getConsumerSamlEndpoint(bc.consumerRealmName()), doc, Binding.POST)
+                .build()   // Request to consumer IdP
+                .login().idp(bc.getIDPAlias()).build()
+                .processSamlResponse(Binding.POST)    // AuthnRequest to producer IdP
+                  .targetAttributeSamlRequest()
+                  .transformDocument(this::extractNamespacesToTopLevelElement)
+                  .transformDocument((document) -> {
+                    try
+                    {
+                        // Find the Signature element
+                        Element signatureElement = DocumentUtil.getDirectChildElement(document.getDocumentElement(), XMLSignature.XMLNS, "Signature");
+                        Assert.assertThat("Signature element not found in request document", signatureElement, Matchers.notNullValue());
+
+                        // Find the KeyInfo element
+                        Element keyInfoElement = DocumentUtil.getDirectChildElement(signatureElement, XMLSignature.XMLNS, "KeyInfo");
+                        Assert.assertThat("KeyInfo element not found in request Signature element", keyInfoElement, Matchers.notNullValue());
+
+                        // Find the X509Data element
+                        Element x509DataElement = DocumentUtil.getDirectChildElement(keyInfoElement, XMLSignature.XMLNS, "X509Data");
+                        Assert.assertThat("X509Data element not found in request Signature/KeyInfo element", x509DataElement, Matchers.notNullValue());
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new RuntimeException(ex);
+                    }
+                  })
+                  .build()
+                .execute();
+        }
+    }
 }
