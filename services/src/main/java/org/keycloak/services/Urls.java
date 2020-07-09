@@ -68,10 +68,6 @@ public class Urls {
         return accountBase(baseUri).path(AccountFormService.class, "processFederatedIdentityUpdate").build(realmName);
     }
 
-    public static URI deleteAccountPage(URI baseUri, String realmName) {
-        return accountBase(baseUri).path(AccountFormService.class, "deleteAccountPage").build(realmName);
-    }
-
     public static URI identityProviderAuthnResponse(URI baseUri, String providerId, String realmName) {
         return realmBase(baseUri).path(RealmsResource.class, "getBrokerService")
                 .path(IdentityBrokerService.class, "getEndpoint")

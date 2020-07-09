@@ -19,7 +19,6 @@ package org.keycloak.services.resources;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.BadRequestException;
 import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.ResteasyUriInfo;
 import org.keycloak.AbstractOAuthClient;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -27,16 +26,12 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.urls.UrlType;
 import org.keycloak.util.TokenUtil;
 
 import javax.ws.rs.GET;
@@ -135,42 +130,14 @@ public abstract class AbstractSecuredLocalService {
     protected abstract URI getBaseRedirectUri();
 
     protected Response login(String path) {
-        URI accountUri = buildAccountURI(path);
-
-        OAuthRedirect oauth = buildOAuthRedirect(accountUri);
-        return oauth.redirect(session.getContext().getUri(), accountUri.toString());
-    }
-
-    protected Response loginWithAIA(String path, String actionProviderId, boolean requireReAuthentication) {
-        URI accountUri = buildAccountURI(path);
-
-        OAuthRedirect oauth = buildOAuthRedirect(accountUri);
-
-        UriBuilder redirectWithAIABuilder = UriBuilder.fromUri(session.getContext().getUri().getAbsolutePath()).queryParam(Constants.KC_ACTION, actionProviderId);
-        if (requireReAuthentication) {
-            redirectWithAIABuilder.queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN);
-        }
-
-        URI redirectWithAIA = redirectWithAIABuilder.build();
-        return oauth.redirect(new KeycloakUriInfo(session, UrlType.BACKEND, new ResteasyUriInfo(redirectWithAIA.getPath(), redirectWithAIA.getQuery(), redirectWithAIA.getPath())), accountUri.toString());
-    }
-
-
-    private OAuthRedirect buildOAuthRedirect(URI accountUri) {
         OAuthRedirect oauth = new OAuthRedirect();
-        String authUrl =
-            OIDCLoginProtocolService.authUrl(session.getContext().getUri()).build(realm.getName()).toString();
+        String authUrl = OIDCLoginProtocolService.authUrl(session.getContext().getUri()).build(realm.getName()).toString();
         oauth.setAuthUrl(authUrl);
 
         oauth.setClientId(client.getClientId());
 
         oauth.setSecure(realm.getSslRequired().isRequired(clientConnection));
 
-        oauth.setStateCookiePath(accountUri.getRawPath());
-        return oauth;
-    }
-
-    private URI buildAccountURI(String path) {
         UriBuilder uriBuilder = UriBuilder.fromUri(getBaseRedirectUri()).path("login-redirect");
 
         if (path != null) {
@@ -187,9 +154,11 @@ public abstract class AbstractSecuredLocalService {
             uriBuilder.queryParam("referrer_uri", referrerUri);
         }
 
-        return uriBuilder.build(realm.getName());
-    }
+        URI accountUri = uriBuilder.build(realm.getName());
 
+        oauth.setStateCookiePath(accountUri.getRawPath());
+        return oauth.redirect(session.getContext().getUri(), accountUri.toString());
+    }
 
     static class OAuthRedirect extends AbstractOAuthClient {
 
@@ -209,14 +178,6 @@ public abstract class AbstractSecuredLocalService {
                     .queryParam(OAuth2Constants.STATE, state)
                     .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
                     .queryParam(OAuth2Constants.SCOPE, scopeParam);
-
-            if (uriInfo.getQueryParameters().getFirst(Constants.KC_ACTION) != null) {
-                uriBuilder.queryParam(Constants.KC_ACTION, uriInfo.getQueryParameters().getFirst(Constants.KC_ACTION));
-            }
-
-            if (uriInfo.getQueryParameters().getFirst(OIDCLoginProtocol.PROMPT_PARAM) != null) {
-                uriBuilder.queryParam(OIDCLoginProtocol.PROMPT_PARAM, uriInfo.getQueryParameters().getFirst(OIDCLoginProtocol.PROMPT_PARAM));
-            }
 
             URI url = uriBuilder.build();
 

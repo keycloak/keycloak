@@ -16,12 +16,8 @@
  */
 package org.keycloak.forms.account.freemarker.model;
 
-import org.keycloak.models.AccountRoles;
-import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredActionProviderModel;
 
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -76,10 +72,5 @@ public class RealmBean {
 
     public boolean isUserManagedAccessAllowed() {
         return realm.isUserManagedAccessAllowed();
-    }
-
-    public boolean isUserDeleteAccountAllowed() {
-       RequiredActionProviderModel deleteAction = realm.getRequiredActionProviderByAlias("delete_account");
-        return Objects.nonNull(realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.DELETE_ACCOUNT)) && Objects.nonNull(deleteAction) && deleteAction.isEnabled();
     }
 }

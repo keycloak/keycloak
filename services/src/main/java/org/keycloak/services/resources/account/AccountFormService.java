@@ -16,10 +16,7 @@
  */
 package org.keycloak.services.resources.account;
 
-import java.util.Objects;
-
 import org.jboss.logging.Logger;
-import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
@@ -31,6 +28,9 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.credential.CredentialModel;
+import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.OTPCredentialProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.Event;
@@ -50,7 +50,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -335,19 +334,6 @@ public class AccountFormService extends AbstractSecuredLocalService {
     @GET
     public Response applicationsPage() {
         return forwardToPage("applications", AccountPages.APPLICATIONS);
-    }
-
-    @Path("deleteAccount")
-
-    @GET
-    public Response deleteAccountPage() {
-        String path = "deleteAccount";
-        if (auth == null) {
-            return login(null);
-        } else if (!clientHasDeleteAccountRole() || !realmHasDeleteActionEnabled()) {
-            return account.setError(Status.FORBIDDEN, Messages.NO_ACCESS).createResponse(AccountPages.ACCOUNT);
-        }
-        return forwardToPage(path, AccountPages.DELETE_ACCOUNT);
     }
 
     /**
@@ -762,19 +748,6 @@ public class AccountFormService extends AbstractSecuredLocalService {
         }
     }
 
-    @Path("deleteAccount")
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processeDeleteAcount(final MultivaluedMap<String, String> formData) {
-      if (auth == null) {
-        return login("deleteAccount");
-      } else if (!clientHasDeleteAccountRole() || !realmHasDeleteActionEnabled()) {
-          return account.setError(Status.FORBIDDEN, Messages.DELETE_ACCOUNT_LACK_PRIVILEDGES).createResponse(AccountPages.ACCOUNT);
-      }
-
-      return loginWithAIA("deleteAccount", DeleteAccount.PROVIDER_ID, true);
-    }
-
     @Path("resource")
     @GET
     public Response resourcesPage(@QueryParam("resource_id") String resourceId) {
@@ -1122,12 +1095,5 @@ public class AccountFormService extends AbstractSecuredLocalService {
         }
     }
 
-    private boolean clientHasDeleteAccountRole() {
-        return client.getRole(AccountRoles.DELETE_ACCOUNT) != null;
-    }
 
-    private boolean realmHasDeleteActionEnabled() {
-        RequiredActionProviderModel deleteAction = realm.getRequiredActionProviderByAlias("delete_account");
-        return Objects.nonNull(deleteAction) && deleteAction.isEnabled();
-    }
 }

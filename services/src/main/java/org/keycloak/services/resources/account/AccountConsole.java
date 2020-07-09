@@ -46,6 +46,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.UriInfo;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.utils.UserHelper;
 
 /**
  * Created by st on 29/03/17.
@@ -132,7 +133,7 @@ public class AccountConsole {
             }
             map.put("isTotpConfigured", isTotpConfigured);
 
-            map.put("deleteAccountAllowed", isDeleteAccountAllowed());
+            map.put("deleteAccountAllowed", UserHelper.isDeleteAccountAllowed(realm, user));
 
             FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
@@ -178,11 +179,6 @@ public class AccountConsole {
         }
 
         return propertyValue;
-    }
-
-    private boolean isDeleteAccountAllowed() {
-        RequiredActionProviderModel deleteAction = realm.getRequiredActionProviderByAlias("delete_account");
-        return Objects.nonNull(realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.DELETE_ACCOUNT)) && Objects.nonNull(deleteAction) && deleteAction.isEnabled();
     }
     
     @GET

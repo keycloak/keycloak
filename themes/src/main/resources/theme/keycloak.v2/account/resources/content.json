@@ -59,8 +59,9 @@
   },
   {
     "id": "deleteAccount",
-    "path": "deleteAccount",
-    "label": "Delete Account",
+    "icon": "pf-icon-disconnected",
+    "path": "delete-account",
+    "label": "deleteAccount",
     "descriptionLabel": "deleteAccountSummary",
     "modulePath": "/content/delete-account-page/DeleteAccountPage.js",
     "componentName": "DeleteAccountPage",

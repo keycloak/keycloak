@@ -36,7 +36,7 @@ export class DeleteAccountPage extends React.Component {
                <p> <Msg msgKey="initialDeletionInstruction" /></p>
                <KeycloakContext.Consumer>
                 { (keycloak: KeycloakService) => (
-                  <Button onClick={() => this.handleDeleteAccount(keycloak)} variant="danger" style={{display:'block', width:'30%', margin:'auto'}}>Delete</Button>
+                  <Button id="delete-account-btn" onClick={() => this.handleDeleteAccount(keycloak)} variant="danger" style={{display:'block', width:'30%', margin:'auto'}}>Delete</Button>
                 )}
                 </KeycloakContext.Consumer>
                

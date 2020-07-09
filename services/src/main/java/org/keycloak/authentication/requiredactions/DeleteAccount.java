@@ -38,9 +38,11 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.theme.Theme;
+import org.keycloak.utils.UserHelper;
 
 public class DeleteAccount implements RequiredActionProvider, RequiredActionFactory {
 
@@ -60,20 +62,14 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
 
   @Override
   public void requiredActionChallenge(RequiredActionContext context) {
-    KeycloakSession session = context.getSession();
+    UserModel user = context.getAuthenticationSession().getAuthenticatedUser();
     RealmModel realm = context.getRealm();
 
-    Theme theme = null;
-
-    try {
-      theme = session.theme().getTheme(Theme.Type.LOGIN);
-    }
-    catch (IOException e) {
-      logger.error("failed to read theme: ", e);
-      context.failure();
+    if(!UserHelper.isDeleteAccountAllowed(realm, user)) {
+      throw new ForbiddenException();
     }
 
-    context.challenge(context.form().setAttribute("url", new UrlBean(realm, theme, context.getUriInfo().getBaseUri(), context.getActionUrl())).createForm("delete-account-confirm.ftl"));
+    context.challenge(context.form().createForm("delete-account-confirm.ftl"));
   }
 
 
@@ -86,38 +82,46 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
     UserModel user = keycloakContext.getAuthenticationSession().getAuthenticatedUser();
 
     try {
-      ClientModel accountClient = session.clientStorageManager().getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, realm);
-      checkClientHasDeleteAccountRole(accountClient);
-      session.sessions().removeUserSessions(realm, user);
-      session.users().removeUser(realm, user);
-      session.userStorageManager().removeUser(realm, user);
+      if(!UserHelper.isDeleteAccountAllowed(realm, user)) {
+        throw new ForbiddenException();
+      }
+      boolean removed = new UserManager(session).removeUser(realm, user);
 
-      eventBuilder.clone().event(EventType.DELETE_ACCOUNT).client(keycloakContext.getClient()).user(user)
-          .detail(Details.USERNAME, user.getUsername()).success();
+      if (removed) {
+        eventBuilder.event(EventType.DELETE_ACCOUNT)
+            .client(keycloakContext.getClient())
+            .user(user)
+            .detail(Details.USERNAME, user.getUsername())
+            .success();
+      } else {
+        eventBuilder.event(EventType.DELETE_ACCOUNT)
+            .client(keycloakContext.getClient())
+            .user(user)
+            .detail(Details.USERNAME, user.getUsername())
+            .error("User could not be deleted");
+        context.failure();
+      }
     } catch (ForbiddenException forbidden) {
       logger.error("account client does not have the required roles for user deletion");
-      eventBuilder.clone().event(EventType.DELETE_ACCOUNT_ERROR)
+      eventBuilder.event(EventType.DELETE_ACCOUNT_ERROR)
           .client(keycloakContext.getClient())
           .user(keycloakContext.getAuthenticationSession().getAuthenticatedUser())
-          .detail(Details.REASON, "account client does not have the required roles for user deletion")
+          .detail(Details.REASON, "does not have the required roles for user deletion")
           .error(Errors.USER_DELETE_ERROR);
-      context.failure();
+      //deletingAccountForbidden
+      context.challenge(context.form().setError("deletingAccountForbidden").createForm("delete-account-confirm.ftl"));
     } catch (Exception exception) {
       logger.error("unexpected error happened during account deletion", exception);
-      eventBuilder.clone().event(EventType.DELETE_ACCOUNT_ERROR)
+      eventBuilder.event(EventType.DELETE_ACCOUNT_ERROR)
           .client(keycloakContext.getClient())
           .user(keycloakContext.getAuthenticationSession().getAuthenticatedUser())
           .detail(Details.REASON, exception.getMessage())
           .error(Errors.USER_DELETE_ERROR);
-      context.failure();
+      context.challenge(context.form().setError("errorDeletingAccount").createForm("delete-account-confirm.ftl"));
     }
   }
 
-  private void checkClientHasDeleteAccountRole(ClientModel clientModel) {
-    if (Objects.isNull(clientModel.getRole(AccountRoles.DELETE_ACCOUNT))) {
-      throw new ForbiddenException();
-    }
-  }
+
 
   @Override
   public RequiredActionProvider create(KeycloakSession session) {

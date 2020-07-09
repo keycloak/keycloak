@@ -255,7 +255,5 @@ public class Messages {
     public static final String WEBAUTHN_ERROR_REGISTER_VERIFICATION = "webauthn-error-register-verification";
     public static final String WEBAUTHN_ERROR_USER_NOT_FOUND = "webauthn-error-user-not-found";
 
-    public static final String DELETE_ACCOUNT_ERROR = "errorDeletingAccount";
-
     public static final String DELETE_ACCOUNT_LACK_PRIVILEDGES = "deletingAccountForbidden";
 }
