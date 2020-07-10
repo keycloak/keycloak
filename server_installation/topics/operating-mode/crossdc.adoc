@@ -323,6 +323,12 @@ Issues related to authorization may exist just for some other versions of {jdgse
 +
 It is currently required to have different configuration files for the JDG servers on both sites as the Infinispan subsystem does not support replacing site names with expressions. See link:https://issues.redhat.com/browse/WFLY-9458[this issue] for more details.
 
+NOTE: The _PUBLIC_IP_ADDRESS_ below refers to the IP address or hostname, which can be used for your server to bind to. Note that
+every {jdgserver_name} server and {project_name} server needs to use different address. During example setup with all the servers running on the same host,
+you may need to add the option `-Djboss.bind.address.management=_PUBLIC_IP_ADDRESS_` as every server needs to use also different management interface.
+But this option usually should be omitted in production environments to avoid the ability for remote access to your server. For more information,
+see the link:{appserver_socket_link}[_{appserver_socket_name}_].
+
 . Start server `jdg1`:
 +
 [source,subs="+quotes"]
@@ -386,13 +392,6 @@ In production you will likely need to have a separate database server in every d
 ```
 +
 
-.. Add this `module` attribute under `cache-container` element of name `keycloak` :
-+
-```xml
- <cache-container name="keycloak" module="org.keycloak.keycloak-model-infinispan">
-```
-+
-
 .. Add the `remote-store` under `work` cache:
 +
 ```xml
@@ -402,6 +401,9 @@ In production you will likely need to have a separate database server in every d
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
 ifeval::[{project_product}==true]
         <property name="protocolVersion">2.6</property>
+endif::[]
+ifeval::[{project_community}==true]
+        <property name="protocolVersion">2.9</property>
 endif::[]
     </remote-store>
 </replicated-cache>
@@ -418,6 +420,9 @@ endif::[]
 ifeval::[{project_product}==true]
         <property name="protocolVersion">2.6</property>
 endif::[]
+ifeval::[{project_community}==true]
+        <property name="protocolVersion">2.9</property>
+endif::[]
     </remote-store>
 </distributed-cache>
 ```
@@ -433,6 +438,9 @@ endif::[]
 ifeval::[{project_product}==true]
         <property name="protocolVersion">2.6</property>
 endif::[]
+ifeval::[{project_community}==true]
+        <property name="protocolVersion">2.9</property>
+endif::[]
     </remote-store>
 </distributed-cache>
 
@@ -442,6 +450,9 @@ endif::[]
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
 ifeval::[{project_product}==true]
         <property name="protocolVersion">2.6</property>
+endif::[]
+ifeval::[{project_community}==true]
+        <property name="protocolVersion">2.9</property>
 endif::[]
     </remote-store>
 </distributed-cache>
@@ -453,6 +464,9 @@ endif::[]
 ifeval::[{project_product}==true]
         <property name="protocolVersion">2.6</property>
 endif::[]
+ifeval::[{project_community}==true]
+        <property name="protocolVersion">2.9</property>
+endif::[]
     </remote-store>
 </distributed-cache>
 
@@ -462,6 +476,9 @@ endif::[]
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
 ifeval::[{project_product}==true]
         <property name="protocolVersion">2.6</property>
+endif::[]
+ifeval::[{project_community}==true]
+        <property name="protocolVersion">2.9</property>
 endif::[]
     </remote-store>
 </distributed-cache>
@@ -474,6 +491,9 @@ endif::[]
         <property name="marshaller">org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory</property>
 ifeval::[{project_product}==true]
         <property name="protocolVersion">2.6</property>
+endif::[]
+ifeval::[{project_community}==true]
+        <property name="protocolVersion">2.9</property>
 endif::[]
     </remote-store>
 </distributed-cache>
@@ -490,6 +510,20 @@ endif::[]
 +
 
 .. The configuration of distributed cache `authenticationSessions` and other caches is left unchanged.
+
+.. It is recommended to add the `remoteStoreSecurityEnabled` property with the value of `false` (or eventually `true` if you enabled security
+for the {jdgserver_name} servers as described above) to the `connectionsInfinispan` SPI in the `keycloak-server` subsystem:
++
+```xml
+<spi name="connectionsInfinispan">
+    ...
+    <provider ...>
+        <properties>
+            ...
+            <property name="remoteStoreSecurityEnabled" value="false"/>
+        </properties>
+    ...
+```
 
 .. Optionally enable DEBUG logging under the `logging` subsystem:
 +

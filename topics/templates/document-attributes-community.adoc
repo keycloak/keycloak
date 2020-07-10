@@ -102,7 +102,7 @@ endif::[]
 
 :appserver_name: WildFly
 :appserver_dirref: WILDFLY_HOME
-:appserver_version: 18
+:appserver_version: 20
 
 :appserver_doc_base_url: http://docs.wildfly.org/{appserver_version}
 :appserver_socket_link: {appserver_doc_base_url}/Admin_Guide.html#Interfaces_and_ports
@@ -123,7 +123,7 @@ endif::[]
 :appserver_loadbalancer_name: {appserver_name} {appserver_version} Documentation
 
 :jdgserver_name: Infinispan
-:jdgserver_version: 9.4.16
+:jdgserver_version: 9.4.18
 :jdgserver_crossdcdocs_link: https://access.redhat.com/documentation/en-us/red_hat_data_grid/7.3/html/red_hat_data_grid_user_guide/x_site_replication
 
 :fuseVersion: JBoss Fuse 6.3.0 Rollup 12
@@ -133,7 +133,7 @@ endif::[]
 :fuse7Version: JBoss Fuse 7.4.0
 
 :subsystem_undertow_xml_urn: urn:jboss:domain:undertow:10.0
-:subsystem_infinispan_xml_urn: urn:jboss:domain:infinispan:9.0
+:subsystem_infinispan_xml_urn: urn:jboss:domain:infinispan:10.0
 :subsystem_datasources_xml_urn: urn:jboss:domain:datasources:5.0
 :saml_adapter_xsd_urn: https://www.keycloak.org/schema/keycloak_saml_adapter_1_10.xsd
 :generic_adapter_name: keycloak-gatekeeper

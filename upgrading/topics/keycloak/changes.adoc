@@ -2,6 +2,28 @@
 
 === Migrating to 11.0.0
 
+==== Upgrade to Wildfly 20
+
+The {project_name} server was upgraded to use Wildfly 20 as the underlying container. This does not directly involve any
+specific {project_name} server functionality, but there are few changes related to the migration, which are worth mentioning.
+
+Dependency updates::
+  The dependencies were updated to the versions used by Wildfly 20 server. For example, Infinispan is now 10.1.8.Final.
+
+Configuration changes::
+  There are few configuration changes in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
+  section to handle the migration of configuration files automatically.
+
+Cross-Datacenter Replication changes::
+  * You will need to upgrade {jdgserver_name} server to version {jdgserver_version}. The older version may still work, but it is
+  not guaranteed as they are not tested anymore.
+  * It is recommended to use the `protocolVersion` property added to the `remote-store` element when configuring Infinispan caches.
+   When connecting to the {jdgserver_name} server 9.4.18, the recommended version of the hotrod protocol version is 2.9 as the Infinispan
+   library version differs among {project_name} server and {jdgserver_name} server. For more details, see the
+   Cross-Datacenter documentation.
+  * It is recommended to use `remoteStoreSecurityEnabled` property under `connectionsInfinispan` subsystem. For more details,
+  see the Cross-Datacenter documentation.
+
 ==== LDAP no-import bugfix
 
 In the previous {project_name} version, when the LDAP provider was configured with `Import Users` OFF, it was possible to update the
@@ -183,7 +205,7 @@ Cross-Datacenter Replication changes::
 ==== Upgrade to Wildfly 16
 
 The {project_name} server was upgraded to use Wildfly 16 as the underlying container. This does not directly involve any
-specific {project_name} server functionality, but there are few changes related to the migration, which worth mentioning.
+specific {project_name} server functionality, but there are few changes related to the migration, which are worth mentioning.
 
 Dependency updates::
   The dependencies were updated to the versions used by Wildfly 16 server. For example, Infinispan is now 9.4.8.Final.
