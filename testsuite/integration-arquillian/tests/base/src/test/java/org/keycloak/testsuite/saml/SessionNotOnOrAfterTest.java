@@ -8,6 +8,7 @@ import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
@@ -29,6 +30,7 @@ import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 /**
  * @author mhajas
  */
+@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class SessionNotOnOrAfterTest extends AbstractSamlTest {
 
     private static final int SSO_MAX_LIFESPAN = 3602;
