@@ -43,6 +43,7 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
     private final String assertionConsumerURL;
     private String signingPublicKeyPem;  // TODO: should not be needed
     private String signingPrivateKeyPem;
+    private String signingCertificate;
 
     private final Document forceLoginRequestDocument;
 
@@ -80,8 +81,13 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
     }
 
     public CreateAuthnRequestStepBuilder signWith(String signingPrivateKeyPem, String signingPublicKeyPem) {
+        return signWith(signingPrivateKeyPem, signingPublicKeyPem, null);
+    }
+
+    public CreateAuthnRequestStepBuilder signWith(String signingPrivateKeyPem, String signingPublicKeyPem, String signingCertificate) {
         this.signingPrivateKeyPem = signingPrivateKeyPem;
         this.signingPublicKeyPem = signingPublicKeyPem;
+        this.signingCertificate = signingCertificate;
         return this;
     }
 
@@ -100,7 +106,7 @@ public class CreateAuthnRequestStepBuilder extends SamlDocumentStepBuilder<Authn
         String relayState = this.relayState == null ? null : this.relayState.get();
         return this.signingPrivateKeyPem == null
           ? requestBinding.createSamlUnsignedRequest(authServerSamlUrl, relayState, samlDoc)
-          : requestBinding.createSamlSignedRequest(authServerSamlUrl, relayState, samlDoc, signingPrivateKeyPem, signingPublicKeyPem);
+          : requestBinding.createSamlSignedRequest(authServerSamlUrl, relayState, samlDoc, signingPrivateKeyPem, signingPublicKeyPem, signingCertificate);
     }
 
     protected Document createLoginRequestDocument() {
