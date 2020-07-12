@@ -63,37 +63,37 @@ public abstract class AbstractClientModel<E extends AbstractEntity> implements C
 
     @Override
     public RoleModel getRole(String name) {
-        return session.realms().getClientRole(realm, this, name);
+        return session.roles().getClientRole(this, name);
     }
 
     @Override
     public RoleModel addRole(String name) {
-        return session.realms().addClientRole(realm, this, name);
+        return session.roles().addClientRole(this, name);
     }
 
     @Override
     public RoleModel addRole(String id, String name) {
-        return session.realms().addClientRole(realm, this, id, name);
+        return session.roles().addClientRole(this, id, name);
     }
 
     @Override
     public boolean removeRole(RoleModel role) {
-        return session.realms().removeRole(realm, role);
+        return session.roles().removeRole(role);
     }
 
     @Override
     public Stream<RoleModel> getRolesStream() {
-        return session.realms().getClientRolesStream(realm, this, null, null);
+        return session.roles().getClientRolesStream(this, null, null);
     }
 
     @Override
     public Stream<RoleModel> getRolesStream(Integer firstResult, Integer maxResults) {
-        return session.realms().getClientRolesStream(realm, this, firstResult, maxResults);
+        return session.roles().getClientRolesStream(this, firstResult, maxResults);
     }
 
     @Override
     public Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
-        return session.realms().searchForClientRolesStream(realm, this, search, first, max);
+        return session.roles().searchForClientRolesStream(this, search, first, max);
     }
 
     @Override

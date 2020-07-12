@@ -22,6 +22,10 @@
         "provider": "${keycloak.client.provider:jpa}"
     },
 
+    "role": {
+        "provider": "${keycloak.role.provider:jpa}"
+    },
+
     "mapStorage": {
         "provider": "${keycloak.mapStorage.provider:concurrenthashmap}",
         "concurrenthashmap": {

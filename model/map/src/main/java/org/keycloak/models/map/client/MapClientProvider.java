@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.models.map.storage.MapStorage;
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import org.keycloak.models.RoleProvider;
 
 public class MapClientProvider implements ClientProvider {
 
@@ -214,10 +215,7 @@ public class MapClientProvider implements ClientProvider {
         final ClientModel client = getClientById(realm, id);
         if (client == null) return false;
         session.users().preRemove(realm, client);
-        final RealmProvider realms = session.realms();
-        for (RoleModel role : client.getRoles()) {
-            realms.removeRole(realm, role);
-        }
+        session.roles().removeRoles(client);
 
         session.getKeycloakSessionFactory().publish(new RealmModel.ClientRemovedEvent() {
             @Override

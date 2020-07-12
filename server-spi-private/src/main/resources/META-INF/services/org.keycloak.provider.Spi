@@ -20,6 +20,7 @@ org.keycloak.storage.UserStorageProviderSpi
 org.keycloak.storage.federated.UserFederatedStorageProviderSpi
 org.keycloak.models.ClientSpi
 org.keycloak.models.RealmSpi
+org.keycloak.models.RoleSpi
 org.keycloak.models.ActionTokenStoreSpi
 org.keycloak.models.CodeToTokenStoreSpi
 org.keycloak.models.SingleUseTokenStoreSpi

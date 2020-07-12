@@ -122,6 +122,15 @@ public interface KeycloakSession {
      * @return
      * @throws IllegalStateException if transaction is not active
      */
+    RoleProvider roles();
+
+    /**
+     * Returns a managed provider instance.  Will start a provider transaction.  This transaction is managed by the KeycloakSession
+     * transaction.
+     *
+     * @return
+     * @throws IllegalStateException if transaction is not active
+     */
     UserSessionProvider sessions();
 
 
@@ -147,6 +156,8 @@ public interface KeycloakSession {
 
 
     ClientProvider clientStorageManager();
+
+//    RoleProvider roleStorageManager();
 
     /**
      * Un-cached view of all users in system including users loaded by UserStorageProviders
@@ -177,6 +188,13 @@ public interface KeycloakSession {
      * @return
      */
     ClientProvider clientLocalStorage();
+
+    /**
+     * Keycloak specific local storage for roles.  No cache in front, this api talks directly to database configured for Keycloak
+     *
+     * @return
+     */
+    RoleProvider roleLocalStorage();
 
     /**
      * Hybrid storage for UserStorageProviders that can't store a specific piece of keycloak data in their external storage.
