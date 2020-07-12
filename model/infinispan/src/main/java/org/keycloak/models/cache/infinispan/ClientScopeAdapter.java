@@ -160,7 +160,7 @@ public class ClientScopeAdapter implements ClientScopeModel {
     public Stream<RoleModel> getScopeMappingsStream() {
         if (isUpdated()) return updated.getScopeMappingsStream();
         return cached.getScope().stream()
-          .map(id -> cacheSession.getRoleById(id, cachedRealm));
+          .map(id -> cacheSession.getRoleById(cachedRealm, id));
     }
 
     public void addScopeMapping(RoleModel role) {

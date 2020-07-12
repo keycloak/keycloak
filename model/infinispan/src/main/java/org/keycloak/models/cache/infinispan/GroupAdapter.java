@@ -202,7 +202,7 @@ public class GroupAdapter implements GroupModel {
         if (isUpdated()) return updated.getRoleMappings();
         Set<RoleModel> roles = new HashSet<>();
         for (String id : cached.getRoleMappings(modelSupplier)) {
-            RoleModel roleById = keycloakSession.realms().getRoleById(id, realm);
+            RoleModel roleById = keycloakSession.roles().getRoleById(realm, id);
             if (roleById == null) {
                 // chance that role was removed, so just delegate to persistence and get user invalidated
                 getDelegateForUpdate();

@@ -19,12 +19,13 @@ package org.keycloak.models.cache;
 
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RoleProvider;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface CacheRealmProvider extends RealmProvider, ClientProvider {
+public interface CacheRealmProvider extends RealmProvider, ClientProvider, RoleProvider {
     void clear();
     RealmProvider getRealmDelegate();
 

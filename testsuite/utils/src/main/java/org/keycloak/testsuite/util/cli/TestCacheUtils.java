@@ -72,9 +72,9 @@ public class TestCacheUtils {
             realm.getRoleById(role.getId());
             roleContainer.getRole(role.getName());
             if (roleContainer instanceof RealmModel) {
-                session.realms().getRealmRole(realm, role.getName());
+                session.roles().getRealmRole(realm, role.getName());
             } else {
-                session.realms().getClientRole(realm, (ClientModel) roleContainer, role.getName());
+                session.roles().getClientRole((ClientModel) roleContainer, role.getName());
             }
         }
     }

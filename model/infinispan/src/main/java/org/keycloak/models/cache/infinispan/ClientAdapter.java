@@ -257,7 +257,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
     public Stream<RoleModel> getScopeMappingsStream() {
         if (isUpdated()) return updated.getScopeMappingsStream();
         return cached.getScope().stream()
-          .map(id -> cacheSession.getRoleById(id, cachedRealm));
+          .map(id -> cacheSession.getRoleById(cachedRealm, id));
     }
 
     public void addScopeMapping(RoleModel role) {
@@ -593,37 +593,37 @@ public class ClientAdapter implements ClientModel, CachedObject {
 
     @Override
     public RoleModel getRole(String name) {
-        return cacheSession.getClientRole(getRealm(), this, name);
+        return cacheSession.getClientRole(this, name);
     }
 
     @Override
     public RoleModel addRole(String name) {
-        return cacheSession.addClientRole(getRealm(), this, name);
+        return cacheSession.addClientRole(this, name);
     }
 
     @Override
     public RoleModel addRole(String id, String name) {
-        return cacheSession.addClientRole(getRealm(), this, id, name);
+        return cacheSession.addClientRole(this, id, name);
     }
 
     @Override
     public boolean removeRole(RoleModel role) {
-        return cacheSession.removeRole(cachedRealm, role);
+        return cacheSession.removeRole(role);
     }
 
     @Override
     public Stream<RoleModel> getRolesStream() {
-        return cacheSession.getClientRolesStream(cachedRealm, this);
+        return cacheSession.getClientRolesStream(this);
     }
     
     @Override
     public Stream<RoleModel> getRolesStream(Integer first, Integer max) {
-        return cacheSession.getClientRolesStream(cachedRealm, this, first, max);
+        return cacheSession.getClientRolesStream(this, first, max);
     }
     
     @Override
     public Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
-        return cacheSession.searchForClientRolesStream(cachedRealm, this, search, first, max);
+        return cacheSession.searchForClientRolesStream(this, search, first, max);
     }
 
     @Override

@@ -139,7 +139,7 @@ public class ClientModelTest extends AbstractKeycloakTest {
             assertThat("Realm Model 'original' is NULL !!", realm, notNullValue());
             ClientModel from = realm.getClientByClientId("from");
 
-            RoleModel role = currentSession.realms().getRoleById(roleId, realm);
+            RoleModel role = currentSession.roles().getRoleById(realm, roleId);
             from.removeRole(role);
             currentSession.clients().removeClient(realm, from.getId());
 
@@ -185,7 +185,7 @@ public class ClientModelTest extends AbstractKeycloakTest {
 
             ClientModel scoped = realm.getClientByClientId("scoped");
             ClientModel from = realm.getClientByClientId("from");
-            RoleModel role = currentSession.realms().getRoleById(roleId, realm);
+            RoleModel role = currentSession.roles().getRoleById(realm, roleId);
             from.removeRole(role);
             Set<RoleModel> scopeMappings = scoped.getScopeMappings();
 
@@ -216,7 +216,7 @@ public class ClientModelTest extends AbstractKeycloakTest {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionRealmRoleRemove2) -> {
             currentSession = sessionRealmRoleRemove2;
             RealmModel realm = currentSession.realms().getRealmByName(realmName);
-            RoleModel role = currentSession.realms().getRoleById(roleId, realm);
+            RoleModel role = currentSession.roles().getRoleById(realm, roleId);
             realm.removeRole(role);
         });
 

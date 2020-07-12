@@ -70,7 +70,7 @@ public class RoleAdapter implements RoleModel {
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getRealmDelegate().getRoleById(cached.getId(), realm);
+        updated = cacheSession.getRoleDelegate().getRoleById(realm, cached.getId());
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }
@@ -223,7 +223,7 @@ public class RoleAdapter implements RoleModel {
     }
 
     private RoleModel getRoleModel() {
-        return cacheSession.getRealmDelegate().getRoleById(cached.getId(), realm);
+        return cacheSession.getRoleDelegate().getRoleById(realm, cached.getId());
     }
 
     @Override
