@@ -29,6 +29,7 @@ import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_PRIVATE_KEY;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_PUBLIC_KEY;
 import static org.keycloak.testsuite.util.Matchers.bodyHC;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
+import static org.keycloak.testsuite.util.UIUtils.getRawPageSource;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
@@ -1373,7 +1374,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
         driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("getAssertionFromDocument").build().toURL());
         waitForPageToLoad();
-        String xml = driver.getPageSource();
+        String xml = getRawPageSource();
         Assert.assertNotEquals("", xml);
         Document doc = DocumentUtil.getDocument(new StringReader(xml));
         String certBase64 = DocumentUtil.getElement(doc, new QName("http://www.w3.org/2000/09/xmldsig#", "X509Certificate")).getTextContent();
