@@ -24,8 +24,9 @@ import java.net.URI;
  * @author pedroigor
  */
 public class SAML2NameIDPolicyBuilder {
-
     private final NameIDPolicyType policyType;
+    private Boolean allowCreate;
+    private String spNameQualifier;
 
     private SAML2NameIDPolicyBuilder(String format) {
         this.policyType = new NameIDPolicyType();
@@ -36,8 +37,23 @@ public class SAML2NameIDPolicyBuilder {
         return new SAML2NameIDPolicyBuilder(format);
     }
 
+    public SAML2NameIDPolicyBuilder setAllowCreate(Boolean allowCreate) {
+        this.allowCreate = allowCreate;
+        return this;
+    }
+
+    public SAML2NameIDPolicyBuilder setSPNameQualifier(String spNameQualifier) {
+        this.spNameQualifier = spNameQualifier;
+        return this;
+    }
+
     public NameIDPolicyType build() {
-        this.policyType.setAllowCreate(Boolean.TRUE);
+        if (this.allowCreate != null)
+            this.policyType.setAllowCreate(this.allowCreate);
+
+        if (this.spNameQualifier != null)
+            this.policyType.setSPNameQualifier(this.spNameQualifier);
+
         return this.policyType;
     }
 }

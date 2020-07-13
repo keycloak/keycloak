@@ -104,8 +104,11 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                     .issuer(issuerURL)
                     .forceAuthn(getConfig().isForceAuthn())
                     .protocolBinding(protocolBinding)
-                    .nameIdPolicy(SAML2NameIDPolicyBuilder.format(nameIDPolicyFormat))
+                    .nameIdPolicy(SAML2NameIDPolicyBuilder
+                        .format(nameIDPolicyFormat)
+                        .setAllowCreate(Boolean.TRUE))
                     .subject(loginHint);
+
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                     .relayState(request.getState().getEncoded());
             boolean postBinding = getConfig().isPostBindingAuthnRequest();
