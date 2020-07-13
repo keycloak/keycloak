@@ -39,6 +39,7 @@ import java.util.List;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
 
 /**
@@ -89,7 +90,10 @@ public class SAMLRequestWriter extends BaseWriter {
         }
 
         Boolean isPassive = request.isIsPassive();
-        if (isPassive != null) {
+        // The AuthnRequest IsPassive attribute is optional and if omitted its default value is false. 
+        // Some IdPs refuse requests if the IsPassive attribute is present and set to false, so to 
+        // maximize compatibility we emit it only if it is set to true
+        if (isPassive != null && isPassive == true) {
             StaxUtil.writeAttribute(writer, JBossSAMLConstants.IS_PASSIVE.get(), isPassive.toString());
         }
 
@@ -223,7 +227,8 @@ public class SAMLRequestWriter extends BaseWriter {
         }
 
         Boolean allowCreate = nameIDPolicy.isAllowCreate();
-        if (allowCreate != null) {
+        // The NameID AllowCreate attribute must not be used when using the transient NameID format.
+        if (allowCreate != null && (format == null || !NAMEID_FORMAT_TRANSIENT.get().equals(format.toASCIIString()))) {
             StaxUtil.writeAttribute(writer, JBossSAMLConstants.ALLOW_CREATE.get(), allowCreate.toString());
         }
 
