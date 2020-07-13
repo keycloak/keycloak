@@ -9,6 +9,7 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
@@ -39,11 +40,18 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.hamcrest.Matcher;
 import org.jboss.resteasy.util.Encode;
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.utils.io.IOUtil.documentToString;
 import static org.keycloak.testsuite.utils.io.IOUtil.setDocElementAttributeValue;
@@ -240,5 +248,63 @@ public class BasicSamlTest extends AbstractSamlTest {
           .getSteps();
 
         samlClient.execute(secondAuthn);
+    }
+
+    @Test
+    public void testIsPassiveAttributeEmittedWhenTrue() throws Exception {
+        // Verifies that the IsPassive attribute is emitted in the authnRequest
+        // when it is set to true
+
+        // Build the login request document
+        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, getAuthServerSamlEndpoint(REALM_NAME));
+        loginRep.setIsPassive(true);
+
+        Document document = SAML2Request.convert(loginRep);
+
+        // Find the AuthnRequest element
+        Element authnRequestElement = document.getDocumentElement();
+        Attr isPassiveAttribute = authnRequestElement.getAttributeNode("IsPassive");
+        assertThat("AuthnRequest element should contain the IsPassive attribute when isPassive is true, but it doesn't", isPassiveAttribute, notNullValue());
+        assertThat("AuthnRequest/IsPassive attribute should be true when isPassive is true, but it isn't", isPassiveAttribute.getNodeValue(), is("true"));
+    }
+
+    @Test
+    public void testIsPassiveAttributeOmittedWhenFalse() throws Exception {
+        // Verifies that the IsPassive attribute is not emitted in the authnRequest
+        // when it is set to false
+
+        // Build the login request document
+        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, getAuthServerSamlEndpoint(REALM_NAME));
+        loginRep.setIsPassive(false);
+
+        Document document = SAML2Request.convert(loginRep);
+
+        // Find the AuthnRequest element
+        Element authnRequestElement = document.getDocumentElement();
+        Attr isPassiveAttribute = authnRequestElement.getAttributeNode("IsPassive");
+        assertThat("AuthnRequest element shouldn't contain the IsPassive attribute when isPassive is false, but it does", isPassiveAttribute, nullValue());
+    }
+
+    @Test
+    public void testAllowCreateAttributeOmittedWhenTransient() throws Exception {
+        // Verifies that the AllowCreate attribute is not emitted in the AuthnRequest
+        // when NameIDFormat is Transient
+
+        // Build the login request document
+        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, getAuthServerSamlEndpoint(REALM_NAME));
+        loginRep.getNameIDPolicy().setFormat(NAMEID_FORMAT_TRANSIENT.getUri());
+        loginRep.getNameIDPolicy().setAllowCreate(true);
+
+        Document document = SAML2Request.convert(loginRep);
+
+        // Find the AuthnRequest element
+        Element authnRequestElement = document.getDocumentElement();
+        Element nameIdPolicyElement = DocumentUtil.getDirectChildElement(authnRequestElement, PROTOCOL_NSURI.get(), "NameIDPolicy");
+
+        Attr formatAttribute = nameIdPolicyElement.getAttributeNode("Format");
+        Attr allowCreateAttribute = nameIdPolicyElement.getAttributeNode("AllowCreate");
+        assertThat("AuthnRequest/NameIdPolicy Format should be present, but it is not", formatAttribute, notNullValue());
+        assertThat("AuthnRequest/NameIdPolicy Format should be Transient, but it is not", formatAttribute.getNodeValue(), is(NAMEID_FORMAT_TRANSIENT.get()));
+        assertThat("AuthnRequest/NameIdPolicy element shouldn't contain the AllowCreate attribute when Format is set to Transient, but it does", allowCreateAttribute, nullValue());
     }
 }
