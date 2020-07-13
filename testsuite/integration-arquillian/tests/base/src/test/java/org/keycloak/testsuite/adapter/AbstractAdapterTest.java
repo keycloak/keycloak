@@ -21,6 +21,7 @@ import org.apache.commons.io.IOUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -32,6 +33,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
 import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
+import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.util.ServerURLs;
@@ -278,6 +280,12 @@ public abstract class AbstractAdapterTest extends AbstractAuthTest {
             archive.add(new StringAsset(contextXmlContent), "/META-INF/context.xml");
         } catch (IOException ex) {
             throw new RuntimeException(ex);
+        }
+    }
+
+    public static void addSameSiteUndertowHandlers(WebArchive archive) {
+        if (SuiteContext.BROWSER_STRICT_COOKIES) {
+            archive.addAsWebInfResource(undertowHandlersConf, UNDERTOW_HANDLERS_CONF);
         }
     }
 }
