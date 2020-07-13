@@ -121,8 +121,14 @@ public class UsersResource {
         if (session.users().getUserByUsername(username, realm) != null) {
             return ErrorResponse.exists("User exists with same username");
         }
-        if (rep.getEmail() != null && !realm.isDuplicateEmailsAllowed() && session.users().getUserByEmail(rep.getEmail(), realm) != null) {
-            return ErrorResponse.exists("User exists with same email");
+        if (rep.getEmail() != null && !realm.isDuplicateEmailsAllowed()) {
+            try {
+                if(session.users().getUserByEmail(rep.getEmail(), realm) != null) {
+                    return ErrorResponse.exists("User exists with same email");
+                }
+            } catch (ModelDuplicateException e) {
+                return ErrorResponse.exists("User exists with same email");
+            }
         }
 
         try {

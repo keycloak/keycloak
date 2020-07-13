@@ -246,6 +246,40 @@ public class UserTest extends AbstractAdminTest {
         user.setEmail("user1@localhost");
         Response response = realm.users().create(user);
         assertEquals(409, response.getStatus());
+        assertAdminEvents.assertEmpty();
+
+        ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+        Assert.assertEquals("User exists with same email", error.getErrorMessage());
+
+        response.close();
+    }
+
+    //KEYCLOAK-14611
+    @Test
+    public void createDuplicateEmailWithExistingDuplicates() {
+        //Allow duplicate emails
+        RealmRepresentation rep = realm.toRepresentation();
+        rep.setDuplicateEmailsAllowed(true);
+        realm.update(rep);
+
+        //Create 2 users with the same email
+        UserRepresentation user = new UserRepresentation();
+        user.setEmail("user1@localhost");
+        user.setUsername("user1");
+        createUser(user, false);
+        user.setUsername("user2");
+        createUser(user, false);
+
+        //Disallow duplicate emails
+        rep.setDuplicateEmailsAllowed(false);
+        realm.update(rep);
+
+        //Create a third user with the same email
+        user.setUsername("user3");
+        Response response = realm.users().create(user);
+        assertEquals(409, response.getStatus());
+        ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+        Assert.assertEquals("User exists with same email", error.getErrorMessage());
         response.close();
     }
 
