@@ -25,6 +25,7 @@ import org.keycloak.models.map.common.AbstractEntity;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  *
@@ -81,18 +82,18 @@ public abstract class AbstractClientModel<E extends AbstractEntity> implements C
     }
 
     @Override
-    public Set<RoleModel> getRoles() {
-        return session.realms().getClientRoles(realm, this);
+    public Stream<RoleModel> getRolesStream() {
+        return session.realms().getClientRolesStream(realm, this, null, null);
     }
 
     @Override
-    public Set<RoleModel> getRoles(Integer firstResult, Integer maxResults) {
-        return session.realms().getClientRoles(realm, this, firstResult, maxResults);
+    public Stream<RoleModel> getRolesStream(Integer firstResult, Integer maxResults) {
+        return session.realms().getClientRolesStream(realm, this, firstResult, maxResults);
     }
 
     @Override
-    public Set<RoleModel> searchForRoles(String search, Integer first, Integer max) {
-        return session.realms().searchForClientRoles(realm, this, search, first, max);
+    public Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
+        return session.realms().searchForClientRolesStream(realm, this, search, first, max);
     }
 
     @Override

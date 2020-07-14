@@ -34,6 +34,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Objects.nonNull;
 
@@ -829,18 +830,18 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     }
     @Override
-    public List<ClientModel> getClients() {
-        return session.clients().getClients(this);
+    public Stream<ClientModel> getClientsStream() {
+        return session.clients().getClientsStream(this);
     }
 
     @Override
-    public List<ClientModel> getClients(Integer firstResult, Integer maxResults) {
-        return session.clients().getClients(this, firstResult, maxResults);
+    public Stream<ClientModel> getClientsStream(Integer firstResult, Integer maxResults) {
+        return session.clients().getClientsStream(this, firstResult, maxResults);
     }
 
     @Override
-    public List<ClientModel> getAlwaysDisplayInConsoleClients() {
-        return session.clients().getAlwaysDisplayInConsoleClients(this);
+    public Stream<ClientModel> getAlwaysDisplayInConsoleClientsStream() {
+        return session.clients().getAlwaysDisplayInConsoleClientsStream(this);
     }
 
     @Override
@@ -872,8 +873,8 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public List<ClientModel> searchClientByClientId(String clientId, Integer firstResult, Integer maxResults) {
-        return session.clients().searchClientsByClientId(this, clientId, firstResult, maxResults);
+    public Stream<ClientModel> searchClientByClientIdStream(String clientId, Integer firstResult, Integer maxResults) {
+        return session.clients().searchClientsByClientIdStream(this, clientId, firstResult, maxResults);
     }
 
     private static final String BROWSER_HEADER_PREFIX = "_browser_header.";
@@ -933,18 +934,18 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public Set<RoleModel> getRoles() {
-        return session.realms().getRealmRoles(this);
+    public Stream<RoleModel> getRolesStream() {
+        return session.realms().getRealmRolesStream(this);
     }
     
     @Override
-    public Set<RoleModel> getRoles(Integer first, Integer max) {
-        return session.realms().getRealmRoles(this, first, max);
+    public Stream<RoleModel> getRolesStream(Integer first, Integer max) {
+        return session.realms().getRealmRolesStream(this, first, max);
     }
     
     @Override
-    public Set<RoleModel> searchForRoles(String search, Integer first, Integer max) {
-        return session.realms().searchForRoles(this, search, first, max);
+    public Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
+        return session.realms().searchForRolesStream(this, search, first, max);
     }
 
     @Override

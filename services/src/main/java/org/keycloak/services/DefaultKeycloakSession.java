@@ -178,7 +178,9 @@ public class DefaultKeycloakSession implements KeycloakSession {
 
     @Override
     public ClientProvider clientStorageManager() {
-        if (clientStorageManager == null) clientStorageManager = new ClientStorageManager(this);
+        if (clientStorageManager == null) {
+            clientStorageManager = new ClientStorageManager(this, factory.getClientStorageProviderTimeout());
+        }
         return clientStorageManager;
     }
 

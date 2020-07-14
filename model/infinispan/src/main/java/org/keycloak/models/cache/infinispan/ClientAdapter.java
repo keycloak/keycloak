@@ -612,18 +612,18 @@ public class ClientAdapter implements ClientModel, CachedObject {
     }
 
     @Override
-    public Set<RoleModel> getRoles() {
-        return cacheSession.getClientRoles(cachedRealm, this);
+    public Stream<RoleModel> getRolesStream() {
+        return cacheSession.getClientRolesStream(cachedRealm, this);
     }
     
     @Override
-    public Set<RoleModel> getRoles(Integer first, Integer max) {
-        return cacheSession.getClientRoles(cachedRealm, this, first, max);
+    public Stream<RoleModel> getRolesStream(Integer first, Integer max) {
+        return cacheSession.getClientRolesStream(cachedRealm, this, first, max);
     }
     
     @Override
-    public Set<RoleModel> searchForRoles(String search, Integer first, Integer max) {
-        return cacheSession.searchForClientRoles(cachedRealm, this, search, first, max);
+    public Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
+        return cacheSession.searchForClientRolesStream(cachedRealm, this, search, first, max);
     }
 
     @Override

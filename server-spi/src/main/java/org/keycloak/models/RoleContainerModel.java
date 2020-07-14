@@ -25,6 +25,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -47,12 +49,30 @@ public interface RoleContainerModel {
 
     boolean removeRole(RoleModel role);
 
-    Set<RoleModel> getRoles();
-    
-    Set<RoleModel> getRoles(Integer firstResult, Integer maxResults);
+    // TODO switch all usages to the stream variant
+    @Deprecated
+    default Set<RoleModel> getRoles() {
+        return getRolesStream().collect(Collectors.toSet());
+    }
 
-    Set<RoleModel> searchForRoles(String search, Integer first, Integer max);
-    
+    Stream<RoleModel> getRolesStream();
+
+    // TODO switch all usages to the stream variant
+    @Deprecated
+    default Set<RoleModel> getRoles(Integer firstResult, Integer maxResults) {
+        return getRolesStream(firstResult, maxResults).collect(Collectors.toSet());
+    }
+
+    Stream<RoleModel> getRolesStream(Integer firstResult, Integer maxResults);
+
+    // TODO switch all usages to the stream variant
+    @Deprecated
+    default Set<RoleModel> searchForRoles(String search, Integer first, Integer max) {
+        return searchForRolesStream(search, first, max).collect(Collectors.toSet());
+    }
+
+    Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max);
+
     List<String> getDefaultRoles();
 
     void addDefaultRole(String name);
