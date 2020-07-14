@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -79,11 +78,11 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
     }
 
     @Override
-    public List<ClientModel> searchClientsByClientId(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
+    public Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
         if (clientId != null && this.clientId.toLowerCase().contains(clientId.toLowerCase())) {
-            return Collections.singletonList(new ClientAdapter(realm));
+            return Stream.of(new ClientAdapter(realm));
         }
-        return Collections.EMPTY_LIST;
+        return Stream.empty();
     }
 
     public class ClientAdapter extends AbstractReadOnlyClientStorageAdapter {

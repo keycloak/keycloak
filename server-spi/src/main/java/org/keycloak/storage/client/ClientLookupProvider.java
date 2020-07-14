@@ -20,6 +20,8 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Abstraction interface for lookoup of clients by id and clientId.  These methods required for participating in login flows.
@@ -71,10 +73,14 @@ public interface ClientLookupProvider {
      * @param clientId Searched substring of the public client
      *   identifier ({@code client_id} in OIDC or {@code entityID} in SAML.)
      * @param firstResult First result to return. Ignored if negative or {@code null}.
-     * @param maxResults Maximim number of results to return. Ignored if negative or {@code null}.
-     * @return Model of the client, or {@code null} if no client is found.
+     * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
+     * @return List of ClientModel or an empty list if no client is found.
+     * @deprecated Use {@link #searchClientsByClientIdStream(org.keycloak.models.RealmModel, java.lang.String, java.lang.Integer, java.lang.Integer)} instead.
      */
-    List<ClientModel> searchClientsByClientId(RealmModel realm, String clientId, Integer firstResult, Integer maxResults);
+    @Deprecated
+    default List<ClientModel> searchClientsByClientId(String clientId, Integer firstResult, Integer maxResults, RealmModel realm) {
+        return searchClientsByClientIdStream(realm, clientId, firstResult, maxResults).collect(Collectors.toList());
+    }
 
     /**
      * Case-insensitive search for clients that contain the given string in their public client identifier.
@@ -82,11 +88,8 @@ public interface ClientLookupProvider {
      * @param clientId Searched substring of the public client
      *   identifier ({@code client_id} in OIDC or {@code entityID} in SAML.)
      * @param firstResult First result to return. Ignored if negative or {@code null}.
-     * @param maxResults Maximim number of results to return. Ignored if negative or {@code null}.
-     * @return Models of the matching clients. Never returns {@code null}.
-     * @deprecated Use {@link #searchClientsByClientId(org.keycloak.models.RealmModel, java.lang.String, java.lang.Integer, java.lang.Integer)} instead.
+     * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
+     * @return Stream of ClientModel or an empty stream if no client is found.
      */
-    default List<ClientModel> searchClientsByClientId(String clientId, Integer firstResult, Integer maxResults, RealmModel realm) {
-        return searchClientsByClientId(realm, clientId, firstResult, maxResults);
-    }
+    Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults);
 }

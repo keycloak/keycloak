@@ -29,6 +29,7 @@ import org.keycloak.storage.client.ClientStorageProvider;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -755,13 +756,13 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public List<ClientModel> getClients() {
-        return cacheSession.getClients(this);
+    public Stream<ClientModel> getClientsStream() {
+        return cacheSession.getClientsStream(this);
     }
 
     @Override
-    public List<ClientModel> getAlwaysDisplayInConsoleClients() {
-        return cacheSession.getAlwaysDisplayInConsoleClients(this);
+    public Stream<ClientModel> getAlwaysDisplayInConsoleClientsStream() {
+        return cacheSession.getAlwaysDisplayInConsoleClientsStream(this);
     }
 
     @Override
@@ -791,13 +792,13 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public List<ClientModel> searchClientByClientId(String clientId, Integer firstResult, Integer maxResults) {
-        return cacheSession.searchClientsByClientId(this, clientId, firstResult, maxResults);
+    public Stream<ClientModel> searchClientByClientIdStream(String clientId, Integer firstResult, Integer maxResults) {
+        return cacheSession.searchClientsByClientIdStream(this, clientId, firstResult, maxResults);
     }
 
     @Override
-    public List<ClientModel> getClients(Integer firstResult, Integer maxResults) {
-        return cacheSession.getClients(this, firstResult, maxResults);
+    public Stream<ClientModel> getClientsStream(Integer firstResult, Integer maxResults) {
+        return cacheSession.getClientsStream(this, firstResult, maxResults);
     }
 
     @Override
@@ -1022,18 +1023,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public Set<RoleModel> getRoles() {
-        return cacheSession.getRealmRoles(this);
+    public Stream<RoleModel> getRolesStream() {
+        return cacheSession.getRealmRolesStream(this);
     }
     
     @Override
-    public Set<RoleModel> getRoles(Integer first, Integer max) {
-        return cacheSession.getRealmRoles(this, first, max);
+    public Stream<RoleModel> getRolesStream(Integer first, Integer max) {
+        return cacheSession.getRealmRolesStream(this, first, max);
     }
 
     @Override
-    public Set<RoleModel> searchForRoles(String search, Integer first, Integer max) {
-        return cacheSession.searchForRoles(this, search, first, max);
+    public Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
+        return cacheSession.searchForRolesStream(this, search, first, max);
     }
     
     @Override

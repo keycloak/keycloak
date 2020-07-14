@@ -22,6 +22,8 @@ import org.keycloak.provider.Provider;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -81,16 +83,44 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
 
     RoleModel getRealmRole(RealmModel realm, String name);
 
-    Set<RoleModel> getRealmRoles(RealmModel realm);
-    
-    Set<RoleModel> getRealmRoles(RealmModel realm, Integer first, Integer max);
-    
-    Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client, Integer first, Integer max);
-    
-    Set<RoleModel> searchForClientRoles(RealmModel realm, ClientModel client, String search, Integer first,
-            Integer max);
-    
-    Set<RoleModel> searchForRoles(RealmModel realm, String search, Integer first, Integer max);
+    // TODO switch all usages to the stream variant
+    @Deprecated
+    default Set<RoleModel> getRealmRoles(RealmModel realm) {
+        return getRealmRolesStream(realm).collect(Collectors.toSet());
+    }
+
+    Stream<RoleModel> getRealmRolesStream(RealmModel realm);
+
+    @Deprecated
+    default Set<RoleModel> getRealmRoles(RealmModel realm, Integer first, Integer max) {
+        return getRealmRolesStream(realm, first, max).collect(Collectors.toSet());
+    }
+
+    Stream<RoleModel> getRealmRolesStream(RealmModel realm, Integer first, Integer max);
+
+    // TODO switch all usages to the stream variant
+    @Deprecated
+    default Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client, Integer first, Integer max) {
+        return getClientRolesStream(realm, client, first, max).collect(Collectors.toSet());
+    }
+
+    Stream<RoleModel> getClientRolesStream(RealmModel realm, ClientModel client, Integer first, Integer max);
+
+    @Deprecated
+    default Set<RoleModel> searchForClientRoles(RealmModel realm, ClientModel client, String search, Integer first,
+            Integer max) {
+        return searchForClientRolesStream(realm, client, search, first, max).collect(Collectors.toSet());
+    }
+
+    Stream<RoleModel> searchForClientRolesStream(RealmModel realm, ClientModel client, String search, Integer first,
+                                                Integer max);
+
+    @Deprecated
+    default Set<RoleModel> searchForRoles(RealmModel realm, String search, Integer first, Integer max) {
+        return searchForRolesStream(realm, search, first, max).collect(Collectors.toSet());
+    }
+
+    Stream<RoleModel> searchForRolesStream(RealmModel realm, String search, Integer first, Integer max);
 
     boolean removeRole(RealmModel realm, RoleModel role);
 
@@ -114,7 +144,9 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
 
     /**
      * TODO: To be @deprecated Use the corresponding method from {@link ??RoleProvider}. */
-    public Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client);
+    default public Stream<RoleModel> getClientRolesStream(RealmModel realm, ClientModel client) {
+        return getClientRolesStream(realm, client, null, null);
+    }
 
     /**
      * TODO: To be @deprecated Use the corresponding method from {@link ??RoleProvider}. */
@@ -154,13 +186,8 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
     /**
      * @deprecated Use the corresponding method from {@link ClientProvider}. */
     @Override
-    public List<ClientModel> getClients(RealmModel realm, Integer firstResult, Integer maxResults);
-
-    /**
-     * @deprecated Use the corresponding method from {@link ClientProvider}. */
-    @Override
     default List<ClientModel> searchClientsByClientId(String clientId, Integer firstResult, Integer maxResults, RealmModel realm) {
-        return searchClientsByClientId(realm, clientId, firstResult, maxResults);
+        return searchClientsByClientId(clientId, firstResult, maxResults, realm);
     }
 
     /**
@@ -172,11 +199,6 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
      * @deprecated Use the corresponding method from {@link ClientProvider}. */
     @Override
     default ClientModel getClientById(String id, RealmModel realm) { return getClientById(realm, id); }
-
-    /**
-     * @deprecated Use the corresponding method from {@link ClientProvider}. */
-    @Override
-    public List<ClientModel> searchClientsByClientId(RealmModel realm, String clientId, Integer firstResult, Integer maxResults);
 
     /**
      * @deprecated Use the corresponding method from {@link ClientProvider}. */
@@ -196,10 +218,4 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
     /**
      * @deprecated Use the corresponding method from {@link ClientProvider}. */
     default boolean removeClient(String id, RealmModel realm) { return this.removeClient(realm, id); }
-
-    /**
-     * @deprecated Use the corresponding method from {@link ClientProvider}. */
-    @Override
-    public List<ClientModel> getAlwaysDisplayInConsoleClients(RealmModel realm);
-
 }

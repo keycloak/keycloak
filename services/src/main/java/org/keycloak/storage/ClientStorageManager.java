@@ -28,9 +28,11 @@ import org.keycloak.storage.client.ClientLookupProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderFactory;
 import org.keycloak.storage.client.ClientStorageProviderModel;
+import org.keycloak.utils.ServicesUtils;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -40,6 +42,8 @@ public class ClientStorageManager implements ClientProvider {
     private static final Logger logger = Logger.getLogger(ClientStorageManager.class);
 
     protected KeycloakSession session;
+
+    private long clientStorageProviderTimeout;
 
     public static boolean isStorageProviderEnabled(RealmModel realm, String providerId) {
         ClientStorageProviderModel model = getStorageProviderModel(realm, providerId);
@@ -118,8 +122,9 @@ public class ClientStorageManager implements ClientProvider {
     }
 
 
-    public ClientStorageManager(KeycloakSession session) {
+    public ClientStorageManager(KeycloakSession session, long clientStorageProviderTimeout) {
         this.session = session;
+        this.clientStorageProviderTimeout = clientStorageProviderTimeout;
     }
 
     @Override
@@ -147,17 +152,22 @@ public class ClientStorageManager implements ClientProvider {
         return null;
     }
 
+    /**
+     * Obtaining clients from an external client storage is time-bounded. In case the external client storage
+     * isn't available at least clients from a local storage are returned. For this purpose
+     * the {@link org.keycloak.services.DefaultKeycloakSessionFactory#getClientStorageProviderTimeout()} property is used.
+     * Default value is 3000 milliseconds and it's configurable.
+     * See {@link org.keycloak.services.DefaultKeycloakSessionFactory} for details.
+     */
     @Override
-    public List<ClientModel> searchClientsByClientId(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
-        List<ClientModel> clients = session.clientLocalStorage().searchClientsByClientId(realm, clientId,  firstResult, maxResults);
-        if (clients != null) {
-            return clients;
-        }
-        for (ClientLookupProvider provider : getEnabledStorageProviders(session, realm, ClientLookupProvider.class)) {
-            clients = provider.searchClientsByClientId(realm, clientId, firstResult, maxResults);
-            if (clients != null) return clients;
-        }
-        return null;
+    public Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
+        Stream<ClientModel> local = session.clientLocalStorage().searchClientsByClientIdStream(realm, clientId,  firstResult, maxResults);
+        Stream<ClientModel> ext = getEnabledStorageProviders(session, realm, ClientLookupProvider.class).stream()
+                .flatMap(ServicesUtils.timeBound(session,
+                        clientStorageProviderTimeout,
+                        p -> ((ClientLookupProvider) p).searchClientsByClientIdStream(realm, clientId, firstResult, maxResults)));
+
+        return Stream.concat(local, ext);
     }
 
     @Override
@@ -171,13 +181,13 @@ public class ClientStorageManager implements ClientProvider {
     }
 
     @Override
-    public List<ClientModel> getClients(RealmModel realm, Integer firstResult, Integer maxResults) {
-       return session.clientLocalStorage().getClients(realm, firstResult, maxResults);
+    public Stream<ClientModel> getClientsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
+       return session.clientLocalStorage().getClientsStream(realm, firstResult, maxResults);
     }
 
     @Override
-    public List<ClientModel> getClients(RealmModel realm) {
-        return session.clientLocalStorage().getClients(realm);
+    public Stream<ClientModel> getClientsStream(RealmModel realm) {
+        return session.clientLocalStorage().getClientsStream(realm);
     }
 
     @Override
@@ -186,8 +196,8 @@ public class ClientStorageManager implements ClientProvider {
     }
 
     @Override
-    public List<ClientModel> getAlwaysDisplayInConsoleClients(RealmModel realm) {
-        return session.clientLocalStorage().getAlwaysDisplayInConsoleClients(realm);
+    public Stream<ClientModel> getAlwaysDisplayInConsoleClientsStream(RealmModel realm) {
+        return session.clientLocalStorage().getAlwaysDisplayInConsoleClientsStream(realm);
     }
 
     @Override

@@ -59,6 +59,12 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
     // TODO: Likely should be changed to int and use Time.currentTime() to be compatible with all our "time" reps
     protected long serverStartupTimestamp;
 
+    /**
+     * Timeout is used as time boundary for obtaining clients from an external client storage. Default value is set
+     * to 3000 milliseconds and it's configurable.
+     */
+    private long clientStorageProviderTimeout;
+
     @Override
     public void register(ProviderEventListener listener) {
         listeners.add(listener);
@@ -78,6 +84,8 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
 
     public void init() {
         serverStartupTimestamp = System.currentTimeMillis();
+
+        clientStorageProviderTimeout = Config.scope("client").getLong("storageProviderTimeout", 3000L);
 
         ProviderManager pm = new ProviderManager(KeycloakDeploymentInfo.create().services(), getClass().getClassLoader(), Config.scope().getArray("providers"));
         spis.addAll(pm.loadSpis());
@@ -349,6 +357,10 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
     protected boolean isInternal(ProviderFactory<?> factory) {
         String packageName = factory.getClass().getPackage().getName();
         return packageName.startsWith("org.keycloak") && !packageName.startsWith("org.keycloak.examples");
+    }
+
+    public long getClientStorageProviderTimeout() {
+        return clientStorageProviderTimeout;
     }
 
     /**

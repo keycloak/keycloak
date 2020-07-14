@@ -26,9 +26,8 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.regex.Matcher;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -76,9 +75,9 @@ public class OpenshiftClientStorageProvider implements ClientStorageProvider {
     }
 
     @Override
-    public List<ClientModel> searchClientsByClientId(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
+    public Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
         // TODO not sure about this, but I don't see this implementation using the search now
-        return Collections.singletonList(getClientByClientId(realm, clientId));
+        return Stream.of(getClientByClientId(realm, clientId));
     }
 
     @Override

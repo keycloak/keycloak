@@ -671,18 +671,18 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     }
 
     @Override
-    public Set<RoleModel> getRoles() {
-        return session.realms().getClientRoles(realm, this);
+    public Stream<RoleModel> getRolesStream() {
+        return session.realms().getClientRolesStream(realm, this, null, null);
     }
 
     @Override
-    public Set<RoleModel> getRoles(Integer first, Integer max) {
-        return session.realms().getClientRoles(realm, this, first, max);
+    public Stream<RoleModel> getRolesStream(Integer first, Integer max) {
+        return session.realms().getClientRolesStream(realm, this, first, max);
     }
 
     @Override
-    public Set<RoleModel> searchForRoles(String search, Integer first, Integer max) {
-        return session.realms().searchForClientRoles(realm, this, search, first, max);
+    public Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
+        return session.realms().searchForClientRolesStream(realm, this, search, first, max);
     }
 
     @Override

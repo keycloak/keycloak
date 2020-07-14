@@ -31,6 +31,8 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 /**
@@ -538,18 +540,18 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
-    public List<ClientModel> getClients(RealmModel realm, Integer firstResult, Integer maxResults) {
-        return getClientDelegate().getClients(realm, firstResult, maxResults);
+    public Stream<ClientModel> getClientsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
+        return getClientDelegate().getClientsStream(realm, firstResult, maxResults);
     }
 
     @Override
-    public List<ClientModel> getClients(RealmModel realm) {
-        return getClientDelegate().getClients(realm);
+    public Stream<ClientModel> getClientsStream(RealmModel realm) {
+        return getClientDelegate().getClientsStream(realm);
     }
 
     @Override
-    public List<ClientModel> getAlwaysDisplayInConsoleClients(RealmModel realm) {
-        return getClientDelegate().getAlwaysDisplayInConsoleClients(realm);
+    public Stream<ClientModel> getAlwaysDisplayInConsoleClientsStream(RealmModel realm) {
+        return getClientDelegate().getAlwaysDisplayInConsoleClientsStream(realm);
     }
 
     @Override
@@ -604,11 +606,11 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
-    public Set<RoleModel> getRealmRoles(RealmModel realm) {
+    public Stream<RoleModel> getRealmRolesStream(RealmModel realm) {
         String cacheKey = getRolesCacheKey(realm.getId());
         boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId());
         if (queryDB) {
-            return getRealmDelegate().getRealmRoles(realm);
+            return getRealmDelegate().getRealmRolesStream(realm);
         }
 
         RoleListQuery query = cache.get(cacheKey, RoleListQuery.class);
@@ -618,33 +620,33 @@ public class RealmCacheSession implements CacheRealmProvider {
 
         if (query == null) {
             Long loaded = cache.getCurrentRevision(cacheKey);
+            // intentionally using deprecated method here because role ids needs to be collected for cashing while the stream returned
             Set<RoleModel> model = getRealmDelegate().getRealmRoles(realm);
             if (model == null) return null;
-            Set<String> ids = new HashSet<>();
-            for (RoleModel role : model) ids.add(role.getId());
+            Set<String> ids = model.stream().map(RoleModel::getId).collect(Collectors.toSet());
             query = new RoleListQuery(loaded, cacheKey, realm, ids);
             logger.tracev("adding realm roles cache miss: realm {0} key {1}", realm.getName(), cacheKey);
             cache.addRevisioned(query, startupRevision);
-            return model;
+            return model.stream();
         }
         Set<RoleModel> list = new HashSet<>();
         for (String id : query.getRoles()) {
             RoleModel role = session.realms().getRoleById(id, realm);
             if (role == null) {
                 invalidations.add(cacheKey);
-                return getRealmDelegate().getRealmRoles(realm);
+                return getRealmDelegate().getRealmRolesStream(realm);
             }
             list.add(role);
         }
-        return list;
+        return list.stream();
     }
 
     @Override
-    public Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client) {
+    public Stream<RoleModel> getClientRolesStream(RealmModel realm, ClientModel client) {
         String cacheKey = getRolesCacheKey(client.getId());
         boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(client.getId()) || listInvalidations.contains(realm.getId());
         if (queryDB) {
-            return getRealmDelegate().getClientRoles(realm, client);
+            return getRealmDelegate().getClientRolesStream(realm, client, null, null);
         }
 
         RoleListQuery query = cache.get(cacheKey, RoleListQuery.class);
@@ -654,46 +656,46 @@ public class RealmCacheSession implements CacheRealmProvider {
 
         if (query == null) {
             Long loaded = cache.getCurrentRevision(cacheKey);
-            Set<RoleModel> model = getRealmDelegate().getClientRoles(realm, client);
+            // intentionally using deprecated method here because role ids needs to be collected for cashing while the stream returned
+            Set<RoleModel> model = getRealmDelegate().getClientRoles(realm, client, null, null);
             if (model == null) return null;
-            Set<String> ids = new HashSet<>();
-            for (RoleModel role : model) ids.add(role.getId());
+            Set<String> ids = model.stream().map(RoleModel::getId).collect(Collectors.toSet());
             query = new RoleListQuery(loaded, cacheKey, realm, ids, client.getClientId());
             logger.tracev("adding client roles cache miss: client {0} key {1}", client.getClientId(), cacheKey);
             cache.addRevisioned(query, startupRevision);
-            return model;
+            return model.stream();
         }
         Set<RoleModel> list = new HashSet<>();
         for (String id : query.getRoles()) {
             RoleModel role = session.realms().getRoleById(id, realm);
             if (role == null) {
                 invalidations.add(cacheKey);
-                return getRealmDelegate().getClientRoles(realm, client);
+                return getRealmDelegate().getClientRolesStream(realm, client, null, null);
             }
             list.add(role);
         }
-        return list;
+        return list.stream();
     }
     
     @Override
-    public Set<RoleModel> getRealmRoles(RealmModel realm, Integer first, Integer max) {
-        return getRealmDelegate().getRealmRoles(realm, first, max);
+    public Stream<RoleModel> getRealmRolesStream(RealmModel realm, Integer first, Integer max) {
+        return getRealmDelegate().getRealmRolesStream(realm, first, max);
     }
 
     @Override
-    public Set<RoleModel> getClientRoles(RealmModel realm, ClientModel client, Integer first, Integer max) {
-        return getRealmDelegate().getClientRoles(realm, client, first, max);
+    public Stream<RoleModel> getClientRolesStream(RealmModel realm, ClientModel client, Integer first, Integer max) {
+        return getRealmDelegate().getClientRolesStream(realm, client, first, max);
     }
     
     @Override
-    public Set<RoleModel> searchForClientRoles(RealmModel realm, ClientModel client, String search, Integer first,
+    public Stream<RoleModel> searchForClientRolesStream(RealmModel realm, ClientModel client, String search, Integer first,
             Integer max) {
-        return getRealmDelegate().searchForClientRoles(realm, client, search, first, max);
+        return getRealmDelegate().searchForClientRolesStream(realm, client, search, first, max);
     }
 
     @Override
-    public Set<RoleModel> searchForRoles(RealmModel realm, String search, Integer first, Integer max) {
-        return getRealmDelegate().searchForRoles(realm, search, first, max);
+    public Stream<RoleModel> searchForRolesStream(RealmModel realm, String search, Integer first, Integer max) {
+        return getRealmDelegate().searchForRolesStream(realm, search, first, max);
     }
 
     @Override
@@ -1128,8 +1130,8 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
-    public List<ClientModel> searchClientsByClientId(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
-        return getClientDelegate().searchClientsByClientId(realm, clientId, firstResult, maxResults);
+    public Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
+        return getClientDelegate().searchClientsByClientIdStream(realm, clientId, firstResult, maxResults);
     }
 
     @Override

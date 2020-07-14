@@ -29,9 +29,7 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.common.Serialization;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -134,15 +132,15 @@ public class MapClientProvider implements ClientProvider {
     }
 
     @Override
-    public List<ClientModel> getClients(RealmModel realm, Integer firstResult, Integer maxResults) {
+    public Stream<ClientModel> getClientsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
         Stream<ClientModel> s = getClientsStream(realm);
-        if (firstResult >= 0) {
+        if (firstResult != null && firstResult >= 0) {
             s = s.skip(firstResult);
         }
-        if (maxResults >= 0) {
+        if (maxResults != null && maxResults >= 0) {
             s = s.limit(maxResults);
         }
-        return s.collect(Collectors.toList());
+        return s;
     }
 
     private Stream<MapClientEntity> getNotRemovedUpdatedClientsStream() {
@@ -152,18 +150,13 @@ public class MapClientProvider implements ClientProvider {
         return Stream.concat(tx.createdValuesStream(clientStore.keySet()), updatedAndNotRemovedClientsStream);
     }
 
-//    @Override
+    @Override
     public Stream<ClientModel> getClientsStream(RealmModel realm) {
         return getNotRemovedUpdatedClientsStream()
           .filter(entityRealmFilter(realm))
           .sorted(COMPARE_BY_CLIENT_ID)
           .map(entityToAdapterFunc(realm))
         ;
-    }
-
-    @Override
-    public List<ClientModel> getClients(RealmModel realm) {
-        return getClientsStream(realm).collect(Collectors.toList());
     }
 
     @Override
@@ -194,10 +187,9 @@ public class MapClientProvider implements ClientProvider {
     }
 
     @Override
-    public List<ClientModel> getAlwaysDisplayInConsoleClients(RealmModel realm) {
+    public Stream<ClientModel> getAlwaysDisplayInConsoleClientsStream(RealmModel realm) {
         return getClientsStream(realm)
-                .filter(ClientModel::isAlwaysDisplayInConsole)
-                .collect(Collectors.toList());
+                .filter(ClientModel::isAlwaysDisplayInConsole);
     }
 
     @Override
@@ -285,9 +277,9 @@ public class MapClientProvider implements ClientProvider {
     }
 
     @Override
-    public List<ClientModel> searchClientsByClientId(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
+    public Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
         if (clientId == null) {
-            return Collections.EMPTY_LIST;
+            return Stream.empty();
         }
         String clientIdLower = clientId.toLowerCase();
         Stream<MapClientEntity> s = getNotRemovedUpdatedClientsStream()
@@ -295,17 +287,14 @@ public class MapClientProvider implements ClientProvider {
           .filter(entity -> entity.getClientId() != null && entity.getClientId().toLowerCase().contains(clientIdLower))
           .sorted(COMPARE_BY_CLIENT_ID);
 
-        if (firstResult >= 0) {
+        if (firstResult != null && firstResult >= 0) {
             s = s.skip(firstResult);
         }
-        if (maxResults >= 0) {
+        if (maxResults != null && maxResults >= 0) {
             s = s.limit(maxResults);
         }
 
-        return s
-          .map(entityToAdapterFunc(realm))
-          .collect(Collectors.toList())
-        ;
+        return s.map(entityToAdapterFunc(realm));
     }
 
     @Override
