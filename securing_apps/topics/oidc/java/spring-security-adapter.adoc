@@ -271,7 +271,7 @@ By Default, the Spring Security Adapter looks for a `keycloak.json` configuratio
 ----
 
 @Bean
-public KeycloakConfigResolver KeycloakConfigResolver() {
+public KeycloakConfigResolver keycloakConfigResolver() {
     return new KeycloakSpringBootConfigResolver();
 }
 
