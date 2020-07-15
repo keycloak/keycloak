@@ -148,6 +148,7 @@ public abstract class KeycloakPropertiesConfigSource extends PropertiesConfigSou
             case "hibernate-orm":
             case "datasource":
             case "http":
+            case "vertx":
             case "log":
                 namespace = NS_QUARKUS;
                 break;

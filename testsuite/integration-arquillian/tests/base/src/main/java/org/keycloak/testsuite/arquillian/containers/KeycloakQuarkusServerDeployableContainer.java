@@ -237,7 +237,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         SSLSocketFactory socketFactory;
 
         try {
-            sslContext = SSLContext.getInstance("SSL");
+            sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
             socketFactory = sslContext.getSocketFactory();
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
