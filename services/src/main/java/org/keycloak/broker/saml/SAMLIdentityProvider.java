@@ -166,6 +166,9 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         JaxrsSAML2BindingBuilder binding = buildLogoutBinding(session, userSession, realm);
         try {
             LogoutRequestType logoutRequest = buildLogoutRequest(userSession, uriInfo, realm, singleLogoutServiceUrl);
+            if (logoutRequest.getDestination() != null) {
+                singleLogoutServiceUrl = logoutRequest.getDestination().toString();
+            }
             int status = SimpleHttp.doPost(singleLogoutServiceUrl, session)
                     .param(GeneralConstants.SAML_REQUEST_KEY, binding.postBinding(SAML2Request.convert(logoutRequest)).encoded())
                     .param(GeneralConstants.RELAY_STATE, userSession.getId()).asStatus();
@@ -190,6 +193,9 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
        } else {
             try {
                 LogoutRequestType logoutRequest = buildLogoutRequest(userSession, uriInfo, realm, singleLogoutServiceUrl);
+                if (logoutRequest.getDestination() != null) {
+                    singleLogoutServiceUrl = logoutRequest.getDestination().toString();
+                }
                 JaxrsSAML2BindingBuilder binding = buildLogoutBinding(session, userSession, realm);
                 if (getConfig().isPostBindingLogout()) {
                     return binding.postBinding(SAML2Request.convert(logoutRequest)).request(singleLogoutServiceUrl);
