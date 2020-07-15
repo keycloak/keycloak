@@ -380,6 +380,7 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
                     OpenShiftTokenReviewRequestRepresentation request = new OpenShiftTokenReviewRequestRepresentation();
                     OpenShiftTokenReviewRequestRepresentation.Spec spec = new OpenShiftTokenReviewRequestRepresentation.Spec();
                     spec.setToken(token);
+                    spec.setAudiences(new String[]{"account"});
                     request.setSpec(spec);
 
                     HttpPost post = new HttpPost(url);

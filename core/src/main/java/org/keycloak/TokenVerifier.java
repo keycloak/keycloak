@@ -137,6 +137,12 @@ public class TokenVerifier<T extends JsonWebToken> {
     public static class AudienceCheck implements Predicate<JsonWebToken> {
 
         private final String expectedAudience;
+        private boolean isOptional;
+
+        public AudienceCheck(String expectedAudience, boolean isOptional) {
+            this.expectedAudience = expectedAudience;
+            this.isOptional = isOptional;
+        }
 
         public AudienceCheck(String expectedAudience) {
             this.expectedAudience = expectedAudience;
@@ -150,6 +156,9 @@ public class TokenVerifier<T extends JsonWebToken> {
 
             String[] audience = t.getAudience();
             if (audience == null) {
+                if (isOptional) {
+                    return true;
+                }
                 throw new VerificationException("No audience in the token");
             }
 
@@ -271,18 +280,18 @@ public class TokenVerifier<T extends JsonWebToken> {
         checks.remove(check);
     }
 
-    private <P extends Predicate<? super T>> TokenVerifier<T> replaceCheck(Class<? extends Predicate<?>> checkClass, boolean active, P predicate) {
+    private <P extends Predicate<? super T>> TokenVerifier<T> replaceCheck(Class<? extends Predicate<?>> checkClass, boolean active, P... predicate) {
         removeCheck(checkClass);
         if (active) {
-            checks.add(predicate);
+            checks.addAll(Arrays.asList(predicate));
         }
         return this;
     }
 
-    private <P extends Predicate<? super T>> TokenVerifier<T> replaceCheck(Predicate<? super T> check, boolean active, P predicate) {
+    private <P extends Predicate<? super T>> TokenVerifier<T> replaceCheck(Predicate<? super T> check, boolean active, P... predicate) {
         removeCheck(check);
         if (active) {
-            checks.add(predicate);
+            checks.addAll(Arrays.asList(predicate));
         }
         return this;
     }
@@ -366,11 +375,29 @@ public class TokenVerifier<T extends JsonWebToken> {
     /**
      * Add check for verifying that token contains the expectedAudience
      *
-     * @param expectedAudience Audience, which needs to be in the target token. Can't be null
+     * @param expectedAudiences Audiences, which needs to be in the target token. Can be <code>null</code>.
      * @return This token verifier
      */
-    public TokenVerifier<T> audience(String expectedAudience) {
-        return this.replaceCheck(AudienceCheck.class, true, new AudienceCheck(expectedAudience));
+    public TokenVerifier<T> audience(String... expectedAudiences) {
+        return audience(false, expectedAudiences);
+    }
+
+    /**
+     * Add check for verifying that token contains the expectedAudience
+     *
+     * @param optional - <code>true</code> if audience check can accept <code>null</code> audience in token.
+     * @param expectedAudiences Audiences, which needs to be in the target token. Can be <code>null</code>.
+     * @return This token verifier
+     */
+    public TokenVerifier<T> audience(boolean optional, String... expectedAudiences) {
+        if (expectedAudiences != null) {
+            AudienceCheck[] audienceChecks = new AudienceCheck[expectedAudiences.length];
+            for (int i = 0; i < expectedAudiences.length; ++i) {
+                audienceChecks[i] = new AudienceCheck(expectedAudiences[i], optional);
+            }
+            return this.replaceCheck(AudienceCheck.class, true, audienceChecks);
+        }
+        return this;
     }
 
     /**
