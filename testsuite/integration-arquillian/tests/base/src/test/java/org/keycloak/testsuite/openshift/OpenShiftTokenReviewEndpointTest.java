@@ -18,6 +18,7 @@ import org.keycloak.events.Details;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.openshift.OpenShiftTokenReviewRequestRepresentation;
@@ -84,7 +85,19 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
         client.setPublicClient(false);
         client.setClientAuthenticatorType("testsuite-client-dummy");
 
-        testRealm.getUsers().add(UserBuilder.create().username("groups-user").password("password").addGroups("/topGroup", "/topGroup/level2group").build());
+        testRealm.getUsers().add(
+                UserBuilder.create()
+                        .username("groups-user")
+                        .password("password")
+                        .addGroups("/topGroup", "/topGroup/level2group")
+                        .role("account", "view-profile")
+                        .build());
+
+        testRealm.getUsers().add(
+                UserBuilder.create()
+                        .username("empty-audience")
+                        .password("password")
+                        .build());
     }
 
     @Before
@@ -228,29 +241,10 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
     }
 
     @Test
-    public void emptyScope() throws Exception {
-        ClientRepresentation clientRep = testRealm().clients().findByClientId("test-app").get(0);
-        List<ClientScopeRepresentation> scopesBefore = testRealm().clients().get(clientRep.getId()).getDefaultClientScopes();
-
-        try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, "test", clientRep.getClientId())
-                .setConsentRequired(false)
-                .setFullScopeAllowed(false)
-                .setDefaultClientScopes(Collections.EMPTY_LIST)
-                .update()) {
-
-            oauth.openid(false);
-            try {
-                new Review()
-                        .invoke()
-                        .assertSuccess()
-                        .assertEmptyScope();
-            } finally {
-                oauth.openid(true);
-            }
-        }
-        // The default client scopes should be same like before.
-        int scopesAfterSize = testRealm().clients().get(clientRep.getId()).getDefaultClientScopes().size();
-        assertEquals(scopesBefore.size(), scopesAfterSize);
+    public void emptyAudience() {
+        new Review().username("empty-audience")
+                .invoke()
+                .assertError(401, "Token verification failure");
     }
 
     @Test
@@ -382,6 +376,7 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
                     OpenShiftTokenReviewRequestRepresentation request = new OpenShiftTokenReviewRequestRepresentation();
                     OpenShiftTokenReviewRequestRepresentation.Spec spec = new OpenShiftTokenReviewRequestRepresentation.Spec();
                     spec.setToken(token);
+                    spec.setAudiences(new String[]{"account"});
                     request.setSpec(spec);
 
                     HttpPost post = new HttpPost(url);
