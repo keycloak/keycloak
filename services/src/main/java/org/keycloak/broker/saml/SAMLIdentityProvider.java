@@ -54,7 +54,6 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 
-
 /**
  * @author Pedro Igor
  */
@@ -167,7 +166,6 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         JaxrsSAML2BindingBuilder binding = buildLogoutBinding(session, userSession, realm);
         try {
             LogoutRequestType logoutRequest = buildLogoutRequest(userSession, uriInfo, realm, singleLogoutServiceUrl);
-
             int status = SimpleHttp.doPost(singleLogoutServiceUrl, session)
                     .param(GeneralConstants.SAML_REQUEST_KEY, binding.postBinding(SAML2Request.convert(logoutRequest)).encoded())
                     .param(GeneralConstants.RELAY_STATE, userSession.getId()).asStatus();
