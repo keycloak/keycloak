@@ -35,31 +35,30 @@ import io.vertx.ext.web.RoutingContext;
  */
 public class QuarkusRequestFilter extends AbstractRequestFilter implements Handler<RoutingContext> {
 
-    private static final String KEYCLOAK_SESSION_KEY = KeycloakSession.class.getName();
     private static final Handler<AsyncResult<Object>> EMPTY_RESULT = result -> {
         // we don't really care about the result because any exception thrown should be handled by the parent class
     };
 
     @Override
     public void handle(RoutingContext context) {
-        ClientConnection clientConnection = createClientConnection(context.request());
-
         // our code should always be run as blocking until we don't provide a better support for running non-blocking code
         // in the event loop
-        context.vertx().executeBlocking(promise -> filter(clientConnection, (session) -> {
-            try {
-                // we need to close the session before response is sent to the client, otherwise subsequent requests could
-                // not get the latest state because the session from the previous request is still being closed
-                // other methods from Vert.x to add a handler to the response works asynchronously
-                context.response().headersEndHandler(event -> close(session));
-                context.next();
-                promise.complete();
-            } catch (Exception cause) {
-                promise.fail(cause);
-                // re-throw so that the any exception is handled from parent
-                throw new RuntimeException(cause);
-            }
-        }), EMPTY_RESULT);
+        context.vertx().executeBlocking(promise -> {
+            filter(createClientConnection(context.request()), (session) -> {
+                try {
+                    // we need to close the session before response is sent to the client, otherwise subsequent requests could
+                    // not get the latest state because the session from the previous request is still being closed
+                    // other methods from Vert.x to add a handler to the response works asynchronously
+                    context.addHeadersEndHandler(event -> close(session));
+                    context.next();
+                    promise.complete();
+                } catch (Throwable cause) {
+                    promise.fail(cause);
+                    // re-throw so that the any exception is handled from parent
+                    throw new RuntimeException(cause);
+                }
+            });
+        }, false, EMPTY_RESULT);
     }
 
     @Override

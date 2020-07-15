@@ -133,7 +133,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
         if (httpClient == null) {
             synchronized(this) {
                 if (httpClient == null) {
-                    long socketTimeout = config.getLong("socket-timeout-millis", -1L);
+                    long socketTimeout = config.getLong("socket-timeout-millis", 5000L);
                     long establishConnectionTimeout = config.getLong("establish-connection-timeout-millis", -1L);
                     int maxPooledPerRoute = config.getInt("max-pooled-per-route", 64);
                     int connectionPoolSize = config.getInt("connection-pool-size", 128);
