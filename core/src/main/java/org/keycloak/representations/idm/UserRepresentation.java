@@ -59,6 +59,12 @@ public class UserRepresentation {
     protected Integer notBefore;
     protected String idcard;
     protected Long loginTimestamp;
+    protected String phone;
+    protected String policeNo;
+    protected String unitCode;
+    protected String xkUsername;
+    protected String xkPassword;
+    protected String roleName;
 
     @Deprecated
     protected Map<String, List<String>> applicationRoles;
@@ -300,5 +306,53 @@ public class UserRepresentation {
 
     public void setLoginTimestamp(Long loginTimestamp) {
         this.loginTimestamp = loginTimestamp;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getPoliceNo() {
+        return policeNo;
+    }
+
+    public void setPoliceNo(String policeNo) {
+        this.policeNo = policeNo;
+    }
+
+    public String getUnitCode() {
+        return unitCode;
+    }
+
+    public void setUnitCode(String unitCode) {
+        this.unitCode = unitCode;
+    }
+
+    public String getXkUsername() {
+        return xkUsername;
+    }
+
+    public void setXkUsername(String xkUsername) {
+        this.xkUsername = xkUsername;
+    }
+
+    public String getXkPassword() {
+        return xkPassword;
+    }
+
+    public void setXkPassword(String xkPassword) {
+        this.xkPassword = xkPassword;
+    }
+
+    public String getRoleName() {
+        return roleName;
+    }
+
+    public void setRoleName(String roleName) {
+        this.roleName = roleName;
     }
 }

@@ -206,6 +206,7 @@ public class UsersResource {
                                              @QueryParam("email") String email,
                                              @QueryParam("username") String username,
                                              @QueryParam("idcard") String idcard,
+                                             @QueryParam("unitCode") String unitCode,
                                              @QueryParam("first") Integer firstResult,
                                              @QueryParam("max") Integer maxResults,
                                              @QueryParam("attrName") String attrName,
@@ -237,7 +238,7 @@ public class UsersResource {
             }
         } else if (attrName != null && attrValue != null) {
             userModels = session.users().searchForUserByUserAttribute(attrName, attrValue, realm);
-        } else if (last != null || first != null || email != null || username != null) {
+        } else if (last != null || first != null || email != null || username != null || idcard!=null) {
             Map<String, String> attributes = new HashMap<>();
             if (last != null) {
                 attributes.put(UserModel.LAST_NAME, last);
@@ -253,6 +254,9 @@ public class UsersResource {
             }
             if (idcard != null) {
                 attributes.put(UserModel.IDCARD, idcard);
+            }
+            if (unitCode != null) {
+                attributes.put(UserModel.UNIT_CODE, unitCode);
             }
             if (exact != null) {
                 attributes.put(UserModel.EXACT, exact.toString());
@@ -295,7 +299,9 @@ public class UsersResource {
                                  @QueryParam("lastName") String last,
                                  @QueryParam("firstName") String first,
                                  @QueryParam("email") String email,
-                                 @QueryParam("username") String username) {
+                                 @QueryParam("username") String username,
+                                 @QueryParam("idcard") String idcard,
+                                 @QueryParam("unitCode") String unitCode) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
         userPermissionEvaluator.requireQuery();
 
@@ -321,6 +327,12 @@ public class UsersResource {
             }
             if (username != null) {
                 parameters.put(UserModel.USERNAME, username);
+            }
+            if (idcard != null) {
+                parameters.put(UserModel.IDCARD, idcard);
+            }
+            if (unitCode != null) {
+                parameters.put(UserModel.UNIT_CODE, unitCode);
             }
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(parameters, realm);
@@ -372,15 +384,6 @@ public class UsersResource {
         return results;
     }
 
-    @Path("count")
-    @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    public Integer getUsersCount() {
-        auth.users().requireView();
-
-        return session.users().getUsersCount(realm);
-    }
 
     @Path("username/{username}")
     @GET
@@ -389,7 +392,7 @@ public class UsersResource {
     public UserRepresentation getUserByUsername(final @PathParam("username") String username) {
         UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
-            if (auth.users().canQuery()) throw new NotFoundException("User not found");
+            if (auth.users().canQuery()) return  null;
             else throw new ForbiddenException();
         }
         return ModelToRepresentation.toRepresentation(session, realm, user);
@@ -403,7 +406,21 @@ public class UsersResource {
     public UserRepresentation getUserByIdcard(@PathParam("idcard") String idcard) {
         UserModel user = session.users().getUserByIdcard(idcard, realm);
         if (user == null) {
-            if (auth.users().canQuery()) throw new NotFoundException("User not found");
+            if (auth.users().canQuery()) return null;
+            else throw new ForbiddenException();
+        }
+        return ModelToRepresentation.toRepresentation(session, realm, user);
+    }
+
+
+    @GET
+    @NoCache
+    @Path("phone/{phone}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public UserRepresentation getUserByPhone(@PathParam("phone") String phone) {
+        UserModel user = session.users().getUserByPhone(phone, realm);
+        if (user == null) {
+            if (auth.users().canQuery()) return null;
             else throw new ForbiddenException();
         }
         return ModelToRepresentation.toRepresentation(session, realm, user);

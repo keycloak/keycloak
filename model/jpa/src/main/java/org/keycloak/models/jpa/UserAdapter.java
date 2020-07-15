@@ -392,7 +392,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         em.persist(entity);
         em.flush();
         em.detach(entity);
-
+        em.clear();
     }
 
     @Override
@@ -572,6 +572,56 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     @Override
     public void setLoginTimestamp(Long loginTimestamp) {
         user.setLoginTimestamp(loginTimestamp);
+    }
+
+    @Override
+    public String getPhone() {
+        return user.getPhone();
+    }
+
+    @Override
+    public void setPhone(String phone) {
+        user.setPhone(phone);
+    }
+
+    @Override
+    public String getPoliceNo() {
+        return user.getPoliceNo();
+    }
+
+    @Override
+    public void setPoliceNo(String policeNo) {
+        user.setPoliceNo(policeNo);
+    }
+
+    @Override
+    public String getUnitCode() {
+        return user.getUnitCode();
+    }
+
+    @Override
+    public void setUnitCode(String unitCode) {
+        user.setUnitCode(unitCode);
+    }
+
+    @Override
+    public String getXkUsername() {
+        return user.getXkUsername();
+    }
+
+    @Override
+    public void setXkUsername(String xkUsername) {
+        user.setXkUsername(xkUsername);
+    }
+
+    @Override
+    public String getXkPassword() {
+        return user.getXkPassword();
+    }
+
+    @Override
+    public void setXkPassword(String xkPassword) {
+        user.setXkPassword(xkPassword);
     }
 
     @Override

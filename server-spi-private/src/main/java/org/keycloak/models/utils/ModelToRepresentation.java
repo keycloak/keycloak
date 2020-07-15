@@ -57,6 +57,7 @@ import java.util.stream.Collectors;
 public class ModelToRepresentation {
 
     public static Set<String> REALM_EXCLUDED_ATTRIBUTES = new HashSet<>();
+
     static {
         REALM_EXCLUDED_ATTRIBUTES.add("displayName");
         REALM_EXCLUDED_ATTRIBUTES.add("displayNameHtml");
@@ -121,6 +122,7 @@ public class ModelToRepresentation {
         rep.setAttributes(group.getAttributes());
         rep.setUserCount(group.getUserCount());
         rep.setUserAllCount(group.getUserAllCount());
+        rep.setParent(group.getParentId());
         Map<String, List<String>> attributes = group.getAttributes();
         rep.setAttributes(attributes);
         if (!full) return rep;
@@ -243,6 +245,11 @@ public class ModelToRepresentation {
         rep.setIdcard(user.getIdcard());
         rep.setLoginTimestamp(user.getLoginTimestamp());
         rep.setNotBefore(session.users().getNotBeforeOfUser(realm, user));
+        rep.setPhone(user.getPhone());
+        rep.setPoliceNo(user.getPoliceNo());
+        rep.setUnitCode(user.getUnitCode());
+        rep.setXkUsername(user.getXkUsername());
+        rep.setXkPassword(user.getXkPassword());
 
         Set<String> requiredActions = user.getRequiredActions();
         List<String> reqActions = new ArrayList<>(requiredActions);
@@ -260,6 +267,18 @@ public class ModelToRepresentation {
         }
         rep.setGroups(groups);
 
+        String roleName = "";
+        List<ClientModel> clients = realm.getClients();
+        for (ClientModel client : clients) {
+            if (client.getName() != null && !client.isPublicClient() &&
+                    !client.getClientId().startsWith("realm") && client.isServiceAccountsEnabled()) {
+                Set<RoleModel> mappings = user.getClientRoleMappings(client);
+                for (RoleModel roleModel : mappings) {
+                    roleName += roleModel.getName() + " ";
+                }
+            }
+        }
+        rep.setRoleName(roleName);
         return rep;
     }
 
@@ -1117,7 +1136,7 @@ public class ModelToRepresentation {
         List<GroupModel> groups = realm.getTopLevelGroups(first, max);
         if (Objects.isNull(result)) return result;
         for (GroupModel group : groups) {
-            result.add(toRepresentation(group, true));
+            result.add(toRepresentation(group, false));
         }
         return result;
     }

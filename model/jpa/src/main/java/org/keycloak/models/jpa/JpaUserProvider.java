@@ -114,7 +114,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             }
         }
 
-        if (addDefaultRequiredActions){
+        if (addDefaultRequiredActions) {
             for (RequiredActionProviderModel r : realm.getRequiredActionProviders()) {
                 if (r.isEnabled() && r.isDefaultAction()) {
                     userModel.addRequiredAction(r.getAlias());
@@ -274,7 +274,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     private UserConsentEntity getGrantedConsentEntity(String userId, String clientId, LockModeType lockMode) {
         StorageId clientStorageId = new StorageId(clientId);
-        String queryName = clientStorageId.isLocal() ?  "userConsentByUserAndClient" : "userConsentByUserAndExternalClient";
+        String queryName = clientStorageId.isLocal() ? "userConsentByUserAndClient" : "userConsentByUserAndExternalClient";
         TypedQuery<UserConsentEntity> query = em.createNamedQuery(queryName, UserConsentEntity.class);
         query.setParameter("userId", userId);
         if (clientStorageId.isLocal()) {
@@ -301,7 +301,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         }
 
         StorageId clientStorageId = null;
-        if ( entity.getClientId() == null) {
+        if (entity.getClientId() == null) {
             clientStorageId = new StorageId(entity.getClientStorageProvider(), entity.getExternalClientId());
         } else {
             clientStorageId = new StorageId(entity.getClientId());
@@ -553,7 +553,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         return new UserAdapter(session, realm, em, results.get(0));
     }
 
-     @Override
+    @Override
     public void close() {
     }
 
@@ -608,7 +608,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         Object count = em.createNamedQuery(namedQuery)
                 .setParameter("realmId", realm.getId())
                 .getSingleResult();
-        return ((Number)count).intValue();
+        return ((Number) count).intValue();
     }
 
     @Override
@@ -634,7 +634,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     public int getUsersCount(String search, RealmModel realm) {
         TypedQuery<Long> query = em.createNamedQuery("searchForUserCount", Long.class);
         query.setParameter("realmId", realm.getId());
-        query.setParameter("search", "%" + search.toLowerCase() + "%");
+        query.setParameter("search", "%" + search + "%");
         Long count = query.getSingleResult();
 
         return count.intValue();
@@ -648,7 +648,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
         TypedQuery<Long> query = em.createNamedQuery("searchForUserCountInGroups", Long.class);
         query.setParameter("realmId", realm.getId());
-        query.setParameter("search", "%" + search.toLowerCase() + "%");
+        query.setParameter("search", "%" + search + "%");
         query.setParameter("groupIds", groupIds);
         Long count = query.getSingleResult();
 
@@ -685,6 +685,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                     break;
                 case UserModel.EMAIL:
                     restrictions.add(qb.like(from.get("email"), "%" + value + "%"));
+                    break;
+                case UserModel.IDCARD:
+                    restrictions.add(qb.like(from.get("idcard"), "%" + value + "%"));
+                    break;
+                case UserModel.UNIT_CODE:
+                    restrictions.add(qb.equal(from.get("unitCode"), value));
                     break;
             }
         }
@@ -732,6 +738,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 case UserModel.EMAIL:
                     restrictions.add(qb.like(from.get("user").get("email"), "%" + value + "%"));
                     break;
+                case UserModel.IDCARD:
+                    restrictions.add(qb.like(from.get("user").get("idcard"), "%" + value + "%"));
+                    break;
+                case UserModel.UNIT_CODE:
+                    restrictions.add(qb.equal(from.get("user").get("unitCode"), value));
+                    break;
             }
         }
 
@@ -754,7 +766,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts) {
-        String queryName = includeServiceAccounts ? "getAllUsersByRealm" : "getAllUsersByRealmExcludeServiceAccount" ;
+        String queryName = includeServiceAccounts ? "getAllUsersByRealm" : "getAllUsersByRealmExcludeServiceAccount";
 
         TypedQuery<UserEntity> query = em.createNamedQuery(queryName, UserEntity.class);
         query.setParameter("realmId", realm.getId());
@@ -865,6 +877,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 case UserModel.LAST_NAME:
                 case UserModel.EMAIL:
                 case UserModel.IDCARD:
+                case UserModel.PHONE:
+                case UserModel.POLICE_NO:
+                case UserModel.UNIT_CODE:
                     if (Boolean.valueOf(attributes.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()))) {
                         predicates.add(builder.equal(builder.lower(root.get(key)), value));
                     } else {
@@ -1048,7 +1063,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             }
             return rtn;
         } else {
-           return credentialStore.getStoredCredentialsByType(realm, user, type);
+            return credentialStore.getStoredCredentialsByType(realm, user, type);
         }
     }
 
@@ -1088,5 +1103,36 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         UserEntity user = em.getReference(UserEntity.class, id);
         boolean isLoaded = em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(user);
         return isLoaded ? user : null;
+    }
+
+    @Override
+    public UserModel getUserByIdcard(String idcard, RealmModel realm) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByIdcard", UserEntity.class);
+        query.setParameter("idcard", idcard);
+        query.setParameter("realmId", realm.getId());
+        List<UserEntity> results = query.getResultList();
+        if (results.size() == 0) return null;
+        return new UserAdapter(session, realm, em, results.get(0));
+    }
+
+    @Override
+    public void updateLoginTimestamp(UserModel userModel) {
+        UserEntity entity = em.find(UserEntity.class, userModel.getId());
+        if (entity == null) return;
+        long time = Time.currentTimeMillis();
+        userModel.setLoginTimestamp(time);
+        entity.setLoginTimestamp(time);
+        em.persist(entity);
+        em.flush();
+    }
+
+    @Override
+    public UserModel getUserByPhone(String phone, RealmModel realm) {
+        TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByPhone", UserEntity.class);
+        query.setParameter("phone", phone);
+        query.setParameter("realmId", realm.getId());
+        List<UserEntity> results = query.getResultList();
+        if (results.size() == 0) return null;
+        return new UserAdapter(session, realm, em, results.get(0));
     }
 }

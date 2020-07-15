@@ -836,4 +836,17 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
     public void updateLoginTimestamp(UserModel userModel) {
         localStorage().updateLoginTimestamp(userModel);
     }
+
+    @Override
+    public UserModel getUserByPhone(String phone, RealmModel realm) {
+        UserModel user = localStorage().getUserByPhone(phone, realm);
+        if (user != null) {
+            return importValidation(realm, user);
+        }
+        for (UserLookupProvider provider : getEnabledStorageProviders(session, realm, UserLookupProvider.class)) {
+            user = provider.getUserByPhone(phone, realm);
+            if (user != null) return user;
+        }
+        return null;
+    }
 }

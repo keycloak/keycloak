@@ -442,5 +442,8 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
         return null;
     }
 
-
+    @Override
+    public UserModel getUserByPhone(String phone, RealmModel realm) {
+        return null;
+    }
 }

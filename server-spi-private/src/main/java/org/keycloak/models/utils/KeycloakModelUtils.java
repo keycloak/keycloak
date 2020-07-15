@@ -213,6 +213,19 @@ public final class KeycloakModelUtils {
         return session.users().getUserByUsername(username, realm);
     }
 
+
+    /**
+     * Try to find user by phonefor authentication
+     *
+     * @param realm    realm
+     * @param phone u
+     * @return found user
+     */
+    public static UserModel findUserByPhone(KeycloakSession session, RealmModel realm, String phone) {
+        return session.users().getUserByPhone(phone, realm);
+    }
+
+
     /**
      * Wrap given runnable job into KeycloakTransaction.
      *

@@ -277,6 +277,56 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
+    public String getPhone() {
+        return delegate.getPhone();
+    }
+
+    @Override
+    public void setPhone(String phone) {
+        delegate.setPhone(phone);
+    }
+
+    @Override
+    public String getPoliceNo() {
+        return delegate.getPoliceNo();
+    }
+
+    @Override
+    public void setPoliceNo(String policeNo) {
+        delegate.setPoliceNo(policeNo);
+    }
+
+    @Override
+    public String getUnitCode() {
+        return delegate.getUnitCode();
+    }
+
+    @Override
+    public void setUnitCode(String unitCode) {
+        delegate.setUnitCode(unitCode);
+    }
+
+    @Override
+    public String getXkUsername() {
+        return delegate.getXkUsername();
+    }
+
+    @Override
+    public void setXkUsername(String xkUsername) {
+        delegate.setXkUsername(xkUsername);
+    }
+
+    @Override
+    public String getXkPassword() {
+        return delegate.getXkPassword();
+    }
+
+    @Override
+    public void setXkPassword(String xkPassword) {
+        delegate.setXkPassword(xkPassword);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof UserModel)) return false;

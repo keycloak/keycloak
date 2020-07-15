@@ -924,6 +924,10 @@ public class UserCacheSession implements UserCache {
         return realmId + ".idcard." + idcard;
     }
 
+    static String getUserByPhoneCacheKey(String realmId, String phone) {
+        return realmId + ".phone." + phone;
+    }
+
     @Override
     public UserModel getUserByIdcard(String idcard, RealmModel realm) {
         logger.tracev("getUserByIdcard: {0}", idcard);
@@ -976,5 +980,53 @@ public class UserCacheSession implements UserCache {
     @Override
     public void updateLoginTimestamp(UserModel userModel) {
         getDelegate().updateLoginTimestamp(userModel);
+    }
+
+    @Override
+    public UserModel getUserByPhone(String phone, RealmModel realm) {
+        logger.tracev("getUserByPhone: {0}", phone);
+        if (realmInvalidations.contains(realm.getId())) {
+            logger.tracev("realmInvalidations");
+            return getDelegate().getUserByPhone(phone, realm);
+        }
+        String cacheKey = getUserByPhoneCacheKey(realm.getId(), phone);
+        if (invalidations.contains(cacheKey)) {
+            logger.tracev("invalidations");
+            return getDelegate().getUserByPhone(phone, realm);
+        }
+        UserListQuery query = cache.get(cacheKey, UserListQuery.class);
+
+        String userId = null;
+        if (query == null) {
+            logger.tracev("query null");
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            UserModel model = getDelegate().getUserByPhone(phone, realm);
+            if (model == null) {
+                logger.tracev("model from delegate null");
+                return null;
+            }
+            userId = model.getId();
+            if (invalidations.contains(userId)) return model;
+            if (managedUsers.containsKey(userId)) {
+                logger.tracev("return managed user");
+                return managedUsers.get(userId);
+            }
+
+            UserModel adapter = getUserAdapter(realm, userId, loaded, model);
+            if (adapter instanceof UserAdapter) { // this was cached, so we can cache query too
+                query = new UserListQuery(loaded, cacheKey, realm, model.getId());
+                cache.addRevisioned(query, startupRevision);
+            }
+            managedUsers.put(userId, adapter);
+            return adapter;
+        } else {
+            userId = query.getUsers().iterator().next();
+            if (invalidations.contains(userId)) {
+                logger.tracev("invalidated cache return delegate");
+                return getDelegate().getUserByPhone(phone, realm);
+            }
+            logger.trace("return getUserById");
+            return getUserById(userId, realm);
+        }
     }
 }

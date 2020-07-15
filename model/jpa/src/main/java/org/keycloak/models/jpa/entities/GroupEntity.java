@@ -29,13 +29,13 @@ import java.util.LinkedList;
  */
 @NamedQueries({
         @NamedQuery(name="getGroupIdsByParent", query="select u.id from GroupEntity u where u.parentId = :parent"),
-        @NamedQuery(name="getGroupIdsByNameContaining", query="select u.id from GroupEntity u where u.realm.id = :realm and u.name like concat('%',:search,'%') order by u.name ASC"),
-        @NamedQuery(name="getTopLevelGroupIds", query="select u.id from GroupEntity u where u.parentId = :parent and u.realm.id = :realm order by u.name ASC"),
+        @NamedQuery(name="getGroupIdsByNameContaining", query="select u.id from GroupEntity u where u.realm = :realm and u.name like concat('%',:search,'%') order by u.name ASC"),
+        @NamedQuery(name="getTopLevelGroupIds", query="select u.id from GroupEntity u where u.parentId = :parent and u.realm = :realm order by u.name ASC"),
         @NamedQuery(name="getGroupIdsByName", query="select u.id from GroupEntity u where u.name = :name"),
-        @NamedQuery(name="getGroupCount", query="select count(u) from GroupEntity u where u.realm.id = :realm"),
-        @NamedQuery(name="getTopLevelGroupCount", query="select count(u) from GroupEntity u where u.realm.id = :realm and u.parentId = :parent"),
+        @NamedQuery(name="getGroupCount", query="select count(u) from GroupEntity u where u.realm = :realm"),
+        @NamedQuery(name="getTopLevelGroupCount", query="select count(u) from GroupEntity u where u.realm = :realm and u.parentId = :parent"),
         @NamedQuery(name="getGroupByAttributeNameAndValue", query="select g from GroupEntity g join g.attributes attr " +
-                "where g.realm.id = :realmId and attr.name = :name and attr.value = :value")
+                "where g.realm = :realmId and attr.name = :name and attr.value = :value")
 })
 @Entity
 @Table(name="KEYCLOAK_GROUP",

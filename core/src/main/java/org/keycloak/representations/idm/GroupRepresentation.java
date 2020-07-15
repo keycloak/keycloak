@@ -38,6 +38,7 @@ public class GroupRepresentation {
     protected boolean hasChild;
     protected Long userCount;
     protected Long userAllCount;
+    protected String parent;
 
     public String getId() {
         return id;
@@ -132,5 +133,13 @@ public class GroupRepresentation {
 
     public void setUserAllCount(Long userAllCount) {
         this.userAllCount = userAllCount;
+    }
+
+    public String getParent() {
+        return parent;
+    }
+
+    public void setParent(String parent) {
+        this.parent = parent;
     }
 }

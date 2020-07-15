@@ -65,6 +65,11 @@ public class InMemoryUserAdapter implements UserModel {
     private boolean readonly;
     private String idcard;
     private Long modifyTimestamp;
+    private String phone;
+    private String policeNo;
+    private String unitCode;
+    private String xkUsername;
+    private String xkPassword;
 
     public InMemoryUserAdapter(KeycloakSession session, RealmModel realm, String id) {
         this.session = session;
@@ -396,6 +401,61 @@ public class InMemoryUserAdapter implements UserModel {
     public void setLoginTimestamp(Long loginTimestamp) {
         checkReadonly();
         this.loginTimestamp = loginTimestamp;
+    }
+
+    @Override
+    public String getPhone() {
+        return phone;
+    }
+
+    @Override
+    public void setPhone(String phone) {
+        checkReadonly();
+        this.phone = phone;
+    }
+
+    @Override
+    public String getPoliceNo() {
+        return policeNo;
+    }
+
+    @Override
+    public void setPoliceNo(String policeNo) {
+        checkReadonly();
+        this.policeNo = policeNo;
+    }
+
+    @Override
+    public String getUnitCode() {
+        return unitCode;
+    }
+
+    @Override
+    public void setUnitCode(String unitCode) {
+        checkReadonly();
+        this.unitCode = unitCode;
+    }
+
+    @Override
+    public String getXkUsername() {
+        return xkUsername;
+    }
+
+    @Override
+    public void setXkUsername(String xkUsername) {
+        checkReadonly();
+        this.xkUsername = xkUsername;
+    }
+
+    @Override
+    public String getXkPassword() {
+        return xkPassword;
+    }
+
+    @Override
+    public void setXkPassword(String xkPassword) {
+        checkReadonly();
+        this.xkPassword = xkPassword;
     }
 
     @Override

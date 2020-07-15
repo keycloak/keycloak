@@ -31,12 +31,7 @@ import org.keycloak.models.utils.RoleUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import javax.persistence.LockModeType;
 
 /**
@@ -48,6 +43,7 @@ public class GroupAdapter implements GroupModel, JpaModel<GroupEntity> {
     protected GroupEntity group;
     protected EntityManager em;
     protected RealmModel realm;
+    private static final Map<String, Long> counts = new HashMap<>(16);
 
     public GroupAdapter(RealmModel realm, EntityManager em, GroupEntity group) {
         this.em = em;
@@ -117,13 +113,23 @@ public class GroupAdapter implements GroupModel, JpaModel<GroupEntity> {
 
     @Override
     public Long getUserAllCount() {
-        Long count = getUserCount(getId());
-        Set<GroupModel> children = getSubGroups();
-        for (GroupModel child : children) {
-            count += getUserCount(child.getId());
-        }
-        return count;
+        String id = getId();
+        counts.put(id, getUserCount(id));
+        getUserAllCount(getSubGroups(), id);
+        return counts.get(id);
     }
+
+    private void getUserAllCount(Set<GroupModel> groups, String id) {
+        for (GroupModel child : groups) {
+            Long count = counts.get(id);
+            Long userCount = getUserCount(child.getId());
+            if (userCount != null) {
+                counts.put(id, userCount + count);
+            }
+            getUserAllCount(child.getSubGroups(), id);
+        }
+    }
+
 
     @Override
     public boolean isHasChild() {

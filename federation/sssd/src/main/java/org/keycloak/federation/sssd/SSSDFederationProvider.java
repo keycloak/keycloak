@@ -213,4 +213,9 @@ public class SSSDFederationProvider implements UserStorageProvider,
     public UserModel getUserByIdcard(String idcard, RealmModel realm) {
         return null;
     }
+
+    @Override
+    public UserModel getUserByPhone(String phone, RealmModel realm) {
+        return null;
+    }
 }

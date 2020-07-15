@@ -1215,7 +1215,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public List<GroupModel> getGroupsByParent(RealmModel realm, String parent) {
-        String cacheKey = getGroupsQueryCacheKey(realm.getId() + parent);
+        String cacheKey = getGroupsQueryCacheKey(realm.getId()+".parent." + parent);
         boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId() + parent);
         if (queryDB) {
             return getRealmDelegate().getGroupsByParent(realm, parent);
@@ -1294,7 +1294,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public GroupModel getGroupByName(RealmModel realm, String groupName) {
-        String cacheKey = getGroupsQueryCacheKey(realm.getId() + groupName);
+        String cacheKey = getGroupsQueryCacheKey(realm.getId()+".groupName." + groupName);
         boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId() + groupName);
         if (queryDB) {
             return getRealmDelegate().getGroupByName(realm, groupName);

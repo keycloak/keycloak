@@ -61,7 +61,8 @@ import java.util.LinkedList;
                 "where u.realmId = :realmId and attr.name = :name and attr.value = :value"),
         @NamedQuery(name="deleteUsersByRealm", query="delete from UserEntity u where u.realmId = :realmId"),
         @NamedQuery(name="deleteUsersByRealmAndLink", query="delete from UserEntity u where u.realmId = :realmId and u.federationLink=:link"),
-        @NamedQuery(name="unlinkUsers", query="update UserEntity u set u.federationLink = null where u.realmId = :realmId and u.federationLink=:link")
+        @NamedQuery(name="unlinkUsers", query="update UserEntity u set u.federationLink = null where u.realmId = :realmId and u.federationLink=:link"),
+        @NamedQuery(name="getRealmUserByPhone", query="select u from UserEntity u where u.phone = :phone and u.realmId = :realmId")
 })
 @Entity
 @Table(name="USER_ENTITY", uniqueConstraints = {
@@ -135,6 +136,21 @@ public class UserEntity {
 
     @Column(name = "LOGIN_TIMESTAMP")
     protected Long loginTimestamp;
+
+    @Column(name = "PHONE")
+    private String phone;
+
+    @Column(name = "POLICE_NO")
+    private String policeNo;
+
+    @Column(name = "UNIT_CODE")
+    private String unitCode;
+
+    @Column(name = "XK_USERNAME")
+    private String xkUsername;
+
+    @Column(name = "XK_PASSWORD")
+    private String xkPassword;
 
     public String getId() {
         return id;
@@ -305,6 +321,47 @@ public class UserEntity {
 
     public void setLoginTimestamp(Long loginTimestamp) {
         this.loginTimestamp = loginTimestamp;
+    }
+
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getPoliceNo() {
+        return policeNo;
+    }
+
+    public void setPoliceNo(String policeNo) {
+        this.policeNo = policeNo;
+    }
+
+    public String getUnitCode() {
+        return unitCode;
+    }
+
+    public void setUnitCode(String unitCode) {
+        this.unitCode = unitCode;
+    }
+
+    public String getXkUsername() {
+        return xkUsername;
+    }
+
+    public void setXkUsername(String xkUsername) {
+        this.xkUsername = xkUsername;
+    }
+
+    public String getXkPassword() {
+        return xkPassword;
+    }
+
+    public void setXkPassword(String xkPassword) {
+        this.xkPassword = xkPassword;
     }
 
     @Override

@@ -40,10 +40,16 @@ public interface UserModel extends RoleMapperModel {
     String GROUPS = "keycloak.session.realm.users.query.groups";
     String SEARCH = "keycloak.session.realm.users.query.search";
     String EXACT = "keycloak.session.realm.users.query.exact";
+    String POLICE_NO = "policeNo";
+    String PHONE = "PHONE";
+    String XK_USERNAME = "xkUsername";
+    String UNIT_CODE = "unitCode";
 
     interface UserRemovedEvent extends ProviderEvent {
         RealmModel getRealm();
+
         UserModel getUser();
+
         KeycloakSession getKeycloakSession();
     }
 
@@ -52,12 +58,12 @@ public interface UserModel extends RoleMapperModel {
     String getUsername();
 
     void setUsername(String username);
-    
+
     /**
      * Get timestamp of user creation. May be null for old users created before this feature introduction.
      */
     Long getCreatedTimestamp();
-    
+
     void setCreatedTimestamp(Long timestamp);
 
     boolean isEnabled();
@@ -133,7 +139,7 @@ public interface UserModel extends RoleMapperModel {
     default long getGroupsCount() {
         return getGroupsCountByNameContaining(null);
     }
-    
+
     default long getGroupsCountByNameContaining(String search) {
         if (search == null) {
             return getGroups().size();
@@ -144,13 +150,17 @@ public interface UserModel extends RoleMapperModel {
     }
 
     void joinGroup(GroupModel group);
+
     void leaveGroup(GroupModel group);
+
     boolean isMemberOf(GroupModel group);
 
     String getFederationLink();
+
     void setFederationLink(String link);
 
     String getServiceAccountClientLink();
+
     void setServiceAccountClientLink(String clientInternalId);
 
     String getIdcard();
@@ -164,6 +174,28 @@ public interface UserModel extends RoleMapperModel {
     Long getLoginTimestamp();
 
     void setLoginTimestamp(Long loginTimestamp);
+
+    String getPhone();
+
+    void setPhone(String phone);
+
+    String getPoliceNo();
+
+    void setPoliceNo(String policeNo);
+
+    String getUnitCode();
+
+    void setUnitCode(String unitCode);
+
+
+    String getXkUsername();
+
+    void setXkUsername(String xkUsername);
+
+    String getXkPassword();
+
+    void setXkPassword(String xkPassword);
+
 
     enum RequiredAction {
         VERIFY_EMAIL, UPDATE_PROFILE, CONFIGURE_TOTP, UPDATE_PASSWORD, TERMS_AND_CONDITIONS

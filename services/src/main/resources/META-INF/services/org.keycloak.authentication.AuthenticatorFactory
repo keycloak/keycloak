@@ -51,3 +51,5 @@ org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory
 org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthenticatorFactory
 org.keycloak.authentication.authenticators.directgrant.ValidateIdcard
 org.keycloak.authentication.authenticators.directgrant.ValidateIdcardFirstName
+org.keycloak.authentication.authenticators.directgrant.ValidateAesUsername
+org.keycloak.authentication.authenticators.directgrant.ValidatePhone

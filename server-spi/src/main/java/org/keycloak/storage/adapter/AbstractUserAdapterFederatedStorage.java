@@ -55,6 +55,11 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
     public static String IDCARD_ATTRIBUTE = "IDCARD";
     public static String MODIFY_TIMESTAMP_ATTRIBUTE = "MODIFY_TIMESTAMP";
     public static String LOGIN_TIMESTAMP_ATTRIBUTE = "LOGIN_TIMESTAMP";
+    public static String PHONE_ATTRIBUTE = "PHONE";
+    public static String POLICE_NO_ATTRIBUTE = "POLICE_NO";
+    public static String UNIT_CODE_ATTRIBUTE = "UNIT_CODE";
+    public static String XK_USERNAME_ATTRIBUTE = "XK_USERNAME";
+    public static String XK_PASSWORD_ATTRIBUTE = "XK_PASSWORD";
 
 
     protected KeycloakSession session;
@@ -489,6 +494,57 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
         } else {
             setSingleAttribute(LOGIN_TIMESTAMP_ATTRIBUTE, Long.toString(loginTimestamp));
         }
+    }
+
+    @Override
+    public String getPhone() {
+        return getFirstAttribute(PHONE_ATTRIBUTE);
+    }
+
+    @Override
+    public void setPhone(String phone) {
+        setSingleAttribute(PHONE_ATTRIBUTE, phone);
+    }
+
+    @Override
+    public String getPoliceNo() {
+        return getFirstAttribute(POLICE_NO_ATTRIBUTE);
+    }
+
+    @Override
+    public void setPoliceNo(String policeNo) {
+        setSingleAttribute(POLICE_NO_ATTRIBUTE, policeNo);
+    }
+
+    @Override
+    public String getUnitCode() {
+        return getFirstAttribute(UNIT_CODE_ATTRIBUTE);
+    }
+
+    @Override
+    public void setUnitCode(String unitCode) {
+        setSingleAttribute(UNIT_CODE_ATTRIBUTE, unitCode);
+    }
+
+    @Override
+    public String getXkUsername() {
+        return getFirstAttribute(XK_USERNAME_ATTRIBUTE);
+
+    }
+
+    @Override
+    public void setXkUsername(String xkUsername) {
+        setSingleAttribute(XK_USERNAME_ATTRIBUTE, xkUsername);
+    }
+
+    @Override
+    public String getXkPassword() {
+        return getFirstAttribute(XK_PASSWORD_ATTRIBUTE);
+    }
+
+    @Override
+    public void setXkPassword(String xkPassword) {
+        setSingleAttribute(XK_USERNAME_ATTRIBUTE, xkPassword);
     }
 
     @Override

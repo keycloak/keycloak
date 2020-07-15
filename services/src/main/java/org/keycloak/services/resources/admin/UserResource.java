@@ -226,6 +226,11 @@ public class UserResource {
 
         if (rep.getIdcard() != null) user.setIdcard(rep.getIdcard());
         user.setModifyTimestamp(Time.currentTimeMillis());
+        if (rep.getPhone() != null) user.setPhone(rep.getPhone());
+        if (rep.getPoliceNo() != null) user.setPoliceNo(rep.getPoliceNo());
+        if (rep.getUnitCode() != null) user.setUnitCode(rep.getUnitCode());
+        if (rep.getXkUsername() != null) user.setXkUsername(rep.getXkUsername());
+        if (rep.getXkPassword() != null) user.setXkPassword(rep.getXkPassword());
 
         if (reqActions != null) {
             Set<String> allActions = new HashSet<>();

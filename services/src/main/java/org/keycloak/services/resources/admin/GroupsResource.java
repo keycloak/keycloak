@@ -17,7 +17,9 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+
 import javax.ws.rs.NotFoundException;
+
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -44,8 +46,8 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * @resource Groups
  * @author Bill Burke
+ * @resource Groups
  */
 public class GroupsResource {
 
@@ -110,7 +112,7 @@ public class GroupsResource {
         if (group == null) {
             throw new NotFoundException("Could not find group by id");
         }
-        GroupResource resource =  new GroupResource(realm, group, session, this.auth, adminEvent);
+        GroupResource resource = new GroupResource(realm, group, session, this.auth, adminEvent);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
     }
@@ -154,9 +156,11 @@ public class GroupsResource {
             if (rep.getId() != null) {
                 child = realm.getGroupById(rep.getId());
                 if (child == null) {
-                    throw new NotFoundException("Could not find child by id");
+                    child = realm.createGroup(rep.getId(), rep.getName());
+                    GroupResource.updateGroup(rep, child);
+                }else {
+                    realm.moveGroup(child, null);
                 }
-                realm.moveGroup(child, null);
                 adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri());
             } else {
                 child = realm.createGroup(rep.getName());

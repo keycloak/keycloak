@@ -438,4 +438,64 @@ public class UserAdapter implements CachedUserModel {
         getDelegateForUpdate();
         updated.setModifyTimestamp(modifyTimestamp);
     }
+
+    @Override
+    public String getPhone() {
+        if (updated != null) return updated.getPhone();
+        return cached.getPhone();
+    }
+
+    @Override
+    public void setPhone(String phone) {
+        getDelegateForUpdate();
+        updated.setPhone(phone);
+    }
+
+    @Override
+    public String getPoliceNo() {
+        if (updated != null) return updated.getPoliceNo();
+        return cached.getPoliceNo();
+    }
+
+    @Override
+    public void setPoliceNo(String policeNo) {
+        getDelegateForUpdate();
+        updated.setPoliceNo(policeNo);
+    }
+
+    @Override
+    public String getUnitCode() {
+        if (updated != null) return updated.getUnitCode();
+        return cached.getUnitCode();
+    }
+
+    @Override
+    public void setUnitCode(String unitCode) {
+        getDelegateForUpdate();
+        updated.setUnitCode(unitCode);
+    }
+
+    @Override
+    public String getXkUsername() {
+        if (updated != null) return updated.getXkUsername();
+        return cached.getXkUsername();
+    }
+
+    @Override
+    public void setXkUsername(String xkUsername) {
+        getDelegateForUpdate();
+        updated.setXkUsername(xkUsername);
+    }
+
+    @Override
+    public String getXkPassword() {
+        if (updated != null) return updated.getXkPassword();
+        return cached.getXkPassword();
+    }
+
+    @Override
+    public void setXkPassword(String xkPassword) {
+        getDelegateForUpdate();
+        updated.setXkPassword(xkPassword);
+    }
 }

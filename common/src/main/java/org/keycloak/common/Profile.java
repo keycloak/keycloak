@@ -43,9 +43,10 @@ public class Profile {
         EXPERIMENTAL,
         DEPRECATED;
     }
+
     public enum Feature {
         ACCOUNT2(Type.PREVIEW),
-        ACCOUNT_API(Type.PREVIEW),
+        ACCOUNT_API(Type.DEFAULT, Type.PREVIEW),
         ADMIN_FINE_GRAINED_AUTHZ(Type.PREVIEW),
         DOCKER(Type.DISABLED_BY_DEFAULT),
         IMPERSONATION(Type.DEFAULT),
@@ -106,7 +107,7 @@ public class Profile {
         Config config = new Config();
 
         product = "rh-sso".equals(Version.NAME) ? ProductValue.RHSSO : ProductValue.KEYCLOAK;
-        profile = ProfileValue.valueOf("COMMUNITY");
+        profile = ProfileValue.valueOf(config.getProfile().toUpperCase());
 
         for (Feature f : Feature.values()) {
             Boolean enabled = config.getConfig(f);

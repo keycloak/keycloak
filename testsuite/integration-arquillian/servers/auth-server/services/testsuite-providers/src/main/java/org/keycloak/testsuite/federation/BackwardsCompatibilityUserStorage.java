@@ -306,6 +306,11 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
     }
 
     @Override
+    public UserModel getUserByPhone(String phone, RealmModel realm) {
+        return null;
+    }
+
+    @Override
     public UserModel addUser(RealmModel realm, String username) {
         users.put(username, new MyUser(username));
         return createUser(realm, username);

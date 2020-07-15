@@ -236,4 +236,9 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
         }
         return users;
     }
+
+    @Override
+    public UserModel getUserByPhone(String phone, RealmModel realm) {
+        return null;
+    }
 }

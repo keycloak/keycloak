@@ -23,24 +23,27 @@ import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAu
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.*;
+import org.keycloak.models.utils.AesEncrypt;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.KeycloakModels;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.utils.RegUitl;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ValidateIdcard extends AbstractDirectGrantAuthenticator {
+public class ValidateAesUsername extends AbstractDirectGrantAuthenticator {
 
-    public static final String PROVIDER_ID = "direct-grant-validate-idcard";
+    public static final String PROVIDER_ID = "direct-grant-validate-aes-username";
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
@@ -51,12 +54,21 @@ public class ValidateIdcard extends AbstractDirectGrantAuthenticator {
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
+        String ip = retrieveIp(context);
+        if (!"".equals(ip)) {
+            context.getEvent().ipAddress(ip);
+        }
         context.getEvent().detail(Details.USERNAME, username);
         context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
 
         UserModel user = null;
         try {
-            user = KeycloakModels.findUserByIdcard(context.getSession(), context.getRealm(), username);
+            if (RegUitl.isPhone(username)) {
+                user = KeycloakModelUtils.findUserByPhone(context.getSession(), context.getRealm(), username);
+            } else {
+                username = AesEncrypt.encrypt(username);
+                user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
+            }
         } catch (ModelDuplicateException mde) {
             ServicesLogger.LOGGER.modelDuplicateException(mde);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", "Invalid user credentials");
@@ -66,7 +78,7 @@ public class ValidateIdcard extends AbstractDirectGrantAuthenticator {
 
 
         if (user == null) {
-            context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
+            context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
@@ -114,7 +126,7 @@ public class ValidateIdcard extends AbstractDirectGrantAuthenticator {
 
     @Override
     public String getDisplayType() {
-        return "Idcard Validation";
+        return "AES Username Validation";
     }
 
     @Override
@@ -128,8 +140,7 @@ public class ValidateIdcard extends AbstractDirectGrantAuthenticator {
     }
 
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.REQUIRED,
-            AuthenticationExecutionModel.Requirement.ALTERNATIVE
+            AuthenticationExecutionModel.Requirement.REQUIRED
     };
 
     @Override
@@ -156,4 +167,11 @@ public class ValidateIdcard extends AbstractDirectGrantAuthenticator {
         MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
         return inputData.getFirst(AuthenticationManager.FORM_USERNAME);
     }
+
+    protected String retrieveIp(AuthenticationFlowContext context) {
+        MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
+        return inputData.getFirst("ip");
+    }
+
+
 }

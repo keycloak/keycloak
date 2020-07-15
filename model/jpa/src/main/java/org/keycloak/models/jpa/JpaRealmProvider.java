@@ -560,6 +560,9 @@ public class JpaRealmProvider implements RealmProvider {
         RealmEntity realmEntity = em.getReference(RealmEntity.class, realm.getId());
         groupEntity.setRealm(realmEntity.getId());
         groupEntity.setParentId(toParent == null? GroupEntity.TOP_PARENT_ID : toParent.getId());
+        if(toParent != null){
+            toParent.setHasChild(true);
+        }
         em.persist(groupEntity);
         em.flush();
         realmEntity.getGroups().add(groupEntity);

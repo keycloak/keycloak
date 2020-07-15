@@ -1777,6 +1777,11 @@ public class RepresentationToModel {
         user.setLastName(userRep.getLastName());
         user.setFederationLink(userRep.getFederationLink());
         user.setIdcard(userRep.getIdcard());
+        user.setPhone(userRep.getPhone());
+        user.setPoliceNo(userRep.getPoliceNo());
+        user.setUnitCode(userRep.getUnitCode());
+        user.setXkUsername(userRep.getXkUsername());
+        user.setXkPassword(userRep.getXkPassword());
         if (userRep.getAttributes() != null) {
             for (Map.Entry<String, List<String>> entry : userRep.getAttributes().entrySet()) {
                 List<String> value = entry.getValue();

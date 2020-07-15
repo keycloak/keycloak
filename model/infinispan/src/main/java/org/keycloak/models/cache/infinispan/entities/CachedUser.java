@@ -55,6 +55,11 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
     private String idcard;
     private Long modifyTimestamp;
     private Long loginTimestamp;
+    private String phone;
+    private String policeNo;
+    private String unitCode;
+    private String xkUsername;
+    private String xkPassword;
 
     public CachedUser(Long revision, RealmModel realm, UserModel user, int notBefore) {
         super(revision, user.getId());
@@ -76,6 +81,11 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
         this.roleMappings = new DefaultLazyLoader<>(userModel -> userModel.getRoleMappings().stream().map(RoleModel::getId).collect(Collectors.toSet()), Collections::emptySet);
         this.groups = new DefaultLazyLoader<>(userModel -> userModel.getGroups().stream().map(GroupModel::getId).collect(Collectors.toCollection(LinkedHashSet::new)), LinkedHashSet::new);
         this.loginTimestamp=user.getLoginTimestamp();
+        this.phone = user.getPhone();
+        this.policeNo = user.getPoliceNo();
+        this.unitCode = user.getUnitCode();
+        this.xkUsername = user.getXkUsername();
+        this.xkPassword = user.getXkPassword();
     }
 
     public String getRealm() {
@@ -156,5 +166,26 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
 
     public Long getLoginTimestamp() {
         return loginTimestamp;
+    }
+
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public String getPoliceNo() {
+        return policeNo;
+    }
+
+    public String getUnitCode() {
+        return unitCode;
+    }
+
+    public String getXkUsername() {
+        return xkUsername;
+    }
+
+    public String getXkPassword() {
+        return xkPassword;
     }
 }

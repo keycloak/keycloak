@@ -17,7 +17,9 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+
 import javax.ws.rs.NotFoundException;
+
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -54,8 +56,8 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * @resource Groups
  * @author Bill Burke
+ * @resource Groups
  */
 public class GroupResource {
 
@@ -73,9 +75,7 @@ public class GroupResource {
         this.group = group;
     }
 
-     /**
-     *
-     *
+    /**
      * @return
      */
     @GET
@@ -100,20 +100,27 @@ public class GroupResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response updateGroup(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
-
-        for (GroupModel sibling: siblings()) {
+        for (GroupModel sibling : siblings()) {
             if (Objects.equals(sibling.getId(), group.getId())) continue;
             if (sibling.getName().equals(rep.getName())) {
                 return ErrorResponse.exists("Sibling group named '" + rep.getName() + "' already exists.");
             }
         }
-        
+
         updateGroup(rep, group);
+
+        if (rep.getParent() != null) {
+            GroupModel parent = realm.getGroupById(rep.getParent());
+            if (parent == null) {
+                throw new NotFoundException("Could not find parent by id");
+            }
+            realm.moveGroup(group, parent);
+        }
         adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
-        
+
         return Response.noContent().build();
     }
-    
+
     private List<GroupModel> siblings() {
         if (group.getParentId() == null) {
             return realm.getTopLevelGroups();
@@ -125,7 +132,7 @@ public class GroupResource {
     @DELETE
     public void deleteGroup() {
         this.auth.groups().requireManage(group);
-        if(group.isHasChild()){
+        if (group.isHasChild()) {
             throw new RuntimeException("Group has children and cannot be deleted!");
         }
         realm.removeGroup(group);
@@ -165,9 +172,11 @@ public class GroupResource {
         if (rep.getId() != null) {
             child = realm.getGroupById(rep.getId());
             if (child == null) {
-                throw new NotFoundException("Could not find child by id");
+                child = realm.createGroup(rep.getId(), rep.getName(), group);
+                updateGroup(rep, child);
+            } else {
+                realm.moveGroup(child, group);
             }
-            realm.moveGroup(child, group);
             adminEvent.operation(OperationType.UPDATE);
         } else {
             child = realm.createGroup(rep.getName(), group);
@@ -178,7 +187,13 @@ public class GroupResource {
             builder.status(201).location(uri);
             rep.setId(child.getId());
             adminEvent.operation(OperationType.CREATE);
-
+        }
+        if (rep.getParent() != null) {
+            GroupModel parent = realm.getGroupById(rep.getParent());
+            if (parent == null) {
+                throw new NotFoundException("Could not find parent by id");
+            }
+            realm.moveGroup(child, parent);
         }
         adminEvent.resourcePath(session.getContext().getUri()).representation(rep).success();
 
@@ -206,7 +221,7 @@ public class GroupResource {
     public RoleMapperResource getRoleMappings() {
         AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.groups().requireManage(group);
         AdminPermissionEvaluator.RequirePermissionCheck viewCheck = () -> auth.groups().requireView(group);
-        RoleMapperResource resource =  new RoleMapperResource(realm, auth, group, adminEvent, manageCheck, viewCheck);
+        RoleMapperResource resource = new RoleMapperResource(realm, auth, group, adminEvent, manageCheck, viewCheck);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
 
@@ -214,14 +229,14 @@ public class GroupResource {
 
     /**
      * Get users
-     *
+     * <p>
      * Returns a list of users, filtered according to query parameters
      *
-     * @param firstResult Pagination offset
-     * @param maxResults Maximum results size (defaults to 100)
+     * @param firstResult         Pagination offset
+     * @param maxResults          Maximum results size (defaults to 100)
      * @param briefRepresentation Only return basic information (only guaranteed to return id, username, created, first and last name,
-     *  email, enabled state, email verification state, federation link, and access.
-     *  Note that it means that namely user attributes, required actions, and not before are not returned.)
+     *                            email, enabled state, email verification state, federation link, and access.
+     *                            Note that it means that namely user attributes, required actions, and not before are not returned.)
      * @return
      */
     @GET
@@ -280,7 +295,6 @@ public class GroupResource {
 
     /**
      * Return object stating whether client Authorization permissions have been initialized or not and a reference
-     *
      *
      * @return initialized manage permissions reference
      */

@@ -398,7 +398,57 @@ public abstract class AbstractUserAdapter implements UserModel {
 
     @Override
     public void setLoginTimestamp(Long loginTimestamp) {
+        throw new ReadOnlyException("user is read only for this update");
+    }
 
+    @Override
+    public String getPhone() {
+        return null;
+    }
+
+    @Override
+    public void setPhone(String phone) {
+        throw new ReadOnlyException("user is read only for this update");
+    }
+
+    @Override
+    public String getPoliceNo() {
+        return null;
+    }
+
+    @Override
+    public void setPoliceNo(String policeNo) {
+        throw new ReadOnlyException("user is read only for this update");
+    }
+
+    @Override
+    public String getUnitCode() {
+        return null;
+    }
+
+    @Override
+    public void setUnitCode(String unitCode) {
+        throw new ReadOnlyException("user is read only for this update");
+    }
+
+    @Override
+    public String getXkUsername() {
+        return null;
+    }
+
+    @Override
+    public void setXkUsername(String xkUsername) {
+        throw new ReadOnlyException("user is read only for this update");
+    }
+
+    @Override
+    public String getXkPassword() {
+        return null;
+    }
+
+    @Override
+    public void setXkPassword(String xkPassword) {
+        throw new ReadOnlyException("user is read only for this update");
     }
 
     @Override
