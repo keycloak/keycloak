@@ -77,6 +77,11 @@ public final class LDAPContextManager implements AutoCloseable {
             }
         }
 
+        //These only need to be set here for StartTLS.
+        if (ldapConfig.isStartTls()) {
+            connProp.put("java.naming.ldap.factory.socket", "org.keycloak.truststore.SSLSocketFactory");
+        }
+
         ldapContext = new InitialLdapContext(connProp, null);
         if (ldapConfig.isStartTls()) {
             SSLSocketFactory sslSocketFactory = null;
