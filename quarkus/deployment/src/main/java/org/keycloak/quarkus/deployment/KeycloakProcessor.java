@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.quarkus.deployment.IsDevelopment;
+import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
 import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
@@ -78,6 +80,11 @@ class KeycloakProcessor {
     @BuildStep
     void initializeRouter(BuildProducer<FilterBuildItem> routes) {
         routes.produce(new FilterBuildItem(new QuarkusRequestFilter(), FilterBuildItem.AUTHORIZATION - 10));
+    }
+
+    @BuildStep(onlyIf = IsDevelopment.class)
+    void configureDevMode(BuildProducer<HotDeploymentWatchedFileBuildItem> hotFiles) {
+        hotFiles.produce(new HotDeploymentWatchedFileBuildItem("META-INF/keycloak.properties"));
     }
 
     private Map<Spi, Set<Class<? extends ProviderFactory>>> loadFactories() {
