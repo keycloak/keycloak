@@ -37,9 +37,7 @@
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
         <hibernate.version>5.4.18.Final</hibernate.version>
         <snakeyaml.version>1.20</snakeyaml.version>
-
-        <surefire-plugin.version>2.22.0</surefire-plugin.version>
-
+        <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
         <wildfly.common.format.version>1.5.0.Final-format-001</wildfly.common.format.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -51,20 +49,10 @@
         <dependencies>
             <dependency>
                 <groupId>io.quarkus</groupId>
-                <artifactId>quarkus-bom-deployment</artifactId>
+                <artifactId>quarkus-bom</artifactId>
                 <version>${quarkus.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-quarkus-server</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-quarkus-server-deployment</artifactId>
-                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate</groupId>
