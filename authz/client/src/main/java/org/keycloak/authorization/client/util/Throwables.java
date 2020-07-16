@@ -69,7 +69,7 @@ public final class Throwables {
             HttpResponseException httpe = HttpResponseException.class.cast(cause);
 
             if (httpe.getStatusCode() == 403) {
-                TokenIntrospectionResponse response = token.getHttp().<TokenIntrospectionResponse>post(token.getServerConfiguration().getTokenIntrospectionEndpoint())
+                TokenIntrospectionResponse response = token.getHttp().<TokenIntrospectionResponse>post(token.getServerConfiguration().getIntrospectionEndpoint())
                         .authentication()
                         .client()
                         .param("token", token.call())

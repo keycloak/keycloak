@@ -36,8 +36,8 @@ public class ServerConfiguration {
     @JsonProperty("token_endpoint")
     private String tokenEndpoint;
 
-    @JsonProperty("token_introspection_endpoint")
-    private String tokenIntrospectionEndpoint;
+    @JsonProperty("introspection_endpoint")
+    private String introspectionEndpoint;
 
     @JsonProperty("userinfo_endpoint")
     private String userinfoEndpoint;
@@ -120,8 +120,8 @@ public class ServerConfiguration {
         return tokenEndpoint;
     }
 
-    public String getTokenIntrospectionEndpoint() {
-        return tokenIntrospectionEndpoint;
+    public String getIntrospectionEndpoint() {
+        return introspectionEndpoint;
     }
 
     public String getUserinfoEndpoint() {
