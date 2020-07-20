@@ -19,18 +19,22 @@ package org.keycloak.services.clientregistration;
 
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.models.*;
+import org.keycloak.models.ClientInitialAccessModel;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.validation.ValidationMessages;
-import org.keycloak.validation.ClientValidationUtil;
+import org.keycloak.validation.ValidationUtil;
 
 import javax.ws.rs.core.Response;
 
@@ -54,16 +58,6 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
         RegistrationAuth registrationAuth = auth.requireCreate(context);
 
-        ValidationMessages validationMessages = new ValidationMessages();
-        if (!context.validateClient(validationMessages)) {
-            String errorCode = validationMessages.fieldHasError("redirectUris") ? ErrorCodes.INVALID_REDIRECT_URI : ErrorCodes.INVALID_CLIENT_METADATA;
-            throw new ErrorResponseException(
-                    errorCode,
-                    validationMessages.getStringMessages(),
-                    Response.Status.BAD_REQUEST
-            );
-        }
-
         try {
             RealmModel realm = session.getContext().getRealm();
             ClientModel clientModel = ClientManager.createClient(session, realm, client, true);
@@ -81,11 +75,6 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             client = ModelToRepresentation.toRepresentation(clientModel, session);
 
             client.setSecret(clientModel.getSecret());
-
-            ClientValidationUtil.validate(session, clientModel, true, c -> {
-                session.getTransactionManager().setRollbackOnly();
-                throw  new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, c.getError(), Response.Status.BAD_REQUEST);
-            });
 
             String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, clientModel, registrationAuth);
             client.setRegistrationAccessToken(registrationAccessToken);
@@ -133,23 +122,8 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier modified", Response.Status.BAD_REQUEST);
         }
 
-        ValidationMessages validationMessages = new ValidationMessages();
-        if (!context.validateClient(validationMessages)) {
-            String errorCode = validationMessages.fieldHasError("redirectUris") ? ErrorCodes.INVALID_REDIRECT_URI : ErrorCodes.INVALID_CLIENT_METADATA;
-            throw new ErrorResponseException(
-                    errorCode,
-                    validationMessages.getStringMessages(),
-                    Response.Status.BAD_REQUEST
-            );
-        }
-
         RepresentationToModel.updateClient(rep, client);
         RepresentationToModel.updateClientProtocolMappers(rep, client);
-
-        ClientValidationUtil.validate(session, client, false, c -> {
-            session.getTransactionManager().setRollbackOnly();
-            throw  new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, c.getError(), Response.Status.BAD_REQUEST);
-        });
 
         rep = ModelToRepresentation.toRepresentation(client, session);
 
@@ -176,6 +150,18 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         } else {
             throw new ForbiddenException();
         }
+    }
+
+    public void validateClient(ClientModel clientModel, OIDCClientRepresentation oidcClient, boolean create) {
+        ValidationUtil.validateClient(session, clientModel, oidcClient, create, r -> {
+            session.getTransactionManager().setRollbackOnly();
+            String errorCode = r.fieldHasError("redirectUris") ? ErrorCodes.INVALID_REDIRECT_URI : ErrorCodes.INVALID_CLIENT_METADATA;
+            throw new ErrorResponseException(errorCode, r.getAllErrorsAsString(), Response.Status.BAD_REQUEST);
+        });
+    }
+
+    public void validateClient(ClientRepresentation clientRep, boolean create) {
+        validateClient(session.getContext().getRealm().getClientByClientId(clientRep.getClientId()), null, create);
     }
 
     @Override
