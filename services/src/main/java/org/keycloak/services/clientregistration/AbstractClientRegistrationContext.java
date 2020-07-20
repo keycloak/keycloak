@@ -19,8 +19,6 @@ package org.keycloak.services.clientregistration;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.services.validation.ClientValidator;
-import org.keycloak.services.validation.ValidationMessages;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -52,8 +50,4 @@ public abstract class AbstractClientRegistrationContext implements ClientRegistr
         return provider;
     }
 
-    @Override
-    public boolean validateClient(ValidationMessages validationMessages) {
-        return ClientValidator.validate(client, validationMessages);
-    }
 }

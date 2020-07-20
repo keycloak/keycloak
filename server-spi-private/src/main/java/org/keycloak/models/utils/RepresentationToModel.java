@@ -136,7 +136,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.validation.ClientValidationUtil;
+import org.keycloak.validation.ValidationUtil;
 
 public class RepresentationToModel {
 
@@ -1266,8 +1266,8 @@ public class RepresentationToModel {
             ClientModel app = createClient(session, realm, resourceRep, false, mappedFlows);
             appMap.put(app.getClientId(), app);
 
-            ClientValidationUtil.validate(session, app, false, c -> {
-                throw new RuntimeException("Invalid client " + app.getClientId() + ": " + c.getError());
+            ValidationUtil.validateClient(session, app, false, r -> {
+                throw new RuntimeException("Invalid client " + app.getClientId() + ": " + r.getAllErrorsAsString());
             });
         }
         return appMap;
