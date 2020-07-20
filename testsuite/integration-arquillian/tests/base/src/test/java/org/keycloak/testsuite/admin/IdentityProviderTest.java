@@ -891,6 +891,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
           "postBindingAuthnRequest",
           "singleSignOnServiceUrl",
           "wantAuthnRequestsSigned",
+          "nameIDPolicyFormat",
           "signingCertificate",
           "addExtensionsElementWithKeyInfo"
         ));
@@ -901,6 +902,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertThat(config, hasEntry("singleSignOnServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml"));
         assertThat(config, hasEntry("wantAuthnRequestsSigned", "true"));
         assertThat(config, hasEntry("addExtensionsElementWithKeyInfo", "false"));
+        assertThat(config, hasEntry("nameIDPolicyFormat", "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"));
         assertThat(config, hasEntry(is("signingCertificate"), notNullValue()));
     }
 
