@@ -86,6 +86,8 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
             updatePairwiseSubMappers(clientModel, SubjectType.parse(clientOIDC.getSubjectType()), clientOIDC.getSectorIdentifierUri());
             updateClientRepWithProtocolMappers(clientModel, client);
 
+            validateClient(clientModel, clientOIDC, true);
+
             URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
             clientOIDC = DescriptionConverter.toExternalResponse(session, client, uri);
             clientOIDC.setClientIdIssuedAt(Time.currentTime());
@@ -121,6 +123,8 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
             ClientModel clientModel = session.getContext().getRealm().getClientByClientId(client.getClientId());
             updatePairwiseSubMappers(clientModel, SubjectType.parse(clientOIDC.getSubjectType()), clientOIDC.getSectorIdentifierUri());
             updateClientRepWithProtocolMappers(clientModel, client);
+
+            validateClient(clientModel, clientOIDC, false);
 
             URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
             clientOIDC = DescriptionConverter.toExternalResponse(session, client, uri);

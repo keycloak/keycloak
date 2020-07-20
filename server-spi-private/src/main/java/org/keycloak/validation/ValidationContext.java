@@ -16,15 +16,24 @@
  */
 package org.keycloak.validation;
 
-import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 
-public interface ClientValidationProvider extends Validator<ClientModel> {
+public interface ValidationContext<T> {
 
-    // for a special case when performing OIDC client registration
-    ValidationResult validate(ClientValidationContext.OIDCContext validationContext);
-
-    @Override
-    default void close() {
+    enum Event {
+        CREATE,
+        UPDATE
     }
 
+    Event getEvent();
+
+    KeycloakSession getSession();
+
+    T getObjectToValidate();
+
+    ValidationContext<T> addError(String message);
+    ValidationContext<T> addError(String fieldId, String message);
+    ValidationContext<T> addError(String fieldId, String message, String localizedMessageKey, Object... localizedMessageParams);
+
+    ValidationResult toResult();
 }

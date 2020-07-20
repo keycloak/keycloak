@@ -51,15 +51,19 @@ import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.*;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
@@ -104,90 +108,101 @@ public class ClientTest extends AbstractAdminTest {
     }
 
     @Test
-    public void createClientValidation() {
-        ClientRepresentation rep = new ClientRepresentation();
-        rep.setClientId("my-app");
-        rep.setDescription("my-app description");
-        rep.setEnabled(true);
-
-        rep.setRootUrl("invalid");
-        createClientExpectingValidationError(rep, "Invalid URL in rootUrl");
-
-        rep.setRootUrl(null);
-        rep.setBaseUrl("invalid");
-        createClientExpectingValidationError(rep, "Invalid URL in baseUrl");
-
-        rep.setRootUrl(null);
-        rep.setBaseUrl("/valid");
-        createClientExpectingSuccessfulClientCreation(rep);
-
-        rep.setRootUrl("");
-        rep.setBaseUrl("/valid");
-        createClientExpectingSuccessfulClientCreation(rep);
+    public void testInvalidUrlClientValidation() {
+        testClientUriValidation("Root URL is not a valid URL",
+                "Base URL is not a valid URL",
+                null,
+                "invalid", "myapp://some-fake-app");
     }
 
     @Test
-    public void updateClientValidation() {
-        ClientRepresentation rep = createClient();
-
-        rep.setClientId("my-app");
-        rep.setDescription("my-app description");
-        rep.setEnabled(true);
-
-        rep.setRootUrl("invalid");
-        updateClientExpectingValidationError(rep, "Invalid URL in rootUrl");
-
-        rep.setRootUrl(null);
-        rep.setBaseUrl("invalid");
-        updateClientExpectingValidationError(rep, "Invalid URL in baseUrl");
-
-        ClientRepresentation stored = realm.clients().get(rep.getId()).toRepresentation();
-        assertNull(stored.getRootUrl());
-        assertNull(stored.getBaseUrl());
-
-        rep.setRootUrl(null);
-        rep.setBaseUrl("/valid");
-        updateClientExpectingSuccessfulClientUpdate(rep, null, "/valid");
-
-        rep.setRootUrl("");
-        rep.setBaseUrl("/valid");
-        updateClientExpectingSuccessfulClientUpdate(rep, "", "/valid");
+    public void testIllegalSchemeClientValidation() {
+        testClientUriValidation("Root URL uses an illegal scheme",
+                "Base URL uses an illegal scheme",
+                "A redirect URI uses an illegal scheme",
+                "data:text/html;base64,PHNjcmlwdD5jb25maXJtKGRvY3VtZW50LmRvbWFpbik7PC9zY3JpcHQ+",
+                "javascript:confirm(document.domain)/*"
+        );
     }
 
-    private void createClientExpectingValidationError(ClientRepresentation rep, String expectedError) {
-        Response response = realm.clients().create(rep);
-
-        assertEquals(400, response.getStatus());
-        OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
-        assertEquals("invalid_input", error.getError());
-        assertEquals(expectedError, error.getErrorDescription());
-
-        assertNull(response.getLocation());
-
-        response.close();
+    // KEYCLOAK-3421
+    @Test
+    public void testFragmentProhibitedClientValidation() {
+        testClientUriValidation("Root URL must not contain an URL fragment",
+                null,
+                "Redirect URIs must not contain an URI fragment",
+                "http://redhat.com/abcd#someFragment"
+        );
     }
 
-    private void createClientExpectingSuccessfulClientCreation(ClientRepresentation rep) {
-        Response response = realm.clients().create(rep);
-        assertEquals(201, response.getStatus());
-
-        String id = ApiUtil.getCreatedId(response);
-        realm.clients().get(id).remove();
-
-        response.close();
+    private void testClientUriValidation(String expectedRootUrlError, String expectedBaseUrlError, String expectedRedirectUrisError, String... testUrls) {
+        testClientUriValidation(false, expectedRootUrlError, expectedBaseUrlError, expectedRedirectUrisError, testUrls);
+        testClientUriValidation(true, expectedRootUrlError, expectedBaseUrlError, expectedRedirectUrisError, testUrls);
     }
 
-    private void updateClientExpectingValidationError(ClientRepresentation rep, String expectedError) {
-        try {
-            realm.clients().get(rep.getId()).update(rep);
-            fail("Expected exception");
-        } catch (BadRequestException e) {
-            Response response = e.getResponse();
-            assertEquals(400, response.getStatus());
-            OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
-            assertEquals("invalid_input", error.getError());
-            assertEquals(expectedError, error.getErrorDescription());
+    private void testClientUriValidation(boolean create, String expectedRootUrlError, String expectedBaseUrlError, String expectedRedirectUrisError, String... testUrls) {
+        ClientRepresentation rep;
+        if (create) {
+            rep = new ClientRepresentation();
+            rep.setClientId("my-app2");
+            rep.setEnabled(true);
         }
+        else {
+            rep = createClient();
+        }
+
+        for (String testUrl : testUrls) {
+            if (expectedRootUrlError != null) {
+                rep.setRootUrl(testUrl);
+                createOrUpdateClientExpectingValidationErrors(rep, create, expectedRootUrlError);
+            }
+            rep.setRootUrl(null);
+
+            if (expectedBaseUrlError != null) {
+                rep.setBaseUrl(testUrl);
+                createOrUpdateClientExpectingValidationErrors(rep, create, expectedBaseUrlError);
+            }
+            rep.setBaseUrl(null);
+
+            if (expectedRedirectUrisError != null) {
+                rep.setRedirectUris(Collections.singletonList(testUrl));
+                createOrUpdateClientExpectingValidationErrors(rep, create, expectedRedirectUrisError);
+            }
+            rep.setRedirectUris(null);
+
+            if (expectedRootUrlError != null) rep.setRootUrl(testUrl);
+            if (expectedBaseUrlError != null) rep.setBaseUrl(testUrl);
+            if (expectedRedirectUrisError != null) rep.setRedirectUris(Collections.singletonList(testUrl));
+            createOrUpdateClientExpectingValidationErrors(rep, create, expectedRootUrlError, expectedBaseUrlError, expectedRedirectUrisError);
+
+            rep.setRootUrl(null);
+            rep.setBaseUrl(null);
+            rep.setRedirectUris(null);
+        }
+    }
+
+    private void createOrUpdateClientExpectingValidationErrors(ClientRepresentation rep, boolean create, String... expectedErrors) {
+        Response response = null;
+        if (create) {
+            response = realm.clients().create(rep);
+        }
+        else {
+            try {
+                realm.clients().get(rep.getId()).update(rep);
+                fail("Expected exception");
+            }
+            catch (BadRequestException e) {
+                response = e.getResponse();
+            }
+        }
+
+        expectedErrors = Arrays.stream(expectedErrors).filter(Objects::nonNull).toArray(String[]::new);
+
+        assertEquals(response.getStatus(), 400);
+        OAuth2ErrorRepresentation errorRep = response.readEntity(OAuth2ErrorRepresentation.class);
+        List<String> actualErrors = asList(errorRep.getErrorDescription().split("; "));
+        assertThat(actualErrors, containsInAnyOrder(expectedErrors));
+        assertEquals("invalid_input", errorRep.getError());
     }
 
     private void updateClientExpectingSuccessfulClientUpdate(ClientRepresentation rep, String expectedRootUrl, String expectedBaseUrl) {
@@ -367,55 +382,6 @@ public class ClientTest extends AbstractAdminTest {
         assertEquals("service-account-serviceclient", userRep.getUsername());
         // KEYCLOAK-11197 service accounts are no longer created with a placeholder e-mail.
         assertNull(userRep.getEmail());
-    }
-
-    // KEYCLOAK-3421
-    @Test
-    public void createClientWithFragments() {
-        ClientRepresentation client = ClientBuilder.create()
-                .clientId("client-with-fragment")
-                .rootUrl("http://localhost/base#someFragment")
-                .redirectUris("http://localhost/auth", "http://localhost/auth#fragment", "http://localhost/auth*", "/relative")
-                .build();
-
-        Response response = realm.clients().create(client);
-        assertUriFragmentError(response);
-    }
-
-    // KEYCLOAK-3421
-    @Test
-    public void updateClientWithFragments() {
-        ClientRepresentation client = ClientBuilder.create()
-                .clientId("client-with-fragment")
-                .redirectUris("http://localhost/auth", "http://localhost/auth*")
-                .build();
-        Response response = realm.clients().create(client);
-        String clientUuid = ApiUtil.getCreatedId(response);
-        ClientResource clientResource = realm.clients().get(clientUuid);
-        getCleanup().addClientUuid(clientUuid);
-        response.close();
-
-        client = clientResource.toRepresentation();
-        client.setRootUrl("http://localhost/base#someFragment");
-        List<String> redirectUris = client.getRedirectUris();
-        redirectUris.add("http://localhost/auth#fragment");
-        redirectUris.add("/relative");
-        client.setRedirectUris(redirectUris);
-
-        try {
-            clientResource.update(client);
-            fail("Should fail");
-        }
-        catch (BadRequestException e) {
-            assertUriFragmentError(e.getResponse());
-        }
-    }
-
-    private void assertUriFragmentError(Response response) {
-        assertEquals(response.getStatus(), 400);
-        String error = response.readEntity(OAuth2ErrorRepresentation.class).getError();
-        assertTrue("Error response doesn't mention Redirect URIs fragments", error.contains("Redirect URIs must not contain an URI fragment"));
-        assertTrue("Error response doesn't mention Root URL fragments", error.contains("Root URL must not contain an URL fragment"));
     }
 
     @Test

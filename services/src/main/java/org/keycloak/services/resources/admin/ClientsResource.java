@@ -40,10 +40,7 @@ import org.keycloak.services.clientpolicy.DefaultClientPolicyManager;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.services.validation.ClientValidator;
-import org.keycloak.services.validation.PairwiseClientValidator;
-import org.keycloak.services.validation.ValidationMessages;
-import org.keycloak.validation.ClientValidationUtil;
+import org.keycloak.validation.ValidationUtil;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
@@ -60,7 +57,6 @@ import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
 
 import static java.lang.Boolean.TRUE;
 
@@ -179,16 +175,6 @@ public class ClientsResource {
     public Response createClient(final ClientRepresentation rep) {
         auth.clients().requireManage();
 
-        ValidationMessages validationMessages = new ValidationMessages();
-        if (!ClientValidator.validate(rep, validationMessages) || !PairwiseClientValidator.validate(session, rep, validationMessages)) {
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(
-                    validationMessages.getStringMessages(),
-                    validationMessages.getStringMessages(messages),
-                    Response.Status.BAD_REQUEST
-            );
-        }
-
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientRegisterContext(rep, auth.adminAuth()));
         } catch (ClientPolicyException cpe) {
@@ -220,9 +206,12 @@ public class ClientsResource {
                 }
             }
 
-            ClientValidationUtil.validate(session, clientModel, true, c -> {
+            ValidationUtil.validateClient(session, clientModel, true, r -> {
                 session.getTransactionManager().setRollbackOnly();
-                throw new ErrorResponseException(Errors.INVALID_INPUT, c.getError(), Response.Status.BAD_REQUEST);
+                throw new ErrorResponseException(
+                        Errors.INVALID_INPUT,
+                        r.getAllLocalizedErrorsAsString(AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale())),
+                        Response.Status.BAD_REQUEST);
             });
 
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
