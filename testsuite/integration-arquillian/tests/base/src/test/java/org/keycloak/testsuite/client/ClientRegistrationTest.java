@@ -24,13 +24,14 @@ import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.services.clientregistration.ErrorCodes;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.NotFoundException;
@@ -38,11 +39,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
@@ -51,7 +55,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import static org.keycloak.services.clientregistration.ErrorCodes.INVALID_CLIENT_METADATA;
+import static org.keycloak.services.clientregistration.ErrorCodes.INVALID_REDIRECT_URI;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -169,45 +174,121 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
-    public void registerClientValidation() throws IOException {
-    	authCreateClients();
-    	ClientRepresentation client = buildClient();
-    	client.setRootUrl("invalid");
-
-    	try {
-            registerClient(client);
-        } catch (ClientRegistrationException e) {
-            HttpErrorException c = (HttpErrorException) e.getCause();
-            assertEquals(400, c.getStatusLine().getStatusCode());
-
-            OAuth2ErrorRepresentation error = JsonSerialization.readValue(c.getErrorResponse(), OAuth2ErrorRepresentation.class);
-
-            assertEquals("invalid_client_metadata", error.getError());
-            assertEquals("Invalid URL in rootUrl", error.getErrorDescription());
-        }
+    public void testInvalidUrlClientValidation() {
+        testClientUriValidation("Root URL is not a valid URL",
+                "Base URL is not a valid URL",
+                "Backchannel logout URL is not a valid URL",
+                null,
+                "invalid", "myapp://some-fake-app");
     }
 
     @Test
-    public void updateClientValidation() throws IOException, ClientRegistrationException {
-        registerClientAsAdmin();
+    public void testIllegalSchemeClientValidation() {
+        testClientUriValidation("Root URL uses an illegal scheme",
+                "Base URL uses an illegal scheme",
+                "Backchannel logout URL uses an illegal scheme",
+                "A redirect URI uses an illegal scheme",
+                "data:text/html;base64,PHNjcmlwdD5jb25maXJtKGRvY3VtZW50LmRvbWFpbik7PC9zY3JpcHQ+",
+                "javascript:confirm(document.domain)/*"
+        );
+    }
 
-        ClientRepresentation client = reg.get(CLIENT_ID);
-        client.setRootUrl("invalid");
+    // KEYCLOAK-3421
+    @Test
+    public void testFragmentProhibitedClientValidation() {
+        testClientUriValidation("Root URL must not contain an URL fragment",
+                null,
+                null,
+                "Redirect URIs must not contain an URI fragment",
+                "http://redhat.com/abcd#someFragment"
+        );
+    }
 
-    	try {
-            reg.update(client);
-        } catch (ClientRegistrationException e) {
-            HttpErrorException c = (HttpErrorException) e.getCause();
-            assertEquals(400, c.getStatusLine().getStatusCode());
+    private void testClientUriValidation(String expectedRootUrlError, String expectedBaseUrlError, String expectedBackchannelLogoutUrlError, String expectedRedirectUrisError, String... testUrls) {
+        testClientUriValidation(true, expectedRootUrlError, expectedBaseUrlError, expectedBackchannelLogoutUrlError, expectedRedirectUrisError, testUrls);
+        testClientUriValidation(false, expectedRootUrlError, expectedBaseUrlError, expectedBackchannelLogoutUrlError, expectedRedirectUrisError, testUrls);
+    }
 
-            OAuth2ErrorRepresentation error = JsonSerialization.readValue(c.getErrorResponse(), OAuth2ErrorRepresentation.class);
-
-            assertEquals("invalid_client_metadata", error.getError());
-            assertEquals("Invalid URL in rootUrl", error.getErrorDescription());
+    private void testClientUriValidation(boolean register, String expectedRootUrlError, String expectedBaseUrlError, String expectedBackchannelLogoutUrlError, String expectedRedirectUrisError, String... testUrls) {
+        ClientRepresentation rep;
+        if (register) {
+            authCreateClients();
+            rep = buildClient();
+        }
+        else {
+            try {
+                registerClientAsAdmin();
+                rep = reg.get(CLIENT_ID);
+            }
+            catch (ClientRegistrationException e) {
+                throw new RuntimeException(e);
+            }
         }
 
-        ClientRepresentation updatedClient = reg.get(CLIENT_ID);
-        assertNull(updatedClient.getRootUrl());
+        for (String testUrl : testUrls) {
+            if (expectedRootUrlError != null) {
+                rep.setRootUrl(testUrl);
+                registerOrUpdateClientExpectingValidationErrors(rep, register, false, expectedRootUrlError);
+            }
+            rep.setRootUrl(null);
+
+            if (expectedBaseUrlError != null) {
+                rep.setBaseUrl(testUrl);
+                registerOrUpdateClientExpectingValidationErrors(rep, register, false, expectedBaseUrlError);
+            }
+            rep.setBaseUrl(null);
+
+            if (expectedBackchannelLogoutUrlError != null) {
+                OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).setBackchannelLogoutUrl(testUrl);
+                registerOrUpdateClientExpectingValidationErrors(rep, register, false, expectedBackchannelLogoutUrlError);
+            }
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).setBackchannelLogoutUrl(null);
+
+            if (expectedRedirectUrisError != null) {
+                rep.setRedirectUris(Collections.singletonList(testUrl));
+                registerOrUpdateClientExpectingValidationErrors(rep, register, true, expectedRedirectUrisError);
+            }
+            rep.setRedirectUris(null);
+
+            if (expectedRootUrlError != null) rep.setRootUrl(testUrl);
+            if (expectedBaseUrlError != null) rep.setBaseUrl(testUrl);
+            if (expectedRedirectUrisError != null) rep.setRedirectUris(Collections.singletonList(testUrl));
+            registerOrUpdateClientExpectingValidationErrors(rep, register, expectedRedirectUrisError != null, expectedRootUrlError, expectedBaseUrlError, expectedRedirectUrisError);
+
+            rep.setRootUrl(null);
+            rep.setBaseUrl(null);
+            rep.setRedirectUris(null);
+        }
+    }
+
+    private void registerOrUpdateClientExpectingValidationErrors(ClientRepresentation rep, boolean register, boolean redirectUris, String... expectedErrors) {
+        HttpErrorException errorException = null;
+        try {
+            if (register) {
+                registerClient(rep);
+            }
+            else {
+                reg.update(rep);
+            }
+            fail("Expected exception");
+        }
+        catch (ClientRegistrationException e) {
+            errorException = (HttpErrorException) e.getCause();
+        }
+
+        expectedErrors = Arrays.stream(expectedErrors).filter(Objects::nonNull).toArray(String[]::new);
+
+        assertEquals(errorException.getStatusLine().getStatusCode(), 400);
+        OAuth2ErrorRepresentation errorRep;
+        try {
+            errorRep = JsonSerialization.readValue(errorException.getErrorResponse(), OAuth2ErrorRepresentation.class);
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        List<String> actualErrors = asList(errorRep.getErrorDescription().split("; "));
+        assertThat(actualErrors, containsInAnyOrder(expectedErrors));
+        assertEquals(redirectUris ? INVALID_REDIRECT_URI : INVALID_CLIENT_METADATA, errorRep.getError());
     }
 
     @Test
