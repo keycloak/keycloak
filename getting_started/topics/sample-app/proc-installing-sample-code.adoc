@@ -1,6 +1,6 @@
 
-[id="deploy-code"]
-=== Installing sample code to secure the application
+[id="installing-sample-code_{context}"]
+= Installing sample code to secure the application
 
 The final procedure is to make this application secure by installing some sample code from the {quickstartRepo_link} repository. The quickstarts work with the most recent {project_name} release.
 
@@ -38,17 +38,17 @@ $ cd {quickstartRepo_dir}/app-profile-jee-vanilla/config
 $ mvn clean wildfly:deploy
 ----
 
-. Confirm that the application installationt succeeded. Go to http://localhost:8080/vanilla where a login page should appear.
+. Confirm that the application installationt succeeded. Go to http://localhost:8080/vanilla where a login page is displayed.
 +
 .Login page confirming success
-image:images/vanilla.png[]
+image:images/vanilla.png[Login page confirming success]
 
 . Log in using the account that you created in the demo realm.
 +
 .Login page to demo realm
-image:images/demo-login.png[]
+image:images/demo-login.png[Login page to demo realm]
 +
 A message appears indicating you have completed a successful use of {project_name} to protect a sample {appserver_name} application.  Congratulations!
 +
 .Complete success
-image:images/success.png[]
+image:images/success.png[Complete success]

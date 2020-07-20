@@ -1,5 +1,5 @@
-[id="login-admin"]
-=== Logging into the admin console
+[id="logging-in-admin-console_{context}"]
+= Logging into the admin console
 
 After you create the initial admin account, you can log in to the admin console.  In this console, you add users and register applications to be secured by {project_name}.
 
@@ -18,13 +18,13 @@ The Administration Console is generally referred to as the admin console for sho
 . Enter the username and password you created on the *Welcome* page to open the  *admin console*.
 +
 .Admin console login screen
-image:images/admin-login.png[]
+image:images/admin-login.png[Admin console login screen]
 +
 The initial screen for the admin console appears.
 +
 .Admin console
-image:{project_images}/admin-console.png[]
+image:images/admin-console.png[Admin console]
 
 .Next steps
 
-Now that you can log into the admin console, you can begin creating realms where administrators can create users and give them access to applications. For more details, see xref:_first-steps[Creating a realm and a user].
+Now that you can log into the admin console, you can begin creating realms where administrators can create users and give them access to applications. For more details, see xref:creating-first-realm_{context}[Creating a realm and a user].

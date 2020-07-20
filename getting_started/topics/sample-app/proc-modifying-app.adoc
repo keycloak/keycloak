@@ -1,6 +1,6 @@
 
-[id="configure-appserver"]
-=== Modifying the {appserver_name} instance
+[id="modifying-app_{context}"]
+= Modifying the {appserver_name} instance
 
 The {appserver_name} servlet application requires additional configuration before it is secured by {project_name}.
 

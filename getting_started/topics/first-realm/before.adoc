@@ -1,5 +1,0 @@
-
-=== Before You Start
-
-Before you can create your first realm, complete the installation of {project_name} and create the initial admin user as shown in <<_install-boot, Installing and Booting>>.
-

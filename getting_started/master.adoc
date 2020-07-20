@@ -2,6 +2,7 @@
 :toclevels: 3
 :numbered:
 :linkattrs:
+:context:
 
 include::topics/templates/document-attributes-product.adoc[]
 

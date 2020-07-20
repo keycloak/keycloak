@@ -1,5 +1,6 @@
 
-=== Adjusting the port used by {project_name}
+[id="adjusting-ports_{context}"]
+= Adjusting the port used by {project_name}
 
 The instructions in this guide apply to running {appserver_name} on the same machine as the {project_name} server. In this situation, even though {appserver_name} is bundled with {project_name}, you cannot use {appserver_name} as an application container. You must run a separate {appserver_name} instance for your servlet application.
 

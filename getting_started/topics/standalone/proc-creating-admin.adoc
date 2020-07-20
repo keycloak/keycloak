@@ -1,6 +1,6 @@
 
-[id="create-admin"]
-=== Creating the admin account
+[id="create-admin_{context}"]
+= Creating the admin account
 
 Before you can use {project_name}, you need to create an admin account which you use to log in to the {project_name} admin console.
 
@@ -14,10 +14,7 @@ Before you can use {project_name}, you need to create an admin account which you
 The welcome page opens, confirming that the server is running.
 +
 .Welcome page
-image:{project_images}/welcome.png[]
+image:images/welcome.png[Welcome page]
 
 . Enter a username and password to create an initial admin user.
 
-// Additional resources
-// For more information, see the
-// link:{installguide_link}[{installguide_name}] and the link:{adminguide_link}[{adminguide_name}].

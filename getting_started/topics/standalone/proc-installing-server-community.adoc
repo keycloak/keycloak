@@ -1,6 +1,6 @@
 
-[id="standalone-keycloak-install"]
-=== Installing the Server
+[id="installing-server-community_{context}"]
+= Installing the Server
 You can install the server on Linux or Windows. The server download ZIP file contains the scripts and binaries to run the {project_name} server.
 
 .Procedure

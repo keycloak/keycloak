@@ -1,9 +1,8 @@
 
-[id="standalone-install"]
-=== Installing the {project_name} server
+[id="installing-server-product_{context}"]
+= Installing the {project_name} server
 
 For this sample instance of {project_name}, this procedure involves installation in standalone mode. The server download ZIP file contains the scripts and binaries to run the {project_name} server. You can install the server on Linux or Windows.
-
 
 .Procedure
 
@@ -32,4 +31,3 @@ $ tar -xvzf rh-sso-{project_version_base}.tar.gz
 ----
 > Expand-Archive -Path 'C:Downloads\rhsso-{project_version_base}.zip` -DestinationPath 'C:\Downloads'
 ----
-

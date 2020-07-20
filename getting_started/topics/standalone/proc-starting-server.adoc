@@ -1,5 +1,5 @@
-[id="boot-server"]
-=== Starting the {project_name} server
+[id="starting-server_{context}"]
+= Starting the {project_name} server
 
 You start the server on the system where you installed it.
 

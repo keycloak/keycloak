@@ -1,5 +1,6 @@
 
-=== Registering the {appserver_name} application
+[id="registering-app_{context}"]
+= Registering the {appserver_name} application
 
 You can now define and register the client in the {project_name} admin console.
 
@@ -16,14 +17,14 @@ You can now define and register the client in the {project_name} admin console.
 . Click `Clients` in the left side menu to open the Clients page.
 +
 .Clients
-image:{project_images}/clients.png[]
+image:images/clients.png[Clients]
 
 . On the right side, click *Create*.  
 
 . On the Add Client dialog, create a client called *vanilla* by completing the fields as shown below:
 +
 .Add Client
-image:{project_images}/add-client.png[]
+image:images/add-client.png[Add Client]
 
 . Click *Save*.
 
@@ -32,7 +33,7 @@ image:{project_images}/add-client.png[]
 . Select *Keycloak OIDC JSON* to generate a file that you need in a later procedure.
 +
 .Keycloak.json file
-image:{project_images}/client-install-selected.png[]
+image:images/keycloak-json.png[Keycloak.json file]
 
 . Click *Download* to save *Keycloak.json* in a location that you can find later.
 
@@ -40,8 +41,6 @@ image:{project_images}/client-install-selected.png[]
 . Select *Keycloak OIDC JBoss Subsystem XML* to generate an XML template.
 +
 .Template XML
-image:{project_images}/client-install-selected.png[]
+image:images/client-install-selected.png[Template XML]
 
 . Click *Download* to save a copy for use in the next procedure, which involves {appserver_name} configuration.
-
-

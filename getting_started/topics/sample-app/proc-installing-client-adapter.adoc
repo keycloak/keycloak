@@ -1,5 +1,6 @@
 
-=== Installing the {appserver_name} client adapter
+[id="installing-client-adapter_{context}"]
+= Installing the {appserver_name} client adapter
 
 When {appserver_name} and {project_name} are installed on the same machine, {appserver_name} requires some modification. To make this modification, you install a {project_name} client adapter.
 

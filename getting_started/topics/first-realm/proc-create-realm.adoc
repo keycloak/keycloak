@@ -1,5 +1,7 @@
-[[_create-realm]]
-=== Creating a realm
+// UserStory: As an RH SSO customer, I need to know hoq to create a realm that protects applications
+
+[id="create-realm_{context}"]
+= Creating a realm
 
 As the admin in the master realm, you create the realms where administrators create users and applications.
 
@@ -17,7 +19,7 @@ As the admin in the master realm, you create the realms where administrators cre
 . Type `demo` in the *Name* field.
 +
 .A new realm
-image:{project_images}/add-demo-realm.png[]
+image:images/add-demo-realm.png[A new realm]
 +
 NOTE: The realm name is case-sensitive, so make note of the case that you use.
 
@@ -26,6 +28,6 @@ NOTE: The realm name is case-sensitive, so make note of the case that you use.
 The main admin console page opens with realm set to `demo`.
 +
 .Demo realm
-image:{project_images}/demo-realm.png[]
+image:images/demo-realm.png[Demo realm]
 
 . Switch between managing the `master` realm and the realm you just created by clicking entries in the *Select realm* drop-down list.
