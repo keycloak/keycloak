@@ -36,7 +36,7 @@ Or to build a specific guide run:
 
     mvn clean install -f GUIDE_DIR
     
-By default an archive version of the documentation is built. To build a latest build run:
+By default, an archive version of the documentation is built. To build the latest build run:
 
     mvn clean install -Dlatest
 
