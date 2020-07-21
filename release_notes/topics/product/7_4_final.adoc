@@ -3,7 +3,7 @@
 Red Hat is proud to announce the release of version 7.4 of {project_name} (RH-SSO). RH-SSO is based on the Keycloak project, and enables you to secure your web applications by providing Web SSO capabilities based on popular standards such as OpenID Connect, OAuth 2.0, and SAML 2.0. The RH-SSO server acts as an OpenID Connect or SAML-based identity provider (IdP), allowing your enterprise user directory or third-party IdP to secure your applications via standards-based security tokens.
 
 [NOTE]
-{project_name} for s390x platform (IBM zSeries) is supported only in the OpenShift environment. Bare metal installations on IBM zSeries are not supported.
+{project_name} for IBM Z is supported only in the OpenShift environment. Bare metal installations on IBM Z are not supported.
 
 The following notes apply to the RH-SSO 7.4 release.
 
