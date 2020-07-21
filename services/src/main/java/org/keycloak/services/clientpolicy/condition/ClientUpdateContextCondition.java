@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.services.clientpolicy.condition;
+package org.keycloak.services.clientpolicy.condition;
 
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
@@ -30,14 +30,14 @@ import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvide
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.util.TokenUtil;
 
-public class TestAuthnMethodsCondition implements ClientPolicyConditionProvider {
+public class ClientUpdateContextCondition implements ClientPolicyConditionProvider {
 
-    private static final Logger logger = Logger.getLogger(TestAuthnMethodsCondition.class);
+    private static final Logger logger = Logger.getLogger(ClientUpdateContextCondition.class);
 
     private final KeycloakSession session;
     private final ComponentModel componentModel;
 
-    public TestAuthnMethodsCondition(KeycloakSession session, ComponentModel componentModel) {
+    public ClientUpdateContextCondition(KeycloakSession session, ComponentModel componentModel) {
         this.session = session;
         this.componentModel = componentModel;
     }
@@ -58,9 +58,9 @@ public class TestAuthnMethodsCondition implements ClientPolicyConditionProvider 
         if (authMethod == null) return false;
 
         ClientPolicyLogger.log(logger, "auth method = " + authMethod);
-        componentModel.getConfig().get(TestAuthnMethodsConditionFactory.AUTH_METHOD).stream().forEach(i -> ClientPolicyLogger.log(logger, "auth method expected = " + i));
+        componentModel.getConfig().get(ClientUpdateContextConditionFactory.UPDATE_CLIENT_SOURCE).stream().forEach(i -> ClientPolicyLogger.log(logger, "auth method expected = " + i));
 
-        boolean isMatched = componentModel.getConfig().get(TestAuthnMethodsConditionFactory.AUTH_METHOD).stream().anyMatch(i -> i.equals(authMethod));
+        boolean isMatched = componentModel.getConfig().get(ClientUpdateContextConditionFactory.UPDATE_CLIENT_SOURCE).stream().anyMatch(i -> i.equals(authMethod));
         if (isMatched) {
             ClientPolicyLogger.log(logger, "auth method matched.");
         } else {
@@ -73,16 +73,16 @@ public class TestAuthnMethodsCondition implements ClientPolicyConditionProvider 
         String authMethod = null;
 
         if (context.getToken() == null) {
-            authMethod = TestAuthnMethodsConditionFactory.BY_ANONYMOUS;
+            authMethod = ClientUpdateContextConditionFactory.BY_ANONYMOUS;
         } else if (isInitialAccessToken(context.getToken())) {
-            authMethod = TestAuthnMethodsConditionFactory.BY_INITIAL_ACCESS_TOKEN;
+            authMethod = ClientUpdateContextConditionFactory.BY_INITIAL_ACCESS_TOKEN;
         } else if (isRegistrationAccessToken(context.getToken())) {
-            authMethod = TestAuthnMethodsConditionFactory.BY_REGISTRATION_ACCESS_TOKEN;
+            authMethod = ClientUpdateContextConditionFactory.BY_REGISTRATION_ACCESS_TOKEN;
         } else if (isBearerToken(context.getToken())) {
             if (context.getAuthenticatedUser() != null || context.getAuthenticatedClient() != null) {
-                authMethod = TestAuthnMethodsConditionFactory.BY_AUTHENTICATED_USER;
+                authMethod = ClientUpdateContextConditionFactory.BY_AUTHENTICATED_USER;
             } else {
-                authMethod = TestAuthnMethodsConditionFactory.BY_ANONYMOUS;
+                authMethod = ClientUpdateContextConditionFactory.BY_ANONYMOUS;
             }
         }
 
