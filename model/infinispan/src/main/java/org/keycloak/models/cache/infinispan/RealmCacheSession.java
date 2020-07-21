@@ -160,8 +160,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     public RoleProvider getRoleDelegate() {
         if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
         if (roleDelegate != null) return roleDelegate;
-//        roleDelegate = session.roleStorageManager();
-        roleDelegate = session.roleLocalStorage();
+        roleDelegate = session.roleStorageManager();
         return roleDelegate;
     }
 
