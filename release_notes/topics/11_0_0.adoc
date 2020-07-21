@@ -9,7 +9,7 @@ Thanks to https://github.com/cachescrubber[cachescrubber]
 
 == Namespace support for LDAP group mapper
 
-Namespace support for LDAP group mapper allows to map groups from LDAP under specified branch (namespace) of the Keycloak groups tree.
+Namespace support for LDAP group mapper allows you to map groups from LDAP under specified branch (namespace) of the Keycloak groups tree.
 Previously groups from LDAP were always added as the top level groups in Keycloak.
 
 Thanks to https://github.com/tjuerge[Torsten Juergeleit]
