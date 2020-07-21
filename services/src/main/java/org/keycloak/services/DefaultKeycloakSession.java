@@ -42,7 +42,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.services.clientpolicy.DefaultClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.ClientStorageManager;
-//import org.keycloak.storage.RoleStorageManager;
+import org.keycloak.storage.RoleStorageManager;
 import org.keycloak.storage.UserStorageManager;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.vault.DefaultVaultTranscriber;
@@ -72,7 +72,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private RoleProvider roleProvider;
     private UserStorageManager userStorageManager;
     private ClientStorageManager clientStorageManager;
-//    private RoleStorageManager roleStorageManager;
+    private RoleStorageManager roleStorageManager;
     private UserCredentialStoreManager userCredentialStorageManager;
     private UserSessionProvider sessionProvider;
     private AuthenticationSessionProvider authenticationSessionProvider;
@@ -120,8 +120,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
         if (cache != null) {
             return cache;
         } else {
-//            return roleStorageManager();
-            return roleLocalStorage();
+            return roleStorageManager();
         }
     }
 
@@ -204,11 +203,13 @@ public class DefaultKeycloakSession implements KeycloakSession {
         return getProvider(RoleProvider.class);
     }
 
-//    @Override
-//    public RoleProvider roleStorageManager() {
-//        if (roleStorageManager == null) roleStorageManager = new RoleStorageManager(this);
-//        return roleStorageManager;
-//    }
+    @Override
+    public RoleProvider roleStorageManager() {
+        if (roleStorageManager == null) {
+            roleStorageManager = new RoleStorageManager(this, factory.getRoleStorageProviderTimeout());
+        }
+        return roleStorageManager;
+    }
 
 
     @Override

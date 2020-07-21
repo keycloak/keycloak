@@ -74,6 +74,7 @@ org.keycloak.credential.CredentialSpi
 org.keycloak.keys.PublicKeyStorageSpi
 org.keycloak.keys.KeySpi
 org.keycloak.storage.client.ClientStorageProviderSpi
+org.keycloak.storage.role.RoleStorageProviderSpi
 org.keycloak.crypto.SignatureSpi
 org.keycloak.crypto.ClientSignatureVerifierSpi
 org.keycloak.crypto.HashSpi

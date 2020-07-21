@@ -157,7 +157,10 @@ public interface KeycloakSession {
 
     ClientProvider clientStorageManager();
 
-//    RoleProvider roleStorageManager();
+    /**
+     * @return RoleStorageManager instance
+     */
+    RoleProvider roleStorageManager();
 
     /**
      * Un-cached view of all users in system including users loaded by UserStorageProviders
@@ -190,7 +193,7 @@ public interface KeycloakSession {
     ClientProvider clientLocalStorage();
 
     /**
-     * Keycloak specific local storage for roles.  No cache in front, this api talks directly to database configured for Keycloak
+     * Keycloak specific local storage for roles.  No cache in front, this api talks directly to storage configured for Keycloak
      *
      * @return
      */

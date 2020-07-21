@@ -20,12 +20,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.provider.Provider;
+import org.keycloak.storage.role.RoleLookupProvider;
 
 /**
  * Provider of the role records.
  * @author vramik
  */
-public interface RoleProvider extends Provider {
+public interface RoleProvider extends Provider, RoleLookupProvider {
 
     /**
      * Adds a realm role with given {@code name} to the given realm.
@@ -136,51 +137,4 @@ public interface RoleProvider extends Provider {
      * @param client Client.
      */
     void removeRoles(ClientModel client);
-
-    //TODO RoleLookupProvider
-    /**
-     * Exact search for a role by given name.
-     * @param realm Realm.
-     * @param name String name of the role.
-     * @return Model of the role, or {@code null} if no role is found.
-     */
-    RoleModel getRealmRole(RealmModel realm, String name);
-
-    /**
-     * Exact search for a role by its internal ID..
-     * @param realm Realm.
-     * @param id Internal ID of the role.
-     * @return Model of the role.
-     */
-    RoleModel getRoleById(RealmModel realm, String id);
-
-    /**
-     * Case-insensitive search for roles that contain the given string in their name or description.
-     * @param realm Realm.
-     * @param search Searched substring of the role's name or description.
-     * @param first First result to return. Ignored if negative or {@code null}.
-     * @param max Maximum number of results to return. Ignored if negative or {@code null}.
-     * @return Stream of the realm roles their name or description contains given search string. 
-     * Never returns {@code null}.
-     */
-    Stream<RoleModel> searchForRolesStream(RealmModel realm, String search, Integer first, Integer max);
-
-    /**
-     * Exact search for a client role by given name.
-     * @param client Client.
-     * @param name String name of the role.
-     * @return Model of the role, or {@code null} if no role is found.
-     */
-    RoleModel getClientRole(ClientModel client, String name);
-
-    /**
-     * Case-insensitive search for client roles that contain the given string in their name or description.
-     * @param client Client.
-     * @param search String to search by role's name or description.
-     * @param first First result to return. Ignored if negative or {@code null}.
-     * @param max Maximum number of results to return. Ignored if negative or {@code null}.
-     * @return Stream of the client roles their name or description contains given search string. 
-     * Never returns {@code null}.
-     */
-    Stream<RoleModel> searchForClientRolesStream(ClientModel client, String search, Integer first, Integer max);
 }

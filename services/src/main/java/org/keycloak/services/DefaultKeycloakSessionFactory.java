@@ -60,11 +60,13 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
     protected long serverStartupTimestamp;
 
     /**
-     * Timeout is used as time boundary for obtaining clients from an external client storage. Default value is set
+     * Timeouts are used as time boundary for obtaining models from an external storage. Default value is set
      * to 3000 milliseconds and it's configurable.
      */
-    private long clientStorageProviderTimeout;
+    private Long clientStorageProviderTimeout;
+    private Long roleStorageProviderTimeout;
 
+    
     @Override
     public void register(ProviderEventListener listener) {
         listeners.add(listener);
@@ -84,8 +86,6 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
 
     public void init() {
         serverStartupTimestamp = System.currentTimeMillis();
-
-        clientStorageProviderTimeout = Config.scope("client").getLong("storageProviderTimeout", 3000L);
 
         ProviderManager pm = new ProviderManager(KeycloakDeploymentInfo.create().services(), getClass().getClassLoader(), Config.scope().getArray("providers"));
         spis.addAll(pm.loadSpis());
@@ -360,7 +360,17 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
     }
 
     public long getClientStorageProviderTimeout() {
+        if (clientStorageProviderTimeout == null) {
+            clientStorageProviderTimeout = Config.scope("client").getLong("storageProviderTimeout", 3000L);
+        }
         return clientStorageProviderTimeout;
+    }
+
+    public long getRoleStorageProviderTimeout() {
+        if (roleStorageProviderTimeout == null) {
+            roleStorageProviderTimeout = Config.scope("role").getLong("storageProviderTimeout", 3000L);
+        }
+        return roleStorageProviderTimeout;
     }
 
     /**
