@@ -652,12 +652,24 @@ After you build the distribution, you run this command to setup servers and run 
     
 ### Cluster tests with Keycloak on Quarkus
 
+Make sure the `testsuite/integration-arquillian/servers/auth-server/quarkus` module was built as follows:
+
+    mvn -f testsuite/integration-arquillian/servers/auth-server/quarkus/pom.xml clean install \
+         -Pauth-server-cluster-quarkus
+
 Run tests using the `auth-server-cluster-quarkus` profile:
 
      mvn -f testsuite/integration-arquillian/tests/base/pom.xml clean install \
      -Pauth-server-cluster-quarkus \
      -Dsession.cache.owners=2  \
      -Dtest=AuthenticationSessionFailoverClusterTest
+     
+Alternatively, you can perform both steps using the following command:
+
+    mvn -f testsuite/integration-arquillian/pom.xml clean install \
+    -Pauth-server-cluster-quarkus \
+    -Dsession.cache.owners=2 \
+    -Dtest=AuthenticationSessionFailoverClusterTest
      
 ---
 **NOTE**

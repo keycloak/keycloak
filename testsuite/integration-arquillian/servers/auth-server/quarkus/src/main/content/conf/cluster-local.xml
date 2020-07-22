@@ -18,8 +18,8 @@
 
 <infinispan
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="urn:infinispan:config:9.4 http://www.infinispan.org/schemas/infinispan-config-9.4.xsd"
-        xmlns="urn:infinispan:config:9.4">
+        xsi:schemaLocation="urn:infinispan:config:10.1 http://www.infinispan.org/schemas/infinispan-config-10.1.xsd"
+        xmlns="urn:infinispan:config:10.1">
 
     <!-- Local Cache Container Configuration -->
     <cache-container name="keycloak">
