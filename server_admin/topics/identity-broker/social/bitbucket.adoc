@@ -13,7 +13,7 @@ NOTE: You will use the `Redirect URI` from this page in a later step, which you 
 
 .Add a New App
 To enable login with Bitbucket you must first register an application project in
-https://confluence.atlassian.com/bitbucket/oauth-on-bitbucket-cloud-238027431.html[OAuth on Bitbucket Cloud].
+https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/[OAuth on Bitbucket Cloud].
 
 NOTE: Bitbucket often changes the look and feel of application registration, so what you see on the Bitbucket site may differ. If in doubt, see the Bitbucket documentation.
 

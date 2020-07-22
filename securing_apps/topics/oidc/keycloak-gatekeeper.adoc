@@ -450,7 +450,7 @@ The proxy will automatically rotate the server certificates if the files change 
 
 If a request for an access token contains a refresh token and  `--enable-refresh-tokens` is set to `true`, the proxy will automatically refresh the access token for you. The tokens themselves are kept either as an encrypted *(--encryption-key=KEY)* cookie *(cookie name: kc-state).* or a store *(still requires encryption key)*.
 
-At present the only store options supported are link:https://github.com/antirez/redis[Redis] and link:https://github.com/boltdb/bolt[Boltdb].
+At present the only store options supported are link:https://github.com/redis/redis[Redis] and link:https://github.com/boltdb/bolt[Boltdb].
 
 To enable a local boltdb store use `--store-url boltdb:///PATH` or using a relative path `boltdb://PATH`.
 
