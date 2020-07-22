@@ -22,7 +22,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.common.enums.SslRequired;
-import org.keycloak.dom.saml.v2.assertion.AttributeType;
+import org.keycloak.dom.saml.v2.metadata.ContactTypeType;
 import org.keycloak.dom.saml.v2.metadata.EndpointType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
@@ -51,6 +51,8 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.broker.OIDCIdentityProviderConfigRep;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.util.JsonSerialization;
+import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -74,8 +76,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
+import java.util.UUID;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -657,10 +659,10 @@ public class IdentityProviderTest extends AbstractAdminTest {
         IdentityProviderResource provider = realm.identityProviders().get("saml");
         IdentityProviderRepresentation rep = provider.toRepresentation();
         assertCreatedSamlIdp(rep, false);
-        
+
     }
 
-
+    
     @Test
     public void testSamlImportAndExportMultipleSigningKeys() throws URISyntaxException, IOException, ParsingException {
 
@@ -897,7 +899,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertEquals("config", expected.getConfig(), actual.getConfig());
     }
 
-    private void assertCreatedSamlIdp(IdentityProviderRepresentation idp,boolean enabled) {
+    private void assertCreatedSamlIdp(IdentityProviderRepresentation idp,boolean enabled) throws IOException {
         //System.out.println("idp: " + idp);
         Assert.assertNotNull("IdentityProviderRepresentation not null", idp);
         Assert.assertNotNull("internalId", idp.getInternalId());
@@ -908,7 +910,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertSamlConfig(idp.getConfig());
     }
 
-    private void assertSamlConfig(Map<String, String> config) {
+    private void assertSamlConfig(Map<String, String> config) throws IOException {
         // import endpoint simply converts IDPSSODescriptor into key value pairs.
         // check that saml-idp-metadata.xml was properly converted into key value pairs
         //System.out.println(config);
@@ -924,7 +926,23 @@ public class IdentityProviderTest extends AbstractAdminTest {
           "signingCertificate",
           "addExtensionsElementWithKeyInfo",
           "loginHint",
-          "hideOnLoginPage"
+          "hideOnLoginPage",
+          "mdrpiRegistrationAuthority",
+          "mdrpiRegistrationPolicy",
+          "mduiDescription",
+          "mduiInformationURL",
+          "mduiPrivacyStatementURL",
+          "mduiLogo",
+          "mduiLogoHeight",
+          "mduiLogoWidth",
+          "mdOrganizationName",
+          "mdOrganizationDisplayName",
+          "mdOrganizationURL",
+          "mdContactType",
+          "mdContactGivenName",
+          "mdContactSurname",
+          "mdContactEmailAddress",
+          "mdContactTelephoneNumber"
         ));
         assertThat(config, hasEntry("validateSignature", "true"));
         assertThat(config, hasEntry("singleLogoutServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml"));
@@ -935,16 +953,38 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertThat(config, hasEntry("addExtensionsElementWithKeyInfo", "false"));
         assertThat(config, hasEntry("nameIDPolicyFormat", "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"));
         assertThat(config, hasEntry("hideOnLoginPage", "true"));
+        assertThat(config, hasEntry("mdrpiRegistrationAuthority", "http://www.surfconext.nl/"));
+        assertThat(config, hasEntry("mdrpiRegistrationPolicy", "https://wiki.surfnet.nl/display/eduGAIN/EduGAIN"));
+        assertThat(config, hasEntry("mduiDescription", "Test SAML IdP"));
+        assertThat(config, hasEntry("mduiInformationURL", "https://samltest.id/faq"));
+        assertThat(config, hasEntry("mduiPrivacyStatementURL", "https://samltest.id"));
+        assertThat(config,
+            hasEntry("mduiLogo", "https://github.com/keycloak/keycloak-misc/blob/master/logo/keycloak_icon_256px.png"));
+        assertThat(config, hasEntry("mduiLogoHeight", "54"));
+        assertThat(config, hasEntry("mduiLogoWidth", "125"));
+        assertThat(config, hasEntry("mdOrganizationName", "saml"));
+        assertThat(config, hasEntry("mdOrganizationDisplayName", "saml organization"));
+        assertThat(config, hasEntry("mdOrganizationURL", "https://samltest.id"));
+        assertThat(config, hasEntry("mdContactType", ContactTypeType.ADMINISTRATIVE.name()));
+        assertThat(config, hasEntry("mdContactGivenName", "John"));
+        assertThat(config, hasEntry("mdContactSurname", "Tester"));
+        assertThat(config, hasEntry("mdContactEmailAddress", JsonSerialization.writeValueAsString( ImmutableList.<String>builder().add("support@samltest.com").build() )));
+        assertThat(config, hasEntry("mdContactTelephoneNumber",JsonSerialization.writeValueAsString( ImmutableList.<String>builder().add("1234567890").add("9876543210").build() )));
         assertThat(config, hasEntry(is("signingCertificate"), notNullValue()));
     }
 
-    private void assertSamlImport(Map<String, String> config, String expectedSigningCertificates,boolean enabled) {
+    private void assertSamlImport(Map<String, String> config, String expectedSigningCertificates,boolean enabled) throws IOException{
         //firtsly check and remove enabledFromMetadata from config
         boolean enabledFromMetadata = Boolean.valueOf(config.get(SAMLIdentityProviderConfig.ENABLED_FROM_METADATA));
         config.remove(SAMLIdentityProviderConfig.ENABLED_FROM_METADATA);
         Assert.assertEquals(enabledFromMetadata,enabled);
+        //check display name equal expected and remove it from config
+        String displayName = config.get(SAMLIdentityProviderConfig.MDUI_DISPLAY_NAME);
+        Assert.assertEquals(displayName, "saml");
+        config.remove(SAMLIdentityProviderConfig.MDUI_DISPLAY_NAME);
         assertSamlConfig(config);
         assertThat(config, hasEntry("signingCertificate", expectedSigningCertificates));
+
     }
 
     private void assertSamlExport(String body) throws ParsingException, URISyntaxException {

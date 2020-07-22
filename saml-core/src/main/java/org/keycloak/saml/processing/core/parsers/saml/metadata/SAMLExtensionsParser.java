@@ -23,6 +23,11 @@ import org.keycloak.dom.saml.v2.metadata.ExtensionsType;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.parsers.saml.mdattr.SAMLEntityAttributesParser;
+import org.keycloak.saml.processing.core.parsers.saml.mdrpi.SAMLRegistrationInfoParser;
+import org.keycloak.saml.processing.core.parsers.saml.mdui.SAMLUIInfoParser;
+
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.StartElement;
 
 /**
  * Parses &lt;samlp:Extensions&gt; SAML2 element into series of DOM nodes.
@@ -51,8 +56,14 @@ public class SAMLExtensionsParser extends AbstractStaxSamlMetadataParser<Extensi
         StartElement elementDetail) throws ParsingException {
 
         switch (element) {
+            case UIINFO:
+                target.addExtension(SAMLUIInfoParser.getInstance().parse(xmlEventReader));
+                break;
             case ENTITY_ATTRIBUTES:
                 target.addExtension(SAMLEntityAttributesParser.getInstance().parse(xmlEventReader));
+                break;
+            case REGISTRATION_INFO:
+                target.addExtension(SAMLRegistrationInfoParser.getInstance().parse(xmlEventReader));
                 break;
             default:
                 target.addExtension(StaxParserUtil.getDOMElement(xmlEventReader));

@@ -1002,8 +1002,36 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
 
             }
         ];
-        if (instance && instance.alias) {
+        $scope.contactTypes = [
+            {
+                type: "TECHNICAL",
+                name: "technical"
 
+            },
+            {
+                type: "SUPPORT",
+                name: "support"
+
+            },
+            {
+                type: "ADMINISTRATIVE",
+                name: "administrative"
+
+            },
+            {
+                type: "BILLING",
+                name: "billing"
+
+            },
+            {
+                type: "OTHER",
+                name: "other"
+
+            }
+        ];
+        if (instance && instance.alias) {
+            $scope.identityProvider.config.mdContactEmailAddress =  angular.fromJson($scope.identityProvider.config.mdContactEmailAddress);
+        	$scope.identityProvider.config.mdContactTelephoneNumber =  angular.fromJson($scope.identityProvider.config.mdContactTelephoneNumber);
         } else {
             $scope.identityProvider.config.nameIDPolicyFormat = $scope.nameIdFormats[0].format;
             $scope.identityProvider.config.principalType = $scope.principalTypes[0].type;
@@ -1011,7 +1039,26 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             $scope.identityProvider.config.xmlSigKeyInfoKeyNameTransformer = $scope.xmlKeyNameTranformers[1];
         }
         $scope.identityProvider.config.entityId = $scope.identityProvider.config.entityId || (authUrl + '/realms/' + realm.realm);
+    
     }
+    
+    $scope.deleteContactEmailAddress = function(index) {
+        $scope.identityProvider.config.mdContactEmailAddress.splice(index, 1);
+    }
+
+    $scope.addContactEmailAddress = function() {
+        $scope.identityProvider.config.mdContactEmailAddress.push($scope.newContactEmailAddress);
+        $scope.newContactEmailAddress = "";
+    }
+    
+    $scope.deleteContactTelephoneNumber = function(index) {
+        $scope.identityProvider.config.mdContactTelephoneNumber.splice(index, 1);
+    }
+
+    $scope.addContactTelephoneNumber = function() {
+        $scope.identityProvider.config.mdContactTelephoneNumber.push($scope.newContactTelephoneNumber);
+        $scope.newContactTelephoneNumber = "";
+    }   
 
     $scope.hidePassword = true;
     $scope.fromUrl = {
@@ -1104,10 +1151,21 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
              $scope.identityProvider.enabled = data["enabledFromMetadata"] == "true";
              delete data["enabledFromMetadata"];
         }
+        if (data["mduiDisplayName"] !== undefined ) {
+             $scope.identityProvider.displayName = data["mduiDisplayName"];
+             delete data["mduiDisplayName"];
+        }
+        if (data["mdContactEmailAddress"] !== undefined ) {
+        	$scope.identityProvider.config.mdContactEmailAddress =  angular.fromJson(data["mdContactEmailAddress"]);
+        	delete data["mdContactEmailAddress"];
+        }
+        if (data["mdContactTelephoneNumber"] !== undefined ) {
+        	$scope.identityProvider.config.mdContactTelephoneNumber =  angular.fromJson(data["mdContactTelephoneNumber"]);
+        	delete data["mdContactTelephoneNumber"];
+        }
         for (var key in data) {
             $scope.identityProvider.config[key] = data[key];
         }
-       
     }
 
     $scope.uploadFile = function() {
@@ -1195,6 +1253,18 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
     };
 
     $scope.save = function() {
+        if ($scope.newContactEmailAddress && $scope.newContactEmailAddress.length > 0) {
+            $scope.addContactEmailAddress();
+        }
+        if ($scope.newContactTelephoneNumber && $scope.newContactTelephoneNumber.length > 0) {
+            $scope.addContactTelephoneNumber();
+        }
+        if ($scope.identityProvider.config.mdContactEmailAddress !== undefined ) {
+        	$scope.identityProvider.config.mdContactEmailAddress = angular.toJson($scope.identityProvider.config.mdContactEmailAddress);
+        }
+        if ($scope.identityProvider.config.mdContactTelephoneNumber !== undefined ) {
+        	$scope.identityProvider.config.mdContactTelephoneNumber = angular.toJson($scope.identityProvider.config.mdContactTelephoneNumber);
+        }
         if ($scope.newIdentityProvider) {
             if (!$scope.identityProvider.alias) {
                 Notifications.error("You must specify an alias");

@@ -295,10 +295,162 @@
                 </div>
                 <kc-tooltip>{{:: 'identity-provider.allowed-clock-skew.tooltip' | translate}}</kc-tooltip>
             </div>
-        </fieldset>
-        <fieldset>
-            <legend collapsed><span class="text">{{:: 'identity-provider.saml.requested-authncontext' | translate}}</span> <kc-tooltip>{{:: 'identity-provider.saml.requested-authncontext.tooltip' | translate}}</kc-tooltip></legend>
+         </fieldset>
+         <fieldset>
+           <legend collapsed><span class="text">{{:: 'saml.metadata-extensions' | translate}}</span> <kc-tooltip>{{:: 'saml.metadata-extensions.tooltip' | translate}}</kc-tooltip></legend>
+           <div class="form-group">
+                <label class="col-md-2 control-label" for="mdrpiRegistrationAuthority">{{:: 'mdrpiRegistrationAuthority' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mdrpiRegistrationAuthority" type="text" ng-model="identityProvider.config.mdrpiRegistrationAuthority">
+                </div>
+                <kc-tooltip>{{:: 'saml.mdrpiRegistrationAuthority.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group"  data-ng-show="identityProvider.config.mdrpiRegistrationAuthority">
+                <label class="col-md-2 control-label" for="mdrpiRegistrationPolicy">{{:: 'mdrpiRegistrationPolicy' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mdrpiRegistrationPolicy" type="text" ng-model="identityProvider.config.mdrpiRegistrationPolicy">
+                </div>
+                <kc-tooltip>{{:: 'saml.mdrpiRegistrationPolicy.tooltip' | translate}}</kc-tooltip>
+            </div>
+			<div class="form-group">
+                <label class="col-md-2 control-label" for="mduiDescription"> {{:: 'description' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mduiDescription" type="text" ng-model="identityProvider.config.mduiDescription">
+                </div>
+                <kc-tooltip>{{:: 'identity-provider.mduiDescription.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="mduiInformationUrl">{{:: 'mduiInformationUrl' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mduiInformationUrl" type="text" ng-model="identityProvider.config.mduiInformationURL">
+                </div>
+                <kc-tooltip>{{:: 'saml.mduiInformationUrl.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="mduiPrivacyStatementUrl">{{:: 'mduiPrivacyStatementUrl' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mduiPrivacyStatementUrl" type="text" ng-model="identityProvider.config.mduiPrivacyStatementURL">
+                </div>
+                <kc-tooltip>{{:: 'saml.mduiPrivacyStatementUrl.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="mduiLogo">{{:: 'mduiLogo' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mduiogo" type="text" ng-model="identityProvider.config.mduiLogo">
+                </div>
+                <kc-tooltip>{{:: 'saml.mduiLogo.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="identityProvider.config.mduiLogo">
+                <label class="col-md-2 control-label" for="mduiLogoWidth">{{:: 'mduiLogoWidth' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mduiLogoWidth" string-to-number type="number" min="0" step="1" type="number" ng-model="identityProvider.config.mduiLogoWidth">
+                </div>
+                <kc-tooltip>{{:: 'saml.mduiLogoWidth.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="identityProvider.config.mduiLogo">
+                <label class="col-md-2 control-label" for="mduiLogoHeight">{{:: 'mduiLogoHeight' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mduiLogoHeight" string-to-number type="number" min="0" step="1" type="number" ng-model="identityProvider.config.mduiLogoHeight">
+                </div>
+                <kc-tooltip>{{:: 'saml.mduiLogoHeight.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" >
+                <label class="col-md-2 control-label" for="mdOrganizationName">{{:: 'mdOrganizationName' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mdOrganizationName" s type="text" ng-model="identityProvider.config.mdOrganizationName">
+                </div>
+                <kc-tooltip>{{:: 'saml.mdOrganizationName.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" >
+                <label class="col-md-2 control-label" for="mdOrganizationDisplayName">{{:: 'mdOrganizationDisplayName' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mdOrganizationDisplayName"  type="text" ng-model="identityProvider.config.mdOrganizationDisplayName">
+                </div>
+                <kc-tooltip>{{:: 'saml.mdOrganizationDisplayName.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" >
+                <label class="col-md-2 control-label" for="mdOrganizationURL">{{:: 'mdOrganizationURL' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mdOrganizationURL"  type="text" ng-model="identityProvider.config.mdOrganizationURL">
+                </div>
+                <kc-tooltip>{{:: 'saml.mdOrganizationURL.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" >
+                <label class="col-md-2 control-label" for="mdContactType">{{:: 'mdContactType' | translate}}</label>
+                <div class="col-md-6">
+                  <select id="mdContactType" ng-model="identityProvider.config.mdContactType">
+						  <option value="">-- No contact person --</option>
+						  <option ng-repeat="ctype in contactTypes" value="{{ctype.type}}" >{{ctype.type}}</option>
+                   </select>
+                </div>
+                <kc-tooltip>{{:: 'saml.mdContactType.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="identityProvider.config.mdContactType">
+                <label class="col-md-2 control-label" for="mdContactCompany">{{:: 'mdContactCompany' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mdContactCompany"  type="text" ng-model="identityProvider.config.mdContactCompany">
+                </div>
+                <kc-tooltip>{{:: 'saml.mdContactCompany.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="identityProvider.config.mdContactType">
+                <label class="col-md-2 control-label" for="mdContactGivenName">{{:: 'mdContactGivenName' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mdContactGivenName"  type="text" ng-model="identityProvider.config.mdContactGivenName">
+                </div>
+                <kc-tooltip>{{:: 'saml.mdContactGivenName.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="identityProvider.config.mdContactType">
+                <label class="col-md-2 control-label" for="mdContactSurname">{{:: 'mdContactSurname' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mdContactSurname"  type="text" ng-model="identityProvider.config.mdContactSurname">
+                </div>
+                <kc-tooltip>{{:: 'saml.mdContactSurname.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group " data-ng-show="identityProvider.config.mdContactType">
+                <label class="col-md-2 control-label" for="mdContactEmailAddress">{{:: 'mdContactEmailAddress' | translate}}</label>
 
+                <div class="col-sm-6">
+                    <div class="input-group" ng-repeat="i in identityProvider.config.mdContactEmailAddress track by $index">
+                        <input class="form-control" ng-model="identityProvider.config.mdContactEmailAddress[$index]">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="deleteContactEmailAddress($index)"><span class="fa fa-minus"></span></button>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <input class="form-control" ng-model="newContactEmailAddress" id="newContactEmailAddress">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="newContactEmailAddress.length > 0 && addContactEmailAddress()"><span class="fa fa-plus"></span></button>
+                        </div>
+                    </div>
+                </div>
+
+                <kc-tooltip>{{:: 'mdContactEmailAddress.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group " data-ng-show="identityProvider.config.mdContactType">
+                <label class="col-md-2 control-label" for="mdContactTelephoneNumber">{{:: 'mdContactTelephoneNumber' | translate}}</label>
+
+                <div class="col-sm-6">
+                    <div class="input-group" ng-repeat="i in identityProvider.config.mdContactTelephoneNumber track by $index">
+                        <input class="form-control" ng-model="identityProvider.config.mdContactTelephoneNumber[$index]">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="deleteContactTelephoneNumber($index)"><span class="fa fa-minus"></span></button>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <input class="form-control" ng-model="newContactTelephoneNumber" id="newContactTelephoneNumber">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="newContactTelephoneNumber.length > 0 && addContactTelephoneNumber()"><span class="fa fa-plus"></span></button>
+                        </div>
+                    </div>
+                </div>
+
+                <kc-tooltip>{{:: 'mdContactTelephoneNumber.tooltip' | translate}}</kc-tooltip>
+            </div>
+         </fieldset>
+         <fieldset>
+            <legend collapsed><span class="text">{{:: 'identity-provider.saml.requested-authncontext' | translate}}</span> <kc-tooltip>{{:: 'identity-provider.saml.requested-authncontext.tooltip' | translate}}</kc-tooltip></legend>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="authnContextComparisonType">{{:: 'identity-provider.saml.authncontext-comparison-type' | translate}}</label>
                 <div class="col-md-6">

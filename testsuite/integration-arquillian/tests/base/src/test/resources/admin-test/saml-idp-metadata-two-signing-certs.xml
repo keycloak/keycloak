@@ -2,19 +2,32 @@
 <EntityDescriptor entityID="http://localhost:8080/auth/realms/master"
                   xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
                   xmlns:mdattr="urn:oasis:names:tc:SAML:metadata:attribute"
+                  xmlns:mdrpi="urn:oasis:names:tc:SAML:metadata:rpi"
+                  xmlns:mdui="urn:oasis:names:tc:SAML:metadata:ui"
                   xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
                   xmlns:dsig="http://www.w3.org/2000/09/xmldsig#"
 >
    <Extensions>
-	 <mdattr:EntityAttributes>
-        <saml:Attribute Name="http://macedir.org/entity-category" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
-          <saml:AttributeValue>http://refeds.org/category/hide-from-discovery</saml:AttributeValue>
-        </saml:Attribute>
-      </mdattr:EntityAttributes>
-      </Extensions>
+        <mdrpi:RegistrationInfo registrationAuthority="http://www.surfconext.nl/" registrationInstant="2016-09-20T16:33:00Z">
+          <mdrpi:RegistrationPolicy xml:lang="en">https://wiki.surfnet.nl/display/eduGAIN/EduGAIN</mdrpi:RegistrationPolicy>
+        </mdrpi:RegistrationInfo>
+	    <mdattr:EntityAttributes>
+          <saml:Attribute Name="http://macedir.org/entity-category" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+            <saml:AttributeValue>http://refeds.org/category/hide-from-discovery</saml:AttributeValue>
+          </saml:Attribute>
+        </mdattr:EntityAttributes>
+   </Extensions>
    <IDPSSODescriptor WantAuthnRequestsSigned="true"
       protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
-
+      <Extensions>
+        <mdui:UIInfo>
+          <mdui:DisplayName xml:lang="en">saml</mdui:DisplayName>
+          <mdui:Description xml:lang="en">Test SAML IdP</mdui:Description>
+          <mdui:InformationURL xml:lang="en">https://samltest.id/faq</mdui:InformationURL>
+          <mdui:PrivacyStatementURL xml:lang="en">https://samltest.id</mdui:PrivacyStatementURL>
+          <mdui:Logo height="54" width="125">https://github.com/keycloak/keycloak-misc/blob/master/logo/keycloak_icon_256px.png</mdui:Logo>
+         </mdui:UIInfo>
+      </Extensions>
       <KeyDescriptor use="signing">
          <dsig:KeyInfo>
              <dsig:KeyName>hAoy_sBtpu6FdRVCk7ykihF6Ug-o0pKPK3LN9RYkeqs</dsig:KeyName>
@@ -45,4 +58,16 @@
       <SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
          Location="http://localhost:8080/auth/realms/master/protocol/saml" />
    </IDPSSODescriptor>
+   <Organization>
+        <OrganizationName xml:lang="en">saml</OrganizationName>
+        <OrganizationDisplayName xml:lang="en">saml organization</OrganizationDisplayName>
+        <OrganizationURL xml:lang="en">https://samltest.id</OrganizationURL>
+    </Organization>
+    <ContactPerson contactType="administrative">
+        <GivenName>John</GivenName>
+	    <SurName>Tester</SurName>
+        <EmailAddress>support@samltest.com</EmailAddress>
+	    <TelephoneNumber>1234567890</TelephoneNumber>
+	    <TelephoneNumber>9876543210</TelephoneNumber>
+    </ContactPerson>
 </EntityDescriptor>

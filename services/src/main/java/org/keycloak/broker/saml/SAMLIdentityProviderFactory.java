@@ -21,13 +21,16 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.xml.namespace.QName;
 
 import org.keycloak.Config.Scope;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.common.util.Time;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
+import org.keycloak.dom.saml.v2.mdrpi.RegistrationInfoType;
+import org.keycloak.dom.saml.v2.mdui.LogoType;
+import org.keycloak.dom.saml.v2.mdui.UIInfoType;
+import org.keycloak.dom.saml.v2.metadata.ContactType;
 import org.keycloak.dom.saml.v2.metadata.EndpointType;
 import org.keycloak.dom.saml.v2.metadata.EntitiesDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
@@ -99,6 +102,10 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
 
                 if (idpDescriptor != null) {
                     SAMLIdentityProviderConfig samlIdentityProviderConfig = new SAMLIdentityProviderConfig();
+                     
+                    // find default locale
+                    String lang = (String) session.getAttribute("locale");
+                   
                     String singleSignOnServiceUrl = null;
                     boolean postBindingResponse = false;
                     boolean postBindingLogout = false;
@@ -164,6 +171,52 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                             samlIdentityProviderConfig.setEncryptionPublicKey(defaultCertificate);
                         }
                     }
+                    if (idpDescriptor.getExtensions() != null && idpDescriptor.getExtensions().getUIInfo() != null) {
+                        UIInfoType uiInfo = idpDescriptor.getExtensions().getUIInfo();
+                        // import attributes only if values with these locale exist
+                        uiInfo.getDisplayName().stream().filter(dn -> lang.equals(dn.getLang())).findFirst().ifPresent(
+                            displayName -> samlIdentityProviderConfig.setConfigMduiDisplayName(displayName.getValue()));
+                        uiInfo.getDescription().stream().filter(dn -> lang.equals(dn.getLang())).findFirst()
+                            .ifPresent(description -> samlIdentityProviderConfig.setMduiDescription(description.getValue()));
+                        uiInfo.getInformationURL().stream().filter(dn -> lang.equals(dn.getLang())).findFirst()
+                            .ifPresent(informationURL -> samlIdentityProviderConfig
+                                .setMduiInformationURL(informationURL.getValue().toString()));
+                        uiInfo.getPrivacyStatementURL().stream().filter(dn -> lang.equals(dn.getLang())).findFirst()
+                            .ifPresent(privacyStatementURL -> samlIdentityProviderConfig
+                                .setMduiPrivacyStatementURL(privacyStatementURL.getValue().toString()));
+                        if (!uiInfo.getLogo().isEmpty()) {
+                            LogoType logo = uiInfo.getLogo().get(0);
+                            samlIdentityProviderConfig.setMduiLogo(logo.getValue().toString());
+                            samlIdentityProviderConfig.setMduiLogoHeight(logo.getHeight());
+                            samlIdentityProviderConfig.setMduiLogoWidth(logo.getWidth());
+                        }
+
+                    }
+
+                    // organization
+                    if (entityType.getOrganization() != null) {
+                        entityType.getOrganization().getOrganizationName().stream().filter(dn -> lang.equals(dn.getLang()))
+                            .findFirst().ifPresent(organizationName -> samlIdentityProviderConfig
+                                .setMdOrganizationName(organizationName.getValue()));
+                        entityType.getOrganization().getOrganizationDisplayName().stream()
+                            .filter(dn -> lang.equals(dn.getLang())).findFirst()
+                            .ifPresent(organizationDisplayName -> samlIdentityProviderConfig
+                                .setMdOrganizationDisplayName(organizationDisplayName.getValue()));
+                        entityType.getOrganization().getOrganizationURL().stream().filter(dn -> lang.equals(dn.getLang()))
+                            .findFirst().ifPresent(organizationURL -> samlIdentityProviderConfig
+                                .setMdOrganizationURL(organizationURL.getValue().toString()));
+                    }
+
+                    // contact person
+                    if (!entityType.getContactPerson().isEmpty()) {
+                        ContactType contact = entityType.getContactPerson().get(0);
+                        samlIdentityProviderConfig.setMdContactType(contact.getContactType().name());
+                        samlIdentityProviderConfig.setMdContactCompany(contact.getCompany());
+                        samlIdentityProviderConfig.setMdContactGivenName(contact.getGivenName());
+                        samlIdentityProviderConfig.setMdContactSurname(contact.getSurName());
+                        samlIdentityProviderConfig.setMdContactEmailAddress(contact.getEmailAddress());
+                        samlIdentityProviderConfig.setMdContactTelephoneNumber(contact.getTelephoneNumber());
+                    }
 
                     samlIdentityProviderConfig.setEnabledFromMetadata(entityType.getValidUntil() == null
                         || entityType.getValidUntil().toGregorianCalendar().getTime().after(new Date(System.currentTimeMillis())));
@@ -178,6 +231,16 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                         }
 
                     }
+
+                    if (entityType.getExtensions().getRegistrationInfo() != null) {
+                        RegistrationInfoType registrationInfo = entityType.getExtensions().getRegistrationInfo();
+                        samlIdentityProviderConfig
+                            .setΜdrpiRegistrationAuthority(registrationInfo.getRegistrationAuthority().toString());
+                        registrationInfo.getRegistrationPolicy().stream().filter(dn -> lang.equals(dn.getLang())).findFirst()
+                            .ifPresent(registrationPolicy -> samlIdentityProviderConfig
+                                .setΜdrpiRegistrationPolicy(registrationPolicy.getValue().toString()));
+                    }
+                    
 
                     return samlIdentityProviderConfig.getConfig();
                 }
