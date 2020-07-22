@@ -21,6 +21,8 @@ import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.dom.saml.v2.mdattr.EntityAttributes;
+import org.keycloak.dom.saml.v2.mdrpi.RegistrationInfoType;
+import org.keycloak.dom.saml.v2.mdui.UIInfoType;
 import org.w3c.dom.Element;
 
 /**
@@ -99,4 +101,21 @@ public class ExtensionsType {
         return null;
     }
 
+    public RegistrationInfoType getRegistrationInfo() {
+        for (Object o : this.any) {
+            if (o instanceof RegistrationInfoType) {
+                return (RegistrationInfoType) o;
+            }
+        }
+        return null;
+    }
+
+    public UIInfoType getUIInfo() {
+        for (Object o : this.any) {
+            if (o instanceof UIInfoType) {
+                return (UIInfoType) o;
+            }
+        }
+        return null;
+    }
 }

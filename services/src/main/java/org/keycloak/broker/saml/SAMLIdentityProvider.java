@@ -19,12 +19,14 @@ package org.keycloak.broker.saml;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.provider.*;
 import org.keycloak.broker.provider.util.SimpleHttp;
+import org.keycloak.broker.saml.mappers.UserAttributeMapper;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyStatus;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
+import org.keycloak.dom.saml.v2.metadata.ContactTypeType;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
@@ -41,6 +43,7 @@ import org.keycloak.saml.SamlProtocolExtensionsAwareBuilder.NodeGenerator;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.model.SPDescriptorModel;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
@@ -62,9 +65,11 @@ import java.net.URI;
 import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -302,46 +307,87 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
     @Override
     public Response export(UriInfo uriInfo, RealmModel realm, String format) {
-        try
-        {
-            URI authnBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri();
+        try {
+            SPDescriptorModel sp = new SPDescriptorModel();
+            sp.setBinding(getConfig().isPostBindingAuthnRequest() ? JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri()
+                : JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri());
 
-            if (getConfig().isPostBindingAuthnRequest()) {
-                authnBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri();
+            URI endpoint = uriInfo.getBaseUriBuilder().path("realms").path(realm.getName()).path("broker")
+                .path(getConfig().getAlias()).path("endpoint").build();
+            sp.setAssertionEndpoint(endpoint);
+            sp.setLogoutEndpoint(endpoint);
+
+            sp.setWantAuthnRequestsSigned(getConfig().isWantAuthnRequestsSigned());
+            sp.setWantAssertionsSigned(getConfig().isWantAssertionsSigned());
+            sp.setWantAssertionsEncrypted(getConfig().isWantAssertionsEncrypted());
+            sp.setEntityId(getEntityId(uriInfo, realm));
+            sp.setNameIDPolicyFormat(getConfig().getNameIDPolicyFormat());
+            sp.setDisplayName(realm.getName());
+            sp.setDescription(realm.getAttributes().get("mduiDescription"));
+            sp.setInformationURL(realm.getAttributes().get("mduiInformationURL"));
+            sp.setPrivacyStatementURL(realm.getAttributes().get("mduiPrivacyStatementURL"));
+            sp.setLogo(realm.getAttributes().get("mduiLogo"));
+            if (realm.getAttributes().get("mduiLogoWidth") != null)
+                sp.setLogoWidth(Integer.valueOf(realm.getAttributes().get("mduiLogoWidth")));
+            if (realm.getAttributes().get("mduiLogoHeight") != null)
+                sp.setLogoHeight(Integer.valueOf(realm.getAttributes().get("mduiLogoHeight")));
+            if (realm.getAttributes().get("samlAttributes") != null)
+                sp.setSamlAttributes((Map <String,String> )JsonSerialization.readValue(realm.getAttributes().get("samlAttributes"), Map.class));
+            sp.setRegistrationAuthority(realm.getAttributes().get("mdrpiRegistrationAuthority"));
+            sp.setRegistrationPolicy(realm.getAttributes().get("mdrpiRegistrationPolicy"));
+            if (realm.getAttributes().get("mdOrganizationName") != null && realm.getAttributes().get("mdOrganizationDisplayName") != null
+                && realm.getAttributes().get("mdOrganizationURL") != null) {
+                sp.setOrganizationName(realm.getAttributes().get("mdOrganizationName"));
+                sp.setOrganizationDisplayName(realm.getAttributes().get("mdOrganizationDisplayName"));
+                sp.setOrganizationURL(realm.getAttributes().get("mdOrganizationURL"));
+            }
+            if (realm.getAttributes().get("mdContactType") != null) {
+                sp.setContactType(ContactTypeType.valueOf(realm.getAttributes().get("mdContactType")));
+                sp.setContactCompany(realm.getAttributes().get("mdContactCompany"));
+                sp.setContactGivenName(realm.getAttributes().get("mdContactGivenName"));
+                sp.setContactSurname(realm.getAttributes().get("mdContactSurname"));
+                if (realm.getAttributes().get("mdContactEmailAddress") != null) 
+                    sp.setContactEmailAddresses(Arrays.asList(realm.getAttributes().get("mdContactEmailAddress").split(",")));
+                if (realm.getAttributes().get("mdContactTelephoneNumber") != null)    
+                    sp.setContactTelephoneNumbers(Arrays.asList(realm.getAttributes().get("mdContactTelephoneNumber").split(",")));
             }
 
-            URI endpoint = uriInfo.getBaseUriBuilder()
-                    .path("realms").path(realm.getName())
-                    .path("broker")
-                    .path(getConfig().getAlias())
-                    .path("endpoint")
-                    .build();
-
-
-            boolean wantAuthnRequestsSigned = getConfig().isWantAuthnRequestsSigned();
-            boolean wantAssertionsSigned = getConfig().isWantAssertionsSigned();
-            boolean wantAssertionsEncrypted = getConfig().isWantAssertionsEncrypted();
-            String entityId = getEntityId(uriInfo, realm);
-            String nameIDPolicyFormat = getConfig().getNameIDPolicyFormat();
-
-            List<Element> signingKeys = new ArrayList<Element>();
-            List<Element> encryptionKeys = new ArrayList<Element>();
-
-            Set<RsaKeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE OR ACTIVE, push PASSIVE to end of list
-              ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
-              : (o1.getStatus() == KeyStatus.PASSIVE ? 1 : -1));
+            realm.getIdentityProviderMappersByAliasStream(getConfig().getAlias())
+                .filter(mapper -> UserAttributeMapper.PROVIDER_ID.equals(mapper.getIdentityProviderMapper()))
+                .forEach(mapper -> {
+                    List<String> mapperValues = new ArrayList<>();
+                    if (mapper.getConfig().get(UserAttributeMapper.ATTRIBUTE_NAME) != null) {
+                        mapperValues.add(mapper.getConfig().get(UserAttributeMapper.ATTRIBUTE_NAME));
+                        mapperValues.add(mapper.getConfig().get(UserAttributeMapper.ATTRIBUTE_FRIENDLY_NAME) != null
+                            ? mapper.getConfig().get(UserAttributeMapper.ATTRIBUTE_FRIENDLY_NAME)
+                            : "");
+                    } else {
+                        mapperValues.add(mapper.getConfig().get(UserAttributeMapper.ATTRIBUTE_FRIENDLY_NAME) != null
+                            ? mapper.getConfig().get(UserAttributeMapper.ATTRIBUTE_FRIENDLY_NAME)
+                            : "");
+                    }
+                    sp.getMappers().add(mapperValues);
+                });
+            
+            Set<RsaKeyMetadata> keys = new TreeSet<>((o1, o2) -> o1.getStatus() == o2.getStatus() // Status can be only PASSIVE
+                                                                                                  // OR ACTIVE, push PASSIVE to
+                                                                                                  // end of list
+                ? (int) (o2.getProviderPriority() - o1.getProviderPriority())
+                : (o1.getStatus() == KeyStatus.PASSIVE ? 1 : -1));
             keys.addAll(session.keys().getRsaKeys(realm));
             for (RsaKeyMetadata key : keys) {
-                if (key == null || key.getCertificate() == null) continue;
+                if (key == null || key.getCertificate() == null)
+                    continue;
 
-                signingKeys.add(SPMetadataDescriptor.buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate())));
+                sp.getSigningCerts().add(
+                    SPMetadataDescriptor.buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate())));
 
                 if (key.getStatus() == KeyStatus.ACTIVE)
-                    encryptionKeys.add(SPMetadataDescriptor.buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate())));
+                    sp.getEncryptionCerts().add(SPMetadataDescriptor.buildKeyInfoElement(key.getKid(),
+                        PemUtils.encodeCertificate(key.getCertificate())));
             }
-            String descriptor = SPMetadataDescriptor.getSPDescriptor(authnBinding, endpoint, endpoint,
-              wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted,
-              entityId, nameIDPolicyFormat, signingKeys, encryptionKeys);
+            sp.setLocal(realm.getDefaultLocale());
+            String descriptor = SPMetadataDescriptor.getSPDescriptor(sp);
 
             // Metadata signing
             if (getConfig().isSignSpMetadata())

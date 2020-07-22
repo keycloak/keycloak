@@ -17,6 +17,10 @@
 package org.keycloak.saml.processing.core.saml.v2.writers;
 
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
+import org.keycloak.dom.saml.v2.mdattr.EntityAttributes;
+import org.keycloak.dom.saml.v2.mdrpi.RegistrationInfoType;
+import org.keycloak.dom.saml.v2.mdui.LogoType;
+import org.keycloak.dom.saml.v2.mdui.UIInfoType;
 import org.keycloak.dom.saml.v2.metadata.AdditionalMetadataLocationType;
 import org.keycloak.dom.saml.v2.metadata.AffiliationDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.AttributeAuthorityDescriptorType;
@@ -60,6 +64,10 @@ import java.util.List;
 public class SAMLMetadataWriter extends BaseWriter {
 
     private final String METADATA_PREFIX = "md";
+    private final String MDUI_PREFIX = "mdui";
+    private final String MDATTR_PREFIX = "mdattr";
+    private final String MDRPI_PREFIX = "mdrpi";
+    private final String SAML_PREFIX = "saml";
 
     public SAMLMetadataWriter(XMLStreamWriter writer) {
         super(writer);
@@ -70,6 +78,7 @@ public class SAMLMetadataWriter extends BaseWriter {
 
         StaxUtil.writeDefaultNameSpace(writer, JBossSAMLURIConstants.METADATA_NSURI.get());
         StaxUtil.writeNameSpace(writer, "md", JBossSAMLURIConstants.METADATA_NSURI.get());
+        StaxUtil.writeNameSpace(writer, "mdui", JBossSAMLURIConstants.METADATA_UI.get());
         StaxUtil.writeNameSpace(writer, "saml", JBossSAMLURIConstants.ASSERTION_NSURI.get());
         StaxUtil.writeNameSpace(writer, "ds", JBossSAMLURIConstants.XMLDSIG_NSURI.get());
 
@@ -108,8 +117,11 @@ public class SAMLMetadataWriter extends BaseWriter {
     public void writeEntityDescriptor(EntityDescriptorType entityDescriptor) throws ProcessingException {
         StaxUtil.writeStartElement(writer, METADATA_PREFIX, JBossSAMLConstants.ENTITY_DESCRIPTOR.get(), JBossSAMLURIConstants.METADATA_NSURI.get());
         StaxUtil.writeDefaultNameSpace(writer, JBossSAMLURIConstants.METADATA_NSURI.get());
-        StaxUtil.writeNameSpace(writer, "md", JBossSAMLURIConstants.METADATA_NSURI.get());
-        StaxUtil.writeNameSpace(writer, "saml", JBossSAMLURIConstants.ASSERTION_NSURI.get());
+        StaxUtil.writeNameSpace(writer, METADATA_PREFIX, JBossSAMLURIConstants.METADATA_NSURI.get());
+        StaxUtil.writeNameSpace(writer, MDUI_PREFIX, JBossSAMLURIConstants.METADATA_UI.get());
+        StaxUtil.writeNameSpace(writer, MDATTR_PREFIX, JBossSAMLURIConstants.METADATA_ENTITY_ATTRIBUTES_NSURI.get());
+        StaxUtil.writeNameSpace(writer, MDRPI_PREFIX, JBossSAMLURIConstants.METADATA_RPI.get());
+        StaxUtil.writeNameSpace(writer, SAML_PREFIX, JBossSAMLURIConstants.ASSERTION_NSURI.get());
         StaxUtil.writeNameSpace(writer, "ds", JBossSAMLURIConstants.XMLDSIG_NSURI.get());
 
         StaxUtil.writeAttribute(writer, JBossSAMLConstants.ENTITY_ID.get(), entityDescriptor.getEntityID());
@@ -126,7 +138,19 @@ public class SAMLMetadataWriter extends BaseWriter {
         }
         ExtensionsType extensions = entityDescriptor.getExtensions();
         if (extensions != null) {
-            StaxUtil.writeDOMElement(writer, extensions.getElement());
+            StaxUtil.writeStartElement(writer, METADATA_PREFIX, JBossSAMLConstants.EXTENSIONS__METADATA.get(),
+                JBossSAMLURIConstants.METADATA_NSURI.get());
+            if (extensions.getEntityAttributes() != null) {
+                writeEntityAttributes(extensions.getEntityAttributes());
+                extensions.removeExtension(extensions.getEntityAttributes());
+            }
+            if (extensions.getRegistrationInfo() != null) {
+                writeRegistrationInfo(extensions.getRegistrationInfo());
+                extensions.removeExtension(extensions.getRegistrationInfo());
+            }
+            Element el = extensions.getElement();
+            if (el != null)
+                StaxUtil.writeDOMElement(writer, el);
         }
 
         List<EntityDescriptorType.EDTChoiceType> choiceTypes = entityDescriptor.getChoiceType();
@@ -201,6 +225,19 @@ public class SAMLMetadataWriter extends BaseWriter {
                     wantAssertionsSigned.toString());
         }
 
+        //write extension 
+        if (spSSODescriptor.getExtensions() != null) {
+            UIInfoType uiInfo = null;
+            for (Object any : spSSODescriptor.getExtensions().getAny()) {
+                if (any instanceof UIInfoType) {
+                    uiInfo = (UIInfoType) any;
+                    break;
+                }
+            }
+            if (uiInfo != null)
+                writeExtensionswithUIInfo(uiInfo);
+        }
+          
         // Get the key descriptors
         List<KeyDescriptorType> keyDescriptors = spSSODescriptor.getKeyDescriptor();
         for (KeyDescriptorType keyDescriptor : keyDescriptors) {
@@ -417,14 +454,7 @@ public class SAMLMetadataWriter extends BaseWriter {
         for (LocalizedURIType uri : uriList) {
             StaxUtil.writeStartElement(writer, METADATA_PREFIX, JBossSAMLConstants.ORGANIZATION_URL.get(), JBossSAMLURIConstants.METADATA_NSURI.get());
 
-            String lang = uri.getLang();
-            String val = uri.getValue().toString();
-            StaxUtil.writeAttribute(writer, new QName(JBossSAMLURIConstants.XML.get(), JBossSAMLConstants.LANG.get(), "xml"),
-                    lang);
-
-            StaxUtil.writeCharacters(writer, val);
-
-            StaxUtil.writeEndElement(writer);
+            writeLocalizedUriType(uri);
         }
 
         StaxUtil.writeEndElement(writer);
@@ -545,11 +575,19 @@ public class SAMLMetadataWriter extends BaseWriter {
     }
 
     private void writeLocalizedType(LocalizedNameType localName) throws ProcessingException {
-        String lang = localName.getLang();
-        String val = localName.getValue();
-        StaxUtil.writeAttribute(writer, new QName(JBossSAMLURIConstants.XML.get(), JBossSAMLConstants.LANG.get(), "xml"), lang);
+        StaxUtil.writeAttribute(writer, new QName(JBossSAMLURIConstants.XML.get(), JBossSAMLConstants.LANG.get(), "xml"),
+            localName.getLang());
 
-        StaxUtil.writeCharacters(writer, val);
+        StaxUtil.writeCharacters(writer, localName.getValue());
+
+        StaxUtil.writeEndElement(writer);
+    }
+
+    private void writeLocalizedUriType(LocalizedURIType uriType) throws ProcessingException {
+        StaxUtil.writeAttribute(writer, new QName(JBossSAMLURIConstants.XML.get(), JBossSAMLConstants.LANG.get(), "xml"),
+            uriType.getLang());
+
+        StaxUtil.writeCharacters(writer, uriType.getValue().toString());
 
         StaxUtil.writeEndElement(writer);
     }
@@ -562,5 +600,100 @@ public class SAMLMetadataWriter extends BaseWriter {
         }
 
         StaxUtil.writeEndElement(writer);
+    }
+    
+    private void writeEntityAttributes(EntityAttributes entityAtributers) throws ProcessingException {
+        StaxUtil.writeStartElement(writer, MDATTR_PREFIX, JBossSAMLConstants.ENTITY_ATTRIBUTES.get(),
+            JBossSAMLURIConstants.METADATA_ENTITY_ATTRIBUTES_NSURI.get());
+
+        for (AttributeType attr : entityAtributers.getAttribute()) {
+            StaxUtil.writeStartElement(writer, SAML_PREFIX, JBossSAMLConstants.ATTRIBUTE.get(),
+                JBossSAMLURIConstants.ASSERTION_NSURI.get());
+            StaxUtil.writeAttribute(writer, new QName(JBossSAMLConstants.NAME.get()), String.valueOf(attr.getName()));
+            StaxUtil.writeAttribute(writer, new QName(JBossSAMLConstants.NAME_FORMAT.get()),
+                String.valueOf(attr.getNameFormat()));
+
+            for (Object value : attr.getAttributeValue()) {
+                StaxUtil.writeStartElement(writer, SAML_PREFIX, JBossSAMLConstants.ATTRIBUTE_VALUE.get(),
+                    JBossSAMLURIConstants.ASSERTION_NSURI.get());
+                StaxUtil.writeCharacters(writer, value.toString());
+                StaxUtil.writeEndElement(writer);
+            }
+            StaxUtil.writeEndElement(writer);
+        }
+
+        StaxUtil.writeEndElement(writer);
+    }
+    
+    private void writeRegistrationInfo(RegistrationInfoType info) throws ProcessingException {
+        StaxUtil.writeStartElement(writer, MDRPI_PREFIX, JBossSAMLConstants.REGISTRATION_INFO.get(),
+            JBossSAMLURIConstants.METADATA_RPI.get());
+        StaxUtil.writeAttribute(writer, new QName(JBossSAMLConstants.REGISTRATION_AUTHORITY.get()),
+            String.valueOf(info.getRegistrationAuthority().toString()));
+        for (LocalizedURIType uri : info.getRegistrationPolicy()) {
+            StaxUtil.writeStartElement(writer, MDRPI_PREFIX, JBossSAMLConstants.REGISTRATION_POLICY.get(),
+                JBossSAMLURIConstants.METADATA_RPI.get());
+            writeLocalizedUriType(uri);
+            StaxUtil.writeEndElement(writer);
+        }
+
+        StaxUtil.writeEndElement(writer);
+    }
+
+    private void writeExtensionswithUIInfo(UIInfoType uiInfo) throws ProcessingException {
+
+        StaxUtil.writeStartElement(writer, METADATA_PREFIX, JBossSAMLConstants.EXTENSIONS__METADATA.get(),
+            JBossSAMLURIConstants.METADATA_NSURI.get());
+        StaxUtil.writeStartElement(writer, MDUI_PREFIX, JBossSAMLConstants.UIINFO.get(),
+            JBossSAMLURIConstants.METADATA_UI.get());
+
+        if (uiInfo.getDisplayName().size() > 0) {
+            for (LocalizedNameType name : uiInfo.getDisplayName()) {
+                StaxUtil.writeStartElement(writer, MDUI_PREFIX, JBossSAMLConstants.DISPLAY_NAME.get(),
+                    JBossSAMLURIConstants.METADATA_UI.get());
+                writeLocalizedType(name);
+            }
+        }
+
+        if (uiInfo.getDescription().size() > 0) {
+            for (LocalizedNameType description : uiInfo.getDescription()) {
+                StaxUtil.writeStartElement(writer, MDUI_PREFIX, JBossSAMLConstants.DESCRIPTION.get(),
+                    JBossSAMLURIConstants.METADATA_UI.get());
+                writeLocalizedType(description);
+            }
+        }
+
+        if (uiInfo.getInformationURL().size() > 0) {
+            for (LocalizedURIType uri : uiInfo.getInformationURL()) {
+                StaxUtil.writeStartElement(writer, MDUI_PREFIX, JBossSAMLConstants.INFORMATION_URL.get(),
+                    JBossSAMLURIConstants.METADATA_UI.get());
+                writeLocalizedUriType(uri);
+            }
+        }
+
+        if (uiInfo.getPrivacyStatementURL().size() > 0) {
+            for (LocalizedURIType uri : uiInfo.getPrivacyStatementURL()) {
+                StaxUtil.writeStartElement(writer, MDUI_PREFIX, JBossSAMLConstants.PRIVACY_STATEMENT_URL.get(),
+                    JBossSAMLURIConstants.METADATA_UI.get());
+                writeLocalizedUriType(uri);
+            }
+        }
+
+        if (uiInfo.getLogo().size() > 0) {
+            for (LogoType logo : uiInfo.getLogo()) {
+                StaxUtil.writeStartElement(writer, MDUI_PREFIX, JBossSAMLConstants.LOGO.get(),
+                    JBossSAMLURIConstants.METADATA_UI.get());
+                StaxUtil.writeAttribute(writer, new QName(JBossSAMLConstants.WIDTH.get()), String.valueOf(logo.getWidth()));
+                StaxUtil.writeAttribute(writer, new QName(JBossSAMLConstants.HEIGHT.get()), String.valueOf(logo.getHeight()));
+
+                StaxUtil.writeCharacters(writer, logo.getValue().toString());
+                StaxUtil.writeEndElement(writer);
+            }
+        }
+
+        StaxUtil.writeEndElement(writer);
+        StaxUtil.writeEndElement(writer);
+        StaxUtil.flush(writer);
+
     }
 }

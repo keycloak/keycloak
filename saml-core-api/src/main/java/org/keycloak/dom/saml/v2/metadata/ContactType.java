@@ -193,6 +193,14 @@ public class ContactType extends TypeWithOtherAttributes {
         return Collections.unmodifiableList(this.telephoneNumber);
     }
 
+    public void setEmailAddress(List<String> emailAddress) {
+        this.emailAddress = emailAddress;
+    }
+
+    public void setTelephoneNumber(List<String> telephoneNumber) {
+        this.telephoneNumber = telephoneNumber;
+    }
+
     /**
      * Gets the value of the contactType property.
      *
