@@ -11,7 +11,7 @@ show you how to connect {project_name} to a more mature database.
 is a Java API that is used to connect to a RDBMS.  There are different JDBC drivers per database type that are provided
 by your database vendor.  This chapter discusses how to configure {project_name} to use one of these vendor-specific drivers.
 
-The top layered technology for persistence is Hibernate JPA.  This is a object to relational mapping API that maps Java
+The top layered technology for persistence is Hibernate JPA.  This is an object to relational mapping API that maps Java
 Objects to relational data.  Most deployments of {project_name} will never have to touch the configuration aspects
 of Hibernate, but we will discuss how that is done if you run into that rare circumstance.
 
