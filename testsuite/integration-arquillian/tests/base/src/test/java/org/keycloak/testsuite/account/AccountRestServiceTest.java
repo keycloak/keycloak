@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.account;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -27,6 +28,7 @@ import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterF
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.Profile;
+import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.credential.CredentialTypeMetadata;
 import org.keycloak.events.EventType;
@@ -1201,5 +1203,23 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         Assert.assertThat(apps.keySet(), containsInAnyOrder("offline-client", "always-display-client"));
 
         assertClientRep(apps.get("offline-client"), "Offline Client", null, false, true, false, null, offlineClientAppUri);
+    }
+
+    @Test
+    public void testApiVersion() throws IOException {
+        apiVersion = AccountRestApiVersion.DEFAULT.getStrVersion();
+
+        // a smoke test to check API with version works
+        testUpdateProfile(); // profile endpoint is the root URL of account REST service, i.e. the URL will be like "/v1/"
+        testCredentialsGet(); // "/v1/credentials"
+    }
+
+    @Test
+    public void testInvalidApiVersion() throws IOException {
+        apiVersion = "v2-foo";
+
+        SimpleHttp.Response response = SimpleHttp.doGet(getAccountUrl("credentials"), httpClient).auth(tokenUtil.getToken()).asResponse();
+        assertEquals("API version not found", response.asJson().get("error").textValue());
+        assertEquals(404, response.getStatus());
     }
 }

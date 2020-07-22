@@ -207,7 +207,9 @@ public class RealmsResource {
     public Object getAccountService(final @PathParam("realm") String name) {
         RealmModel realm = init(name);
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
-        return new AccountLoader().getAccountService(session, event);
+        AccountLoader accountLoader = new AccountLoader(session, event);
+        ResteasyProviderFactory.getInstance().injectProperties(accountLoader);
+        return accountLoader;
     }
 
     @Path("{realm}")
