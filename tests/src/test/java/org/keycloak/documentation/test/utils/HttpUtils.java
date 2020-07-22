@@ -1,104 +1,151 @@
 package org.keycloak.documentation.test.utils;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.config.CookieSpecs;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpHead;
-import org.apache.http.cookie.CookieSpec;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.hc.client5.http.ClientProtocolException;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpHead;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
+import org.apache.hc.client5.http.impl.DefaultHttpRequestRetryStrategy;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
+import org.apache.hc.core5.http.ClassicHttpResponse;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpStatus;
+import org.apache.hc.core5.http.ParseException;
+import org.apache.hc.core5.http.io.HttpClientResponseHandler;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.util.TimeValue;
 
 import java.io.IOException;
-import java.io.StringWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
+import java.security.cert.X509Certificate;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.X509TrustManager;
 
 public class HttpUtils {
 
-    public Response load(String url) {
-        CloseableHttpClient client = createClient();
-        Response response = new Response();
+    private CloseableHttpClient client;
 
+    public HttpUtils() {
         try {
-            HttpGet h = new HttpGet(url);
-            CloseableHttpResponse r = client.execute(h);
-            int status = r.getStatusLine().getStatusCode();
-
-            if (status == 200) {
-                response.setSuccess(true);
-
-                HttpEntity entity = r.getEntity();
-                String c = IOUtils.toString(entity.getContent(), StandardCharsets.UTF_8);
-
-                response.setContent(c);
-            } else if (status == 301 || status == 302) {
-                String location = r.getFirstHeader("Location").getValue();
-                response.setRedirectLocation(location);
-                response.setSuccess(false);
-            } else {
-                response.setError("invalid status code " + status);
-                response.setSuccess(false);
-            }
+            client = createClient();
         } catch (Exception e) {
-            response.setError("exception " + e.getMessage());
-            response.setSuccess(false);
-        } finally {
-            try {
-                client.close();
-            } catch (IOException e) {
-            }
+            throw new RuntimeException(e);
         }
-
-        return response;
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                try {
+                    client.close();
+                } catch (IOException e) {
+                }
+            }
+        });
     }
 
-    private CloseableHttpClient createClient() {
-        return HttpClientBuilder.create()
-                    .setRetryHandler(new DefaultHttpRequestRetryHandler(Constants.HTTP_RETRY, true))
-                    .setDefaultRequestConfig(
-                            RequestConfig.custom().setCookieSpec(CookieSpecs.IGNORE_COOKIES).build()
-                    )
-                    .build();
+    public Response load(String url) {
+        return exec(new HttpGet(url));
     }
 
     public Response isValid(String url) {
-        CloseableHttpClient client = createClient();
+        return exec(new HttpHead(url));
+    }
+
+    private Response exec(HttpUriRequestBase method) {
         Response response = new Response();
 
-        try {
-            HttpHead h = new HttpHead(url);
-            CloseableHttpResponse r = client.execute(h);
-            int status = r.getStatusLine().getStatusCode();
+        HttpClientResponseHandler<String> responseHandler = new HttpClientResponseHandler<String>() {
+            @Override
+            public String handleResponse(ClassicHttpResponse r) throws IOException {
+                int status = r.getCode();
 
-            if (status == 200) {
-                response.setSuccess(true);
-            } else if (status == 301 || status == 302) {
-                String location = r.getFirstHeader("Location").getValue();
-                response.setRedirectLocation(location);
-                response.setSuccess(false);
-            } else {
-                response.setError("invalid status code " + status);
-                response.setSuccess(false);
+                if (status == HttpStatus.SC_SUCCESS) {
+                    response.setSuccess(true);
+
+                    HttpEntity entity = r.getEntity();
+                    try {
+                        String c = entity != null ? EntityUtils.toString(entity) : "";
+                        response.setContent(c);
+                    } catch (ParseException e) {
+                        throw new ClientProtocolException(e);
+                    }
+                } else if (status / 100 == 3) {
+                    String location = r.getFirstHeader("Location").getValue();
+                    response.setRedirectLocation(location);
+                    response.setSuccess(false);
+                } else {
+                    response.setError("invalid status code " + status);
+                    response.setSuccess(false);
+                }
+                return "";
             }
+        };
+
+        try {
+            client.execute(method, responseHandler);
         } catch (Exception e) {
+            e.printStackTrace();
             response.setError("exception " + e.getMessage());
             response.setSuccess(false);
-        } finally {
-            try {
-                client.close();
-            } catch (IOException e) {
-            }
         }
 
         return response;
+    }
+
+    private static CloseableHttpClient createClient() throws Exception {
+        return HttpClientBuilder.create()
+            .setRetryStrategy(new DefaultHttpRequestRetryStrategy(
+                Constants.HTTP_RETRY,
+                TimeValue.ofSeconds(1L)
+            ))
+            .disableCookieManagement()
+            .disableRedirectHandling()
+            .setConnectionManager(
+                PoolingHttpClientConnectionManagerBuilder.create()
+                    .setSSLSocketFactory(new NoopSSLConnectionSocketFactory())
+                    .build()
+            )
+            .build();
+    }
+
+    private static class NoopSSLConnectionSocketFactory extends SSLConnectionSocketFactory {
+        private static SSLContext sslContext;
+
+        static {
+            try {
+                sslContext = SSLContext.getInstance("TLS");
+                sslContext.init(
+                    null,
+                    new X509TrustManager[] {
+                        new X509TrustManager() {
+                            public X509Certificate[] getAcceptedIssuers() {
+                                return null;
+                            }
+
+                            public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                            }
+
+                            public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                            }
+                        }
+                    },
+                    null
+                );
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public NoopSSLConnectionSocketFactory() {
+            super(sslContext, new NoopHostnameVerifier());
+        }
+
+        @Override
+        protected void verifySession(String hostname, SSLSession sslSession) throws SSLException {
+            // no-op
+        }
     }
 
     public static class Response {
