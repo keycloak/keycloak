@@ -59,7 +59,7 @@ subject_token_type::
     `subject_issuer`.
 requested_token_type::
     _OPTIONAL._ This parameter represents the type of token the client wants to exchange for.  Currently only oauth
-    and OpenID Connect token types are supported.  The default value for this depends on whether the
+    and OpenID Connect token types are supported.  The default value for this depends on whether it
     is `urn:ietf:params:oauth:token-type:refresh_token` in which case you will be returned both an access token and refresh
     token within the response.  Other appropriate values are `urn:ietf:params:oauth:token-type:access_token` and `urn:ietf:params:oauth:token-type:id_token`
 audience::
