@@ -19,6 +19,7 @@ package org.keycloak.services.resources.account;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
@@ -98,8 +99,9 @@ public class AccountRestService {
     private final RealmModel realm;
     private final UserModel user;
     private final Locale locale;
+    private final AccountRestApiVersion version;
 
-    public AccountRestService(KeycloakSession session, Auth auth, ClientModel client, EventBuilder event) {
+    public AccountRestService(KeycloakSession session, Auth auth, ClientModel client, EventBuilder event, AccountRestApiVersion version) {
         this.session = session;
         this.auth = auth;
         this.realm = auth.getRealm();
@@ -107,6 +109,7 @@ public class AccountRestService {
         this.client = client;
         this.event = event;
         this.locale = session.getContext().resolveLocale(user);
+        this.version = version;
     }
     
     public void init() {

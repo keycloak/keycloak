@@ -43,6 +43,8 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
+import javax.ws.rs.core.UriBuilder;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -63,6 +65,8 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
 
     protected String alwaysDisplayClientAppUri = APP_ROOT + "/always-display-client";
 
+    protected String apiVersion;
+
     @Before
     public void before() {
         httpClient = HttpClientBuilder.create().build();
@@ -75,6 +79,7 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        apiVersion = null;
     }
 
     @Override
@@ -112,7 +117,14 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
     }
 
     protected String getAccountUrl(String resource) {
-        return suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/test/account" + (resource != null ? "/" + resource : "");
+        String url = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/test/account";
+        if (apiVersion != null) {
+            url += "/" + apiVersion;
+        }
+        if (resource != null) {
+            url += "/" + resource;
+        }
+        return url;
     }
 
     @Test
