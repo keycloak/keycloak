@@ -1,5 +1,5 @@
 <#import "template.ftl" as layout>
-    <@layout.registrationLayout; section>
+    <@layout.registrationLayout displayMessage=!messagesPerField.existsError('totp'); section>
         <#if section="header">
             ${msg("doLogIn")}
             <#elseif section="form">
@@ -28,11 +28,18 @@
                             <label for="otp" class="${properties.kcLabelClass!}">${msg("loginOtpOneTime")}</label>
                         </div>
 
-                        <div class="${properties.kcInputWrapperClass!}">
-                            <input id="otp" name="otp" autocomplete="off" type="text" class="${properties.kcInputClass!}"
-                            autofocus/>
-                        </div>
+                    <div class="${properties.kcInputWrapperClass!}">
+                        <input id="otp" name="otp" autocomplete="off" type="text" class="${properties.kcInputClass!}"
+                               autofocus aria-invalid="<#if messagesPerField.existsError('totp')>true</#if>"/>
+
+                        <#if messagesPerField.existsError('totp')>
+                            <span id="input-error-otp-code" class="${properties.kcInputErrorMessageClass!}"
+                                  aria-live="polite">
+                                ${kcSanitize(messagesPerField.get('totp'))?no_esc}
+                            </span>
+                        </#if>
                     </div>
+                </div>
 
                     <div class="${properties.kcFormGroupClass!}">
                         <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">

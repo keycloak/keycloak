@@ -36,6 +36,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -101,7 +102,7 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
         if (!valid) {
             context.getEvent().user(userModel)
                     .error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = challenge(context, Messages.INVALID_TOTP);
+            Response challengeResponse = challenge(context, Messages.INVALID_TOTP, Validation.FIELD_OTP_CODE);
             context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
             return;
         }
@@ -116,6 +117,11 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
     @Override
     protected String tempDisabledError() {
         return Messages.INVALID_TOTP;
+    }
+
+    @Override
+    protected String tempDisabledFieldError() {
+        return Validation.FIELD_OTP_CODE;
     }
 
     @Override

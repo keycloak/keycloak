@@ -1,10 +1,12 @@
 package org.keycloak.testsuite.broker;
 
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.openqa.selenium.NoSuchElementException;
 
 import static org.junit.Assert.assertEquals;
@@ -17,6 +19,9 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
+
+    @Page
+    protected LoginUpdateProfilePage loginUpdateProfilePage;
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
@@ -260,6 +265,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("", "no-first-name@localhost.com", "FirstName", "LastName");
         updateAccountInformationPage.assertCurrent();
-        assertEquals("Please specify username.", accountUpdateProfilePage.getError());
+
+        assertEquals("Please specify username.", loginUpdateProfilePage.getInputErrors().getUsernameError());
     }
 }

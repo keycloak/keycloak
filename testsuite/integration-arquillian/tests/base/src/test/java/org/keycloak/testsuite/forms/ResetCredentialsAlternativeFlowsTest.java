@@ -464,11 +464,10 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
 
             // Create OTP credential with empty label
             totpPage.configure(totp.generateTOTP(accountTotpPage.getTotpSecret()), emptyOtpLabel);
-            try {
-                Assert.assertTrue(totpPage.getError().isEmpty());
-            } catch (org.openqa.selenium.NoSuchElementException nsee) {
-                // OK to ignore if 'alert-error' element wasn't found
-            }
+
+            Assert.assertNull(totpPage.getAlertError());
+            Assert.assertNull(totpPage.getInputCodeError());
+            Assert.assertNull(totpPage.getInputLabelError());
 
             // Assert user authenticated
             appPage.assertCurrent();
@@ -508,16 +507,15 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
             // should fail with error since OTP label is required in this case already
             final String deviceNameLabelRequiredErrorMessage = "Please specify device name.";
             totpPage.configure(totp.generateTOTP(accountTotpPage.getTotpSecret()), emptyOtpLabel);
-            Assert.assertTrue(totpPage.getError().equals(deviceNameLabelRequiredErrorMessage));
+            Assert.assertTrue(totpPage.getInputLabelError().equals(deviceNameLabelRequiredErrorMessage));
 
             // Create 2nd OTP credential with valid (non-empty) Device Name label. This should pass
             final String secondOtpLabel = "My 2nd OTP device";
             totpPage.configure(totp.generateTOTP(accountTotpPage.getTotpSecret()), secondOtpLabel);
-            try {
-                Assert.assertTrue(totpPage.getError().isEmpty());
-            } catch (org.openqa.selenium.NoSuchElementException nsee) {
-                // OK to ignore if 'alert-error' element wasn't found
-            }
+
+            Assert.assertNull(totpPage.getAlertError());
+            Assert.assertNull(totpPage.getInputCodeError());
+            Assert.assertNull(totpPage.getInputLabelError());
 
             // Assert user authenticated
             appPage.assertCurrent();
