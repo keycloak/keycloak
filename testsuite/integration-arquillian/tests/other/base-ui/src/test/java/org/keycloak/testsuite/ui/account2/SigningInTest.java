@@ -275,12 +275,12 @@ public class SigningInTest extends BaseAccountPageTest {
 
         if (passwordless) {
             credentialType = webAuthnPwdlessCredentialType;
-            expectedHelpText = "Use your security key for passwordless log in.";
+            expectedHelpText = "Use your security key for passwordless sign in.";
             providerId = WebAuthnPasswordlessRegisterFactory.PROVIDER_ID;
         }
         else {
             credentialType = webAuthnCredentialType;
-            expectedHelpText = "Use your security key to log in.";
+            expectedHelpText = "Use your security key to sign in.";
             providerId = WebAuthnRegisterFactory.PROVIDER_ID;
         }
 

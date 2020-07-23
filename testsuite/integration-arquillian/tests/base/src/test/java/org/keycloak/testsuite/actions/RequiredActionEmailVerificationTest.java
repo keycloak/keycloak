@@ -784,7 +784,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
             // Browser 2: Log in
             driver2.navigate().to(accountPage.buildUri().toString());
 
-            assertThat(driver2.getTitle(), is("Log in to " + testRealmName));
+            assertThat(driver2.getTitle(), is("Sign in to " + testRealmName));
             driver2.findElement(By.id("username")).sendKeys("test-user@localhost");
             driver2.findElement(By.id("password")).sendKeys("password");
             driver2.findElement(By.id("password")).submit();
@@ -954,7 +954,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         // login page should be shown in the second browser
         assertThat(driver2.getPageSource(), Matchers.containsString("kc-login"));
-        assertThat(driver2.getPageSource(), Matchers.containsString("Log In"));
+        assertThat(driver2.getPageSource(), Matchers.containsString("Sign in"));
 
         // email should be verified and required actions empty
         UserRepresentation user = testRealm().users().get(testUserId).toRepresentation();

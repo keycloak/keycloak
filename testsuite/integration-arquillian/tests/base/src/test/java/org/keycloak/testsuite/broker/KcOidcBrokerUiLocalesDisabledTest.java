@@ -48,7 +48,7 @@ public class KcOidcBrokerUiLocalesDisabledTest extends AbstractBrokerTest {
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
 
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
 
         Assert.assertThat("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl(), containsString("/auth/realms/" + bc.providerRealmName() + "/"));

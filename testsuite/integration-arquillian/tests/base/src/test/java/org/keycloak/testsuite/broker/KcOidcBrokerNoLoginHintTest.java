@@ -46,7 +46,7 @@ public class KcOidcBrokerNoLoginHintTest extends AbstractBrokerTest {
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
 
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
 
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));

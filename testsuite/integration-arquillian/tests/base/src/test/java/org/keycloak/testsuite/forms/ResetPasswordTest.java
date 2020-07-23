@@ -381,7 +381,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         resetPasswordPage.assertCurrent();
 
-        assertEquals("Please specify username.", resetPasswordPage.getErrorMessage());
+        assertEquals("Please specify username.", resetPasswordPage.getUsernameError());
 
         assertEquals(0, greenMail.getReceivedMessages().length);
 

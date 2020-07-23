@@ -78,6 +78,6 @@ public class CustomAuthFlowCookieTest extends AbstractCustomAccountManagementTes
         //SSO shouln't work
         //navigate to different client of the same realm and verify user is not logged in
         oauth.openLoginForm();
-        assertEquals("Log in to test", driver.getTitle());
+        assertEquals("Sign in to test", driver.getTitle());
     }
 }

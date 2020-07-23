@@ -58,10 +58,10 @@ public class KcOidcBrokerHiddenIdpHintTest extends AbstractInitializedBaseBroker
     @Test
     public void testSuccessfulRedirectToProviderHiddenOnLoginPage() {
         driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         String url = driver.getCurrentUrl() + "&kc_idp_hint=" + bc.getIDPAlias();
         driver.navigate().to(url);
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
 

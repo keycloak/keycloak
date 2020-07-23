@@ -234,7 +234,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
 
         try {
-            waitForPage(driver, "log in to", true);
+            waitForPage(driver, "sign in to", true);
         } catch (TimeoutException e) {
             log.debug(driver.getTitle());
             log.debug(driver.getPageSource());
@@ -251,12 +251,12 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             loginPage.login(bc.getUserLogin(), "invalid");
         }
 
-        assertEquals("Invalid username or password.", loginPage.getError());
+        assertEquals("Invalid username or password.", loginPage.getInputError());
 
         loginPage.clickSocial(bc.getIDPAlias());
 
         try {
-            waitForPage(driver, "log in to", true);
+            waitForPage(driver, "sign in to", true);
         } catch (TimeoutException e) {
             log.debug(driver.getTitle());
             log.debug(driver.getPageSource());
@@ -291,7 +291,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         waitForPage(driver, "grant access", false);
         consentPage.cancel();
 
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
 
         // Revert consentRequired
         adminClient.realm(bc.providerRealmName())
@@ -563,7 +563,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             updateAccountInformationPage.assertCurrent();
             updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
             accountPage.logOut();
-            waitForPage(driver, "log in to", true);
+            waitForPage(driver, "sign in to", true);
             log.debug("Logging in");
             assertTrue(this.driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/protocol/openid-connect/auth"));
         } finally {

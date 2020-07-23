@@ -64,7 +64,7 @@ public final class KcOidcBrokerFrontendUrlTest extends AbstractBrokerTest {
         driver.navigate().to(proxy.getUrl() + "/realms/consumer/account");
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         log.debug("Logging in");
 
         // make sure the frontend url is used to build the redirect uri when redirecting to the broker

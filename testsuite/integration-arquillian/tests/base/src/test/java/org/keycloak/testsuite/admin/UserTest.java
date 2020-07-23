@@ -373,7 +373,7 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(accountUrl);
 
-        assertEquals("Log In", PageUtils.getPageTitle(driver));
+        assertEquals("Sign in to your account", PageUtils.getPageTitle(driver));
 
         loginPage.login("user_hashed_creds", "admin");
 
@@ -1910,7 +1910,7 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(accountUrl);
 
-        assertEquals("Log In", PageUtils.getPageTitle(driver));
+        assertEquals("Sign in to your account", PageUtils.getPageTitle(driver));
 
         loginPage.login("user1", "password");
 
@@ -2167,7 +2167,7 @@ public class UserTest extends AbstractAdminTest {
 
         String accountUrl = RealmsResource.accountUrl(UriBuilder.fromUri(getAuthServerRoot())).build(REALM_NAME).toString();
         driver.navigate().to(accountUrl);
-        assertEquals("Test user should be on the login page.", "Log In", PageUtils.getPageTitle(driver));
+        assertEquals("Test user should be on the login page.", "Sign in to your account", PageUtils.getPageTitle(driver));
         loginPage.login(userName, userPass);
         assertTrue("Test user should be successfully logged in.", driver.getTitle().contains("Account Management"));
         accountPage.logOut();
@@ -2180,7 +2180,7 @@ public class UserTest extends AbstractAdminTest {
         realm.users().get(userId).removeCredential(passwordCredential.get().getId());
 
         driver.navigate().to(accountUrl);
-        assertEquals("Test user should be on the login page.", "Log In", PageUtils.getPageTitle(driver));
+        assertEquals("Test user should be on the login page.", "Sign in to your account", PageUtils.getPageTitle(driver));
         loginPage.login(userName, userPass);
         assertTrue("Test user should fail to log in after password was deleted.",
                 driver.getCurrentUrl().contains(String.format("/realms/%s/login-actions/authenticate", REALM_NAME)));

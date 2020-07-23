@@ -30,13 +30,13 @@ public abstract class AbstractNestedBrokerTest extends AbstractBaseBrokerTest {
     /** Logs in subconsumer realm via consumer IDP via provider IDP and updates account information */
     protected void logInAsUserInNestedIDPForFirstTime() {
         driver.navigate().to(getAccountUrl(getConsumerRoot(), nbc.subConsumerRealmName()));
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         log.debug("Clicking social " + nbc.getSubConsumerIDPDisplayName());
         loginPage.clickSocial(nbc.getSubConsumerIDPDisplayName());
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         log.debug("Clicking social " + nbc.getIDPAlias());
         loginPage.clickSocial(nbc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         log.debug("Logging in");
         loginPage.login(nbc.getUserLogin(), nbc.getUserPassword());
 

@@ -571,7 +571,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         loginUpdateProfilePage.update("Joe", "Doe", "joe@parent.com");
 
         errorPage.assertCurrent();
-        Assert.assertEquals("You are already authenticated as different user 'child' in this session. Please log out first.", errorPage.getError());
+        Assert.assertEquals("You are already authenticated as different user 'child' in this session. Please sign out first.", errorPage.getError());
 
         logoutAll();
 

@@ -254,7 +254,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             idpConfirmLinkPage.clickLinkAccount();
 
             loginPage.clickSocial(samlBrokerConfig.getIDPAlias());
-            waitForPage(driver, "log in to", true);
+            waitForPage(driver, "sign in to", true);
             log.debug("Logging in");
             loginTotpPage.login(totp.generateTOTP(totpSecret));
 
@@ -368,7 +368,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
 
         RealmResource realm = adminClient.realm(bc.providerRealmName());
         ClientRepresentation rep = realm.clients().findByClientId(BrokerTestConstants.CLIENT_ID).get(0);
@@ -389,7 +389,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
 
         RealmResource realm = adminClient.realm(bc.providerRealmName());
         ClientRepresentation rep = realm.clients().findByClientId(BrokerTestConstants.CLIENT_ID).get(0);
@@ -435,7 +435,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             final String LINK = oauth.AUTH_SERVER_ROOT + "/realms/" + REALM_NAME + "/broker/" + IDP_NAME + "/endpoint?code=foo123";
 
             driver.navigate().to(LINK);
-            waitForPage(driver, "log in to provider", true);
+            waitForPage(driver, "sign in to provider", true);
 
             errorPage.assertCurrent();
             assertThat(errorPage.getError(), Matchers.is("Missing state parameter in response from identity provider."));
@@ -491,7 +491,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
             WaitUtils.waitForPageToLoad();
 
-            assertThat(driver.getTitle(), Matchers.containsString("Log in to " + bc.consumerRealmName()));
+            assertThat(driver.getTitle(), Matchers.containsString("Sign in to " + bc.consumerRealmName()));
             logInWithIdp(IDP_NAME, USERNAME, USERNAME);
             accountUpdateProfilePage.assertCurrent();
 
@@ -501,7 +501,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             driver.navigate().to(getAccountUrl(getProviderRoot(), bc.providerRealmName()));
             WaitUtils.waitForPageToLoad();
 
-            assertThat(driver.getTitle(), Matchers.containsString("Log in to " + bc.providerRealmName()));
+            assertThat(driver.getTitle(), Matchers.containsString("Sign in to " + bc.providerRealmName()));
 
             loginPage.login(USERNAME, USERNAME);
             WaitUtils.waitForPageToLoad();
@@ -513,7 +513,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
             WaitUtils.waitForPageToLoad();
 
-            assertThat(driver.getTitle(), Matchers.containsString("Log in to " + bc.consumerRealmName()));
+            assertThat(driver.getTitle(), Matchers.containsString("Sign in to " + bc.consumerRealmName()));
             logInWithIdp(IDP_NAME, USERNAME, USERNAME);
 
             accountUpdateProfilePage.assertCurrent();

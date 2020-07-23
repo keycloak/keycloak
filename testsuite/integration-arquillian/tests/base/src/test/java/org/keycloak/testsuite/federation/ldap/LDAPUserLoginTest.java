@@ -152,7 +152,7 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
         // Run the test actions
         loginPage.open();
         loginPage.login(username, password);
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         if (username.equals(DEFAULT_TEST_USERS.get("INVALID_USER_EMAIL")) || username.equals(DEFAULT_TEST_USERS.get("INVALID_USER_NAME"))) {
 
