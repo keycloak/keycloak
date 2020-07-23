@@ -516,14 +516,14 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
             // Login for 2 times with incorrect TOTP. This should temporarily disable the user
             loginTotpPage.login("bad-totp");
-            Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getError());
+            Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
 
             loginTotpPage.login("bad-totp");
-            Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getError());
+            Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
 
             // Login with valid TOTP. I should not be able to login
             loginTotpPage.login(totp.generateTOTP(totpSecret));
-            Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getError());
+            Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
 
             // Clear login failures
             String userId = ApiUtil.findUserByUsername(realm, bc.getUserLogin()).getId();

@@ -38,6 +38,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
@@ -110,7 +111,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         if (Validation.isBlank(passwordNew)) {
             Response challenge = context.form()
                     .setAttribute("username", authSession.getAuthenticatedUser().getUsername())
-                    .setError(Messages.MISSING_PASSWORD)
+                    .addError(new FormMessage(Validation.FIELD_PASSWORD, Messages.MISSING_PASSWORD))
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
             errorEvent.error(Errors.PASSWORD_MISSING);
@@ -118,7 +119,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         } else if (!passwordNew.equals(passwordConfirm)) {
             Response challenge = context.form()
                     .setAttribute("username", authSession.getAuthenticatedUser().getUsername())
-                    .setError(Messages.NOTMATCH_PASSWORD)
+                    .addError(new FormMessage(Validation.FIELD_PASSWORD_CONFIRM, Messages.NOTMATCH_PASSWORD))
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
             errorEvent.error(Errors.PASSWORD_CONFIRM_ERROR);
