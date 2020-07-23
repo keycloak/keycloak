@@ -80,7 +80,7 @@ public class SelectAuthenticatorPage extends LanguageComboboxAwarePage {
     @Override
     public boolean isCurrent() {
         // Check the title
-        if (!DroneUtils.getCurrentDriver().getTitle().startsWith("Log in to ") && !DroneUtils.getCurrentDriver().getTitle().startsWith("Anmeldung bei ")) {
+        if (!DroneUtils.getCurrentDriver().getTitle().startsWith("Sign in to ") && !DroneUtils.getCurrentDriver().getTitle().startsWith("Anmeldung bei ")) {
             return false;
         }
 

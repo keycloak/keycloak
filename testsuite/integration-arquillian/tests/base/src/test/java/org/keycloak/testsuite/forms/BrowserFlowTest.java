@@ -1086,7 +1086,7 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
         loginPage.login(user.getUsername(), "wrong_password");
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
         events.clear();
 
         loginPage.assertCurrent();
@@ -1117,18 +1117,21 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
             loginUsernameOnlyPage.open();
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login("non_existing_user");
-            Assert.assertEquals("Invalid username.", loginUsernameOnlyPage.getError());
+            Assert.assertEquals("Invalid username.", loginUsernameOnlyPage.getUsernameError());
+            Assert.assertEquals("Invalid username.", loginUsernameOnlyPage.getUsernameError());
 
             realm.setLoginWithEmailAllowed(true);
             testRealm().update(realm);
             loginUsernameOnlyPage.login("non_existing_user");
-            Assert.assertEquals("Invalid username or email.", loginUsernameOnlyPage.getError());
+            Assert.assertEquals("Invalid username or email.", loginUsernameOnlyPage.getUsernameError());
+            Assert.assertEquals("Invalid username or email.", loginUsernameOnlyPage.getUsernameError());
 
             loginUsernameOnlyPage.login(user.getUsername());
 
             passwordPage.assertCurrent();
             passwordPage.login("wrong_password");
-            Assert.assertEquals("Invalid password.", passwordPage.getError());
+            Assert.assertEquals("Invalid password.", passwordPage.getPasswordError());
+            Assert.assertEquals("Invalid password.", passwordPage.getPasswordError());
 
             passwordPage.assertCurrent();
             events.clear();

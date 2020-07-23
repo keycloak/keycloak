@@ -129,7 +129,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         String context = spnegoResponse.readEntity(String.class);
         spnegoResponse.close();
 
-        Assert.assertTrue(context.contains("Log in to test"));
+        Assert.assertTrue(context.contains("Sign in to test"));
 
         String url = ActionURIUtils.getActionURIFromPageSource(context);
 

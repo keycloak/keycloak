@@ -58,7 +58,7 @@ public class KcOidcBrokerSubMatchIntrospectionTest extends AbstractBrokerTest {
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
 
         log.debug("Logging in");
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());

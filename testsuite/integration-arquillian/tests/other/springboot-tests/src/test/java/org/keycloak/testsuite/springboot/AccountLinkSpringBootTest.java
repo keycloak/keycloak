@@ -530,7 +530,7 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
 
         assertThat(errorPage.getError(), is(equalTo("You are already authenticated as different user '"
                 + CHILD_USERNAME_1
-                + "' in this session. Please log out first.")));
+                + "' in this session. Please sign out first.")));
 
         logoutAll();
 

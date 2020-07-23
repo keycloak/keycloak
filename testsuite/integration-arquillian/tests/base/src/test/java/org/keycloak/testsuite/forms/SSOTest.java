@@ -159,7 +159,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
 
             oauth2.openLoginForm();
 
-            assertTrue(driver2.getTitle().equals("Log in to test"));
+            assertTrue(driver2.getTitle().equals("Sign in to test"));
         } finally {
             driver2.close();
         }

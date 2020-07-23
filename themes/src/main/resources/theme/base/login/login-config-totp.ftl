@@ -1,11 +1,10 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout displayInfo=true displayRequiredFields=true; section>
+<@layout.registrationLayout displayRequiredFields=false; section>
 
     <#if section = "header">
         ${msg("loginTotpTitle")}
 
     <#elseif section = "form">
-
     <ol id="kc-totp-settings">
         <li>
             <p>${msg("loginTotpStep1")}</p>
@@ -69,7 +68,7 @@
             </div>
 
             <div class="${properties.kcInputWrapperClass!}">
-                <input type="text" class="form-control" id="userLabel" name="userLabel" autocomplete="off">
+                <input type="text" class="${properties.kcInputClass!}" id="userLabel" name="userLabel" autocomplete="off">
             </div>
         </div>
 
