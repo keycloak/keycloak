@@ -153,7 +153,7 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
 
         // Use 7 digits instead 6 to have 100% probability of failure
         oneTimeCodePage.sendCode("1234567");
-        Assert.assertEquals(INVALID_AUTH_CODE, oneTimeCodePage.getError());
+        Assert.assertEquals(INVALID_AUTH_CODE, oneTimeCodePage.getInputError());
         Assert.assertTrue(oneTimeCodePage.isOtpLabelPresent());
     }
 
@@ -183,12 +183,12 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
         // Select "second" factor (which is unnamed as it doesn't have userLabel) but try to connect with the OTP code from the "first" one
         loginTotpPage.selectOtpCredential(OTPFormAuthenticator.UNNAMED);
         loginTotpPage.login(getOtpCode(USER_WITH_TWO_OTPS_OTP1_SECRET));
-        Assert.assertEquals(INVALID_AUTH_CODE, oneTimeCodePage.getError());
+        Assert.assertEquals(INVALID_AUTH_CODE, oneTimeCodePage.getInputError());
 
         // Select "first" factor but try to connect with the OTP code from the "second" one
         loginTotpPage.selectOtpCredential("first");
         loginTotpPage.login(getOtpCode(USER_WITH_TWO_OTPS_OTP2_SECRET));
-        Assert.assertEquals(INVALID_AUTH_CODE, oneTimeCodePage.getError());
+        Assert.assertEquals(INVALID_AUTH_CODE, oneTimeCodePage.getInputError());
 
         // Select "second" factor and try to connect with its OTP code
         loginTotpPage.selectOtpCredential(OTPFormAuthenticator.UNNAMED);

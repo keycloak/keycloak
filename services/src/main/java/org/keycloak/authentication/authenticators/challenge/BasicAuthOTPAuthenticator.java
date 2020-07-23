@@ -30,6 +30,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.validation.Validation;
 
 import javax.ws.rs.core.Response;
 
@@ -72,7 +73,7 @@ public class BasicAuthOTPAuthenticator extends BasicAuthAuthenticator implements
         if (!valid) {
             context.getEvent().user(context.getUser()).error(Errors.INVALID_USER_CREDENTIALS);
             if (context.getExecution().isRequired()){
-                Response challengeResponse = challenge(context, Messages.INVALID_TOTP);
+                Response challengeResponse = challenge(context, Messages.INVALID_TOTP, Validation.FIELD_OTP_CODE);
                 context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
             } else {
                 context.attempted();

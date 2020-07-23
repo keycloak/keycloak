@@ -175,7 +175,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractAuthTest {
         loginTotpPage.assertCurrent();
         loginTotpPage.login("7123456");
         assertCurrentUrlDoesntStartWith(testRealmAccountPage);
-        Assert.assertNotNull(loginTotpPage.getError());
+        Assert.assertNotNull(loginTotpPage.getInputError());
 
         // Authenticate as the user with correct OTP
         loginTotpPage.login(totp.generateTOTP(totpSecret));

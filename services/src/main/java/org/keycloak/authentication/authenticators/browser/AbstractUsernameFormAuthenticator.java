@@ -84,6 +84,10 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         return Messages.INVALID_USER;
     }
 
+    protected String tempDisabledFieldError(){
+        return FIELD_USERNAME;
+    }
+
     protected Response setDuplicateUserChallenge(AuthenticationFlowContext context, String eventError, String loginFormError, AuthenticationFlowError authenticatorError) {
         context.getEvent().error(eventError);
         Response challengeResponse = context.form()
@@ -240,7 +244,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             if (context.getProtector().isTemporarilyDisabled(context.getSession(), context.getRealm(), user)) {
                 context.getEvent().user(user);
                 context.getEvent().error(Errors.USER_TEMPORARILY_DISABLED);
-                Response challengeResponse = challenge(context, tempDisabledError(), FIELD_USERNAME);
+                Response challengeResponse = challenge(context, tempDisabledError(), tempDisabledFieldError());
                 context.forceChallenge(challengeResponse);
                 return true;
             }
