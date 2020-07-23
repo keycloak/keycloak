@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
@@ -76,6 +77,11 @@ public class ClientAttributeUpdater extends ServerResourceUpdater<ClientAttribut
 
     public ClientAttributeUpdater setRedirectUris(List<String> values) {
         this.rep.setRedirectUris(values);
+        return this;
+    }
+    
+    public ClientAttributeUpdater filterRedirectUris(Predicate<String> filter) {
+        this.rep.setRedirectUris(this.rep.getRedirectUris().stream().filter(filter).collect(Collectors.toList()));
         return this;
     }
 

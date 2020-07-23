@@ -86,6 +86,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.keycloak.testsuite.util.ServerURLs;
 
 @EnableFeature(value = Profile.Feature.CLIENT_POLICIES, skipRestart = true)
 public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
@@ -827,7 +828,7 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         clientRep.setBearerOnly(Boolean.FALSE);
         clientRep.setPublicClient(Boolean.FALSE);
         clientRep.setServiceAccountsEnabled(Boolean.TRUE);
-        clientRep.setRedirectUris(Collections.singletonList("https://localhost:8543/auth/realms/master/app/auth"));
+        clientRep.setRedirectUris(Collections.singletonList(ServerURLs.getAuthServerContextRoot() + "/auth/realms/master/app/auth"));
         op.accept(clientRep);
         Response resp = adminClient.realm(REALM_NAME).clients().create(clientRep);
         if (resp.getStatus() == Response.Status.BAD_REQUEST.getStatusCode()) {
@@ -858,8 +859,8 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
     private String createClientDynamically(String clientName, Consumer<OIDCClientRepresentation> op) throws ClientRegistrationException {
         OIDCClientRepresentation clientRep = new OIDCClientRepresentation();
         clientRep.setClientName(clientName);
-        clientRep.setClientUri("https://localhost:8543");
-        clientRep.setRedirectUris(Collections.singletonList("https://localhost:8543/auth/realms/master/app/auth"));
+        clientRep.setClientUri(ServerURLs.getAuthServerContextRoot());
+        clientRep.setRedirectUris(Collections.singletonList(ServerURLs.getAuthServerContextRoot() + "/auth/realms/master/app/auth"));
         op.accept(clientRep);
         OIDCClientRepresentation response = reg.oidc().create(clientRep);
         reg.auth(Auth.token(response));
