@@ -64,6 +64,9 @@ You must define the SAML configuration options as well.  They basically describe
 
 |Validating X509 Certificate
 |The public certificate that will be used to validate the signatures of SAML requests and responses from the external IDP.
+
+|Pass subject
+|Whether or not a `login_hint` query parameter should be forwarded to the IDP. When provided, this login_hint parameter is added to AuthnRequest's Subject. This allows destination providers to prefill their login form. When no login_hint is provided, nothing is forwarded as an AuthnRequest Subject.
 |===
 
 
@@ -87,4 +90,16 @@ This metadata is also available publicly by going to the URL.
 http[s]://{host:port}/auth/realms/{realm-name}/broker/{broker-alias}/endpoint/descriptor
 ----
 
+[[_identity_broker_saml_login_hint]]
+==== Send Subject in SAML requests
 
+By default, a social button pointing to a SAML Identity Provider redirects the user to a login URL:
+
+[source]
+----
+http[s]://{host:port}/auth/realms/${realm-name}/broker/{broker-alias}/login
+----
+
+Adding a query parameter named `login_hint` to this URL will add its value to SAML request as a Subject attribute. When this query parameter is absent or left empty, no subject will be added to the request.
+
+"Pass subject" option must be enabled.
