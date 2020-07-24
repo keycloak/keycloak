@@ -62,6 +62,7 @@ public class ValidateAesUsername extends AbstractDirectGrantAuthenticator {
         UserModel user = null;
         try {
             if (RegUitl.isPhone(username)) {
+                username = AesEncrypt.encrypt(username);
                 user = KeycloakModelUtils.findUserByPhone(context.getSession(), context.getRealm(), username);
             } else {
                 username = AesEncrypt.encrypt(username);
