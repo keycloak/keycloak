@@ -74,5 +74,6 @@
         <module name="com.webauthn4j.webauthn4j-core"/>
         <module name="com.webauthn4j.webauthn4j-util"/>
         <module name="javax.persistence.api"/>
+        <module name="org.apache.commons.codec"/>
     </dependencies>
 </module>

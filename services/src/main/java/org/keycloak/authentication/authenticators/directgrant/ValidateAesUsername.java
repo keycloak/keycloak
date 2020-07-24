@@ -23,19 +23,17 @@ import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAu
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.*;
-import org.keycloak.models.utils.AesEncrypt;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.utils.AesEncrypt;
 import org.keycloak.utils.RegUitl;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -126,7 +124,7 @@ public class ValidateAesUsername extends AbstractDirectGrantAuthenticator {
 
     @Override
     public String getDisplayType() {
-        return "AES Username Validation";
+        return "Username AES Validation";
     }
 
     @Override

@@ -18,7 +18,9 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
+
 import javax.ws.rs.NotFoundException;
+
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.ObjectUtil;
@@ -66,9 +68,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Base resource for managing users
  *
- * @resource Users
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
+ * @resource Users
  */
 public class UsersResource {
 
@@ -98,7 +100,7 @@ public class UsersResource {
 
     /**
      * Create a new user
-     *
+     * <p>
      * Username must be unique.
      *
      * @param rep
@@ -110,7 +112,7 @@ public class UsersResource {
         auth.users().requireManage();
 
         String username = rep.getUsername();
-        if(realm.isRegistrationEmailAsUsername()) {
+        if (realm.isRegistrationEmailAsUsername()) {
             username = rep.getEmail();
         }
         if (ObjectUtil.isBlank(username)) {
@@ -125,7 +127,7 @@ public class UsersResource {
             return ErrorResponse.exists("User exists with same email");
         }
 
-        if (rep.getIdcard() != null && session.users().getUserByIdcard(rep.getIdcard(), realm) != null) {
+        if (!ObjectUtil.isBlank(rep.getIdcard()) && session.users().getUserByIdcard(rep.getIdcard(), realm) != null) {
             return ErrorResponse.exists("User exists with same idcard ");
         }
 
@@ -155,7 +157,7 @@ public class UsersResource {
                 session.getTransactionManager().setRollbackOnly();
             }
             return ErrorResponse.error("Password policy not met", Response.Status.BAD_REQUEST);
-        } catch (ModelException me){
+        } catch (ModelException me) {
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();
             }
@@ -163,6 +165,7 @@ public class UsersResource {
             return ErrorResponse.error("Could not create user", Response.Status.BAD_REQUEST);
         }
     }
+
     /**
      * Get representation of the user
      *
@@ -185,15 +188,15 @@ public class UsersResource {
 
     /**
      * Get users
-     *
+     * <p>
      * Returns a list of users, filtered according to query parameters
      *
-     * @param search A String contained in username, first or last name, or email
+     * @param search     A String contained in username, first or last name, or email
      * @param last
      * @param first
      * @param email
      * @param username
-     * @param first Pagination offset
+     * @param first      Pagination offset
      * @param maxResults Maximum results size (defaults to 100)
      * @return
      */
@@ -206,6 +209,7 @@ public class UsersResource {
                                              @QueryParam("email") String email,
                                              @QueryParam("username") String username,
                                              @QueryParam("idcard") String idcard,
+                                             @QueryParam("phone") String phone,
                                              @QueryParam("unitCode") String unitCode,
                                              @QueryParam("first") Integer firstResult,
                                              @QueryParam("max") Integer maxResults,
@@ -238,7 +242,7 @@ public class UsersResource {
             }
         } else if (attrName != null && attrValue != null) {
             userModels = session.users().searchForUserByUserAttribute(attrName, attrValue, realm);
-        } else if (last != null || first != null || email != null || username != null || idcard!=null) {
+        } else if (last != null || first != null || email != null || username != null || idcard != null || unitCode != null || phone != null || exact != null) {
             Map<String, String> attributes = new HashMap<>();
             if (last != null) {
                 attributes.put(UserModel.LAST_NAME, last);
@@ -257,6 +261,9 @@ public class UsersResource {
             }
             if (unitCode != null) {
                 attributes.put(UserModel.UNIT_CODE, unitCode);
+            }
+            if (phone != null) {
+                attributes.put(UserModel.PHONE, phone);
             }
             if (exact != null) {
                 attributes.put(UserModel.EXACT, exact.toString());
@@ -301,6 +308,7 @@ public class UsersResource {
                                  @QueryParam("email") String email,
                                  @QueryParam("username") String username,
                                  @QueryParam("idcard") String idcard,
+                                 @QueryParam("phone") String phone,
                                  @QueryParam("unitCode") String unitCode) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
         userPermissionEvaluator.requireQuery();
@@ -314,7 +322,7 @@ public class UsersResource {
             } else {
                 return session.users().getUsersCount(search.trim(), realm, auth.groups().getGroupsWithViewPermission());
             }
-        } else if (last != null || first != null || email != null || username != null) {
+        } else if (last != null || first != null || email != null || username != null || idcard != null || unitCode != null || phone != null) {
             Map<String, String> parameters = new HashMap<>();
             if (last != null) {
                 parameters.put(UserModel.LAST_NAME, last);
@@ -333,6 +341,9 @@ public class UsersResource {
             }
             if (unitCode != null) {
                 parameters.put(UserModel.UNIT_CODE, unitCode);
+            }
+            if (phone != null) {
+                parameters.put(UserModel.PHONE, phone);
             }
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(parameters, realm);
@@ -392,7 +403,7 @@ public class UsersResource {
     public UserRepresentation getUserByUsername(final @PathParam("username") String username) {
         UserModel user = session.users().getUserByUsername(username, realm);
         if (user == null) {
-            if (auth.users().canQuery()) return  null;
+            if (auth.users().canQuery()) return null;
             else throw new ForbiddenException();
         }
         return ModelToRepresentation.toRepresentation(session, realm, user);

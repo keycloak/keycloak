@@ -18,13 +18,16 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
+
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
+
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionToken;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.email.EmailException;
@@ -114,9 +117,9 @@ import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME
 /**
  * Base resource for managing users
  *
- * @resource Users
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
+ * @resource Users
  */
 public class UserResource {
     private static final Logger logger = Logger.getLogger(UserResource.class);
@@ -156,7 +159,7 @@ public class UserResource {
 
         auth.users().requireManage(user);
 
-        if (rep.getIdcard() != null) {
+        if (!ObjectUtil.isBlank(rep.getIdcard())) {
             UserModel userModel = session.users().getUserByIdcard(rep.getIdcard(), realm);
             if (userModel != null && !userModel.getId().equals(rep.getId())) {
                 return ErrorResponse.exists("User exists with same idcard ");
@@ -209,7 +212,7 @@ public class UserResource {
         if (rep.getEmail() != null) {
             String email = rep.getEmail();
             user.setEmail(email);
-            if(realm.isRegistrationEmailAsUsername()) {
+            if (realm.isRegistrationEmailAsUsername()) {
                 user.setUsername(email);
             }
         }
@@ -335,10 +338,10 @@ public class UserResource {
         result.put("sameRealm", sameRealm);
         result.put("redirect", redirect.toString());
         event.event(EventType.IMPERSONATE)
-             .session(userSession)
-             .user(user)
-             .detail(Details.IMPERSONATOR_REALM, authenticatedRealm.getName())
-             .detail(Details.IMPERSONATOR, impersonator).success();
+                .session(userSession)
+                .user(user)
+                .detail(Details.IMPERSONATOR_REALM, authenticatedRealm.getName())
+                .detail(Details.IMPERSONATOR, impersonator).success();
 
         return result;
     }
@@ -494,9 +497,9 @@ public class UserResource {
 
             Map<String, Object> currentRep = new HashMap<>();
             currentRep.put("clientId", client.getClientId());
-            currentRep.put("grantedClientScopes", (rep==null ? Collections.emptyList() : rep.getGrantedClientScopes()));
-            currentRep.put("createdDate", (rep==null ? null : rep.getCreatedDate()));
-            currentRep.put("lastUpdatedDate", (rep==null ? null : rep.getLastUpdatedDate()));
+            currentRep.put("grantedClientScopes", (rep == null ? Collections.emptyList() : rep.getGrantedClientScopes()));
+            currentRep.put("createdDate", (rep == null ? null : rep.getCreatedDate()));
+            currentRep.put("lastUpdatedDate", (rep == null ? null : rep.getLastUpdatedDate()));
 
             List<Map<String, String>> additionalGrants = new LinkedList<>();
             if (hasOfflineToken) {
@@ -546,9 +549,8 @@ public class UserResource {
 
     /**
      * Remove all user sessions associated with the user
-     *
+     * <p>
      * Also send notification to all clients that have an admin URL to invalidate the sessions for the particular user.
-     *
      */
     @Path("logout")
     @POST
@@ -571,7 +573,10 @@ public class UserResource {
     @NoCache
     public Response deleteUser() {
         auth.users().requireManage(user);
-
+        UserModel authUser = auth.adminAuth().getUser();
+        if (authUser.getId().equals(user.getId())) {
+            return ErrorResponse.error("User couldn't be deleted", Status.BAD_REQUEST);
+        }
         boolean removed = new UserManager(session).removeUser(realm, user);
         if (removed) {
             adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
@@ -585,7 +590,7 @@ public class UserResource {
     public RoleMapperResource getRoleMappings() {
         AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.users().requireMapRoles(user);
         AdminPermissionEvaluator.RequirePermissionCheck viewCheck = () -> auth.users().requireView(user);
-        RoleMapperResource resource =  new RoleMapperResource(realm, auth, user, adminEvent, manageCheck, viewCheck);
+        RoleMapperResource resource = new RoleMapperResource(realm, auth, user, adminEvent, manageCheck, viewCheck);
         ResteasyProviderFactory.getInstance().injectProperties(resource);
         return resource;
 
@@ -652,7 +657,7 @@ public class UserResource {
     @Path("credentials")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<CredentialRepresentation> credentials(){
+    public List<CredentialRepresentation> credentials() {
         auth.users().requireManage(user);
         List<CredentialModel> models = session.userCredentialManager().getStoredCredentials(realm, user);
         models.forEach(c -> c.setSecretData(null));
@@ -680,7 +685,6 @@ public class UserResource {
 
     /**
      * Remove a credential for a user
-     *
      */
     @Path("credentials/{credentialId}")
     @DELETE
@@ -716,22 +720,24 @@ public class UserResource {
 
     /**
      * Move a credential to a first position in the credentials list of the user
+     *
      * @param credentialId The credential to move
      */
     @Path("credentials/{credentialId}/moveToFirst")
     @POST
-    public void moveCredentialToFirst(final @PathParam("credentialId") String credentialId){
+    public void moveCredentialToFirst(final @PathParam("credentialId") String credentialId) {
         moveCredentialAfter(credentialId, null);
     }
 
     /**
      * Move a credential to a position behind another credential
-     * @param credentialId The credential to move
+     *
+     * @param credentialId            The credential to move
      * @param newPreviousCredentialId The credential that will be the previous element in the list. If set to null, the moved credential will be the first element in the list.
      */
     @Path("credentials/{credentialId}/moveAfter/{newPreviousCredentialId}")
     @POST
-    public void moveCredentialAfter(final @PathParam("credentialId") String credentialId, final @PathParam("newPreviousCredentialId") String newPreviousCredentialId){
+    public void moveCredentialAfter(final @PathParam("credentialId") String credentialId, final @PathParam("newPreviousCredentialId") String newPreviousCredentialId) {
         auth.users().requireManage(user);
         CredentialModel credential = session.userCredentialManager().getStoredCredentialById(realm, user, credentialId);
         if (credential == null) {
@@ -746,12 +752,12 @@ public class UserResource {
      * Send an email to the user with a link they can click to reset their password.
      * The redirectUri and clientId parameters are optional. The default for the
      * redirect is the account client.
-     *
+     * <p>
      * This endpoint has been deprecated.  Please use the execute-actions-email passing a list with
      * UPDATE_PASSWORD within it.
      *
      * @param redirectUri redirect uri
-     * @param clientId client id
+     * @param clientId    client id
      * @return
      */
     @Deprecated
@@ -768,16 +774,16 @@ public class UserResource {
 
     /**
      * Send a update account email to the user
-     *
+     * <p>
      * An email contains a link the user can click to perform a set of required actions.
      * The redirectUri and clientId parameters are optional. If no redirect is given, then there will
      * be no link back to click after actions have completed.  Redirect uri must be a valid uri for the
      * particular clientId.
      *
      * @param redirectUri Redirect uri
-     * @param clientId Client id
-     * @param lifespan Number of seconds after which the generated token expires
-     * @param actions required actions the user needs to complete
+     * @param clientId    Client id
+     * @param lifespan    Number of seconds after which the generated token expires
+     * @param actions     required actions the user needs to complete
      * @return
      */
     @Path("execute-actions-email")
@@ -795,12 +801,12 @@ public class UserResource {
 
         if (!user.isEnabled()) {
             throw new WebApplicationException(
-                ErrorResponse.error("User is disabled", Status.BAD_REQUEST));
+                    ErrorResponse.error("User is disabled", Status.BAD_REQUEST));
         }
 
         if (redirectUri != null && clientId == null) {
             throw new WebApplicationException(
-                ErrorResponse.error("Client id missing", Status.BAD_REQUEST));
+                    ErrorResponse.error("Client id missing", Status.BAD_REQUEST));
         }
 
         if (clientId == null) {
@@ -811,7 +817,7 @@ public class UserResource {
         if (client == null) {
             logger.debugf("Client %s doesn't exist", clientId);
             throw new WebApplicationException(
-                ErrorResponse.error("Client doesn't exist", Status.BAD_REQUEST));
+                    ErrorResponse.error("Client doesn't exist", Status.BAD_REQUEST));
         }
         if (!client.isEnabled()) {
             logger.debugf("Client %s is not enabled", clientId);
@@ -824,7 +830,7 @@ public class UserResource {
             redirect = RedirectUtils.verifyRedirectUri(session, redirectUri, client);
             if (redirect == null) {
                 throw new WebApplicationException(
-                    ErrorResponse.error("Invalid redirect uri.", Status.BAD_REQUEST));
+                        ErrorResponse.error("Invalid redirect uri.", Status.BAD_REQUEST));
             }
         }
 
@@ -841,10 +847,10 @@ public class UserResource {
             String link = builder.build(realm.getName()).toString();
 
             this.session.getProvider(EmailTemplateProvider.class)
-              .setAttribute(Constants.TEMPLATE_ATTR_REQUIRED_ACTIONS, token.getRequiredActions())
-              .setRealm(realm)
-              .setUser(user)
-              .sendExecuteActions(link, TimeUnit.SECONDS.toMinutes(lifespan));
+                    .setAttribute(Constants.TEMPLATE_ATTR_REQUIRED_ACTIONS, token.getRequiredActions())
+                    .setRealm(realm)
+                    .setUser(user)
+                    .sendExecuteActions(link, TimeUnit.SECONDS.toMinutes(lifespan));
 
             //audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
 
@@ -859,13 +865,13 @@ public class UserResource {
 
     /**
      * Send an email-verification email to the user
-     *
+     * <p>
      * An email contains a link the user can click to verify their email address.
      * The redirectUri and clientId parameters are optional. The default for the
      * redirect is the account client.
      *
      * @param redirectUri Redirect uri
-     * @param clientId Client id
+     * @param clientId    Client id
      * @return
      */
     @Path("send-verify-email")
@@ -890,7 +896,7 @@ public class UserResource {
 
         if (Objects.nonNull(search) && Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
             results = ModelToRepresentation.searchForGroupByName(user, !briefRepresentation, search.trim(), firstResult, maxResults);
-        } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
+        } else if (Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
             results = ModelToRepresentation.toGroupHierarchy(user, !briefRepresentation, firstResult, maxResults);
         } else {
             results = ModelToRepresentation.toGroupHierarchy(user, !briefRepresentation);
@@ -930,7 +936,7 @@ public class UserResource {
         auth.groups().requireManageMembership(group);
 
         try {
-            if (user.isMemberOf(group)){
+            if (user.isMemberOf(group)) {
                 user.leaveGroup(group);
                 adminEvent.operation(OperationType.DELETE).resource(ResourceType.GROUP_MEMBERSHIP).representation(ModelToRepresentation.toRepresentation(group, true)).resourcePath(session.getContext().getUri()).success();
             }
@@ -951,7 +957,7 @@ public class UserResource {
             throw new NotFoundException("Group not found");
         }
         auth.groups().requireManageMembership(group);
-        if (!user.isMemberOf(group)){
+        if (!user.isMemberOf(group)) {
             user.joinGroup(group);
             adminEvent.operation(OperationType.CREATE).resource(ResourceType.GROUP_MEMBERSHIP).representation(ModelToRepresentation.toRepresentation(group, true)).resourcePath(session.getContext().getUri()).success();
         }
@@ -960,7 +966,7 @@ public class UserResource {
     @PUT
     @Path("enable")
     @NoCache
-    public void enable(){
+    public void enable() {
         auth.users().requireManage(user);
         user.setEnabled(!user.isEnabled());
     }

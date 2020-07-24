@@ -24,15 +24,16 @@
             <column name="PHONE" type="VARCHAR(11)">
                 <constraints nullable="true"/>
             </column>
-            <column name="POLICE_NO" type="VARCHAR(10)">
+
+            <column name="POLICE_NO" type="VARCHAR(255)">
                 <constraints nullable="true"/>
             </column>
 
-            <column name="UNIT_CODE" type="VARCHAR(20)">
+            <column name="UNIT_CODE" type="VARCHAR(32)">
                 <constraints nullable="true"/>
             </column>
 
-            <column name="XK_USERNAME" type="VARCHAR(20)">
+            <column name="XK_USERNAME" type="VARCHAR(32)">
                 <constraints nullable="true"/>
             </column>
 

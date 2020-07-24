@@ -41,7 +41,7 @@ public interface UserModel extends RoleMapperModel {
     String SEARCH = "keycloak.session.realm.users.query.search";
     String EXACT = "keycloak.session.realm.users.query.exact";
     String POLICE_NO = "policeNo";
-    String PHONE = "PHONE";
+    String PHONE = "phone";
     String XK_USERNAME = "xkUsername";
     String UNIT_CODE = "unitCode";
 

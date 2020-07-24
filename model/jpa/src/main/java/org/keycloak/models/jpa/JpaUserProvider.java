@@ -692,6 +692,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 case UserModel.UNIT_CODE:
                     restrictions.add(qb.equal(from.get("unitCode"), value));
                     break;
+                case UserModel.PHONE:
+                    restrictions.add(qb.equal(from.get("phone"), value));
+                    break;
             }
         }
 
@@ -743,6 +746,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                     break;
                 case UserModel.UNIT_CODE:
                     restrictions.add(qb.equal(from.get("user").get("unitCode"), value));
+                    break;
+                case UserModel.PHONE:
+                    restrictions.add(qb.equal(from.get("user").get("phone"), value));
                     break;
             }
         }
@@ -867,6 +873,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                     orPredicates.add(builder.like(root.get(UserModel.USERNAME), "%" + value + "%"));
                     orPredicates.add(builder.like(root.get(UserModel.FIRST_NAME), "%" + value + "%"));
                     orPredicates.add(builder.like(root.get(UserModel.IDCARD), "%" + value + "%"));
+                    orPredicates.add(builder.equal(root.get(UserModel.PHONE), value));
+                    orPredicates.add(builder.equal(root.get(UserModel.POLICE_NO), value));
 
                     predicates.add(builder.or(orPredicates.toArray(new Predicate[orPredicates.size()])));
 
