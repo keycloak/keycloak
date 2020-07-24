@@ -1,5 +1,6 @@
 == Get Started
 
+[id="image-streams-applications-templates"]
 === Using the {project_openshift_product_name} Image Streams and Application Templates
 
 [IMPORTANT]
@@ -80,7 +81,7 @@ $ oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
 
 ==== Deploying the {project_name} Image using the Application Template
 
-===== Deploying the Template via OpenShift CLI
+===== Deploying the Template using OpenShift CLI
 
 . List the available {project_name} application templates:
 +
@@ -104,7 +105,7 @@ $ oc new-app --template={project_templates_version}-x509-https
      ---------
      An example {project_name} 7 application. For more information about using this template, see https://github.com/jboss-openshift/application-templates.
 
-     A new {project_name} service has been created in your project. The admin username/password for accessing the master realm via the {project_name} console is IACfQO8v/nR7llVSVb4Dye3TNRbXoXhRpAKTmiCRc. The HTTPS keystore used for serving secure content, the JGroups keystore used for securing JGroups communications, and server truststore used for securing {project_name} requests were automatically created via OpenShift's service serving x509 certificate secrets.
+     A new {project_name} service has been created in your project. The admin username/password for accessing the master realm using the {project_name} console is IACfQO8v/nR7llVSVb4Dye3TNRbXoXhRpAKTmiCRc. The HTTPS keystore used for serving secure content, the JGroups keystore used for securing JGroups communications, and server truststore used for securing {project_name} requests were automatically created using OpenShift's service serving x509 certificate secrets.
 
      * With parameters:
         * Application Name=sso
@@ -131,9 +132,9 @@ $ oc new-app --template={project_templates_version}-x509-https
     Run 'oc status' to view your app.
 ----
 
-===== Deploying the Template via the OpenShift Web Console
+Alternatively, perform one of the following procedures to deploy the {project_name} template by using the OpenShift 3.x or 4.x web console.
 
-Alternatively, perform the following steps to deploy the {project_name} template via the OpenShift web console:
+===== Deploying the Template using the OpenShift 3.x Web Console
 
 . Log in to the OpenShift web console and select the _sso-app-demo_ project space.
 . Click *Add to Project*, then *Browse Catalog* to list the default image streams and templates.
@@ -143,6 +144,42 @@ Alternatively, perform the following steps to deploy the {project_name} template
 . From the *Add to Project* drop-down menu, select the _sso-app-demo_ project space. Then click *Next*.
 . Select *Do not bind at this time* radio button in the *Binding* step. Click *Create* to continue.
 . In the *Results* step, click the *Continue to the project overview* link to verify the status of the deployment.
+
+===== Deploying the Template using the OpenShift 4.x Web Console
+
+.Prerequisites
+
+* Perform the steps described in xref:image-streams-applications-templates[Using the {project_openshift_product_name} Image Streams and Application Templates].
+
+.Procedure
+
+. Log in to the OpenShift web console and select the _sso-app-demo_ project space.
+
+. On the left sidebar, click the `Administrator` tab and then click `</> Developer`.
++
+image:images/choose_developer_role.png[]
+
+. Click `From Catalog`.
++
+image:images/add_from_catalog.png[]
+
+. Search for `sso`.
++
+image:images/sso_keyword.png[]
+
+. Choose a template such as `Red Hat Single Sign-On 7.4 on OpenJDK (Ephemeral)`.
++
+image:images/choose_template.png[]
+
+. Click `Instantiate Template`.
++
+image:images/instantiate_template.png[]
+
+. Adjust the template parameters if necessary and click `Create`.
+
+. Verify the Red Hat Single Sign-On for OpenShift image was deployed.
++
+image:images/verify_deployment.png[]
 
 ==== Accessing the Administrator Console of the {project_name} Pod
 
