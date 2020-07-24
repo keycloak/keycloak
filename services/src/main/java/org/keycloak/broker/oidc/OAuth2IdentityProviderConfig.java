@@ -92,14 +92,6 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
     public void setDefaultScope(String defaultScope) {
         getConfig().put("defaultScope", defaultScope);
     }
-
-    public boolean isLoginHint() {
-        return Boolean.valueOf(getConfig().get("loginHint"));
-    }
-
-    public void setLoginHint(boolean loginHint) {
-        getConfig().put("loginHint", String.valueOf(loginHint));
-    }
     
     public boolean isJWTAuthentication() {
         if (getClientAuthMethod().equals(OIDCLoginProtocol.CLIENT_SECRET_JWT)

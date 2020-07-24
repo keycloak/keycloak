@@ -353,8 +353,9 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     public Response performPostLogin(@PathParam("provider_id") String providerId,
                                      @QueryParam(LoginActionsService.SESSION_CODE) String code,
                                      @QueryParam("client_id") String clientId,
-                                     @QueryParam(Constants.TAB_ID) String tabId) {
-        return performLogin(providerId, code, clientId, tabId);
+                                     @QueryParam(Constants.TAB_ID) String tabId,
+                                     @QueryParam(OIDCLoginProtocol.LOGIN_HINT_PARAM) String loginHint) {
+        return performLogin(providerId, code, clientId, tabId, loginHint);
     }
 
     @GET
@@ -363,7 +364,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     public Response performLogin(@PathParam("provider_id") String providerId,
                                  @QueryParam(LoginActionsService.SESSION_CODE) String code,
                                  @QueryParam("client_id") String clientId,
-                                 @QueryParam(Constants.TAB_ID) String tabId) {
+                                 @QueryParam(Constants.TAB_ID) String tabId,
+                                 @QueryParam(OIDCLoginProtocol.LOGIN_HINT_PARAM) String loginHint) {
         this.event.detail(Details.IDENTITY_PROVIDER, providerId);
 
         if (isDebugEnabled()) {
@@ -376,15 +378,18 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 return parsedCode.response;
             }
 
-            ClientSessionCode clientSessionCode = parsedCode.clientSessionCode;
+            ClientSessionCode<AuthenticationSessionModel> clientSessionCode = parsedCode.clientSessionCode;
             IdentityProviderModel identityProviderModel = realmModel.getIdentityProviderByAlias(providerId);
             if (identityProviderModel == null) {
                 throw new IdentityBrokerException("Identity Provider [" + providerId + "] not found.");
             }
             if (identityProviderModel.isLinkOnly()) {
                 throw new IdentityBrokerException("Identity Provider [" + providerId + "] is not allowed to perform a login.");
-
             }
+            if (clientSessionCode != null && clientSessionCode.getClientSession() != null && loginHint != null) {
+                clientSessionCode.getClientSession().setClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
+            }
+
             IdentityProviderFactory providerFactory = getIdentityProviderFactory(session, identityProviderModel);
 
             IdentityProvider identityProvider = providerFactory.create(session, identityProviderModel);
