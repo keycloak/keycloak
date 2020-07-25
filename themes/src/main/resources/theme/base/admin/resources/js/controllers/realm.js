@@ -1125,6 +1125,35 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         }
     };
 
+    if (instance && instance.alias) {
+        try { $scope.authnContextClassRefs = JSON.parse($scope.identityProvider.config.authnContextClassRefs || '[]'); } catch (e) { $scope.authnContextClassRefs = []; }
+        try { $scope.authnContextDeclRefs = JSON.parse($scope.identityProvider.config.authnContextDeclRefs || '[]'); } catch (e) { $scope.authnContextDeclRefs = []; }
+    } else {
+        $scope.authnContextClassRefs = [];
+        $scope.authnContextDeclRefs = [];
+    }
+
+    $scope.deleteAuthnContextClassRef = function(index) {
+        $scope.authnContextClassRefs.splice(index, 1);
+        $scope.identityProvider.config.authnContextClassRefs = JSON.stringify($scope.authnContextClassRefs);
+    };
+
+    $scope.addAuthnContextClassRef = function() {
+        $scope.authnContextClassRefs.push($scope.newAuthnContextClassRef);
+        $scope.identityProvider.config.authnContextClassRefs = JSON.stringify($scope.authnContextClassRefs);
+        $scope.newAuthnContextClassRef = "";
+    };
+
+    $scope.deleteAuthnContextDeclRef = function(index) {
+        $scope.authnContextDeclRefs.splice(index, 1);
+        $scope.identityProvider.config.authnContextDeclRefs = JSON.stringify($scope.authnContextDeclRefs);
+    };
+
+    $scope.addAuthnContextDeclRef = function() {
+        $scope.authnContextDeclRefs.push($scope.newAuthnContextDeclRef);
+        $scope.identityProvider.config.authnContextDeclRefs = JSON.stringify($scope.authnContextDeclRefs);
+        $scope.newAuthnContextDeclRef = "";
+    };
 });
 
 module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, $location, $route, Dialog, Notifications, TimeUnit, TimeUnit2, serverInfo) {

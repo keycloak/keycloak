@@ -270,6 +270,17 @@ public class SAMLRequestWriter extends BaseWriter {
             }
         }
 
+        List<String> authnContextDeclRef = requestedAuthnContextType.getAuthnContextDeclRef();
+
+        if (authnContextDeclRef != null && !authnContextDeclRef.isEmpty()) {
+            for (String declRef : authnContextDeclRef) {
+                StaxUtil.writeStartElement(writer, ASSERTION_PREFIX, JBossSAMLConstants.AUTHN_CONTEXT_DECL_REF.get(), ASSERTION_NSURI.get());
+                StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, ASSERTION_NSURI.get());
+                StaxUtil.writeCharacters(writer, declRef);
+                StaxUtil.writeEndElement(writer);
+            }
+        }
+
         StaxUtil.writeEndElement(writer);
         StaxUtil.flush(writer);
     }
