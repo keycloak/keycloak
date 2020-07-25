@@ -1120,6 +1120,35 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         }
     };
 
+    if (instance && instance.alias) {
+        $scope.authnContextClassRefs = ($scope.identityProvider.config.authnContextClassRefs || '').split(',').filter(Boolean);
+        $scope.authnContextDeclRefs = ($scope.identityProvider.config.authnContextDeclRefs || '').split(',').filter(Boolean);
+    } else {
+        $scope.authnContextClassRefs = [];
+        $scope.authnContextDeclRefs = [];
+    }
+
+    $scope.deleteAuthnContextClassRef = function(index) {
+        $scope.authnContextClassRefs.splice(index, 1);
+        $scope.identityProvider.config.authnContextClassRefs = $scope.authnContextClassRefs.join(',');
+    };
+
+    $scope.addAuthnContextClassRef = function() {
+        $scope.authnContextClassRefs.push($scope.newAuthnContextClassRef);
+        $scope.identityProvider.config.authnContextClassRefs = $scope.authnContextClassRefs.join(',');
+        $scope.newAuthnContextClassRef = "";
+    };
+
+    $scope.deleteAuthnContextDeclRef = function(index) {
+        $scope.authnContextDeclRefs.splice(index, 1);
+        $scope.identityProvider.config.authnContextDeclRefs = $scope.authnContextDeclRefs.join(',');
+    };
+
+    $scope.addAuthnContextDeclRef = function() {
+        $scope.authnContextDeclRefs.push($scope.newAuthnContextDeclRef);
+        $scope.identityProvider.config.authnContextDeclRefs = $scope.authnContextDeclRefs.join(',');
+        $scope.newAuthnContextDeclRef = "";
+    };
 });
 
 module.controller('RealmIdentityProviderExportCtrl', function(realm, identityProvider, $scope, $http, IdentityProviderExport) {

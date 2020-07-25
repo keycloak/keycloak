@@ -97,6 +97,18 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 protocolBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get();
             }
 
+            SAML2RequestedAuthnContextBuilder requestedAuthnContext =
+                new SAML2RequestedAuthnContextBuilder()
+                    .setComparison(getConfig().getAuthnContextComparisonType());
+
+            if (getConfig().getAuthnContextClassRefs() != null && getConfig().getAuthnContextClassRefs().length() > 0)
+                for (String authnContextClassRef : getConfig().getAuthnContextClassRefs().split(","))
+                    requestedAuthnContext.addAuthnContextClassRef(authnContextClassRef);
+
+            if (getConfig().getAuthnContextDeclRefs() != null && getConfig().getAuthnContextDeclRefs().length() > 0)
+                for (String authnContextDeclRef : getConfig().getAuthnContextDeclRefs().split(","))
+                    requestedAuthnContext.addAuthnContextDeclRef(authnContextDeclRef);
+
             String loginHint = getConfig().isLoginHint() ? request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM) : null;
             SAML2AuthnRequestBuilder authnRequestBuilder = new SAML2AuthnRequestBuilder()
                     .assertionConsumerUrl(assertionConsumerServiceUrl)
@@ -107,6 +119,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                     .nameIdPolicy(SAML2NameIDPolicyBuilder
                         .format(nameIDPolicyFormat)
                         .setAllowCreate(Boolean.TRUE))
+                    .requestedAuthnContext(requestedAuthnContext)
                     .subject(loginHint);
 
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
