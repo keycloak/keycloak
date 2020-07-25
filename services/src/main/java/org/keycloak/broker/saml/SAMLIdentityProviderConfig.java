@@ -19,8 +19,8 @@ package org.keycloak.broker.saml;
 import static org.keycloak.common.util.UriUtils.checkUrl;
 
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.dom.saml.v2.protocol.AuthnContextComparisonType;
 import org.keycloak.models.IdentityProviderModel;
-
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.saml.SamlPrincipalType;
@@ -53,6 +53,9 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final String WANT_AUTHN_REQUESTS_SIGNED = "wantAuthnRequestsSigned";
     public static final String XML_SIG_KEY_INFO_KEY_NAME_TRANSFORMER = "xmlSigKeyInfoKeyNameTransformer";
     public static final String ENABLED_FROM_METADATA  = "enabledFromMetadata";
+    public static final String AUTHN_CONTEXT_COMPARISON_TYPE = "authnContextComparisonType";
+    public static final String AUTHN_CONTEXT_CLASS_REFS = "authnContextClassRefs";
+    public static final String AUTHN_CONTEXT_DECL_REFS = "authnContextDeclRefs";
 
     public SAMLIdentityProviderConfig() {
     }
@@ -281,13 +284,37 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public void setPrincipalAttribute(String principalAttribute) {
         getConfig().put(PRINCIPAL_ATTRIBUTE, principalAttribute);
     }
-    
+
     public boolean isEnabledFromMetadata() {
         return Boolean.valueOf(getConfig().get(ENABLED_FROM_METADATA ));
     }
 
     public void setEnabledFromMetadata(boolean enabled) {
         getConfig().put(ENABLED_FROM_METADATA , String.valueOf(enabled));
+    }
+
+    public AuthnContextComparisonType getAuthnContextComparisonType() {
+        return AuthnContextComparisonType.fromValue(getConfig().getOrDefault(AUTHN_CONTEXT_COMPARISON_TYPE, AuthnContextComparisonType.EXACT.value()));
+    }
+
+    public void setAuthnContextComparisonType(AuthnContextComparisonType authnContextComparisonType) {
+        getConfig().put(AUTHN_CONTEXT_COMPARISON_TYPE, authnContextComparisonType.value());
+    }
+
+    public String getAuthnContextClassRefs() {
+        return getConfig().get(AUTHN_CONTEXT_CLASS_REFS);
+    }
+
+    public void setAuthnContextClassRefs(String authnContextClassRefs) {
+        getConfig().put(AUTHN_CONTEXT_CLASS_REFS, authnContextClassRefs);
+    }
+
+    public String getAuthnContextDeclRefs() {
+        return getConfig().get(AUTHN_CONTEXT_DECL_REFS);
+    }
+
+    public void setAuthnContextDeclRefs(String authnContextDeclRefs) {
+        getConfig().put(AUTHN_CONTEXT_DECL_REFS, authnContextDeclRefs);
     }
 
     @Override

@@ -45,6 +45,7 @@ import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.util.JsonSerialization;
 
 import org.w3c.dom.Element;
 
@@ -54,6 +55,8 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -97,6 +100,16 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 protocolBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get();
             }
 
+            SAML2RequestedAuthnContextBuilder requestedAuthnContext =
+                new SAML2RequestedAuthnContextBuilder()
+                    .setComparison(getConfig().getAuthnContextComparisonType());
+
+            for (String authnContextClassRef : getAuthnContextClassRefUris())
+                requestedAuthnContext.addAuthnContextClassRef(authnContextClassRef);
+
+            for (String authnContextDeclRef : getAuthnContextDeclRefUris())
+                requestedAuthnContext.addAuthnContextDeclRef(authnContextDeclRef);
+
             String loginHint = getConfig().isLoginHint() ? request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM) : null;
             SAML2AuthnRequestBuilder authnRequestBuilder = new SAML2AuthnRequestBuilder()
                     .assertionConsumerUrl(assertionConsumerServiceUrl)
@@ -107,6 +120,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                     .nameIdPolicy(SAML2NameIDPolicyBuilder
                         .format(nameIDPolicyFormat)
                         .setAllowCreate(Boolean.TRUE))
+                    .requestedAuthnContext(requestedAuthnContext)
                     .subject(loginHint);
 
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
@@ -146,6 +160,32 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
     private String getEntityId(UriInfo uriInfo, RealmModel realm) {
         return UriBuilder.fromUri(uriInfo.getBaseUri()).path("realms").path(realm.getName()).build().toString();
+    }
+
+    private List<String> getAuthnContextClassRefUris() {
+        String authnContextClassRefs = getConfig().getAuthnContextClassRefs();
+        if (authnContextClassRefs == null || authnContextClassRefs.isEmpty())
+            return new LinkedList<String>();
+
+        try {
+            return Arrays.asList(JsonSerialization.readValue(authnContextClassRefs, String[].class));
+        } catch (Exception e) {
+            logger.warn("Could not json-deserialize AuthContextClassRefs config entry: " + authnContextClassRefs, e);
+            return new LinkedList<String>();
+        }
+    }
+
+    private List<String> getAuthnContextDeclRefUris() {
+        String authnContextDeclRefs = getConfig().getAuthnContextDeclRefs();
+        if (authnContextDeclRefs == null || authnContextDeclRefs.isEmpty())
+            return new LinkedList<String>();
+
+        try {
+            return Arrays.asList(JsonSerialization.readValue(authnContextDeclRefs, String[].class));
+        } catch (Exception e) {
+            logger.warn("Could not json-deserialize AuthContextDeclRefs config entry: " + authnContextDeclRefs, e);
+            return new LinkedList<String>();
+        }
     }
 
     @Override
