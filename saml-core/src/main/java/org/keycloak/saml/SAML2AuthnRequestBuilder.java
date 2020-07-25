@@ -20,6 +20,7 @@ import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
+import org.keycloak.dom.saml.v2.protocol.RequestedAuthnContextType;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
@@ -106,6 +107,17 @@ public class SAML2AuthnRequestBuilder implements SamlProtocolExtensionsAwareBuil
         subType.addBaseID(nameId);
         subject.setSubType(subType);
         return subject;
+    }
+
+    public SAML2AuthnRequestBuilder requestedAuthnContext(SAML2RequestedAuthnContextBuilder requestedAuthnContextBuilder) {
+        RequestedAuthnContextType requestedAuthnContext = requestedAuthnContextBuilder.build();
+
+        // Only emit the RequestedAuthnContext element if at least a ClassRef or a DeclRef is present
+        if (!requestedAuthnContext.getAuthnContextClassRef().isEmpty() ||
+            !requestedAuthnContext.getAuthnContextDeclRef().isEmpty())
+            this.authnRequestType.setRequestedAuthnContext(requestedAuthnContext);
+
+        return this;
     }
 
     public Document toDocument() {
