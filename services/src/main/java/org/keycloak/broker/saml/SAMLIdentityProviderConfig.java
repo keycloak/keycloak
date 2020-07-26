@@ -285,7 +285,7 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     }
 
     public AuthnContextComparisonType getAuthnContextComparisonType() {
-        return AuthnContextComparisonType.fromValue(getConfig().get(AUTHN_CONTEXT_COMPARISON_TYPE));
+        return AuthnContextComparisonType.fromValue(getConfig().getOrDefault(AUTHN_CONTEXT_COMPARISON_TYPE, AuthnContextComparisonType.EXACT.value()));
     }
 
     public void setAuthnContextComparisonType(AuthnContextComparisonType authnContextComparisonType) {
