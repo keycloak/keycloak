@@ -20,6 +20,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenIdGenerator;
+import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.constants.AdapterConstants;
@@ -376,9 +377,11 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     protected boolean isReAuthRequiredForKcAction(UserSessionModel userSession, AuthenticationSessionModel authSession) {
         if (authSession.getClientNote(Constants.KC_ACTION) != null) {
+            String providerId = authSession.getClientNote(Constants.KC_ACTION);
+            RequiredActionProvider requiredActionProvider = this.session.getProvider(RequiredActionProvider.class, providerId);
             String authTime = userSession.getNote(AuthenticationManager.AUTH_TIME);
             int authTimeInt = authTime == null ? 0 : Integer.parseInt(authTime);
-            int maxAgeInt = Constants.KC_ACTION_MAX_AGE;
+            int maxAgeInt = requiredActionProvider.getMaxAuthAge();
             return authTimeInt + maxAgeInt < Time.currentTime();
         } else {
             return false;
