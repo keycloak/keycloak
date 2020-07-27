@@ -80,7 +80,7 @@ public class OidcBackchannelLogoutBrokerConfiguration implements BrokerConfigura
                 OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
         oidcAdvancedConfigWrapper.setBackchannelLogoutSessionRequired(true);
         oidcAdvancedConfigWrapper.setBackchannelLogoutUrl(getConsumerRoot() +
-                "/auth/realms/" + REALM_CONS_NAME + "/protocol/openid-connect/logout-v2/backchannel-logout");
+                "/auth/realms/" + REALM_CONS_NAME + "/protocol/openid-connect/logout/backchannel-logout");
 
         client.setRedirectUris(Collections.singletonList(getConsumerRoot() +
                 "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_OIDC_ALIAS + "/endpoint/*"));

@@ -206,7 +206,7 @@ public class OAuthClient {
     public class BackchannelLogoutUrlBuilder {
         private final String backchannelLogoutPath = "/backchannel-logout";
 
-        private final UriBuilder b = OIDCLoginProtocolService.oidcLogoutUrl(UriBuilder.fromUri(baseUrl)).path(backchannelLogoutPath);
+        private final UriBuilder b = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(baseUrl)).path(backchannelLogoutPath);
 
         public String build() {
             return b.build(realm).toString();
