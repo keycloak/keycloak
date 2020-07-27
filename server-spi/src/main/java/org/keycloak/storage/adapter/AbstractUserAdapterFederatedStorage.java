@@ -354,7 +354,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     @Override
     public void setAttribute(String name, List<String> values) {
         if (UserModel.USERNAME.equals(name)) {
-            setUsername(values.get(0));
+            setUsername((values != null && values.size() > 0) ? values.get(0) : null);
         }
         getFederatedStorage().setAttribute(realm, this.getId(), mapAttribute(name), values);
 

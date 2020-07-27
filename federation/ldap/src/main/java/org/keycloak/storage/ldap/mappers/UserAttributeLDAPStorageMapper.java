@@ -203,10 +203,11 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
                 @Override
                 public void setAttribute(String name, List<String> values) {
+                    String valueToSet = (values != null && values.size() > 0) ? values.get(0) : null;
                     if (UserModel.USERNAME.equals(name)) {
-                        checkDuplicateUsername(userModelAttrName, values.get(0), realm, ldapProvider.getSession(), this);
+                        checkDuplicateUsername(userModelAttrName, valueToSet, realm, ldapProvider.getSession(), this);
                     } else if (UserModel.EMAIL.equals(name)) {
-                        checkDuplicateEmail(userModelAttrName, values.get(0), realm, ldapProvider.getSession(), this);
+                        checkDuplicateEmail(userModelAttrName, valueToSet, realm, ldapProvider.getSession(), this);
                     }
                     if (setLDAPAttribute(name, values)) {
                         super.setAttribute(name, values);
