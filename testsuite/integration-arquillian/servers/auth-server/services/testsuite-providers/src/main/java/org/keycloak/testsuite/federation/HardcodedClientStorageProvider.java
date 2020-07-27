@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -79,6 +80,11 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
 
     @Override
     public Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
+        if (Boolean.parseBoolean(component.getConfig().getFirst(HardcodedClientStorageProviderFactory.DELAYED_SEARCH))) try {
+            Thread.sleep(5000l);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(HardcodedClientStorageProvider.class).warn(ex.getCause());
+        }
         if (clientId != null && this.clientId.toLowerCase().contains(clientId.toLowerCase())) {
             return Stream.of(new ClientAdapter(realm));
         }
