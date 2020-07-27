@@ -164,17 +164,18 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public void setAttribute(String name, List<String> values) {
+        String valueToSet = (values != null && values.size() > 0) ? values.get(0) : null;
         if (UserModel.FIRST_NAME.equals(name)) {
-            user.setFirstName(values.get(0));
+            user.setFirstName(valueToSet);
             return;
         } else if (UserModel.LAST_NAME.equals(name)) {
-            user.setLastName(values.get(0));
+            user.setLastName(valueToSet);
             return;
         } else if (UserModel.EMAIL.equals(name)) {
-            setEmail(values.get(0));
+            setEmail(valueToSet);
             return;
         } else if (UserModel.USERNAME.equals(name)) {
-            setUsername(values.get(0));
+            setUsername(valueToSet);
             return;
         }
         // Remove all existing
