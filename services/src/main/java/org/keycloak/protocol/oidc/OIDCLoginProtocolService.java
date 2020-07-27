@@ -36,7 +36,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LoginStatusIframeEndpoint;
 import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
-import org.keycloak.protocol.oidc.endpoints.LogoutV2Endpoint;
 import org.keycloak.protocol.oidc.endpoints.ThirdPartyCookiesIframeEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenRevocationEndpoint;
@@ -145,11 +144,6 @@ public class OIDCLoginProtocolService {
         return uriBuilder.path(OIDCLoginProtocolService.class, "logout");
     }
 
-    public static UriBuilder oidcLogoutUrl(UriBuilder baseUriBuilder) {
-        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(OIDCLoginProtocolService.class, "logoutV2");
-    }
-
     public static UriBuilder tokenRevocationUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
         return uriBuilder.path(OIDCLoginProtocolService.class, "revoke");
@@ -255,14 +249,6 @@ public class OIDCLoginProtocolService {
     @Path("logout")
     public Object logout() {
         LogoutEndpoint endpoint = new LogoutEndpoint(tokenManager, realm, event);
-        ResteasyProviderFactory.getInstance().injectProperties(endpoint);
-        return endpoint;
-    }
-
-    /* new logout endpoint  */
-    @Path("logout-v2")
-    public Object logoutV2() {
-        LogoutV2Endpoint endpoint = new LogoutV2Endpoint(tokenManager, realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
     }
