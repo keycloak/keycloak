@@ -39,6 +39,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.TokenManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.LogoutToken;
@@ -255,7 +256,9 @@ public class DefaultTokenManager implements TokenManager {
         token.putEvents(TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT, JsonSerialization.createObjectNode());
         token.addAudience(client.getClientId());
 
-        token.setSid(clientSession.getUserSession().getId());
+        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isBackchannelLogoutSessionRequired()){
+            token.setSid(clientSession.getUserSession().getId());
+        }
         token.setSubject(user.getId());
 
         return token;
