@@ -141,14 +141,15 @@ public class FullNameLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
                 @Override
                 public void setAttribute(String name, List<String> values) {
+                    String valueToSet = (values != null && values.size() > 0) ? values.get(0) : null;
                     if (UserModel.FIRST_NAME.equals(name)) {
-                        this.firstName = values.get(0);
+                        this.firstName = valueToSet;
                         setFullNameToLDAPObject();
                     } else if (UserModel.LAST_NAME.equals(name)) {
-                        this.lastName = values.get(0);
+                        this.lastName = valueToSet;
                         setFullNameToLDAPObject();
                     }
-                    super.setSingleAttribute(name, values.get(0));
+                    super.setSingleAttribute(name, valueToSet);
                 }
 
                 @Override
