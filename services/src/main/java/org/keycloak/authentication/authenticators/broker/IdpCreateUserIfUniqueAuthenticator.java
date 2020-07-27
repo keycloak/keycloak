@@ -74,12 +74,11 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
 
             UserModel federatedUser = session.users().addUser(realm, username);
             federatedUser.setEnabled(true);
-            federatedUser.setEmail(brokerContext.getEmail());
-            federatedUser.setFirstName(brokerContext.getFirstName());
-            federatedUser.setLastName(brokerContext.getLastName());
 
             for (Map.Entry<String, List<String>> attr : serializedCtx.getAttributes().entrySet()) {
-                federatedUser.setAttribute(attr.getKey(), attr.getValue());
+                if (!UserModel.USERNAME.equalsIgnoreCase(attr.getKey())) {
+                    federatedUser.setAttribute(attr.getKey(), attr.getValue());
+                }
             }
 
             AuthenticatorConfigModel config = context.getAuthenticatorConfig();
