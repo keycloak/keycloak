@@ -183,25 +183,14 @@ image:images/verify_deployment.png[]
 
 ==== Accessing the Administrator Console of the {project_name} Pod
 
-After the template got deployed, identify the available routes:
+After the template is deployed, identify the available routes:
 
 [source,bash,subs="attributes+,macros+"]
 ----
 $ oc get routes
+NAME     HOST/PORT
+sso      sso-sso-app-demo.openshift.example.com
 ----
-
-[cols="7",options="header"]
-|===
-|NAME |HOST/PORT |PATH |SERVICES |PORT |TERMINATION |WILDCARD
-
-|sso
-|sso-sso-app-demo.openshift.example.com
-|
-|sso
-|<all>
-|reencrypt
-|None
-|===
 
 and access the {project_name} administrator console at:
 
