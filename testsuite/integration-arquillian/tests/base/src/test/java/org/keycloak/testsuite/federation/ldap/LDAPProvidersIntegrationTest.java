@@ -39,6 +39,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.storage.ReadOnlyException;
@@ -1142,5 +1143,28 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             List<UserModel> userNotVerified = session.users().searchForUser("john2@test.com", appRealm);
             Assert.assertFalse(userNotVerified.get(0).isEmailVerified());
         });
+    }
+
+    @Test
+    public void testUserAttributeLDAPStorageMapperHandlingUsernameLowercasing() {
+        setEditingUsernameAllowed(false);
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            UserModel johnkeycloak = session.users().getUserByUsername("johnkeycloak", appRealm);
+            // If the username was case sensitive in the username-cn mapper, then this would throw an exception
+            johnkeycloak.setSingleAttribute(UserModel.USERNAME, "JohnKeycloak");
+        });
+
+        // Cleanup
+        setEditingUsernameAllowed(true);
+    }
+
+    private void setEditingUsernameAllowed(boolean allowed) {
+        RealmRepresentation realmRepresentation = testRealm().toRepresentation();
+        realmRepresentation.setEditUsernameAllowed(allowed);
+        testRealm().update(realmRepresentation);
     }
 }

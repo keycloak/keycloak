@@ -26,6 +26,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModelDefaultMethods;
 import org.keycloak.models.utils.DefaultRoles;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.storage.ReadOnlyException;
 
@@ -123,6 +124,9 @@ public class InMemoryUserAdapter extends UserModelDefaultMethods {
     @Override
     public void setSingleAttribute(String name, String value) {
         checkReadonly();
+        if (UserModel.USERNAME.equals(name) || UserModel.EMAIL.equals(name)) {
+            value = KeycloakModelUtils.toLowerCaseSafe(value);
+        }
         attributes.putSingle(name, value);
 
     }
@@ -130,6 +134,10 @@ public class InMemoryUserAdapter extends UserModelDefaultMethods {
     @Override
     public void setAttribute(String name, List<String> values) {
         checkReadonly();
+        if (UserModel.USERNAME.equals(name) || UserModel.EMAIL.equals(name)) {
+            String lowerCasedFirstValue = KeycloakModelUtils.toLowerCaseSafe((values != null && values.size() > 0) ? values.get(0) : null);
+            if (lowerCasedFirstValue != null) values.set(0, lowerCasedFirstValue);
+        }
         attributes.put(name, values);
 
     }
