@@ -18,23 +18,27 @@
 package org.keycloak.utils;
 
 import java.util.Objects;
+import java.util.Set;
 
 import org.keycloak.models.AccountRoles;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.ForbiddenException;
 
 public class UserHelper {
 
-  public static boolean hasDeleteAccountRole(UserModel user) {
-    return Objects.nonNull(user.getRoleMappings()) && user.getRoleMappings().stream().anyMatch((role) -> Objects.equals(role.getName(), Constants.DELETE_ACCOUNT_ROLE));
+  public static boolean hasAccountClientDeleteAccountRole(UserModel user, ClientModel accountClientModel) {
+    Set<RoleModel> acountClientRoleMappings = user.getClientRoleMappings(accountClientModel);
+    return Objects.nonNull(acountClientRoleMappings) && acountClientRoleMappings.stream().anyMatch((role) -> Objects.equals(role.getName(),
+        AccountRoles.DELETE_ACCOUNT));
   }
 
   public static boolean isDeleteAccountAllowed(RealmModel realm, UserModel user) {
     RequiredActionProviderModel deleteAction = realm.getRequiredActionProviderByAlias("delete_account");
-    return hasDeleteAccountRole(user) && Objects.nonNull(deleteAction) && deleteAction.isEnabled();
+    return hasAccountClientDeleteAccountRole(user, realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)) && Objects.nonNull(deleteAction) && deleteAction.isEnabled();
   }
 
 }
