@@ -417,10 +417,7 @@ public class SAMLEndpoint {
                 }
 
                 AssertionType assertion = responseType.getAssertions().get(0).getAssertion();
-
-                SubjectType subject = assertion.getSubject();
-                SubjectType.STSubType subType = subject.getSubType();
-                NameIDType subjectNameID = (NameIDType) subType.getBaseID();
+                NameIDType subjectNameID = getSubjectNameID(assertion);
                 String principal = getPrincipal(assertion);
 
                 if (principal == null) {
@@ -669,10 +666,8 @@ public class SAMLEndpoint {
         SamlPrincipalType principalType = config.getPrincipalType();
 
         if (principalType == null || principalType.equals(SamlPrincipalType.SUBJECT)) {
-            SubjectType subject = assertion.getSubject();
-            SubjectType.STSubType subType = subject.getSubType();
-            NameIDType subjectNameID = (NameIDType) subType.getBaseID();
-            return subjectNameID.getValue();
+            NameIDType subjectNameID = getSubjectNameID(assertion);
+            return subjectNameID != null ? subjectNameID.getValue() : null;
         } else if (principalType.equals(SamlPrincipalType.ATTRIBUTE)) {
             return getAttributeByName(assertion, config.getPrincipalAttribute());
         } else {
@@ -707,4 +702,9 @@ public class SAMLEndpoint {
         }
     }
 
+    private NameIDType getSubjectNameID(final AssertionType assertion) {
+        SubjectType subject = assertion.getSubject();
+        SubjectType.STSubType subType = subject.getSubType();
+        return subType != null ? (NameIDType) subType.getBaseID() : null;
+    }
 }
