@@ -44,6 +44,9 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * @resource Scope Mappings
@@ -105,11 +108,13 @@ public class ScopeMappedClientResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getAvailableClientScopeMappings() {
+    public Stream<RoleRepresentation> getAvailableClientScopeMappings() {
         viewPermission.require();
 
-        Set<RoleModel> roles = scopedClient.getRoles();
-        return ScopeMappedResource.getAvailable(auth, scopeContainer, roles);
+        return scopedClient.getRolesStream()
+                .filter(((Predicate<RoleModel>) scopeContainer::hasScope).negate())
+                .filter(auth.roles()::canMapClientScope)
+                .map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**
@@ -125,11 +130,14 @@ public class ScopeMappedClientResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getCompositeClientScopeMappings(@QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+    public Stream<RoleRepresentation> getCompositeClientScopeMappings(@QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
 
-        Set<RoleModel> roles = scopedClient.getRoles();
-        return ScopeMappedResource.getComposite(scopeContainer, roles, briefRepresentation);
+        Function<RoleModel, RoleRepresentation> toBriefRepresentation = briefRepresentation ?
+                ModelToRepresentation::toBriefRepresentation : ModelToRepresentation::toRepresentation;
+        return scopedClient.getRolesStream()
+                .filter(scopeContainer::hasScope)
+                .map(toBriefRepresentation);
     }
 
     /**

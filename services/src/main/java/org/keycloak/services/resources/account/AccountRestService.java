@@ -515,10 +515,7 @@ public class AccountRestService {
             consentModels.put(client.getClientId(), consent);
         }
 
-        List<ClientModel> alwaysDisplayClients = realm.getAlwaysDisplayInConsoleClients();
-        for(ClientModel client : alwaysDisplayClients) {
-            clients.add(client);
-        }
+        realm.getAlwaysDisplayInConsoleClientsStream().forEach(clients::add);
 
         List<ClientRepresentation> apps = new LinkedList<ClientRepresentation>();
         for (ClientModel client : clients) {

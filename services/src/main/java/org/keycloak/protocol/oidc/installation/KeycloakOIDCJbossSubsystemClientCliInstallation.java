@@ -53,7 +53,7 @@ public class KeycloakOIDCJbossSubsystemClientCliInstallation implements ClientIn
         if (KeycloakOIDCClientInstallation.showVerifyTokenAudience(client)) {
             builder.append("    verify-token-audience=true, \\\n");
         }
-        if (client.getRoles().size() > 0) {
+        if (client.getRolesStream().count() > 0) {
             builder.append("    use-resource-role-mappings=true, \\\n");
         }
         builder.append("    ssl-required=").append(realm.getSslRequired().name()).append(")\n\n");

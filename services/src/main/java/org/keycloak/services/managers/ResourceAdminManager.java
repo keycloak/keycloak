@@ -59,6 +59,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -267,14 +269,17 @@ public class ResourceAdminManager {
 
     public GlobalRequestResult logoutAll(RealmModel realm) {
         realm.setNotBefore(Time.currentTime());
-        List<ClientModel> resources = realm.getClients();
-        logger.debugv("logging out {0} resources ", resources.size());
+        Stream<ClientModel> resources = realm.getClientsStream();
 
         GlobalRequestResult finalResult = new GlobalRequestResult();
-        for (ClientModel resource : resources) {
-            GlobalRequestResult currentResult = logoutClient(realm, resource, realm.getNotBefore());
+        AtomicInteger counter = new AtomicInteger(0);
+        resources.forEach(r -> {
+            counter.getAndIncrement();
+            GlobalRequestResult currentResult = logoutClient(realm, r, realm.getNotBefore());
             finalResult.addAll(currentResult);
-        }
+        });
+        logger.debugv("logging out {0} resources ", counter);
+
         return finalResult;
     }
 
@@ -328,10 +333,10 @@ public class ResourceAdminManager {
 
     public GlobalRequestResult pushRealmRevocationPolicy(RealmModel realm) {
         GlobalRequestResult finalResult = new GlobalRequestResult();
-        for (ClientModel client : realm.getClients()) {
-            GlobalRequestResult currentResult = pushRevocationPolicy(realm, client, realm.getNotBefore());
+        realm.getClientsStream().forEach(c -> {
+            GlobalRequestResult currentResult = pushRevocationPolicy(realm, c, realm.getNotBefore());
             finalResult.addAll(currentResult);
-        }
+        });
         return finalResult;
     }
 

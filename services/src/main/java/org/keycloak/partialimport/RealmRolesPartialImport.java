@@ -24,6 +24,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.resources.admin.RoleResource;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -56,20 +57,15 @@ public class RealmRolesPartialImport extends AbstractPartialImport<RoleRepresent
 
     @Override
     public String getModelId(RealmModel realm, KeycloakSession session, RoleRepresentation roleRep) {
-        for (RoleModel role : realm.getRoles()) {
-            if (getName(roleRep).equals(role.getName())) return role.getId();
-        }
-
-        return null;
+        return realm.getRolesStream()
+                .filter(r -> Objects.equals(getName(roleRep), r.getName()))
+                .map(RoleModel::getId)
+                .findFirst().orElse(null);
     }
 
     @Override
     public boolean exists(RealmModel realm, KeycloakSession session, RoleRepresentation roleRep) {
-        for (RoleModel role : realm.getRoles()) {
-            if (getName(roleRep).equals(role.getName())) return true;
-        }
-
-        return false;
+        return realm.getRolesStream().anyMatch(role -> Objects.equals(getName(roleRep), role.getName()));
     }
 
     @Override

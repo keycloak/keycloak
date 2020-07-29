@@ -21,7 +21,6 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.Token;
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
@@ -61,7 +60,6 @@ import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
-import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
@@ -83,16 +81,15 @@ import org.keycloak.util.TokenUtil;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
@@ -495,21 +492,21 @@ public class TokenManager {
         } else {
 
             // 1 - Client roles of this client itself
-            Set<RoleModel> scopeMappings = new HashSet<>(client.getRoles());
+            Stream<RoleModel> scopeMappings = client.getRolesStream();
 
             // 2 - Role mappings of client itself + default client scopes + optional client scopes requested by scope parameter (if applyScopeParam is true)
             for (ClientScopeModel clientScope : clientScopes) {
                 if (logger.isTraceEnabled()) {
                     logger.tracef("Adding client scope role mappings of client scope '%s' to client '%s'", clientScope.getName(), client.getClientId());
                 }
-                scopeMappings.addAll(clientScope.getScopeMappings());
+                scopeMappings = Stream.concat(scopeMappings, clientScope.getScopeMappingsStream());
             }
 
             // 3 - Expand scope mappings
-            scopeMappings = RoleUtils.expandCompositeRoles(scopeMappings);
+            scopeMappings = RoleUtils.expandCompositeRolesStream(scopeMappings);
 
             // Intersection of expanded user roles and expanded scopeMappings
-            roleMappings.retainAll(scopeMappings);
+            roleMappings.retainAll(scopeMappings.collect(Collectors.toSet()));
 
             return roleMappings;
         }

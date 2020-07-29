@@ -101,20 +101,20 @@ public class RoleContainerResource extends RoleResource {
                                                @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         auth.roles().requireList(roleContainer);
 
-        Set<RoleModel> roleModels;
+        Stream<RoleModel> roleModels;
 
         if(search != null && search.trim().length() > 0) {
-            roleModels = roleContainer.searchForRoles(search, firstResult, maxResults);
+            roleModels = roleContainer.searchForRolesStream(search, firstResult, maxResults);
         } else if (!Objects.isNull(firstResult) && !Objects.isNull(maxResults)) {
-            roleModels = roleContainer.getRoles(firstResult, maxResults);
+            roleModels = roleContainer.getRolesStream(firstResult, maxResults);
         } else {
-            roleModels = roleContainer.getRoles();
+            roleModels = roleContainer.getRolesStream();
         }
 
         Function<RoleModel, RoleRepresentation> toRoleRepresentation = briefRepresentation ?
                 ModelToRepresentation::toBriefRepresentation :
                 ModelToRepresentation::toRepresentation;
-        return roleModels.stream().map(toRoleRepresentation);
+        return roleModels.map(toRoleRepresentation);
     }
 
     /**

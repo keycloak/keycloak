@@ -64,10 +64,11 @@ public class TestClientRolesCondition implements ClientPolicyConditionProvider {
         List<String> rolesForMatching = getRolesForMatching();
         if (rolesForMatching == null) return false;
 
-        client.getRoles().stream().forEach(i -> ClientPolicyLogger.log(logger, "client role = " + i.getName()));
+        client.getRolesStream().forEach(i -> ClientPolicyLogger.log(logger, "client role = " + i.getName()));
         rolesForMatching.stream().forEach(i -> ClientPolicyLogger.log(logger, "roles expected = " + i));
 
-        boolean isMatched = rolesForMatching.stream().anyMatch(i->client.getRoles().stream().anyMatch(j->j.getName().equals(i)));
+        boolean isMatched = rolesForMatching.stream()
+                .anyMatch(i -> client.getRolesStream().anyMatch(j -> j.getName().equals(i)));
         if (isMatched) {
             ClientPolicyLogger.log(logger, "role matched.");
         } else {

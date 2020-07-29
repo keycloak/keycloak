@@ -25,8 +25,6 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 
 import org.keycloak.models.RealmModel.ClientUpdatedEvent;
-import org.keycloak.models.RealmProvider;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.common.Serialization;
 import java.util.Comparator;
@@ -41,7 +39,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.models.map.storage.MapStorage;
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import org.keycloak.models.RoleProvider;
 
 public class MapClientProvider implements ClientProvider {
 

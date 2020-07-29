@@ -94,7 +94,7 @@ public class MigrateTo4_0_0 implements Migration {
         // If client has scope for offline_access role (either directly or through fullScopeAllowed), then add offline_access client
         // scope as optional scope to the client. If it's indirectly (no fullScopeAllowed), then remove role from the scoped roles
         RoleModel offlineAccessRole = realm.getRole(OAuth2Constants.OFFLINE_ACCESS);
-        ClientScopeModel offlineAccessScope = null;
+        ClientScopeModel offlineAccessScope;
         if (offlineAccessRole == null) {
             LOG.infof("Role 'offline_access' not available in realm '%s'. Skip migration of offline_access client scope.", realm.getName());
         } else {
@@ -102,32 +102,32 @@ public class MigrateTo4_0_0 implements Migration {
             if (offlineAccessScope == null) {
                 LOG.infof("Client scope 'offline_access' not available in realm '%s'. Skip migration of offline_access client scope.", realm.getName());
             } else {
-                for (ClientModel client : realm.getClients()) {
-                    if ("openid-connect".equals(client.getProtocol())
-                            && !client.isBearerOnly()
-                            && client.hasScope(offlineAccessRole)
-                            && !client.getClientScopes(false, true).containsKey(OAuth2Constants.OFFLINE_ACCESS)) {
-                        LOG.debugf("Adding client scope 'offline_access' as optional scope to client '%s' in realm '%s'.", client.getClientId(), realm.getName());
-                        client.addClientScope(offlineAccessScope, false);
-
-                        if (!client.isFullScopeAllowed()) {
-                            LOG.debugf("Removing role scope mapping for role 'offline_access' from client '%s' in realm '%s'.", client.getClientId(), realm.getName());
-                            client.deleteScopeMapping(offlineAccessRole);
-                        }
-                    }
-                }
+                realm.getClientsStream()
+                        .filter(MigrationUtils::isOIDCNonBearerOnlyClient)
+                        .filter(c -> c.hasScope(offlineAccessRole))
+                        .filter(c -> !c.getClientScopes(false, true).containsKey(OAuth2Constants.OFFLINE_ACCESS))
+                        .peek(c -> {
+                            LOG.debugf("Adding client scope 'offline_access' as optional scope to client '%s' in realm '%s'.", c.getClientId(), realm.getName());
+                            c.addClientScope(offlineAccessScope, false);
+                        })
+                        .filter(c -> !c.isFullScopeAllowed())
+                        .forEach(c -> {
+                            LOG.debugf("Removing role scope mapping for role 'offline_access' from client '%s' in realm '%s'.", c.getClientId(), realm.getName());
+                            c.deleteScopeMapping(offlineAccessRole);
+                        });
             }
         }
 
 
         // Clients with consentRequired, which don't have any client scopes will be added itself to require consent, so that consent screen is shown when users authenticate
-        for (ClientModel client : realm.getClients()) {
-            if (client.isConsentRequired() && client.getClientScopes(true, true).isEmpty()) {
-                LOG.debugf("Adding client '%s' of realm '%s' to display itself on consent screen", client.getClientId(), realm.getName());
-                client.setDisplayOnConsentScreen(true);
-                String consentText = client.getName()==null ? client.getClientId() : client.getName();
-                client.setConsentScreenText(consentText);
-            }
-        }
+        realm.getClientsStream()
+                .filter(ClientModel::isConsentRequired)
+                .filter(c -> c.getClientScopes(true, true).isEmpty())
+                .forEach(c -> {
+                    LOG.debugf("Adding client '%s' of realm '%s' to display itself on consent screen", c.getClientId(), realm.getName());
+                    c.setDisplayOnConsentScreen(true);
+                    String consentText = c.getName() == null ? c.getClientId() : c.getName();
+                    c.setConsentScreenText(consentText);
+                });
     }
 }

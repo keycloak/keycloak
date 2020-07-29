@@ -149,6 +149,16 @@ public class RoleUtils {
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * @param roles
+     * @return stream with composite roles expanded
+     */
+    public static Stream<RoleModel> expandCompositeRolesStream(Stream<RoleModel> roles) {
+        Set<RoleModel> visited = new HashSet<>();
+
+        return roles.flatMap(roleModel -> RoleUtils.expandCompositeRolesStream(roleModel, visited));
+    }
+
 
     /**
      * @param user

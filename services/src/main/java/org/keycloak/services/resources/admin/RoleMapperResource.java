@@ -19,7 +19,6 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.admin.OperationType;
@@ -35,7 +34,6 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.storage.ReadOnlyException;
@@ -53,15 +51,15 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * Base resource for managing users
@@ -183,17 +181,12 @@ public class RoleMapperResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getCompositeRealmRoleMappings(@QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+    public Stream<RoleRepresentation> getCompositeRealmRoleMappings(@QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
 
-        Set<RoleModel> roles = realm.getRoles();
-        List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
-        for (RoleModel roleModel : roles) {
-            if (roleMapper.hasRole(roleModel)) {
-               realmMappingsRep.add(briefRepresentation ? ModelToRepresentation.toBriefRepresentation(roleModel) : ModelToRepresentation.toRepresentation(roleModel));
-            }
-        }
-        return realmMappingsRep;
+        Function<RoleModel, RoleRepresentation> toBriefRepresentation = briefRepresentation ?
+                ModelToRepresentation::toBriefRepresentation : ModelToRepresentation::toRepresentation;
+        return realm.getRolesStream().filter(roleMapper::hasRole).map(toBriefRepresentation);
     }
 
     /**
@@ -205,14 +198,13 @@ public class RoleMapperResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getAvailableRealmRoleMappings() {
+    public Stream<RoleRepresentation> getAvailableRealmRoleMappings() {
         viewPermission.require();
 
-        Set<RoleModel> available = realm.getRoles();
-        Set<RoleModel> set = available.stream().filter(r ->
-            canMapRole(r)
-        ).collect(Collectors.toSet());
-        return ClientRoleMappingsResource.getAvailableRoles(roleMapper, set);
+        return realm.getRolesStream()
+                .filter(this::canMapRole)
+                .filter(((Predicate<RoleModel>) roleMapper::hasRole).negate())
+                .map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**

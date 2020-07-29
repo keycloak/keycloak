@@ -38,6 +38,7 @@ import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.CommonLDAPGroupMapper;
 import org.keycloak.storage.ldap.mappers.membership.CommonLDAPGroupMapperConfig;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
+import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 import org.keycloak.storage.ldap.mappers.membership.UserRolesRetrieveStrategy;
 import org.keycloak.storage.user.SynchronizationResult;
 
@@ -46,7 +47,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.keycloak.storage.ldap.mappers.membership.MembershipType;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 /**
  * Map realm roles or roles of particular client to LDAP groups
@@ -178,10 +180,9 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
 
 
             RoleContainerModel roleContainer = getTargetRoleContainer(realm);
-            Set<RoleModel> keycloakRoles = roleContainer.getRoles();
+            Stream<RoleModel> keycloakRoles = roleContainer.getRolesStream();
 
-            for (RoleModel keycloakRole : keycloakRoles) {
-                String roleName = keycloakRole.getName();
+            Consumer<String> syncRoleFromKCToLDAP = roleName -> {
                 if (ldapRoleNames.contains(roleName)) {
                     syncResult.increaseUpdated();
                 } else {
@@ -189,7 +190,8 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
                     createLDAPRole(roleName);
                     syncResult.increaseAdded();
                 }
-            }
+            };
+            keycloakRoles.map(RoleModel::getName).forEach(syncRoleFromKCToLDAP);
 
             return syncResult;
         }
