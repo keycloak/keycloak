@@ -46,7 +46,7 @@ deploymentconfig "sso" scaled
 +
 [source,bash,subs="attributes+,macros+"]
 ----
-$ oc patch dc/sso --type=json -p '[{"op": "replace", "path": "/spec/triggers/0/imageChangeParams/from/name", "value": "redhat-{project_templates_version}-openshift:{project_latest_image_tag}"}]'
+$ oc patch dc/sso --type=json -p '[{"op": "replace", "path": "/spec/triggers/0/imageChangeParams/from/name", "value": "{openshift_image_stream}:{project_latest_image_tag}"}]'
 "sso" patched
 ----
 . Start rollout of the new {project_name} {project_version} images based on the latest image defined in the image change triggers.
@@ -313,15 +313,15 @@ Successfully updated TX_DATABASE_PREFIX_MAPPING to:         sso-postgresql=DB
 [source,bash,subs="attributes+,macros+"]
 ----
 $ oc get is -n openshift | grep {project_templates_version} | cut -d ' ' -f1
-redhat-{project_templates_version}-openshift
+{openshift_image_stream}
 ----
 +
 [source,bash,subs="attributes+,macros+"]
 ----
-$ oc new-build redhat-{project_templates_version}-openshift:{project_latest_image_tag}~https://github.com/iankko/openshift-examples.git#KEYCLOAK-8500 \
+$ oc new-build {openshift_image_stream}:{project_latest_image_tag}~https://github.com/iankko/openshift-examples.git#KEYCLOAK-8500 \
   --context-dir=sso-manual-db-migration \
   --name={project_templates_version}-db-migration-image
---> Found image bf45ac2 (7 days old) in image stream "openshift/redhat-{project_templates_version}-openshift" under tag "{project_latest_image_tag}" for "redhat-{project_templates_version}-openshift:{project_latest_image_tag}"
+--> Found image bf45ac2 (7 days old) in image stream "openshift/{openshift_image_stream}" under tag "{project_latest_image_tag}" for "{openshift_image_stream}:{project_latest_image_tag}"
 
     Red Hat SSO {project_version}
     ---------------
@@ -476,7 +476,7 @@ Replace `<PREFIX>_USERNAME` and `<PREFIX>_DATABASE` with the actual database cre
 +
 [source,bash,subs="attributes+,macros+"]
 ----
-$ oc patch dc/sso --type=json -p '[{"op": "replace", "path": "/spec/triggers/0/imageChangeParams/from/name", "value": "redhat-{project_templates_version}-openshift:{project_latest_image_tag}"}]'
+$ oc patch dc/sso --type=json -p '[{"op": "replace", "path": "/spec/triggers/0/imageChangeParams/from/name", "value": "{openshift_image_stream}:{project_latest_image_tag}"}]'
 "sso" patched
 ----
 . Start rollout of the new {project_name} {project_version} images based on the latest image defined in the image change triggers.
