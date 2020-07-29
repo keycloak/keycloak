@@ -57,7 +57,7 @@ done
 +
 [source,bash,subs="attributes+,macros+"]
 ----
-$ oc -n openshift import-image redhat-{project_templates_version}-openshift:{project_latest_image_tag}
+$ oc -n openshift import-image {openshift_image_repository}:{project_latest_image_tag} --from=registry.redhat.io/{openshift_image_repository}:{project_latest_image_tag} --confirm
 ----
 
 [[Example-Deploying-SSO]]
