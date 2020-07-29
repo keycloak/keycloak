@@ -49,7 +49,6 @@ public interface RoleContainerModel {
 
     boolean removeRole(RoleModel role);
 
-    // TODO switch all usages to the stream variant
     @Deprecated
     default Set<RoleModel> getRoles() {
         return getRolesStream().collect(Collectors.toSet());
@@ -57,7 +56,6 @@ public interface RoleContainerModel {
 
     Stream<RoleModel> getRolesStream();
 
-    // TODO switch all usages to the stream variant
     @Deprecated
     default Set<RoleModel> getRoles(Integer firstResult, Integer maxResults) {
         return getRolesStream(firstResult, maxResults).collect(Collectors.toSet());
@@ -65,7 +63,6 @@ public interface RoleContainerModel {
 
     Stream<RoleModel> getRolesStream(Integer firstResult, Integer maxResults);
 
-    // TODO switch all usages to the stream variant
     @Deprecated
     default Set<RoleModel> searchForRoles(String search, Integer first, Integer max) {
         return searchForRolesStream(search, first, max).collect(Collectors.toSet());

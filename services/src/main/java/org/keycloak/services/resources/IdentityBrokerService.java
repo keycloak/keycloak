@@ -22,7 +22,6 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.broker.util.PostBrokerLoginConstants;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
@@ -1120,7 +1119,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     private ParsedCodeContext samlIdpInitiatedSSO(final String clientUrlName) {
         event.event(EventType.LOGIN);
         CacheControlUtil.noBackButtonCacheControlHeader();
-        Optional<ClientModel> oClient = this.realmModel.getClients().stream()
+        Optional<ClientModel> oClient = this.realmModel.getClientsStream()
           .filter(c -> Objects.equals(c.getAttribute(SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME), clientUrlName))
           .findFirst();
 

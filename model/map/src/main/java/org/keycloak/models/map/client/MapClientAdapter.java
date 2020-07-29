@@ -26,9 +26,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import com.google.common.base.Functions;
 import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -454,10 +451,7 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
             return true;
         }
 
-        Set<RoleModel> roles = getRoles();
-        if (roles.contains(role)) return true;
-
-        return roles.stream().anyMatch(r -> r.hasRole(role));
+        return getRolesStream().anyMatch(r -> (Objects.equals(r, role) || r.hasRole(role)));
     }
 
     /*************** Default roles ****************/

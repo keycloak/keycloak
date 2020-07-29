@@ -31,6 +31,7 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -70,13 +71,11 @@ public class RedirectUtils {
     }
 
     private static Set<String> getValidateRedirectUris(KeycloakSession session) {
-        Set<String> redirects = new HashSet<>();
-        for (ClientModel client : session.getContext().getRealm().getClients()) {
-            if (client.isEnabled()) {
-                redirects.addAll(resolveValidRedirects(session, client.getRootUrl(), client.getRedirectUris()));
-            }
-        }
-        return redirects;
+        return session.getContext().getRealm().getClientsStream()
+                .filter(ClientModel::isEnabled)
+                .map(c -> resolveValidRedirects(session, c.getRootUrl(), c.getRedirectUris()))
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
     }
 
     private static String verifyRedirectUri(KeycloakSession session, String rootUrl, String redirectUri, Set<String> validRedirects, boolean requireRedirectUri) {

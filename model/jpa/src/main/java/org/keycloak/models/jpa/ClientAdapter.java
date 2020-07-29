@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -688,19 +689,14 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     @Override
     public boolean hasScope(RoleModel role) {
         if (isFullScopeAllowed()) return true;
-        Set<RoleModel> roles = getScopeMappings();
-        if (roles.contains(role)) return true;
 
-        for (RoleModel mapping : roles) {
-            if (mapping.hasRole(role)) return true;
-        }
-        roles = getRoles();
-        if (roles.contains(role)) return true;
+        Predicate<RoleModel> hasRoleOrEquals = r -> (Objects.equals(r, role) || r.hasRole(role));
 
-        for (RoleModel mapping : roles) {
-            if (mapping.hasRole(role)) return true;
+        if (getScopeMappingsStream().anyMatch(hasRoleOrEquals)) {
+            return true;
         }
-        return false;
+
+        return getRolesStream().anyMatch(hasRoleOrEquals);
     }
 
     @Override

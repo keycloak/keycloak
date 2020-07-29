@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -661,19 +662,9 @@ public class ClientAdapter implements ClientModel, CachedObject {
         if (isUpdated()) return updated.hasScope(role);
         if (cached.isFullScopeAllowed() || cached.getScope().contains(role.getId())) return true;
 
-        Set<RoleModel> roles = getScopeMappings();
+        if (getScopeMappingsStream().anyMatch(r -> r.hasRole(role))) return true;
 
-        for (RoleModel mapping : roles) {
-            if (mapping.hasRole(role)) return true;
-        }
-
-        roles = getRoles();
-        if (roles.contains(role)) return true;
-
-        for (RoleModel mapping : roles) {
-            if (mapping.hasRole(role)) return true;
-        }
-        return false;
+        return getRolesStream().anyMatch(r -> (Objects.equals(r, role) || r.hasRole(role)));
     }
 
     @Override

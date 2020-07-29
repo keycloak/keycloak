@@ -35,7 +35,7 @@ public class RealmSynchronizer implements Synchronizer<RealmRemovedEvent> {
         AuthorizationProvider authorizationProvider = providerFactory.create(event.getKeycloakSession());
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
 
-        event.getRealm().getClients().forEach(clientModel -> {
+        event.getRealm().getClientsStream().forEach(clientModel -> {
             ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
 
             if (resourceServer != null) {

@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
@@ -120,7 +121,7 @@ public class ExportUtils {
         List<ClientModel> clients = Collections.emptyList();
 
         if (options.isClientsIncluded()) {
-            clients = realm.getClients();
+            clients = realm.getClientsStream().collect(Collectors.toList());
             List<ClientRepresentation> clientReps = new ArrayList<>();
             for (ClientModel app : clients) {
                 ClientRepresentation clientRep = exportClient(session, app);
@@ -133,22 +134,18 @@ public class ExportUtils {
         if (options.isGroupsAndRolesIncluded()) {
             ModelToRepresentation.exportGroups(realm, rep);
 
-            List<RoleRepresentation> realmRoleReps = null;
             Map<String, List<RoleRepresentation>> clientRolesReps = new HashMap<>();
 
-            Set<RoleModel> realmRoles = realm.getRoles();
-            if (realmRoles != null && realmRoles.size() > 0) {
-                realmRoleReps = exportRoles(realmRoles);
-            }
+            List<RoleRepresentation> realmRoleReps = exportRoles(realm.getRolesStream());
 
             RolesRepresentation rolesRep = new RolesRepresentation();
-            if (realmRoleReps != null) {
+            if (!realmRoleReps.isEmpty()) {
                 rolesRep.setRealm(realmRoleReps);
             }
 
             if (options.isClientsIncluded()) {
                 for (ClientModel client : clients) {
-                    Set<RoleModel> currentAppRoles = client.getRoles();
+                    Stream<RoleModel> currentAppRoles = client.getRolesStream();
                     List<RoleRepresentation> currentAppRoleReps = exportRoles(currentAppRoles);
                     clientRolesReps.put(client.getClientId(), currentAppRoleReps);
                 }
@@ -411,14 +408,8 @@ public class ExportUtils {
         }
     }
 
-    public static List<RoleRepresentation> exportRoles(Collection<RoleModel> roles) {
-        List<RoleRepresentation> roleReps = new ArrayList<RoleRepresentation>();
-
-        for (RoleModel role : roles) {
-            RoleRepresentation roleRep = exportRole(role);
-            roleReps.add(roleRep);
-        }
-        return roleReps;
+    public static List<RoleRepresentation> exportRoles(Stream<RoleModel> roles) {
+        return roles.map(ExportUtils::exportRole).collect(Collectors.toList());
     }
 
     public static List<String> getRoleNames(Collection<RoleModel> roles) {

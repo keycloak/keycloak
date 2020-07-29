@@ -586,13 +586,10 @@ public final class KeycloakModelUtils {
     }
 
     public static boolean isClientScopeUsed(RealmModel realm, ClientScopeModel clientScope) {
-        for (ClientModel client : realm.getClients()) {
-            if ((client.getClientScopes(true, false).containsKey(clientScope.getName())) ||
-                    (client.getClientScopes(false, false).containsKey(clientScope.getName()))) {
-                return true;
-            }
-        }
-        return false;
+        return realm.getClientsStream()
+                .filter(c -> (c.getClientScopes(true, false).containsKey(clientScope.getName())) ||
+                (c.getClientScopes(false, false).containsKey(clientScope.getName())))
+                .findFirst().isPresent();
     }
 
     public static ClientScopeModel getClientScopeByName(RealmModel realm, String clientScopeName) {
@@ -602,14 +599,7 @@ public final class KeycloakModelUtils {
             }
         }
         // check if we are referencing a client instead of a scope
-        if (realm.getClients() != null) {
-            for (ClientModel client : realm.getClients()) {
-                if (clientScopeName.equals(client.getClientId())) {
-                    return client;
-                }
-            }
-        }
-        return null;
+        return realm.getClientsStream().filter(c -> clientScopeName.equals(c.getClientId())).findFirst().orElse(null);
     }
 
     /**

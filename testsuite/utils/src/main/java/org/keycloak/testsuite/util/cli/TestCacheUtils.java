@@ -24,7 +24,6 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 
 /**
@@ -35,12 +34,12 @@ public class TestCacheUtils {
     public static void cacheRealmWithEverything(KeycloakSession session, String realmName) {
         RealmModel realm  = session.realms().getRealmByName(realmName);
 
-        for (ClientModel client : realm.getClients()) {
-            realm.getClientById(client.getId());
-            realm.getClientByClientId(client.getClientId());
+        realm.getClientsStream().forEach(c -> {
+            realm.getClientById(c.getId());
+            realm.getClientByClientId(c.getClientId());
 
-            cacheRoles(session, realm, client);
-        }
+            cacheRoles(session, realm, c);
+        });
 
         cacheRoles(session, realm, realm);
 
@@ -66,7 +65,7 @@ public class TestCacheUtils {
     }
 
     private static void cacheRoles(KeycloakSession session, RealmModel realm, RoleContainerModel roleContainer) {
-        for (RoleModel role : roleContainer.getRoles()) {
+        roleContainer.getRolesStream().forEach(role -> {
             realm.getRoleById(role.getId());
             roleContainer.getRole(role.getName());
             if (roleContainer instanceof RealmModel) {
@@ -74,7 +73,7 @@ public class TestCacheUtils {
             } else {
                 session.roles().getClientRole((ClientModel) roleContainer, role.getName());
             }
-        }
+        });
     }
 
     private static void cacheGroupRecursive(RealmModel realm, GroupModel group) {

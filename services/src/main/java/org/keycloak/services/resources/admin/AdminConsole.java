@@ -53,18 +53,17 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.ext.Providers;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -219,7 +218,7 @@ public class AdminConsole {
         if (realm.equals(masterRealm)) {
             logger.debug("setting up realm access for a master realm user");
             createRealm = user.hasRole(masterRealm.getRole(AdminRoles.CREATE_REALM));
-            addMasterRealmAccess(realm, user, realmAccess);
+            addMasterRealmAccess(user, realmAccess);
         } else {
             logger.debug("setting up realm access for a realm user");
             addRealmAccess(realm, user, realmAccess);
@@ -233,28 +232,26 @@ public class AdminConsole {
     private void addRealmAccess(RealmModel realm, UserModel user, Map<String, Set<String>> realmAdminAccess) {
         RealmManager realmManager = new RealmManager(session);
         ClientModel realmAdminApp = realm.getClientByClientId(realmManager.getRealmAdminClientId(realm));
-        Set<RoleModel> roles = realmAdminApp.getRoles();
-        for (RoleModel role : roles) {
-            if (!user.hasRole(role)) continue;
-            if (!realmAdminAccess.containsKey(realm.getName())) {
-                realmAdminAccess.put(realm.getName(), new HashSet<String>());
-            }
-            realmAdminAccess.get(realm.getName()).add(role.getName());
-        }
-
+        getRealmAdminAccess(realmAdminApp, user, realmAdminAccess);
     }
 
-    private void addMasterRealmAccess(RealmModel masterRealm, UserModel user, Map<String, Set<String>> realmAdminAccess) {
+    private void addMasterRealmAccess(UserModel user, Map<String, Set<String>> realmAdminAccess) {
         List<RealmModel> realms = session.realms().getRealms();
         for (RealmModel realm : realms) {
             ClientModel realmAdminApp = realm.getMasterAdminClient();
-            Set<RoleModel> roles = realmAdminApp.getRoles();
-            for (RoleModel role : roles) {
-                if (!user.hasRole(role)) continue;
-                if (!realmAdminAccess.containsKey(realm.getName())) {
-                    realmAdminAccess.put(realm.getName(), new HashSet<String>());
-                }
-                realmAdminAccess.get(realm.getName()).add(role.getName());
+            getRealmAdminAccess(realmAdminApp, user, realmAdminAccess);
+        }
+    }
+
+    private void getRealmAdminAccess(ClientModel client, UserModel user, Map<String, Set<String>> realmAdminAccess) {
+        Set<String> roles = client.getRolesStream().filter(user::hasRole)
+                .map(RoleModel::getName).collect(Collectors.toSet());
+
+        if (!roles.isEmpty()) {
+            if (!realmAdminAccess.containsKey(realm.getName())) {
+                realmAdminAccess.put(realm.getName(), roles);
+            } else {
+                realmAdminAccess.get(realm.getName()).addAll(roles);
             }
         }
     }

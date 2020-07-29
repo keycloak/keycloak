@@ -583,9 +583,9 @@ public class RealmCacheSession implements CacheRealmProvider {
         invalidationEvents.add(ClientRemovedEvent.create(client));
         cache.clientRemoval(realm.getId(), id, client.getClientId(), invalidations);
 
-        for (RoleModel role : client.getRoles()) {
+        client.getRolesStream().forEach(role -> {
             roleRemovalInvalidations(role.getId(), role.getName(), client.getId());
-        }
+        });
         
         if (client.isServiceAccountsEnabled()) {
             UserModel serviceAccount = session.users().getServiceAccount(client);
