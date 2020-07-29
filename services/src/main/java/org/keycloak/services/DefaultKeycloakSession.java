@@ -22,6 +22,7 @@ import org.keycloak.credential.UserCredentialStoreManager;
 import org.keycloak.jose.jws.DefaultTokenManager;
 import org.keycloak.keys.DefaultKeyManager;
 import org.keycloak.models.ClientProvider;
+import org.keycloak.models.GroupProvider;
 import org.keycloak.models.TokenManager;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -69,6 +70,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private final Map<String, Object> attributes = new HashMap<>();
     private RealmProvider model;
     private ClientProvider clientProvider;
+    private GroupProvider groupProvider;
     private RoleProvider roleProvider;
     private UserStorageManager userStorageManager;
     private ClientStorageManager clientStorageManager;
@@ -111,6 +113,16 @@ public class DefaultKeycloakSession implements KeycloakSession {
             return cache;
         } else {
             return clientStorageManager();
+        }
+    }
+
+    private GroupProvider getGroupProvider() {
+        // TODO: Extract GroupProvider from CacheRealmProvider and use that instead
+        GroupProvider cache = getProvider(CacheRealmProvider.class);
+        if (cache != null) {
+            return cache;
+        } else {
+            return groupLocalStorage();
         }
     }
 
@@ -188,6 +200,11 @@ public class DefaultKeycloakSession implements KeycloakSession {
     @Override
     public ClientProvider clientLocalStorage() {
         return getProvider(ClientProvider.class);
+    }
+
+    @Override
+    public GroupProvider groupLocalStorage() {
+        return getProvider(GroupProvider.class);
     }
 
     @Override
@@ -321,6 +338,14 @@ public class DefaultKeycloakSession implements KeycloakSession {
             clientProvider = getClientProvider();
         }
         return clientProvider;
+    }
+
+    @Override
+    public GroupProvider groups() {
+        if (groupProvider == null) {
+            groupProvider = getGroupProvider();
+        }
+        return groupProvider;
     }
 
     @Override

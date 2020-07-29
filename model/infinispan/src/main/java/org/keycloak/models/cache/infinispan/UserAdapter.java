@@ -352,7 +352,7 @@ public class UserAdapter implements CachedUserModel {
         if (updated != null) return updated.getGroups();
         Set<GroupModel> groups = new LinkedHashSet<>();
         for (String id : cached.getGroups(modelSupplier)) {
-            GroupModel groupModel = keycloakSession.realms().getGroupById(id, realm);
+            GroupModel groupModel = keycloakSession.groups().getGroupById(realm, id);
             if (groupModel == null) {
                 // chance that role was removed, so just delete to persistence and get user invalidated
                 getDelegateForUpdate();

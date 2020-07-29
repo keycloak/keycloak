@@ -68,7 +68,7 @@ public class GroupAdapter implements GroupModel {
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getRealmDelegate().getGroupById(cached.getId(), realm);
+        updated = cacheSession.getGroupDelegate().getGroupById(realm, cached.getId());
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }
@@ -224,7 +224,7 @@ public class GroupAdapter implements GroupModel {
     public GroupModel getParent() {
         if (isUpdated()) return updated.getParent();
         if (cached.getParentId() == null) return null;
-        return keycloakSession.realms().getGroupById(cached.getParentId(), realm);
+        return keycloakSession.groups().getGroupById(realm, cached.getParentId());
     }
 
     @Override
@@ -238,7 +238,7 @@ public class GroupAdapter implements GroupModel {
         if (isUpdated()) return updated.getSubGroups();
         Set<GroupModel> subGroups = new HashSet<>();
         for (String id : cached.getSubGroups(modelSupplier)) {
-            GroupModel subGroup = keycloakSession.realms().getGroupById(id, realm);
+            GroupModel subGroup = keycloakSession.groups().getGroupById(realm, id);
             if (subGroup == null) {
                 // chance that role was removed, so just delegate to persistence and get user invalidated
                 getDelegateForUpdate();
@@ -273,6 +273,6 @@ public class GroupAdapter implements GroupModel {
     }
 
     private GroupModel getGroupModel() {
-        return cacheSession.getRealmDelegate().getGroupById(cached.getId(), realm);
+        return cacheSession.getGroupDelegate().getGroupById(realm, cached.getId());
     }
 }

@@ -26,6 +26,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -57,7 +58,7 @@ import static org.keycloak.common.util.StackUtil.getShortStackTrace;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class JpaRealmProvider implements RealmProvider, ClientProvider, RoleProvider {
+public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupProvider, RoleProvider {
     protected static final Logger logger = Logger.getLogger(JpaRealmProvider.class);
     private final KeycloakSession session;
     protected EntityManager em;
@@ -169,7 +170,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, RoleProv
         removeRoles(adapter);
 
         for (GroupModel group : adapter.getGroups()) {
-            session.realms().removeGroup(adapter, group);
+            session.groups().removeGroup(adapter, group);
         }
         
         num = em.createNamedQuery("removeClientInitialAccessByRealm")
@@ -395,7 +396,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, RoleProv
     }
 
     @Override
-    public GroupModel getGroupById(String id, RealmModel realm) {
+    public GroupModel getGroupById(RealmModel realm, String id) {
         GroupEntity groupEntity = em.find(GroupEntity.class, id);
         if (groupEntity == null) return null;
         if (!groupEntity.getRealm().equals(realm.getId())) return null;
@@ -413,7 +414,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, RoleProv
         }
         group.setParent(toParent);
         if (toParent != null) toParent.addChild(group);
-        else session.realms().addTopLevelGroup(realm, group);
+        else session.groups().addTopLevelGroup(realm, group);
     }
 
     @Override
@@ -421,7 +422,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, RoleProv
         RealmEntity ref = em.getReference(RealmEntity.class, realm.getId());
 
         return ref.getGroups().stream()
-                .map(g -> session.realms().getGroupById(g.getId(), realm))
+                .map(g -> session.groups().getGroupById(realm, g.getId()))
                 .sorted(Comparator.comparing(GroupModel::getName))
                 .collect(Collectors.collectingAndThen(
                         Collectors.toList(), Collections::unmodifiableList));
@@ -479,7 +480,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, RoleProv
 
         return ref.getGroups().stream()
                 .filter(g -> GroupEntity.TOP_PARENT_ID.equals(g.getParentId()))
-                .map(g -> session.realms().getGroupById(g.getId(), realm))
+                .map(g -> session.groups().getGroupById(realm, g.getId()))
                 .sorted(Comparator.comparing(GroupModel::getName))
                 .collect(Collectors.collectingAndThen(
                         Collectors.toList(), Collections::unmodifiableList));
@@ -496,7 +497,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, RoleProv
         List<GroupModel> list = new ArrayList<>();
         if(Objects.nonNull(groupIds) && !groupIds.isEmpty()) {
             for (String id : groupIds) {
-                GroupModel group = getGroupById(id, realm);
+                GroupModel group = getGroupById(realm, id);
                 list.add(group);
             }
         }
@@ -532,7 +533,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, RoleProv
 
         realm.removeDefaultGroup(group);
         for (GroupModel subGroup : group.getSubGroups()) {
-            session.realms().removeGroup(realm, subGroup);
+            session.groups().removeGroup(realm, subGroup);
         }
         GroupEntity groupEntity = em.find(GroupEntity.class, group.getId(), LockModeType.PESSIMISTIC_WRITE);
         if ((groupEntity == null) || (!groupEntity.getRealm().equals(realm.getId()))) {
@@ -753,9 +754,9 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, RoleProv
         if (Objects.isNull(groups)) return Collections.EMPTY_LIST;
         List<GroupModel> list = new ArrayList<>();
         for (String id : groups) {
-            GroupModel groupById = session.realms().getGroupById(id, realm);
+            GroupModel groupById = session.groups().getGroupById(realm, id);
             while(Objects.nonNull(groupById.getParentId())) {
-                groupById = session.realms().getGroupById(groupById.getParentId(), realm);
+                groupById = session.groups().getGroupById(realm, groupById.getParentId());
             }
             if(!list.contains(groupById)) {
                 list.add(groupById);

@@ -455,7 +455,7 @@ public class RoleContainerResource extends RoleResource {
             throw new NotFoundException("Could not find role");
         }
         
-        List<GroupModel> groupsModel = session.realms().getGroupsByRole(realm, role, firstResult, maxResults);
+        List<GroupModel> groupsModel = session.groups().getGroupsByRole(realm, role, firstResult, maxResults);
 
         return groupsModel.stream()
         		.map(g -> ModelToRepresentation.toRepresentation(g, !briefRepresentation))

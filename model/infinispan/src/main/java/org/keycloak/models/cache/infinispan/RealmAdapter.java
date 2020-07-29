@@ -710,7 +710,7 @@ public class RealmAdapter implements CachedRealmModel {
 
         List<GroupModel> defaultGroups = new LinkedList<>();
         for (String id : cached.getDefaultGroups()) {
-            defaultGroups.add(cacheSession.getGroupById(id, this));
+            defaultGroups.add(cacheSession.getGroupById(this, id));
         }
         return Collections.unmodifiableList(defaultGroups);
 
@@ -1416,7 +1416,7 @@ public class RealmAdapter implements CachedRealmModel {
 
     @Override
     public GroupModel getGroupById(String id) {
-        return cacheSession.getGroupById(id, this);
+        return cacheSession.getGroupById(this, id);
     }
 
     @Override

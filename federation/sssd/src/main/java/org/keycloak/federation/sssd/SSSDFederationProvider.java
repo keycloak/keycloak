@@ -123,7 +123,7 @@ public class SSSDFederationProvider implements UserStorageProvider,
         for (String s : sssd.getGroups()) {
             GroupModel group = KeycloakModelUtils.findGroupByPath(realm, "/" + s);
             if (group == null) {
-                group = session.realms().createGroup(realm, s);
+                group = session.groups().createGroup(realm, s);
             }
             user.joinGroup(group);
         }

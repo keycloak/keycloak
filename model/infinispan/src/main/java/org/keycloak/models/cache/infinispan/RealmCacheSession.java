@@ -101,6 +101,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     protected KeycloakSession session;
     protected RealmProvider realmDelegate;
     protected ClientProvider clientDelegate;
+    protected GroupProvider groupDelegate;
     protected RoleProvider roleDelegate;
     protected boolean transactionActive;
     protected boolean setRollbackOnly;
@@ -163,8 +164,12 @@ public class RealmCacheSession implements CacheRealmProvider {
         roleDelegate = session.roleStorageManager();
         return roleDelegate;
     }
-
-
+    public GroupProvider getGroupDelegate() {
+        if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
+        if (groupDelegate != null) return groupDelegate;
+        groupDelegate = session.groupLocalStorage();
+        return groupDelegate;
+    }
 
 
     @Override
@@ -826,7 +831,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
-    public GroupModel getGroupById(String id, RealmModel realm) {
+    public GroupModel getGroupById(RealmModel realm, String id) {
         CachedGroup cached = cache.get(id, CachedGroup.class);
         if (cached != null && !cached.getRealm().equals(realm.getId())) {
             cached = null;
@@ -834,14 +839,14 @@ public class RealmCacheSession implements CacheRealmProvider {
 
         if (cached == null) {
             Long loaded = cache.getCurrentRevision(id);
-            GroupModel model = getRealmDelegate().getGroupById(id, realm);
+            GroupModel model = getGroupDelegate().getGroupById(realm, id);
             if (model == null) return null;
             if (invalidations.contains(id)) return model;
             cached = new CachedGroup(loaded, realm, model);
             cache.addRevisioned(cached, startupRevision);
 
         } else if (invalidations.contains(id)) {
-            return getRealmDelegate().getGroupById(id, realm);
+            return getGroupDelegate().getGroupById(realm, id);
         } else if (managedGroups.containsKey(id)) {
             return managedGroups.get(id);
         }
@@ -857,7 +862,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         listInvalidations.add(realm.getId());
 
         invalidationEvents.add(GroupMovedEvent.create(group, toParent, realm.getId()));
-        getRealmDelegate().moveGroup(realm, group, toParent);
+        getGroupDelegate().moveGroup(realm, group, toParent);
     }
 
     @Override
@@ -865,7 +870,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         String cacheKey = getGroupsQueryCacheKey(realm.getId());
         boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId());
         if (queryDB) {
-            return getRealmDelegate().getGroups(realm);
+            return getGroupDelegate().getGroups(realm);
         }
 
         GroupListQuery query = cache.get(cacheKey, GroupListQuery.class);
@@ -875,7 +880,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
         if (query == null) {
             Long loaded = cache.getCurrentRevision(cacheKey);
-            List<GroupModel> model = getRealmDelegate().getGroups(realm);
+            List<GroupModel> model = getGroupDelegate().getGroups(realm);
             if (model == null) return null;
             Set<String> ids = new HashSet<>();
             for (GroupModel client : model) ids.add(client.getId());
@@ -886,10 +891,10 @@ public class RealmCacheSession implements CacheRealmProvider {
         }
         List<GroupModel> list = new LinkedList<>();
         for (String id : query.getGroups()) {
-            GroupModel group = session.realms().getGroupById(id, realm);
+            GroupModel group = session.groups().getGroupById(realm, id);
             if (group == null) {
                 invalidations.add(cacheKey);
-                return getRealmDelegate().getGroups(realm);
+                return getGroupDelegate().getGroups(realm);
             }
             list.add(group);
         }
@@ -901,7 +906,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups) {
-        return getRealmDelegate().getGroupsCount(realm, onlyTopGroups);
+        return getGroupDelegate().getGroupsCount(realm, onlyTopGroups);
     }
 
     @Override
@@ -911,12 +916,12 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
-        return getRealmDelegate().getGroupsCountByNameContaining(realm, search);
+        return getGroupDelegate().getGroupsCountByNameContaining(realm, search);
     }
     
     @Override
     public List<GroupModel> getGroupsByRole(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
-    	return getRealmDelegate().getGroupsByRole(realm, role, firstResult, maxResults);
+    	return getGroupDelegate().getGroupsByRole(realm, role, firstResult, maxResults);
     }
 
     @Override
@@ -924,7 +929,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         String cacheKey = getTopGroupsQueryCacheKey(realm.getId());
         boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId());
         if (queryDB) {
-            return getRealmDelegate().getTopLevelGroups(realm);
+            return getGroupDelegate().getTopLevelGroups(realm);
         }
 
         GroupListQuery query = cache.get(cacheKey, GroupListQuery.class);
@@ -934,7 +939,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
         if (query == null) {
             Long loaded = cache.getCurrentRevision(cacheKey);
-            List<GroupModel> model = getRealmDelegate().getTopLevelGroups(realm);
+            List<GroupModel> model = getGroupDelegate().getTopLevelGroups(realm);
             if (model == null) return null;
             Set<String> ids = new HashSet<>();
             for (GroupModel client : model) ids.add(client.getId());
@@ -945,10 +950,10 @@ public class RealmCacheSession implements CacheRealmProvider {
         }
         List<GroupModel> list = new LinkedList<>();
         for (String id : query.getGroups()) {
-            GroupModel group = session.realms().getGroupById(id, realm);
+            GroupModel group = session.groups().getGroupById(realm, id);
             if (group == null) {
                 invalidations.add(cacheKey);
-                return getRealmDelegate().getTopLevelGroups(realm);
+                return getGroupDelegate().getTopLevelGroups(realm);
             }
             list.add(group);
         }
@@ -963,7 +968,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         String cacheKey = getTopGroupsQueryCacheKey(realm.getId() + first + max);
         boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId() + first + max);
         if (queryDB) {
-            return getRealmDelegate().getTopLevelGroups(realm, first, max);
+            return getGroupDelegate().getTopLevelGroups(realm, first, max);
         }
 
         GroupListQuery query = cache.get(cacheKey, GroupListQuery.class);
@@ -973,7 +978,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
         if (Objects.isNull(query)) {
             Long loaded = cache.getCurrentRevision(cacheKey);
-            List<GroupModel> model = getRealmDelegate().getTopLevelGroups(realm, first, max);
+            List<GroupModel> model = getGroupDelegate().getTopLevelGroups(realm, first, max);
             if (model == null) return null;
             Set<String> ids = new HashSet<>();
             for (GroupModel client : model) ids.add(client.getId());
@@ -984,10 +989,10 @@ public class RealmCacheSession implements CacheRealmProvider {
         }
         List<GroupModel> list = new LinkedList<>();
         for (String id : query.getGroups()) {
-            GroupModel group = session.realms().getGroupById(id, realm);
+            GroupModel group = session.groups().getGroupById(realm, id);
             if (Objects.isNull(group)) {
                 invalidations.add(cacheKey);
-                return getRealmDelegate().getTopLevelGroups(realm);
+                return getGroupDelegate().getTopLevelGroups(realm);
             }
             list.add(group);
         }
@@ -999,7 +1004,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public List<GroupModel> searchForGroupByName(RealmModel realm, String search, Integer first, Integer max) {
-        return getRealmDelegate().searchForGroupByName(realm, search, first, max);
+        return getGroupDelegate().searchForGroupByName(realm, search, first, max);
     }
 
     @Override
@@ -1013,7 +1018,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
         invalidationEvents.add(GroupRemovedEvent.create(group, realm.getId()));
 
-        return getRealmDelegate().removeGroup(realm, group);
+        return getGroupDelegate().removeGroup(realm, group);
     }
 
     private GroupModel groupAdded(RealmModel realm, GroupModel group, GroupModel toParent) {
@@ -1027,7 +1032,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public GroupModel createGroup(RealmModel realm, String id, String name, GroupModel toParent) {
-        GroupModel group = getRealmDelegate().createGroup(realm, id, name, toParent);
+        GroupModel group = getGroupDelegate().createGroup(realm, id, name, toParent);
         return groupAdded(realm, group, toParent);
     }
 
@@ -1040,7 +1045,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
         addGroupEventIfAbsent(GroupMovedEvent.create(subGroup, null, realm.getId()));
 
-        getRealmDelegate().addTopLevelGroup(realm, subGroup);
+        getGroupDelegate().addTopLevelGroup(realm, subGroup);
 
     }
 
