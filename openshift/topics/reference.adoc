@@ -82,24 +82,16 @@ information about the image and should not be modified by the user:
 |*_true_*
 
 |*_JBOSS_IMAGE_NAME_*
-|Image name, same as Name label.
-|*_redhat-sso-7/sso72-openshift_*
-
-|*_JBOSS_IMAGE_RELEASE_*
-|Image release, same as Release label.
-|*_dev_*
+|Image name, same as "name" label.
+|*_{openshift_image_repository}_*
 
 |*_JBOSS_IMAGE_VERSION_*
-|Image version, same as Version label.
-|*_1.1_*
+|Image version, same as "version" label.
+|*_{project_versionDoc}_*
 
 |*_JBOSS_MODULES_SYSTEM_PKGS_*
 |-
 |*_org.jboss.logmanager,jdk.nashorn.api_*
-
-|*_STI_BUILDER_*
-|Provides OpenShift S2I support for jee project types.
-|*_jee_*
 
 |===
 

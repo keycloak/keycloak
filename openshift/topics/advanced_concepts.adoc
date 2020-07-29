@@ -299,7 +299,7 @@ as an example. Update the example for other database drivers accordingly.
 +
 [source,subs="attributes+,macros+,+quotes"]
 ----
-*FROM* {openshift_image}:latest
+*FROM* {openshift_image_repository}:latest
 
 *COPY* sso-extensions.cli /opt/eap/extensions/
 *COPY* mariadb-java-client-2.5.4.jar /opt/eap/extensions/jdbc-driver.jar

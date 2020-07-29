@@ -9,7 +9,8 @@ include::topics/templates/document-attributes-product.adoc[]
 :openshift_name: {openshift_openjdk_name}
 :openshift_link: {openshift_openjdk_link}
 :openshift_image_platforms: {openshift_openjdk_platforms}
-:openshift_image: {openshift_openjdk_image}
+:openshift_image_repository: {openshift_openjdk_image_repository}
+:openshift_image_stream: {openshift_openjdk_image_stream}
 :openshift_name_other: {openshift_openj9_name}
 :openshift_link_other: {openshift_openj9_link}
 

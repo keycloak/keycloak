@@ -11,7 +11,7 @@
 :keycloak_upgrade_version: 9.0.x
 :project_versionDoc: 7.4
 :project_templates_base_url: https://raw.githubusercontent.com/jboss-container-images/redhat-sso-7-openshift-image/sso74-dev/templates
-:project_latest_image_tag: 1.0
+:project_latest_image_tag: {project_versionDoc}
 :project_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/{project_versionDoc}/html-single
 :maven_repository: https://maven.repository.redhat.com/ga/
 
@@ -63,15 +63,18 @@
 :upgradingguide_link: {project_doc_base_url}/upgrading_guide/
 :releasenotes_name: Release Notes
 :releasenotes_link: {project_doc_base_url}/release_notes/
+:openshift_image_repository_productline: rh-sso-7
 :openshift_openjdk_name: Red Hat Single Sign-On for OpenShift on OpenJDK
 :openshift_openjdk_link: {project_doc_base_url}/red_hat_single_sign-on_for_openshift/
 :openshift_openjdk_platforms: x86_64
-:openshift_openjdk_image: redhat-sso-7/sso74-openshift-rhel8
+:openshift_openjdk_image_stream: sso74-openshift-rhel8
+:openshift_openjdk_image_repository: {openshift_image_repository_productline}/{openshift_openjdk_image_stream}
 :openshift_openjdk_project_templates_version: sso74
 :openshift_openj9_name: Red Hat Single Sign-On for OpenShift on Eclipse OpenJ9
 :openshift_openj9_link: {project_doc_base_url}/red_hat_single_sign-on_for_openshift_on_openj9/
 :openshift_openj9_platforms: IBM Z/IBM Power Systems
-:openshift_openj9_image: redhat-sso-7/sso74-openj9-openshift-rhel8
+:openshift_openj9_image_stream: sso74-openj9-openshift-rhel8
+:openshift_openj9_image_repository: {openshift_image_repository_productline}/{openshift_openj9_image_stream}
 :openshift_openj9_project_templates_version: sso74-openj9
 
 // Aggregate various frequently referred links to the official OCP documentation
