@@ -894,7 +894,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
             session.getContext().setRealm(realm);
 
-            GroupModel customerAGroup = session.realms().createGroup(realm, "Customer A");
+            GroupModel customerAGroup = session.groups().createGroup(realm, "Customer A");
             UserModel customerAManager = session.users().addUser(realm, "customer-a-manager");
             session.userCredentialManager().updateCredential(realm, customerAManager, UserCredentialModel.password("password"));
             ClientModel realmAdminClient = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);

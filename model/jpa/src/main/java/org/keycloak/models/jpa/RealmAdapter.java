@@ -797,7 +797,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         if (entities == null || entities.isEmpty()) return Collections.EMPTY_LIST;
         List<GroupModel> defaultGroups = new LinkedList<>();
         for (GroupEntity entity : entities) {
-            defaultGroups.add(session.realms().getGroupById(entity.getId(), this));
+            defaultGroups.add(session.groups().getGroupById(this, entity.getId()));
         }
         return Collections.unmodifiableList(defaultGroups);
     }
@@ -2022,52 +2022,52 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public GroupModel createGroup(String id, String name, GroupModel toParent) {
-        return session.realms().createGroup(this, id, name, toParent);
+        return session.groups().createGroup(this, id, name, toParent);
     }
 
     @Override
     public void moveGroup(GroupModel group, GroupModel toParent) {
-        session.realms().moveGroup(this, group, toParent);
+        session.groups().moveGroup(this, group, toParent);
     }
 
     @Override
     public GroupModel getGroupById(String id) {
-        return session.realms().getGroupById(id, this);
+        return session.groups().getGroupById(this, id);
     }
 
     @Override
     public List<GroupModel> getGroups() {
-        return session.realms().getGroups(this);
+        return session.groups().getGroups(this);
     }
 
     @Override
     public Long getGroupsCount(Boolean onlyTopGroups) {
-        return session.realms().getGroupsCount(this, onlyTopGroups);
+        return session.groups().getGroupsCount(this, onlyTopGroups);
     }
 
     @Override
     public Long getGroupsCountByNameContaining(String search) {
-        return session.realms().getGroupsCountByNameContaining(this, search);
+        return session.groups().getGroupsCountByNameContaining(this, search);
     }
 
     @Override
     public List<GroupModel> getTopLevelGroups() {
-        return session.realms().getTopLevelGroups(this);
+        return session.groups().getTopLevelGroups(this);
     }
 
     @Override
     public List<GroupModel> getTopLevelGroups(Integer first, Integer max) {
-        return session.realms().getTopLevelGroups(this, first, max);
+        return session.groups().getTopLevelGroups(this, first, max);
     }
 
     @Override
     public List<GroupModel> searchForGroupByName(String search, Integer first, Integer max) {
-        return session.realms().searchForGroupByName(this, search, first, max);
+        return session.groups().searchForGroupByName(this, search, first, max);
     }
 
     @Override
     public boolean removeGroup(GroupModel group) {
-        return session.realms().removeGroup(this, group);
+        return session.groups().removeGroup(this, group);
     }
 
     @Override

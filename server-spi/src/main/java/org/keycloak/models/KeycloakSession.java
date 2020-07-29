@@ -116,6 +116,14 @@ public interface KeycloakSession {
     ClientProvider clients();
 
     /**
+     * Returns a managed group provider instance.
+     *
+     * @return Currently used GroupProvider instance.
+     * @throws IllegalStateException if transaction is not active
+     */
+    GroupProvider groups();
+
+    /**
      * Returns a managed provider instance.  Will start a provider transaction.  This transaction is managed by the KeycloakSession
      * transaction.
      *
@@ -191,6 +199,13 @@ public interface KeycloakSession {
      * @return
      */
     ClientProvider clientLocalStorage();
+
+    /**
+     * Keycloak specific local storage for groups.  No cache in front, this api talks directly to storage configured for Keycloak
+     *
+     * @return
+     */
+    GroupProvider groupLocalStorage();
 
     /**
      * Keycloak specific local storage for roles.  No cache in front, this api talks directly to storage configured for Keycloak

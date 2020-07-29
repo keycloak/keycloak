@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface RealmProvider extends Provider /* TODO: Remove in future version */, ClientProvider, RoleProvider /* up to here */ {
+public interface RealmProvider extends Provider /* TODO: Remove in future version */, ClientProvider, GroupProvider, RoleProvider /* up to here */ {
 
     // Note: The reason there are so many query methods here is for layering a cache on top of an persistent KeycloakSession
     MigrationModel getMigrationModel();
@@ -37,42 +37,7 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
     RealmModel getRealm(String id);
     RealmModel getRealmByName(String name);
 
-    void moveGroup(RealmModel realm, GroupModel group, GroupModel toParent);
-
-    List<GroupModel> getGroups(RealmModel realm);
-
-    Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups);
-
-    Long getGroupsCountByNameContaining(RealmModel realm, String search);
-    
-    List<GroupModel> getGroupsByRole(RealmModel realm, RoleModel role, int firstResult, int maxResults);
-
-    List<GroupModel> getTopLevelGroups(RealmModel realm);
-
-    List<GroupModel> getTopLevelGroups(RealmModel realm, Integer first, Integer max);
-
-    List searchForGroupByName(RealmModel realm, String search, Integer first, Integer max);
-
-    boolean removeGroup(RealmModel realm, GroupModel group);
-
-    default GroupModel createGroup(RealmModel realm, String name) {
-        return createGroup(realm, null, name, null);
-    }
-
-    default GroupModel createGroup(RealmModel realm, String id, String name) {
-        return createGroup(realm, id, name, null);
-    }
-
-    default GroupModel createGroup(RealmModel realm, String name, GroupModel toParent) {
-        return createGroup(realm, null, name, toParent);
-    }
-
-    GroupModel createGroup(RealmModel realm, String id, String name, GroupModel toParent);
-
-    void addTopLevelGroup(RealmModel realm, GroupModel subGroup);
-
     ClientScopeModel getClientScopeById(String id, RealmModel realm);
-    GroupModel getGroupById(String id, RealmModel realm);
 
     List<RealmModel> getRealms();
     List<RealmModel> getRealmsWithProviderType(Class<?> type);
@@ -232,4 +197,93 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
         return searchForClientRolesStream(client, search, first, max).collect(Collectors.toSet());
     }
 
+    /* GROUP PROVIDER METHODS */
+
+    /**
+     * @deprecated Use the corresponding method from {@link GroupProvider}. */
+    @Override
+    void moveGroup(RealmModel realm, GroupModel group, GroupModel toParent);
+
+    /**
+     * @deprecated Use the corresponding method from {@link GroupProvider}. */
+    @Override
+    GroupModel getGroupById(RealmModel realm, String id);
+
+    /**
+     * @deprecated Use the corresponding method from {@link GroupProvider}. */
+    @Override
+    default GroupModel getGroupById(String id, RealmModel realm) {
+        return getGroupById(realm, id);
+    }
+
+    /**
+     * @deprecated Use the corresponding method from {@link GroupProvider}. */
+    @Override
+    List<GroupModel> getGroups(RealmModel realm);
+
+    /**
+     * @deprecated Use the corresponding method from {@link GroupProvider}. */
+    @Override
+    Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups);
+
+    /**
+     * @deprecated Use the corresponding method from {@link GroupProvider}. */
+    @Override
+    Long getGroupsCountByNameContaining(RealmModel realm, String search);
+
+    /**
+     * @deprecated Use the corresponding method from {@link GroupProvider}. */
+    @Override
+    List<GroupModel> getGroupsByRole(RealmModel realm, RoleModel role, int firstResult, int maxResults);
+
+    /**
+     * @deprecated Use the corresponding method from {@link GroupProvider}. */
+    @Override
+    List<GroupModel> getTopLevelGroups(RealmModel realm);
+
+    /**
+     * @deprecated Use the corresponding method from {@link GroupProvider}. */
+    @Override
+    List<GroupModel> getTopLevelGroups(RealmModel realm, Integer first, Integer max);
+
+    /**
+     * @deprecated Use the corresponding method from {@link GroupProvider}. */
+    @Override
+    List searchForGroupByName(RealmModel realm, String search, Integer first, Integer max);
+
+    /**
+     * @deprecated Use the corresponding method from {@link GroupProvider}. */
+    @Override
+    boolean removeGroup(RealmModel realm, GroupModel group);
+
+    /**
+     * @deprecated Use the corresponding method from {@link GroupProvider}. */
+    @Override
+    default GroupModel createGroup(RealmModel realm, String name) {
+        return createGroup(realm, null, name, null);
+    }
+
+    /**
+     * @deprecated Use the corresponding method from {@link GroupProvider}. */
+    @Override
+    default GroupModel createGroup(RealmModel realm, String id, String name) {
+        return createGroup(realm, id, name, null);
+    }
+
+    /**
+     * @deprecated Use the corresponding method from {@link GroupProvider}. */
+    @Override
+    default GroupModel createGroup(RealmModel realm, String name, GroupModel toParent) {
+        return createGroup(realm, null, name, toParent);
+    }
+
+    /**
+     * @deprecated Use the corresponding method from {@link GroupProvider}. */
+    @Override
+    GroupModel createGroup(RealmModel realm, String id, String name, GroupModel toParent);
+
+    /**
+     * @deprecated Use the corresponding method from {@link GroupProvider}. */
+    @Override
+    void addTopLevelGroup(RealmModel realm, GroupModel subGroup);
 }
