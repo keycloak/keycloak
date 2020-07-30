@@ -46,6 +46,13 @@
                 <kc-tooltip>{{:: 'verifyEmail.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
+                <label for="allowedEmailPattern" class="col-md-2 control-label">{{:: 'allowedEmailPattern' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="text" ng-model="realm.attributes.allowedEmailPattern" name="allowedEmailPattern" id="allowedEmailPattern"/>
+                </div>
+                <kc-tooltip>{{:: 'allowedEmailPattern.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
                 <label for="loginWithEmailAllowed" class="col-md-2 control-label">{{:: 'loginWithEmailAllowed' | translate}}</label>
                 <div class="col-md-6">
                     <input ng-model="realm.loginWithEmailAllowed" name="loginWithEmailAllowed" id="loginWithEmailAllowed" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />

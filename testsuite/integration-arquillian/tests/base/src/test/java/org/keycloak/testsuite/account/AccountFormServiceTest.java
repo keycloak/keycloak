@@ -923,6 +923,50 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("Your account has been updated.", profilePage.getSuccess());
     }
 
+    /**
+     * https://issues.redhat.com/browse/KEYCLOAK-14963
+     */
+    @Test
+    public void changeEmailToNotAllowedEmailShouldError() {
+
+        try {
+            configureRealmAllowedEmailPattern("^.*@(localhost|allowed)$");
+
+            profilePage.open();
+            loginPage.login("test-user@localhost", "password");
+            events.expectLogin().client("account").detail(Details.REDIRECT_URI, getAccountRedirectUrl()).assertEvent();
+            Assert.assertEquals("test-user@localhost", profilePage.getEmail());
+
+            profilePage.updateProfile("New first", "New last", "test-user@notallowed");
+
+            Assert.assertEquals("Email address not allowed.", profilePage.getError());
+        } finally {
+            configureRealmAllowedEmailPattern(null);
+        }
+    }
+
+    /**
+     * https://issues.redhat.com/browse/KEYCLOAK-14963
+     */
+    @Test
+    public void changeEmailToOtherAllowedEmail() {
+
+        try {
+            configureRealmAllowedEmailPattern("^.*@(localhost|allowed)$");
+
+            profilePage.open();
+            loginPage.login("test-user@localhost", "password");
+            events.expectLogin().client("account").detail(Details.REDIRECT_URI, getAccountRedirectUrl()).assertEvent();
+            Assert.assertEquals("test-user@localhost", profilePage.getEmail());
+
+            profilePage.updateProfile("New first", "New last", "test-user@allowed");
+
+            Assert.assertEquals("Your account has been updated.", profilePage.getSuccess());
+        } finally {
+            configureRealmAllowedEmailPattern(null);
+        }
+    }
+
     public void totpPageSetup() {
         String pageSource = driver.getPageSource();
 
@@ -1384,5 +1428,11 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         }
         // None of PK credential ID, label, and AAGUID can be present on Edit Account screen
         assertEquals(3, noSuchElementExceptionCount);
+    }
+
+    protected void configureRealmAllowedEmailPattern(String pattern) {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        realm.setAttributes(Collections.singletonMap(RealmModel.ALLOWED_EMAIL_PATTERN_KEY, pattern));
+        testRealm().update(realm);
     }
 }

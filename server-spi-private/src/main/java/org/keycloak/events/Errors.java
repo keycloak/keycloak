@@ -75,6 +75,7 @@ public interface Errors {
 
     String EMAIL_SEND_FAILED = "email_send_failed";
     String INVALID_EMAIL = "invalid_email";
+    String INVALID_EMAIL_NOT_ALLOWED = "invalid_email_not_allowed";
     String IDENTITY_PROVIDER_LOGIN_FAILURE = "identity_provider_login_failure";
     String IDENTITY_PROVIDER_ERROR = "identity_provider_error";
 

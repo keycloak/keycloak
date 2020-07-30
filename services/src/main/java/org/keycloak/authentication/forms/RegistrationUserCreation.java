@@ -80,6 +80,9 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
             } else if (!Validation.isEmailValid(email)) {
                 errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.INVALID_EMAIL));
                 formData.remove(Validation.FIELD_EMAIL);
+            } else if (!isEmailAllowed(context,email)) {
+                errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.INVALID_EMAIL_NOT_ALLOWED));
+                formData.remove(Validation.FIELD_EMAIL);
             }
             if (errors.size() > 0) {
                 context.error(Errors.INVALID_REGISTRATION);
@@ -109,8 +112,32 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
                 return;
             }
 
+            if (!isEmailAllowed(context,email)) {
+                context.error(Errors.INVALID_REGISTRATION);
+                errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.INVALID_EMAIL_NOT_ALLOWED));
+                formData.remove(Validation.FIELD_EMAIL);
+                context.validationError(formData, errors);
+                return;
+            }
         }
         context.success();
+    }
+
+    /**
+     * Allows for additional custom email-validation, e.g. filter-out +-emails or only allow certain domains.
+     * @param context
+     * @param email
+     * @return
+     */
+    protected boolean isEmailAllowed(ValidationContext context, String email) {
+
+        String emailPattern = context.getRealm().getAllowedEmailPattern();
+
+        if (emailPattern != null) {
+            return Validation.isValidEmailCustom(emailPattern, email);
+        }
+
+        return true;
     }
 
     @Override
@@ -194,10 +221,12 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
             AuthenticationExecutionModel.Requirement.REQUIRED,
             AuthenticationExecutionModel.Requirement.DISABLED
     };
+
     @Override
     public AuthenticationExecutionModel.Requirement[] getRequirementChoices() {
         return REQUIREMENT_CHOICES;
     }
+
     @Override
     public FormAction create(KeycloakSession session) {
         return this;

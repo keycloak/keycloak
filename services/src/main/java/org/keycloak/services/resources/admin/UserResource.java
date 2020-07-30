@@ -68,6 +68,7 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserSessionManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
@@ -79,7 +80,6 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
-import javax.ws.rs.NotSupportedException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -209,7 +209,21 @@ public class UserResource {
                 user.setUsername(email);
             }
         }
-        if (rep.getEmail() == "") user.setEmail(null);
+
+        if ("".equals(rep.getEmail())) {
+            user.setEmail(null);
+        } else if (realm.getAllowedEmailPattern() != null) {
+            // Always checking for valid email might break existing clients,
+            // thus we place this check behind the allowedEmailPattern guard.
+            if (!Validation.isEmailValid(rep.getEmail())) {
+                throw new ModelException(Messages.INVALID_EMAIL);
+            }
+
+            if (!Validation.isValidEmailCustom(realm.getAllowedEmailPattern(), rep.getEmail())) {
+                throw new ModelException(Messages.INVALID_EMAIL_NOT_ALLOWED);
+            }
+        }
+
         if (rep.getFirstName() != null) user.setFirstName(rep.getFirstName());
         if (rep.getLastName() != null) user.setLastName(rep.getLastName());
 

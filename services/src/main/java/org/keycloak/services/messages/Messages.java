@@ -34,6 +34,8 @@ public class Messages {
 
     public static final String INVALID_EMAIL = "invalidEmailMessage";
 
+    public static final String INVALID_EMAIL_NOT_ALLOWED = "notAllowedEmailMessage";
+
     public static final String ACCOUNT_DISABLED = "accountDisabledMessage";
 
     public static final String ACCOUNT_TEMPORARILY_DISABLED = "accountTemporarilyDisabledMessage";

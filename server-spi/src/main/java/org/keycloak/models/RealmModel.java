@@ -34,6 +34,9 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 public interface RealmModel extends RoleContainerModel {
+
+    String ALLOWED_EMAIL_PATTERN_KEY = "allowedEmailPattern";
+
     interface RealmCreationEvent extends ProviderEvent {
         RealmModel getCreatedRealm();
         KeycloakSession getKeycloakSession();
@@ -152,6 +155,14 @@ public interface RealmModel extends RoleContainerModel {
     boolean isVerifyEmail();
 
     void setVerifyEmail(boolean verifyEmail);
+
+    default String getAllowedEmailPattern() {
+        return getAttribute(ALLOWED_EMAIL_PATTERN_KEY);
+    }
+
+    default void setAllowedEmailPattern(String pattern) {
+        setAttribute(ALLOWED_EMAIL_PATTERN_KEY, pattern);
+    }
 
     boolean isLoginWithEmailAllowed();
 

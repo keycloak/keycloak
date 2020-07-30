@@ -22,6 +22,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
@@ -36,6 +37,8 @@ import javax.mail.internet.MimeMessage;
 import static org.jgroups.util.Util.assertTrue;
 import static org.junit.Assert.assertEquals;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+
+import java.util.Collections;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -292,6 +295,56 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         assertEquals("Invalid email address.", registerPage.getError());
         events.expectRegister("registerUserInvalidEmail", "registerUserInvalidEmailemail")
                 .error("invalid_registration").assertEvent();
+    }
+
+    /**
+     * https://issues.redhat.com/browse/KEYCLOAK-14963
+     */
+    @Test
+    public void registerUserNotAllowedEmail() {
+
+        try{
+            configureRealmAllowedEmailPattern("^.*@(localhost|allowed|email)$");
+
+            loginPage.open();
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
+
+            registerPage.register("firstName", "lastName", "registerUser@notallowed", "registerUserInvalidEmail", "password", "password");
+            registerPage.assertCurrent();
+    //        assertEquals("registerUser@notallowed", registerPage.getEmail());
+            assertEquals("Email address not allowed.", registerPage.getError());
+            events.expectRegister("registerUserInvalidEmail", "registerUser@notallowed")
+                    .error("invalid_registration").assertEvent();
+        } finally {
+            configureRealmAllowedEmailPattern(null);
+        }
+    }
+
+    /**
+     * https://issues.redhat.com/browse/KEYCLOAK-14963
+     */
+    @Test
+    public void registerUserNotAllowedEmail_emailAsUsername() {
+
+        try{
+            configureRealmRegistrationEmailAsUsername(true);
+            configureRealmAllowedEmailPattern("^.*@(localhost|allowed|email)$");
+
+            loginPage.open();
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
+
+            registerPage.registerWithEmailAsUsername("firstName", "lastName", "registerUser@notallowed", "password", "password");
+            registerPage.assertCurrent();
+    //        assertEquals("registerUser@notallowed", registerPage.getEmail());
+            assertEquals("Email address not allowed.", registerPage.getError());
+            events.expectRegister("registerUser@notallowed", "registerUser@notallowed")
+                    .error("invalid_registration").assertEvent();
+        } finally {
+            configureRealmRegistrationEmailAsUsername(false);
+            configureRealmAllowedEmailPattern(null);
+        }
     }
 
     @Test
@@ -568,6 +621,12 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     protected void configureRealmRegistrationEmailAsUsername(final boolean value) {
         RealmRepresentation realm = testRealm().toRepresentation();
         realm.setRegistrationEmailAsUsername(value);
+        testRealm().update(realm);
+    }
+
+    protected void configureRealmAllowedEmailPattern(String pattern) {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        realm.setAttributes(Collections.singletonMap(RealmModel.ALLOWED_EMAIL_PATTERN_KEY, pattern));
         testRealm().update(realm);
     }
 
