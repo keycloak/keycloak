@@ -54,6 +54,7 @@ import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Expression;
+import javax.persistence.criteria.Join;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Subquery;
@@ -840,6 +841,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             predicates.add(root.get("serviceAccountClientLink").isNull());
         }
 
+        Join<Object, Object> federatedIdentitiesJoin = null;
+
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
@@ -852,7 +855,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 case UserModel.SEARCH:
                     List<Predicate> orPredicates = new ArrayList();
 
-                    orPredicates.add(builder.like(builder.lower(root.get(USERNAME)), "%" + value.toLowerCase() + "%"));
+                    orPredicates
+                            .add(builder.like(builder.lower(root.get(USERNAME)), "%" + value.toLowerCase() + "%"));
                     orPredicates.add(builder.like(builder.lower(root.get(EMAIL)), "%" + value.toLowerCase() + "%"));
                     orPredicates.add(builder.like(
                             builder.lower(builder.concat(builder.concat(
@@ -878,7 +882,20 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                     predicates.add(builder.equal(root.get(key), Boolean.parseBoolean(value.toLowerCase())));
                     break;
                 case UserModel.ENABLED:
-                    predicates.add(builder.equal(builder.lower(root.get(key)), Boolean.parseBoolean(value.toLowerCase())));
+                    predicates.add(builder.equal(root.get(key), Boolean.parseBoolean(value)));
+                    break;
+                case UserModel.IDP_ALIAS:
+                    if (federatedIdentitiesJoin == null) {
+                        federatedIdentitiesJoin = root.join("federatedIdentities");
+                    }
+                    predicates.add(builder.equal(federatedIdentitiesJoin.get("identityProvider"), value));
+                    break;
+                case UserModel.IDP_USER_ID:
+                    if (federatedIdentitiesJoin == null) {
+                        federatedIdentitiesJoin = root.join("federatedIdentities");
+                    }
+                    predicates.add(builder.equal(federatedIdentitiesJoin.get("userId"), value));
+                    break;
             }
         }
 

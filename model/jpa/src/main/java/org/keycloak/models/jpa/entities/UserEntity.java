@@ -110,6 +110,11 @@ public class UserEntity {
     @BatchSize(size = 20)
     protected Collection<CredentialEntity> credentials;
 
+    @OneToMany(mappedBy="user")
+    @Fetch(FetchMode.SELECT)
+    @BatchSize(size = 20)
+    protected Collection<FederatedIdentityEntity> federatedIdentities;
+
     @Column(name="FEDERATION_LINK")
     protected String federationLink;
 
@@ -231,6 +236,17 @@ public class UserEntity {
 
     public void setCredentials(Collection<CredentialEntity> credentials) {
         this.credentials = credentials;
+    }
+
+    public Collection<FederatedIdentityEntity> getFederatedIdentities() {
+        if (federatedIdentities == null) {
+            federatedIdentities = new LinkedList<>();
+        }
+        return federatedIdentities;
+    }
+
+    public void setFederatedIdentities(Collection<FederatedIdentityEntity> federatedIdentities) {
+        this.federatedIdentities = federatedIdentities;
     }
 
     public String getFederationLink() {

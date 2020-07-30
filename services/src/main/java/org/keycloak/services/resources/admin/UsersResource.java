@@ -208,14 +208,19 @@ public class UsersResource {
      * Returns a list of users, filtered according to query parameters
      *
      * @param search A String contained in username, first or last name, or email
-     * @param last
-     * @param first
-     * @param email
-     * @param username
-     * @param enabled Boolean representing if user is enabled or not
-     * @param first Pagination offset
+     * @param last A String contained in lastName, or the complete lastName, if param "exact" is true
+     * @param first A String contained in firstName, or the complete firstName, if param "exact" is true
+     * @param email A String contained in email, or the complete email, if param "exact" is true
+     * @param username A String contained in username, or the complete username, if param "exact" is true
+     * @param emailVerified whether the email has been verified
+     * @param idpAlias The alias of an Identity Provider linked to the user
+     * @param idpUserId The userId at an Identity Provider linked to the user
+     * @param firstResult Pagination offset
      * @param maxResults Maximum results size (defaults to 100)
-     * @return
+     * @param enabled Boolean representing if user is enabled or not
+     * @param briefRepresentation Boolean which defines whether brief representations are returned (default: false)
+     * @param exact Boolean which defines whether the params "last", "first", "email" and "username" must match exactly
+     * @return the list of users
      */
     @GET
     @NoCache
@@ -226,6 +231,8 @@ public class UsersResource {
                                              @QueryParam("email") String email,
                                              @QueryParam("username") String username,
                                              @QueryParam("emailVerified") Boolean emailVerified,
+                                             @QueryParam("idpAlias") String idpAlias,
+                                             @QueryParam("idpUserId") String idpUserId,
                                              @QueryParam("first") Integer firstResult,
                                              @QueryParam("max") Integer maxResults,
                                              @QueryParam("enabled") Boolean enabled,
@@ -241,7 +248,8 @@ public class UsersResource {
         List<UserModel> userModels = Collections.emptyList();
         if (search != null) {
             if (search.startsWith(SEARCH_ID_PARAMETER)) {
-                UserModel userModel = session.users().getUserById(search.substring(SEARCH_ID_PARAMETER.length()).trim(), realm);
+                UserModel userModel =
+                        session.users().getUserById(search.substring(SEARCH_ID_PARAMETER.length()).trim(), realm);
                 if (userModel != null) {
                     userModels = Collections.singletonList(userModel);
                 }
@@ -251,35 +259,45 @@ public class UsersResource {
                 if (enabled != null) {
                     attributes.put(UserModel.ENABLED, enabled.toString());
                 }
-                return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult, maxResults, false);
+                return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
+                        maxResults, false);
             }
-        } else if (last != null || first != null || email != null || username != null  || emailVerified != null || enabled != null || exact != null) {
-            Map<String, String> attributes = new HashMap<>();
-            if (last != null) {
-                attributes.put(UserModel.LAST_NAME, last);
-            }
-            if (first != null) {
-                attributes.put(UserModel.FIRST_NAME, first);
-            }
-            if (email != null) {
-                attributes.put(UserModel.EMAIL, email);
-            }
-            if (username != null) {
-                attributes.put(UserModel.USERNAME, username);
-            }
-            if (enabled != null) {
-                attributes.put(UserModel.ENABLED, enabled.toString());
-            }
-            if (exact != null) {
-                attributes.put(UserModel.EXACT, exact.toString());
-            }
-            if (emailVerified != null) {
-                attributes.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
-            }
-            return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult, maxResults, true);
-        } else {
-            return searchForUser(new HashMap<>(), realm, userPermissionEvaluator, briefRepresentation, firstResult, maxResults, false);
-        }
+        } else if (last != null || first != null || email != null || username != null || emailVerified != null
+                || idpAlias != null || idpUserId != null || enabled != null || exact != null) {
+                    Map<String, String> attributes = new HashMap<>();
+                    if (last != null) {
+                        attributes.put(UserModel.LAST_NAME, last);
+                    }
+                    if (first != null) {
+                        attributes.put(UserModel.FIRST_NAME, first);
+                    }
+                    if (email != null) {
+                        attributes.put(UserModel.EMAIL, email);
+                    }
+                    if (username != null) {
+                        attributes.put(UserModel.USERNAME, username);
+                    }
+                    if (emailVerified != null) {
+                        attributes.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
+                    }
+                    if (idpAlias != null) {
+                        attributes.put(UserModel.IDP_ALIAS, idpAlias);
+                    }
+                    if (idpUserId != null) {
+                        attributes.put(UserModel.IDP_USER_ID, idpUserId);
+                    }
+                    if (enabled != null) {
+                        attributes.put(UserModel.ENABLED, enabled.toString());
+                    }
+                    if (exact != null) {
+                        attributes.put(UserModel.EXACT, exact.toString());
+                    }
+                    return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
+                            maxResults, true);
+                } else {
+                    return searchForUser(new HashMap<>(), realm, userPermissionEvaluator, briefRepresentation,
+                            firstResult, maxResults, false);
+                }
 
         return toRepresentation(realm, userPermissionEvaluator, briefRepresentation, userModels);
     }

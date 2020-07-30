@@ -719,6 +719,130 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void searchByIdp() {
+        // Add user without IDP
+        createUser();
+
+        // add sample Identity Providers
+        final String identityProviderAlias1 = "identity-provider-alias1";
+        addSampleIdentityProvider(identityProviderAlias1, 0);
+        final String identityProviderAlias2 = "identity-provider-alias2";
+        addSampleIdentityProvider(identityProviderAlias2, 1);
+
+        final String commonIdpUserId = "commonIdpUserId";
+
+        // create first IDP1 User with link
+        final String idp1User1Username = "idp1user1";
+        final String idp1User1KeycloakId = createUser(idp1User1Username, "idp1user1@localhost");
+        final String idp1User1UserId = "idp1user1Id";
+        FederatedIdentityRepresentation link1_1 = new FederatedIdentityRepresentation();
+        link1_1.setUserId(idp1User1UserId);
+        link1_1.setUserName(idp1User1Username);
+        addFederatedIdentity(idp1User1KeycloakId, identityProviderAlias1, link1_1);
+
+        // create second IDP1 User with link
+        final String idp1User2Username = "idp1user2";
+        final String idp1User2KeycloakId = createUser(idp1User2Username, "idp1user2@localhost");
+        FederatedIdentityRepresentation link1_2 = new FederatedIdentityRepresentation();
+        link1_2.setUserId(commonIdpUserId);
+        link1_2.setUserName(idp1User2Username);
+        addFederatedIdentity(idp1User2KeycloakId, identityProviderAlias1, link1_2);
+
+        // create IDP2 user with link
+        final String idp2UserUsername = "idp2user";
+        final String idp2UserKeycloakId = createUser(idp2UserUsername, "idp2user@localhost");
+        FederatedIdentityRepresentation link2 = new FederatedIdentityRepresentation();
+        link2.setUserId(commonIdpUserId);
+        link2.setUserName(idp2UserUsername);
+        addFederatedIdentity(idp2UserKeycloakId, identityProviderAlias2, link2);
+
+        // run search tests
+        List<UserRepresentation> searchForAllUsers =
+                realm.users().search(null, null, null, null, null, null, null, null, null, null, null);
+        assertEquals(4, searchForAllUsers.size());
+
+        List<UserRepresentation> searchByIdpAlias =
+                realm.users().search(null, null, null, null, null, identityProviderAlias1, null, null, null, null,
+                        null);
+        assertEquals(2, searchByIdpAlias.size());
+        assertEquals(idp1User1Username, searchByIdpAlias.get(0).getUsername());
+        assertEquals(idp1User2Username, searchByIdpAlias.get(1).getUsername());
+
+        List<UserRepresentation> searchByIdpUserId =
+                realm.users().search(null, null, null, null, null, null, commonIdpUserId, null, null, null, null);
+        assertEquals(2, searchByIdpUserId.size());
+        assertEquals(idp1User2Username, searchByIdpUserId.get(0).getUsername());
+        assertEquals(idp2UserUsername, searchByIdpUserId.get(1).getUsername());
+
+        List<UserRepresentation> searchByIdpAliasAndUserId =
+                realm.users().search(null, null, null, null, null, identityProviderAlias1, idp1User1UserId, null, null,
+                        null,
+                        null);
+        assertEquals(1, searchByIdpAliasAndUserId.size());
+        assertEquals(idp1User1Username, searchByIdpAliasAndUserId.get(0).getUsername());
+    }
+
+    private void addFederatedIdentity(String keycloakUserId, String identityProviderAlias1,
+            FederatedIdentityRepresentation link) {
+        Response response1 = realm.users().get(keycloakUserId).addFederatedIdentity(identityProviderAlias1, link);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE,
+                AdminEventPaths.userFederatedIdentityLink(keycloakUserId, identityProviderAlias1), link,
+                ResourceType.USER);
+        assertEquals(204, response1.getStatus());
+    }
+
+    @Test
+    public void searchByIdpAndEnabled() {
+        // add sample Identity Provider
+        final String identityProviderAlias = "identity-provider-alias";
+        addSampleIdentityProvider(identityProviderAlias, 0);
+
+        // add disabled user with IDP link
+        UserRepresentation disabledUser = new UserRepresentation();
+        final String disabledUsername = "disabled_username";
+        disabledUser.setUsername(disabledUsername);
+        disabledUser.setEmail("disabled@localhost");
+        disabledUser.setEnabled(false);
+        final String disabledUserKeycloakId = createUser(disabledUser);
+        FederatedIdentityRepresentation disabledUserLink = new FederatedIdentityRepresentation();
+        final String disabledUserId = "disabledUserId";
+        disabledUserLink.setUserId(disabledUserId);
+        disabledUserLink.setUserName(disabledUsername);
+        addFederatedIdentity(disabledUserKeycloakId, identityProviderAlias, disabledUserLink);
+
+        // add enabled user with IDP link
+        UserRepresentation enabledUser = new UserRepresentation();
+        final String enabledUsername = "enabled_username";
+        enabledUser.setUsername(enabledUsername);
+        enabledUser.setEmail("enabled@localhost");
+        enabledUser.setEnabled(true);
+        final String enabledUserKeycloakId = createUser(enabledUser);
+        FederatedIdentityRepresentation enabledUserLink = new FederatedIdentityRepresentation();
+        final String enabledUserId = "enabledUserId";
+        enabledUserLink.setUserId(enabledUserId);
+        enabledUserLink.setUserName(enabledUsername);
+        addFederatedIdentity(enabledUserKeycloakId, identityProviderAlias, enabledUserLink);
+
+        // run search tests
+        List<UserRepresentation> searchByIdpAliasAndEnabled =
+                realm.users().search(null, null, null, null, null, identityProviderAlias, null, null, null, true, null);
+        assertEquals(1, searchByIdpAliasAndEnabled.size());
+        assertEquals(enabledUsername, searchByIdpAliasAndEnabled.get(0).getUsername());
+
+        List<UserRepresentation> searchByIdpAliasAndDisabled =
+                realm.users().search(null, null, null, null, null, identityProviderAlias, null, null, null, false,
+                        null);
+        assertEquals(1, searchByIdpAliasAndDisabled.size());
+        assertEquals(disabledUsername, searchByIdpAliasAndDisabled.get(0).getUsername());
+
+        List<UserRepresentation> searchByIdpAliasWithoutEnabledFlag =
+                realm.users().search(null, null, null, null, null, identityProviderAlias, null, null, null, null, null);
+        assertEquals(2, searchByIdpAliasWithoutEnabledFlag.size());
+        assertEquals(disabledUsername, searchByIdpAliasWithoutEnabledFlag.get(0).getUsername());
+        assertEquals(enabledUsername, searchByIdpAliasWithoutEnabledFlag.get(1).getUsername());
+    }
+
+    @Test
     public void searchById() {
         String expectedUserId = createUsers().get(0);
         List<UserRepresentation> users = realm.users().search("id:" + expectedUserId, null, null);
@@ -829,9 +953,7 @@ public class UserTest extends AbstractAdminTest {
         FederatedIdentityRepresentation link = new FederatedIdentityRepresentation();
         link.setUserId("social-user-id");
         link.setUserName("social-username");
-        Response response = user.addFederatedIdentity("social-provider-id", link);
-        assertEquals(204, response.getStatus());
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userFederatedIdentityLink(id, "social-provider-id"), link, ResourceType.USER);
+        addFederatedIdentity(id, "social-provider-id", link);
 
         // Verify social link is here
         user = realm.users().get(id);
@@ -851,11 +973,15 @@ public class UserTest extends AbstractAdminTest {
     }
 
     private void addSampleIdentityProvider() {
+        addSampleIdentityProvider("social-provider-id", 0);
+    }
+
+    private void addSampleIdentityProvider(final String alias, final int expectedInitialIdpCount) {
         List<IdentityProviderRepresentation> providers = realm.identityProviders().findAll();
-        Assert.assertEquals(0, providers.size());
+        Assert.assertEquals(expectedInitialIdpCount, providers.size());
 
         IdentityProviderRepresentation rep = new IdentityProviderRepresentation();
-        rep.setAlias("social-provider-id");
+        rep.setAlias(alias);
         rep.setProviderId("oidc");
 
         realm.identityProviders().create(rep);
