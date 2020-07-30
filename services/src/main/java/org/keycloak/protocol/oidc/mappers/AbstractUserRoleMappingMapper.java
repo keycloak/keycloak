@@ -61,8 +61,9 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
 
         Set<String> realmRoleNames;
         if (prefix != null && !prefix.isEmpty()) {
+            final String interpolatedPrefix = replaceClientIdPlaceholder(prefix, clientId);
             realmRoleNames = rolesToAdd.stream()
-                    .map(roleName -> prefix + roleName)
+                    .map(roleName -> interpolatedPrefix + roleName)
                     .collect(Collectors.toSet());
         } else {
             realmRoleNames = rolesToAdd;
@@ -85,19 +86,25 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
     private static final Pattern DOT_PATTERN = Pattern.compile("\\.");
     private static final String DOT_REPLACEMENT = "\\\\\\\\.";
 
+    private static String replaceClientIdPlaceholder(final String text, final String clientId) {
+        if (text != null && clientId != null) {
+            // case when clientId contains dots
+            final String normalizedClientId = DOT_PATTERN.matcher(clientId).replaceAll(DOT_REPLACEMENT);
+            return CLIENT_ID_PATTERN.matcher(text).replaceAll(normalizedClientId);
+        }
+        return text;
+    }
+
     private static void mapClaim(IDToken token, ProtocolMapperModel mappingModel, Object attributeValue, String clientId) {
         attributeValue = OIDCAttributeMapperHelper.mapAttributeValue(mappingModel, attributeValue);
         if (attributeValue == null) return;
 
-        String protocolClaim = mappingModel.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
+        String protocolClaim = replaceClientIdPlaceholder(
+                mappingModel.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME),
+                clientId
+        );
         if (protocolClaim == null) {
             return;
-        }
-
-        if (clientId != null) {
-            // case when clientId contains dots
-            clientId = DOT_PATTERN.matcher(clientId).replaceAll(DOT_REPLACEMENT);
-            protocolClaim = CLIENT_ID_PATTERN.matcher(protocolClaim).replaceAll(clientId);
         }
 
         List<String> split = OIDCAttributeMapperHelper.splitClaimPath(protocolClaim);

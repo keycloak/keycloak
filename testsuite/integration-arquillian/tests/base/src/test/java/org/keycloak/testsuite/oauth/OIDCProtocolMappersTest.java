@@ -1183,4 +1183,55 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         return oauth.doAccessTokenRequest(authzEndpointResponse.getCode(), clientSecret);
     }
 
+    @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
+    public void testReplaceClientIdPlaceholderInClientRolePrefix() throws Exception {
+        // Add mapper for realm roles
+        ProtocolMapperRepresentation realmMapper =
+                ProtocolMapperUtil.createUserRealmRoleMappingMapper(
+                        "${client_id}:::",
+                        "Realm roles mapper",
+                        "roles-custom-realm",
+                        true,
+                        true,
+                        true
+                );
+        // Add mapper for client roles
+        ProtocolMapperRepresentation clientMapper =
+                ProtocolMapperUtil.createUserClientRoleMappingMapper(
+                        "test-app",
+                        "${client_id}:::",
+                        "Client roles mapper",
+                        "roles-custom-client",
+                        true,
+                        true,
+                        true
+                );
+        ProtocolMappersResource protocolMappers =
+                ApiUtil.findClientResourceByClientId(adminClient.realm("test"), "test-app")
+                        .getProtocolMappers();
+        protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
+
+        // Login user
+        OAuthClient.AccessTokenResponse response =
+                browserLogin("password", "test-user@localhost", "password");
+        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+
+        // Verify realm roles are still provided in the token even when the mapper is miss-configured
+        assertNotNull(idToken.getOtherClaims());
+        assertNotNull(idToken.getOtherClaims().get("roles-custom-realm"));
+        assertTrue(idToken.getOtherClaims().get("roles-custom-realm") instanceof List);
+        assertEquals(2, ((List) idToken.getOtherClaims().get("roles-custom-realm")).size());
+        assertTrue(((List) idToken.getOtherClaims().get("roles-custom-realm")).contains("${client_id}:::offline_access"));
+        assertTrue(((List) idToken.getOtherClaims().get("roles-custom-realm")).contains("${client_id}:::user"));
+
+        // Verify client role is provided in the token and the prefix has had the ${client_id} placeholder replaced
+        assertNotNull(idToken.getOtherClaims().get("roles-custom-client"));
+        assertTrue(idToken.getOtherClaims().get("roles-custom-client") instanceof List);
+        assertEquals(1, ((List) idToken.getOtherClaims().get("roles-custom-client")).size());
+        assertTrue(((List) idToken.getOtherClaims().get("roles-custom-client")).contains("test-app:::customer-user"));
+
+        // Revert
+        deleteMappers(protocolMappers);
+    }
 }
