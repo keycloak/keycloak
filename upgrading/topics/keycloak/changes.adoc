@@ -88,7 +88,7 @@ KEYCLOAK-12579-add-not-null-constraint::keycloak failed.`
 
 === Migrating to 9.0.0
 
-===== Improved handling of user locale
+==== Improved handling of user locale
 
 A number of improvements have been made to how the locale for the login page is selected, as well as when the locale
 is updated for a user.
