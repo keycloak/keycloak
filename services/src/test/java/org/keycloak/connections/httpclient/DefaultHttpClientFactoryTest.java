@@ -48,7 +48,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class DefaultHttpClientFactoryTest {
 	private static final String DISABLE_TRUST_MANAGER_PROPERTY = "disable-trust-manager";
-	private static final String TEST_DOMAIN = "www.google.com";
+	private static final String TEST_DOMAIN = "keycloak.org";
 
 	@Test
 	public void createHttpClientProviderWithDisableTrustManager() throws IOException{
@@ -64,7 +64,7 @@ public class DefaultHttpClientFactoryTest {
 			Assume.assumeTrue( "Could not get test url for domain", testURL.isPresent() );
 			response = httpClient.execute(new HttpGet(testURL.get()));
 		}
-		assertEquals(HttpStatus.SC_OK,response.getStatusLine().getStatusCode());
+		assertEquals(HttpStatus.SC_NOT_FOUND,response.getStatusLine().getStatusCode());
 	}
 
 	@Test(expected = SSLPeerUnverifiedException.class)
