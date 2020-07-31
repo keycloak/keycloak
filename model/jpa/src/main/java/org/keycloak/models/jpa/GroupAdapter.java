@@ -115,7 +115,8 @@ public class GroupAdapter implements GroupModel, JpaModel<GroupEntity> {
     public Long getUserAllCount() {
         String id = getId();
         counts.put(id, getUserCount(id));
-        getUserAllCount(getSubGroups(), id);
+        //数据量多卡死
+        //getUserAllCount(getSubGroups(), id);
         return counts.get(id);
     }
 

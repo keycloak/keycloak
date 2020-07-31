@@ -257,7 +257,8 @@ public class JPAResourceStore implements ResourceStore {
                 } else if (value.length > 0 && value[0] != null) {
                     predicates.add(
                             builder.or(builder.like(root.get(name), "%" + value[0] + "%"),
-                                    builder.like(root.get("displayName"), "%" + value[0] + "%")));
+                                    builder.like(root.get("displayName"), "%" + value[0] + "%"),
+                                    builder.like(root.get("permission"), "%" + value[0] + "%")));
                 }
             }
         });
@@ -451,4 +452,20 @@ public class JPAResourceStore implements ResourceStore {
         return list;
     }
 
+    @Override
+    public List<Resource> findResourceIdByPermission(String resourceServerId, String permission) {
+        TypedQuery<ResourceEntity> query = entityManager.createNamedQuery("findResourceIdByPermission", ResourceEntity.class);
+
+        query.setParameter("ownerId", resourceServerId);
+        query.setParameter("serverId", resourceServerId);
+        query.setParameter("permission", permission);
+
+
+        List<ResourceEntity> result = query.getResultList();
+        List<Resource> list = new LinkedList<>();
+        for (ResourceEntity resourceEntity : result) {
+            list.add(new ResourceAdapter(resourceEntity, entityManager, provider.getStoreFactory()));
+        }
+        return list;
+    }
 }

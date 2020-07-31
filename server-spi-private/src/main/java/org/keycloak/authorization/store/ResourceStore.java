@@ -215,6 +215,13 @@ public interface ResourceStore {
      */
     List<Resource> findTopLevel(String resourceServerId, int firstResult, int maxResult);
 
+    /**
+     * Finds Permission
+     * @param resourceServerId
+     * @return
+     */
+    List<Resource> findResourceIdByPermission(String resourceServerId, String permission);
+
 
 
 }

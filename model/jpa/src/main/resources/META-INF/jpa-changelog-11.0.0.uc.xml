@@ -21,7 +21,7 @@
 
     <changeSet author="liubinwang@govnet.com.cn" id="11.0.0.uc_01">
         <addColumn tableName="USER_ENTITY">
-            <column name="PHONE" type="VARCHAR(11)">
+            <column name="PHONE" type="VARCHAR(255)">
                 <constraints nullable="true"/>
             </column>
 

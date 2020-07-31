@@ -547,6 +547,7 @@ public class ClientsResource {
                 if (!roleConfig.isEmpty()) {
                     for (Map<String, Object> roleMap : roleConfig) {
                         if (containRole(userRoles, String.valueOf(roleMap.get("id")))) {
+
                             for (Resource resource : policy.getResources()) {
                                 if (parent.getId().equals(resource.getId()) || parent.getId().equals(resource.getParentId())) {
                                     resources.add(resource);
@@ -559,5 +560,117 @@ public class ClientsResource {
         }
         return resources;
     }
+
+
+    @Path("{id}/clientResourcePermissionByUser/{userId}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public Set<ResourceRepresentation> getClientResourcePermissionByUser(final @PathParam("id") String id, final @PathParam("userId") String userId,
+                                                                         final @QueryParam("permission") String permission) {
+        auth.clients().requireView();
+        AuthorizationProvider authorizationProvider = session.getProvider(AuthorizationProvider.class);
+        StoreFactory storeFactory = authorizationProvider.getStoreFactory();
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(id);
+        final Set<Resource> resources = getResourcePermissionByUser(authorizationProvider, resourceServer, id, userId, permission);
+        Map<String, ResourceRepresentation> alls = Maps.newLinkedHashMap();
+        Set<ResourceRepresentation> allsResource = new LinkedHashSet<>();
+        for (Resource resource : resources) {
+            ResourceRepresentation resourceRepresentation = ModelToRepresentation.toRepresentation(resource, resourceServer, authorizationProvider, false);
+            resourceRepresentation.setParent(resource.getParentId());
+            allsResource.add(resourceRepresentation);
+            alls.put(resource.getId(), resourceRepresentation);
+        }
+        return toResource(allsResource, alls);
+    }
+
+    /**
+     * @param authorizationProvider
+     * @param resourceServer
+     * @param clientId
+     * @param userId
+     * @param permission
+     * @return
+     */
+    private Set<Resource> getResourcePermissionByUser(AuthorizationProvider authorizationProvider, ResourceServer resourceServer, String clientId, String userId, String permission) {
+        StoreFactory storeFactory = authorizationProvider.getStoreFactory();
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+        ClientModel clientModel = realm.getClientById(clientId);
+        final Set<Resource> resources = new LinkedHashSet<>();
+        if (clientModel != null && resourceServer != null && auth.clients().canView(clientModel)) {
+            UserModel user = session.users().getUserById(userId, realm);
+            Set<RoleModel> userRoles = new HashSet<>();
+            Set<RoleModel> roles = clientModel.getRoles();
+            for (RoleModel roleModel : roles) {
+                if (user.hasRole(roleModel)) {
+                    userRoles.add(roleModel);
+                }
+            }
+            policyStore.findByType("resource", resourceServer.getId()).forEach(policy -> {
+                resources.addAll(policyToResourcePermission(authorizationProvider, resourceServer, userRoles, policy, permission));
+            });
+        } else {
+            throw new ForbiddenException();
+        }
+        return resources;
+    }
+
+
+    /**
+     * @param authorizationProvider
+     * @param resourceServer
+     * @param userRoles
+     * @param policy
+     */
+    private Set<Resource> policyToResourcePermission(AuthorizationProvider authorizationProvider, ResourceServer resourceServer, Set<RoleModel> userRoles, Policy policy, String permission) {
+        Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
+        Iterator<Policy> associatedPoliciesIterable = associatedPolicies.iterator();
+        Set<Resource> resources = new LinkedHashSet<>();
+        List<Resource> resourcePermissions = authorizationProvider.getStoreFactory().getResourceStore().findResourceIdByPermission(resourceServer.getId(), permission);
+        while (associatedPoliciesIterable.hasNext()) {
+            Policy associatedPolicie = associatedPoliciesIterable.next();
+            String roles = associatedPolicie.getConfig().get("roles");
+            if (roles != null) {
+                List<Map<String, Object>> roleConfig;
+                try {
+                    roleConfig = JsonSerialization.readValue(roles, List.class);
+                } catch (Exception e) {
+                    throw new RuntimeException("Malformed configuration for role policy [" + policy.getName() + "].", e);
+                }
+                if (!roleConfig.isEmpty()) {
+                    for (Map<String, Object> roleMap : roleConfig) {
+                        if (containRole(userRoles, String.valueOf(roleMap.get("id")))) {
+                            for (Resource resource : policy.getResources()) {
+                                if (containResource(resourcePermissions, resource)) {
+                                    resources.add(resource);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return resources;
+    }
+
+
+    /**
+     * 是否包含资源
+     *
+     * @param resources
+     * @param contain
+     * @return
+     */
+    private boolean containResource(List<Resource> resources, Resource contain) {
+        boolean bool = false;
+        for (Resource resource : resources) {
+            if (resource.getId().equals(resource.getId()) || contain.getParentId().equals(resource.getId())) {
+                bool = true;
+                break;
+            }
+        }
+        return bool;
+    }
+
 
 }

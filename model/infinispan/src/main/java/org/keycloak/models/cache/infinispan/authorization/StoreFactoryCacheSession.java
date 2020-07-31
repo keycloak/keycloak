@@ -380,6 +380,9 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         return "resource.parent." + parent + "." + serverId;
     }
 
+    public static String getResourceBypermissionCacheKey(String permission, String serverId) {
+        return "resource.permission." + permission + "." + serverId;
+    }
 
     public static String getPolicyByNameCacheKey(String name, String serverId) {
         return "policy.name." + name + "." + serverId;
@@ -862,6 +865,14 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         @Override
         public List<Resource> findTopLevel(String resourceServerId, int firstResult, int maxResult) {
             return getResourceStoreDelegate().findTopLevel(resourceServerId, firstResult, maxResult);
+        }
+
+        @Override
+        public List<Resource> findResourceIdByPermission(String resourceServerId, String permission) {
+            if(permission==null) return  Collections.emptyList();
+            String cacheKey=getResourceBypermissionCacheKey(permission,resourceServerId);
+            return cacheQuery(cacheKey, ResourceListQuery.class, () -> getResourceStoreDelegate().findResourceIdByPermission(resourceServerId, permission),
+                    (revision, resources) -> new ResourceListQuery(revision, cacheKey, resources.stream().map(resource -> resource.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
         }
     }
 

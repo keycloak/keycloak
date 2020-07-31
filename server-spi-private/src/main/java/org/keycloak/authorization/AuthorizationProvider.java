@@ -580,6 +580,10 @@ public final class AuthorizationProvider implements Provider {
                 return delegate.findTopLevel(resourceServerId, firstResult, maxResult);
             }
 
+            @Override
+            public List<Resource> findResourceIdByPermission(String resourceServerId, String permission) {
+                return delegate.findResourceIdByPermission(resourceServerId, permission);
+            }
         };
     }
 }

@@ -379,6 +379,27 @@ public class ResourceSetService {
         return Response.ok(toRepresentation(model, this.resourceServer, authorization)).build();
     }
 
+    @Path("/permission")
+    @GET
+    @NoCache
+    @Produces("application/json")
+    public Response find(@QueryParam("permission") String permission) {
+        this.auth.realm().requireViewAuthorization();
+        StoreFactory storeFactory = authorization.getStoreFactory();
+
+        if (permission == null) {
+            return Response.status(Status.BAD_REQUEST).build();
+        }
+
+        List<Resource> resources = storeFactory.getResourceStore().findResourceIdByPermission(this.resourceServer.getId(), permission);
+
+        return Response.ok(
+                resources.stream()
+                        .map(resource -> toRepresentation(resource, resourceServer, authorization, false))
+                        .collect(Collectors.toList()))
+                .build();
+    }
+
     @GET
     @NoCache
     @Produces("application/json")
