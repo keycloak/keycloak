@@ -89,7 +89,6 @@
                     <exclude>**/mkdirp/**</exclude>
                     <exclude>**/package.json</exclude>
                     <exclude>**/package-lock.json</exclude>
-                    <exclude>**/bower.json</exclude>
                     <exclude>**/component.json</exclude>
                     <exclude>**/composer.json</exclude>
                     <exclude>**/npm-shrinkwrap.json</exclude>
