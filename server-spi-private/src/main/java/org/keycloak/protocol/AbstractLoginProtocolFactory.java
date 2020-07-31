@@ -80,15 +80,19 @@ public abstract class AbstractLoginProtocolFactory implements LoginProtocolFacto
         Set<ClientScopeModel> defaultClientScopes = realm.getDefaultClientScopes(true).stream()
                 .filter(clientScope -> getId().equals(clientScope.getProtocol()))
                 .collect(Collectors.toSet());
-        for (ClientModel newClient : newClients) {
-            newClient.addClientScopes(defaultClientScopes, true);
+        if (!defaultClientScopes.isEmpty()) {
+            for (ClientModel newClient : newClients) {
+                newClient.addClientScopes(defaultClientScopes, true);
+            }
         }
 
         Set<ClientScopeModel> nonDefaultClientScopes = realm.getDefaultClientScopes(false).stream()
                 .filter(clientScope -> getId().equals(clientScope.getProtocol()))
                 .collect(Collectors.toSet());
-        for (ClientModel newClient : newClients) {
-            newClient.addClientScopes(nonDefaultClientScopes, false);
+        if (!nonDefaultClientScopes.isEmpty()) {
+            for (ClientModel newClient : newClients) {
+                newClient.addClientScopes(nonDefaultClientScopes, false);
+            }
         }
     }
 
