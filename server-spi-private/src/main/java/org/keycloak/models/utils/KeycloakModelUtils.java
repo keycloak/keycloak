@@ -618,8 +618,9 @@ public final class KeycloakModelUtils {
             }
         }
         // check if we are referencing a client instead of a scope
-        if (realm.getClients() != null) {
-            for (ClientModel client : realm.getClients()) {
+        List<ClientModel> clients = realm.getClients();
+        if (clients != null) {
+            for (ClientModel client : clients) {
                 if (clientScopeName.equals(client.getClientId())) {
                     return client;
                 }
