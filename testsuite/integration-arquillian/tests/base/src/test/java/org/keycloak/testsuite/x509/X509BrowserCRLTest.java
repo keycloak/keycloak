@@ -58,7 +58,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
 
     @Test
     public void loginSuccessWithEmptyRevocationListFromFile() {
-        // Not possible to test file CRL on undertow at this moment - jboss config dir doesn't exists
+        // Not possible to test file CRL on undertow at this moment - jboss config dir doesn't exist
         ContainerAssume.assumeNotAuthServerUndertow();
 
         X509AuthenticatorConfigModel config =
@@ -74,7 +74,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
 
     @Test
     public void loginFailedWithIntermediateRevocationListFromFile() {
-        // Not possible to test file CRL on undertow at this moment - jboss config dir doesn't exists
+        // Not possible to test file CRL on undertow at this moment - jboss config dir doesn't exist
         ContainerAssume.assumeNotAuthServerUndertow();
 
         X509AuthenticatorConfigModel config =

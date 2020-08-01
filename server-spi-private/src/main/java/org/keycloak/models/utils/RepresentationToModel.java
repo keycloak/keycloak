@@ -311,7 +311,7 @@ public class RepresentationToModel {
                 if (clientScope != null) {
                     newRealm.addDefaultClientScope(clientScope, true);
                 } else {
-                    logger.warnf("Referenced client scope '%s' doesn't exists", clientScopeName);
+                    logger.warnf("Referenced client scope '%s' doesn't exist", clientScopeName);
                 }
             }
         }
@@ -321,7 +321,7 @@ public class RepresentationToModel {
                 if (clientScope != null) {
                     newRealm.addDefaultClientScope(clientScope, false);
                 } else {
-                    logger.warnf("Referenced client scope '%s' doesn't exists", clientScopeName);
+                    logger.warnf("Referenced client scope '%s' doesn't exist", clientScopeName);
                 }
             }
         }
@@ -1469,7 +1469,7 @@ public class RepresentationToModel {
         if (clientScope != null) {
             client.addClientScope(clientScope, defaultScope);
         } else {
-            logger.warnf("Referenced client scope '%s' doesn't exists. Ignoring", clientScopeName);
+            logger.warnf("Referenced client scope '%s' doesn't exist. Ignoring", clientScopeName);
         }
     }
 

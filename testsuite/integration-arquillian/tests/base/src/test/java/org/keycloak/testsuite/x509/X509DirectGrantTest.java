@@ -221,7 +221,7 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
 
     @Test
     public void loginCertificateRevoked() throws Exception {
-        // Not possible to test file CRL on undertow at this moment - jboss config dir doesn't exists
+        // Not possible to test file CRL on undertow at this moment - jboss config dir doesn't exist
         ContainerAssume.assumeNotAuthServerUndertow();
 
         X509AuthenticatorConfigModel config =
