@@ -31,6 +31,10 @@ import org.keycloak.models.UserModel;
 public class UserHelper {
 
   public static boolean hasAccountClientDeleteAccountRole(UserModel user, ClientModel accountClientModel) {
+    if (Objects.isNull(user)) {
+      return false;
+    }
+
     Set<RoleModel> acountClientRoleMappings = user.getClientRoleMappings(accountClientModel);
     return Objects.nonNull(acountClientRoleMappings) && acountClientRoleMappings.stream().anyMatch((role) -> Objects.equals(role.getName(),
         AccountRoles.DELETE_ACCOUNT));

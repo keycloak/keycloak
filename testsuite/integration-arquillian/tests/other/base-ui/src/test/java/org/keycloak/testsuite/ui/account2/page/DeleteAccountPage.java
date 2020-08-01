@@ -19,7 +19,7 @@ public class DeleteAccountPage extends AbstractLoggedInPage  {
   }
 
   public String getPath() {
-    return UriBuilder.fromPath(this.getAuthRoot()).path("realms").path(TEST).path("account").path("/#/delete-account").build().toString();
+    return UriBuilder.fromPath(this.getAuthRoot()).path("realms").path(TEST).path("account").buildFromEncoded("/#/delete-account").toString();
   }
 
   public boolean isCurrent() {

@@ -58,7 +58,7 @@
     "hidden": "!features.isMyResourcesEnabled"
   },
   {
-    "id": "deleteAccount",
+    "id": "delete-account",
     "icon": "pf-icon-disconnected",
     "path": "delete-account",
     "label": "deleteAccount",
