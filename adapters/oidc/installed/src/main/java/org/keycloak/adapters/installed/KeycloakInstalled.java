@@ -259,7 +259,7 @@ public class KeycloakInstalled {
 
         String redirectUri = String.format("http://%s:%s", getListenHostname(), callback.getLocalPort());
 
-        String logoutUrl = deployment.getLogoutUrl()
+        String logoutUrl = deployment.getLogoutUrl().clone()
                 .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
                 .build().toString();
 
