@@ -156,7 +156,7 @@ See [filename]`kcreg config credentials --help` for more information about start
 [[_working_with_alternative_configurations]]
 ==== Working with alternative configurations
 
-By default, the Client Registration CLI automatically maintains a configuration file at a default location, [filename]`./.keycloak/kcreg.config`, under the user's home directory. You can use the [command]`--config` option to point to a different file or location to mantain multiple authenticated sessions in parallel. It is the safest way to perform operations tied to a single configuration file from a single thread.
+By default, the Client Registration CLI automatically maintains a configuration file at a default location, [filename]`./.keycloak/kcreg.config`, under the user's home directory. You can use the [command]`--config` option to point to a different file or location to maintain multiple authenticated sessions in parallel. It is the safest way to perform operations tied to a single configuration file from a single thread.
 
 [IMPORTANT]
 ====
