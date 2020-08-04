@@ -15,9 +15,13 @@ public class PasswordCredentialModel extends CredentialModel {
     private final PasswordCredentialData credentialData;
     private final PasswordSecretData secretData;
 
-    public PasswordCredentialModel(PasswordCredentialData credentialData, PasswordSecretData secretData) {
+    private PasswordCredentialModel(PasswordCredentialData credentialData, PasswordSecretData secretData) {
         this.credentialData = credentialData;
         this.secretData = secretData;
+    }
+
+    public static PasswordCredentialModel createFromValues(PasswordCredentialData credentialData, PasswordSecretData secretData) {
+        return new PasswordCredentialModel(credentialData, secretData);
     }
 
     public static PasswordCredentialModel createFromValues(String algorithm, byte[] salt, int hashIterations, String encodedPassword){

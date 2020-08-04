@@ -2,14 +2,16 @@ package org.keycloak.models.credential.dto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.common.util.MultivaluedHashMap;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public class PasswordCredentialData {
     private final int hashIterations;
     private final String algorithm;
-    private final Map<String, String> algorithmData;
+    private final MultivaluedHashMap<String, String> additionalParameters;
 
     /**
      * Creator for standard algorithms (no algorithm tuning beyond hash iterations)
@@ -24,13 +26,13 @@ public class PasswordCredentialData {
      * Creator for custom algorithms (algorithm with tuning parameters beyond simple has iterations)
      * @param hashIterations iterations
      * @param algorithm algorithm id
-     * @param algorithmData additional tuning parameters
+     * @param additionalParameters additional tuning parameters
      */
     @JsonCreator
-    public PasswordCredentialData(@JsonProperty("hashIterations") int hashIterations, @JsonProperty("algorithm") String algorithm, @JsonProperty("algorithmData") Map<String, String> algorithmData) {
+    public PasswordCredentialData(@JsonProperty("hashIterations") int hashIterations, @JsonProperty("algorithm") String algorithm, @JsonProperty("algorithmData") Map<String, List<String>> additionalParameters) {
         this.hashIterations = hashIterations;
         this.algorithm = algorithm;
-        this.algorithmData = algorithmData == null ? Collections.emptyMap() : Collections.unmodifiableMap(algorithmData);
+        this.additionalParameters = new MultivaluedHashMap<>(additionalParameters == null ? Collections.emptyMap() : additionalParameters);
     }
 
 
@@ -44,11 +46,11 @@ public class PasswordCredentialData {
     }
 
     /**
-     * Returns an immutable map of algorithm-specific settings. These settings may include additional
-     * parameters such as Bcrypt memory-tuning parameters
+     * Returns a map of algorithm-specific settings. These settings may include additional
+     * parameters such as Bcrypt memory-tuning parameters. It should be used immutably.
      * @return algorithm data
      */
-    public Map<String, String> getAlgorithmData() {
-        return algorithmData;
+    public MultivaluedHashMap<String, String> getAdditionalParameters() {
+        return additionalParameters;
     }
 }
