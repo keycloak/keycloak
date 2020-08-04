@@ -1,0 +1,17 @@
+
+.dropdown {
+  width: 100%;
+  border-bottom: 1px solid var(--pf-c-nav__link--before--BorderColor);
+}
+
+.toggle {
+  color: var(--pf-c-nav__link--m-current--Color);
+}
+
+.toggle:focus {
+  outline:0;
+}
+
+.toggle::before {
+  border: none;
+}

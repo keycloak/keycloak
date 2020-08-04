@@ -1,0 +1,17 @@
+{
+  "en": {
+    "translation": {
+      "personalInfoHtmlTitle": "Personal Info",
+      "personalInfoIntroMessage": "Manage your basic information",
+      "Account Security": "Account Security",
+      "accountSecurityIntroMessage": "Control your password and account access",
+      "signingIn": "Signing In",
+      "device-activity": "Device Activity",
+      "applications": "Applications",
+      "applicationsIntroMessage": "Track and manage your app permission to access your account",
+      "fullName": "{{givenName}} {{familyName}}",
+      "unknownUser": "Anonymous",
+      "Keycloak Administration Console": "RH-SSO Administration Console"
+    }
+  }
+}
