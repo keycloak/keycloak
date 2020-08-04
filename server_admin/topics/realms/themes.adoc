@@ -29,7 +29,8 @@ Every UI screen is internationalized in {project_name}.  The default language is
 `Internationalization` switch on the `Theme` tab you can choose which locales you want to support and what the default locale
 will be.  The next time a user logs in, they will be able to choose a language on the login page to use for the login screens,
 User Account Management UI, and Admin Console.  The link:{developerguide_link}[{developerguide_name}] explains
-how you can offer additional languages.
+how you can offer additional languages. All internationalized texts which are provided by the theme can be overwritten
+by realm-specific texts on the `Localization` tab.
 
 
 [[_user_locale_selection]]
