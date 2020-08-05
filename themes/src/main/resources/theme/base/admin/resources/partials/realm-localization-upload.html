@@ -1,0 +1,37 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <kc-tabs-realm></kc-tabs-realm>
+
+    <ul class="nav nav-tabs nav-tabs-pf">
+        <li><a href="#/realms/{{realm.realm}}/localization">{{:: 'lookup' | translate}}</a></li>
+        <li class="active"><a href="#/realms/{{realm.realm}}/localization/upload">{{:: 'localization-upload-file' | translate}}</a></li>
+    </ul>
+
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+        <div class="form-group">
+            <label class="col-md-2 control-label" for="locale"><span class="required">*</span> {{:: 'locale' | translate}}</label>
+            <div class="col-md-6">
+                <input class="form-control" id="locale" type="text" ng-model="locale" placeholder="{{:: 'locale' | translate}}" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-md-2 control-label"><span class="required">*</span> {{:: 'file' | translate}}</label>
+            <div class="col-md-6">
+                <div data-ng-show="!files || files.length == 0">
+                    <label for="import-file" class="btn btn-default">{{:: 'select-file' | translate}} <i class="pficon pficon-import"></i></label>
+                    <input id="import-file" type="file" class="hidden" ng-file-select="onFileSelect($files)" required>
+                </div>
+                <span class="kc-uploaded-file" data-ng-show="files.length > 0">
+                        {{files[0].name}}
+                </span>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-10 col-md-offset-2">
+                <button data-kc-save>{{:: 'import' | translate}}</button>
+                <button data-kc-reset>{{:: 'cancel' | translate}}</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<kc-menu></kc-menu>

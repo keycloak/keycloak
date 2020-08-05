@@ -35,6 +35,7 @@
         <class>org.keycloak.models.jpa.entities.FederatedIdentityEntity</class>
         <class>org.keycloak.models.jpa.entities.MigrationModelEntity</class>
         <class>org.keycloak.models.jpa.entities.UserEntity</class>
+        <class>org.keycloak.models.jpa.entities.RealmLocalizationTextsEntity</class>
         <class>org.keycloak.models.jpa.entities.UserRequiredActionEntity</class>
         <class>org.keycloak.models.jpa.entities.UserAttributeEntity</class>
         <class>org.keycloak.models.jpa.entities.UserRoleMappingEntity</class>

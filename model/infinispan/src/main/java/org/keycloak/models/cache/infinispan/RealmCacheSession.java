@@ -171,7 +171,6 @@ public class RealmCacheSession implements CacheRealmProvider {
         return groupDelegate;
     }
 
-
     @Override
     public void registerRealmInvalidation(String id, String name) {
         cache.realmUpdated(id, name, invalidations);
@@ -1247,4 +1246,51 @@ public class RealmCacheSession implements CacheRealmProvider {
         getRealmDelegate().decreaseRemainingCount(realm, clientInitialAccess);
     }
 
+    @Override
+    public void saveLocalizationText(RealmModel realm, String locale, String key, String text) {
+        getRealmDelegate().saveLocalizationText(realm, locale, key, text);
+        registerRealmInvalidation(realm.getId(), locale);
+    }
+
+    @Override
+    public void saveLocalizationTexts(RealmModel realm, String locale, Map<String, String> localizationTexts) {
+        getRealmDelegate().saveLocalizationTexts(realm, locale, localizationTexts);
+        registerRealmInvalidation(realm.getId(), locale);
+    }
+
+    @Override
+    public boolean updateLocalizationText(RealmModel realm, String locale, String key, String text) {
+        boolean wasFound = getRealmDelegate().updateLocalizationText(realm, locale, key, text);
+        if (wasFound) {
+            registerRealmInvalidation(realm.getId(), locale);
+        }
+        return wasFound;
+    }
+
+    @Override
+    public boolean deleteLocalizationTextsByLocale(RealmModel realm, String locale) {
+        boolean wasDeleted = getRealmDelegate().deleteLocalizationTextsByLocale(realm, locale);
+        if(wasDeleted) {
+            registerRealmInvalidation(realm.getId(), locale);
+        }
+        return wasDeleted;
+    }
+
+    @Override
+    public boolean deleteLocalizationText(RealmModel realm, String locale, String key) {
+        boolean wasFound = getRealmDelegate().deleteLocalizationText(realm, locale, key);
+        if (wasFound) {
+            registerRealmInvalidation(realm.getId(), locale);
+        }
+        return wasFound;
+    }
+
+    @Override
+    public String getLocalizationTextsById(RealmModel realm, String locale, String key) {
+        Map<String, String> localizationTexts = getRealm(realm.getId()).getRealmLocalizationTextsByLocale(locale);
+        if(localizationTexts != null) {
+            return localizationTexts.get(key);
+        }
+        return null;
+    }
 }

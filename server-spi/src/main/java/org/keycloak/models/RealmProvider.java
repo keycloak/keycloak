@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import java.util.Map;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.provider.Provider;
 
@@ -79,6 +80,18 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
 
     void removeExpiredClientInitialAccess();
     void decreaseRemainingCount(RealmModel realm, ClientInitialAccessModel clientInitialAccess); // Separate provider method to ensure we decrease remainingCount atomically instead of doing classic update
+
+    void saveLocalizationText(RealmModel realm, String locale, String key, String text);
+
+    void saveLocalizationTexts(RealmModel realm, String locale, Map<String, String> localizationTexts);
+
+    boolean updateLocalizationText(RealmModel realm, String locale, String key, String text);
+
+    boolean deleteLocalizationTextsByLocale(RealmModel realm, String locale);
+
+    boolean deleteLocalizationText(RealmModel realm, String locale, String key);
+
+    String getLocalizationTextsById(RealmModel realm, String locale, String key);
 
     // The methods below are going to be removed in future version of Keycloak
     // Sadly, we have to copy-paste the declarations from the respective interfaces

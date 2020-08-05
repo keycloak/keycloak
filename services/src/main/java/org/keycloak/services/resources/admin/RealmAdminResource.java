@@ -220,6 +220,15 @@ public class RealmAdminResource {
         return clientScopesResource;
     }
 
+    /**
+     * Base path for managing localization under this realm.
+     */
+    @Path("localization")
+    public RealmLocalizationResource getLocalization() {
+        RealmLocalizationResource resource = new RealmLocalizationResource(realm, auth);
+        ResteasyProviderFactory.getInstance().injectProperties(resource);
+        return resource;
+    }
 
     /**
      * Get realm default client scopes.  Only name and ids are returned.

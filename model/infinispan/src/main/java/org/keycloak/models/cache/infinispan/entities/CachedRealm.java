@@ -163,6 +163,8 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     private Map<String, Integer> userActionTokenLifespans;
 
+    protected Map<String, Map<String,String>> realmLocalizationTexts;
+
     public CachedRealm(Long revision, RealmModel model) {
         super(revision, model.getId());
         name = model.getName();
@@ -301,6 +303,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         } catch (UnsupportedOperationException ex) {
         }
 
+        realmLocalizationTexts = model.getRealmLocalizationTexts();
     }
 
     protected void cacheClientScopes(RealmModel model) {
@@ -717,5 +720,9 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public boolean isAllowUserManagedAccess() {
         return allowUserManagedAccess;
+    }
+
+    public Map<String, Map<String, String>> getRealmLocalizationTexts() {
+        return realmLocalizationTexts;
     }
 }

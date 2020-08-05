@@ -377,6 +377,41 @@ module.factory('RealmKeys', function($resource) {
     });
 });
 
+module.factory('RealmSpecificLocales', function($resource) {
+    return $resource(authUrl + '/admin/realms/:id/localization', {
+        id : '@realm'
+    },{'get':  {method:'GET', isArray:true}});
+});
+
+module.factory('RealmSpecificLocalizationTexts', function($resource) {
+    return $resource(authUrl + '/admin/realms/:id/localization/:locale', {
+        id : '@realm',
+        locale : '@locale'
+    });
+});
+
+module.factory('RealmSpecificLocalizationText', function ($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/localization/:locale/:key', {
+        realm: '@realm',
+        locale: '@locale',
+        key: '@key'
+    }, {
+        // wrap plain text response as AngularJS $resource will convert it into a char array otherwise.
+        get: {
+            method: 'GET',
+            transformResponse: function (data) {
+                return {content: data};
+            }
+        },
+        save: {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8'
+            }
+        }
+    });
+});
+
 module.factory('RealmEventsConfig', function($resource) {
     return $resource(authUrl + '/admin/realms/:id/events/config', {
         id : '@realm'

@@ -21,4 +21,20 @@
         <dropForeignKeyConstraint baseTableName="REALM_DEFAULT_GROUPS" constraintName="FK_DEF_GROUPS_GROUP"/>
     </changeSet>
 
+    <changeSet author="keycloak" id="12.1.0-add-realm-localization-table">
+        <createTable tableName="REALM_LOCALIZATIONS">
+            <column name="REALM_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="LOCALE" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TEXTS" type="CLOB">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="REALM_ID, LOCALE" tableName="REALM_LOCALIZATIONS"/>
+    </changeSet>
+
 </databaseChangeLog>
