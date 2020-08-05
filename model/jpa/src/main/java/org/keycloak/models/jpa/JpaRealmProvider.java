@@ -39,12 +39,16 @@ import org.keycloak.models.jpa.entities.ClientInitialAccessEntity;
 import org.keycloak.models.jpa.entities.ClientScopeEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.RealmEntity;
+import org.keycloak.models.jpa.entities.RealmLocalizationTextsEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaDelete;
+import javax.persistence.criteria.Root;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -856,6 +860,84 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
         em.createNamedQuery("decreaseClientInitialAccessRemainingCount")
                 .setParameter("id", clientInitialAccess.getId())
                 .executeUpdate();
+    }
+
+    private RealmLocalizationTextsEntity getRealmLocalizationTextsEntity(String locale, String realmId) {
+        RealmLocalizationTextsEntity.RealmLocalizationTextEntityKey key = new RealmLocalizationTextsEntity.RealmLocalizationTextEntityKey();
+        key.setRealmId(realmId);
+        key.setLocale(locale);
+        return em.find(RealmLocalizationTextsEntity.class, key);
+    }
+
+    @Override
+    public boolean updateLocalizationText(RealmModel realm, String locale, String key, String text) {
+        RealmLocalizationTextsEntity entity = getRealmLocalizationTextsEntity(locale, realm.getId());
+        if (entity != null && entity.getTexts() != null && entity.getTexts().containsKey(key)) {
+            entity.getTexts().put(key, text);
+
+            em.persist(entity);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public void saveLocalizationText(RealmModel realm, String locale, String key, String text) {
+        RealmLocalizationTextsEntity entity = getRealmLocalizationTextsEntity(locale, realm.getId());
+        if(entity == null) {
+            entity = new RealmLocalizationTextsEntity();
+            entity.setRealmId(realm.getId());
+            entity.setLocale(locale);
+            entity.setTexts(new HashMap<>());
+        }
+        entity.getTexts().put(key, text);
+        em.persist(entity);
+    }
+
+    @Override
+    public void saveLocalizationTexts(RealmModel realm, String locale, Map<String, String> localizationTexts) {
+        RealmLocalizationTextsEntity entity = new RealmLocalizationTextsEntity();
+        entity.setTexts(localizationTexts);
+        entity.setLocale(locale);
+        entity.setRealmId(realm.getId());
+        em.merge(entity);
+    }
+
+    @Override
+    public boolean deleteLocalizationTextsByLocale(RealmModel realm, String locale) {
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaDelete<RealmLocalizationTextsEntity> criteriaDelete =
+                builder.createCriteriaDelete(RealmLocalizationTextsEntity.class);
+        Root<RealmLocalizationTextsEntity> root = criteriaDelete.from(RealmLocalizationTextsEntity.class);
+
+        criteriaDelete.where(builder.and(
+                builder.equal(root.get("realmId"), realm.getId()),
+                builder.equal(root.get("locale"), locale)));
+        int linesUpdated = em.createQuery(criteriaDelete).executeUpdate();
+        return linesUpdated == 1?true:false;
+    }
+
+    @Override
+    public String getLocalizationTextsById(RealmModel realm, String locale, String key) {
+        RealmLocalizationTextsEntity entity = getRealmLocalizationTextsEntity(locale, realm.getId());
+        if (entity != null && entity.getTexts() != null && entity.getTexts().containsKey(key)) {
+            return entity.getTexts().get(key);
+        }
+        return null;
+    }
+
+    @Override
+    public boolean deleteLocalizationText(RealmModel realm, String locale, String key) {
+        RealmLocalizationTextsEntity entity = getRealmLocalizationTextsEntity(locale, realm.getId());
+        if (entity != null && entity.getTexts() != null && entity.getTexts().containsKey(key)) {
+            entity.getTexts().remove(key);
+
+            em.persist(entity);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private ClientInitialAccessModel entityToModel(ClientInitialAccessEntity entity) {

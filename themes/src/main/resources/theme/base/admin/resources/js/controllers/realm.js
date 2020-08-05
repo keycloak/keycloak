@@ -83,7 +83,7 @@ function getAccessObject(Auth, Current) {
 }
 
 
-module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location, Notifications, ServerInfo) {
+module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location, Notifications, ServerInfo, RealmSpecificLocalizationTexts) {
     $scope.authUrl = authUrl;
     $scope.resourceUrl = resourceUrl;
     $scope.auth = Auth;
@@ -97,6 +97,18 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
         $scope.fragment = $location.path();
         $scope.path = $location.path().substring(1).split("/");
     });
+
+    $scope.$watch(function() {
+        return Current.realm;
+    }, function() {
+        if(Current.realm !== null && currentRealm !== Current.realm.id) {
+            currentRealm = Current.realm.id;
+            translateProvider.translations(locale, resourceBundle);
+            RealmSpecificLocalizationTexts.get({id: currentRealm, locale: locale}, function (localizationTexts) {
+                translateProvider.translations(locale, localizationTexts.toJSON());
+            })
+        }
+    })
 });
 
 module.controller('HomeCtrl', function(Realm, Auth, Current, $location) {
@@ -497,6 +509,131 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
     $scope.$watch('realm.accountTheme', updateSupported);
     $scope.$watch('realm.emailTheme', updateSupported);
     $scope.$watch('realm.internationalizationEnabled', updateSupported);
+});
+
+module.controller('RealmLocalizationCtrl', function($scope, Current, $location, Realm, realm, serverInfo, Notifications, RealmSpecificLocales, realmSpecificLocales, RealmSpecificLocalizationTexts, RealmSpecificLocalizationText, Dialog, $translate){
+    $scope.realm = realm;
+    $scope.realmSpecificLocales = realmSpecificLocales;
+    $scope.newLocale = null;
+    $scope.selectedRealmSpecificLocales = null;
+    $scope.localizationTexts = null;
+
+    $scope.createLocale = function() {
+        if(!$scope.newLocale) {
+            Notifications.error($translate.instant('missing-locale'));
+            return;
+        }
+        $scope.realmSpecificLocales.push($scope.newLocale)
+        $scope.selectedRealmSpecificLocales = $scope.newLocale;
+        $scope.newLocale = null;
+        $location.url('/create/localization/' + realm.realm + '/' + $scope.selectedRealmSpecificLocales);
+    }
+
+    $scope.$watch(function() {
+        return $scope.selectedRealmSpecificLocales;
+    }, function() {
+        if($scope.selectedRealmSpecificLocales != null) {
+            $scope.updateRealmSpecificLocalizationTexts();
+        }
+    })
+
+    $scope.updateRealmSpecificLocales = function() {
+        RealmSpecificLocales.get({id: realm.realm}, function (updated) {
+            $scope.realmSpecificLocales = updated;
+        })
+    }
+
+    $scope.updateRealmSpecificLocalizationTexts = function() {
+        RealmSpecificLocalizationTexts.get({id: realm.realm, locale: $scope.selectedRealmSpecificLocales }, function (updated) {
+            $scope.localizationTexts = updated;
+        })
+    }
+
+    $scope.removeLocalizationText = function(key) {
+        Dialog.confirmDelete(key, 'localization text', function() {
+            RealmSpecificLocalizationText.remove({
+                realm: realm.realm,
+                locale: $scope.selectedRealmSpecificLocales,
+                key: key
+            }, function () {
+                $scope.updateRealmSpecificLocalizationTexts();
+                Notifications.success($translate.instant('localization-text.remove.success'));
+            });
+        });
+    }
+});
+
+module.controller('RealmLocalizationUploadCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, $upload, $translate){
+    $scope.realm = realm;
+    $scope.locale = null;
+    $scope.files = [];
+
+    $scope.onFileSelect = function($files) {
+        $scope.files = $files;
+    };
+
+    $scope.reset = function() {
+        $scope.locale = null;
+        $scope.files = null;
+    };
+
+    $scope.save = function() {
+
+        if(!$scope.files || $scope.files.length === 0) {
+            Notifications.error($translate.instant('missing-file'));
+            return;
+        }
+        //$files: an array of files selected, each file has name, size, and type.
+        for (var i = 0; i < $scope.files.length; i++) {
+            var $file = $scope.files[i];
+            $scope.upload = $upload.upload({
+                url: authUrl + '/admin/realms/' + realm.realm + '/localization/' + $scope.locale,
+                file: $file
+            }).then(function(response) {
+                $scope.reset();
+                Notifications.success($translate.instant('localization-file.upload.success'));
+            }).catch(function() {
+                Notifications.error($translate.instant('localization-file.upload.error'));
+            });
+        }
+    };
+
+});
+
+module.controller('RealmLocalizationDetailCtrl', function($scope, Current, $location, Realm, realm, Notifications, locale, key, RealmSpecificLocalizationText, localizationText, $translate){
+    $scope.realm = realm;
+    $scope.locale = locale;
+    $scope.key = key;
+    $scope.value = ((localizationText)? localizationText.content : null);
+
+    $scope.create = !key;
+
+    $scope.save = function() {
+        if ($scope.create) {
+            RealmSpecificLocalizationText.save({
+                realm: realm.realm,
+                locale: $scope.locale,
+                key: $scope.key
+            }, $scope.value, function (data, headers) {
+                $location.url("/realms/" + realm.realm + "/localization");
+                Notifications.success($translate.instant('localization-text.create.success'));
+            });
+        } else {
+            RealmSpecificLocalizationText.save({
+                realm: realm.realm,
+                locale: $scope.locale,
+                key: $scope.key
+            }, $scope.value, function (data, headers) {
+                $location.url("/realms/" + realm.realm + "/localization");
+                Notifications.success($translate.instant('localization-text.update.success'));
+            });
+        }
+    };
+
+    $scope.cancel = function () {
+        $location.url("/realms/" + realm.realm + "/localization");
+    };
+
 });
 
 module.controller('RealmCacheCtrl', function($scope, realm, RealmClearUserCache, RealmClearRealmCache, RealmClearKeysCache, Notifications) {

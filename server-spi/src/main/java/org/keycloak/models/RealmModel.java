@@ -771,6 +771,15 @@ public interface RealmModel extends RoleContainerModel {
     void removeDefaultClientScope(ClientScopeModel clientScope);
 
     /**
+     * Patches the realm-specific localization texts. This method will not delete any text.
+     * It updates texts, which are already stored or create new ones if the key does not exist yet.
+     */
+    void patchRealmLocalizationTexts(String locale, Map<String, String> localizationTexts);
+    boolean removeRealmLocalizationTexts(String locale);
+    Map<String, Map<String, String>> getRealmLocalizationTexts();
+    Map<String, String> getRealmLocalizationTextsByLocale(String locale);
+
+    /**
      * @deprecated Use {@link #getDefaultClientScopesStream(boolean) getDefaultClientScopesStream} instead.
      */
     @Deprecated

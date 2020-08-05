@@ -28,6 +28,7 @@ import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
+import javax.persistence.MapKey;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -242,6 +243,9 @@ public class RealmEntity {
     @Column(name="ALLOW_USER_MANAGED_ACCESS")
     private boolean allowUserManagedAccess;
 
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realmId")
+    @MapKey(name="locale")
+    Map<String, RealmLocalizationTextsEntity> realmLocalizationTexts;
 
     public String getId() {
         return id;
@@ -832,6 +836,17 @@ public class RealmEntity {
 
     public boolean isAllowUserManagedAccess() {
         return allowUserManagedAccess;
+    }
+
+    public Map<String, RealmLocalizationTextsEntity> getRealmLocalizationTexts() {
+        if (realmLocalizationTexts == null) {
+            realmLocalizationTexts = new HashMap<>();
+        }
+        return realmLocalizationTexts;
+    }
+
+    public void setRealmLocalizationTexts(Map<String, RealmLocalizationTextsEntity> realmLocalizationTexts) {
+        this.realmLocalizationTexts = realmLocalizationTexts;
     }
 
     @Override

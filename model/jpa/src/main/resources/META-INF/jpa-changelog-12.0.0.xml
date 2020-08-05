@@ -26,4 +26,20 @@
         <dropForeignKeyConstraint baseTableName="SCOPE_MAPPING" constraintName="FK_P3RH9GRKU11KQFRS4FLTT7RNQ"/>
     </changeSet>
 
+    <changeSet author="keycloak" id="12.1.0-add-realm-localization-table">
+        <createTable tableName="REALM_LOCALIZATIONS">
+            <column name="REALM_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="LOCALE" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TEXTS" type="CLOB">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="REALM_ID, LOCALE" tableName="REALM_LOCALIZATIONS"/>
+    </changeSet>
+
 </databaseChangeLog>

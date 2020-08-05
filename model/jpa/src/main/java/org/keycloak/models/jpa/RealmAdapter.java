@@ -2226,6 +2226,53 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public void patchRealmLocalizationTexts(String locale, Map<String, String> localizationTexts) {
+        Map<String, RealmLocalizationTextsEntity> currentLocalizationTexts = realm.getRealmLocalizationTexts();
+        if(currentLocalizationTexts.containsKey(locale)) {
+            RealmLocalizationTextsEntity localizationTextsEntity = currentLocalizationTexts.get(locale);
+            localizationTextsEntity.getTexts().putAll(localizationTexts);
+
+            em.persist(localizationTextsEntity);
+        }
+        else {
+            RealmLocalizationTextsEntity realmLocalizationTextsEntity = new RealmLocalizationTextsEntity();
+            realmLocalizationTextsEntity.setRealmId(realm.getId());
+            realmLocalizationTextsEntity.setLocale(locale);
+            realmLocalizationTextsEntity.setTexts(localizationTexts);
+
+            em.persist(realmLocalizationTextsEntity);
+        }
+    }
+
+    @Override
+    public boolean removeRealmLocalizationTexts(String locale) {
+        if (locale == null) return false;
+        if (realm.getRealmLocalizationTexts().containsKey(locale))
+        {
+            em.remove(realm.getRealmLocalizationTexts().get(locale));
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public Map<String, Map<String, String>> getRealmLocalizationTexts() {
+        Map<String, Map<String, String>> localizationTexts = new HashMap<>();
+        realm.getRealmLocalizationTexts().forEach((locale, localizationTextsEntity) -> {
+            localizationTexts.put(localizationTextsEntity.getLocale(), localizationTextsEntity.getTexts());
+        });
+        return localizationTexts;
+    }
+
+    @Override
+    public Map<String, String> getRealmLocalizationTextsByLocale(String locale) {
+        if (realm.getRealmLocalizationTexts().containsKey(locale)) {
+            return realm.getRealmLocalizationTexts().get(locale).getTexts();
+        }
+        return Collections.emptyMap();
+    }
+
+    @Override
     public String toString() {
         return String.format("%s@%08x", getId(), hashCode());
     }

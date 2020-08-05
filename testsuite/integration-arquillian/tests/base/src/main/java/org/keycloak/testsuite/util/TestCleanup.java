@@ -26,9 +26,8 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
 import org.keycloak.testsuite.arquillian.TestContext;
 import com.google.common.collect.Streams;
-import java.util.Collection;
+
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Enlist resources to be cleaned after test method
@@ -46,6 +45,7 @@ public class TestCleanup {
     private static final String GROUP_IDS = "GROUP_IDS";
     private static final String AUTH_FLOW_IDS = "AUTH_FLOW_IDS";
     private static final String AUTH_CONFIG_IDS = "AUTH_CONFIG_IDS";
+    private static final String LOCALIZATION_LANGUAGES = "LOCALIZATION_LANGUAGES";
 
     private final TestContext testContext;
     private final String realmName;
@@ -115,6 +115,9 @@ public class TestCleanup {
         entities.add(AUTH_FLOW_IDS, flowId);
     }
 
+    public void addLocalization(String language) {
+        entities.add(LOCALIZATION_LANGUAGES, language);
+    }
 
     public void addAuthenticationConfigId(String executionConfigId) {
         entities.add(AUTH_CONFIG_IDS, executionConfigId);
@@ -222,6 +225,17 @@ public class TestCleanup {
                     realm.flows().removeAuthenticatorConfig(configId);
                 } catch (NotFoundException nfe) {
                     // Idp might be already deleted in the test
+                }
+            }
+        }
+
+        List<String> localizationLanguages = entities.get(LOCALIZATION_LANGUAGES);
+        if (localizationLanguages != null) {
+            for (String localizationLanguage : localizationLanguages) {
+                try {
+                    realm.localization().deleteRealmLocalizationTexts(localizationLanguage);
+                } catch (NotFoundException nfe) {
+                    // Localization texts might be already deleted in the test
                 }
             }
         }
