@@ -34,6 +34,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oidc.BackchannelLogoutResponse;
 import org.keycloak.protocol.oidc.LogoutTokenValidationCode;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -274,15 +275,16 @@ public class LogoutEndpoint {
                 .map(idp -> idp.getConfig().getAlias())
                 .collect(Collectors.toList());
 
-        boolean localLogoutSucceeded;
+        BackchannelLogoutResponse backchannelLogoutResponse;
 
         if (logoutToken.getSid() != null) {
-            localLogoutSucceeded = backchannelLogoutWithSessionId(logoutToken.getSid(), identityProviderAliases);
+            backchannelLogoutResponse = backchannelLogoutWithSessionId(logoutToken.getSid(), identityProviderAliases);
         } else {
-            localLogoutSucceeded = backchannelLogoutFederatedUserId(logoutToken.getSubject(), identityProviderAliases);
+            backchannelLogoutResponse =
+                    backchannelLogoutFederatedUserId(logoutToken.getSubject(), identityProviderAliases);
         }
 
-        if (!localLogoutSucceeded) {
+        if (!backchannelLogoutResponse.getLocalLogoutSucceeded()) {
             event.error(Errors.LOGOUT_FAILED);
             throw new ErrorResponseException(OAuthErrorException.SERVER_ERROR,
                     "There was an error in the local logout",
@@ -290,58 +292,88 @@ public class LogoutEndpoint {
         }
 
         session.getProvider(SecurityHeadersProvider.class).options().allowEmptyContentType();
+        
+        if (oneOrMoreDownstreamLogoutsFailed(backchannelLogoutResponse)) {
+            return Cors.add(request)
+                    .auth()
+                    .builder(Response.status(Response.Status.GATEWAY_TIMEOUT)
+                            .type(MediaType.APPLICATION_JSON_TYPE))
+                    .build();
+        }
+
         return Cors.add(request)
                 .auth()
-                .builder(Response.ok())
+                .builder(Response.ok()
+                        .type(MediaType.APPLICATION_JSON_TYPE))
                 .build();
     }
 
-    private boolean backchannelLogoutWithSessionId(String sessionId, List<String> identityProviderAliases) {
-
-        boolean allLogoutsSucceeded = true;
-
+    private BackchannelLogoutResponse backchannelLogoutWithSessionId(String sessionId,
+            List<String> identityProviderAliases) {
+        BackchannelLogoutResponse backchannelLogoutResponse = new BackchannelLogoutResponse();
+        backchannelLogoutResponse.setLocalLogoutSucceeded(true);
         for (String identityProviderAlias : identityProviderAliases) {
             UserSessionModel userSession = session.sessions().getUserSessionByBrokerSessionId(realm,
                     identityProviderAlias + "." + sessionId);
 
             if (userSession != null) {
-                boolean logoutSucceeded = logoutUserSession(userSession);
-                allLogoutsSucceeded = allLogoutsSucceeded && logoutSucceeded;
+                backchannelLogoutResponse = logoutUserSession(userSession);
             }
         }
 
-        return allLogoutsSucceeded;
+        return backchannelLogoutResponse;
     }
 
-    private boolean backchannelLogoutFederatedUserId(String federatedUserId, List<String> identityProviderAliases) {
-
-        boolean allLogoutsSucceeded = true;
-
+    private BackchannelLogoutResponse backchannelLogoutFederatedUserId(String federatedUserId,
+            List<String> identityProviderAliases) {
+        BackchannelLogoutResponse backchannelLogoutResponse = new BackchannelLogoutResponse();
+        backchannelLogoutResponse.setLocalLogoutSucceeded(true);
         for (String identityProviderAlias : identityProviderAliases) {
             List<UserSessionModel> userSessions = session.sessions().getUserSessionByBrokerUserId(realm,
                     identityProviderAlias + "." + federatedUserId);
 
             for (UserSessionModel userSession : userSessions) {
-                boolean logoutSucceeded = logoutUserSession(userSession);
-                allLogoutsSucceeded = allLogoutsSucceeded && logoutSucceeded;
+                BackchannelLogoutResponse userBackchannelLogoutResponse;
+                userBackchannelLogoutResponse = logoutUserSession(userSession);
+                backchannelLogoutResponse.setLocalLogoutSucceeded(backchannelLogoutResponse.getLocalLogoutSucceeded()
+                        && userBackchannelLogoutResponse.getLocalLogoutSucceeded());
+                userBackchannelLogoutResponse.getClientResponses()
+                        .forEach(backchannelLogoutResponse::addClientResponses);
             }
         }
 
-        return allLogoutsSucceeded;
+        return backchannelLogoutResponse;
     }
 
-    private boolean logoutUserSession(UserSessionModel userSession) {
-        boolean logoutSucceeded = AuthenticationManager.backchannelLogout(session, realm, userSession,
-                session.getContext().getUri(),
-                clientConnection, headers, false);
+    private BackchannelLogoutResponse logoutUserSession(UserSessionModel userSession) {
+        BackchannelLogoutResponse backchannelLogoutResponse =
+                AuthenticationManager.backchannelLogout(session, realm, userSession,
+                        session.getContext().getUri(),
+                        clientConnection, headers, false);
 
-        if (logoutSucceeded) {
+        if (backchannelLogoutResponse.getLocalLogoutSucceeded()) {
             event.user(userSession.getUser())
                     .session(userSession)
                     .success();
         }
 
-        return logoutSucceeded;
+        return backchannelLogoutResponse;
+    }
+    
+    private boolean oneOrMoreDownstreamLogoutsFailed(BackchannelLogoutResponse backchannelLogoutResponse) {
+        BackchannelLogoutResponse filteredBackchannelLogoutResponse = new BackchannelLogoutResponse();
+        for (BackchannelLogoutResponse.DownStreamBackchannelLogoutResponse response : backchannelLogoutResponse
+                .getClientResponses()) {
+            if (response.isWithBackchannelLogoutUrl()) {
+                filteredBackchannelLogoutResponse.addClientResponses(response);
+            }
+        }
+
+        return backchannelLogoutResponse.getClientResponses().stream()
+                .filter(BackchannelLogoutResponse.DownStreamBackchannelLogoutResponse::isWithBackchannelLogoutUrl)
+                .anyMatch(clientResponse -> !(clientResponse.getResponseCode().isPresent() &&
+                        (clientResponse.getResponseCode().get() == Response.Status.OK.getStatusCode() ||
+                                clientResponse.getResponseCode().get() == Response.Status.NO_CONTENT.getStatusCode())));
     }
 
     private void logout(UserSessionModel userSession, boolean offline) {

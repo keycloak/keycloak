@@ -28,7 +28,6 @@ import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.broker.AbstractBaseBrokerTest;
 import org.keycloak.testsuite.broker.BrokerConfiguration;
-import org.keycloak.testsuite.broker.BrokerTestTools;
 import org.keycloak.testsuite.broker.OidcBackchannelLogoutBrokerConfiguration;
 import org.keycloak.testsuite.util.CredentialBuilder;
 import org.keycloak.testsuite.util.LogoutTokenUtil;

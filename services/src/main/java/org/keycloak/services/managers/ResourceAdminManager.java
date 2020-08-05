@@ -32,7 +32,6 @@ import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.TokenManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -50,7 +49,6 @@ import org.keycloak.services.util.ResolveRelative;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -149,11 +147,11 @@ public class ResourceAdminManager {
     }
 
 
-    public boolean logoutClientSession(RealmModel realm, ClientModel resource, AuthenticatedClientSessionModel clientSession) {
+    public Response logoutClientSession(RealmModel realm, ClientModel resource, AuthenticatedClientSessionModel clientSession) {
         return logoutClientSessions(realm, resource, Arrays.asList(clientSession));
     }
 
-    protected boolean logoutClientSessions(RealmModel realm, ClientModel resource, List<AuthenticatedClientSessionModel> clientSessions) {
+    protected Response logoutClientSessions(RealmModel realm, ClientModel resource, List<AuthenticatedClientSessionModel> clientSessions) {
         String managementUrl = getManagementUrl(session, resource);
         if (managementUrl != null) {
 
@@ -174,20 +172,19 @@ public class ResourceAdminManager {
 
             if (adapterSessionIds == null || adapterSessionIds.isEmpty()) {
                 logger.debugv("Can't logout {0}: no logged adapter sessions", resource.getClientId());
-                return false;
+                return null;
             }
 
             if (managementUrl.contains(CLIENT_SESSION_HOST_PROPERTY)) {
-                boolean allPassed = true;
                 // Send logout separately to each host (needed for single-sign-out in cluster for non-distributable apps - KEYCLOAK-748)
                 for (Map.Entry<String, List<String>> entry : adapterSessionIds.entrySet()) {
                     String host = entry.getKey();
                     List<String> sessionIds = entry.getValue();
                     String currentHostMgmtUrl = managementUrl.replace(CLIENT_SESSION_HOST_PROPERTY, host);
-                    allPassed = sendLogoutRequest(realm, resource, sessionIds, userSessions, 0, currentHostMgmtUrl) && allPassed;
+                    sendLogoutRequest(realm, resource, sessionIds, userSessions, 0, currentHostMgmtUrl);
                 }
+                return Response.ok().build();
 
-                return allPassed;
             } else {
                 // Send single logout request
                 List<String> allSessionIds = new ArrayList<String>();
@@ -199,26 +196,21 @@ public class ResourceAdminManager {
             }
         } else {
             logger.debugv("Can't logout {0}: no management url", resource.getClientId());
-            return false;
+            return null;
         }
     }
 
-    public boolean logoutClientSessionWithBackchannelLogoutUrl(ClientModel resource,
-                                                               AuthenticatedClientSessionModel clientSession) {
+    public Response logoutClientSessionWithBackchannelLogoutUrl(ClientModel resource,
+            AuthenticatedClientSessionModel clientSession) {
         String backchannelLogoutUrl = getBackchannelLogoutUrl(session, resource);
-
-        if (backchannelLogoutUrl != null) {
-            // Send logout separately to each host (needed for single-sign-out in cluster for non-distributable apps - KEYCLOAK-748)
-            if (backchannelLogoutUrl.contains(CLIENT_SESSION_HOST_PROPERTY)) {
-                String host = clientSession.getNote(AdapterConstants.CLIENT_SESSION_HOST);
-                String currentHostMgmtUrl = backchannelLogoutUrl.replace(CLIENT_SESSION_HOST_PROPERTY, host);
-                return sendBackChannelLogoutRequestToClientUri(resource, clientSession, currentHostMgmtUrl);
-            } else {
-                return sendBackChannelLogoutRequestToClientUri(resource, clientSession,backchannelLogoutUrl);
-            }
+        // Send logout separately to each host (needed for single-sign-out in cluster for non-distributable apps -
+        // KEYCLOAK-748)
+        if (backchannelLogoutUrl.contains(CLIENT_SESSION_HOST_PROPERTY)) {
+            String host = clientSession.getNote(AdapterConstants.CLIENT_SESSION_HOST);
+            String currentHostMgmtUrl = backchannelLogoutUrl.replace(CLIENT_SESSION_HOST_PROPERTY, host);
+            return sendBackChannelLogoutRequestToClientUri(resource, clientSession, currentHostMgmtUrl);
         } else {
-            logger.debugv("Can't logout {0}: no management url", resource.getClientId());
-            return false;
+            return sendBackChannelLogoutRequestToClientUri(resource, clientSession, backchannelLogoutUrl);
         }
     }
 
@@ -234,7 +226,7 @@ public class ResourceAdminManager {
         return StringPropertyReplacer.replaceProperties(absoluteURI);
     }
 
-    protected Boolean sendBackChannelLogoutRequestToClientUri(ClientModel resource,
+    protected Response sendBackChannelLogoutRequestToClientUri(ClientModel resource,
                                                               AuthenticatedClientSessionModel clientSessionModel, String managementUrl) {
         UserModel user = clientSessionModel.getUserSession().getUser();
 
@@ -256,10 +248,10 @@ public class ResourceAdminManager {
 
             boolean success = status == 204 || status == 200;
             logger.debugf("logout success for %s: %s", managementUrl, success);
-            return success;
+            return Response.status(status).build();
         } catch (IOException e) {
             ServicesLogger.LOGGER.logoutFailed(e, resource.getClientId());
-            return false;
+            return Response.serverError().build();
         }
     }
 
@@ -301,7 +293,7 @@ public class ResourceAdminManager {
         // Propagate this to all hosts
         GlobalRequestResult result = new GlobalRequestResult();
         for (String mgmtUrl : mgmtUrls) {
-            if (sendLogoutRequest(realm, resource, null, null, notBefore, mgmtUrl)) {
+            if (sendLogoutRequest(realm, resource, null, null, notBefore, mgmtUrl) != null) {
                 result.addSuccessRequest(mgmtUrl);
             } else {
                 result.addFailedRequest(mgmtUrl);
@@ -310,7 +302,7 @@ public class ResourceAdminManager {
         return result;
     }
 
-    protected boolean sendLogoutRequest(RealmModel realm, ClientModel resource, List<String> adapterSessionIds, List<String> userSessions, int notBefore, String managementUrl) {
+    protected Response sendLogoutRequest(RealmModel realm, ClientModel resource, List<String> adapterSessionIds, List<String> userSessions, int notBefore, String managementUrl) {
         LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getClientId(), adapterSessionIds, notBefore, userSessions);
         String token = session.tokens().encode(adminAction);
         if (logger.isDebugEnabled()) logger.debugv("logout resource {0} url: {1} sessionIds: " + adapterSessionIds, resource.getClientId(), managementUrl);
@@ -319,10 +311,10 @@ public class ResourceAdminManager {
             int status = session.getProvider(HttpClientProvider.class).postText(target.toString(), token);
             boolean success = status == 204 || status == 200;
             logger.debugf("logout success for %s: %s", managementUrl, success);
-            return success;
+            return Response.ok().build();
         } catch (IOException e) {
             ServicesLogger.LOGGER.logoutFailed(e, resource.getClientId());
-            return false;
+            return Response.serverError().build();
         }
     }
 
