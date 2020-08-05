@@ -380,6 +380,9 @@ public class JpaUserFederatedStorageProvider implements
         if (grantedClientScopeEntities != null) {
             for (FederatedUserConsentClientScopeEntity grantedClientScope : grantedClientScopeEntities) {
                 ClientScopeModel grantedClientScopeModel = realm.getClientScopeById(grantedClientScope.getScopeId());
+                if (grantedClientScopeModel == null) {
+                    grantedClientScopeModel = realm.getClientById(grantedClientScope.getScopeId());
+                }
                 if (grantedClientScopeModel != null) {
                     model.addGrantedClientScope(grantedClientScopeModel);
                 }
