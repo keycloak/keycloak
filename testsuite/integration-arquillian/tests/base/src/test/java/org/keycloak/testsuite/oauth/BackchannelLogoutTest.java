@@ -19,6 +19,7 @@ import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.protocol.oidc.LogoutTokenValidationCode;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -26,8 +27,8 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.broker.AbstractBaseBrokerTest;
-import org.keycloak.testsuite.broker.BrokerConfiguration;
+import org.keycloak.testsuite.broker.AbstractNestedBrokerTest;
+import org.keycloak.testsuite.broker.NestedBrokerConfiguration;
 import org.keycloak.testsuite.broker.OidcBackchannelLogoutBrokerConfiguration;
 import org.keycloak.testsuite.util.CredentialBuilder;
 import org.keycloak.testsuite.util.LogoutTokenUtil;
@@ -49,16 +50,16 @@ import java.util.stream.Collectors;
 
 import javax.ws.rs.core.Response;
 
-public class BackchannelLogoutTest extends AbstractBaseBrokerTest {
+public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
     public static final String ACCOUNT_CLIENT_NAME = "account";
     public static final String BROKER_CLIENT_ID = "brokerapp";
     public static final String USER_PASSWORD_CONSUMER_REALM = "password";
     private static final KeyPair KEY_PAIR = KeyUtils.generateRsaKeyPair(2048);
-    private String realmIdProviderRealm;
     private String userIdProviderRealm;
     private String realmIdConsumerRealm;
     private String accountClientIdConsumerRealm;
+    private String accountClientIdSubConsumerRealm;
     private String providerId;
 
     private RealmManager providerRealmManager;
@@ -71,33 +72,35 @@ public class BackchannelLogoutTest extends AbstractBaseBrokerTest {
     WebDriver driver2;
 
     @Override
-    protected BrokerConfiguration getBrokerConfiguration() {
+    protected NestedBrokerConfiguration getNestedBrokerConfiguration() {
         return OidcBackchannelLogoutBrokerConfiguration.INSTANCE;
     }
 
     @Before
     public void createProviderRealmUser() {
-        log.debug("creating user for realm " + bc.providerRealmName());
+        log.debug("creating user for realm " + nbc.providerRealmName());
 
         final UserRepresentation userProviderRealm = new UserRepresentation();
-        userProviderRealm.setUsername(bc.getUserLogin());
-        userProviderRealm.setEmail(bc.getUserEmail());
+        userProviderRealm.setUsername(nbc.getUserLogin());
+        userProviderRealm.setEmail(nbc.getUserEmail());
         userProviderRealm.setEmailVerified(true);
         userProviderRealm.setEnabled(true);
 
-        final RealmResource realmResource = adminClient.realm(bc.providerRealmName());
+        final RealmResource realmResource = adminClient.realm(nbc.providerRealmName());
         userIdProviderRealm = createUserWithAdminClient(realmResource, userProviderRealm);
-        realmIdProviderRealm = realmResource.toRepresentation().getId();
 
-        resetUserPassword(realmResource.users().get(userIdProviderRealm), bc.getUserPassword(), false);
+        resetUserPassword(realmResource.users().get(userIdProviderRealm), nbc.getUserPassword(), false);
     }
 
     @Before
-    public void addIdentityProviderToConsumerRealm() {
-        log.debug("adding identity provider to realm " + bc.consumerRealmName());
+    public void addIdentityProviders() {
+        log.debug("adding identity provider to realm " + nbc.consumerRealmName());
+        RealmResource realm = adminClient.realm(nbc.consumerRealmName());
+        realm.identityProviders().create(nbc.setUpIdentityProvider()).close();
 
-        final RealmResource realm = adminClient.realm(bc.consumerRealmName());
-        realm.identityProviders().create(bc.setUpIdentityProvider()).close();
+        log.debug("adding identity provider to realm " + nbc.subConsumerRealmName());
+        realm = adminClient.realm(nbc.subConsumerRealmName());
+        realm.identityProviders().create(nbc.setUpConsumerIdentityProvider()).close();
     }
 
     @Before
@@ -107,15 +110,20 @@ public class BackchannelLogoutTest extends AbstractBaseBrokerTest {
 
     @Before
     public void fetchConsumerRealmDetails() {
-        RealmResource realmResourceConsumerRealm = adminClient.realm(bc.consumerRealmName());
+        RealmResource realmResourceConsumerRealm = adminClient.realm(nbc.consumerRealmName());
         realmIdConsumerRealm = realmResourceConsumerRealm.toRepresentation().getId();
         accountClientIdConsumerRealm =
-                adminClient.realm(bc.consumerRealmName()).clients().findByClientId(ACCOUNT_CLIENT_NAME).get(0).getId();
+                adminClient.realm(nbc.consumerRealmName()).clients().findByClientId(ACCOUNT_CLIENT_NAME).get(0).getId();
+
+        RealmResource realmResourceSubConsumerRealm = adminClient.realm(nbc.subConsumerRealmName());
+        accountClientIdSubConsumerRealm =
+                adminClient.realm(nbc.subConsumerRealmName()).clients().findByClientId(ACCOUNT_CLIENT_NAME).get(0)
+                        .getId();
     }
 
     @Before
     public void createNewRsaKeyForProviderRealm() {
-        providerRealmManager = RealmManager.realm(adminClient.realm(bc.providerRealmName()));
+        providerRealmManager = RealmManager.realm(adminClient.realm(nbc.providerRealmName()));
         providerId = providerRealmManager.generateNewRsaKey(KEY_PAIR, "rsa-test-2");
     }
 
@@ -126,20 +134,20 @@ public class BackchannelLogoutTest extends AbstractBaseBrokerTest {
 
         String sessionIdProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
         String sessionIdConsumerRealm = assertConsumerLoginEventAccountManagement(userIdConsumerRealm);
-        assertActiveSessionInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertActiveSessionInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionIdConsumerRealm);
 
         String logoutTokenEncoded = getLogoutTokenEncodedAndSigned(userIdProviderRealm, sessionIdProviderRealm);
 
-        oauth.realm(bc.consumerRealmName());
+        oauth.realm(nbc.consumerRealmName());
         try (CloseableHttpResponse response = oauth.doBackchannelLogout(logoutTokenEncoded)) {
             assertThat(response, Matchers.statusCodeIsHC(Response.Status.OK));
         }
 
         assertConsumerLogoutEvent(sessionIdConsumerRealm, userIdConsumerRealm);
-        assertNoSessionsInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertNoSessionsInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionIdConsumerRealm);
-        assertActiveSessionInClient(bc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
+        assertActiveSessionInClient(nbc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
                 sessionIdProviderRealm);
     }
 
@@ -150,26 +158,26 @@ public class BackchannelLogoutTest extends AbstractBaseBrokerTest {
 
         String sessionIdProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
         String sessionIdConsumerRealm = assertConsumerLoginEventAccountManagement(userIdConsumerRealm);
-        assertActiveSessionInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertActiveSessionInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionIdConsumerRealm);
 
         String logoutTokenEncoded = getLogoutTokenEncodedAndSigned(userIdProviderRealm);
 
-        oauth.realm(bc.consumerRealmName());
+        oauth.realm(nbc.consumerRealmName());
         try (CloseableHttpResponse response = oauth.doBackchannelLogout(logoutTokenEncoded)) {
             assertThat(response, Matchers.statusCodeIsHC(Response.Status.OK));
         }
 
         assertConsumerLogoutEvent(sessionIdConsumerRealm, userIdConsumerRealm);
-        assertNoSessionsInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertNoSessionsInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionIdConsumerRealm);
-        assertActiveSessionInClient(bc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
+        assertActiveSessionInClient(nbc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
                 sessionIdProviderRealm);
     }
 
     @Test
     public void postBackchannelLogoutWithoutLogoutToken() throws Exception {
-        oauth.realm(bc.consumerRealmName());
+        oauth.realm(nbc.consumerRealmName());
         try (CloseableHttpResponse response = oauth.doBackchannelLogout(null)) {
             assertThat(response, Matchers.statusCodeIsHC(Response.Status.BAD_REQUEST));
             assertThat(response, Matchers.bodyHC(containsString("No logout token")));
@@ -184,7 +192,7 @@ public class BackchannelLogoutTest extends AbstractBaseBrokerTest {
         String logoutTokenMissingContent =
                 Base64Url.encode(JsonSerialization.writeValueAsBytes(JsonSerialization.createObjectNode()));
 
-        oauth.realm(bc.consumerRealmName());
+        oauth.realm(nbc.consumerRealmName());
         try (CloseableHttpResponse response = oauth.doBackchannelLogout(logoutTokenMissingContent)) {
             assertThat(response, Matchers.statusCodeIsHC(Response.Status.BAD_REQUEST));
             assertThat(response,
@@ -199,7 +207,7 @@ public class BackchannelLogoutTest extends AbstractBaseBrokerTest {
     public void postBackchannelLogoutWithSessionIdUserNotLoggedIn() throws Exception {
         String logoutTokenEncoded = getLogoutTokenEncodedAndSigned(userIdProviderRealm, UUID.randomUUID().toString());
 
-        oauth.realm(bc.consumerRealmName());
+        oauth.realm(nbc.consumerRealmName());
         try (CloseableHttpResponse response = oauth.doBackchannelLogout(logoutTokenEncoded)) {
             assertThat(response, Matchers.statusCodeIsHC(Response.Status.OK));
         }
@@ -209,7 +217,7 @@ public class BackchannelLogoutTest extends AbstractBaseBrokerTest {
     public void postBackchannelLogoutWithoutSessionIdUserNotLoggedIn() throws Exception {
         String logoutTokenEncoded = getLogoutTokenEncodedAndSigned(userIdProviderRealm);
 
-        oauth.realm(bc.consumerRealmName());
+        oauth.realm(nbc.consumerRealmName());
         try (CloseableHttpResponse response = oauth.doBackchannelLogout(logoutTokenEncoded)) {
             assertThat(response, Matchers.statusCodeIsHC(Response.Status.OK));
         }
@@ -219,7 +227,7 @@ public class BackchannelLogoutTest extends AbstractBaseBrokerTest {
     public void postBackchannelLogoutWithoutSessionIdUserDoesntExist() throws Exception {
         String logoutTokenEncoded = getLogoutTokenEncodedAndSigned(UUID.randomUUID().toString());
 
-        oauth.realm(bc.consumerRealmName());
+        oauth.realm(nbc.consumerRealmName());
         try (CloseableHttpResponse response = oauth.doBackchannelLogout(logoutTokenEncoded)) {
             assertThat(response, Matchers.statusCodeIsHC(Response.Status.OK));
         }
@@ -232,36 +240,36 @@ public class BackchannelLogoutTest extends AbstractBaseBrokerTest {
 
         String sessionId1ProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
         String sessionId1ConsumerRealm = assertConsumerLoginEventAccountManagement(userIdConsumerRealm);
-        assertActiveSessionInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertActiveSessionInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionId1ConsumerRealm);
 
         OAuthClient oauth2 = new OAuthClient();
         oauth2.init(driver2);
-        oauth2.realm(bc.consumerRealmName())
+        oauth2.realm(nbc.consumerRealmName())
                 .clientId(ACCOUNT_CLIENT_NAME)
-                .redirectUri(getAuthServerRoot() + "realms/" + bc.consumerRealmName() + "/account")
-                .doLoginSocial(bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
+                .redirectUri(getAuthServerRoot() + "realms/" + nbc.consumerRealmName() + "/account")
+                .doLoginSocial(nbc.getIDPAlias(), nbc.getUserLogin(), nbc.getUserPassword());
 
         String sessionId2ProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
         String sessionId2ConsumerRealm = assertConsumerLoginEventAccountManagement(userIdConsumerRealm);
-        assertActiveSessionInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertActiveSessionInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionId2ConsumerRealm);
 
         String logoutTokenEncoded = getLogoutTokenEncodedAndSigned(userIdProviderRealm, sessionId1ProviderRealm);
 
-        oauth.realm(bc.consumerRealmName());
+        oauth.realm(nbc.consumerRealmName());
         try (CloseableHttpResponse response = oauth.doBackchannelLogout(logoutTokenEncoded)) {
             assertThat(response, Matchers.statusCodeIsHC(Response.Status.OK));
         }
 
         assertConsumerLogoutEvent(sessionId1ConsumerRealm, userIdConsumerRealm);
-        assertNoSessionsInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertNoSessionsInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionId1ConsumerRealm);
-        assertActiveSessionInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertActiveSessionInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionId2ConsumerRealm);
-        assertActiveSessionInClient(bc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
+        assertActiveSessionInClient(nbc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
                 sessionId1ProviderRealm);
-        assertActiveSessionInClient(bc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
+        assertActiveSessionInClient(nbc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
                 sessionId2ProviderRealm);
     }
 
@@ -272,32 +280,32 @@ public class BackchannelLogoutTest extends AbstractBaseBrokerTest {
 
         String sessionId1ProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
         String sessionId1ConsumerRealm = assertConsumerLoginEventAccountManagement(userIdConsumerRealm);
-        assertActiveSessionInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertActiveSessionInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionId1ConsumerRealm);
 
-        loginWithSecondBrowser(bc.getIDPAlias());
+        loginWithSecondBrowser(nbc.getIDPAlias());
 
         String sessionId2ProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
         String sessionId2ConsumerRealm = assertConsumerLoginEventAccountManagement(userIdConsumerRealm);
-        assertActiveSessionInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertActiveSessionInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionId2ConsumerRealm);
 
         String logoutTokenEncoded = getLogoutTokenEncodedAndSigned(userIdProviderRealm);
 
-        oauth.realm(bc.consumerRealmName());
+        oauth.realm(nbc.consumerRealmName());
         try (CloseableHttpResponse response = oauth.doBackchannelLogout(logoutTokenEncoded)) {
             assertThat(response, Matchers.statusCodeIsHC(Response.Status.OK));
         }
 
         List<String> expectedSessionIdsInLogoutEvents = Arrays.asList(sessionId1ConsumerRealm, sessionId2ConsumerRealm);
         assertConsumerLogoutEvents(expectedSessionIdsInLogoutEvents, userIdConsumerRealm);
-        assertNoSessionsInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertNoSessionsInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionId1ConsumerRealm);
-        assertNoSessionsInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertNoSessionsInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionId2ConsumerRealm);
-        assertActiveSessionInClient(bc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
+        assertActiveSessionInClient(nbc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
                 sessionId1ProviderRealm);
-        assertActiveSessionInClient(bc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
+        assertActiveSessionInClient(nbc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
                 sessionId2ProviderRealm);
     }
 
@@ -308,37 +316,37 @@ public class BackchannelLogoutTest extends AbstractBaseBrokerTest {
 
         logInAsUserInIDPForFirstTime();
         String userIdConsumerRealm = getUserIdConsumerRealm();
-        adminClient.realm(bc.consumerRealmName()).users().get(userIdConsumerRealm)
+        adminClient.realm(nbc.consumerRealmName()).users().get(userIdConsumerRealm)
                 .resetPassword(CredentialBuilder.create().password(USER_PASSWORD_CONSUMER_REALM).build());
 
         String sessionId1ProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
         String sessionId1ConsumerRealm = assertConsumerLoginEventAccountManagement(userIdConsumerRealm);
-        assertActiveSessionInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertActiveSessionInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionId1ConsumerRealm);
 
         OAuthClient oauth2 = loginWithSecondBrowser(identityProvider2.getDisplayName());
         linkUsers(oauth2);
 
-        String sessionId2ProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm, BROKER_CLIENT_ID);
+        String sessionId2ProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
         String sessionId2ConsumerRealm = assertConsumerLoginEventAccountManagement(userIdConsumerRealm);
-        assertActiveSessionInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertActiveSessionInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionId2ConsumerRealm);
 
         String logoutTokenEncoded = getLogoutTokenEncodedAndSigned(userIdProviderRealm, sessionId1ProviderRealm);
 
-        oauth.realm(bc.consumerRealmName());
+        oauth.realm(nbc.consumerRealmName());
         try (CloseableHttpResponse response = oauth.doBackchannelLogout(logoutTokenEncoded)) {
             assertThat(response, Matchers.statusCodeIsHC(Response.Status.OK));
         }
 
         assertConsumerLogoutEvent(sessionId1ConsumerRealm, userIdConsumerRealm);
-        assertNoSessionsInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertNoSessionsInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionId1ConsumerRealm);
-        assertActiveSessionInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertActiveSessionInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionId2ConsumerRealm);
-        assertActiveSessionInClient(bc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
+        assertActiveSessionInClient(nbc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
                 sessionId1ProviderRealm);
-        assertActiveSessionInClient(bc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
+        assertActiveSessionInClient(nbc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
                 sessionId2ProviderRealm);
     }
 
@@ -349,38 +357,38 @@ public class BackchannelLogoutTest extends AbstractBaseBrokerTest {
 
         logInAsUserInIDPForFirstTime();
         String userIdConsumerRealm = getUserIdConsumerRealm();
-        adminClient.realm(bc.consumerRealmName()).users().get(userIdConsumerRealm)
+        adminClient.realm(nbc.consumerRealmName()).users().get(userIdConsumerRealm)
                 .resetPassword(CredentialBuilder.create().password(USER_PASSWORD_CONSUMER_REALM).build());
 
         String sessionId1ProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
         String sessionId1ConsumerRealm = assertConsumerLoginEventAccountManagement(userIdConsumerRealm);
-        assertActiveSessionInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertActiveSessionInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionId1ConsumerRealm);
 
         OAuthClient oauth2 = loginWithSecondBrowser(identityProvider2.getDisplayName());
         linkUsers(oauth2);
 
-        String sessionId2ProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm, BROKER_CLIENT_ID);
+        String sessionId2ProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
         String sessionId2ConsumerRealm = assertConsumerLoginEventAccountManagement(userIdConsumerRealm);
-        assertActiveSessionInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertActiveSessionInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionId2ConsumerRealm);
 
         String logoutTokenEncoded = getLogoutTokenEncodedAndSigned(userIdProviderRealm);
 
-        oauth.realm(bc.consumerRealmName());
+        oauth.realm(nbc.consumerRealmName());
         try (CloseableHttpResponse response = oauth.doBackchannelLogout(logoutTokenEncoded)) {
             assertThat(response, Matchers.statusCodeIsHC(Response.Status.OK));
         }
 
         List<String> expectedSessionIdsInLogoutEvents = Arrays.asList(sessionId1ConsumerRealm, sessionId2ConsumerRealm);
         assertConsumerLogoutEvents(expectedSessionIdsInLogoutEvents, userIdConsumerRealm);
-        assertNoSessionsInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertNoSessionsInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionId1ConsumerRealm);
-        assertNoSessionsInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertNoSessionsInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionId2ConsumerRealm);
-        assertActiveSessionInClient(bc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
+        assertActiveSessionInClient(nbc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
                 sessionId1ProviderRealm);
-        assertActiveSessionInClient(bc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
+        assertActiveSessionInClient(nbc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
                 sessionId2ProviderRealm);
     }
 
@@ -391,22 +399,90 @@ public class BackchannelLogoutTest extends AbstractBaseBrokerTest {
 
         String sessionIdProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
         String sessionIdConsumerRealm = assertConsumerLoginEventAccountManagement(userIdConsumerRealm);
-        assertActiveSessionInClient(bc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+        assertActiveSessionInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
                 sessionIdConsumerRealm);
 
         String logoutTokenEncoded = getLogoutTokenEncodedAndSigned(userIdProviderRealm, sessionIdProviderRealm);
 
-        disableAccountClientConsumerRealm();
+        disableClient(nbc.consumerRealmName(), accountClientIdConsumerRealm);
 
-        oauth.realm(bc.consumerRealmName());
+        oauth.realm(nbc.consumerRealmName());
         try (CloseableHttpResponse response = oauth.doBackchannelLogout(logoutTokenEncoded)) {
             assertThat(response, Matchers.statusCodeIsHC(Response.Status.NOT_IMPLEMENTED));
             assertThat(response, Matchers.bodyHC(containsString("There was an error in the local logout")));
         }
 
-        events.expectLogoutError(Errors.LOGOUT_FAILED)
-                .realm(realmIdConsumerRealm)
-                .assertEvent();
+        assertLogoutErrorEvent(nbc.consumerRealmName());
+    }
+
+    @Test
+    public void postBackchannelLogoutNestedBrokering() throws Exception {
+        String consumerClientId = OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID;
+
+        logInAsUserInNestedIDPForFirstTime();
+        String userIdConsumerRealm = getUserIdConsumerRealm();
+        String userIdSubConsumerRealm = getUserIdSubConsumerRealm();
+        String sessionIdProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
+
+        String sessionIdConsumerRealm = assertConsumerLoginEvent(userIdConsumerRealm, consumerClientId);
+        assertActiveSessionInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
+                sessionIdConsumerRealm);
+
+        String sessionIdSubConsumerRealm =
+                assertLoginEvent(userIdSubConsumerRealm, ACCOUNT_CLIENT_NAME, nbc.subConsumerRealmName());
+        assertActiveSessionInClient(nbc.subConsumerRealmName(), accountClientIdSubConsumerRealm, userIdSubConsumerRealm,
+                sessionIdSubConsumerRealm);
+
+        String logoutTokenEncoded = getLogoutTokenEncodedAndSigned(userIdProviderRealm, sessionIdProviderRealm);
+
+        oauth.realm(nbc.consumerRealmName());
+        try (CloseableHttpResponse response = oauth.doBackchannelLogout(logoutTokenEncoded)) {
+            assertThat(response, Matchers.statusCodeIsHC(Response.Status.OK));
+        }
+
+        assertConsumerLogoutEvent(sessionIdConsumerRealm, userIdConsumerRealm);
+        assertLogoutEvent(sessionIdSubConsumerRealm, userIdSubConsumerRealm, nbc.subConsumerRealmName());
+
+        assertNoSessionsInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
+                sessionIdConsumerRealm);
+        assertNoSessionsInClient(nbc.subConsumerRealmName(), accountClientIdSubConsumerRealm, userIdSubConsumerRealm,
+                sessionIdSubConsumerRealm);
+        assertActiveSessionInClient(nbc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
+                sessionIdProviderRealm);
+    }
+
+    @Test
+    public void postBackchannelLogoutNestedBrokeringDownstreamLogoutOfSubConsumerFails() throws Exception {
+        String consumerClientId = OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID;
+
+        logInAsUserInNestedIDPForFirstTime();
+        String userIdConsumerRealm = getUserIdConsumerRealm();
+        String userIdSubConsumerRealm = getUserIdSubConsumerRealm();
+        String sessionIdProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
+
+        String sessionIdConsumerRealm = assertConsumerLoginEvent(userIdConsumerRealm, consumerClientId);
+        assertActiveSessionInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
+                sessionIdConsumerRealm);
+
+        String sessionIdSubConsumerRealm =
+                assertLoginEvent(userIdSubConsumerRealm, ACCOUNT_CLIENT_NAME, nbc.subConsumerRealmName());
+        assertActiveSessionInClient(nbc.subConsumerRealmName(), accountClientIdSubConsumerRealm, userIdSubConsumerRealm,
+                sessionIdSubConsumerRealm);
+
+        disableClient(nbc.subConsumerRealmName(), accountClientIdSubConsumerRealm);
+
+        String logoutTokenEncoded = getLogoutTokenEncodedAndSigned(userIdProviderRealm, sessionIdProviderRealm);
+
+        oauth.realm(nbc.consumerRealmName());
+        try (CloseableHttpResponse response = oauth.doBackchannelLogout(logoutTokenEncoded)) {
+            assertThat(response, Matchers.statusCodeIsHC(Response.Status.GATEWAY_TIMEOUT));
+        }
+
+        assertLogoutErrorEvent(nbc.subConsumerRealmName());
+        assertConsumerLogoutEvent(sessionIdConsumerRealm, userIdConsumerRealm);
+
+        assertNoSessionsInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
+                sessionIdConsumerRealm);
     }
 
     private String getLogoutTokenEncodedAndSigned(String userId) throws IOException {
@@ -414,7 +490,7 @@ public class BackchannelLogoutTest extends AbstractBaseBrokerTest {
     }
 
     private String getLogoutTokenEncodedAndSigned(String userId, String sessionId) throws IOException {
-        String keyId = adminClient.realm(bc.providerRealmName())
+        String keyId = adminClient.realm(nbc.providerRealmName())
                 .keys().getKeyMetadata().getKeys().stream()
                 .filter(key -> providerId.equals(key.getProviderId()))
                 .findFirst().get()
@@ -422,57 +498,102 @@ public class BackchannelLogoutTest extends AbstractBaseBrokerTest {
 
         return LogoutTokenUtil.generateSignedLogoutToken(KEY_PAIR.getPrivate(),
                 keyId,
-                getConsumerRoot() + "/auth/realms/" + bc.providerRealmName(),
-                bc.getIDPClientIdInProviderRealm(),
+                getConsumerRoot() + "/auth/realms/" + nbc.providerRealmName(),
+                nbc.getIDPClientIdInProviderRealm(),
                 userId,
                 sessionId);
     }
 
     private String assertConsumerLoginEventAccountManagement(String userIdConsumerRealm) {
-        String sessionId = events.expectLogin()
-                .realm(realmIdConsumerRealm)
-                .client(ACCOUNT_CLIENT_NAME)
-                .user(userIdConsumerRealm)
-                .removeDetail(Details.CODE_ID)
-                .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
-                .assertEvent()
-                .getSessionId();
-        events.clear();
+        return assertConsumerLoginEvent(userIdConsumerRealm, ACCOUNT_CLIENT_NAME);
+    }
+
+    private String assertConsumerLoginEvent(String userIdConsumerRealm, String clientId) {
+        return assertLoginEvent(userIdConsumerRealm, clientId, nbc.consumerRealmName());
+    }
+
+    private String assertLoginEvent(String userId, String clientId, String realmName) {
+        String sessionId = null;
+        String realmId = adminClient.realm(realmName).toRepresentation().getId();
+
+        List<EventRepresentation> eventList = adminClient.realm(realmName).getEvents();
+
+        Optional<EventRepresentation> loginEventOptional = eventList.stream()
+                .filter(event -> userId.equals(event.getUserId()))
+                .filter(event -> event.getType().equals(EventType.LOGIN.name()))
+                .findAny();
+
+        if (loginEventOptional.isPresent()) {
+            EventRepresentation loginEvent = loginEventOptional.get();
+            this.events.expectLogin()
+                    .realm(realmId)
+                    .client(clientId)
+                    .user(userId)
+                    .removeDetail(Details.CODE_ID)
+                    .removeDetail(Details.REDIRECT_URI)
+                    .removeDetail(Details.CONSENT)
+                    .assertEvent(loginEvent);
+            sessionId = loginEvent.getSessionId();
+        } else {
+            fail("No Login event found for user " + userId);
+        }
+
         return sessionId;
     }
 
     private String assertProviderLoginEventIdpClient(String userIdProviderRealm) {
-        return assertProviderLoginEventIdpClient(userIdProviderRealm, BROKER_CLIENT_ID);
-    }
-
-    private String assertProviderLoginEventIdpClient(String userIdProviderRealm, String clientId) {
-        String sessionId = events.expectLogin()
-                .realm(realmIdProviderRealm)
-                .client(clientId)
-                .user(userIdProviderRealm)
-                .removeDetail(Details.CODE_ID)
-                .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
-                .assertEvent()
-                .getSessionId();
-        // These polls are used to remove 2 events (CODE_TO_TOKEN and USER_INFO_REQUEST) that occur during login
-        events.poll();
-        events.poll();
-        return sessionId;
+        return assertLoginEvent(userIdProviderRealm, BROKER_CLIENT_ID, nbc.providerRealmName());
     }
 
     private void assertConsumerLogoutEvent(String sessionIdConsumerRealm, String userIdConsumerRealm) {
-        events.expectLogout(sessionIdConsumerRealm)
-                .realm(realmIdConsumerRealm)
-                .user(userIdConsumerRealm)
-                .removeDetail(Details.REDIRECT_URI)
-                .assertEvent();
+        assertLogoutEvent(sessionIdConsumerRealm, userIdConsumerRealm, nbc.consumerRealmName());
+    }
+
+    private void assertLogoutEvent(String sessionId, String userId, String realmName) {
+
+        String realmId = adminClient.realm(realmName).toRepresentation().getId();
+
+        List<EventRepresentation> eventList = adminClient.realm(realmName).getEvents();
+
+        Optional<EventRepresentation> logoutEventOptional = eventList.stream()
+                .filter(event -> sessionId.equals(event.getSessionId()))
+                .findAny();
+
+        if (logoutEventOptional.isPresent()) {
+            EventRepresentation logoutEvent = logoutEventOptional.get();
+            this.events.expectLogout(sessionId)
+                    .realm(realmId)
+                    .user(userId)
+                    .removeDetail(Details.REDIRECT_URI)
+                    .assertEvent(logoutEvent);
+        } else {
+            fail("No Logout event found for session " + sessionId);
+        }
+    }
+
+    private void assertLogoutErrorEvent(String realmName) {
+
+        String realmId = adminClient.realm(realmName).toRepresentation().getId();
+
+        List<EventRepresentation> eventList = adminClient.realm(realmName).getEvents();
+
+        Optional<EventRepresentation> logoutErrorEventOptional = eventList.stream()
+                .filter(event -> event.getError().equals(Errors.LOGOUT_FAILED))
+                .findAny();
+
+        if (logoutErrorEventOptional.isPresent()) {
+            EventRepresentation logoutEvent = logoutErrorEventOptional.get();
+            this.events.expectLogoutError(Errors.LOGOUT_FAILED)
+                    .realm(realmId)
+                    .assertEvent(logoutEvent);
+        } else {
+            fail("No Logout error event found in realm " + realmName);
+        }
     }
 
     private void assertConsumerLogoutEvents(List<String> sessionIdsConsumerRealm, String userIdConsumerRealm) {
 
-        List<EventRepresentation> consumerRealmEvents = adminClient.realm(bc.consumerRealmName()).getEvents();
+        List<EventRepresentation> consumerRealmEvents = adminClient.realm(nbc.consumerRealmName()).getEvents();
 
         for (String sessionId : sessionIdsConsumerRealm) {
             Optional<EventRepresentation> logoutEventOptional = consumerRealmEvents.stream()
@@ -493,7 +614,15 @@ public class BackchannelLogoutTest extends AbstractBaseBrokerTest {
     }
 
     private String getUserIdConsumerRealm() {
-        RealmResource realmResourceConsumerRealm = adminClient.realm(bc.consumerRealmName());
+        return getUserId(nbc.consumerRealmName());
+    }
+
+    private String getUserIdSubConsumerRealm() {
+        return getUserId(nbc.subConsumerRealmName());
+    }
+
+    private String getUserId(String realmName) {
+        RealmResource realmResourceConsumerRealm = adminClient.realm(realmName);
         return realmResourceConsumerRealm.users().list().get(0).getId();
     }
 
@@ -520,29 +649,29 @@ public class BackchannelLogoutTest extends AbstractBaseBrokerTest {
     }
 
     private IdentityProviderRepresentation addSecondIdentityProviderToConsumerRealm() {
-        log.debug("adding second identity provider to realm " + bc.consumerRealmName());
+        log.debug("adding second identity provider to realm " + nbc.consumerRealmName());
 
-        IdentityProviderRepresentation identityProvider2 = bc.setUpIdentityProvider();
+        IdentityProviderRepresentation identityProvider2 = nbc.setUpIdentityProvider();
         identityProvider2.setAlias(identityProvider2.getAlias() + "2");
         identityProvider2.setDisplayName(identityProvider2.getDisplayName() + "2");
         Map<String, String> config = identityProvider2.getConfig();
         config.put("clientId", BROKER_CLIENT_ID);
-        adminClient.realm(bc.consumerRealmName()).identityProviders().create(identityProvider2).close();
+        adminClient.realm(nbc.consumerRealmName()).identityProviders().create(identityProvider2).close();
 
-        ClientResource ipdClientResource = adminClient.realm(bc.providerRealmName()).clients()
-                .get(bc.getIDPClientIdInProviderRealm());
+        ClientResource ipdClientResource = adminClient.realm(nbc.providerRealmName()).clients()
+                .get(nbc.getIDPClientIdInProviderRealm());
         ClientRepresentation clientRepresentation = ipdClientResource.toRepresentation();
-        clientRepresentation.getRedirectUris().add(getConsumerRoot() + "/auth/realms/" + bc.consumerRealmName()
+        clientRepresentation.getRedirectUris().add(getConsumerRoot() + "/auth/realms/" + nbc.consumerRealmName()
                 + "/broker/" + identityProvider2.getAlias() + "/endpoint/*");
         ipdClientResource.update(clientRepresentation);
 
         return identityProvider2;
     }
 
-    private void disableAccountClientConsumerRealm() {
-        ClientResource accountClient = adminClient.realm(bc.consumerRealmName())
+    private void disableClient(String realmName, String clientId) {
+        ClientResource accountClient = adminClient.realm(realmName)
                 .clients()
-                .get(accountClientIdConsumerRealm);
+                .get(clientId);
         ClientRepresentation clientRepresentation = accountClient.toRepresentation();
         clientRepresentation.setEnabled(false);
         accountClient.update(clientRepresentation);
@@ -551,15 +680,15 @@ public class BackchannelLogoutTest extends AbstractBaseBrokerTest {
     private OAuthClient loginWithSecondBrowser(String identityProviderDisplayName) {
         OAuthClient oauth2 = new OAuthClient();
         oauth2.init(driver2);
-        oauth2.realm(bc.consumerRealmName())
+        oauth2.realm(nbc.consumerRealmName())
                 .clientId(ACCOUNT_CLIENT_NAME)
-                .redirectUri(getAuthServerRoot() + "realms/" + bc.consumerRealmName() + "/account")
-                .doLoginSocial(identityProviderDisplayName, bc.getUserLogin(), bc.getUserPassword());
+                .redirectUri(getAuthServerRoot() + "realms/" + nbc.consumerRealmName() + "/account")
+                .doLoginSocial(identityProviderDisplayName, nbc.getUserLogin(), nbc.getUserPassword());
         return oauth2;
     }
 
     private void linkUsers(OAuthClient oauth) {
-        oauth.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail());
-        oauth.linkUsers(bc.getUserLogin(), USER_PASSWORD_CONSUMER_REALM);
+        oauth.updateAccountInformation(nbc.getUserLogin(), nbc.getUserEmail());
+        oauth.linkUsers(nbc.getUserLogin(), USER_PASSWORD_CONSUMER_REALM);
     }
 }

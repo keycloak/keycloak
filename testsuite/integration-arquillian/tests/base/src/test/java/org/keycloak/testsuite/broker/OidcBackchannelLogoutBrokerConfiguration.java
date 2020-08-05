@@ -33,7 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class OidcBackchannelLogoutBrokerConfiguration implements BrokerConfiguration {
+public class OidcBackchannelLogoutBrokerConfiguration implements NestedBrokerConfiguration {
 
     public static final OidcBackchannelLogoutBrokerConfiguration INSTANCE =
             new OidcBackchannelLogoutBrokerConfiguration();
@@ -43,6 +43,13 @@ public class OidcBackchannelLogoutBrokerConfiguration implements BrokerConfigura
     public static final String USER_INFO_CLAIM = "user-claim";
     public static final String HARDOCDED_CLAIM = "test";
     public static final String HARDOCDED_VALUE = "value";
+
+    public static final String REALM_SUB_CONS_NAME = "subconsumer";
+    public static final String CONSUMER_CLIENT_ID = "consumer-brokerapp";
+    public static final String CONSUMER_CLIENT_SECRET = "consumer-secret";
+
+    public static final String SUB_CONSUMER_IDP_OIDC_ALIAS = "consumer-kc-oidc-idp";
+    public static final String SUB_CONSUMER_IDP_OIDC_PROVIDER_ID = "keycloak-oidc";
 
     @Override
     public RealmRepresentation createProviderRealm() {
@@ -177,16 +184,23 @@ public class OidcBackchannelLogoutBrokerConfiguration implements BrokerConfigura
     @Override
     public List<ClientRepresentation> createConsumerClients() {
         ClientRepresentation client = new ClientRepresentation();
-        client.setId("broker-app");
-        client.setClientId("broker-app");
-        client.setName("broker-app");
-        client.setSecret("broker-app-secret");
+        client.setId(CONSUMER_CLIENT_ID);
+        client.setClientId(CONSUMER_CLIENT_ID);
+        client.setName(CONSUMER_CLIENT_ID);
+        client.setSecret(CONSUMER_CLIENT_SECRET);
         client.setEnabled(true);
         client.setDirectAccessGrantsEnabled(true);
 
-        client.setRedirectUris(Collections.singletonList(getConsumerRoot() + "/auth/*"));
+        client.setRedirectUris(Collections.singletonList(getConsumerRoot() +
+                "/auth/realms/" + REALM_SUB_CONS_NAME + "/broker/" + SUB_CONSUMER_IDP_OIDC_ALIAS + "/endpoint/*"));
 
         client.setBaseUrl(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app");
+
+        OIDCAdvancedConfigWrapper oidcAdvancedConfigWrapper =
+                OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
+        oidcAdvancedConfigWrapper.setBackchannelLogoutSessionRequired(true);
+        oidcAdvancedConfigWrapper.setBackchannelLogoutUrl(getConsumerRoot() +
+                "/auth/realms/" + REALM_SUB_CONS_NAME + "/protocol/openid-connect/logout/backchannel-logout");
 
         return Collections.singletonList(client);
     }
@@ -259,4 +273,54 @@ public class OidcBackchannelLogoutBrokerConfiguration implements BrokerConfigura
         return IDP_OIDC_ALIAS;
     }
 
+    @Override
+    public RealmRepresentation createSubConsumerRealm() {
+        RealmRepresentation realm = new RealmRepresentation();
+        realm.setRealm(REALM_SUB_CONS_NAME);
+        realm.setEnabled(true);
+        realm.setResetPasswordAllowed(true);
+        realm.setEventsListeners(Arrays.asList("jboss-logging", "event-queue"));
+        realm.setEventsEnabled(true);
+
+        return realm;
+    }
+
+    @Override
+    public String subConsumerRealmName() {
+        return REALM_SUB_CONS_NAME;
+    }
+
+    @Override
+    public IdentityProviderRepresentation setUpConsumerIdentityProvider() {
+        IdentityProviderRepresentation idp =
+                createIdentityProvider(SUB_CONSUMER_IDP_OIDC_ALIAS, SUB_CONSUMER_IDP_OIDC_PROVIDER_ID);
+
+        Map<String, String> config = idp.getConfig();
+        config.put(IdentityProviderModel.SYNC_MODE, IdentityProviderSyncMode.IMPORT.toString());
+        config.put("clientId", CONSUMER_CLIENT_ID);
+        config.put("clientSecret", CONSUMER_CLIENT_SECRET);
+        config.put("prompt", "login");
+        config.put("issuer", getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME);
+        config.put("authorizationUrl",
+                getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/protocol/openid-connect/auth");
+        config.put("tokenUrl",
+                getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/protocol/openid-connect/token");
+        config.put("logoutUrl",
+                getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/protocol/openid-connect/logout");
+        config.put("userInfoUrl",
+                getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/protocol/openid-connect/userinfo");
+        config.put("defaultScope", "email profile");
+        config.put("backchannelSupported", "true");
+        config.put(OIDCIdentityProviderConfig.JWKS_URL,
+                getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/protocol/openid-connect/certs");
+        config.put(OIDCIdentityProviderConfig.USE_JWKS_URL, "true");
+        config.put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "true");
+
+        return idp;
+    }
+
+    @Override
+    public String getSubConsumerIDPDisplayName() {
+        return SUB_CONSUMER_IDP_OIDC_ALIAS;
+    }
 }
