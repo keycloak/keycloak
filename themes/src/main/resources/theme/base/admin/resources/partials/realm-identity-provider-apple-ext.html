@@ -1,0 +1,21 @@
+<div class="form-group">
+    <label class="col-md-2 control-label" for="teamId">{{:: 'teamId' | translate}}</label>
+    <div class="col-md-6">
+        <input ng-model="identityProvider.config.teamId" id="teamId" class="form-control" />
+    </div>
+    <kc-tooltip>{{:: 'identity-provider.apple-teamId.tooltip' | translate}}</kc-tooltip>
+</div>
+<div class="form-group">
+    <label class="col-md-2 control-label" for="keyId">{{:: 'keyId' | translate}}</label>
+    <div class="col-md-6">
+        <input ng-model="identityProvider.config.keyId" id="keyId" class="form-control" />
+    </div>
+    <kc-tooltip>{{:: 'identity-provider.apple-keyId.tooltip' | translate}}</kc-tooltip>
+</div>
+<div class="form-group">
+    <label class="col-md-2 control-label" for="p8Content">{{:: 'p8Content' | translate}}</label>
+    <div class="col-md-6">
+        <input ng-model="identityProvider.config.p8Content" id="p8Content" class="form-control" />
+    </div>
+    <kc-tooltip>{{:: 'identity-provider.apple-p8Content.tooltip' | translate}}</kc-tooltip>
+</div>

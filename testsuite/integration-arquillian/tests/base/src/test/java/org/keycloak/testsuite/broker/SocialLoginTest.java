@@ -47,6 +47,7 @@ import org.keycloak.testsuite.pages.social.OpenShiftLoginPage;
 import org.keycloak.testsuite.pages.social.PayPalLoginPage;
 import org.keycloak.testsuite.pages.social.StackOverflowLoginPage;
 import org.keycloak.testsuite.pages.social.TwitterLoginPage;
+import org.keycloak.testsuite.pages.social.AppleLoginPage;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -92,6 +93,7 @@ import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT4_
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.PAYPAL;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.STACKOVERFLOW;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.TWITTER;
+import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.APPLE;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -133,7 +135,8 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         OPENSHIFT4_KUBE_ADMIN("openshift-v4", "openshift-v4-admin", OpenShiftLoginPage.class),
         GITLAB("gitlab", GitLabLoginPage.class),
         BITBUCKET("bitbucket", BitbucketLoginPage.class),
-        INSTAGRAM("instagram", InstagramLoginPage.class);
+        INSTAGRAM("instagram", InstagramLoginPage.class),
+        APPLE("apple", AppleLoginPage.class);
 
         private final String id;
         private final Class<? extends AbstractSocialLoginPage> pageObjectClazz;
@@ -415,6 +418,17 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         assertAccount();
     }
 
+    @Test
+    public void appleLogin() throws InterruptedException {
+        setTestProvider(APPLE);
+        performLogin();
+
+        // update firstName/lastName if you already added the application to the apple-id account used for tests
+        // (in that case, no firstName and lastName are returned by apple in profile)
+        assertUpdateProfile(true, true, false);
+        assertAccount();
+    }
+
     public IdentityProviderRepresentation buildIdp(Provider provider) {
         IdentityProviderRepresentation idp = IdentityProviderBuilder.create()
                 .alias(provider.id())
@@ -449,6 +463,11 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         if (provider == FACEBOOK_INCLUDE_BIRTHDAY) {
             idp.getConfig().put("defaultScope", "public_profile,email,user_birthday");
             idp.getConfig().put("fetchedFields", "birthday");
+        }
+        if (provider == APPLE) {
+            idp.getConfig().put("teamId", getConfig(provider, "teamId"));
+            idp.getConfig().put("keyId", getConfig(provider, "keyId"));
+            idp.getConfig().put("p8Content", getConfig(provider, "p8Content"));
         }
         return idp;
     }
