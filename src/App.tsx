@@ -4,7 +4,7 @@ import { ClientList } from './clients/ClientList';
 import { DataLoader } from './components/data-loader/DataLoader';
 import { HttpClientContext } from './http-service/HttpClientContext';
 import { Client } from './clients/client-model';
-import { Page } from '@patternfly/react-core';
+import { Page, PageSection } from '@patternfly/react-core';
 import { Header } from './PageHeader';
 import { PageNav } from './PageNav';
 
@@ -18,9 +18,11 @@ export const App = () => {
   };
   return (
     <Page header={<Header />} sidebar={<PageNav />}>
-      <DataLoader loader={loader}>
-        {(clients) => <ClientList clients={clients} />}
-      </DataLoader>
+      <PageSection>
+        <DataLoader loader={loader}>
+          {(clients) => <ClientList clients={clients} />}
+        </DataLoader>
+      </PageSection>
     </Page>
   );
 };
