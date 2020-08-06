@@ -16,11 +16,13 @@
  */
 package org.keycloak.services.managers;
 
+import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenIdGenerator;
@@ -234,8 +236,9 @@ public class ResourceAdminManager {
         String token = session.tokens().encode(logoutToken);
         if (logger.isDebugEnabled())
             logger.debugv("logout resource {0} url: {1} sessionIds: ", resource.getClientId(), managementUrl);
+        HttpPost post = null;
         try {
-            HttpPost post = new HttpPost(managementUrl);
+            post = new HttpPost(managementUrl);
             List<NameValuePair> parameters = new LinkedList<>();
             if (logoutToken != null) {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.LOGOUT_TOKEN, token));
@@ -244,14 +247,19 @@ public class ResourceAdminManager {
             UrlEncodedFormEntity formEntity;
             formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
             post.setEntity(formEntity);
-            int status = httpClient.execute(post).getStatusLine().getStatusCode();
-
+            HttpResponse response = httpClient.execute(post);
+            int status = response.getStatusLine().getStatusCode();
+            EntityUtils.consumeQuietly(response.getEntity());
             boolean success = status == 204 || status == 200;
             logger.debugf("logout success for %s: %s", managementUrl, success);
             return Response.status(status).build();
         } catch (IOException e) {
             ServicesLogger.LOGGER.logoutFailed(e, resource.getClientId());
             return Response.serverError().build();
+        } finally {
+            if (post != null) {
+                post.releaseConnection();
+            }
         }
     }
 
