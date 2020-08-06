@@ -184,6 +184,16 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_SESSION_REQUIRED, val);
     }
 
+    public boolean getBackchannelLogoutRevokeOfflineTokens() {
+        String backchannelLogoutRevokeOfflineTokens = getAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_TOKENS);
+        return Boolean.parseBoolean(backchannelLogoutRevokeOfflineTokens);
+    }
+
+    public void setBackchannelLogoutRevokeOfflineTokens(boolean backchannelLogoutRevokeOfflineTokens) {
+        String val = String.valueOf(backchannelLogoutRevokeOfflineTokens);
+        setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_TOKENS, val);
+    }
+
     private String getAttribute(String attrKey) {
         if (clientModel != null) {
             return clientModel.getAttribute(attrKey);

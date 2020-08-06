@@ -122,6 +122,8 @@ public class OIDCClientRepresentation {
     private String backchannel_logout_uri;
 
     private Boolean backchannel_logout_session_required;
+    
+    private Boolean backchannel_logout_revoke_offline_tokens;
 
     public List<String> getRedirectUris() {
         return redirect_uris;
@@ -467,6 +469,14 @@ public class OIDCClientRepresentation {
 
     public void setBackchannelLogoutSessionRequired(Boolean backchannel_logout_session_required) {
         this.backchannel_logout_session_required = backchannel_logout_session_required;
+    }
+
+    public Boolean getBackchannelLogoutRevokeOfflineTokens() {
+        return backchannel_logout_revoke_offline_tokens;
+    }
+
+    public void setBackchannelLogoutRevokeOfflineTokens(Boolean backchannel_logout_revoke_offline_tokens) {
+        this.backchannel_logout_revoke_offline_tokens = backchannel_logout_revoke_offline_tokens;
     }
 
     public String getTlsClientAuthSubjectDn() {

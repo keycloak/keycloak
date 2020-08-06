@@ -275,13 +275,17 @@ public class LogoutEndpoint {
                 .map(idp -> idp.getConfig().getAlias())
                 .collect(Collectors.toList());
 
+        boolean logoutOfflineSessions = Boolean.parseBoolean(logoutToken.getEvents()
+                .getOrDefault(TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT_REVOKE_OFFLINE_TOKENS, false).toString());
+
         BackchannelLogoutResponse backchannelLogoutResponse;
 
         if (logoutToken.getSid() != null) {
-            backchannelLogoutResponse = backchannelLogoutWithSessionId(logoutToken.getSid(), identityProviderAliases);
+            backchannelLogoutResponse = backchannelLogoutWithSessionId(logoutToken.getSid(), identityProviderAliases,
+                    logoutOfflineSessions);
         } else {
-            backchannelLogoutResponse =
-                    backchannelLogoutFederatedUserId(logoutToken.getSubject(), identityProviderAliases);
+            backchannelLogoutResponse = backchannelLogoutFederatedUserId(logoutToken.getSubject(),
+                    identityProviderAliases, logoutOfflineSessions);
         }
 
         if (!backchannelLogoutResponse.getLocalLogoutSucceeded()) {
@@ -292,7 +296,7 @@ public class LogoutEndpoint {
         }
 
         session.getProvider(SecurityHeadersProvider.class).options().allowEmptyContentType();
-        
+
         if (oneOrMoreDownstreamLogoutsFailed(backchannelLogoutResponse)) {
             return Cors.add(request)
                     .auth()
@@ -309,7 +313,7 @@ public class LogoutEndpoint {
     }
 
     private BackchannelLogoutResponse backchannelLogoutWithSessionId(String sessionId,
-            List<String> identityProviderAliases) {
+            List<String> identityProviderAliases, boolean logoutOfflineSessions) {
         BackchannelLogoutResponse backchannelLogoutResponse = new BackchannelLogoutResponse();
         backchannelLogoutResponse.setLocalLogoutSucceeded(true);
         for (String identityProviderAlias : identityProviderAliases) {
@@ -317,7 +321,7 @@ public class LogoutEndpoint {
                     identityProviderAlias + "." + sessionId);
 
             if (userSession != null) {
-                backchannelLogoutResponse = logoutUserSession(userSession);
+                backchannelLogoutResponse = logoutUserSession(userSession, logoutOfflineSessions);
             }
         }
 
@@ -325,7 +329,7 @@ public class LogoutEndpoint {
     }
 
     private BackchannelLogoutResponse backchannelLogoutFederatedUserId(String federatedUserId,
-            List<String> identityProviderAliases) {
+            List<String> identityProviderAliases, boolean logoutOfflineSessions) {
         BackchannelLogoutResponse backchannelLogoutResponse = new BackchannelLogoutResponse();
         backchannelLogoutResponse.setLocalLogoutSucceeded(true);
         for (String identityProviderAlias : identityProviderAliases) {
@@ -334,7 +338,7 @@ public class LogoutEndpoint {
 
             for (UserSessionModel userSession : userSessions) {
                 BackchannelLogoutResponse userBackchannelLogoutResponse;
-                userBackchannelLogoutResponse = logoutUserSession(userSession);
+                userBackchannelLogoutResponse = logoutUserSession(userSession, logoutOfflineSessions);
                 backchannelLogoutResponse.setLocalLogoutSucceeded(backchannelLogoutResponse.getLocalLogoutSucceeded()
                         && userBackchannelLogoutResponse.getLocalLogoutSucceeded());
                 userBackchannelLogoutResponse.getClientResponses()
@@ -345,11 +349,11 @@ public class LogoutEndpoint {
         return backchannelLogoutResponse;
     }
 
-    private BackchannelLogoutResponse logoutUserSession(UserSessionModel userSession) {
+    private BackchannelLogoutResponse logoutUserSession(UserSessionModel userSession, boolean logoutOfflineSessions) {
         BackchannelLogoutResponse backchannelLogoutResponse =
                 AuthenticationManager.backchannelLogout(session, realm, userSession,
                         session.getContext().getUri(),
-                        clientConnection, headers, false);
+                        clientConnection, headers, false, logoutOfflineSessions);
 
         if (backchannelLogoutResponse.getLocalLogoutSucceeded()) {
             event.user(userSession.getUser())

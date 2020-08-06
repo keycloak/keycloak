@@ -256,8 +256,12 @@ public class DefaultTokenManager implements TokenManager {
         token.putEvents(TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT, JsonSerialization.createObjectNode());
         token.addAudience(client.getClientId());
 
-        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isBackchannelLogoutSessionRequired()){
+        OIDCAdvancedConfigWrapper oidcAdvancedConfigWrapper = OIDCAdvancedConfigWrapper.fromClientModel(client);
+        if (oidcAdvancedConfigWrapper.isBackchannelLogoutSessionRequired()){
             token.setSid(clientSession.getUserSession().getId());
+        }
+        if (oidcAdvancedConfigWrapper.getBackchannelLogoutRevokeOfflineTokens()){
+            token.putEvents(TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT_REVOKE_OFFLINE_TOKENS, true);
         }
         token.setSubject(user.getId());
 

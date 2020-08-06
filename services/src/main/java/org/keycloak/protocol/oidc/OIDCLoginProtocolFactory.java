@@ -394,6 +394,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         if (OIDCAdvancedConfigWrapper.fromClientRepresentation(rep).getBackchannelLogoutUrl() == null){
             OIDCAdvancedConfigWrapper oidcAdvancedConfigWrapper = OIDCAdvancedConfigWrapper.fromClientModel(newClient);
             oidcAdvancedConfigWrapper.setBackchannelLogoutSessionRequired(true);
+            oidcAdvancedConfigWrapper.setBackchannelLogoutRevokeOfflineTokens(false);
         }
     }
 
