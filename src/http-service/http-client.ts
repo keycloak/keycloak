@@ -76,7 +76,9 @@ export class HttpClient {
 
     try {
       response.data = await response.json();
-    } catch (e) {} // ignore.  Might be empty
+    } catch (e) {
+      console.warn(e);
+    }
 
     if (!response.ok) {
       this.handleError(response);
@@ -105,7 +107,7 @@ export class HttpClient {
   private makeUrl(url: string, config?: RequestInitWithParams): string {
     const searchParams = new URLSearchParams();
     // add request params
-    if (config && config.hasOwnProperty('params')) {
+    if (config && {}.hasOwnProperty.call(config, 'params')) {
       const params: { [name: string]: string } = (config.params as {}) || {};
       Object.keys(params).forEach((key) =>
         searchParams.append(key, params[key])

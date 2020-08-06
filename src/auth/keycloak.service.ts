@@ -1,6 +1,4 @@
 import { KeycloakLoginOptions } from 'keycloak-js';
-import i18next from 'i18next';
-import { initOptions } from '../i18n';
 import { useTranslation } from 'react-i18next';
 
 export type KeycloakClient = Keycloak.KeycloakInstance;
