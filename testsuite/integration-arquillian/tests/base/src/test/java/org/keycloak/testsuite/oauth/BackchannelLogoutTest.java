@@ -13,7 +13,9 @@ import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
@@ -485,11 +487,107 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
                 sessionIdConsumerRealm);
     }
 
+    @Test
+    public void postBackchannelLogoutNestedBrokeringRevokeOfflineSessions() throws Exception {
+        String consumerClientId = OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID;
+
+        subConsumerIdpRequestsOfflineSessions();
+
+        logInAsUserInNestedIDPForFirstTime();
+        String userIdConsumerRealm = getUserIdConsumerRealm();
+        String userIdSubConsumerRealm = getUserIdSubConsumerRealm();
+        String sessionIdProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
+
+        String sessionIdConsumerRealm = assertConsumerLoginEvent(userIdConsumerRealm, consumerClientId);
+        assertActiveSessionInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
+                sessionIdConsumerRealm);
+
+        String sessionIdSubConsumerRealm =
+                assertLoginEvent(userIdSubConsumerRealm, ACCOUNT_CLIENT_NAME, nbc.subConsumerRealmName());
+        assertActiveSessionInClient(nbc.subConsumerRealmName(), accountClientIdSubConsumerRealm, userIdSubConsumerRealm,
+                sessionIdSubConsumerRealm);
+
+        String logoutTokenEncoded = getLogoutTokenEncodedAndSigned(userIdProviderRealm, sessionIdProviderRealm, true);
+
+        oauth.realm(nbc.consumerRealmName());
+        try (CloseableHttpResponse response = oauth.doBackchannelLogout(logoutTokenEncoded)) {
+            assertThat(response, Matchers.statusCodeIsHC(Response.Status.OK));
+        }
+
+        assertConsumerLogoutEvent(sessionIdConsumerRealm, userIdConsumerRealm);
+        assertLogoutEvent(sessionIdSubConsumerRealm, userIdSubConsumerRealm, nbc.subConsumerRealmName());
+
+        assertNoSessionsInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
+                sessionIdConsumerRealm);
+        assertNoOfflineSessionsInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
+                sessionIdConsumerRealm);
+        assertNoSessionsInClient(nbc.subConsumerRealmName(), accountClientIdSubConsumerRealm, userIdSubConsumerRealm,
+                sessionIdSubConsumerRealm);
+        assertActiveSessionInClient(nbc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
+                sessionIdProviderRealm);
+    }
+
+    @Test
+    public void postBackchannelLogoutNestedBrokeringDoNotRevokeOfflineSessions() throws Exception {
+        String consumerClientId = OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID;
+
+        subConsumerIdpRequestsOfflineSessions();
+
+        logInAsUserInNestedIDPForFirstTime();
+        String userIdConsumerRealm = getUserIdConsumerRealm();
+        String userIdSubConsumerRealm = getUserIdSubConsumerRealm();
+        String sessionIdProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
+
+        String sessionIdConsumerRealm = assertConsumerLoginEvent(userIdConsumerRealm, consumerClientId);
+        assertActiveSessionInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
+                sessionIdConsumerRealm);
+
+        String sessionIdSubConsumerRealm =
+                assertLoginEvent(userIdSubConsumerRealm, ACCOUNT_CLIENT_NAME, nbc.subConsumerRealmName());
+        assertActiveSessionInClient(nbc.subConsumerRealmName(), accountClientIdSubConsumerRealm, userIdSubConsumerRealm,
+                sessionIdSubConsumerRealm);
+
+        String logoutTokenEncoded = getLogoutTokenEncodedAndSigned(userIdProviderRealm, sessionIdProviderRealm, false);
+
+        oauth.realm(nbc.consumerRealmName());
+        try (CloseableHttpResponse response = oauth.doBackchannelLogout(logoutTokenEncoded)) {
+            assertThat(response, Matchers.statusCodeIsHC(Response.Status.OK));
+        }
+
+        assertConsumerLogoutEvent(sessionIdConsumerRealm, userIdConsumerRealm);
+        assertLogoutEvent(sessionIdSubConsumerRealm, userIdSubConsumerRealm, nbc.subConsumerRealmName());
+
+        assertNoSessionsInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
+                sessionIdConsumerRealm);
+        assertActiveOfflineSessionInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
+                sessionIdConsumerRealm);
+        assertNoSessionsInClient(nbc.subConsumerRealmName(), accountClientIdSubConsumerRealm, userIdSubConsumerRealm,
+                sessionIdSubConsumerRealm);
+        assertActiveSessionInClient(nbc.providerRealmName(), BROKER_CLIENT_ID, userIdProviderRealm,
+                sessionIdProviderRealm);
+    }
+
+    private void subConsumerIdpRequestsOfflineSessions() {
+        IdentityProviderResource subConsumerIDPResource = adminClient.realm(nbc.subConsumerRealmName())
+                .identityProviders().get(nbc.getSubConsumerIDPDisplayName());
+
+        IdentityProviderRepresentation subConsumerIDP = subConsumerIDPResource.toRepresentation();
+        Map<String, String> config = subConsumerIDP.getConfig();
+        config.put("defaultScope", config.get("defaultScope") + " " + OAuth2Constants.OFFLINE_ACCESS);
+
+        subConsumerIDPResource.update(subConsumerIDP);
+    }
+
     private String getLogoutTokenEncodedAndSigned(String userId) throws IOException {
         return getLogoutTokenEncodedAndSigned(userId, null);
     }
 
     private String getLogoutTokenEncodedAndSigned(String userId, String sessionId) throws IOException {
+        return getLogoutTokenEncodedAndSigned(userId, sessionId, false);
+    }
+
+    private String getLogoutTokenEncodedAndSigned(String userId, String sessionId, boolean revokeOfflineSessions)
+            throws IOException {
         String keyId = adminClient.realm(nbc.providerRealmName())
                 .keys().getKeyMetadata().getKeys().stream()
                 .filter(key -> providerId.equals(key.getProviderId()))
@@ -501,7 +599,8 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
                 getConsumerRoot() + "/auth/realms/" + nbc.providerRealmName(),
                 nbc.getIDPClientIdInProviderRealm(),
                 userId,
-                sessionId);
+                sessionId,
+                revokeOfflineSessions);
     }
 
     private String assertConsumerLoginEventAccountManagement(String userIdConsumerRealm) {
@@ -643,6 +742,28 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
                 .clients()
                 .get(clientId)
                 .getUserSessions(0, 5)
+                .stream()
+                .filter(s -> s.getUserId().equals(userId) && s.getId().equals(sessionId))
+                .collect(Collectors.toList());
+    }
+
+    private void assertActiveOfflineSessionInClient(String realmName, String clientId, String userId,
+            String sessionId) {
+        List<UserSessionRepresentation> sessions = getOfflineClientSessions(realmName, clientId, userId, sessionId);
+        assertThat(sessions.size(), is(1));
+    }
+
+    private void assertNoOfflineSessionsInClient(String realmName, String clientId, String userId, String sessionId) {
+        List<UserSessionRepresentation> sessions = getOfflineClientSessions(realmName, clientId, userId, sessionId);
+        assertThat(sessions.size(), is(0));
+    }
+
+    private List<UserSessionRepresentation> getOfflineClientSessions(String realmName, String clientId, String userId,
+            String sessionId) {
+        return adminClient.realm(realmName)
+                .clients()
+                .get(clientId)
+                .getOfflineUserSessions(0, 5)
                 .stream()
                 .filter(s -> s.getUserId().equals(userId) && s.getId().equals(sessionId))
                 .collect(Collectors.toList());

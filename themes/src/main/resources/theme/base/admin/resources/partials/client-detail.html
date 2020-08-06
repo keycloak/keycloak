@@ -373,6 +373,13 @@
                 </div>
                 <kc-tooltip>{{:: 'backchannel-logout-session-required.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="backchannelLogoutRevokeOfflineSessions">{{:: 'backchannel-logout-revoke-offline-sessions' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="backchannelLogoutRevokeOfflineSessions" name="backchannelLogoutRevokeOfflineSessions" id="backchannelLogoutRevokeOfflineSessions" onoffswitch ng-click="switchChange()" on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'backchannel-logout-revoke-offline-sessions.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
         <fieldset data-ng-show="protocol == 'saml'">
             <legend collapsed><span class="text">{{:: 'fine-saml-endpoint-conf' | translate}}</span>  <kc-tooltip>{{:: 'fine-saml-endpoint-conf.tooltip' | translate}}</kc-tooltip></legend>

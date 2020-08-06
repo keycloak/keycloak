@@ -86,6 +86,7 @@ public class OidcBackchannelLogoutBrokerConfiguration implements NestedBrokerCon
         OIDCAdvancedConfigWrapper oidcAdvancedConfigWrapper =
                 OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
         oidcAdvancedConfigWrapper.setBackchannelLogoutSessionRequired(true);
+        oidcAdvancedConfigWrapper.setBackchannelLogoutRevokeOfflineTokens(false);
         oidcAdvancedConfigWrapper.setBackchannelLogoutUrl(getConsumerRoot() +
                 "/auth/realms/" + REALM_CONS_NAME + "/protocol/openid-connect/logout/backchannel-logout");
 
@@ -199,6 +200,7 @@ public class OidcBackchannelLogoutBrokerConfiguration implements NestedBrokerCon
         OIDCAdvancedConfigWrapper oidcAdvancedConfigWrapper =
                 OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
         oidcAdvancedConfigWrapper.setBackchannelLogoutSessionRequired(true);
+        oidcAdvancedConfigWrapper.setBackchannelLogoutRevokeOfflineTokens(false);
         oidcAdvancedConfigWrapper.setBackchannelLogoutUrl(getConsumerRoot() +
                 "/auth/realms/" + REALM_SUB_CONS_NAME + "/protocol/openid-connect/logout/backchannel-logout");
 

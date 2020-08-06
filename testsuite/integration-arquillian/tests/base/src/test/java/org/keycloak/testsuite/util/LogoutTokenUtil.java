@@ -22,7 +22,8 @@ import java.util.UUID;
 public class LogoutTokenUtil {
 
     public static String generateSignedLogoutToken(PrivateKey privateKey, String keyId,
-            String issuer, String clientId, String userId, String sessionId) throws IOException {
+            String issuer, String clientId, String userId, String sessionId, boolean revokeOfflineSessions)
+            throws IOException {
         JWSHeader jwsHeader =
                 new JWSHeader(Algorithm.RS256, OAuth2Constants.JWT, ContentType.APPLICATION_JSON.toString(), keyId);
         String logoutTokenHeaderEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(jwsHeader));
@@ -30,6 +31,7 @@ public class LogoutTokenUtil {
         LogoutToken logoutToken = new LogoutToken();
         logoutToken.setSid(sessionId);
         logoutToken.putEvents(TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT, new HashMap<>());
+        logoutToken.putEvents(TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT_REVOKE_OFFLINE_TOKENS, revokeOfflineSessions);
         logoutToken.setSubject(userId);
         logoutToken.issuer(issuer);
         logoutToken.id(UUID.randomUUID().toString());
