@@ -2,6 +2,7 @@
 :toclevels: 3
 :sectanchors:
 :linkattrs:
+:context:
 
 include::topics/templates/document-attributes-community.adoc[]
 
