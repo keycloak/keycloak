@@ -132,3 +132,7 @@ public/assets/
 
 # server-install
 server/
+
+# VS Code #
+###########
+*.code-workspace
