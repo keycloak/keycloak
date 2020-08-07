@@ -129,3 +129,6 @@ web_modules/
 build/
 .build/
 public/assets/
+
+# server-install
+server/
