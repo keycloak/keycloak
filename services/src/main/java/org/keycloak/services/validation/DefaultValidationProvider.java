@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.validation;
 
+import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.validation.Validation;
 import org.keycloak.validation.ValidationContextKey;
@@ -122,7 +123,7 @@ public class DefaultValidationProvider implements ValidationProvider {
 //    }
 
 //
-//    protected Validation createProfileValidation(ValidationRegistry registry) {
+//    protected Validation createProfileValidation() {
 //        return (key, value, context) -> {
 //
 //            UserModel input = value instanceof UserModel ? (UserModel) value : null;
@@ -137,7 +138,7 @@ public class DefaultValidationProvider implements ValidationProvider {
 //                return false;
 //            }
 //
-//            boolean emailValid = context.validateNested(ValidationKey.User.EMAIL, input.getEmail(), registry);
+//            boolean emailValid = context.validateNested(ValidationKey.User.EMAIL, input.getEmail());
 //            if (!emailValid) {
 //                context.addError(key, Messages.INVALID_EMAIL);
 //            }
