@@ -11,7 +11,8 @@ import java.util.Map;
 public class PasswordCredentialData {
     private final int hashIterations;
     private final String algorithm;
-    private final MultivaluedHashMap<String, String> additionalParameters;
+
+    private MultivaluedHashMap<String, String> additionalParameters;
 
     /**
      * Creator for standard algorithms (no algorithm tuning beyond hash iterations)
@@ -19,7 +20,7 @@ public class PasswordCredentialData {
      * @param algorithm algorithm id
      */
     public PasswordCredentialData(int hashIterations, String algorithm) {
-        this(hashIterations, algorithm, Collections.emptyMap());
+        this(hashIterations, algorithm, null);
     }
 
     /**
@@ -32,7 +33,7 @@ public class PasswordCredentialData {
     public PasswordCredentialData(@JsonProperty("hashIterations") int hashIterations, @JsonProperty("algorithm") String algorithm, @JsonProperty("algorithmData") Map<String, List<String>> additionalParameters) {
         this.hashIterations = hashIterations;
         this.algorithm = algorithm;
-        this.additionalParameters = new MultivaluedHashMap<>(additionalParameters == null ? Collections.emptyMap() : additionalParameters);
+        this.additionalParameters = additionalParameters != null ?  new MultivaluedHashMap<>(additionalParameters) : null;
     }
 
 
@@ -51,6 +52,9 @@ public class PasswordCredentialData {
      * @return algorithm data
      */
     public MultivaluedHashMap<String, String> getAdditionalParameters() {
+        if (additionalParameters == null) {
+            additionalParameters = new MultivaluedHashMap<>();
+        }
         return additionalParameters;
     }
 }
