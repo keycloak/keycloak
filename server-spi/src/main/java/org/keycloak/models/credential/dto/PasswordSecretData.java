@@ -1,15 +1,14 @@
 package org.keycloak.models.credential.dto;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.MultivaluedHashMap;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 public class PasswordSecretData {
 
@@ -17,7 +16,8 @@ public class PasswordSecretData {
 
     private final String value;
     private final byte[] salt;
-    private final MultivaluedHashMap<String, String> additionalParameters;
+
+    private MultivaluedHashMap<String, String> additionalParameters;
 
     /**
      * Creator with the option to provide customized secret data (multiple salt values, chiefly)
@@ -28,7 +28,7 @@ public class PasswordSecretData {
      */
     @JsonCreator
     public PasswordSecretData(@JsonProperty("value") String value, @JsonProperty("salt") String salt, @JsonProperty("algorithmData") Map<String, List<String>> additionalParameters) throws IOException {
-        this.additionalParameters = new MultivaluedHashMap<>(additionalParameters == null ? Collections.emptyMap() : additionalParameters);
+        this.additionalParameters = additionalParameters != null ? new MultivaluedHashMap<>( additionalParameters) : null;
 
         if (salt == null || "__SALT__".equals(salt)) {
             this.value = value;
@@ -48,7 +48,7 @@ public class PasswordSecretData {
     public PasswordSecretData(String value, byte[] salt) {
         this.value = value;
         this.salt = salt;
-        this.additionalParameters = new MultivaluedHashMap<>();
+        this.additionalParameters = null;
     }
 
     public String getValue() {
@@ -60,6 +60,9 @@ public class PasswordSecretData {
     }
 
     public MultivaluedHashMap<String, String> getAdditionalParameters() {
+        if (additionalParameters == null) {
+            additionalParameters = new MultivaluedHashMap<>();
+        }
         return additionalParameters;
     }
 }
