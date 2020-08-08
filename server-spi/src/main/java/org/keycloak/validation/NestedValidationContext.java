@@ -21,6 +21,7 @@ import org.keycloak.models.KeycloakSession;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 
 /**
  * {@link ValidationContext} for nested {@link Validation Validation's}
@@ -98,5 +99,13 @@ public class NestedValidationContext extends ValidationContext {
     public boolean validateNested(ValidationKey key, Object value) {
         return validationRegistry.resolveValidations(this, key, value).stream()
                 .allMatch(v -> v.validate(key, value, this));
+    }
+
+    public boolean evaluateAndReportErrorIfFalse(BooleanSupplier supplier, ValidationKey key, String message) {
+        boolean result = supplier.getAsBoolean();
+        if (!result) {
+            addError(key, message);
+        }
+        return result;
     }
 }

@@ -31,33 +31,51 @@ import java.util.Objects;
  */
 public interface ValidationContextKey {
 
+    ValidationContextKey KEYCLOAK_DEFAULT_CONTEXT_KEY = new BuiltInValidationContextKey("", null);
+
     interface User {
 
-        ValidationContextKey RESOURCE_UPDATE = new BuiltInValidationContextKey("user.resource_update");
+        ValidationContextKey USER_DEFAULT_CONTEXT_KEY =
+                new BuiltInValidationContextKey("user", ValidationContextKey.KEYCLOAK_DEFAULT_CONTEXT_KEY);
 
-        ValidationContextKey PROFILE_UPDATE = new BuiltInValidationContextKey("user.profile_update");
+        ValidationContextKey USER_RESOURCE_UPDATE_CONTEXT_KEY =
+                new BuiltInValidationContextKey("user.resource_update", User.USER_DEFAULT_CONTEXT_KEY);
 
-        ValidationContextKey REGISTRATION = new BuiltInValidationContextKey("user.registration");
+        ValidationContextKey USER_PROFILE_UPDATE_CONTEXT_KEY =
+                new BuiltInValidationContextKey("user.profile_update", User.USER_DEFAULT_CONTEXT_KEY);
 
-        ValidationContextKey PROFILE_UPDATE_REGISTRATION = new BuiltInValidationContextKey("user.profile_update_registration");
+        ValidationContextKey USER_REGISTRATION_CONTEXT_KEY =
+                new BuiltInValidationContextKey("user.registration", User.USER_DEFAULT_CONTEXT_KEY);
 
-        ValidationContextKey PROFILE_UPDATE_IDP_REVIEW = new BuiltInValidationContextKey("user.profile_update_idp_review");
+        ValidationContextKey USER_PROFILE_UPDATE_REGISTRATION_CONTEXT_KEY =
+                new BuiltInValidationContextKey("user.profile_update_registration", User.USER_DEFAULT_CONTEXT_KEY);
 
-        List<ValidationContextKey> ALL_KEYS = Collections.unmodifiableList(Arrays.asList(RESOURCE_UPDATE, PROFILE_UPDATE, PROFILE_UPDATE_IDP_REVIEW, PROFILE_UPDATE_REGISTRATION, REGISTRATION));
+        ValidationContextKey USER_PROFILE_UPDATE_IDP_REVIEW_CONTEXT_KEY =
+                new BuiltInValidationContextKey("user.profile_update_idp_review", User.USER_DEFAULT_CONTEXT_KEY);
+
+        List<ValidationContextKey> USER_ALL_CONTEXT_KEYS = Collections.unmodifiableList(
+                Arrays.asList(USER_DEFAULT_CONTEXT_KEY, USER_RESOURCE_UPDATE_CONTEXT_KEY, USER_PROFILE_UPDATE_CONTEXT_KEY,
+                        USER_PROFILE_UPDATE_IDP_REVIEW_CONTEXT_KEY, USER_PROFILE_UPDATE_REGISTRATION_CONTEXT_KEY, USER_REGISTRATION_CONTEXT_KEY));
     }
 
-    String name();
+    String getName();
 
-    static ValidationContextKey newCustomValidationContextKey(String name) {
-        return new CustomValidationContextKey(name);
+    ValidationContextKey getParent();
+
+    static ValidationContextKey newCustomValidationContextKey(String name, ValidationContextKey parent) {
+        return new CustomValidationContextKey(name, parent);
     }
 
     static ValidationContextKey lookup(String name) {
 
-        for (ValidationContextKey key : User.ALL_KEYS) {
-            if (key.name().equals(name)) {
+        for (ValidationContextKey key : User.USER_ALL_CONTEXT_KEYS) {
+            if (key.getName().equals(name)) {
                 return key;
             }
+        }
+
+        if (KEYCLOAK_DEFAULT_CONTEXT_KEY.getName().equals(name)) {
+            return KEYCLOAK_DEFAULT_CONTEXT_KEY;
         }
 
         return null;
@@ -65,15 +83,15 @@ public interface ValidationContextKey {
 
     final class BuiltInValidationContextKey extends AbstractValidationContextKey {
 
-        public BuiltInValidationContextKey(String name) {
-            super(name);
+        public BuiltInValidationContextKey(String name, ValidationContextKey parent) {
+            super(name, parent);
         }
     }
 
     final class CustomValidationContextKey extends AbstractValidationContextKey {
 
-        public CustomValidationContextKey(String name) {
-            super(name);
+        public CustomValidationContextKey(String name, ValidationContextKey parent) {
+            super(name, parent);
         }
     }
 
@@ -81,12 +99,20 @@ public interface ValidationContextKey {
 
         private final String name;
 
-        public AbstractValidationContextKey(String name) {
+        private final ValidationContextKey parent;
+
+        public AbstractValidationContextKey(String name, ValidationContextKey parent) {
             this.name = name;
+            this.parent = parent;
         }
 
-        public String name() {
+        public String getName() {
             return name;
+        }
+
+        @Override
+        public ValidationContextKey getParent() {
+            return parent;
         }
 
         @Override

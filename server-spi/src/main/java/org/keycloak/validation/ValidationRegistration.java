@@ -92,8 +92,37 @@ public class ValidationRegistration implements Comparable<ValidationRegistration
         return Double.compare(this.getOrder(), that.getOrder());
     }
 
-    public boolean isEligibleForContextKey(ValidationContextKey contextKey) {
-        return getContextKeys().contains(contextKey);
+    public boolean isEligibleForContextKey(ValidationContextKey key) {
+
+        if (key == null) {
+            return false;
+        }
+
+        // check for direct validation context key match
+        Set<ValidationContextKey> keys = getContextKeys();
+        if (keys.contains(key)) {
+            return true;
+        }
+
+        // check if parent validation context key which includes all children
+        ValidationContextKey current = key.getParent();
+        if (current == null) {
+            return false;
+        }
+
+        int i = 0;
+        do {
+            i++;
+            if (keys.contains(current)) {
+                return true;
+            }
+            current = current.getParent();
+            if (i > 100) { // simple guard against infinite loops in malformed configurations
+                throw new IllegalStateException("loop detected in ValidationContextKey hierarchy: contextKey:" + current.getName() + " registration name: " + this.getName());
+            }
+        } while (current != null);
+
+        return false;
     }
 
     @Override

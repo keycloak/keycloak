@@ -32,20 +32,20 @@ public class DefaultValidationProvider implements ValidationProvider {
 
         registry.register("builtin_user_username_validation",
                 createUsernameValidation(), ValidationKey.User.USERNAME,
-                ValidationContextKey.User.PROFILE_UPDATE, ValidationContextKey.User.REGISTRATION);
+                ValidationContextKey.User.USER_PROFILE_UPDATE_CONTEXT_KEY, ValidationContextKey.User.USER_REGISTRATION_CONTEXT_KEY);
 
         registry.register("builtin_user_email_validation",
                 createEmailValidation(), ValidationKey.User.EMAIL,
-                ValidationContextKey.User.PROFILE_UPDATE, ValidationContextKey.User.REGISTRATION);
+                ValidationContextKey.User.USER_PROFILE_UPDATE_CONTEXT_KEY, ValidationContextKey.User.USER_REGISTRATION_CONTEXT_KEY);
 
         // TODO firstname / lastname validation could be merged?
         registry.register("builtin_user_firstname_validation",
                 createFirstnameValidation(), ValidationKey.User.FIRSTNAME,
-                ValidationContextKey.User.PROFILE_UPDATE);
+                ValidationContextKey.User.USER_PROFILE_UPDATE_CONTEXT_KEY);
 
         registry.register("builtin_user_lastname_validation",
                 createLastnameValidation(), ValidationKey.User.LASTNAME,
-                ValidationContextKey.User.PROFILE_UPDATE);
+                ValidationContextKey.User.USER_PROFILE_UPDATE_CONTEXT_KEY);
     }
 
     protected Validation createLastnameValidation() {
