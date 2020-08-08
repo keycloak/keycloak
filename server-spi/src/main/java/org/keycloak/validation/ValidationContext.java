@@ -29,13 +29,16 @@ import java.util.Map;
  */
 public class ValidationContext {
 
-    private final RealmModel realm;
-
     // user registration, user profile update, client registration, realm creation
     private final ValidationContextKey contextKey;
 
     // additional context specific attributes
     private final Map<String, Object> attributes;
+
+    /**
+     * Holds the current {@link RealmModel}
+     */
+    private final RealmModel realm;
 
     /**
      * Holds the current {@link UserModel}
@@ -55,19 +58,22 @@ public class ValidationContext {
     // TODO add support to skip certain validations for ValidationKey
 
     public ValidationContext(ValidationContext that) {
-        this(that.getRealm(), that.getContextKey(), that.getAttributes(), that.getUser(), that.getClient(), that.isBulkMode());
+        this(that.getContextKey(), that.getAttributes(), that.getRealm(), that.getUser(), that.getClient(), that.isBulkMode());
     }
 
-    public ValidationContext(RealmModel realm, ValidationContextKey contextKey) {
-        this(realm, contextKey, Collections.emptyMap(), null, null, true);
+    public ValidationContext(ValidationContextKey contextKey) {
+        this(contextKey, Collections.emptyMap(), null, null, null, true);
     }
 
-    public ValidationContext(RealmModel realm, ValidationContextKey contextKey, Map<String, Object> attributes) {
-        this(realm, contextKey, attributes, null, null, true);
+    public ValidationContext(ValidationContextKey contextKey, RealmModel realm) {
+        this(contextKey, Collections.emptyMap(), realm, null, null, true);
+    }
+
+    public ValidationContext(ValidationContextKey contextKey, Map<String, Object> attributes) {
+        this(contextKey, attributes, null, null, null, true);
     }
 
     /**
-     *
      * @param realm
      * @param contextKey
      * @param attributes
@@ -75,7 +81,7 @@ public class ValidationContext {
      * @param client
      * @param bulkMode
      */
-    public ValidationContext(RealmModel realm, ValidationContextKey contextKey, Map<String, Object> attributes, UserModel user, ClientModel client, boolean bulkMode) {
+    public ValidationContext(ValidationContextKey contextKey, Map<String, Object> attributes, RealmModel realm, UserModel user, ClientModel client, boolean bulkMode) {
         this.realm = realm;
         this.contextKey = contextKey;
         this.attributes = attributes;
@@ -124,15 +130,52 @@ public class ValidationContext {
         return bulkMode;
     }
 
+    /**
+     * Returns a shallow-copy of the current {@link ValidationContext} with the given {@link RealmModel}.
+     * @param realm
+     * @return
+     */
+    public ValidationContext withRealm(RealmModel realm) {
+        return new ValidationContext(contextKey, attributes, realm, user, client, bulkMode);
+    }
+
+    /**
+     * Returns a shallow-copy of the current {@link ValidationContext} with the given {@link UserModel}.
+     *
+     * @param user
+     * @return
+     */
     public ValidationContext withUser(UserModel user) {
-        return new ValidationContext(realm, contextKey, attributes, user, client, bulkMode);
+        return new ValidationContext(contextKey, attributes, realm, user, client, bulkMode);
     }
 
+    /**
+     * Returns a shallow-copy of the current {@link ValidationContext} with the given {@link ClientModel}.
+     *
+     * @param client
+     * @return
+     */
     public ValidationContext withClient(ClientModel client) {
-        return new ValidationContext(realm, contextKey, attributes, user, client, bulkMode);
+        return new ValidationContext(contextKey, attributes, realm, user, client, bulkMode);
     }
 
+    /**
+     * Returns a shallow-copy of the current {@link ValidationContext} with the given bulkMode.
+     *
+     * @param bulkMode
+     * @return
+     */
     public ValidationContext withBulkMode(boolean bulkMode) {
-        return new ValidationContext(realm, contextKey, attributes, user, client, bulkMode);
+        return new ValidationContext(contextKey, attributes, realm, user, client, bulkMode);
+    }
+
+    /**
+     * Returns a shallow-copy of the current {@link ValidationContext} with the given attributes.
+     *
+     * @param attributes
+     * @return
+     */
+    public ValidationContext withAttributes(Map<String, Object> attributes) {
+        return new ValidationContext(contextKey, attributes, realm, user, client, bulkMode);
     }
 }

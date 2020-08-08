@@ -51,7 +51,7 @@ public class DefaultValidatorProviderTest {
 
         new DefaultValidationProvider().register(registry);
 
-        ValidationContext context = new ValidationContext(realm, ValidationContextKey.User.PROFILE_UPDATE);
+        ValidationContext context = new ValidationContext(ValidationContextKey.User.PROFILE_UPDATE);
 
         ValidationResult result;
         ValidationProblem problem;
@@ -86,7 +86,7 @@ public class DefaultValidatorProviderTest {
 
         new DefaultValidationProvider().register(registry);
 
-        ValidationContext context = new ValidationContext(realm, ValidationContextKey.User.PROFILE_UPDATE);
+        ValidationContext context = new ValidationContext(ValidationContextKey.User.PROFILE_UPDATE);
 
         ValidationResult result;
         ValidationProblem problem;
@@ -116,7 +116,7 @@ public class DefaultValidatorProviderTest {
                 CustomValidations::validatePhone, CustomValidations.PHONE,
                 ValidationRegistry.DEFAULT_ORDER, ValidationContextKey.User.PROFILE_UPDATE);
 
-        ValidationContext context = new ValidationContext(realm, ValidationContextKey.User.PROFILE_UPDATE);
+        ValidationContext context = new ValidationContext(ValidationContextKey.User.PROFILE_UPDATE);
 
         ValidationResult result;
         ValidationProblem problem;
@@ -142,7 +142,7 @@ public class DefaultValidatorProviderTest {
                 CustomValidations::validateEmailCustom, ValidationKey.User.EMAIL,
                 ValidationRegistry.DEFAULT_ORDER + 1000.0, ValidationContextKey.User.REGISTRATION);
 
-        ValidationContext context = new ValidationContext(realm, ValidationContextKey.User.REGISTRATION);
+        ValidationContext context = new ValidationContext(ValidationContextKey.User.REGISTRATION);
 
         ValidationResult result;
         ValidationProblem problem;
@@ -173,7 +173,7 @@ public class DefaultValidatorProviderTest {
         assertEquals("Should have only one validation", 1, validations.size());
         assertSame("custom_user_email_validation", validations.get(0).getName());
 
-        ValidationContext context = new ValidationContext(realm, ValidationContextKey.User.REGISTRATION);
+        ValidationContext context = new ValidationContext(ValidationContextKey.User.REGISTRATION);
 
         ValidationResult result;
         ValidationProblem problem;
@@ -199,7 +199,7 @@ public class DefaultValidatorProviderTest {
                 ValidationRegistry.DEFAULT_ORDER, contextKey);
 
         ValidationContextKey differentContextKey = ValidationContextKey.User.REGISTRATION;
-        ValidationContext context = new ValidationContext(realm, differentContextKey);
+        ValidationContext context = new ValidationContext(differentContextKey);
 
         ValidationResult result = validator.validate(context, "", CustomValidations.PHONE);
         assertTrue("A missing phone number is valid without validation in the " + differentContextKey, result.isValid());
@@ -213,7 +213,7 @@ public class DefaultValidatorProviderTest {
                 CustomValidations::validatePhone, CustomValidations.PHONE,
                 ValidationRegistry.DEFAULT_ORDER, contextKey);
 
-        ValidationContext context = new ValidationContext(realm, contextKey);
+        ValidationContext context = new ValidationContext(contextKey);
 
         ValidationResult result = validator.validate(context, "", CustomValidations.PHONE);
         assertFalse("A missing phone number should be invalid", result.isValid());
@@ -231,7 +231,7 @@ public class DefaultValidatorProviderTest {
                 CustomValidations::validateCustomAttribute2, CustomValidations.CUSTOM_ATTRIBUTE,
                 ValidationRegistry.DEFAULT_ORDER + 1000.0, CustomValidations.CUSTOM_CONTEXT);
 
-        ValidationContext context = new ValidationContext(realm, CustomValidations.CUSTOM_CONTEXT);
+        ValidationContext context = new ValidationContext(CustomValidations.CUSTOM_CONTEXT);
 
         ValidationResult result = validator.validate(context, "value3", CustomValidations.CUSTOM_ATTRIBUTE);
         assertFalse("An invalid custom attribute should be invalid", result.isValid());
@@ -257,7 +257,7 @@ public class DefaultValidatorProviderTest {
                 CustomValidations::validateCustomAttribute2, CustomValidations.CUSTOM_ATTRIBUTE,
                 ValidationRegistry.DEFAULT_ORDER + 1000.0, CustomValidations.CUSTOM_CONTEXT);
 
-        ValidationContext context = new ValidationContext(realm, CustomValidations.CUSTOM_CONTEXT).withBulkMode(false);
+        ValidationContext context = new ValidationContext(CustomValidations.CUSTOM_CONTEXT).withBulkMode(false);
 
         ValidationResult result = validator.validate(context, "value3", CustomValidations.CUSTOM_ATTRIBUTE);
         assertFalse("An invalid custom attribute should be invalid", result.isValid());
@@ -280,7 +280,7 @@ public class DefaultValidatorProviderTest {
                 CustomValidations::validateUserModel, ValidationKey.User.USER,
                 ValidationRegistry.DEFAULT_ORDER + 1000.0, ValidationContextKey.User.REGISTRATION);
 
-        ValidationContext context = new ValidationContext(realm, ValidationContextKey.User.REGISTRATION);
+        ValidationContext context = new ValidationContext(ValidationContextKey.User.REGISTRATION);
 
         UserModel user = new InMemoryUserAdapter(session, realm, "1");
 
@@ -311,7 +311,7 @@ public class DefaultValidatorProviderTest {
                     throw new RuntimeException(exceptionDuringValidation);
                 }, CustomValidations.PHONE, ValidationRegistry.DEFAULT_ORDER, CustomValidations.CUSTOM_CONTEXT);
 
-        ValidationContext context = new ValidationContext(realm, CustomValidations.CUSTOM_CONTEXT);
+        ValidationContext context = new ValidationContext(CustomValidations.CUSTOM_CONTEXT);
 
         ValidationResult result = validator.validate(context, "+491234567", CustomValidations.PHONE);
         assertFalse("An exception during validation should fail the validation", result.isValid());
@@ -346,13 +346,13 @@ public class DefaultValidatorProviderTest {
         ValidationResult result;
 
         // validation should run
-        context = new ValidationContext(realm, ValidationContextKey.User.REGISTRATION, Collections.singletonMap("over18", true));
+        context = new ValidationContext(ValidationContextKey.User.REGISTRATION, Collections.singletonMap("over18", true));
         result = validator.validate(context, 15, CustomValidations.CUSTOM_ATTRIBUTE);
         assertFalse("Conditional validation should fail the validation", result.isValid());
         assertTrue("Conditional validation should cause problems", result.hasProblems());
 
         // validation should NOT run
-        context = new ValidationContext(realm, ValidationContextKey.User.REGISTRATION);
+        context = new ValidationContext(ValidationContextKey.User.REGISTRATION);
         result = validator.validate(context, 15, CustomValidations.CUSTOM_ATTRIBUTE);
         assertTrue("Conditional validation that is not triggered should pass the validation", result.isValid());
         assertFalse("Conditional validation that is not triggered should not cause problems", result.hasProblems());
