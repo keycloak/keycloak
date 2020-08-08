@@ -16,7 +16,9 @@
  */
 package org.keycloak.services.validation;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.validation.NamedValidation;
 import org.keycloak.validation.NestedValidationContext;
 import org.keycloak.validation.Validation;
 import org.keycloak.validation.ValidationContext;
@@ -32,7 +34,10 @@ import java.util.Set;
 
 public class DefaultValidatorProvider implements ValidatorProvider {
 
+    private static final Logger LOGGER = Logger.getLogger(DefaultValidatorProvider.class);
+
     private final KeycloakSession session;
+
     private final ValidationRegistry validationRegistry;
 
     public DefaultValidatorProvider(KeycloakSession session, ValidationRegistry validationRegistry) {
@@ -43,7 +48,7 @@ public class DefaultValidatorProvider implements ValidatorProvider {
     @Override
     public ValidationResult validate(ValidationContext context, Object value, Set<ValidationKey> keys) {
 
-        Map<ValidationKey, List<Validation>> validators = validationRegistry.resolveValidations(context, keys, value);
+        Map<ValidationKey, List<NamedValidation>> validators = validationRegistry.resolveValidations(context, keys, value);
 
         if (validators == null || validators.isEmpty()) {
             return null;
@@ -60,15 +65,24 @@ public class DefaultValidatorProvider implements ValidatorProvider {
         return new ValidationResult(valid, problems);
     }
 
-    protected boolean validateInternal(NestedValidationContext context, Object value, Map<ValidationKey, List<Validation>> validators) {
+    protected boolean validateInternal(NestedValidationContext context, Object value, Map<ValidationKey, List<NamedValidation>> validators) {
 
         boolean valid = true;
 
         outer:
-        for (Map.Entry<ValidationKey, List<Validation>> entry : validators.entrySet()) {
-            for (Validation validation : entry.getValue()) {
+        for (Map.Entry<ValidationKey, List<NamedValidation>> entry : validators.entrySet()) {
+            for (NamedValidation validation : entry.getValue()) {
 
-                valid &= validation.validate(entry.getKey(), value, context);
+                ValidationKey key = entry.getKey();
+
+                try {
+                    valid &= validation.validate(key, value, context);
+                } catch (Exception ex) {
+                    LOGGER.warnf("Exception during validation %s for key %s", validation.getName(), key.getName(), ex);
+                    context.addProblem(ValidationProblem.error(key, Validation.VALIDATION_ERROR, ex));
+                    valid = false;
+                    break outer;
+                }
 
                 if (!valid && !context.isBulkMode()) {
                     break outer;

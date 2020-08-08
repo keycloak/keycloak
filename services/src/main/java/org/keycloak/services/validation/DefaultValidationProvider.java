@@ -16,7 +16,6 @@
  */
 package org.keycloak.services.validation;
 
-import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.validation.Validation;
 import org.keycloak.validation.ValidationContextKey;
@@ -29,19 +28,23 @@ public class DefaultValidationProvider implements ValidationProvider {
     @Override
     public void register(MutableValidationRegistry registry) {
 
-        // TODO add additional validators
-        registry.register(createUsernameValidation(), ValidationKey.User.USERNAME,
+        // TODO add additional validations
+
+        registry.register("builtin_user_username_validation",
+                createUsernameValidation(), ValidationKey.User.USERNAME,
                 ValidationContextKey.User.PROFILE_UPDATE, ValidationContextKey.User.REGISTRATION);
 
-        registry.register(createEmailValidation(), ValidationKey.User.EMAIL,
+        registry.register("builtin_user_email_validation",
+                createEmailValidation(), ValidationKey.User.EMAIL,
                 ValidationContextKey.User.PROFILE_UPDATE, ValidationContextKey.User.REGISTRATION);
 
         // TODO firstname / lastname validation could be merged?
-        registry.register(createFirstnameValidation(), ValidationKey.User.FIRSTNAME,
+        registry.register("builtin_user_firstname_validation",
+                createFirstnameValidation(), ValidationKey.User.FIRSTNAME,
                 ValidationContextKey.User.PROFILE_UPDATE);
 
-        registry.register(createLastnameValidation(),
-                ValidationKey.User.LASTNAME,
+        registry.register("builtin_user_lastname_validation",
+                createLastnameValidation(), ValidationKey.User.LASTNAME,
                 ValidationContextKey.User.PROFILE_UPDATE);
     }
 

@@ -40,7 +40,7 @@ public class DelegatingValidation implements Validation {
         return this.delegate.validate(key, value, context);
     }
 
-    public boolean isSupported(ValidationKey key, Object value, NestedValidationContext context) {
+    public boolean isSupported(ValidationKey key, Object value, ValidationContext context) {
         return this.supported.test(key, value, context);
     }
 }

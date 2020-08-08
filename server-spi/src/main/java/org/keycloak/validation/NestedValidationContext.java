@@ -68,7 +68,15 @@ public class NestedValidationContext extends ValidationContext {
      * @param message
      */
     public void addError(ValidationKey key, String message) {
-        addProblem(ValidationProblem.error(key, message));
+        addError(key, message, null);
+    }
+
+    /**
+     * @param key
+     * @param message
+     */
+    public void addError(ValidationKey key, String message, Exception exception) {
+        addProblem(ValidationProblem.error(key, message, exception));
     }
 
     /**
@@ -79,6 +87,7 @@ public class NestedValidationContext extends ValidationContext {
         addProblem(ValidationProblem.warning(key, message));
     }
 
+
     /**
      * Provides support for nested validations, e.g. delegate complex field validations to other validations.
      *
@@ -87,9 +96,6 @@ public class NestedValidationContext extends ValidationContext {
      * @return
      */
     public boolean validateNested(ValidationKey key, Object value) {
-
-        // TODO check for loops!
-
         return validationRegistry.resolveValidations(this, key, value).stream()
                 .allMatch(v -> v.validate(key, value, this));
     }

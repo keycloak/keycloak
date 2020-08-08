@@ -22,6 +22,8 @@ package org.keycloak.validation;
 @FunctionalInterface
 public interface Validation {
 
+    String VALIDATION_ERROR = "validation_error";
+
     /**
      * Validates the given value in the current {@link NestedValidationContext}.
      * Detailed validation problems can be reported via the {@link ValidationProblem} list.
@@ -53,7 +55,7 @@ public interface Validation {
     @FunctionalInterface
     interface ValidationSupported {
 
-        ValidationSupported ALWAYS = (k, v, c) -> true;
+        ValidationSupported ALWAYS = (key, value, context) -> true;
 
         /**
          * @param key

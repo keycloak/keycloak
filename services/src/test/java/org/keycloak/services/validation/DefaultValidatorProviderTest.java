@@ -7,7 +7,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.storage.adapter.InMemoryUserAdapter;
+import org.keycloak.validation.DelegatingValidation;
+import org.keycloak.validation.NamedValidation;
 import org.keycloak.validation.NestedValidationContext;
+import org.keycloak.validation.Validation.ValidationSupported;
 import org.keycloak.validation.ValidationContext;
 import org.keycloak.validation.ValidationContextKey;
 import org.keycloak.validation.ValidationKey;
@@ -17,6 +20,7 @@ import org.keycloak.validation.ValidationRegistry;
 import org.keycloak.validation.ValidationRegistry.MutableValidationRegistry;
 import org.keycloak.validation.ValidationResult;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -108,7 +112,9 @@ public class DefaultValidatorProviderTest {
 
         new DefaultValidationProvider().register(registry);
 
-        registry.register(CustomValidations::validatePhone, CustomValidations.PHONE, ValidationRegistry.DEFAULT_ORDER, ValidationContextKey.User.PROFILE_UPDATE);
+        registry.register("custom_user_phone_validation",
+                CustomValidations::validatePhone, CustomValidations.PHONE,
+                ValidationRegistry.DEFAULT_ORDER, ValidationContextKey.User.PROFILE_UPDATE);
 
         ValidationContext context = new ValidationContext(realm, ValidationContextKey.User.PROFILE_UPDATE);
 
@@ -132,7 +138,8 @@ public class DefaultValidatorProviderTest {
 
         new DefaultValidationProvider().register(registry);
 
-        registry.register(CustomValidations::validateEmailCustom, ValidationKey.User.EMAIL,
+        registry.register("custom_user_email_validation",
+                CustomValidations::validateEmailCustom, ValidationKey.User.EMAIL,
                 ValidationRegistry.DEFAULT_ORDER + 1000.0, ValidationContextKey.User.REGISTRATION);
 
         ValidationContext context = new ValidationContext(realm, ValidationContextKey.User.REGISTRATION);
@@ -158,13 +165,13 @@ public class DefaultValidatorProviderTest {
         new DefaultValidationProvider().register(registry);
 
         // default order = 0.0 effectively replaces the existing validator
-        org.keycloak.validation.Validation customValidation = CustomValidations::validateEmailCustom;
-        registry.register(customValidation, ValidationKey.User.EMAIL,
+        registry.register("custom_user_email_validation",
+                CustomValidations::validateEmailCustom, ValidationKey.User.EMAIL,
                 ValidationRegistry.DEFAULT_ORDER, ValidationContextKey.User.REGISTRATION);
 
-        List<org.keycloak.validation.Validation> validations = registry.getValidations(ValidationKey.User.EMAIL);
+        List<NamedValidation> validations = registry.getValidations(ValidationKey.User.EMAIL);
         assertEquals("Should have only one validation", 1, validations.size());
-        assertSame(customValidation, validations.get(0));
+        assertSame("custom_user_email_validation", validations.get(0).getName());
 
         ValidationContext context = new ValidationContext(realm, ValidationContextKey.User.REGISTRATION);
 
@@ -187,7 +194,8 @@ public class DefaultValidatorProviderTest {
     public void ignoreCustomValidationInDifferentValidationContext() {
 
         ValidationContextKey contextKey = ValidationContextKey.User.PROFILE_UPDATE;
-        registry.register(CustomValidations::validatePhone, CustomValidations.PHONE,
+        registry.register("custom_user_phone_validation",
+                CustomValidations::validatePhone, CustomValidations.PHONE,
                 ValidationRegistry.DEFAULT_ORDER, contextKey);
 
         ValidationContextKey differentContextKey = ValidationContextKey.User.REGISTRATION;
@@ -201,7 +209,8 @@ public class DefaultValidatorProviderTest {
     public void validateWithCustomValidationInCustomValidationContext() {
 
         ValidationContextKey contextKey = CustomValidations.CUSTOM_CONTEXT;
-        registry.register(CustomValidations::validatePhone, CustomValidations.PHONE,
+        registry.register("custom_user_phone_validation",
+                CustomValidations::validatePhone, CustomValidations.PHONE,
                 ValidationRegistry.DEFAULT_ORDER, contextKey);
 
         ValidationContext context = new ValidationContext(realm, contextKey);
@@ -214,10 +223,12 @@ public class DefaultValidatorProviderTest {
     @Test
     public void validateWithCustomValidationsInBulkMode() {
 
-        registry.register(CustomValidations::validateCustomAttribute1, CustomValidations.CUSTOM_ATTRIBUTE,
+        registry.register("custom_user_attribute1_validation",
+                CustomValidations::validateCustomAttribute1, CustomValidations.CUSTOM_ATTRIBUTE,
                 ValidationRegistry.DEFAULT_ORDER, CustomValidations.CUSTOM_CONTEXT);
 
-        registry.register(CustomValidations::validateCustomAttribute2, CustomValidations.CUSTOM_ATTRIBUTE,
+        registry.register("custom_user_attribute2_validation",
+                CustomValidations::validateCustomAttribute2, CustomValidations.CUSTOM_ATTRIBUTE,
                 ValidationRegistry.DEFAULT_ORDER + 1000.0, CustomValidations.CUSTOM_CONTEXT);
 
         ValidationContext context = new ValidationContext(realm, CustomValidations.CUSTOM_CONTEXT);
@@ -238,10 +249,12 @@ public class DefaultValidatorProviderTest {
     @Test
     public void validateWithCustomValidationsWithoutBulkMode() {
 
-        registry.register(CustomValidations::validateCustomAttribute1, CustomValidations.CUSTOM_ATTRIBUTE,
+        registry.register("custom_user_attribute1_validation",
+                CustomValidations::validateCustomAttribute1, CustomValidations.CUSTOM_ATTRIBUTE,
                 ValidationRegistry.DEFAULT_ORDER, CustomValidations.CUSTOM_CONTEXT);
 
-        registry.register(CustomValidations::validateCustomAttribute2, CustomValidations.CUSTOM_ATTRIBUTE,
+        registry.register("custom_user_attribute2_validation",
+                CustomValidations::validateCustomAttribute2, CustomValidations.CUSTOM_ATTRIBUTE,
                 ValidationRegistry.DEFAULT_ORDER + 1000.0, CustomValidations.CUSTOM_CONTEXT);
 
         ValidationContext context = new ValidationContext(realm, CustomValidations.CUSTOM_CONTEXT).withBulkMode(false);
@@ -263,7 +276,8 @@ public class DefaultValidatorProviderTest {
 
         new DefaultValidationProvider().register(registry);
 
-        registry.register(CustomValidations::validateUserModel, ValidationKey.User.USER,
+        registry.register("custom_user_registration_validation",
+                CustomValidations::validateUserModel, ValidationKey.User.USER,
                 ValidationRegistry.DEFAULT_ORDER + 1000.0, ValidationContextKey.User.REGISTRATION);
 
         ValidationContext context = new ValidationContext(realm, ValidationContextKey.User.REGISTRATION);
@@ -287,6 +301,62 @@ public class DefaultValidatorProviderTest {
         assertEquals(Messages.MISSING_EMAIL, errors.get(2).getMessage());
     }
 
+    @Test
+    public void validateWithExceptionShouldFail() {
+
+        String exceptionDuringValidation = "exception_during_validation";
+
+        registry.register("custom_user_phone_validation",
+                (key, value, context) -> {
+                    throw new RuntimeException(exceptionDuringValidation);
+                }, CustomValidations.PHONE, ValidationRegistry.DEFAULT_ORDER, CustomValidations.CUSTOM_CONTEXT);
+
+        ValidationContext context = new ValidationContext(realm, CustomValidations.CUSTOM_CONTEXT);
+
+        ValidationResult result = validator.validate(context, "+491234567", CustomValidations.PHONE);
+        assertFalse("An exception during validation should fail the validation", result.isValid());
+        assertTrue("An exception during validation should cause problems", result.hasProblems());
+
+        ValidationProblem problem = result.getErrors(CustomValidations.PHONE).get(0);
+        assertEquals(org.keycloak.validation.Validation.VALIDATION_ERROR, problem.getMessage());
+        assertEquals(exceptionDuringValidation, problem.getException().getMessage());
+    }
+
+
+    @Test
+    public void validateWithConditionalValidation() {
+
+        org.keycloak.validation.Validation userAgeValidation = (key, value, context) -> {
+            int input = value instanceof Integer ? (Integer) value : -1;
+            boolean valid = input >= 18;
+            if (!valid) {
+                context.addError(key, "invalid_age");
+            }
+            return valid;
+        };
+
+        ValidationSupported userAgeValidationCondition = (key, value, context) ->
+                context.getAttributeAsBoolean("over18");
+
+        registry.register("custom_user_age_validation",
+                new DelegatingValidation(userAgeValidation, userAgeValidationCondition), CustomValidations.CUSTOM_ATTRIBUTE,
+                ValidationRegistry.DEFAULT_ORDER, ValidationContextKey.User.REGISTRATION);
+
+        ValidationContext context;
+        ValidationResult result;
+
+        // validation should run
+        context = new ValidationContext(realm, ValidationContextKey.User.REGISTRATION, Collections.singletonMap("over18", true));
+        result = validator.validate(context, 15, CustomValidations.CUSTOM_ATTRIBUTE);
+        assertFalse("Conditional validation should fail the validation", result.isValid());
+        assertTrue("Conditional validation should cause problems", result.hasProblems());
+
+        // validation should NOT run
+        context = new ValidationContext(realm, ValidationContextKey.User.REGISTRATION);
+        result = validator.validate(context, 15, CustomValidations.CUSTOM_ATTRIBUTE);
+        assertTrue("Conditional validation that is not triggered should pass the validation", result.isValid());
+        assertFalse("Conditional validation that is not triggered should not cause problems", result.hasProblems());
+    }
 
     interface CustomValidations {
 
@@ -370,6 +440,7 @@ public class DefaultValidatorProviderTest {
                 valid = false;
             }
 
+            // use a built-in validation in a nested validation
             if (!context.validateNested(ValidationKey.User.EMAIL, user.getEmail())) {
                 valid = false;
             }
@@ -377,5 +448,6 @@ public class DefaultValidatorProviderTest {
             return valid;
         }
     }
+
 
 }

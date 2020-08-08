@@ -17,6 +17,7 @@
 package org.keycloak.services.validation;
 
 import org.jboss.logging.Logger;
+import org.keycloak.validation.NamedValidation;
 import org.keycloak.validation.Validation;
 import org.keycloak.validation.ValidationContext;
 import org.keycloak.validation.ValidationContextKey;
@@ -57,22 +58,22 @@ public class DefaultValidationRegistry implements ValidationRegistry.MutableVali
     }
 
     @Override
-    public List<Validation> getValidations(ValidationKey key) {
+    public List<NamedValidation> getValidations(ValidationKey key) {
         return getValidationRegistrationsStream(key)
-                .map(ValidationRegistration::getValidation)
+                .map(NamedValidation::new)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public Map<ValidationKey, List<Validation>> getValidations(Set<ValidationKey> keys) {
+    public Map<ValidationKey, List<NamedValidation>> getValidations(Set<ValidationKey> keys) {
 
         if (keys == null || keys.isEmpty()) {
             return Collections.emptyMap();
         }
 
-        Map<ValidationKey, List<Validation>> validationMap = new LinkedHashMap<>();
+        Map<ValidationKey, List<NamedValidation>> validationMap = new LinkedHashMap<>();
         for (ValidationKey key : keys) {
-            List<Validation> validations = getValidations(key);
+            List<NamedValidation> validations = getValidations(key);
             validationMap.put(key, validations);
         }
 
@@ -80,15 +81,15 @@ public class DefaultValidationRegistry implements ValidationRegistry.MutableVali
     }
 
     @Override
-    public Map<ValidationKey, List<Validation>> resolveValidations(ValidationContext context, Set<ValidationKey> keys, Object value) {
+    public Map<ValidationKey, List<NamedValidation>> resolveValidations(ValidationContext context, Set<ValidationKey> keys, Object value) {
 
         if (keys == null || keys.isEmpty()) {
             return Collections.emptyMap();
         }
 
-        Map<ValidationKey, List<Validation>> validationMap = new LinkedHashMap<>();
+        Map<ValidationKey, List<NamedValidation>> validationMap = new LinkedHashMap<>();
         for (ValidationKey key : keys) {
-            List<Validation> validations = resolveValidations(context, key, value);
+            List<NamedValidation> validations = resolveValidations(context, key, value);
             validationMap.put(key, validations);
         }
 
@@ -96,35 +97,35 @@ public class DefaultValidationRegistry implements ValidationRegistry.MutableVali
     }
 
     @Override
-    public List<Validation> resolveValidations(ValidationContext context, ValidationKey key, Object value) {
+    public List<NamedValidation> resolveValidations(ValidationContext context, ValidationKey key, Object value) {
         return resolveValidationsInternal(key, getValidationRegistrationsStream(key), context, value);
     }
 
-    protected List<Validation> resolveValidationsInternal(ValidationKey key, Stream<ValidationRegistration> registrations, ValidationContext context, Object value) {
+    protected List<NamedValidation> resolveValidationsInternal(ValidationKey key, Stream<ValidationRegistration> registrations, ValidationContext context, Object value) {
         return filterSupportedValidationsStream(key, registrations, context, value)
                 .collect(Collectors.toList());
     }
 
-    protected Stream<Validation> filterSupportedValidationsStream(ValidationKey key, Stream<ValidationRegistration> registrations, ValidationContext context, Object value) {
+    protected Stream<NamedValidation> filterSupportedValidationsStream(ValidationKey key, Stream<ValidationRegistration> registrations, ValidationContext context, Object value) {
         return filterEligibleRegistrationsStream(registrations, context)
                 .filter(v -> v.isSupported(key, value, context));
     }
 
-    protected Stream<Validation> filterEligibleRegistrationsStream(Stream<ValidationRegistration> registrations, ValidationContext context) {
+    protected Stream<NamedValidation> filterEligibleRegistrationsStream(Stream<ValidationRegistration> registrations, ValidationContext context) {
         return registrations.filter(vr -> vr.isEligibleForContextKey(context.getContextKey())).sorted()
-                .map(ValidationRegistration::getValidation);
+                .map(NamedValidation::new);
     }
 
     @Override
-    public void register(Validation validation, ValidationKey key, double order, Set<ValidationContextKey> contextKeys) {
+    public void register(String name, Validation validation, ValidationKey key, double order, Set<ValidationContextKey> contextKeys) {
 
-        ValidationRegistration registration = new ValidationRegistration(key, validation, order, contextKeys);
+        ValidationRegistration registration = new ValidationRegistration(name, key, validation, order, contextKeys);
 
         SortedSet<ValidationRegistration> registrations = validatorRegistrations.computeIfAbsent(key, t -> new TreeSet<>());
 
         boolean wasNew = registrations.add(registration);
         if (!wasNew) {
-            LOGGER.debugf("Validation %s for key %s replaced existing validation.", validation.getClass().getName(), key);
+            LOGGER.debugf("Validation %s (%s) for key %s replaced existing validation.", registration.getName(), validation.getClass().getName(), key);
 
             // remove existing registration (with same order)
             registrations.remove(registration);

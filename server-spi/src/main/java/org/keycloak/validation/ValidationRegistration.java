@@ -29,6 +29,11 @@ public class ValidationRegistration implements Comparable<ValidationRegistration
     private final ValidationKey key;
 
     /**
+     * A logical name describing the validation.
+     */
+    private final String name;
+
+    /**
      * The actual {@link Validation}
      */
     private final Validation validation;
@@ -45,11 +50,25 @@ public class ValidationRegistration implements Comparable<ValidationRegistration
      */
     private final double order;
 
-    public ValidationRegistration(ValidationKey key, Validation validation, double order, Set<ValidationContextKey> contextKeys) {
+    /**
+     * Creates a new {@link ValidationRegistration}.
+     *
+     * @param name
+     * @param key
+     * @param validation
+     * @param order
+     * @param contextKeys
+     */
+    public ValidationRegistration(String name, ValidationKey key, Validation validation, double order, Set<ValidationContextKey> contextKeys) {
+        this.name = name;
         this.key = key;
         this.validation = validation;
         this.order = order;
         this.contextKeys = contextKeys;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public ValidationKey getKey() {
@@ -75,5 +94,16 @@ public class ValidationRegistration implements Comparable<ValidationRegistration
 
     public boolean isEligibleForContextKey(ValidationContextKey contextKey) {
         return getContextKeys().contains(contextKey);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{" +
+                "key=" + key +
+                ", name='" + name + '\'' +
+                ", validation=" + validation +
+                ", contextKeys=" + contextKeys +
+                ", order=" + order +
+                '}';
     }
 }

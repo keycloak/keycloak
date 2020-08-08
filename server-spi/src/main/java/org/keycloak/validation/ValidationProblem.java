@@ -17,7 +17,7 @@
 package org.keycloak.validation;
 
 /**
- * Denotes a problem that occurred during validatoin.
+ * Denotes a problem that occurred during a {@link Validation}.
  */
 public class ValidationProblem {
 
@@ -48,10 +48,16 @@ public class ValidationProblem {
      */
     private final Severity severity;
 
-    public ValidationProblem(ValidationKey key, String message, Severity severity) {
+    /**
+     * Holds an exception that occurred during a Validation.
+     */
+    private final Exception exception;
+
+    public ValidationProblem(ValidationKey key, String message, Severity severity, Exception exception) {
         this.key = key;
         this.message = message;
         this.severity = severity;
+        this.exception = exception;
     }
 
     public ValidationKey getKey() {
@@ -74,20 +80,29 @@ public class ValidationProblem {
         return severity == Severity.WARNING;
     }
 
+    public Exception getException() {
+        return exception;
+    }
+
     public static ValidationProblem warning(ValidationKey key, String message) {
-        return new ValidationProblem(key, message, Severity.WARNING);
+        return new ValidationProblem(key, message, Severity.WARNING, null);
     }
 
     public static ValidationProblem error(ValidationKey key, String message) {
-        return new ValidationProblem(key, message, Severity.ERROR);
+        return error(key, message, null);
+    }
+
+    public static ValidationProblem error(ValidationKey key, String message, Exception ex) {
+        return new ValidationProblem(key, message, Severity.ERROR, ex);
     }
 
     @Override
     public String toString() {
-        return "ValidationProblem{" +
-                "key='" + key + '\'' +
+        return getClass().getSimpleName() + "{" +
+                "key=" + key +
                 ", message='" + message + '\'' +
                 ", severity=" + severity +
+                ", exception=" + exception +
                 '}';
     }
 }
