@@ -33,6 +33,9 @@ public interface ValidationContextKey {
 
     ValidationContextKey DEFAULT_CONTEXT_KEY = new BuiltInValidationContextKey("", null);
 
+    ValidationContextKey CLIENT_DEFAULT_CONTEXT_KEY =
+            new BuiltInValidationContextKey("client", ValidationContextKey.DEFAULT_CONTEXT_KEY);
+
     ValidationContextKey USER_DEFAULT_CONTEXT_KEY =
             new BuiltInValidationContextKey("user", ValidationContextKey.DEFAULT_CONTEXT_KEY);
 

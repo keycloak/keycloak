@@ -20,6 +20,7 @@ import org.keycloak.validation.ValidationRegistry;
 import org.keycloak.validation.ValidationRegistry.MutableValidationRegistry;
 import org.keycloak.validation.ValidationResult;
 
+import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 
@@ -27,6 +28,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.validation.ValidationContextKey.CLIENT_DEFAULT_CONTEXT_KEY;
 import static org.keycloak.validation.ValidationContextKey.DEFAULT_CONTEXT_KEY;
 import static org.keycloak.validation.ValidationContextKey.USER_DEFAULT_CONTEXT_KEY;
 import static org.keycloak.validation.ValidationContextKey.USER_PROFILE_UPDATE_CONTEXT_KEY;
@@ -378,6 +380,42 @@ public class DefaultValidatorProviderTest {
         }
     }
 
+    @Test
+    public void validationWithWarningShouldStillBeValid() {
+
+        registry.register("custom_client_redirectUri",
+                (key, value, context) -> {
+
+                    String input = String.valueOf(value);
+                    URI uri;
+                    try {
+                        uri = URI.create(input);
+                    } catch (IllegalArgumentException iae) {
+                        context.addError(key, "redirect_uri_missing", iae);
+                        return false;
+                    }
+
+                    if (!"https".equals(uri.getScheme())) {
+                        context.addWarning(key, CustomValidations.WARNING_SECURITY_HTTPS_RECOMMENDED);
+                    }
+
+                    return true;
+                },
+                CustomValidations.CLIENT_REDIRECT_URI, ValidationRegistry.DEFAULT_ORDER, CLIENT_DEFAULT_CONTEXT_KEY);
+
+        ValidationContext context = new ValidationContext(CLIENT_DEFAULT_CONTEXT_KEY);
+        ValidationResult result = validator.validate(context, "http://app/oidc_callback", CustomValidations.CLIENT_REDIRECT_URI);
+
+        assertTrue("Validation with warning should still pass", result.isValid());
+        assertTrue("Validation with warning should cause problems", result.hasProblems());
+        assertTrue(result.getErrors().isEmpty());
+        assertFalse(result.getWarnings().isEmpty());
+
+        ValidationProblem problem = result.getWarnings(CustomValidations.CLIENT_REDIRECT_URI).get(0);
+        assertEquals(CustomValidations.WARNING_SECURITY_HTTPS_RECOMMENDED, problem.getMessage());
+        assertEquals(ValidationProblem.Severity.WARNING, problem.getSeverity());
+    }
+
     interface CustomValidations {
 
         String MISSING_PHONE = "missing_phone";
@@ -394,11 +432,15 @@ public class DefaultValidatorProviderTest {
 
         String INVALID_USER_LASTNAME = "invalid_user_lastname";
 
+        String WARNING_SECURITY_HTTPS_RECOMMENDED = "warning_security_https_recommended";
+
         ValidationContextKey USER_CUSTOM_CONTEXT_KEY = ValidationContextKey.newCustomValidationContextKey("user.custom", USER_DEFAULT_CONTEXT_KEY);
 
         CustomValidationKey USER_PHONE = ValidationKey.newCustomKey("user.phone", true);
 
         CustomValidationKey USER_ATTRIBUTES_CUSTOM = ValidationKey.newCustomKey("user.attributes.customAttribute", true);
+
+        CustomValidationKey CLIENT_REDIRECT_URI = ValidationKey.newCustomKey("client.redirectUri", true);
 
         static boolean validatePhone(ValidationKey key, Object value, NestedValidationContext context) {
 
