@@ -60,27 +60,27 @@ public class DefaultValidatorProviderTest {
         ValidationResult result;
         ValidationProblem problem;
 
-        result = validator.validate(context, "test@localhost", ValidationKey.User.EMAIL);
+        result = validator.validate(context, "test@localhost", ValidationKey.USER_EMAIL);
         assertTrue("A valid email should be valid", result.isValid());
         assertFalse("A valid email should cause no problems", result.hasProblems());
 
-        result = validator.validate(context, "", ValidationKey.User.EMAIL);
+        result = validator.validate(context, "", ValidationKey.USER_EMAIL);
         assertFalse("An empty email should be invalid", result.isValid());
         assertTrue("An empty email should cause report problems", result.hasProblems());
-        problem = result.getErrors(ValidationKey.User.EMAIL).get(0);
+        problem = result.getErrors(ValidationKey.USER_EMAIL).get(0);
         assertEquals("An empty email should result in a problem", Messages.MISSING_EMAIL, problem.getMessage());
         assertTrue("An empty email should result in a missing email error", problem.isError());
 
-        result = validator.validate(context, null, ValidationKey.User.EMAIL);
+        result = validator.validate(context, null, ValidationKey.USER_EMAIL);
         assertFalse("A null email should be invalid", result.isValid());
         assertTrue("A null email should cause report problems", result.hasProblems());
-        problem = result.getErrors(ValidationKey.User.EMAIL).get(0);
+        problem = result.getErrors(ValidationKey.USER_EMAIL).get(0);
         assertEquals("An null email should result in a missing email problem", Messages.MISSING_EMAIL, problem.getMessage());
 
-        result = validator.validate(context, "invalid", ValidationKey.User.EMAIL);
+        result = validator.validate(context, "invalid", ValidationKey.USER_EMAIL);
         assertFalse("A null email should be invalid", result.isValid());
         assertTrue("A null email should cause report problems", result.hasProblems());
-        problem = result.getErrors(ValidationKey.User.EMAIL).get(0);
+        problem = result.getErrors(ValidationKey.USER_EMAIL).get(0);
         assertEquals("An null email should result in a problem", Messages.INVALID_EMAIL, problem.getMessage());
         assertTrue("An null email should result in a invalid email error", problem.isError());
     }
@@ -95,18 +95,18 @@ public class DefaultValidatorProviderTest {
         ValidationResult result;
         ValidationProblem problem;
 
-        result = validator.validate(context, "test@localhost", ValidationKey.User.EMAIL);
+        result = validator.validate(context, "test@localhost", ValidationKey.USER_EMAIL);
         assertTrue("A valid email should be valid", result.isValid());
         assertFalse("A valid email should cause no problems", result.hasProblems());
 
-        result = validator.validate(context, "Theo", ValidationKey.User.FIRSTNAME);
+        result = validator.validate(context, "Theo", ValidationKey.USER_FIRSTNAME);
         assertTrue("A valid firstname should be valid", result.isValid());
         assertFalse("A valid firstname should cause no problems", result.hasProblems());
 
-        result = validator.validate(context, null, ValidationKey.User.LASTNAME);
+        result = validator.validate(context, null, ValidationKey.USER_LASTNAME);
         assertFalse("An invalid lastname should be valid", result.isValid());
         assertTrue("An invalid lastname should cause no problems", result.hasProblems());
-        problem = result.getErrors(ValidationKey.User.LASTNAME).get(0);
+        problem = result.getErrors(ValidationKey.USER_LASTNAME).get(0);
         assertEquals("An invalid lastname should result in a problem", Messages.MISSING_LAST_NAME, problem.getMessage());
         assertTrue("An invalid lastname should result in a missing lastname error", problem.isError());
     }
@@ -117,7 +117,7 @@ public class DefaultValidatorProviderTest {
         new DefaultValidationProvider().register(registry);
 
         registry.register("custom_user_phone_validation",
-                CustomValidations::validatePhone, CustomValidations.PHONE,
+                CustomValidations::validatePhone, CustomValidations.USER_PHONE,
                 ValidationRegistry.DEFAULT_ORDER, USER_PROFILE_UPDATE_CONTEXT_KEY);
 
         ValidationContext context = new ValidationContext(USER_PROFILE_UPDATE_CONTEXT_KEY);
@@ -125,14 +125,14 @@ public class DefaultValidatorProviderTest {
         ValidationResult result;
         ValidationProblem problem;
 
-        result = validator.validate(context, "+4912345678", CustomValidations.PHONE);
+        result = validator.validate(context, "+4912345678", CustomValidations.USER_PHONE);
         assertTrue("A valid phone number should be valid", result.isValid());
         assertFalse("A valid phone number should cause no problems", result.hasProblems());
 
-        result = validator.validate(context, "", CustomValidations.PHONE);
+        result = validator.validate(context, "", CustomValidations.USER_PHONE);
         assertFalse("A missing phone number should be invalid", result.isValid());
         assertTrue("A missing phone should cause problems", result.hasProblems());
-        problem = result.getErrors(CustomValidations.PHONE).get(0);
+        problem = result.getErrors(CustomValidations.USER_PHONE).get(0);
         assertEquals("A missing phone should result in a problem", CustomValidations.MISSING_PHONE, problem.getMessage());
         assertTrue("A missing phone should result in a missing email error", problem.isError());
     }
@@ -143,7 +143,7 @@ public class DefaultValidatorProviderTest {
         new DefaultValidationProvider().register(registry);
 
         registry.register("custom_user_email_validation",
-                CustomValidations::validateEmailCustom, ValidationKey.User.EMAIL,
+                CustomValidations::validateEmailCustom, ValidationKey.USER_EMAIL,
                 ValidationRegistry.DEFAULT_ORDER + 1000.0, USER_REGISTRATION_CONTEXT_KEY);
 
         ValidationContext context = new ValidationContext(USER_REGISTRATION_CONTEXT_KEY);
@@ -151,14 +151,14 @@ public class DefaultValidatorProviderTest {
         ValidationResult result;
         ValidationProblem problem;
 
-        result = validator.validate(context, "test@allowed", ValidationKey.User.EMAIL);
+        result = validator.validate(context, "test@allowed", ValidationKey.USER_EMAIL);
         assertTrue("A valid email should be valid", result.isValid());
         assertFalse("A valid email should cause no problems", result.hasProblems());
 
-        result = validator.validate(context, "test@notallowed", ValidationKey.User.EMAIL);
+        result = validator.validate(context, "test@notallowed", ValidationKey.USER_EMAIL);
         assertFalse("A not allowed email should be invalid", result.isValid());
         assertTrue("A not allowed email should cause report problems", result.hasProblems());
-        problem = result.getErrors(ValidationKey.User.EMAIL).get(0);
+        problem = result.getErrors(ValidationKey.USER_EMAIL).get(0);
         assertEquals("A not allowed should result in a problem", CustomValidations.EMAIL_NOT_ALLOWED, problem.getMessage());
         assertTrue("A not allowed should result in a email not allowed error", problem.isError());
     }
@@ -170,10 +170,10 @@ public class DefaultValidatorProviderTest {
 
         // default order = 0.0 effectively replaces the existing validator
         registry.register("custom_user_email_validation",
-                CustomValidations::validateEmailCustom, ValidationKey.User.EMAIL,
+                CustomValidations::validateEmailCustom, ValidationKey.USER_EMAIL,
                 ValidationRegistry.DEFAULT_ORDER, USER_REGISTRATION_CONTEXT_KEY);
 
-        List<NamedValidation> validations = registry.getValidations(ValidationKey.User.EMAIL);
+        List<NamedValidation> validations = registry.getValidations(ValidationKey.USER_EMAIL);
         assertEquals("Should have only one validation", 1, validations.size());
         assertSame("custom_user_email_validation", validations.get(0).getName());
 
@@ -182,14 +182,14 @@ public class DefaultValidatorProviderTest {
         ValidationResult result;
         ValidationProblem problem;
 
-        result = validator.validate(context, "test@allowed", ValidationKey.User.EMAIL);
+        result = validator.validate(context, "test@allowed", ValidationKey.USER_EMAIL);
         assertTrue("A valid email should be valid", result.isValid());
         assertFalse("A valid email should cause no problems", result.hasProblems());
 
-        result = validator.validate(context, "test@notallowed", ValidationKey.User.EMAIL);
+        result = validator.validate(context, "test@notallowed", ValidationKey.USER_EMAIL);
         assertFalse("A not allowed email should be invalid", result.isValid());
         assertTrue("A not allowed email should cause report problems", result.hasProblems());
-        problem = result.getErrors(ValidationKey.User.EMAIL).get(0);
+        problem = result.getErrors(ValidationKey.USER_EMAIL).get(0);
         assertEquals("A not allowed should result in a problem", CustomValidations.EMAIL_NOT_ALLOWED, problem.getMessage());
         assertTrue("A not allowed should result in a email not allowed error", problem.isError());
     }
@@ -197,15 +197,14 @@ public class DefaultValidatorProviderTest {
     @Test
     public void ignoreCustomValidationInDifferentValidationContext() {
 
-        ValidationContextKey contextKey = USER_PROFILE_UPDATE_CONTEXT_KEY;
         registry.register("custom_user_phone_validation",
-                CustomValidations::validatePhone, CustomValidations.PHONE,
-                ValidationRegistry.DEFAULT_ORDER, contextKey);
+                CustomValidations::validatePhone, CustomValidations.USER_PHONE,
+                ValidationRegistry.DEFAULT_ORDER, USER_PROFILE_UPDATE_CONTEXT_KEY);
 
         ValidationContextKey differentContextKey = USER_REGISTRATION_CONTEXT_KEY;
         ValidationContext context = new ValidationContext(differentContextKey);
 
-        ValidationResult result = validator.validate(context, "", CustomValidations.PHONE);
+        ValidationResult result = validator.validate(context, "", CustomValidations.USER_PHONE);
         assertTrue("A missing phone number is valid without validation in the " + differentContextKey, result.isValid());
     }
 
@@ -214,12 +213,12 @@ public class DefaultValidatorProviderTest {
 
         ValidationContextKey contextKey = CustomValidations.USER_CUSTOM_CONTEXT_KEY;
         registry.register("custom_user_phone_validation",
-                CustomValidations::validatePhone, CustomValidations.PHONE,
+                CustomValidations::validatePhone, CustomValidations.USER_PHONE,
                 ValidationRegistry.DEFAULT_ORDER, contextKey);
 
         ValidationContext context = new ValidationContext(contextKey);
 
-        ValidationResult result = validator.validate(context, "", CustomValidations.PHONE);
+        ValidationResult result = validator.validate(context, "", CustomValidations.USER_PHONE);
         assertFalse("A missing phone number should be invalid", result.isValid());
         assertTrue("A missing phone should cause problems", result.hasProblems());
     }
@@ -228,24 +227,24 @@ public class DefaultValidatorProviderTest {
     public void validateWithCustomValidationsInBulkMode() {
 
         registry.register("custom_user_attribute1_validation",
-                CustomValidations::validateCustomAttribute1, CustomValidations.CUSTOM_ATTRIBUTE,
+                CustomValidations::validateCustomAttribute1, CustomValidations.USER_ATTRIBUTES_CUSTOM,
                 ValidationRegistry.DEFAULT_ORDER, CustomValidations.USER_CUSTOM_CONTEXT_KEY);
 
         registry.register("custom_user_attribute2_validation",
-                CustomValidations::validateCustomAttribute2, CustomValidations.CUSTOM_ATTRIBUTE,
+                CustomValidations::validateCustomAttribute2, CustomValidations.USER_ATTRIBUTES_CUSTOM,
                 ValidationRegistry.DEFAULT_ORDER + 1000.0, CustomValidations.USER_CUSTOM_CONTEXT_KEY);
 
         ValidationContext context = new ValidationContext(CustomValidations.USER_CUSTOM_CONTEXT_KEY);
 
-        ValidationResult result = validator.validate(context, "value3", CustomValidations.CUSTOM_ATTRIBUTE);
+        ValidationResult result = validator.validate(context, "value3", CustomValidations.USER_ATTRIBUTES_CUSTOM);
         assertFalse("An invalid custom attribute should be invalid", result.isValid());
         assertTrue("An invalid custom attribute should cause problems", result.hasProblems());
         assertEquals(2, result.getProblems().size());
         assertEquals(2, result.getErrors().size());
-        assertEquals(0, result.getErrors(ValidationKey.User.USERNAME).size());
-        List<ValidationProblem> errors = result.getErrors(CustomValidations.CUSTOM_ATTRIBUTE);
+        assertEquals(0, result.getErrors(ValidationKey.USER_USERNAME).size());
+        List<ValidationProblem> errors = result.getErrors(CustomValidations.USER_ATTRIBUTES_CUSTOM);
         assertEquals(2, errors.size());
-        assertEquals(CustomValidations.CUSTOM_ATTRIBUTE, errors.get(0).getKey());
+        assertEquals(CustomValidations.USER_ATTRIBUTES_CUSTOM, errors.get(0).getKey());
         assertEquals(CustomValidations.INVALID_ATTRIBUTE1, errors.get(0).getMessage());
         assertEquals(CustomValidations.INVALID_ATTRIBUTE2, errors.get(1).getMessage());
     }
@@ -254,24 +253,24 @@ public class DefaultValidatorProviderTest {
     public void validateWithCustomValidationsWithoutBulkMode() {
 
         registry.register("custom_user_attribute1_validation",
-                CustomValidations::validateCustomAttribute1, CustomValidations.CUSTOM_ATTRIBUTE,
+                CustomValidations::validateCustomAttribute1, CustomValidations.USER_ATTRIBUTES_CUSTOM,
                 ValidationRegistry.DEFAULT_ORDER, CustomValidations.USER_CUSTOM_CONTEXT_KEY);
 
         registry.register("custom_user_attribute2_validation",
-                CustomValidations::validateCustomAttribute2, CustomValidations.CUSTOM_ATTRIBUTE,
+                CustomValidations::validateCustomAttribute2, CustomValidations.USER_ATTRIBUTES_CUSTOM,
                 ValidationRegistry.DEFAULT_ORDER + 1000.0, CustomValidations.USER_CUSTOM_CONTEXT_KEY);
 
         ValidationContext context = new ValidationContext(CustomValidations.USER_CUSTOM_CONTEXT_KEY).withBulkMode(false);
 
-        ValidationResult result = validator.validate(context, "value3", CustomValidations.CUSTOM_ATTRIBUTE);
+        ValidationResult result = validator.validate(context, "value3", CustomValidations.USER_ATTRIBUTES_CUSTOM);
         assertFalse("An invalid custom attribute should be invalid", result.isValid());
         assertTrue("An invalid custom attribute should cause problems", result.hasProblems());
         assertEquals(1, result.getProblems().size());
         assertEquals(1, result.getErrors().size());
-        assertEquals(0, result.getErrors(ValidationKey.User.USERNAME).size());
-        List<ValidationProblem> errors = result.getErrors(CustomValidations.CUSTOM_ATTRIBUTE);
+        assertEquals(0, result.getErrors(ValidationKey.USER_USERNAME).size());
+        List<ValidationProblem> errors = result.getErrors(CustomValidations.USER_ATTRIBUTES_CUSTOM);
         assertEquals(1, errors.size());
-        assertEquals(CustomValidations.CUSTOM_ATTRIBUTE, errors.get(0).getKey());
+        assertEquals(CustomValidations.USER_ATTRIBUTES_CUSTOM, errors.get(0).getKey());
         assertEquals(CustomValidations.INVALID_ATTRIBUTE1, errors.get(0).getMessage());
     }
 
@@ -281,7 +280,7 @@ public class DefaultValidatorProviderTest {
         new DefaultValidationProvider().register(registry);
 
         registry.register("custom_user_registration_validation",
-                CustomValidations::validateUserModel, ValidationKey.User.USER,
+                CustomValidations::validateUserModel, ValidationKey.USER,
                 ValidationRegistry.DEFAULT_ORDER + 1000.0, USER_REGISTRATION_CONTEXT_KEY);
 
         ValidationContext context = new ValidationContext(USER_REGISTRATION_CONTEXT_KEY);
@@ -292,13 +291,13 @@ public class DefaultValidatorProviderTest {
         user.setFirstName("Probe");
         user.setEmail("");
 
-        ValidationResult result = validator.validate(context, user, ValidationKey.User.USER);
+        ValidationResult result = validator.validate(context, user, ValidationKey.USER);
 
         assertFalse("An invalid custom attribute should be invalid", result.isValid());
         assertTrue("An invalid custom attribute should cause problems", result.hasProblems());
         assertEquals(3, result.getProblems().size());
         assertEquals(3, result.getErrors().size());
-        assertEquals(0, result.getErrors(ValidationKey.User.USERNAME).size());
+        assertEquals(0, result.getErrors(ValidationKey.USER_USERNAME).size());
         List<ValidationProblem> errors = result.getErrors();
         assertEquals(CustomValidations.INVALID_USER_FIRSTNAME, errors.get(0).getMessage());
         assertEquals(CustomValidations.INVALID_USER_LASTNAME, errors.get(1).getMessage());
@@ -313,15 +312,15 @@ public class DefaultValidatorProviderTest {
         registry.register("custom_user_phone_validation",
                 (key, value, context) -> {
                     throw new RuntimeException(exceptionDuringValidation);
-                }, CustomValidations.PHONE, ValidationRegistry.DEFAULT_ORDER, CustomValidations.USER_CUSTOM_CONTEXT_KEY);
+                }, CustomValidations.USER_PHONE, ValidationRegistry.DEFAULT_ORDER, CustomValidations.USER_CUSTOM_CONTEXT_KEY);
 
         ValidationContext context = new ValidationContext(CustomValidations.USER_CUSTOM_CONTEXT_KEY);
 
-        ValidationResult result = validator.validate(context, "+491234567", CustomValidations.PHONE);
+        ValidationResult result = validator.validate(context, "+491234567", CustomValidations.USER_PHONE);
         assertFalse("An exception during validation should fail the validation", result.isValid());
         assertTrue("An exception during validation should cause problems", result.hasProblems());
 
-        ValidationProblem problem = result.getErrors(CustomValidations.PHONE).get(0);
+        ValidationProblem problem = result.getErrors(CustomValidations.USER_PHONE).get(0);
         assertEquals(org.keycloak.validation.Validation.VALIDATION_ERROR, problem.getMessage());
         assertEquals(exceptionDuringValidation, problem.getException().getMessage());
     }
@@ -343,7 +342,7 @@ public class DefaultValidatorProviderTest {
                 context.getAttributeAsBoolean("over18");
 
         registry.register("custom_user_age_validation",
-                new DelegatingValidation(userAgeValidation, userAgeValidationCondition), CustomValidations.CUSTOM_ATTRIBUTE,
+                new DelegatingValidation(userAgeValidation, userAgeValidationCondition), CustomValidations.USER_ATTRIBUTES_CUSTOM,
                 ValidationRegistry.DEFAULT_ORDER, USER_REGISTRATION_CONTEXT_KEY);
 
         ValidationContext context;
@@ -351,13 +350,13 @@ public class DefaultValidatorProviderTest {
 
         // validation should run
         context = new ValidationContext(USER_REGISTRATION_CONTEXT_KEY, Collections.singletonMap("over18", true));
-        result = validator.validate(context, 15, CustomValidations.CUSTOM_ATTRIBUTE);
+        result = validator.validate(context, 15, CustomValidations.USER_ATTRIBUTES_CUSTOM);
         assertFalse("Conditional validation should fail the validation", result.isValid());
         assertTrue("Conditional validation should cause problems", result.hasProblems());
 
         // validation should NOT run
         context = new ValidationContext(USER_REGISTRATION_CONTEXT_KEY);
-        result = validator.validate(context, 15, CustomValidations.CUSTOM_ATTRIBUTE);
+        result = validator.validate(context, 15, CustomValidations.USER_ATTRIBUTES_CUSTOM);
         assertTrue("Conditional validation that is not triggered should pass the validation", result.isValid());
         assertFalse("Conditional validation that is not triggered should not cause problems", result.hasProblems());
     }
@@ -367,14 +366,14 @@ public class DefaultValidatorProviderTest {
 
         registry.register("custom_user_attribute_validation",
                 (key, value, context) -> context.evaluateAndReportErrorIfFalse(() -> value != null, key, CustomValidations.INVALID_ATTRIBUTE),
-                CustomValidations.CUSTOM_ATTRIBUTE, ValidationRegistry.DEFAULT_ORDER, DEFAULT_CONTEXT_KEY);
+                CustomValidations.USER_ATTRIBUTES_CUSTOM, ValidationRegistry.DEFAULT_ORDER, DEFAULT_CONTEXT_KEY);
 
         for (ValidationContextKey contextKey : ValidationContextKey.ALL_CONTEXT_KEYS) {
             ValidationContext context = new ValidationContext(contextKey);
-            ValidationResult result = validator.validate(context, null, CustomValidations.CUSTOM_ATTRIBUTE);
+            ValidationResult result = validator.validate(context, null, CustomValidations.USER_ATTRIBUTES_CUSTOM);
             assertFalse("Conditional validation should fail the validation", result.isValid());
             assertTrue("Conditional validation should cause problems", result.hasProblems());
-            ValidationProblem problem = result.getErrors(CustomValidations.CUSTOM_ATTRIBUTE).get(0);
+            ValidationProblem problem = result.getErrors(CustomValidations.USER_ATTRIBUTES_CUSTOM).get(0);
             assertEquals(CustomValidations.INVALID_ATTRIBUTE, problem.getMessage());
         }
     }
@@ -391,13 +390,15 @@ public class DefaultValidatorProviderTest {
 
         String INVALID_ATTRIBUTE2 = "invalid_attribute2";
 
-        ValidationContextKey USER_CUSTOM_CONTEXT_KEY = ValidationContextKey.newCustomValidationContextKey("custom", USER_DEFAULT_CONTEXT_KEY);
-
-        CustomValidationKey PHONE = ValidationKey.newCustomKey("user.phone", true);
-
-        CustomValidationKey CUSTOM_ATTRIBUTE = ValidationKey.newCustomKey("user.attributes.customAttribute", true);
         String INVALID_USER_FIRSTNAME = "invalid_user_firstname";
+
         String INVALID_USER_LASTNAME = "invalid_user_lastname";
+
+        ValidationContextKey USER_CUSTOM_CONTEXT_KEY = ValidationContextKey.newCustomValidationContextKey("user.custom", USER_DEFAULT_CONTEXT_KEY);
+
+        CustomValidationKey USER_PHONE = ValidationKey.newCustomKey("user.phone", true);
+
+        CustomValidationKey USER_ATTRIBUTES_CUSTOM = ValidationKey.newCustomKey("user.attributes.customAttribute", true);
 
         static boolean validatePhone(ValidationKey key, Object value, NestedValidationContext context) {
 
@@ -450,21 +451,21 @@ public class DefaultValidatorProviderTest {
 
             boolean valid = true;
             if (!"Theo".equals(user.getFirstName())) {
-                context.addError(ValidationKey.User.FIRSTNAME, INVALID_USER_FIRSTNAME);
+                context.addError(ValidationKey.USER_FIRSTNAME, INVALID_USER_FIRSTNAME);
                 // go on with additional checks
                 // return false;
                 valid = false;
             }
 
             if (!"Tester".equals(user.getLastName())) {
-                context.addError(ValidationKey.User.EMAIL, INVALID_USER_LASTNAME);
+                context.addError(ValidationKey.USER_EMAIL, INVALID_USER_LASTNAME);
                 // go on with additional checks
                 // return false;
                 valid = false;
             }
 
             // use a built-in validation in a nested validation
-            if (!context.validateNested(ValidationKey.User.EMAIL, user.getEmail())) {
+            if (!context.validateNested(ValidationKey.USER_EMAIL, user.getEmail())) {
                 valid = false;
             }
 

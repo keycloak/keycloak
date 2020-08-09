@@ -29,25 +29,24 @@ import java.util.Objects;
  */
 public interface ValidationKey {
 
-    /**
-     * Collection of User specific validation keys.
-     */
-    interface User {
+    // User Entities
+    // USER_PROFILE
+    // USER_REGISTRATION
+    // USER
+    BuiltinValidationKey USER = new BuiltinValidationKey("user", false);
+    // User Attributes
+    BuiltinValidationKey USER_USERNAME = new BuiltinValidationKey("user.username", true);
+    BuiltinValidationKey USER_EMAIL = new BuiltinValidationKey("user.email", true);
+    BuiltinValidationKey USER_FIRSTNAME = new BuiltinValidationKey("user.firstName", true);
+    BuiltinValidationKey USER_LASTNAME = new BuiltinValidationKey("user.lastName", true);
 
-        // User Entities
-        // USER_PROFILE
-        // USER_REGISTRATION
-        // USER
-        BuiltinValidationKey USER = new BuiltinValidationKey("user", false);
-
-        // User Attributes
-        BuiltinValidationKey USERNAME = new BuiltinValidationKey("user.username", true);
-        BuiltinValidationKey EMAIL = new BuiltinValidationKey("user.email", true);
-        BuiltinValidationKey FIRSTNAME = new BuiltinValidationKey("user.firstName", true);
-        BuiltinValidationKey LASTNAME = new BuiltinValidationKey("user.lastName", true);
-
-        List<BuiltinValidationKey> ALL_KEYS = Collections.unmodifiableList(Arrays.asList(USER, USERNAME, EMAIL, FIRSTNAME, LASTNAME));
-    }
+    List<BuiltinValidationKey> ALL_KEYS = Collections.unmodifiableList(Arrays.asList(
+            USER,
+            USER_USERNAME,
+            USER_EMAIL,
+            USER_FIRSTNAME,
+            USER_LASTNAME
+    ));
 
     // TODO add additional supported attributes
 
@@ -80,13 +79,11 @@ public interface ValidationKey {
      */
     static ValidationKey lookup(String name) {
 
-        for (ValidationKey key : User.ALL_KEYS) {
+        for (ValidationKey key : ALL_KEYS) {
             if (key.getName().equals(name)) {
                 return key;
             }
         }
-
-        // todo check other validation keys
 
         return null;
     }

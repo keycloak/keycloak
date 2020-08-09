@@ -16,17 +16,15 @@
  */
 package org.keycloak.validation;
 
-import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
 
 /**
  * Denotes a dedicated ValidationContext in which certain {@link Validation} rules should be applied, e.g. during User Registration,
  * User Profile change, Client Registration, Realm Definition, Identity Provider Configuration, etc.
- * {@link Validation Validation's} can be associated with different ValidationContextKey.
+ * {@link Validation Validation's} can be associated with different {@link ValidationContextKey}.
  * <p>
  * Users can create custom {@link ValidationContextKey ValidationContextKey's} by implementing this interface.
  * It is recommended that custom {@link ValidationContextKey} implementations are singletons.
@@ -39,19 +37,19 @@ public interface ValidationContextKey {
             new BuiltInValidationContextKey("user", ValidationContextKey.DEFAULT_CONTEXT_KEY);
 
     ValidationContextKey USER_RESOURCE_UPDATE_CONTEXT_KEY =
-            new BuiltInValidationContextKey("resource_update", USER_DEFAULT_CONTEXT_KEY);
+            new BuiltInValidationContextKey("user.resource_update", USER_DEFAULT_CONTEXT_KEY);
 
     ValidationContextKey USER_PROFILE_UPDATE_CONTEXT_KEY =
-            new BuiltInValidationContextKey("profile_update", USER_DEFAULT_CONTEXT_KEY);
+            new BuiltInValidationContextKey("user.profile_update", USER_DEFAULT_CONTEXT_KEY);
 
     ValidationContextKey USER_REGISTRATION_CONTEXT_KEY =
-            new BuiltInValidationContextKey("registration", USER_DEFAULT_CONTEXT_KEY);
+            new BuiltInValidationContextKey("user.registration", USER_DEFAULT_CONTEXT_KEY);
 
     ValidationContextKey USER_PROFILE_UPDATE_REGISTRATION_CONTEXT_KEY =
-            new BuiltInValidationContextKey("profile_update_registration", USER_DEFAULT_CONTEXT_KEY);
+            new BuiltInValidationContextKey("user.profile_update_registration", USER_DEFAULT_CONTEXT_KEY);
 
     ValidationContextKey USER_PROFILE_UPDATE_IDP_REVIEW_CONTEXT_KEY =
-            new BuiltInValidationContextKey("profile_update_idp_review", USER_DEFAULT_CONTEXT_KEY);
+            new BuiltInValidationContextKey("user.profile_update_idp_review", USER_DEFAULT_CONTEXT_KEY);
 
     List<ValidationContextKey> ALL_CONTEXT_KEYS = Collections.unmodifiableList(Arrays.asList(
 
@@ -70,8 +68,8 @@ public interface ValidationContextKey {
 
     ValidationContextKey getParent();
 
-    static ValidationContextKey newCustomValidationContextKey(String suffix, ValidationContextKey parent) {
-        return new CustomValidationContextKey(suffix, parent);
+    static ValidationContextKey newCustomValidationContextKey(String name, ValidationContextKey parent) {
+        return new CustomValidationContextKey(name, parent);
     }
 
     static ValidationContextKey lookup(String name) {
@@ -87,15 +85,15 @@ public interface ValidationContextKey {
 
     final class BuiltInValidationContextKey extends AbstractValidationContextKey {
 
-        public BuiltInValidationContextKey(String suffix, ValidationContextKey parent) {
-            super(suffix, parent);
+        public BuiltInValidationContextKey(String name, ValidationContextKey parent) {
+            super(name, parent);
         }
     }
 
     final class CustomValidationContextKey extends AbstractValidationContextKey {
 
-        public CustomValidationContextKey(String suffix, ValidationContextKey parent) {
-            super(suffix, parent);
+        public CustomValidationContextKey(String name, ValidationContextKey parent) {
+            super(name, parent);
         }
     }
 
@@ -105,36 +103,9 @@ public interface ValidationContextKey {
 
         private final ValidationContextKey parent;
 
-        public AbstractValidationContextKey(String suffix, ValidationContextKey parent) {
-            this.name = createName(parent, suffix);
+        public AbstractValidationContextKey(String name, ValidationContextKey parent) {
+            this.name = name;
             this.parent = parent;
-        }
-
-        private String createName(ValidationContextKey parent, String suffix) {
-
-            if (parent == null) {
-                return "";
-            }
-
-            Deque<ValidationContextKey> deque = new ArrayDeque<>();
-            ValidationContextKey current = parent;
-            do {
-                if (DEFAULT_CONTEXT_KEY.equals(current)) {
-                    break;
-                }
-                deque.add(current);
-                current = current.getParent();
-            } while (current != null);
-
-
-            StringBuilder path = new StringBuilder();
-            while (!deque.isEmpty()) {
-                path.append(deque.removeLast().getName()).append('.');
-            }
-
-            path.append(suffix);
-
-            return path.toString();
         }
 
         public String getName() {
@@ -148,8 +119,12 @@ public interface ValidationContextKey {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof AbstractValidationContextKey)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof AbstractValidationContextKey)) {
+                return false;
+            }
             AbstractValidationContextKey that = (AbstractValidationContextKey) o;
             return Objects.equals(name, that.name);
         }
