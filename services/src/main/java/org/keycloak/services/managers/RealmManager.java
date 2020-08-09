@@ -303,11 +303,11 @@ public class RealmManager {
         String adminRealmId = Config.getAdminRealm();
         RealmModel adminRealm = model.getRealm(adminRealmId);
         ClientModel masterApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm.getName()));
-        if (masterApp != null) {
-            realm.setMasterAdminClient(masterApp);
-        }  else {
+        if (masterApp == null) {
             createMasterAdminManagement(realm);
+            return;
         }
+        realm.setMasterAdminClient(masterApp);
     }
 
     private void createMasterAdminManagement(RealmModel realm) {
@@ -521,22 +521,19 @@ public class RealmManager {
         if (!hasRealmAdminManagementClient(rep)) setupRealmAdminManagement(realm);
         if (!hasAccountManagementClient(rep)) setupAccountManagement(realm);
 
-        boolean postponeImpersonationSetup = false;
-        if (hasRealmAdminManagementClient(rep)) {
-            postponeImpersonationSetup = true;
-        } else {
+        boolean postponeImpersonationSetup = hasRealmAdminManagementClient(rep);
+        if (!postponeImpersonationSetup) {
             setupImpersonationService(realm);
         }
-
 
         if (!hasBrokerClient(rep)) setupBrokerService(realm);
         if (!hasAdminConsoleClient(rep)) setupAdminConsole(realm);
 
         boolean postponeAdminCliSetup = false;
         if (!hasAdminCliClient(rep)) {
-            if (hasRealmAdminManagementClient(rep)) {
-                postponeAdminCliSetup = true;
-            } else {
+            postponeAdminCliSetup = hasRealmAdminManagementClient(rep);
+            
+            if(!postponeAdminCliSetup) {
                 setupAdminCli(realm);
             }
         }
@@ -550,7 +547,6 @@ public class RealmManager {
         }
 
         RepresentationToModel.importRealm(session, rep, realm, skipUserDependent);
-        List<ClientRepresentation> clients = rep.getClients();
 
         setupClientServiceAccountsAndAuthorizationOnImport(rep, skipUserDependent);
 
@@ -570,8 +566,7 @@ public class RealmManager {
         // I need to postpone impersonation because it needs "realm-management" client and its roles set
         if (postponeImpersonationSetup) {
             setupImpersonationService(realm);
-            String realmAdminClientId = getRealmAdminClientId(realm);
-         }
+        }
 
         if (postponeAdminCliSetup) {
             setupAdminCli(realm);
