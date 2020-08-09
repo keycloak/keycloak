@@ -360,6 +360,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public boolean isResetPasswordAllowedWhenPasswordNotSet() {
+        if (isUpdated()) return updated.isResetPasswordAllowedWhenPasswordNotSet();
+        return cached.isResetPasswordAllowedWhenPasswordNotSet();
+    }
+
+    @Override
+    public void setResetPasswordAllowedWhenPasswordNotSet(boolean resetPasswordAllowedWhenPasswordNotSet) {
+        getDelegateForUpdate();
+        updated.setResetPasswordAllowedWhenPasswordNotSet(resetPasswordAllowedWhenPasswordNotSet);
+    }
+
+    @Override
     public boolean isEditUsernameAllowed() {
         if (isUpdated()) return updated.isEditUsernameAllowed();
         return cached.isEditUsernameAllowed();

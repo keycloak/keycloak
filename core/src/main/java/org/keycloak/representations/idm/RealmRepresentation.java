@@ -70,6 +70,7 @@ public class RealmRepresentation {
     protected Boolean loginWithEmailAllowed;
     protected Boolean duplicateEmailsAllowed;
     protected Boolean resetPasswordAllowed;
+    protected Boolean resetPasswordAllowedWhenPasswordNotSet;
     protected Boolean editUsernameAllowed;
 
     @Deprecated
@@ -588,6 +589,14 @@ public class RealmRepresentation {
 
     public void setResetPasswordAllowed(Boolean resetPassword) {
         this.resetPasswordAllowed = resetPassword;
+    }
+
+    public Boolean isResetPasswordAllowedWhenPasswordNotSet() {
+        return resetPasswordAllowedWhenPasswordNotSet;
+    }
+
+    public void setResetPasswordAllowedWhenPasswordNotSet(Boolean resetPasswordWhenPasswordNotSet) {
+        this.resetPasswordAllowedWhenPasswordNotSet = resetPasswordWhenPasswordNotSet;
     }
 
     public Boolean isEditUsernameAllowed() {

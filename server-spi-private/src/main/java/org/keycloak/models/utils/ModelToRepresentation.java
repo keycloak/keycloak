@@ -360,6 +360,7 @@ public class ModelToRepresentation {
         rep.setLoginWithEmailAllowed(realm.isLoginWithEmailAllowed());
         rep.setDuplicateEmailsAllowed(realm.isDuplicateEmailsAllowed());
         rep.setResetPasswordAllowed(realm.isResetPasswordAllowed());
+        rep.setResetPasswordAllowedWhenPasswordNotSet(realm.isResetPasswordAllowedWhenPasswordNotSet());
         rep.setEditUsernameAllowed(realm.isEditUsernameAllowed());
         rep.setDefaultSignatureAlgorithm(realm.getDefaultSignatureAlgorithm());
         rep.setRevokeRefreshToken(realm.isRevokeRefreshToken());

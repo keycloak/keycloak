@@ -67,6 +67,18 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
             return;
         }
 
+        // If the realm requires a password to be set before allowing resets,
+        // make sure the user has currently a password set
+        if (!context.getRealm().isResetPasswordAllowedWhenPasswordNotSet())
+        {
+            if (getUserPassword(context.getSession(), context.getRealm(), user) == null)
+            {
+                logger.debugf("Forget-password triggered for user '%s' without password on realm '%s'. Skipping because realm does not allow it.", user.getUsername(), context.getRealm().getName());
+                context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
+                return;
+            }
+        }
+
         String actionTokenUserId = authenticationSession.getAuthNote(DefaultActionTokenKey.ACTION_TOKEN_USER_ID);
         if (actionTokenUserId != null && Objects.equals(user.getId(), actionTokenUserId)) {
             logger.debugf("Forget-password triggered when reauthenticating user after authentication via action token. Skipping " + PROVIDER_ID + " screen and using user '%s' ", user.getUsername());
@@ -118,11 +130,16 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
         }
     }
 
-    public static Long getLastChangedTimestamp(KeycloakSession session, RealmModel realm, UserModel user) {
-        // TODO(hmlnarik): Make this more generic to support non-password credential types
+    private static CredentialModel getUserPassword(KeycloakSession session, RealmModel realm, UserModel user)
+    {
         PasswordCredentialProvider passwordProvider = (PasswordCredentialProvider) session.getProvider(CredentialProvider.class, PasswordCredentialProviderFactory.PROVIDER_ID);
         CredentialModel password = passwordProvider.getPassword(realm, user);
+        return password;
+    }
 
+    public static Long getLastChangedTimestamp(KeycloakSession session, RealmModel realm, UserModel user) {
+        // TODO(hmlnarik): Make this more generic to support non-password credential types
+        CredentialModel password = getUserPassword(session, realm, user);
         return password == null ? null : password.getCreatedDate();
     }
 

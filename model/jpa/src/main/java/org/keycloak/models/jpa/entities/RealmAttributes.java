@@ -26,6 +26,8 @@ public interface RealmAttributes {
 
     String DISPLAY_NAME_HTML = "displayNameHtml";
 
+    String RESET_PASSWORD_ALLOWED_WHEN_PASSWORD_NOT_SET = "resetPasswordAllowedWhenPasswordNotSet";
+
     String ACTION_TOKEN_GENERATED_BY_ADMIN_LIFESPAN = "actionTokenGeneratedByAdminLifespan";
 
     String ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN = "actionTokenGeneratedByUserLifespan";

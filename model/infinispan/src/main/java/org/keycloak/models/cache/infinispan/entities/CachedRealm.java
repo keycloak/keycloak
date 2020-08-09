@@ -62,6 +62,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean loginWithEmailAllowed;
     protected boolean duplicateEmailsAllowed;
     protected boolean resetPasswordAllowed;
+    protected boolean resetPasswordAllowedWhenPasswordNotSet;
     protected boolean identityFederationEnabled;
     protected boolean editUsernameAllowed;
     //--- brute force settings
@@ -177,6 +178,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         loginWithEmailAllowed = model.isLoginWithEmailAllowed();
         duplicateEmailsAllowed = model.isDuplicateEmailsAllowed();
         resetPasswordAllowed = model.isResetPasswordAllowed();
+        resetPasswordAllowedWhenPasswordNotSet = model.isResetPasswordAllowedWhenPasswordNotSet();
         identityFederationEnabled = model.isIdentityFederationEnabled();
         editUsernameAllowed = model.isEditUsernameAllowed();
         //--- brute force settings
@@ -408,6 +410,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public boolean isResetPasswordAllowed() {
         return resetPasswordAllowed;
+    }
+
+    public boolean isResetPasswordAllowedWhenPasswordNotSet() {
+        return resetPasswordAllowedWhenPasswordNotSet;
     }
 
     public boolean isEditUsernameAllowed() {

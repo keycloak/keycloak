@@ -31,6 +31,13 @@
                 </div>
                 <kc-tooltip>{{:: 'resetPasswordAllowed.tooltip' |translate}}</kc-tooltip>
             </div>
+            <div class="form-group" ng-show="realm.resetPasswordAllowed">
+                <label for="resetPasswordAllowedWhenPasswordNotSet" class="col-md-2 control-label">{{:: 'resetPasswordAllowedWhenPasswordNotSet' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="realm.resetPasswordAllowedWhenPasswordNotSet" name="resetPasswordAllowedWhenPasswordNotSet" id="resetPasswordAllowedWhenPasswordNotSet" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'resetPasswordAllowedWhenPasswordNotSet.tooltip' |translate}}</kc-tooltip>
+            </div>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="rememberMe">{{:: 'rememberMe' | translate}}</label>
                 <div class="col-md-6">

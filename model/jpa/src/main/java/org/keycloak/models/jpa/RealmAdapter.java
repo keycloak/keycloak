@@ -393,6 +393,16 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public boolean isResetPasswordAllowedWhenPasswordNotSet() {
+        return getAttribute(RealmAttributes.RESET_PASSWORD_ALLOWED_WHEN_PASSWORD_NOT_SET, true);
+    }
+
+    @Override
+    public void setResetPasswordAllowedWhenPasswordNotSet(boolean resetPasswordAllowedWhenPasswordNotSet) {
+        setAttribute(RealmAttributes.RESET_PASSWORD_ALLOWED_WHEN_PASSWORD_NOT_SET, resetPasswordAllowedWhenPasswordNotSet);
+    }
+
+    @Override
     public boolean isEditUsernameAllowed() {
         return realm.isEditUsernameAllowed();
     }
