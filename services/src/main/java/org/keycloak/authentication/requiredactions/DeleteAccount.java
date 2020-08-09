@@ -158,4 +158,9 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
   public boolean isOneTimeAction() {
     return true;
   }
+
+  @Override
+  public int getMaxAuthAge() {
+    return 0;
+  }
 }

@@ -15,7 +15,7 @@ export class DeleteAccountPage extends React.Component {
       } 
 
       handleDeleteAccount(keycloak: KeycloakService) {
-        new AIACommand(keycloak, "delete_account", 'login').execute();
+        new AIACommand(keycloak, "delete_account").execute();
       }
 
       render() {
