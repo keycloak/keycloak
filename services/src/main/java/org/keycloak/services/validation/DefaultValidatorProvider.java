@@ -69,7 +69,6 @@ public class DefaultValidatorProvider implements ValidatorProvider {
 
         boolean valid = true;
 
-        outer:
         for (Map.Entry<ValidationKey, List<NamedValidation>> entry : validators.entrySet()) {
             for (NamedValidation validation : entry.getValue()) {
 
@@ -80,12 +79,11 @@ public class DefaultValidatorProvider implements ValidatorProvider {
                 } catch (Exception ex) {
                     LOGGER.warnf("Exception during validation %s for key %s", validation.getName(), key.getName(), ex);
                     context.addProblem(ValidationProblem.error(key, Validation.VALIDATION_ERROR, ex));
-                    valid = false;
-                    break outer;
+                    return false;
                 }
 
                 if (!valid && !context.isBulkMode()) {
-                    break outer;
+                    return false;
                 }
             }
         }

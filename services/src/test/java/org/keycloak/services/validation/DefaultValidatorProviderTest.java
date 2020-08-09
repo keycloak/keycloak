@@ -27,10 +27,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.validation.ValidationContextKey.User.USER_ALL_CONTEXT_KEYS;
-import static org.keycloak.validation.ValidationContextKey.User.USER_DEFAULT_CONTEXT_KEY;
-import static org.keycloak.validation.ValidationContextKey.User.USER_PROFILE_UPDATE_CONTEXT_KEY;
-import static org.keycloak.validation.ValidationContextKey.User.USER_REGISTRATION_CONTEXT_KEY;
+import static org.keycloak.validation.ValidationContextKey.DEFAULT_CONTEXT_KEY;
+import static org.keycloak.validation.ValidationContextKey.USER_DEFAULT_CONTEXT_KEY;
+import static org.keycloak.validation.ValidationContextKey.USER_PROFILE_UPDATE_CONTEXT_KEY;
+import static org.keycloak.validation.ValidationContextKey.USER_REGISTRATION_CONTEXT_KEY;
 
 public class DefaultValidatorProviderTest {
 
@@ -367,9 +367,9 @@ public class DefaultValidatorProviderTest {
 
         registry.register("custom_user_attribute_validation",
                 (key, value, context) -> context.evaluateAndReportErrorIfFalse(() -> value != null, key, CustomValidations.INVALID_ATTRIBUTE),
-                CustomValidations.CUSTOM_ATTRIBUTE, ValidationRegistry.DEFAULT_ORDER, USER_DEFAULT_CONTEXT_KEY);
+                CustomValidations.CUSTOM_ATTRIBUTE, ValidationRegistry.DEFAULT_ORDER, DEFAULT_CONTEXT_KEY);
 
-        for (ValidationContextKey contextKey : USER_ALL_CONTEXT_KEYS) {
+        for (ValidationContextKey contextKey : ValidationContextKey.ALL_CONTEXT_KEYS) {
             ValidationContext context = new ValidationContext(contextKey);
             ValidationResult result = validator.validate(context, null, CustomValidations.CUSTOM_ATTRIBUTE);
             assertFalse("Conditional validation should fail the validation", result.isValid());
@@ -391,7 +391,7 @@ public class DefaultValidatorProviderTest {
 
         String INVALID_ATTRIBUTE2 = "invalid_attribute2";
 
-        ValidationContextKey USER_CUSTOM_CONTEXT_KEY = ValidationContextKey.newCustomValidationContextKey("user.custom", USER_DEFAULT_CONTEXT_KEY);
+        ValidationContextKey USER_CUSTOM_CONTEXT_KEY = ValidationContextKey.newCustomValidationContextKey("custom", USER_DEFAULT_CONTEXT_KEY);
 
         CustomValidationKey PHONE = ValidationKey.newCustomKey("user.phone", true);
 

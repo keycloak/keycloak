@@ -16,8 +16,10 @@
  */
 package org.keycloak.validation;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
 
@@ -31,51 +33,53 @@ import java.util.Objects;
  */
 public interface ValidationContextKey {
 
-    ValidationContextKey KEYCLOAK_DEFAULT_CONTEXT_KEY = new BuiltInValidationContextKey("", null);
+    ValidationContextKey DEFAULT_CONTEXT_KEY = new BuiltInValidationContextKey("", null);
 
-    interface User {
+    ValidationContextKey USER_DEFAULT_CONTEXT_KEY =
+            new BuiltInValidationContextKey("user", ValidationContextKey.DEFAULT_CONTEXT_KEY);
 
-        ValidationContextKey USER_DEFAULT_CONTEXT_KEY =
-                new BuiltInValidationContextKey("user", ValidationContextKey.KEYCLOAK_DEFAULT_CONTEXT_KEY);
+    ValidationContextKey USER_RESOURCE_UPDATE_CONTEXT_KEY =
+            new BuiltInValidationContextKey("resource_update", USER_DEFAULT_CONTEXT_KEY);
 
-        ValidationContextKey USER_RESOURCE_UPDATE_CONTEXT_KEY =
-                new BuiltInValidationContextKey("user.resource_update", User.USER_DEFAULT_CONTEXT_KEY);
+    ValidationContextKey USER_PROFILE_UPDATE_CONTEXT_KEY =
+            new BuiltInValidationContextKey("profile_update", USER_DEFAULT_CONTEXT_KEY);
 
-        ValidationContextKey USER_PROFILE_UPDATE_CONTEXT_KEY =
-                new BuiltInValidationContextKey("user.profile_update", User.USER_DEFAULT_CONTEXT_KEY);
+    ValidationContextKey USER_REGISTRATION_CONTEXT_KEY =
+            new BuiltInValidationContextKey("registration", USER_DEFAULT_CONTEXT_KEY);
 
-        ValidationContextKey USER_REGISTRATION_CONTEXT_KEY =
-                new BuiltInValidationContextKey("user.registration", User.USER_DEFAULT_CONTEXT_KEY);
+    ValidationContextKey USER_PROFILE_UPDATE_REGISTRATION_CONTEXT_KEY =
+            new BuiltInValidationContextKey("profile_update_registration", USER_DEFAULT_CONTEXT_KEY);
 
-        ValidationContextKey USER_PROFILE_UPDATE_REGISTRATION_CONTEXT_KEY =
-                new BuiltInValidationContextKey("user.profile_update_registration", User.USER_DEFAULT_CONTEXT_KEY);
+    ValidationContextKey USER_PROFILE_UPDATE_IDP_REVIEW_CONTEXT_KEY =
+            new BuiltInValidationContextKey("profile_update_idp_review", USER_DEFAULT_CONTEXT_KEY);
 
-        ValidationContextKey USER_PROFILE_UPDATE_IDP_REVIEW_CONTEXT_KEY =
-                new BuiltInValidationContextKey("user.profile_update_idp_review", User.USER_DEFAULT_CONTEXT_KEY);
+    List<ValidationContextKey> ALL_CONTEXT_KEYS = Collections.unmodifiableList(Arrays.asList(
 
-        List<ValidationContextKey> USER_ALL_CONTEXT_KEYS = Collections.unmodifiableList(
-                Arrays.asList(USER_DEFAULT_CONTEXT_KEY, USER_RESOURCE_UPDATE_CONTEXT_KEY, USER_PROFILE_UPDATE_CONTEXT_KEY,
-                        USER_PROFILE_UPDATE_IDP_REVIEW_CONTEXT_KEY, USER_PROFILE_UPDATE_REGISTRATION_CONTEXT_KEY, USER_REGISTRATION_CONTEXT_KEY));
-    }
+            DEFAULT_CONTEXT_KEY,
+
+            USER_DEFAULT_CONTEXT_KEY,
+            USER_RESOURCE_UPDATE_CONTEXT_KEY,
+            USER_PROFILE_UPDATE_CONTEXT_KEY,
+            USER_PROFILE_UPDATE_IDP_REVIEW_CONTEXT_KEY,
+            USER_PROFILE_UPDATE_REGISTRATION_CONTEXT_KEY,
+            USER_REGISTRATION_CONTEXT_KEY
+    ));
+
 
     String getName();
 
     ValidationContextKey getParent();
 
-    static ValidationContextKey newCustomValidationContextKey(String name, ValidationContextKey parent) {
-        return new CustomValidationContextKey(name, parent);
+    static ValidationContextKey newCustomValidationContextKey(String suffix, ValidationContextKey parent) {
+        return new CustomValidationContextKey(suffix, parent);
     }
 
     static ValidationContextKey lookup(String name) {
 
-        for (ValidationContextKey key : User.USER_ALL_CONTEXT_KEYS) {
+        for (ValidationContextKey key : ALL_CONTEXT_KEYS) {
             if (key.getName().equals(name)) {
                 return key;
             }
-        }
-
-        if (KEYCLOAK_DEFAULT_CONTEXT_KEY.getName().equals(name)) {
-            return KEYCLOAK_DEFAULT_CONTEXT_KEY;
         }
 
         return null;
@@ -83,15 +87,15 @@ public interface ValidationContextKey {
 
     final class BuiltInValidationContextKey extends AbstractValidationContextKey {
 
-        public BuiltInValidationContextKey(String name, ValidationContextKey parent) {
-            super(name, parent);
+        public BuiltInValidationContextKey(String suffix, ValidationContextKey parent) {
+            super(suffix, parent);
         }
     }
 
     final class CustomValidationContextKey extends AbstractValidationContextKey {
 
-        public CustomValidationContextKey(String name, ValidationContextKey parent) {
-            super(name, parent);
+        public CustomValidationContextKey(String suffix, ValidationContextKey parent) {
+            super(suffix, parent);
         }
     }
 
@@ -101,9 +105,36 @@ public interface ValidationContextKey {
 
         private final ValidationContextKey parent;
 
-        public AbstractValidationContextKey(String name, ValidationContextKey parent) {
-            this.name = name;
+        public AbstractValidationContextKey(String suffix, ValidationContextKey parent) {
+            this.name = createName(parent, suffix);
             this.parent = parent;
+        }
+
+        private String createName(ValidationContextKey parent, String suffix) {
+
+            if (parent == null) {
+                return "";
+            }
+
+            Deque<ValidationContextKey> deque = new ArrayDeque<>();
+            ValidationContextKey current = parent;
+            do {
+                if (DEFAULT_CONTEXT_KEY.equals(current)) {
+                    break;
+                }
+                deque.add(current);
+                current = current.getParent();
+            } while (current != null);
+
+
+            StringBuilder path = new StringBuilder();
+            while (!deque.isEmpty()) {
+                path.append(deque.removeLast().getName()).append('.');
+            }
+
+            path.append(suffix);
+
+            return path.toString();
         }
 
         public String getName() {
