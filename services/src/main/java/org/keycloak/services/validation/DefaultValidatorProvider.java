@@ -17,7 +17,10 @@
 package org.keycloak.services.validation;
 
 import org.jboss.logging.Logger;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.validation.NamedValidation;
 import org.keycloak.validation.NestedValidationContext;
 import org.keycloak.validation.Validation;
@@ -28,6 +31,7 @@ import org.keycloak.validation.ValidationRegistry;
 import org.keycloak.validation.ValidationResult;
 import org.keycloak.validation.ValidatorProvider;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,7 +52,12 @@ public class DefaultValidatorProvider implements ValidatorProvider {
     @Override
     public ValidationResult validate(ValidationContext context, Object value, Set<ValidationKey> keys) {
 
-        Map<ValidationKey, List<NamedValidation>> validators = validationRegistry.resolveValidations(context, keys, value);
+        Set<ValidationKey> keysToUse = resolveKeysFromValue(context, value, keys);
+        if (keysToUse == null || keysToUse.isEmpty()) {
+            throw new IllegalStateException("ValidationKeys missing: No validation keys were provided and could not derive ValidationKey from value.");
+        }
+
+        Map<ValidationKey, List<NamedValidation>> validators = validationRegistry.resolveValidations(context, keysToUse, value);
 
         if (validators == null || validators.isEmpty()) {
             return null;
@@ -63,6 +72,24 @@ public class DefaultValidatorProvider implements ValidatorProvider {
         }
 
         return new ValidationResult(valid, problems);
+    }
+
+    protected Set<ValidationKey> resolveKeysFromValue(ValidationContext context, Object value, Set<ValidationKey> keys) {
+
+        if (keys != null && !keys.isEmpty()) {
+            return keys;
+        }
+
+        // TODO move to map from value.getClass() -> ValidationKey
+        if (value instanceof UserModel) {
+            return Collections.singleton(ValidationKey.USER);
+        } else if (value instanceof ClientModel) {
+            return Collections.singleton(ValidationKey.CLIENT);
+        } else if (value instanceof RealmModel) {
+            return Collections.singleton(ValidationKey.REALM);
+        }
+
+        return null;
     }
 
     protected boolean validateInternal(NestedValidationContext context, Object value, Map<ValidationKey, List<NamedValidation>> validators) {

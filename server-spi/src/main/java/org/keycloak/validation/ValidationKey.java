@@ -29,6 +29,10 @@ import java.util.Objects;
  */
 public interface ValidationKey {
 
+    BuiltinValidationKey REALM = new BuiltinValidationKey("realm", false);
+
+    BuiltinValidationKey CLIENT = new BuiltinValidationKey("client", false);
+
     // User Entities
     // USER_PROFILE
     // USER_REGISTRATION
@@ -41,6 +45,10 @@ public interface ValidationKey {
     BuiltinValidationKey USER_LASTNAME = new BuiltinValidationKey("user.lastName", true);
 
     List<BuiltinValidationKey> ALL_KEYS = Collections.unmodifiableList(Arrays.asList(
+            REALM,
+
+            CLIENT,
+
             USER,
             USER_USERNAME,
             USER_EMAIL,

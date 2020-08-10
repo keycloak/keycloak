@@ -33,6 +33,9 @@ public interface ValidationContextKey {
 
     ValidationContextKey DEFAULT_CONTEXT_KEY = new BuiltInValidationContextKey("", null);
 
+    ValidationContextKey REALM_DEFAULT_CONTEXT_KEY =
+            new BuiltInValidationContextKey("realm", ValidationContextKey.DEFAULT_CONTEXT_KEY);
+
     ValidationContextKey CLIENT_DEFAULT_CONTEXT_KEY =
             new BuiltInValidationContextKey("client", ValidationContextKey.DEFAULT_CONTEXT_KEY);
 
@@ -58,6 +61,10 @@ public interface ValidationContextKey {
 
             DEFAULT_CONTEXT_KEY,
 
+            REALM_DEFAULT_CONTEXT_KEY,
+
+            CLIENT_DEFAULT_CONTEXT_KEY,
+
             USER_DEFAULT_CONTEXT_KEY,
             USER_RESOURCE_UPDATE_CONTEXT_KEY,
             USER_PROFILE_UPDATE_CONTEXT_KEY,
@@ -65,7 +72,6 @@ public interface ValidationContextKey {
             USER_PROFILE_UPDATE_REGISTRATION_CONTEXT_KEY,
             USER_REGISTRATION_CONTEXT_KEY
     ));
-
 
     String getName();
 

@@ -47,6 +47,10 @@ public interface ValidatorProvider extends Provider {
         return validate(context, value, Collections.singleton(key));
     }
 
+    default ValidationResult validate(ValidationContext context, Object value) {
+        return validate(context, value, Collections.emptySet());
+    }
+
     @Override
     default void close() {
         // NOOP
