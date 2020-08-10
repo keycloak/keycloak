@@ -36,6 +36,7 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.clientpolicy.AdminClientRegisterContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.DefaultClientPolicyManager;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;

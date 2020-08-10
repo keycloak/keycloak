@@ -759,7 +759,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
         }
 
         auth.require(AccountRoles.MANAGE_ACCOUNT);
-
+        
         csrfCheck(formData);
 
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
@@ -881,7 +881,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
         }
 
         auth.require(AccountRoles.MANAGE_ACCOUNT);
-
+        
         csrfCheck(formData);
 
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
