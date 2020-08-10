@@ -52,7 +52,7 @@ public class DefaultValidatorProvider implements ValidatorProvider {
     @Override
     public ValidationResult validate(ValidationContext context, Object value, Set<ValidationKey> keys) {
 
-        Set<ValidationKey> keysToUse = resolveKeysFromValue(context, value, keys);
+        Set<ValidationKey> keysToUse = resolveValidationKeysFromValue(value, keys);
         if (keysToUse == null || keysToUse.isEmpty()) {
             throw new IllegalStateException("ValidationKeys missing: No validation keys were provided and could not derive ValidationKey from value.");
         }
@@ -74,7 +74,7 @@ public class DefaultValidatorProvider implements ValidatorProvider {
         return new ValidationResult(valid, problems);
     }
 
-    protected Set<ValidationKey> resolveKeysFromValue(ValidationContext context, Object value, Set<ValidationKey> keys) {
+    protected Set<ValidationKey> resolveValidationKeysFromValue(Object value, Set<ValidationKey> keys) {
 
         if (keys != null && !keys.isEmpty()) {
             return keys;
