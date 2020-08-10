@@ -18,7 +18,9 @@ package org.keycloak.validation;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -81,15 +83,22 @@ public interface ValidationContextKey {
         return new CustomValidationContextKey(name, parent);
     }
 
-    static ValidationContextKey lookup(String name) {
+    static ValidationContextKey get(String name) {
+        return AbstractValidationContextKey.Internal.VALIDATION_CONTEXT_KEY_CACHE.get(name);
+    }
 
-        for (ValidationContextKey key : ALL_CONTEXT_KEYS) {
-            if (key.getName().equals(name)) {
-                return key;
-            }
-        }
-
-        return null;
+    /**
+     * Returns a built-in {@link ValidationContextKey.BuiltInValidationContextKey} if present or creates a new {@link ValidationContextKey.CustomValidationContextKey} with the given name and parent.
+     * Note that the parent parameter is ignored if a built-in {@link ValidationContextKey} with the given name is found.
+     * <p>
+     *
+     * @param name
+     * @param parent
+     * @return
+     */
+    static ValidationContextKey getOrCreate(String name, ValidationContextKey parent) {
+        ValidationContextKey key = get(name);
+        return key != null ? key : new ValidationContextKey.CustomValidationContextKey(name, parent);
     }
 
     final class BuiltInValidationContextKey extends AbstractValidationContextKey {
@@ -107,6 +116,22 @@ public interface ValidationContextKey {
     }
 
     class AbstractValidationContextKey implements ValidationContextKey {
+
+        /**
+         * Lazy static singleton holder for the {@link ValidationContextKey.AbstractValidationContextKey.Internal#VALIDATION_CONTEXT_KEY_CACHE}.
+         */
+        static class Internal {
+
+            private static final Map<String, ValidationContextKey> VALIDATION_CONTEXT_KEY_CACHE;
+
+            static {
+                Map<String, ValidationContextKey> map = new HashMap<>();
+                for (ValidationContextKey key : ALL_CONTEXT_KEYS) {
+                    map.put(key.getName(), key);
+                }
+                VALIDATION_CONTEXT_KEY_CACHE = Collections.unmodifiableMap(map);
+            }
+        }
 
         private final String name;
 

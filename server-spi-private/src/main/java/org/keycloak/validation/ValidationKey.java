@@ -18,7 +18,9 @@ package org.keycloak.validation;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -29,20 +31,20 @@ import java.util.Objects;
  */
 public interface ValidationKey {
 
-    BuiltinValidationKey REALM = new BuiltinValidationKey("realm", false);
+    BuiltinValidationKey REALM = new BuiltinValidationKey("realm");
 
-    BuiltinValidationKey CLIENT = new BuiltinValidationKey("client", false);
+    BuiltinValidationKey CLIENT = new BuiltinValidationKey("client");
 
     // User Entities
     // USER_PROFILE
     // USER_REGISTRATION
     // USER
-    BuiltinValidationKey USER = new BuiltinValidationKey("user", false);
+    BuiltinValidationKey USER = new BuiltinValidationKey("user");
     // User Attributes
-    BuiltinValidationKey USER_USERNAME = new BuiltinValidationKey("user.username", true);
-    BuiltinValidationKey USER_EMAIL = new BuiltinValidationKey("user.email", true);
-    BuiltinValidationKey USER_FIRSTNAME = new BuiltinValidationKey("user.firstName", true);
-    BuiltinValidationKey USER_LASTNAME = new BuiltinValidationKey("user.lastName", true);
+    BuiltinValidationKey USER_USERNAME = new BuiltinValidationKey("user.username");
+    BuiltinValidationKey USER_EMAIL = new BuiltinValidationKey("user.email");
+    BuiltinValidationKey USER_FIRSTNAME = new BuiltinValidationKey("user.firstName");
+    BuiltinValidationKey USER_LASTNAME = new BuiltinValidationKey("user.lastName");
 
     List<BuiltinValidationKey> ALL_KEYS = Collections.unmodifiableList(Arrays.asList(
             REALM,
@@ -65,35 +67,26 @@ public interface ValidationKey {
      */
     String getName();
 
-    boolean isPropertyKey();
-
     /**
-     * Create a new {@link ValidationKey}.
-     * <p>
-     * Note that this is only for internal user and for creation of custom {@link ValidationKey ValidationKeys}.
+     * Looks for built-in {@link ValidationKey} instance with the given name.
      *
      * @param name
      * @return
      */
-    static CustomValidationKey newCustomKey(String name, boolean propertyKey) {
-        return new CustomValidationKey(name, propertyKey);
+    static ValidationKey get(String name) {
+        return AbstractValidationKey.Internal.VALIDATION_KEY_CACHE.get(name);
     }
 
     /**
-     * Looks for an existing {@link ValidationKey} instance with the given name.
+     * Returns a built-in {@link BuiltinValidationKey} if present or creates a new {@link CustomValidationKey}.
+     * <p>
      *
      * @param name
      * @return
      */
-    static ValidationKey lookup(String name) {
-
-        for (ValidationKey key : ALL_KEYS) {
-            if (key.getName().equals(name)) {
-                return key;
-            }
-        }
-
-        return null;
+    static ValidationKey getOrCreate(String name) {
+        ValidationKey key = get(name);
+        return key != null ? key : new CustomValidationKey(name);
     }
 
     /**
@@ -104,8 +97,8 @@ public interface ValidationKey {
      */
     final class BuiltinValidationKey extends AbstractValidationKey {
 
-        public BuiltinValidationKey(String name, boolean propertyKey) {
-            super(name, propertyKey);
+        public BuiltinValidationKey(String name) {
+            super(name);
         }
     }
 
@@ -116,8 +109,8 @@ public interface ValidationKey {
      */
     final class CustomValidationKey extends AbstractValidationKey {
 
-        public CustomValidationKey(String name, boolean propertyKey) {
-            super(name, propertyKey);
+        public CustomValidationKey(String name) {
+            super(name);
         }
     }
 
@@ -126,13 +119,26 @@ public interface ValidationKey {
      */
     abstract class AbstractValidationKey implements ValidationKey {
 
+        /**
+         * Lazy static singleton holder for the {@link Internal#VALIDATION_KEY_CACHE}.
+         */
+        static class Internal {
+
+            private static final Map<String, ValidationKey> VALIDATION_KEY_CACHE;
+
+            static {
+                Map<String, ValidationKey> map = new HashMap<>();
+                for (ValidationKey key : ALL_KEYS) {
+                    map.put(key.getName(), key);
+                }
+                VALIDATION_KEY_CACHE = Collections.unmodifiableMap(map);
+            }
+        }
+
         private final String name;
 
-        private final boolean propertyKey;
-
-        public AbstractValidationKey(String name, boolean propertyKey) {
+        public AbstractValidationKey(String name) {
             this.name = name;
-            this.propertyKey = propertyKey;
         }
 
         public String getName() {
@@ -140,22 +146,16 @@ public interface ValidationKey {
         }
 
         @Override
-        public boolean isPropertyKey() {
-            return propertyKey;
-        }
-
-        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (!(o instanceof AbstractValidationKey)) return false;
             AbstractValidationKey that = (AbstractValidationKey) o;
-            return propertyKey == that.propertyKey &&
-                    Objects.equals(name, that.name);
+            return Objects.equals(name, that.name);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(name, propertyKey);
+            return Objects.hash(name);
         }
     }
 }

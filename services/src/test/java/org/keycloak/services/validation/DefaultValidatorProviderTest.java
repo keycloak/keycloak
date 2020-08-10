@@ -458,11 +458,11 @@ public class DefaultValidatorProviderTest {
 
         ValidationContextKey USER_CUSTOM_CONTEXT_KEY = ValidationContextKey.newCustomValidationContextKey("user.custom", USER_DEFAULT_CONTEXT_KEY);
 
-        CustomValidationKey USER_PHONE = ValidationKey.newCustomKey("user.phone", true);
+        ValidationKey USER_PHONE = ValidationKey.getOrCreate("user.phone");
 
-        CustomValidationKey USER_ATTRIBUTES_CUSTOM = ValidationKey.newCustomKey("user.attributes.customAttribute", true);
+        ValidationKey USER_ATTRIBUTES_CUSTOM = ValidationKey.getOrCreate("user.attributes.customAttribute");
 
-        CustomValidationKey CLIENT_REDIRECT_URI = ValidationKey.newCustomKey("client.redirectUri", true);
+        ValidationKey CLIENT_REDIRECT_URI = ValidationKey.getOrCreate("client.redirectUri");
 
         static boolean validatePhone(ValidationKey key, Object value, NestedValidationContext context) {
 
