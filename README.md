@@ -3,7 +3,7 @@ This project is the next generation of the Keycloak Administration Console.  It 
 
 ### Development Instructions
 
-For developemnt on this project you will need a running Keycloak server listening on port 8180.  You will also need [yarn installed on your local machine.](https://classic.yarnpkg.com)
+For development on this project you will need a running Keycloak server listening on port 8180.  You will also need [yarn installed on your local machine.](https://classic.yarnpkg.com)
 
 1. Start keycloak
     * Download Keycloak server from [https://www.keycloak.org/downloads]()
