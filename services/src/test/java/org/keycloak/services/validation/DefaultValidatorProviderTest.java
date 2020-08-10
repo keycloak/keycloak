@@ -285,15 +285,13 @@ public class DefaultValidatorProviderTest {
                 CustomValidations::validateUserModel, ValidationKey.USER,
                 ValidationRegistry.DEFAULT_ORDER + 1000.0, USER_REGISTRATION_CONTEXT_KEY);
 
-        ValidationContext context = new ValidationContext(USER_REGISTRATION_CONTEXT_KEY);
-
         UserModel user = new InMemoryUserAdapter(session, realm, "1");
-
         user.setFirstName("Theo");
         user.setLastName("Tester");
         user.setEmail("tester@allowed");
 
-        // Note that we don't specify
+        ValidationContext context = new ValidationContext(USER_REGISTRATION_CONTEXT_KEY);
+        // Note that we don't specify the ValidationKey here, since it is inferred by the given value (UserModel)
         ValidationResult result = validator.validate(context, user);
         assertTrue("A valid user should be valid", result.isValid());
     }
