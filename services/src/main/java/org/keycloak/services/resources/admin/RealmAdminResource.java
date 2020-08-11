@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
@@ -120,6 +121,7 @@ import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.utils.ReservedCharValidator;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.keycloak.utils.ServicesUtils;
 
 /**
  * Base resource class for the admin REST api of one realm
@@ -1045,14 +1047,10 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-groups")
-    public List<GroupRepresentation> getDefaultGroups() {
+    public Stream<GroupRepresentation> getDefaultGroups() {
         auth.realm().requireViewRealm();
 
-        List<GroupRepresentation> defaults = new LinkedList<>();
-        for (GroupModel group : realm.getDefaultGroups()) {
-            defaults.add(ModelToRepresentation.toRepresentation(group, false));
-        }
-        return defaults;
+        return realm.getDefaultGroupsStream().map(ServicesUtils::groupToBriefRepresentation);
     }
     @PUT
     @NoCache

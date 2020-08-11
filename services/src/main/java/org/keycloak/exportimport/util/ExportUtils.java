@@ -567,10 +567,7 @@ public class ExportUtils {
         }
 
         if (options.isGroupsAndRolesIncluded()) {
-            List<String> groups = new LinkedList<>();
-            for (GroupModel group : user.getGroups()) {
-                groups.add(ModelToRepresentation.buildGroupPath(group));
-            }
+            List<String> groups = user.getGroupsStream().map(ModelToRepresentation::buildGroupPath).collect(Collectors.toList());
             userRep.setGroups(groups);
         }
         return userRep;
@@ -737,10 +734,8 @@ public class ExportUtils {
         userRep.setNotBefore(notBefore);
 
         if (options.isGroupsAndRolesIncluded()) {
-            List<String> groups = new LinkedList<>();
-            for (GroupModel group : session.userFederatedStorage().getGroups(realm, id)) {
-                groups.add(ModelToRepresentation.buildGroupPath(group));
-            }
+            List<String> groups = session.userFederatedStorage().getGroupsStream(realm, id)
+                    .map(ModelToRepresentation::buildGroupPath).collect(Collectors.toList());
             userRep.setGroups(groups);
         }
         return userRep;

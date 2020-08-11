@@ -282,7 +282,12 @@ public interface RealmModel extends RoleContainerModel {
 
     RoleModel getRoleById(String id);
 
-    List<GroupModel> getDefaultGroups();
+    @Deprecated
+    default List<GroupModel> getDefaultGroups() {
+        return getDefaultGroupsStream().collect(Collectors.toList());
+    }
+
+    Stream<GroupModel> getDefaultGroupsStream();
 
     void addDefaultGroup(GroupModel group);
 
@@ -535,12 +540,38 @@ public interface RealmModel extends RoleContainerModel {
     GroupModel createGroup(String id, String name, GroupModel toParent);
 
     GroupModel getGroupById(String id);
-    List<GroupModel> getGroups();
+
+    @Deprecated
+    default List<GroupModel> getGroups() {
+        return getGroupsStream().collect(Collectors.toList());
+    }
+
+    Stream<GroupModel> getGroupsStream();
+
     Long getGroupsCount(Boolean onlyTopGroups);
     Long getGroupsCountByNameContaining(String search);
-    List<GroupModel> getTopLevelGroups();
-    List<GroupModel> getTopLevelGroups(Integer first, Integer max);
-    List<GroupModel> searchForGroupByName(String search, Integer first, Integer max);
+
+    @Deprecated
+    default List<GroupModel> getTopLevelGroups() {
+        return getTopLevelGroupsStream().collect(Collectors.toList());
+    }
+
+    Stream<GroupModel> getTopLevelGroupsStream();
+
+    @Deprecated
+    default List<GroupModel> getTopLevelGroups(Integer first, Integer max) {
+        return getTopLevelGroupsStream(first, max).collect(Collectors.toList());
+    }
+
+    Stream<GroupModel> getTopLevelGroupsStream(Integer first, Integer max);
+
+    @Deprecated
+    default List<GroupModel> searchForGroupByName(String search, Integer first, Integer max) {
+        return searchForGroupByNameStream(search, first, max).collect(Collectors.toList());
+    }
+
+    Stream<GroupModel> searchForGroupByNameStream(String search, Integer first, Integer max);
+
     boolean removeGroup(GroupModel group);
     void moveGroup(GroupModel group, GroupModel toParent);
 

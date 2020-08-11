@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -118,18 +119,29 @@ public interface UserModel extends RoleMapperModel {
 
     void setEmailVerified(boolean verified);
 
-    Set<GroupModel> getGroups();
-
-    default Set<GroupModel> getGroups(int first, int max) {
-        return getGroups(null, first, max);
+    @Deprecated
+    default Set<GroupModel> getGroups() {
+        return getGroupsStream().collect(Collectors.toSet());
     }
 
+    Stream<GroupModel> getGroupsStream();
+
+    @Deprecated
+    default Set<GroupModel> getGroups(int first, int max) {
+        return getGroupsStream(null, first, max).collect(Collectors.toSet());
+    }
+
+    @Deprecated
     default Set<GroupModel> getGroups(String search, int first, int max) {
-        return getGroups().stream()
+        return getGroupsStream(search, first, max)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    default Stream<GroupModel> getGroupsStream(String search, int first, int max) {
+        return getGroupsStream()
                 .filter(group -> search == null || group.getName().toLowerCase().contains(search.toLowerCase()))
                 .skip(first)
-                .limit(max)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+                .limit(max);
     }
 
     default long getGroupsCount() {
@@ -138,11 +150,11 @@ public interface UserModel extends RoleMapperModel {
     
     default long getGroupsCountByNameContaining(String search) {
         if (search == null) {
-            return getGroups().size();
+            return getGroupsStream().count();
         }
 
         String s = search.toLowerCase();
-        return getGroups().stream().filter(group -> group.getName().toLowerCase().contains(s)).count();
+        return getGroupsStream().filter(group -> group.getName().toLowerCase().contains(s)).count();
     }
 
     void joinGroup(GroupModel group);

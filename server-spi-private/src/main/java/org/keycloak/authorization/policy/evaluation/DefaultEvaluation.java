@@ -160,7 +160,7 @@ public class DefaultEvaluation implements Evaluation {
                 }
 
                 if (checkParent) {
-                    return RoleUtils.isMember(user.getGroups(), group);
+                    return RoleUtils.isMember(user.getGroupsStream(), group);
                 }
 
                 return user.isMemberOf(group);
@@ -253,7 +253,7 @@ public class DefaultEvaluation implements Evaluation {
 
             @Override
             public List<String> getUserGroups(String id) {
-                return getUser(id, authorizationProvider.getKeycloakSession()).getGroups().stream()
+                return getUser(id, authorizationProvider.getKeycloakSession()).getGroupsStream()
                         .map(ModelToRepresentation::buildGroupPath)
                         .collect(Collectors.toList());
             }

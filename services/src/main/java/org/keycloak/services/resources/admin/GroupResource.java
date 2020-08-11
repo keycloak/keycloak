@@ -52,6 +52,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * @resource Groups
@@ -101,11 +103,10 @@ public class GroupResource {
     public Response updateGroup(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
 
-        for (GroupModel sibling: siblings()) {
-            if (Objects.equals(sibling.getId(), group.getId())) continue;
-            if (sibling.getName().equals(rep.getName())) {
-                return ErrorResponse.exists("Sibling group named '" + rep.getName() + "' already exists.");
-            }
+        boolean exists = siblings().filter(s -> !Objects.equals(s.getId(), group.getId()))
+                .anyMatch(s -> Objects.equals(s.getName(), rep.getName()));
+        if (exists) {
+            return ErrorResponse.exists("Sibling group named '" + rep.getName() + "' already exists.");
         }
         
         updateGroup(rep, group);
@@ -114,11 +115,11 @@ public class GroupResource {
         return Response.noContent().build();
     }
     
-    private List<GroupModel> siblings() {
+    private Stream<GroupModel> siblings() {
         if (group.getParentId() == null) {
-            return realm.getTopLevelGroups();
+            return realm.getTopLevelGroupsStream();
         } else {
-            return new ArrayList(group.getParent().getSubGroups());
+            return group.getParent().getSubGroupsStream();
         }
     }
 
@@ -145,10 +146,8 @@ public class GroupResource {
     public Response addChild(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
 
-        for (GroupModel group : group.getSubGroups()) {
-            if (group.getName().equals(rep.getName())) {
-                return ErrorResponse.exists("Parent already contains subgroup named '" + rep.getName() + "'");
-            }
+        if (group.getSubGroupsStream().map(GroupModel::getName).anyMatch(Predicate.isEqual(rep.getName()))) {
+            return ErrorResponse.exists("Parent already contains subgroup named '" + rep.getName() + "'");
         }
 
         Response.ResponseBuilder builder = Response.status(204);

@@ -27,9 +27,10 @@ import org.keycloak.representations.IDToken;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Maps user group membership
@@ -93,16 +94,10 @@ public class GroupMembershipMapper extends AbstractOIDCProtocolMapper implements
      * @param userSession
      */
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
+        Function<GroupModel, String> toGroupRepresentation = useFullPath(mappingModel) ?
+                ModelToRepresentation::buildGroupPath : GroupModel::getName;
+        List<String> membership = userSession.getUser().getGroupsStream().map(toGroupRepresentation).collect(Collectors.toList());
 
-        List<String> membership = new LinkedList<>();
-        boolean fullPath = useFullPath(mappingModel);
-        for (GroupModel group : userSession.getUser().getGroups()) {
-            if (fullPath) {
-                membership.add(ModelToRepresentation.buildGroupPath(group));
-            } else {
-                membership.add(group.getName());
-            }
-        }
         String protocolClaim = mappingModel.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
 
         token.getOtherClaims().put(protocolClaim, membership);

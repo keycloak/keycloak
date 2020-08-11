@@ -284,9 +284,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
         UserModel proxy = proxy(realm, user, ldapUser, true);
         DefaultRoles.addDefaultRoles(realm, proxy);
 
-        for (GroupModel g : realm.getDefaultGroups()) {
-            proxy.joinGroup(g);
-        }
+        realm.getDefaultGroupsStream().forEach(proxy::joinGroup);
+
         for (RequiredActionProviderModel r : realm.getRequiredActionProviders()) {
             if (r.isEnabled() && r.isDefaultAction()) {
                 proxy.addRequiredAction(r.getAlias());

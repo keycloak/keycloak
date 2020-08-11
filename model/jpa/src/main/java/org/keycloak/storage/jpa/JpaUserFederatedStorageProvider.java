@@ -37,7 +37,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.JpaUserCredentialStore;
-import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
@@ -61,9 +60,11 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Set;
+import java.util.stream.Stream;
 import javax.persistence.LockModeType;
+
+import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -439,17 +440,10 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public Set<GroupModel> getGroups(RealmModel realm, String userId) {
-        Set<GroupModel> set = new HashSet<>();
+    public Stream<GroupModel> getGroupsStream(RealmModel realm, String userId) {
         TypedQuery<FederatedUserGroupMembershipEntity> query = em.createNamedQuery("feduserGroupMembership", FederatedUserGroupMembershipEntity.class);
         query.setParameter("userId", userId);
-        List<FederatedUserGroupMembershipEntity> results = query.getResultList();
-        if (results.size() == 0) return set;
-        for (FederatedUserGroupMembershipEntity entity : results) {
-            GroupModel group = realm.getGroupById(entity.getGroupId());
-            set.add(group);
-        }
-        return set;
+        return closing(query.getResultStream().map(FederatedUserGroupMembershipEntity::getGroupId).map(realm::getGroupById));
     }
 
     @Override

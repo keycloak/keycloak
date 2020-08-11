@@ -127,20 +127,11 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
                 RealmModel appRealm = ctx.getRealm();
 
                 UserModel johnDb = session.userLocalStorage().getUserByUsername("johnkeycloak", appRealm);
-                Set<GroupModel> johnDbGroups = johnDb.getGroups();
-                Assert.assertEquals(2, johnDbGroups.size());
-
-                Set<GroupModel> johnDbGroupsWithGr = johnDb.getGroups("Gr", 0, 10);
-                Assert.assertEquals(2, johnDbGroupsWithGr.size());
-
-                Set<GroupModel> johnDbGroupsWithGr2 = johnDb.getGroups("Gr", 1, 10);
-                Assert.assertEquals(1, johnDbGroupsWithGr2.size());
-
-                Set<GroupModel> johnDbGroupsWithGr3 = johnDb.getGroups("Gr", 0, 1);
-                Assert.assertEquals(1, johnDbGroupsWithGr3.size());
-
-                Set<GroupModel> johnDbGroupsWith12 = johnDb.getGroups("12", 0, 10);
-                Assert.assertEquals(1, johnDbGroupsWith12.size());
+                Assert.assertEquals(2, johnDb.getGroupsStream().count());
+                Assert.assertEquals(2, johnDb.getGroupsStream("Gr", 0, 10).count());
+                Assert.assertEquals(1, johnDb.getGroupsStream("Gr", 1, 10).count());
+                Assert.assertEquals(1, johnDb.getGroupsStream("Gr", 0, 1).count());
+                Assert.assertEquals(1, johnDb.getGroupsStream("12", 0, 10).count());
 
                 long dbGroupCount = johnDb.getGroupsCount();
                 Assert.assertEquals(2, dbGroupCount);
@@ -161,7 +152,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
             UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
 
-            Set<GroupModel> johnGroups = john.getGroups();
+            Set<GroupModel> johnGroups = john.getGroupsStream().collect(Collectors.toSet());
             Assert.assertEquals(4, johnGroups.size());
             long groupCount = john.getGroupsCount();
             Assert.assertEquals(4, groupCount);
@@ -171,23 +162,12 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             Assert.assertTrue(johnGroups.contains(groupTeam20162017));
             Assert.assertTrue(johnGroups.contains(groupTeamChild20182019));
 
-            Set<GroupModel> johnGroupsWithGr = john.getGroups("gr", 0, 10);
-            Assert.assertEquals(2, johnGroupsWithGr.size());
-
-            Set<GroupModel> johnGroupsWithGr2 = john.getGroups("gr", 1, 10);
-            Assert.assertEquals(1, johnGroupsWithGr2.size());
-
-            Set<GroupModel> johnGroupsWithGr3 = john.getGroups("gr", 0, 1);
-            Assert.assertEquals(1, johnGroupsWithGr3.size());
-
-            Set<GroupModel> johnGroupsWith12 = john.getGroups("12", 0, 10);
-            Assert.assertEquals(1, johnGroupsWith12.size());
-
-            Set<GroupModel> johnGroupsWith2017 = john.getGroups("2017", 0, 10);
-            Assert.assertEquals(1, johnGroupsWith2017.size());
-
-            Set<GroupModel> johnGroupsWith2018 = john.getGroups("2018", 0, 10);
-            Assert.assertEquals(1, johnGroupsWith2017.size());
+            Assert.assertEquals(2, john.getGroupsStream("gr", 0, 10).count());
+            Assert.assertEquals(1, john.getGroupsStream("gr", 1, 10).count());
+            Assert.assertEquals(1, john.getGroupsStream("gr", 0, 1).count());
+            Assert.assertEquals(1, john.getGroupsStream("12", 0, 10).count());
+            Assert.assertEquals(1, john.getGroupsStream("2017", 0, 10).count());
+            Assert.assertEquals(1, john.getGroupsStream("2018", 0, 10).count());
 
             // 4 - Check through userProvider
             List<UserModel> group1Members = session.users().getGroupMembers(appRealm, group1, 0, 10);
@@ -217,8 +197,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             mary.leaveGroup(groupTeam20162017);
             mary.leaveGroup(groupTeamChild20182019);
 
-            johnGroups = john.getGroups();
-            Assert.assertEquals(0, johnGroups.size());
+            Assert.assertEquals(0, john.getGroupsStream().count());
             
             groupCount = john.getGroupsCount();
             Assert.assertEquals(0, groupCount);
@@ -266,7 +245,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
                 mary.joinGroup(group12);
 
                 // Assert that mary has both LDAP and DB mapped groups
-                Set<GroupModel> maryGroups = mary.getGroups();
+                Set<GroupModel> maryGroups = mary.getGroupsStream().collect(Collectors.toSet());
                 Assert.assertEquals(5, maryGroups.size());
                 Assert.assertTrue(maryGroups.contains(group1));
                 Assert.assertTrue(maryGroups.contains(group11));
@@ -275,17 +254,10 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
                 long groupCount = mary.getGroupsCount();
                 Assert.assertEquals(5, groupCount);
 
-                Set<GroupModel> maryGroupsWithGr = mary.getGroups("gr", 0, 10);
-                Assert.assertEquals(5, maryGroupsWithGr.size());
-
-                Set<GroupModel> maryGroupsWithGr2 = mary.getGroups("gr", 1, 10);
-                Assert.assertEquals(4, maryGroupsWithGr2.size());
-
-                Set<GroupModel> maryGroupsWithGr3 = mary.getGroups("gr", 0, 1);
-                Assert.assertEquals(1, maryGroupsWithGr3.size());
-
-                Set<GroupModel> maryGroupsWith12 = mary.getGroups("12", 0, 10);
-                Assert.assertEquals(2, maryGroupsWith12.size());
+                Assert.assertEquals(5, mary.getGroupsStream("gr", 0, 10).count());
+                Assert.assertEquals(4, mary.getGroupsStream("gr", 1, 10).count());
+                Assert.assertEquals(1, mary.getGroupsStream("gr", 0, 1).count());
+                Assert.assertEquals(2, mary.getGroupsStream("12", 0, 10).count());
             });
         } else {
             testingClient.server().run(session -> {
@@ -315,7 +287,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
                 GroupModel group12 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group12");
 
                 // Assert that mary has both LDAP and DB mapped groups
-                Set<GroupModel> maryGroups = mary.getGroups();
+                Set<GroupModel> maryGroups = mary.getGroupsStream().collect(Collectors.toSet());
                 Assert.assertEquals(4, maryGroups.size());
                 Assert.assertTrue(maryGroups.contains(group1));
                 Assert.assertTrue(maryGroups.contains(group11));
@@ -324,17 +296,10 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
                 long groupCount = mary.getGroupsCount();
                 Assert.assertEquals(4, groupCount);
 
-                Set<GroupModel> maryGroupsWithGr = mary.getGroups("gr", 0, 10);
-                Assert.assertEquals(4, maryGroupsWithGr.size());
-
-                Set<GroupModel> maryGroupsWithGr2 = mary.getGroups("gr", 1, 10);
-                Assert.assertEquals(3, maryGroupsWithGr2.size());
-
-                Set<GroupModel> maryGroupsWithGr3 = mary.getGroups("gr", 0, 1);
-                Assert.assertEquals(1, maryGroupsWithGr3.size());
-
-                Set<GroupModel> maryGroupsWith12 = mary.getGroups("12", 0, 10);
-                Assert.assertEquals(1, maryGroupsWith12.size());
+                Assert.assertEquals(4, mary.getGroupsStream("gr", 0, 10).count());
+                Assert.assertEquals(3, mary.getGroupsStream("gr", 1, 10).count());
+                Assert.assertEquals(1, mary.getGroupsStream("gr", 0, 1).count());
+                Assert.assertEquals(1, mary.getGroupsStream("12", 0, 10).count());
             });
         }
 
@@ -350,22 +315,15 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
 
                 UserModel maryDB = session.userLocalStorage().getUserByUsername("marykeycloak", appRealm);
 
-                Set<GroupModel> maryDBGroups = maryDB.getGroups();
+                Set<GroupModel> maryDBGroups = maryDB.getGroupsStream().collect(Collectors.toSet());
                 Assert.assertFalse(maryDBGroups.contains(group1));
                 Assert.assertFalse(maryDBGroups.contains(group11));
                 Assert.assertTrue(maryDBGroups.contains(group12));
 
-                Set<GroupModel> maryDBGroupsWithGr = maryDB.getGroups("Gr", 0, 10);
-                Assert.assertEquals(3, maryDBGroupsWithGr.size());
-
-                Set<GroupModel> maryDBGroupsWithGr2 = maryDB.getGroups("Gr", 1, 10);
-                Assert.assertEquals(2, maryDBGroupsWithGr2.size());
-
-                Set<GroupModel> maryDBGroupsWithGr3 = maryDB.getGroups("Gr", 0, 1);
-                Assert.assertEquals(1, maryDBGroupsWithGr3.size());
-
-                Set<GroupModel> maryDBGroupsWith12 = maryDB.getGroups("12", 0, 10);
-                Assert.assertEquals(2, maryDBGroupsWith12.size());
+                Assert.assertEquals(3, maryDB.getGroupsStream("Gr", 0, 10).count());
+                Assert.assertEquals(2, maryDB.getGroupsStream("Gr", 1, 10).count());
+                Assert.assertEquals(1, maryDB.getGroupsStream("Gr", 0, 1).count());
+                Assert.assertEquals(2, maryDB.getGroupsStream("12", 0, 10).count());
 
                 long dbGroupCount = maryDB.getGroupsCount();
                 Assert.assertEquals(3, dbGroupCount);
@@ -455,23 +413,16 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
 
             // Get user and check that he has requested groups from LDAP
             UserModel rob = session.users().getUserByUsername("robkeycloak", appRealm);
-            Set<GroupModel> robGroups = rob.getGroups();
+            Set<GroupModel> robGroups = rob.getGroupsStream().collect(Collectors.toSet());
 
             Assert.assertFalse(robGroups.contains(group1));
             Assert.assertTrue(robGroups.contains(group11));
             Assert.assertTrue(robGroups.contains(group12));
 
-            Set<GroupModel> robGroupsWithGr = rob.getGroups("Gr", 0, 10);
-            Assert.assertEquals(4, robGroupsWithGr.size());
-
-            Set<GroupModel> robGroupsWithGr2 = rob.getGroups("Gr", 1, 10);
-            Assert.assertEquals(3, robGroupsWithGr2.size());
-
-            Set<GroupModel> robGroupsWithGr3 = rob.getGroups("Gr", 0, 1);
-            Assert.assertEquals(1, robGroupsWithGr3.size());
-
-            Set<GroupModel> robGroupsWith12 = rob.getGroups("12", 0, 10);
-            Assert.assertEquals(2, robGroupsWith12.size());
+            Assert.assertEquals(4, rob.getGroupsStream("Gr", 0, 10).count());
+            Assert.assertEquals(3, rob.getGroupsStream("Gr", 1, 10).count());
+            Assert.assertEquals(1, rob.getGroupsStream("Gr", 0, 1).count());
+            Assert.assertEquals(2, rob.getGroupsStream("12", 0, 10).count());
 
             long dbGroupCount = rob.getGroupsCount();
             Assert.assertEquals(4, dbGroupCount);
@@ -494,7 +445,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             ldapGroup = groupMapper.loadLDAPGroupByName("group12");
             groupMapper.deleteGroupMappingInLDAP(robLdap, ldapGroup);
 
-            robGroups = rob.getGroups();
+            robGroups = rob.getGroupsStream().collect(Collectors.toSet());
             Assert.assertTrue(robGroups.contains(group11));
             Assert.assertTrue(robGroups.contains(group12));
 
@@ -512,8 +463,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             // Delete group mappings through model and verifies that user doesn't have them anymore
             rob.leaveGroup(group11);
             rob.leaveGroup(group12);
-            robGroups = rob.getGroups();
-            Assert.assertEquals(2, robGroups.size());
+            Assert.assertEquals(2, rob.getGroupsStream().count());
         });
     }
 
@@ -604,7 +554,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
 
             // Get user in Keycloak. Ensure that he is member of requested group
             UserModel carlos = session.users().getUserByUsername("carloskeycloak", appRealm);
-            Set<GroupModel> carlosGroups = carlos.getGroups();
+            Set<GroupModel> carlosGroups = carlos.getGroupsStream().collect(Collectors.toSet());
 
             GroupModel group1 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1");
             GroupModel group11 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group11");
@@ -676,7 +626,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             GroupModel group32 = KeycloakModelUtils.findGroupByPath(appRealm, "/group3/group32");
             GroupModel group4 =  KeycloakModelUtils.findGroupByPath(appRealm, "/group4");
 
-            Set<GroupModel> groups = john.getGroups();
+            Set<GroupModel> groups = john.getGroupsStream().collect(Collectors.toSet());
             Assert.assertTrue(groups.contains(group14));
             Assert.assertFalse(groups.contains(group3));
             Assert.assertTrue(groups.contains(group31));
@@ -686,20 +636,11 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             long groupsCount = john.getGroupsCount();
             Assert.assertEquals(4, groupsCount);
 
-            Set<GroupModel> groupsWith3v1 = john.getGroups("3", 0, 10);
-            Assert.assertEquals(2, groupsWith3v1.size());
-
-            Set<GroupModel> groupsWith3v2 = john.getGroups("3", 1, 10);
-            Assert.assertEquals(1, groupsWith3v2.size());
-
-            Set<GroupModel> groupsWith3v3 = john.getGroups("3", 1, 1);
-            Assert.assertEquals(1, groupsWith3v3.size());
-
-            Set<GroupModel> groupsWith3v4 = john.getGroups("3", 1, 0);
-            Assert.assertEquals(0, groupsWith3v4.size());
-
-            Set<GroupModel> groupsWithKeycloak = john.getGroups("Keycloak", 0, 10);
-            Assert.assertEquals(0, groupsWithKeycloak.size());
+            Assert.assertEquals(2, john.getGroupsStream("3", 0, 10).count());
+            Assert.assertEquals(1, john.getGroupsStream("3", 1, 10).count());
+            Assert.assertEquals(1, john.getGroupsStream("3", 1, 1).count());
+            Assert.assertEquals(0, john.getGroupsStream("3", 1, 0).count());
+            Assert.assertEquals(0, john.getGroupsStream("Keycloak", 0, 10).count());
         });
     }
 
@@ -731,7 +672,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             GroupModel group4 =  KeycloakModelUtils.findGroupByPath(appRealm, "/group4");
             Assert.assertNotNull(group4);
 
-            Set<GroupModel> groups = david.getGroups();
+            Set<GroupModel> groups = david.getGroupsStream().collect(Collectors.toSet());
             Assert.assertTrue(groups.contains(defaultGroup11));
             Assert.assertTrue(groups.contains(defaultGroup12));
             Assert.assertFalse(groups.contains(group31));
@@ -797,7 +738,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             // check all the users have the group assigned
             for (int i = 0; i < membersToTest; i++) {
                 UserModel kcUser = session.users().getUserByUsername(String.format("user%02d", i), appRealm);
-                Assert.assertTrue("User contains biggroup " + i, kcUser.getGroups().contains(kcBigGroup));
+                Assert.assertTrue("User contains biggroup " + i, kcUser.getGroupsStream().collect(Collectors.toSet()).contains(kcBigGroup));
             }
             // check the group contains all the users as member
             List<UserModel> groupMembers = session.users().getGroupMembers(appRealm, kcBigGroup, 0, membersToTest);
@@ -846,7 +787,7 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             List<UserModel> groupMembers = session.users().getGroupMembers(appRealm, kcDeleteGroup, 0, 5);
             Assert.assertEquals(1, groupMembers.size());
             Assert.assertEquals("marykeycloak", groupMembers.iterator().next().getUsername());
-            Set<GroupModel> maryGroups = mary.getGroups();
+            Set<GroupModel> maryGroups = mary.getGroupsStream().collect(Collectors.toSet());
             Assert.assertEquals(1, maryGroups.size());
             Assert.assertEquals("deletegroup", maryGroups.iterator().next().getName());
 

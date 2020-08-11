@@ -59,7 +59,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -440,7 +439,7 @@ public class RoleContainerResource extends RoleResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public  List<GroupRepresentation> getGroupsInRole(final @PathParam("role-name") String roleName, 
+    public  Stream<GroupRepresentation> getGroupsInRole(final @PathParam("role-name") String roleName,
                                                     @QueryParam("first") Integer firstResult,
                                                     @QueryParam("max") Integer maxResults,
                                                     @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
@@ -455,10 +454,8 @@ public class RoleContainerResource extends RoleResource {
             throw new NotFoundException("Could not find role");
         }
         
-        List<GroupModel> groupsModel = session.groups().getGroupsByRole(realm, role, firstResult, maxResults);
+        Stream<GroupModel> groupsModel = session.groups().getGroupsByRoleStream(realm, role, firstResult, maxResults);
 
-        return groupsModel.stream()
-        		.map(g -> ModelToRepresentation.toRepresentation(g, !briefRepresentation))
-        		.collect(Collectors.toList());
+        return groupsModel.map(g -> ModelToRepresentation.toRepresentation(g, !briefRepresentation));
     }   
 }

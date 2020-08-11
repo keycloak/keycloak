@@ -43,6 +43,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -148,7 +149,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return identityProviderMapperSet;
     }
 
-    protected List<String> defaultGroups = new LinkedList<>();
+    protected List<String> defaultGroups;
     protected List<String> clientScopes = new LinkedList<>();
     protected List<String> defaultDefaultClientScopes = new LinkedList<>();
     protected List<String> optionalDefaultClientScopes = new LinkedList<>();
@@ -282,9 +283,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
             requiredActionProvidersByAlias.put(action.getAlias(), action);
         }
 
-        for (GroupModel group : model.getDefaultGroups()) {
-            defaultGroups.add(group.getId());
-        }
+        defaultGroups = model.getDefaultGroupsStream().map(GroupModel::getId).collect(Collectors.toList());
 
         browserFlow = model.getBrowserFlow();
         registrationFlow = model.getRegistrationFlow();

@@ -389,14 +389,12 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     }
 
     @Override
-    public Set<GroupModel> getGroups(RealmModel realm, String userId) {
+    public Stream<GroupModel> getGroupsStream(RealmModel realm, String userId) {
         Set<String> set = userGroups.get(getUserIdInMap(realm, userId));
         if (set == null) {
-            return Collections.EMPTY_SET;
+            return Stream.empty();
         }
-        return set.stream()
-          .map(realm::getGroupById)
-          .collect(Collectors.toSet());
+        return set.stream().map(realm::getGroupById);
     }
 
     @Override

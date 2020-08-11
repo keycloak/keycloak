@@ -44,9 +44,7 @@ public class TestCacheUtils {
 
         cacheRoles(session, realm, realm);
 
-        for (GroupModel group : realm.getTopLevelGroups()) {
-            cacheGroupRecursive(realm, group);
-        }
+        realm.getTopLevelGroupsStream().forEach(group -> cacheGroupRecursive(realm, group));
 
         for (ClientScopeModel clientScope : realm.getClientScopes()) {
             realm.getClientScopeById(clientScope.getId());
@@ -81,8 +79,6 @@ public class TestCacheUtils {
 
     private static void cacheGroupRecursive(RealmModel realm, GroupModel group) {
         realm.getGroupById(group.getId());
-        for (GroupModel sub : group.getSubGroups()) {
-            cacheGroupRecursive(realm, sub);
-        }
+        group.getSubGroupsStream().forEach(sub -> cacheGroupRecursive(realm, sub));
     }
 }

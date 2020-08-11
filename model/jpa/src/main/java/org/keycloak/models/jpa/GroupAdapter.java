@@ -36,8 +36,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 import javax.persistence.LockModeType;
+
+import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -119,17 +123,10 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     }
 
     @Override
-    public Set<GroupModel> getSubGroups() {
+    public Stream<GroupModel> getSubGroupsStream() {
         TypedQuery<String> query = em.createNamedQuery("getGroupIdsByParent", String.class);
         query.setParameter("parent", group.getId());
-        List<String> ids = query.getResultList();
-        Set<GroupModel> set = new HashSet<>();
-        for (String id : ids) {
-            GroupModel subGroup = realm.getGroupById(id);
-            if (subGroup == null) continue;
-            set.add(subGroup);
-        }
-        return set;
+        return closing(query.getResultStream().map(realm::getGroupById).filter(Objects::nonNull));
     }
 
     @Override
@@ -203,14 +200,10 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     }
 
     @Override
-    public List<String> getAttribute(String name) {
-        List<String> result = new ArrayList<>();
-        for (GroupAttributeEntity attr : group.getAttributes()) {
-            if (attr.getName().equals(name)) {
-                result.add(attr.getValue());
-            }
-        }
-        return result;
+    public Stream<String> getAttributeStream(String name) {
+        return group.getAttributes().stream()
+                .filter(attr -> Objects.equals(attr.getName(), name))
+                .map(GroupAttributeEntity::getValue);
     }
 
     @Override
