@@ -19,6 +19,7 @@ package org.keycloak.models;
 
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -423,6 +424,16 @@ public interface RealmModel extends RoleContainerModel {
     void removeComponents(String parentId);
     List<ComponentModel> getComponents(String parentId, String providerType);
 
+    /**
+     * Returns stream of ComponentModels for specific parentId and providerType.
+     * @param parentId id of parent
+     * @param providerType type of provider
+     * @return stream of ComponentModels
+     */
+    default Stream<ComponentModel> getComponentsStream(String parentId, String providerType) {
+        return getComponents(parentId, providerType).stream();
+    }
+
     List<ComponentModel> getComponents(String parentId);
 
     List<ComponentModel> getComponents();
@@ -456,6 +467,15 @@ public interface RealmModel extends RoleContainerModel {
         }
         Collections.sort(list, RoleStorageProviderModel.comparator);
         return list;
+    }
+
+    /**
+     * Returns stream of ComponentModels that represent StorageProviders for class storageProviderClass in this realm
+     * @param storageProviderClass class
+     * @return stream of StorageProviders
+     */
+    default Stream<ComponentModel> getStorageProviders(Class<? extends Provider> storageProviderClass) {
+        return getComponentsStream(getId(), storageProviderClass.getName());
     }
 
     String getLoginTheme();

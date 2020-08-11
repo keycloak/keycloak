@@ -575,6 +575,9 @@
           }
         }
       ]
+    },
+    {
+      "name": "sample-realm-group"
     }
   ],
 
