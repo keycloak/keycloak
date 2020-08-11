@@ -18,7 +18,7 @@ package org.keycloak.services.validation;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.validation.Validation;
+import org.keycloak.validation.NestedValidationContext;
 import org.keycloak.validation.ValidationContextKey;
 import org.keycloak.validation.ValidationKey;
 import org.keycloak.validation.ValidationProvider;
@@ -31,76 +31,44 @@ public class DefaultValidationProvider implements ValidationProvider {
 
         // TODO add additional validations
 
-        registry.register("builtin_user_username_validation",
-                createUsernameValidation(), ValidationKey.USER_USERNAME,
+        UserValidation userValidation = createUserValidation();
+
+        registry.addValidation(ValidationKey.USER_USERNAME, userValidation::validateUsername, "builtin_user_username_validation",
                 ValidationContextKey.USER_DEFAULT_CONTEXT_KEY);
 
-        registry.register("builtin_user_email_validation",
-                createEmailValidation(), ValidationKey.USER_EMAIL,
+        registry.addValidation(ValidationKey.USER_EMAIL, userValidation::validateEmail, "builtin_user_email_validation",
                 ValidationContextKey.USER_DEFAULT_CONTEXT_KEY);
 
         // TODO firstname / lastname validation could be merged?
-        registry.register("builtin_user_firstname_validation",
-                createFirstnameValidation(), ValidationKey.USER_FIRSTNAME,
+        registry.addValidation(ValidationKey.USER_FIRSTNAME, userValidation::validateFirstname, "builtin_user_firstname_validation",
                 ValidationContextKey.USER_DEFAULT_CONTEXT_KEY);
 
-        registry.register("builtin_user_lastname_validation",
-                createLastnameValidation(), ValidationKey.USER_LASTNAME,
+        registry.addValidation(ValidationKey.USER_LASTNAME, userValidation::validateLastname, "builtin_user_lastname_validation",
                 ValidationContextKey.USER_DEFAULT_CONTEXT_KEY);
 
-        registry.register("builtin_user_validation",
-                createUserValidation(), ValidationKey.USER,
+        registry.addValidation(ValidationKey.USER, userValidation::validateUser, "builtin_user_validation",
                 ValidationContextKey.USER_DEFAULT_CONTEXT_KEY);
     }
 
-    protected Validation createUserValidation() {
-        return (key, value, context) -> {
-
-            UserModel user = value instanceof UserModel ? (UserModel) value : null;
-
-            if (user == null) {
-                return false;
-            }
-
-            boolean valid;
-
-            valid = context.validateNested(ValidationKey.USER_EMAIL, user.getEmail());
-            valid &= context.validateNested(ValidationKey.USER_USERNAME, user.getUsername());
-            valid &= context.validateNested(ValidationKey.USER_FIRSTNAME, user.getFirstName());
-            valid &= context.validateNested(ValidationKey.USER_LASTNAME, user.getLastName());
-
-            return valid;
-        };
+    protected UserValidation createUserValidation() {
+        return new UserValidation();
     }
 
-    protected Validation createLastnameValidation() {
-        return (key, value, context) -> {
+    public static class UserValidation {
+
+        public boolean validateUsername(ValidationKey key, Object value, NestedValidationContext context) {
 
             String input = value instanceof String ? (String) value : null;
 
-            if (org.keycloak.services.validation.Validation.isBlank(input)) {
-                context.addError(key, Messages.MISSING_LAST_NAME);
+            boolean usernameRequired = context.getAttributeAsBoolean("userNameRequired");
+            if (usernameRequired && Validation.isBlank(input)) {
+                context.addError(key, Messages.MISSING_USERNAME);
                 return false;
             }
             return true;
-        };
-    }
+        }
 
-    protected Validation createFirstnameValidation() {
-        return (key, value, context) -> {
-
-            String input = value instanceof String ? (String) value : null;
-
-            if (org.keycloak.services.validation.Validation.isBlank(input)) {
-                context.addError(key, Messages.MISSING_FIRST_NAME);
-                return false;
-            }
-            return true;
-        };
-    }
-
-    protected Validation createEmailValidation() {
-        return (key, value, context) -> {
+        public boolean validateEmail(ValidationKey key, Object value, NestedValidationContext context) {
 
             String input = value instanceof String ? (String) value : null;
 
@@ -115,20 +83,46 @@ public class DefaultValidationProvider implements ValidationProvider {
             }
 
             return true;
-        };
-    }
+        }
 
-    protected Validation createUsernameValidation() {
-        return (key, value, context) -> {
+        public boolean validateUser(ValidationKey key, Object value, NestedValidationContext context) {
+
+            UserModel user = value instanceof UserModel ? (UserModel) value : null;
+
+            if (user == null) {
+                return false;
+            }
+
+            boolean valid;
+
+            valid = validateEmail(ValidationKey.USER_EMAIL, user.getEmail(), context);
+            valid &= validateUsername(ValidationKey.USER_USERNAME, user.getUsername(), context);
+            valid &= validateFirstname(ValidationKey.USER_FIRSTNAME, user.getFirstName(), context);
+            valid &= validateLastname(ValidationKey.USER_LASTNAME, user.getLastName(), context);
+
+            return valid;
+        }
+
+        public boolean validateFirstname(ValidationKey key, Object value, NestedValidationContext context) {
 
             String input = value instanceof String ? (String) value : null;
 
-            boolean usernameRequired = context.getAttributeAsBoolean("userNameRequired");
-            if (usernameRequired && org.keycloak.services.validation.Validation.isBlank(input)) {
-                context.addError(key, Messages.MISSING_USERNAME);
+            if (org.keycloak.services.validation.Validation.isBlank(input)) {
+                context.addError(key, Messages.MISSING_FIRST_NAME);
                 return false;
             }
             return true;
-        };
+        }
+
+        public boolean validateLastname(ValidationKey key, Object value, NestedValidationContext context) {
+
+            String input = value instanceof String ? (String) value : null;
+
+            if (org.keycloak.services.validation.Validation.isBlank(input)) {
+                context.addError(key, Messages.MISSING_LAST_NAME);
+                return false;
+            }
+            return true;
+        }
     }
 }

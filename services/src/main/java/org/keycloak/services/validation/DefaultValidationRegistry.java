@@ -117,21 +117,39 @@ public class DefaultValidationRegistry implements ValidationRegistry.MutableVali
     }
 
     @Override
-    public void register(String name, Validation validation, ValidationKey key, double order, Set<ValidationContextKey> contextKeys) {
+    public void addValidation(ValidationKey key, Validation validation, String name, Set<ValidationContextKey> contextKeys) {
+        insertValidationForKeyInternal(key, validation, null, name, contextKeys);
+    }
 
-        ValidationRegistration registration = new ValidationRegistration(name, key, validation, order, contextKeys);
+    @Override
+    public void insertValidation(ValidationKey key, Validation validation, Double order, String name, Set<ValidationContextKey> contextKeys) {
+        insertValidationForKeyInternal(key, validation, order, name, contextKeys);
+    }
+
+    protected void insertValidationForKeyInternal(ValidationKey key, Validation validation, Double order, String name, Set<ValidationContextKey> contextKeys) {
 
         SortedSet<ValidationRegistration> registrations = validatorRegistrations.computeIfAbsent(key, t -> new TreeSet<>());
-
+        ValidationRegistration registration = new ValidationRegistration(name, key, validation, deriveOrder(order, registrations), contextKeys);
         boolean wasNew = registrations.add(registration);
         if (!wasNew) {
             LOGGER.debugf("Validation %s (%s) for key %s replaced existing validation.", registration.getName(), validation.getClass().getName(), key);
-
             // remove existing registration (with same order)
             registrations.remove(registration);
-
             // add new registration
             registrations.add(registration);
         }
+    }
+
+    protected double deriveOrder(Double order, SortedSet<ValidationRegistration> registrations) {
+
+        if (order != null) {
+            return order;
+        }
+
+        if (registrations.isEmpty()) {
+            return DEFAULT_ORDER;
+        }
+
+        return registrations.last().getOrder() + 1000.0;
     }
 }

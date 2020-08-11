@@ -22,24 +22,31 @@ package org.keycloak.validation;
 public class NamedValidation extends ConditionalValidation {
 
     private final String name;
+    private final double order;
 
     public NamedValidation(ValidationRegistration registration) {
-        this(registration.getName(), registration.getValidation(), registration.getValidation()::isApplicable);
+        this(registration.getName(), registration.getValidation(), registration.getValidation()::isApplicable, registration.getOrder());
     }
 
-    public NamedValidation(String name, Validation delegate, ValidationCondition condition) {
+    public NamedValidation(String name, Validation delegate, ValidationCondition condition, double order) {
         super(delegate, condition);
         this.name = name;
+        this.order = order;
     }
 
     public String getName() {
         return name;
     }
 
+    public double getOrder() {
+        return order;
+    }
+
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{" +
                 "name='" + name + '\'' +
+                ", order='" + order + '\'' +
                 '}';
     }
 }

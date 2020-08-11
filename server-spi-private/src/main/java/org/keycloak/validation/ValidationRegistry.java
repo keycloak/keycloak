@@ -16,8 +16,6 @@
  */
 package org.keycloak.validation;
 
-import org.keycloak.validation.ValidationKey.BuiltinValidationKey;
-
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -77,52 +75,49 @@ public interface ValidationRegistry {
         /**
          * Registers a new {@link Validation} for the given {@link ValidationKey} that can be applied in the given validation context keys.
          *
-         * @param name        a logical name for the new {@link Validation}
-         * @param validation  the validation logic
          * @param key         the key referencing the validation target
-         * @param order       controls the order of the validation in case of multiple {@link Validation} for a {@link ValidationKey}
+         * @param validation  the validation logic
+         * @param name        a logical name for the new {@link Validation}
          * @param contextKeys controls in which context the given {@link Validation} should be considered
          */
-        void register(String name, Validation validation, ValidationKey key, double order, Set<ValidationContextKey> contextKeys);
+        void addValidation(ValidationKey key, Validation validation, String name, Set<ValidationContextKey> contextKeys);
 
         /**
-         * Registers a new {@link Validation} for the given {@link ValidationKey} that can be applied in the given validation context keys.
+         * Adds a new {@link Validation} for the given {@link ValidationKey} that can be applied in the given validation context keys.
          *
-         * @param name
-         * @param validation
+         * @param key         the key referencing the validation target
+         * @param validation  the validation logic
+         * @param name        a logical name for the new {@link Validation}
+         * @param contextKeys controls in which context the given {@link Validation} should be considered
+         */
+        default void addValidation(ValidationKey key, Validation validation, String name, ValidationContextKey... contextKeys) {
+            addValidation(key, validation, name, new LinkedHashSet<>(Arrays.asList(contextKeys)));
+        }
+
+        /**
+         * Inserts a new {@link Validation} for the given {@link ValidationKey} that can be applied in the given validation context keys at the position indicated by the given order.
+         * Note that this can be used to replace existing validations.
+         *
          * @param key
+         * @param validation
          * @param order
+         * @param name
          * @param contextKeys
-         * @see #register(String, Validation, ValidationKey, double, Set)
          */
-        default void register(String name, Validation validation, ValidationKey key, double order, ValidationContextKey... contextKeys) {
-            register(name, validation, key, order, new LinkedHashSet<>(Arrays.asList(contextKeys)));
-        }
+        void insertValidation(ValidationKey key, Validation validation, Double order, String name, Set<ValidationContextKey> contextKeys);
 
         /**
-         * Registers a new {@link Validation} for the given {@link BuiltinValidationKey} that can be applied in the given validation context keys with a default order.
+         * Inserts a new {@link Validation} for the given {@link ValidationKey} that can be applied in the given validation context keys at the position indicated by the given order.
+         * Note that this can be used to replace existing validations.
          *
-         * @param name
-         * @param validation
          * @param key
-         * @param contextKeys
-         * @see #register(String, Validation, ValidationKey, double, Set)
-         */
-        default void register(String name, Validation validation, BuiltinValidationKey key, Set<ValidationContextKey> contextKeys) {
-            register(name, validation, key, DEFAULT_ORDER, contextKeys);
-        }
-
-        /**
-         * Registers a new {@link Validation} for the given {@link BuiltinValidationKey} that can be applied in the given validation context keys  with a default order.
-         *
-         * @param name
          * @param validation
-         * @param key
+         * @param order
+         * @param name
          * @param contextKeys
-         * @see #register(String, Validation, ValidationKey, double, Set)
          */
-        default void register(String name, Validation validation, BuiltinValidationKey key, ValidationContextKey... contextKeys) {
-            register(name, validation, key, DEFAULT_ORDER, new LinkedHashSet<>(Arrays.asList(contextKeys)));
+        default void insertValidation(ValidationKey key, Validation validation, Double order, String name, ValidationContextKey... contextKeys) {
+            insertValidation(key, validation, order, name, new LinkedHashSet<>(Arrays.asList(contextKeys)));
         }
     }
 }

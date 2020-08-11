@@ -120,9 +120,8 @@ public class DefaultValidatorProviderTest {
 
         registerDefaultValidations();
 
-        registry.register("custom_user_phone_validation",
-                CustomValidations::validatePhone, CustomValidations.USER_PHONE,
-                ValidationRegistry.DEFAULT_ORDER, USER_PROFILE_CONTEXT_KEY);
+        registry.addValidation(CustomValidations.USER_PHONE, CustomValidations::validatePhone,
+                "custom_user_phone_validation", USER_PROFILE_CONTEXT_KEY);
 
         ValidationContext context = new ValidationContext(USER_PROFILE_CONTEXT_KEY);
 
@@ -146,9 +145,8 @@ public class DefaultValidatorProviderTest {
 
         registerDefaultValidations();
 
-        registry.register("custom_user_email_validation",
-                CustomValidations::validateEmailCustom, ValidationKey.USER_EMAIL,
-                ValidationRegistry.DEFAULT_ORDER + 1000.0, USER_REGISTRATION_CONTEXT_KEY);
+        registry.addValidation(ValidationKey.USER_EMAIL, CustomValidations::validateEmailCustom,
+                "custom_user_email_validation", USER_REGISTRATION_CONTEXT_KEY);
 
         ValidationContext context = new ValidationContext(USER_REGISTRATION_CONTEXT_KEY);
 
@@ -172,10 +170,8 @@ public class DefaultValidatorProviderTest {
 
         registerDefaultValidations();
 
-        // default order = 0.0 effectively replaces the existing validator
-        registry.register("custom_user_email_validation",
-                CustomValidations::validateEmailCustom, ValidationKey.USER_EMAIL,
-                ValidationRegistry.DEFAULT_ORDER, USER_REGISTRATION_CONTEXT_KEY);
+        registry.insertValidation(ValidationKey.USER_EMAIL, CustomValidations::validateEmailCustom,
+                ValidationRegistry.DEFAULT_ORDER,"custom_user_email_validation", USER_REGISTRATION_CONTEXT_KEY);
 
         List<NamedValidation> validations = registry.getValidations(ValidationKey.USER_EMAIL);
         assertEquals("Should have only one validation", 1, validations.size());
@@ -201,9 +197,8 @@ public class DefaultValidatorProviderTest {
     @Test
     public void ignoreCustomValidationInDifferentValidationContext() {
 
-        registry.register("custom_user_phone_validation",
-                CustomValidations::validatePhone, CustomValidations.USER_PHONE,
-                ValidationRegistry.DEFAULT_ORDER, USER_PROFILE_CONTEXT_KEY);
+        registry.addValidation(CustomValidations.USER_PHONE, CustomValidations::validatePhone,
+                "custom_user_phone_validation", USER_PROFILE_CONTEXT_KEY);
 
         ValidationContextKey differentContextKey = USER_REGISTRATION_CONTEXT_KEY;
         ValidationContext context = new ValidationContext(differentContextKey);
@@ -216,9 +211,8 @@ public class DefaultValidatorProviderTest {
     public void validateWithCustomValidationInCustomValidationContext() {
 
         ValidationContextKey contextKey = CustomValidations.USER_CUSTOM_CONTEXT_KEY;
-        registry.register("custom_user_phone_validation",
-                CustomValidations::validatePhone, CustomValidations.USER_PHONE,
-                ValidationRegistry.DEFAULT_ORDER, contextKey);
+        registry.addValidation(CustomValidations.USER_PHONE, CustomValidations::validatePhone,
+                "custom_user_phone_validation", contextKey);
 
         ValidationContext context = new ValidationContext(contextKey);
 
@@ -230,13 +224,11 @@ public class DefaultValidatorProviderTest {
     @Test
     public void validateWithCustomValidationsFailFastOff() {
 
-        registry.register("custom_user_attribute1_validation",
-                CustomValidations::validateCustomAttribute1, CustomValidations.USER_ATTRIBUTES_CUSTOM,
-                ValidationRegistry.DEFAULT_ORDER, CustomValidations.USER_CUSTOM_CONTEXT_KEY);
+        registry.addValidation(CustomValidations.USER_ATTRIBUTES_CUSTOM, CustomValidations::validateCustomAttribute1,
+                "custom_user_attribute1_validation", CustomValidations.USER_CUSTOM_CONTEXT_KEY);
 
-        registry.register("custom_user_attribute2_validation",
-                CustomValidations::validateCustomAttribute2, CustomValidations.USER_ATTRIBUTES_CUSTOM,
-                ValidationRegistry.DEFAULT_ORDER + 1000.0, CustomValidations.USER_CUSTOM_CONTEXT_KEY);
+        registry.addValidation(CustomValidations.USER_ATTRIBUTES_CUSTOM, CustomValidations::validateCustomAttribute2,
+                "custom_user_attribute2_validation", CustomValidations.USER_CUSTOM_CONTEXT_KEY);
 
         ValidationContext context = new ValidationContext(CustomValidations.USER_CUSTOM_CONTEXT_KEY);
 
@@ -256,13 +248,11 @@ public class DefaultValidatorProviderTest {
     @Test
     public void validateWithCustomValidationsWithFailFast() {
 
-        registry.register("custom_user_attribute1_validation",
-                CustomValidations::validateCustomAttribute1, CustomValidations.USER_ATTRIBUTES_CUSTOM,
-                ValidationRegistry.DEFAULT_ORDER, CustomValidations.USER_CUSTOM_CONTEXT_KEY);
+        registry.addValidation(CustomValidations.USER_ATTRIBUTES_CUSTOM, CustomValidations::validateCustomAttribute1,
+                "custom_user_attribute1_validation", CustomValidations.USER_CUSTOM_CONTEXT_KEY);
 
-        registry.register("custom_user_attribute2_validation",
-                CustomValidations::validateCustomAttribute2, CustomValidations.USER_ATTRIBUTES_CUSTOM,
-                ValidationRegistry.DEFAULT_ORDER + 1000.0, CustomValidations.USER_CUSTOM_CONTEXT_KEY);
+        registry.addValidation(CustomValidations.USER_ATTRIBUTES_CUSTOM, CustomValidations::validateCustomAttribute2,
+                "custom_user_attribute2_validation", CustomValidations.USER_CUSTOM_CONTEXT_KEY);
 
         ValidationContext context = new ValidationContext(CustomValidations.USER_CUSTOM_CONTEXT_KEY).withFailFast(true);
 
@@ -329,9 +319,8 @@ public class DefaultValidatorProviderTest {
 
         registerDefaultValidations();
 
-        registry.register("custom_user_registration_validation",
-                CustomValidations::validateCustomUserModel, ValidationKey.USER,
-                1000.0, USER_REGISTRATION_CONTEXT_KEY);
+        registry.addValidation(ValidationKey.USER, CustomValidations::validateCustomUserModel,
+                "custom_user_registration_validation", USER_REGISTRATION_CONTEXT_KEY);
 
         ValidationContext context = new ValidationContext(USER_REGISTRATION_CONTEXT_KEY);
 
@@ -360,10 +349,9 @@ public class DefaultValidatorProviderTest {
 
         String exceptionDuringValidation = "exception_during_validation";
 
-        registry.register("custom_user_phone_validation",
-                (key, value, context) -> {
-                    throw new RuntimeException(exceptionDuringValidation);
-                }, CustomValidations.USER_PHONE, ValidationRegistry.DEFAULT_ORDER, CustomValidations.USER_CUSTOM_CONTEXT_KEY);
+        registry.addValidation(CustomValidations.USER_PHONE, (key, value, context) -> {
+            throw new RuntimeException(exceptionDuringValidation);
+        }, "custom_user_phone_validation", CustomValidations.USER_CUSTOM_CONTEXT_KEY);
 
         ValidationContext context = new ValidationContext(CustomValidations.USER_CUSTOM_CONTEXT_KEY);
 
@@ -392,9 +380,8 @@ public class DefaultValidatorProviderTest {
         ValidationCondition condition = (key, value, context) ->
                 context.getAttributeAsBoolean("over18");
 
-        registry.register("custom_user_age_validation",
-                new ConditionalValidation(validation, condition), CustomValidations.USER_ATTRIBUTES_CUSTOM,
-                ValidationRegistry.DEFAULT_ORDER, USER_REGISTRATION_CONTEXT_KEY);
+        registry.addValidation(CustomValidations.USER_ATTRIBUTES_CUSTOM, new ConditionalValidation(validation, condition),
+                "custom_user_age_validation", USER_REGISTRATION_CONTEXT_KEY);
 
         ValidationContext context;
         ValidationResult result;
@@ -415,9 +402,9 @@ public class DefaultValidatorProviderTest {
     @Test
     public void defaultValidationShouldRunInEveryContext() {
 
-        registry.register("custom_user_attribute_validation",
+        registry.addValidation(CustomValidations.USER_ATTRIBUTES_CUSTOM,
                 (key, value, context) -> context.evaluateAndReportErrorIfFalse(() -> value != null, key, CustomValidations.INVALID_ATTRIBUTE),
-                CustomValidations.USER_ATTRIBUTES_CUSTOM, ValidationRegistry.DEFAULT_ORDER, DEFAULT_CONTEXT_KEY);
+                "custom_user_attribute_validation", DEFAULT_CONTEXT_KEY);
 
         for (ValidationContextKey contextKey : ValidationContextKey.ALL_CONTEXT_KEYS) {
             ValidationContext context = new ValidationContext(contextKey);
@@ -432,25 +419,23 @@ public class DefaultValidatorProviderTest {
     @Test
     public void validationWithWarningShouldStillBeValid() {
 
-        registry.register("custom_client_redirectUri",
-                (key, value, context) -> {
+        registry.addValidation(CustomValidations.CLIENT_REDIRECT_URI, (key, value, context) -> {
 
-                    String input = String.valueOf(value);
-                    URI uri;
-                    try {
-                        uri = URI.create(input);
-                    } catch (IllegalArgumentException iae) {
-                        context.addError(key, "redirect_uri_missing", iae);
-                        return false;
-                    }
+            String input = String.valueOf(value);
+            URI uri;
+            try {
+                uri = URI.create(input);
+            } catch (IllegalArgumentException iae) {
+                context.addError(key, "redirect_uri_missing", iae);
+                return false;
+            }
 
-                    if (!"https".equals(uri.getScheme())) {
-                        context.addWarning(key, CustomValidations.WARNING_SECURITY_HTTPS_RECOMMENDED);
-                    }
+            if (!"https".equals(uri.getScheme())) {
+                context.addWarning(key, CustomValidations.WARNING_SECURITY_HTTPS_RECOMMENDED);
+            }
 
-                    return true;
-                },
-                CustomValidations.CLIENT_REDIRECT_URI, ValidationRegistry.DEFAULT_ORDER, CLIENT_DEFAULT_CONTEXT_KEY);
+            return true;
+        }, "custom_client_redirectUri", CLIENT_DEFAULT_CONTEXT_KEY);
 
         ValidationContext context = new ValidationContext(CLIENT_DEFAULT_CONTEXT_KEY);
         ValidationResult result = validator.validate(context, "http://app/oidc_callback", CustomValidations.CLIENT_REDIRECT_URI);
@@ -470,20 +455,18 @@ public class DefaultValidatorProviderTest {
 
         registerDefaultValidations();
 
-        registry.register("custom_user_attribute_validation",
-                (key, value, context) -> {
+        registry.addValidation(CustomValidations.USER_ATTRIBUTES_CUSTOM, (key, value, context) -> {
 
-                    if (!ValidationActionKey.UPDATE.equals(context.getActionKey())) {
-                        return true;
-                    }
+            if (!ValidationActionKey.UPDATE.equals(context.getActionKey())) {
+                return true;
+            }
 
-                    boolean result = value != null;
-                    if (!result) {
-                        context.addError(key, CustomValidations.INVALID_ATTRIBUTE);
-                    }
-                    return result;
-                },
-                CustomValidations.USER_ATTRIBUTES_CUSTOM, ValidationRegistry.DEFAULT_ORDER, DEFAULT_CONTEXT_KEY);
+            boolean result = value != null;
+            if (!result) {
+                context.addError(key, CustomValidations.INVALID_ATTRIBUTE);
+            }
+            return result;
+        }, "custom_user_attribute_validation", DEFAULT_CONTEXT_KEY);
 
         ValidationContext context;
         ValidationResult result;
