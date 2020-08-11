@@ -7,6 +7,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.storage.adapter.InMemoryUserAdapter;
+import org.keycloak.validation.ValidationActionKey;
 import org.keycloak.validation.DelegatingValidation;
 import org.keycloak.validation.NamedValidation;
 import org.keycloak.validation.NestedValidationContext;
@@ -14,7 +15,6 @@ import org.keycloak.validation.Validation.ValidationSupported;
 import org.keycloak.validation.ValidationContext;
 import org.keycloak.validation.ValidationContextKey;
 import org.keycloak.validation.ValidationKey;
-import org.keycloak.validation.ValidationKey.CustomValidationKey;
 import org.keycloak.validation.ValidationProblem;
 import org.keycloak.validation.ValidationRegistry;
 import org.keycloak.validation.ValidationRegistry.MutableValidationRegistry;
@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 import static org.keycloak.validation.ValidationContextKey.CLIENT_DEFAULT_CONTEXT_KEY;
 import static org.keycloak.validation.ValidationContextKey.DEFAULT_CONTEXT_KEY;
 import static org.keycloak.validation.ValidationContextKey.USER_DEFAULT_CONTEXT_KEY;
-import static org.keycloak.validation.ValidationContextKey.USER_PROFILE_UPDATE_CONTEXT_KEY;
+import static org.keycloak.validation.ValidationContextKey.USER_PROFILE_CONTEXT_KEY;
 import static org.keycloak.validation.ValidationContextKey.USER_REGISTRATION_CONTEXT_KEY;
 
 public class DefaultValidatorProviderTest {
@@ -55,9 +55,9 @@ public class DefaultValidatorProviderTest {
     @Test
     public void validateEmail() {
 
-        new DefaultValidationProvider().register(registry);
+        registerDefaultValidations();
 
-        ValidationContext context = new ValidationContext(USER_PROFILE_UPDATE_CONTEXT_KEY);
+        ValidationContext context = new ValidationContext(USER_PROFILE_CONTEXT_KEY);
 
         ValidationResult result;
         ValidationProblem problem;
@@ -90,9 +90,9 @@ public class DefaultValidatorProviderTest {
     @Test
     public void validateMultipleFieldsInValidationContext() {
 
-        new DefaultValidationProvider().register(registry);
+        registerDefaultValidations();
 
-        ValidationContext context = new ValidationContext(USER_PROFILE_UPDATE_CONTEXT_KEY);
+        ValidationContext context = new ValidationContext(USER_PROFILE_CONTEXT_KEY);
 
         ValidationResult result;
         ValidationProblem problem;
@@ -116,13 +116,13 @@ public class DefaultValidatorProviderTest {
     @Test
     public void validateWithCustomValidation() {
 
-        new DefaultValidationProvider().register(registry);
+        registerDefaultValidations();
 
         registry.register("custom_user_phone_validation",
                 CustomValidations::validatePhone, CustomValidations.USER_PHONE,
-                ValidationRegistry.DEFAULT_ORDER, USER_PROFILE_UPDATE_CONTEXT_KEY);
+                ValidationRegistry.DEFAULT_ORDER, USER_PROFILE_CONTEXT_KEY);
 
-        ValidationContext context = new ValidationContext(USER_PROFILE_UPDATE_CONTEXT_KEY);
+        ValidationContext context = new ValidationContext(USER_PROFILE_CONTEXT_KEY);
 
         ValidationResult result;
         ValidationProblem problem;
@@ -142,7 +142,7 @@ public class DefaultValidatorProviderTest {
     @Test
     public void validateWithCustomValidationForBuiltInValidation() {
 
-        new DefaultValidationProvider().register(registry);
+        registerDefaultValidations();
 
         registry.register("custom_user_email_validation",
                 CustomValidations::validateEmailCustom, ValidationKey.USER_EMAIL,
@@ -168,7 +168,7 @@ public class DefaultValidatorProviderTest {
     @Test
     public void validateWithReplacedDefaultValidation() {
 
-        new DefaultValidationProvider().register(registry);
+        registerDefaultValidations();
 
         // default order = 0.0 effectively replaces the existing validator
         registry.register("custom_user_email_validation",
@@ -201,7 +201,7 @@ public class DefaultValidatorProviderTest {
 
         registry.register("custom_user_phone_validation",
                 CustomValidations::validatePhone, CustomValidations.USER_PHONE,
-                ValidationRegistry.DEFAULT_ORDER, USER_PROFILE_UPDATE_CONTEXT_KEY);
+                ValidationRegistry.DEFAULT_ORDER, USER_PROFILE_CONTEXT_KEY);
 
         ValidationContextKey differentContextKey = USER_REGISTRATION_CONTEXT_KEY;
         ValidationContext context = new ValidationContext(differentContextKey);
@@ -279,11 +279,11 @@ public class DefaultValidatorProviderTest {
     @Test
     public void validateCompoundObject() {
 
-        new DefaultValidationProvider().register(registry);
+        registerDefaultValidations();
 
-        registry.register("custom_user_registration_validation",
-                CustomValidations::validateUserModel, ValidationKey.USER,
-                ValidationRegistry.DEFAULT_ORDER + 1000.0, USER_REGISTRATION_CONTEXT_KEY);
+//        registry.register("custom_user_registration_validation",
+//                CustomValidations::validateUserModel, ValidationKey.USER,
+//                ValidationRegistry.DEFAULT_ORDER + 1000.0, USER_REGISTRATION_CONTEXT_KEY);
 
         UserModel user = new InMemoryUserAdapter(session, realm, "1");
         user.setFirstName("Theo");
@@ -299,18 +299,14 @@ public class DefaultValidatorProviderTest {
     @Test
     public void validateCompoundObjectWithNestedPropertiesAndDefaultValidations() {
 
-        new DefaultValidationProvider().register(registry);
-
-        registry.register("custom_user_registration_validation",
-                CustomValidations::validateUserModel, ValidationKey.USER,
-                ValidationRegistry.DEFAULT_ORDER + 1000.0, USER_REGISTRATION_CONTEXT_KEY);
+        registerDefaultValidations();
 
         ValidationContext context = new ValidationContext(USER_REGISTRATION_CONTEXT_KEY);
 
         UserModel user = new InMemoryUserAdapter(session, realm, "1");
 
-        user.setFirstName("Petra");
-        user.setFirstName("Probe");
+        user.setFirstName("");
+        user.setLastName("");
         user.setEmail("");
 
         ValidationResult result = validator.validate(context, user, ValidationKey.USER);
@@ -321,10 +317,41 @@ public class DefaultValidatorProviderTest {
         assertEquals(3, result.getErrors().size());
         assertEquals(0, result.getErrors(ValidationKey.USER_USERNAME).size());
         List<ValidationProblem> errors = result.getErrors();
-        assertEquals(CustomValidations.INVALID_USER_FIRSTNAME, errors.get(0).getMessage());
-        assertEquals(CustomValidations.INVALID_USER_LASTNAME, errors.get(1).getMessage());
-        assertEquals(Messages.MISSING_EMAIL, errors.get(2).getMessage());
+        assertEquals(Messages.MISSING_EMAIL, errors.get(0).getMessage());
+        assertEquals(Messages.MISSING_FIRST_NAME, errors.get(1).getMessage());
+        assertEquals(Messages.MISSING_LAST_NAME, errors.get(2).getMessage());
     }
+
+    @Test
+    public void validateCompoundObjectWithAdditionalCustomValidation() {
+
+        registerDefaultValidations();
+
+        registry.register("custom_user_registration_validation",
+                CustomValidations::validateCustomUserModel, ValidationKey.USER,
+                ValidationRegistry.DEFAULT_ORDER + 1000.0, USER_REGISTRATION_CONTEXT_KEY);
+
+        ValidationContext context = new ValidationContext(USER_REGISTRATION_CONTEXT_KEY);
+
+        UserModel user = new InMemoryUserAdapter(session, realm, "1");
+
+        user.setFirstName(""); // missing
+        user.setLastName(""); // missing
+        user.setEmail("tester@notallowed"); // not allowed -> see CustomValidations::validateCustomUserModel
+
+        ValidationResult result = validator.validate(context, user, ValidationKey.USER);
+
+        assertFalse("An invalid custom attribute should be invalid", result.isValid());
+        assertTrue("An invalid custom attribute should cause problems", result.hasProblems());
+        assertEquals(3, result.getProblems().size());
+        assertEquals(3, result.getErrors().size());
+        assertEquals(0, result.getErrors(ValidationKey.USER_USERNAME).size());
+        List<ValidationProblem> errors = result.getErrors();
+        assertEquals(Messages.MISSING_FIRST_NAME, errors.get(0).getMessage());
+        assertEquals(Messages.MISSING_LAST_NAME, errors.get(1).getMessage());
+        assertEquals(CustomValidations.EMAIL_NOT_ALLOWED, errors.get(2).getMessage());
+    }
+
 
     @Test
     public void validateWithExceptionShouldFail() {
@@ -436,6 +463,47 @@ public class DefaultValidatorProviderTest {
         assertEquals(ValidationProblem.Severity.WARNING, problem.getSeverity());
     }
 
+    @Test
+    public void validateValueOnlyDuringUpdateAction() {
+
+        registerDefaultValidations();
+
+        registry.register("custom_user_attribute_validation",
+                (key, value, context) -> {
+
+                    if (!ValidationActionKey.UPDATE.equals(context.getActionKey())) {
+                        return true;
+                    }
+
+                    boolean result = value != null;
+                    if (!result) {
+                        context.addError(key, CustomValidations.INVALID_ATTRIBUTE);
+                    }
+                    return result;
+                },
+                CustomValidations.USER_ATTRIBUTES_CUSTOM, ValidationRegistry.DEFAULT_ORDER, DEFAULT_CONTEXT_KEY);
+
+        ValidationContext context;
+        ValidationResult result;
+
+        // validation should run and fail with action update
+        context = new ValidationContext(USER_DEFAULT_CONTEXT_KEY).withActionKey(ValidationActionKey.UPDATE);
+        result = validator.validate(context, null, CustomValidations.USER_ATTRIBUTES_CUSTOM);
+        assertFalse("Conditional validation should fail the validation", result.isValid());
+        assertTrue("Conditional validation should cause problems", result.hasProblems());
+        ValidationProblem problem = result.getErrors(CustomValidations.USER_ATTRIBUTES_CUSTOM).get(0);
+        assertEquals(CustomValidations.INVALID_ATTRIBUTE, problem.getMessage());
+
+        // validation should run and pass without action update
+        context = new ValidationContext(USER_DEFAULT_CONTEXT_KEY);
+        result = validator.validate(context, null, CustomValidations.USER_ATTRIBUTES_CUSTOM);
+        assertTrue("Should not check value for default ContextActionKey", result.isValid());
+      }
+
+    protected void registerDefaultValidations() {
+        new DefaultValidationProvider().register(registry);
+    }
+
     interface CustomValidations {
 
         String MISSING_PHONE = "missing_phone";
@@ -447,10 +515,6 @@ public class DefaultValidatorProviderTest {
         String INVALID_ATTRIBUTE1 = "invalid_attribute1";
 
         String INVALID_ATTRIBUTE2 = "invalid_attribute2";
-
-        String INVALID_USER_FIRSTNAME = "invalid_user_firstname";
-
-        String INVALID_USER_LASTNAME = "invalid_user_lastname";
 
         String WARNING_SECURITY_HTTPS_RECOMMENDED = "warning_security_https_recommended";
 
@@ -503,7 +567,7 @@ public class DefaultValidatorProviderTest {
             return true;
         }
 
-        static boolean validateUserModel(ValidationKey key, Object value, NestedValidationContext context) {
+        static boolean validateCustomUserModel(ValidationKey key, Object value, NestedValidationContext context) {
 
             UserModel user = value instanceof UserModel ? (UserModel) value : null;
             if (user == null) {
@@ -511,27 +575,7 @@ public class DefaultValidatorProviderTest {
                 return false;
             }
 
-            boolean valid = true;
-            if (!"Theo".equals(user.getFirstName())) {
-                context.addError(ValidationKey.USER_FIRSTNAME, INVALID_USER_FIRSTNAME);
-                // go on with additional checks
-                // return false;
-                valid = false;
-            }
-
-            if (!"Tester".equals(user.getLastName())) {
-                context.addError(ValidationKey.USER_EMAIL, INVALID_USER_LASTNAME);
-                // go on with additional checks
-                // return false;
-                valid = false;
-            }
-
-            // use a built-in validation in a nested validation
-            if (!context.validateNested(ValidationKey.USER_EMAIL, user.getEmail())) {
-                valid = false;
-            }
-
-            return valid;
+            return context.evaluateAndReportErrorIfFalse(() -> user.getEmail().endsWith("@allowed"), ValidationKey.USER_EMAIL, EMAIL_NOT_ALLOWED);
         }
     }
 }

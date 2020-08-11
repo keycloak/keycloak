@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.validation;
 
+import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.validation.Validation;
 import org.keycloak.validation.ValidationContextKey;
@@ -32,20 +33,44 @@ public class DefaultValidationProvider implements ValidationProvider {
 
         registry.register("builtin_user_username_validation",
                 createUsernameValidation(), ValidationKey.USER_USERNAME,
-                ValidationContextKey.USER_PROFILE_UPDATE_CONTEXT_KEY, ValidationContextKey.USER_REGISTRATION_CONTEXT_KEY);
+                ValidationContextKey.USER_PROFILE_CONTEXT_KEY, ValidationContextKey.USER_REGISTRATION_CONTEXT_KEY);
 
         registry.register("builtin_user_email_validation",
                 createEmailValidation(), ValidationKey.USER_EMAIL,
-                ValidationContextKey.USER_PROFILE_UPDATE_CONTEXT_KEY, ValidationContextKey.USER_REGISTRATION_CONTEXT_KEY);
+                ValidationContextKey.USER_PROFILE_CONTEXT_KEY, ValidationContextKey.USER_REGISTRATION_CONTEXT_KEY);
 
         // TODO firstname / lastname validation could be merged?
         registry.register("builtin_user_firstname_validation",
                 createFirstnameValidation(), ValidationKey.USER_FIRSTNAME,
-                ValidationContextKey.USER_PROFILE_UPDATE_CONTEXT_KEY);
+                ValidationContextKey.USER_PROFILE_CONTEXT_KEY, ValidationContextKey.USER_REGISTRATION_CONTEXT_KEY);
 
         registry.register("builtin_user_lastname_validation",
                 createLastnameValidation(), ValidationKey.USER_LASTNAME,
-                ValidationContextKey.USER_PROFILE_UPDATE_CONTEXT_KEY);
+                ValidationContextKey.USER_PROFILE_CONTEXT_KEY, ValidationContextKey.USER_REGISTRATION_CONTEXT_KEY);
+
+        registry.register("builtin_user_validation",
+                createUserValidation(), ValidationKey.USER,
+                ValidationContextKey.USER_PROFILE_CONTEXT_KEY, ValidationContextKey.USER_REGISTRATION_CONTEXT_KEY);
+    }
+
+    protected Validation createUserValidation() {
+        return (key, value, context) -> {
+
+            UserModel user = value instanceof UserModel ? (UserModel) value : null;
+
+            if (user == null) {
+                return false;
+            }
+
+            boolean valid;
+
+            valid = context.validateNested(ValidationKey.USER_EMAIL, user.getEmail());
+            valid &= context.validateNested(ValidationKey.USER_USERNAME, user.getUsername());
+            valid &= context.validateNested(ValidationKey.USER_FIRSTNAME, user.getFirstName());
+            valid &= context.validateNested(ValidationKey.USER_LASTNAME, user.getLastName());
+
+            return valid;
+        };
     }
 
     protected Validation createLastnameValidation() {
@@ -98,9 +123,8 @@ public class DefaultValidationProvider implements ValidationProvider {
 
             String input = value instanceof String ? (String) value : null;
 
-            if (!context.getRealm().isRegistrationEmailAsUsername()
-                    && context.getAttributeAsBoolean("userNameRequired")
-                    && org.keycloak.services.validation.Validation.isBlank(input)) {
+            boolean usernameRequired = context.getAttributeAsBoolean("userNameRequired");
+            if (usernameRequired && org.keycloak.services.validation.Validation.isBlank(input)) {
                 context.addError(key, Messages.MISSING_USERNAME);
                 return false;
             }

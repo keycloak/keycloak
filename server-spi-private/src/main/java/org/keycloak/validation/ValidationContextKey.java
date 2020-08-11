@@ -36,28 +36,28 @@ public interface ValidationContextKey {
     ValidationContextKey DEFAULT_CONTEXT_KEY = new BuiltInValidationContextKey("", null);
 
     ValidationContextKey REALM_DEFAULT_CONTEXT_KEY =
-            new BuiltInValidationContextKey("realm", ValidationContextKey.DEFAULT_CONTEXT_KEY);
+            new BuiltInValidationContextKey("realm", DEFAULT_CONTEXT_KEY);
 
     ValidationContextKey CLIENT_DEFAULT_CONTEXT_KEY =
-            new BuiltInValidationContextKey("client", ValidationContextKey.DEFAULT_CONTEXT_KEY);
+            new BuiltInValidationContextKey("client", DEFAULT_CONTEXT_KEY);
 
     ValidationContextKey USER_DEFAULT_CONTEXT_KEY =
-            new BuiltInValidationContextKey("user", ValidationContextKey.DEFAULT_CONTEXT_KEY);
+            new BuiltInValidationContextKey("user", DEFAULT_CONTEXT_KEY);
 
-    ValidationContextKey USER_RESOURCE_UPDATE_CONTEXT_KEY =
-            new BuiltInValidationContextKey("user.resource_update", USER_DEFAULT_CONTEXT_KEY);
+    ValidationContextKey USER_RESOURCE_CONTEXT_KEY =
+            new BuiltInValidationContextKey("user.resource", USER_DEFAULT_CONTEXT_KEY);
 
-    ValidationContextKey USER_PROFILE_UPDATE_CONTEXT_KEY =
-            new BuiltInValidationContextKey("user.profile_update", USER_DEFAULT_CONTEXT_KEY);
+    ValidationContextKey USER_PROFILE_CONTEXT_KEY =
+            new BuiltInValidationContextKey("user.profile", USER_DEFAULT_CONTEXT_KEY);
 
     ValidationContextKey USER_REGISTRATION_CONTEXT_KEY =
             new BuiltInValidationContextKey("user.registration", USER_DEFAULT_CONTEXT_KEY);
 
-    ValidationContextKey USER_PROFILE_UPDATE_REGISTRATION_CONTEXT_KEY =
-            new BuiltInValidationContextKey("user.profile_update_registration", USER_DEFAULT_CONTEXT_KEY);
+    ValidationContextKey USER_PROFILE_REGISTRATION_CONTEXT_KEY =
+            new BuiltInValidationContextKey("user.profile.registration", USER_DEFAULT_CONTEXT_KEY);
 
-    ValidationContextKey USER_PROFILE_UPDATE_IDP_REVIEW_CONTEXT_KEY =
-            new BuiltInValidationContextKey("user.profile_update_idp_review", USER_DEFAULT_CONTEXT_KEY);
+    ValidationContextKey USER_PROFILE_IDP_REVIEW_CONTEXT_KEY =
+            new BuiltInValidationContextKey("user.profile.idp_review", USER_DEFAULT_CONTEXT_KEY);
 
     List<ValidationContextKey> ALL_CONTEXT_KEYS = Collections.unmodifiableList(Arrays.asList(
 
@@ -68,10 +68,12 @@ public interface ValidationContextKey {
             CLIENT_DEFAULT_CONTEXT_KEY,
 
             USER_DEFAULT_CONTEXT_KEY,
-            USER_RESOURCE_UPDATE_CONTEXT_KEY,
-            USER_PROFILE_UPDATE_CONTEXT_KEY,
-            USER_PROFILE_UPDATE_IDP_REVIEW_CONTEXT_KEY,
-            USER_PROFILE_UPDATE_REGISTRATION_CONTEXT_KEY,
+
+            USER_RESOURCE_CONTEXT_KEY,
+            USER_PROFILE_CONTEXT_KEY,
+
+            USER_PROFILE_IDP_REVIEW_CONTEXT_KEY,
+            USER_PROFILE_REGISTRATION_CONTEXT_KEY,
             USER_REGISTRATION_CONTEXT_KEY
     ));
 
@@ -79,12 +81,16 @@ public interface ValidationContextKey {
 
     ValidationContextKey getParent();
 
+    default List<ValidationActionKey> getActions() {
+        return Collections.singletonList(ValidationActionKey.DEFAULT);
+    }
+
     static ValidationContextKey newCustomValidationContextKey(String name, ValidationContextKey parent) {
         return new CustomValidationContextKey(name, parent);
     }
 
     static ValidationContextKey get(String name) {
-        return AbstractValidationContextKey.Internal.VALIDATION_CONTEXT_KEY_CACHE.get(name);
+        return AbstractValidationContextKey.Internal.CACHE.get(name);
     }
 
     /**
@@ -115,21 +121,35 @@ public interface ValidationContextKey {
         }
     }
 
+    final class ActionValidationContextKey implements ValidationActionKey {
+
+        private final ValidationContextKey delegate;
+
+        public ActionValidationContextKey(ValidationContextKey delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public String getName() {
+            return null;
+        }
+    }
+
     class AbstractValidationContextKey implements ValidationContextKey {
 
         /**
-         * Lazy static singleton holder for the {@link ValidationContextKey.AbstractValidationContextKey.Internal#VALIDATION_CONTEXT_KEY_CACHE}.
+         * Lazy static singleton holder for the {@link Internal#CACHE}.
          */
         static class Internal {
 
-            private static final Map<String, ValidationContextKey> VALIDATION_CONTEXT_KEY_CACHE;
+            private static final Map<String, ValidationContextKey> CACHE;
 
             static {
                 Map<String, ValidationContextKey> map = new HashMap<>();
                 for (ValidationContextKey key : ALL_CONTEXT_KEYS) {
                     map.put(key.getName(), key);
                 }
-                VALIDATION_CONTEXT_KEY_CACHE = Collections.unmodifiableMap(map);
+                CACHE = Collections.unmodifiableMap(map);
             }
         }
 

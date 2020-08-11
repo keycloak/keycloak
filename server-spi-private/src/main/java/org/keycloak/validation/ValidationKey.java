@@ -74,7 +74,7 @@ public interface ValidationKey {
      * @return
      */
     static ValidationKey get(String name) {
-        return AbstractValidationKey.Internal.VALIDATION_KEY_CACHE.get(name);
+        return AbstractValidationKey.Internal.CACHE.get(name);
     }
 
     /**
@@ -120,18 +120,18 @@ public interface ValidationKey {
     abstract class AbstractValidationKey implements ValidationKey {
 
         /**
-         * Lazy static singleton holder for the {@link Internal#VALIDATION_KEY_CACHE}.
+         * Lazy static singleton holder for the {@link Internal#CACHE}.
          */
         static class Internal {
 
-            private static final Map<String, ValidationKey> VALIDATION_KEY_CACHE;
+            private static final Map<String, ValidationKey> CACHE;
 
             static {
                 Map<String, ValidationKey> map = new HashMap<>();
                 for (ValidationKey key : ALL_KEYS) {
                     map.put(key.getName(), key);
                 }
-                VALIDATION_KEY_CACHE = Collections.unmodifiableMap(map);
+                CACHE = Collections.unmodifiableMap(map);
             }
         }
 
@@ -147,8 +147,12 @@ public interface ValidationKey {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof AbstractValidationKey)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof AbstractValidationKey)) {
+                return false;
+            }
             AbstractValidationKey that = (AbstractValidationKey) o;
             return Objects.equals(name, that.name);
         }
