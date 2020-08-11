@@ -18,6 +18,7 @@
 package org.keycloak.models;
 
 import org.keycloak.provider.Provider;
+import org.keycloak.storage.group.GroupLookupProvider;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,7 +30,7 @@ import java.util.stream.Stream;
  * @author mhajas
  *
  */
-public interface GroupProvider extends Provider {
+public interface GroupProvider extends Provider, GroupLookupProvider {
 
     /**
      * Returns a group from the given realm with the corresponding id
@@ -42,15 +43,6 @@ public interface GroupProvider extends Provider {
     default GroupModel getGroupById(String id, RealmModel realm) {
         return getGroupById(realm, id);
     }
-
-    /**
-     * Returns a group from the given realm with the corresponding id
-     *
-     * @param realm Realm.
-     * @param id Id.
-     * @return GroupModel with the corresponding id.
-     */
-    GroupModel getGroupById(RealmModel realm, String id);
 
     /**
      * Returns groups for the given realm.
@@ -159,32 +151,6 @@ public interface GroupProvider extends Provider {
      * @return Stream of top level groups in the realm.
      */
     Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, Integer firstResult, Integer maxResults);
-
-    /**
-     * Returns groups with the given string in name for the given realm.
-     *
-     * @param realm Realm.
-     * @param search Searched string.
-     * @param firstResult First result to return. Ignored if {@code null}.
-     * @param maxResults Maximum number of results to return. Ignored if {@code null}.
-     * @return List of groups with the given string in name.
-     * @deprecated Use {@link #searchForGroupByNameStream(RealmModel, String, Integer, Integer)}  searchForGroupByNameStream} instead.
-     */
-    @Deprecated
-    default List<GroupModel> searchForGroupByName(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
-        return searchForGroupByNameStream(realm, search, firstResult, maxResults).collect(Collectors.toList());
-    }
-
-    /**
-     * Returns groups with the given string in name for the given realm.
-     *
-     * @param realm Realm.
-     * @param search Searched string.
-     * @param firstResult First result to return. Ignored if {@code null}.
-     * @param maxResults Maximum number of results to return. Ignored if {@code null}.
-     * @return Stream of groups with the given string in name.
-     */
-    Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Integer firstResult, Integer maxResults);
 
     /**
      * Creates a new group with the given name in the given realm.

@@ -43,6 +43,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.services.clientpolicy.DefaultClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.ClientStorageManager;
+import org.keycloak.storage.GroupStorageManager;
 import org.keycloak.storage.RoleStorageManager;
 import org.keycloak.storage.UserStorageManager;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
@@ -75,6 +76,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private UserStorageManager userStorageManager;
     private ClientStorageManager clientStorageManager;
     private RoleStorageManager roleStorageManager;
+    private GroupStorageManager groupStorageManager;
     private UserCredentialStoreManager userCredentialStorageManager;
     private UserSessionProvider sessionProvider;
     private AuthenticationSessionProvider authenticationSessionProvider;
@@ -122,7 +124,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
         if (cache != null) {
             return cache;
         } else {
-            return groupLocalStorage();
+            return groupStorageManager();
         }
     }
 
@@ -226,6 +228,14 @@ public class DefaultKeycloakSession implements KeycloakSession {
             roleStorageManager = new RoleStorageManager(this, factory.getRoleStorageProviderTimeout());
         }
         return roleStorageManager;
+    }
+
+    @Override
+    public GroupProvider groupStorageManager() {
+        if (groupStorageManager == null) {
+            groupStorageManager = new GroupStorageManager(this);
+        }
+        return groupStorageManager;
     }
 
 

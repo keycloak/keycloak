@@ -167,7 +167,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     public GroupProvider getGroupDelegate() {
         if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
         if (groupDelegate != null) return groupDelegate;
-        groupDelegate = session.groupLocalStorage();
+        groupDelegate = session.groupStorageManager();
         return groupDelegate;
     }
 

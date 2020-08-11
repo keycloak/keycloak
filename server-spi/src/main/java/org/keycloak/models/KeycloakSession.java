@@ -171,6 +171,11 @@ public interface KeycloakSession {
     RoleProvider roleStorageManager();
 
     /**
+     * @return GroupStorageManager instance
+     */
+    GroupProvider groupStorageManager();
+
+    /**
      * Un-cached view of all users in system including users loaded by UserStorageProviders
      *
      * @return
