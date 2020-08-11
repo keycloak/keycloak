@@ -107,46 +107,4 @@ public class DefaultValidationProvider implements ValidationProvider {
             return true;
         };
     }
-
-//    protected Validation uniqueEmailValidation() {
-//        return (key, value, context) -> {
-//
-//            if (context.getRealm().isDuplicateEmailsAllowed()) {
-//                return true;
-//            }
-//
-//            String input = value instanceof String ? (String) value : null;
-//            if (input == null) {
-//                context.addError(key, Messages.MISSING_EMAIL);
-//            }
-//
-//            UserModel userByEmail = context.getSession().users().getUserByEmail(input, context.getRealm());
-//            return userByEmail == null;
-//        };
-//    }
-
-//
-//    protected Validation createProfileValidation() {
-//        return (key, value, context) -> {
-//
-//            UserModel input = value instanceof UserModel ? (UserModel) value : null;
-//
-//            if (input == null) {
-//                context.addError(key, Messages.INVALID_USER);
-//                return false;
-//            }
-//
-//            if (!"content".equals(input.getFirstAttribute("FAKE_FIELD"))) {
-//                context.addError(key, "FAKE_FIELD_ERRORKEY");
-//                return false;
-//            }
-//
-//            boolean emailValid = context.validateNested(ValidationKey.User.EMAIL, input.getEmail());
-//            if (!emailValid) {
-//                context.addError(key, Messages.INVALID_EMAIL);
-//            }
-//
-//            return emailValid;
-//        };
-//    }
 }

@@ -80,7 +80,6 @@ public class DefaultValidatorProvider implements ValidatorProvider {
             return keys;
         }
 
-        // TODO move to map from value.getClass() -> ValidationKey
         if (value instanceof UserModel) {
             return Collections.singleton(ValidationKey.USER);
         } else if (value instanceof ClientModel) {
