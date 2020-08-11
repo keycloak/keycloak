@@ -43,17 +43,17 @@ import javax.persistence.criteria.Join;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Objects;
 import java.util.stream.Stream;
 import javax.persistence.LockModeType;
+
+import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -401,22 +401,18 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         return em.createQuery(queryBuilder);
     }
 
-    private Set<GroupModel> getGroupModels(Collection<String> groupIds) {
-        Set<GroupModel> groups = new LinkedHashSet<>();
-        for (String id : groupIds) {
-            groups.add(realm.getGroupById(id));
-        }
-        return groups;
+    private Stream<GroupModel> getGroupModels(Stream<String> groupIds) {
+        return groupIds.map(realm::getGroupById);
     }
 
     @Override
-    public Set<GroupModel> getGroups() {
-        return getGroupModels(createGetGroupsQuery(null, null, null).getResultList());
+    public Stream<GroupModel> getGroupsStream() {
+        return closing(getGroupModels(createGetGroupsQuery(null, null, null).getResultStream()));
     }
 
     @Override
-    public Set<GroupModel> getGroups(String search, int first, int max) {
-        return getGroupModels(createGetGroupsQuery(search, first, max).getResultList());
+    public Stream<GroupModel> getGroupsStream(String search, int first, int max) {
+        return closing(getGroupModels(createGetGroupsQuery(search, first, max).getResultStream()));
     }
 
     @Override
@@ -463,8 +459,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public boolean isMemberOf(GroupModel group) {
-        Set<GroupModel> roles = getGroups();
-        return RoleUtils.isMember(roles, group);
+        return RoleUtils.isMember(getGroupsStream(), group);
     }
 
     protected TypedQuery<UserGroupMembershipEntity> getUserGroupMappingQuery(GroupModel group) {
@@ -479,7 +474,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     public boolean hasRole(RoleModel role) {
         Set<RoleModel> roles = getRoleMappings();
         return RoleUtils.hasRole(roles, role)
-                || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
+                || RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
     }
 
     protected TypedQuery<UserRoleMappingEntity> getUserRoleMappingEntityTypedQuery(RoleModel role) {

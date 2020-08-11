@@ -705,15 +705,9 @@ public class RealmAdapter implements CachedRealmModel {
      }
 
     @Override
-    public List<GroupModel> getDefaultGroups() {
-        if (isUpdated()) return updated.getDefaultGroups();
-
-        List<GroupModel> defaultGroups = new LinkedList<>();
-        for (String id : cached.getDefaultGroups()) {
-            defaultGroups.add(cacheSession.getGroupById(this, id));
-        }
-        return Collections.unmodifiableList(defaultGroups);
-
+    public Stream<GroupModel> getDefaultGroupsStream() {
+        if (isUpdated()) return updated.getDefaultGroupsStream();
+        return cached.getDefaultGroups().stream().map(this::getGroupById);
     }
 
     @Override
@@ -1420,8 +1414,8 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public List<GroupModel> getGroups() {
-        return cacheSession.getGroups(this);
+    public Stream<GroupModel> getGroupsStream() {
+        return cacheSession.getGroupsStream(this);
     }
 
     @Override
@@ -1435,18 +1429,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public List<GroupModel> getTopLevelGroups() {
-        return cacheSession.getTopLevelGroups(this);
+    public Stream<GroupModel> getTopLevelGroupsStream() {
+        return cacheSession.getTopLevelGroupsStream(this);
     }
 
     @Override
-    public List<GroupModel> getTopLevelGroups(Integer first, Integer max) {
-        return cacheSession.getTopLevelGroups(this, first, max);
+    public Stream<GroupModel> getTopLevelGroupsStream(Integer first, Integer max) {
+        return cacheSession.getTopLevelGroupsStream(this, first, max);
     }
 
     @Override
-    public List<GroupModel> searchForGroupByName(String search, Integer first, Integer max) {
-        return cacheSession.searchForGroupByName(this, search, first, max);
+    public Stream<GroupModel> searchForGroupByNameStream(String search, Integer first, Integer max) {
+        return cacheSession.searchForGroupByNameStream(this, search, first, max);
     }
 
     @Override

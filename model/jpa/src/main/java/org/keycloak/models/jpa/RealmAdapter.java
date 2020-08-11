@@ -792,14 +792,10 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public List<GroupModel> getDefaultGroups() {
+    public Stream<GroupModel> getDefaultGroupsStream() {
         Collection<GroupEntity> entities = realm.getDefaultGroups();
-        if (entities == null || entities.isEmpty()) return Collections.EMPTY_LIST;
-        List<GroupModel> defaultGroups = new LinkedList<>();
-        for (GroupEntity entity : entities) {
-            defaultGroups.add(session.groups().getGroupById(this, entity.getId()));
-        }
-        return Collections.unmodifiableList(defaultGroups);
+        if (entities == null || entities.isEmpty()) return Stream.empty();
+        return entities.stream().map(GroupEntity::getId).map(this::getGroupById);
     }
 
     @Override
@@ -2036,8 +2032,8 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public List<GroupModel> getGroups() {
-        return session.groups().getGroups(this);
+    public Stream<GroupModel> getGroupsStream() {
+        return session.groups().getGroupsStream(this);
     }
 
     @Override
@@ -2051,18 +2047,18 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public List<GroupModel> getTopLevelGroups() {
-        return session.groups().getTopLevelGroups(this);
+    public Stream<GroupModel> getTopLevelGroupsStream() {
+        return session.groups().getTopLevelGroupsStream(this);
     }
 
     @Override
-    public List<GroupModel> getTopLevelGroups(Integer first, Integer max) {
-        return session.groups().getTopLevelGroups(this, first, max);
+    public Stream<GroupModel> getTopLevelGroupsStream(Integer first, Integer max) {
+        return session.groups().getTopLevelGroupsStream(this, first, max);
     }
 
     @Override
-    public List<GroupModel> searchForGroupByName(String search, Integer first, Integer max) {
-        return session.groups().searchForGroupByName(this, search, first, max);
+    public Stream<GroupModel> searchForGroupByNameStream(String search, Integer first, Integer max) {
+        return session.groups().searchForGroupByNameStream(this, search, first, max);
     }
 
     @Override

@@ -219,7 +219,9 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
     /**
      * @deprecated Use the corresponding method from {@link GroupProvider}. */
     @Override
-    List<GroupModel> getGroups(RealmModel realm);
+    default List<GroupModel> getGroups(RealmModel realm) {
+        return getGroupsStream(realm).collect(Collectors.toList());
+    }
 
     /**
      * @deprecated Use the corresponding method from {@link GroupProvider}. */
@@ -234,22 +236,30 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
     /**
      * @deprecated Use the corresponding method from {@link GroupProvider}. */
     @Override
-    List<GroupModel> getGroupsByRole(RealmModel realm, RoleModel role, int firstResult, int maxResults);
+    default List<GroupModel> getGroupsByRole(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+        return getGroupsByRoleStream(realm, role, firstResult, maxResults).collect(Collectors.toList());
+    }
 
     /**
      * @deprecated Use the corresponding method from {@link GroupProvider}. */
     @Override
-    List<GroupModel> getTopLevelGroups(RealmModel realm);
+    default List<GroupModel> getTopLevelGroups(RealmModel realm) {
+        return getTopLevelGroupsStream(realm).collect(Collectors.toList());
+    }
 
     /**
      * @deprecated Use the corresponding method from {@link GroupProvider}. */
     @Override
-    List<GroupModel> getTopLevelGroups(RealmModel realm, Integer first, Integer max);
+    default List<GroupModel> getTopLevelGroups(RealmModel realm, Integer first, Integer max) {
+        return getTopLevelGroupsStream(realm, first, max).collect(Collectors.toList());
+    }
 
     /**
      * @deprecated Use the corresponding method from {@link GroupProvider}. */
     @Override
-    List searchForGroupByName(RealmModel realm, String search, Integer first, Integer max);
+    default List<GroupModel> searchForGroupByName(RealmModel realm, String search, Integer first, Integer max) {
+        return searchForGroupByNameStream(realm, search, first, max).collect(Collectors.toList());
+    }
 
     /**
      * @deprecated Use the corresponding method from {@link GroupProvider}. */

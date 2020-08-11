@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -136,10 +137,10 @@ public class GroupAdapter implements GroupModel {
     }
 
     @Override
-    public List<String> getAttribute(String name) {
+    public Stream<String> getAttributeStream(String name) {
         List<String> values = cached.getAttributes(modelSupplier).get(name);
-        if (values == null) return null;
-        return values;
+        if (values == null) return Stream.empty();
+        return values.stream();
     }
 
     @Override
@@ -234,20 +235,20 @@ public class GroupAdapter implements GroupModel {
     }
 
     @Override
-    public Set<GroupModel> getSubGroups() {
-        if (isUpdated()) return updated.getSubGroups();
+    public Stream<GroupModel> getSubGroupsStream() {
+        if (isUpdated()) return updated.getSubGroupsStream();
         Set<GroupModel> subGroups = new HashSet<>();
         for (String id : cached.getSubGroups(modelSupplier)) {
             GroupModel subGroup = keycloakSession.groups().getGroupById(realm, id);
             if (subGroup == null) {
                 // chance that role was removed, so just delegate to persistence and get user invalidated
                 getDelegateForUpdate();
-                return updated.getSubGroups();
+                return updated.getSubGroupsStream();
 
             }
             subGroups.add(subGroup);
         }
-        return subGroups;
+        return subGroups.stream();
     }
 
 

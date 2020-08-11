@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -315,7 +316,7 @@ public class UserAdapter implements CachedUserModel {
         for (RoleModel mapping: mappings) {
            if (mapping.hasRole(role)) return true;
         }
-        return RoleUtils.hasRoleFromGroup(getGroups(), role, true);
+        return RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
     }
 
     @Override
@@ -348,20 +349,20 @@ public class UserAdapter implements CachedUserModel {
     }
 
     @Override
-    public Set<GroupModel> getGroups() {
-        if (updated != null) return updated.getGroups();
+    public Stream<GroupModel> getGroupsStream() {
+        if (updated != null) return updated.getGroupsStream();
         Set<GroupModel> groups = new LinkedHashSet<>();
         for (String id : cached.getGroups(modelSupplier)) {
             GroupModel groupModel = keycloakSession.groups().getGroupById(realm, id);
             if (groupModel == null) {
                 // chance that role was removed, so just delete to persistence and get user invalidated
                 getDelegateForUpdate();
-                return updated.getGroups();
+                return updated.getGroupsStream();
             }
             groups.add(groupModel);
 
         }
-        return groups;
+        return groups.stream();
     }
 
     @Override
@@ -381,8 +382,7 @@ public class UserAdapter implements CachedUserModel {
     public boolean isMemberOf(GroupModel group) {
         if (updated != null) return updated.isMemberOf(group);
         if (cached.getGroups(modelSupplier).contains(group.getId())) return true;
-        Set<GroupModel> roles = getGroups();
-        return RoleUtils.isMember(roles, group);
+        return RoleUtils.isMember(getGroupsStream(), group);
     }
 
     @Override

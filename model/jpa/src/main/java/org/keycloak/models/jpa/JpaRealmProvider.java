@@ -171,9 +171,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
 
         removeRoles(adapter);
 
-        for (GroupModel group : adapter.getGroups()) {
-            session.groups().removeGroup(adapter, group);
-        }
+        adapter.getGroupsStream().forEach(adapter::removeGroup);
         
         num = em.createNamedQuery("removeClientInitialAccessByRealm")
                 .setParameter("realm", realm).executeUpdate();
@@ -420,14 +418,12 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
     }
 
     @Override
-    public List<GroupModel> getGroups(RealmModel realm) {
+    public Stream<GroupModel> getGroupsStream(RealmModel realm) {
         RealmEntity ref = em.getReference(RealmEntity.class, realm.getId());
 
         return ref.getGroups().stream()
                 .map(g -> session.groups().getGroupById(realm, g.getId()))
-                .sorted(Comparator.comparing(GroupModel::getName))
-                .collect(Collectors.collectingAndThen(
-                        Collectors.toList(), Collections::unmodifiableList));
+                .sorted(Comparator.comparing(GroupModel::getName));
     }
 
     @Override
@@ -454,11 +450,11 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
 
     @Override
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
-        return (long) searchForGroupByName(realm, search, null, null).size();
+        return searchForGroupByNameStream(realm, search, null, null).count();
     }
     
     @Override
-    public List<GroupModel> getGroupsByRole(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+    public Stream<GroupModel> getGroupsByRoleStream(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
         TypedQuery<GroupEntity> query = em.createNamedQuery("groupsInRole", GroupEntity.class);
         query.setParameter("roleId", role.getId());
         if (firstResult != -1) {
@@ -467,44 +463,33 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
         if (maxResults != -1) {
             query.setMaxResults(maxResults);
         }
-        List<GroupEntity> results = query.getResultList();
+        Stream<GroupEntity> results = query.getResultStream();
 
-        return results.stream()
-        		.map(g -> new GroupAdapter(realm, em, g))
-                .sorted(Comparator.comparing(GroupModel::getName))
-                .collect(Collectors.collectingAndThen(
-                        Collectors.toList(), Collections::unmodifiableList));
+        return closing(results
+        		.map(g -> (GroupModel) new GroupAdapter(realm, em, g))
+                .sorted(Comparator.comparing(GroupModel::getName)));
     }
 
     @Override
-    public List<GroupModel> getTopLevelGroups(RealmModel realm) {
+    public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm) {
         RealmEntity ref = em.getReference(RealmEntity.class, realm.getId());
 
         return ref.getGroups().stream()
                 .filter(g -> GroupEntity.TOP_PARENT_ID.equals(g.getParentId()))
                 .map(g -> session.groups().getGroupById(realm, g.getId()))
-                .sorted(Comparator.comparing(GroupModel::getName))
-                .collect(Collectors.collectingAndThen(
-                        Collectors.toList(), Collections::unmodifiableList));
+                .sorted(Comparator.comparing(GroupModel::getName));
     }
 
     @Override
-    public List<GroupModel> getTopLevelGroups(RealmModel realm, Integer first, Integer max) {
-        List<String> groupIds =  em.createNamedQuery("getTopLevelGroupIds", String.class)
+    public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, Integer first, Integer max) {
+        Stream<String> groupIds =  em.createNamedQuery("getTopLevelGroupIds", String.class)
                 .setParameter("realm", realm.getId())
                 .setParameter("parent", GroupEntity.TOP_PARENT_ID)
                 .setFirstResult(first)
-                    .setMaxResults(max)
-                    .getResultList();
-        List<GroupModel> list = new ArrayList<>();
-        if(Objects.nonNull(groupIds) && !groupIds.isEmpty()) {
-            for (String id : groupIds) {
-                GroupModel group = getGroupById(realm, id);
-                list.add(group);
-            }
-        }
-        // no need to sort, it's sorted at database level
-        return Collections.unmodifiableList(list);
+                .setMaxResults(max)
+                .getResultStream();
+
+        return closing(groupIds.map(realm::getGroupById));
     }
 
     @Override
@@ -534,9 +519,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
         session.users().preRemove(realm, group);
 
         realm.removeDefaultGroup(group);
-        for (GroupModel subGroup : group.getSubGroups()) {
-            session.groups().removeGroup(realm, subGroup);
-        }
+        group.getSubGroupsStream().forEach(realm::removeGroup);
+
         GroupEntity groupEntity = em.find(GroupEntity.class, group.getId(), LockModeType.PESSIMISTIC_WRITE);
         if ((groupEntity == null) || (!groupEntity.getRealm().equals(realm.getId()))) {
             return false;
@@ -745,28 +729,22 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
     }
 
     @Override
-    public List<GroupModel> searchForGroupByName(RealmModel realm, String search, Integer first, Integer max) {
+    public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Integer first, Integer max) {
         TypedQuery<String> query = em.createNamedQuery("getGroupIdsByNameContaining", String.class)
                 .setParameter("realm", realm.getId())
                 .setParameter("search", search);
         if(Objects.nonNull(first) && Objects.nonNull(max)) {
             query= query.setFirstResult(first).setMaxResults(max);
         }
-        List<String> groups =  query.getResultList();
-        if (Objects.isNull(groups)) return Collections.EMPTY_LIST;
-        List<GroupModel> list = new ArrayList<>();
-        for (String id : groups) {
+        Stream<String> groups =  query.getResultStream();
+
+        return closing(groups.map(id -> {
             GroupModel groupById = session.groups().getGroupById(realm, id);
-            while(Objects.nonNull(groupById.getParentId())) {
+            while (Objects.nonNull(groupById.getParentId())) {
                 groupById = session.groups().getGroupById(realm, groupById.getParentId());
             }
-            if(!list.contains(groupById)) {
-                list.add(groupById);
-            }
-        }
-        list.sort(Comparator.comparing(GroupModel::getName));
-
-        return Collections.unmodifiableList(list);
+            return groupById;
+        }).sorted(Comparator.comparing(GroupModel::getName)).distinct());
     }
 
     @Override

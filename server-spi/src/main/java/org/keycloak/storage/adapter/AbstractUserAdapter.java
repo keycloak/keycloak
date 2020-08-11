@@ -36,6 +36,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * This abstract class provides implementations for everything but getUsername().  getId() returns a default value
@@ -94,8 +95,8 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
      *
      * @return
      */
-    protected Set<GroupModel> getGroupsInternal() {
-        return Collections.emptySet();
+    protected Stream<GroupModel> getGroupsInternal() {
+        return Stream.empty();
     }
 
     /**
@@ -110,11 +111,10 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
     }
 
     @Override
-    public Set<GroupModel> getGroups() {
-        Set<GroupModel> set = new HashSet<>();
-        if (appendDefaultGroups()) set.addAll(realm.getDefaultGroups());
-        set.addAll(getGroupsInternal());
-        return set;
+    public Stream<GroupModel> getGroupsStream() {
+        Stream<GroupModel> groups = getGroupsInternal();
+        if (appendDefaultGroups()) groups = Stream.concat(groups, realm.getDefaultGroupsStream());
+        return groups;
     }
 
     @Override
@@ -131,8 +131,7 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
 
     @Override
     public boolean isMemberOf(GroupModel group) {
-        Set<GroupModel> roles = getGroups();
-        return RoleUtils.isMember(roles, group);
+        return RoleUtils.isMember(getGroupsStream(), group);
     }
 
     @Override
@@ -170,7 +169,7 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
     public boolean hasRole(RoleModel role) {
         Set<RoleModel> roles = getRoleMappings();
         return RoleUtils.hasRole(roles, role)
-          || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
+          || RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
     }
 
     @Override

@@ -57,8 +57,12 @@ import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Set of helper methods, which are useful in various model implementations.
@@ -382,30 +386,11 @@ public final class KeycloakModelUtils {
 
     }
 
-    /**
-     *
-     *
-     * @param user
-     * @param name
-     * @return
-     */
-    public static String resolveFirstAttribute(UserModel user, String name) {
-        String value = user.getFirstAttribute(name);
-        if (value != null) return value;
-        for (GroupModel group : user.getGroups()) {
-            value = resolveFirstAttribute(group, name);
-            if (value != null) return value;
-        }
-        return null;
-
-    }
-
     public static List<String>  resolveAttribute(GroupModel group, String name) {
-        List<String> values = group.getAttribute(name);
-        if (values != null && !values.isEmpty()) return values;
+        List<String> values = group.getAttributeStream(name).collect(Collectors.toList());
+        if (!values.isEmpty()) return values;
         if (group.getParentId() == null) return null;
         return resolveAttribute(group.getParent(), name);
-
     }
 
 
@@ -418,21 +403,24 @@ public final class KeycloakModelUtils {
             }
             aggrValues.addAll(values);
         }
-        for (GroupModel group : user.getGroups()) {
-            values = resolveAttribute(group, name);
-            if (values != null && !values.isEmpty()) {
-                if (!aggregateAttrs) {
-                    return values;
-                }
-                aggrValues.addAll(values);
-            }
+        Stream<List<String>> attributes = user.getGroupsStream()
+                .map(group -> resolveAttribute(group, name))
+                .filter(Objects::nonNull)
+                .filter(attr -> !attr.isEmpty());
+
+        if (!aggregateAttrs) {
+            Optional<List<String>> first = attributes.findFirst();
+            if (first.isPresent()) return first.get();
+        } else {
+            aggrValues.addAll(attributes.flatMap(Collection::stream).collect(Collectors.toSet()));
         }
+
         return aggrValues;
     }
 
 
     private static GroupModel findSubGroup(String[] segments, int index, GroupModel parent) {
-        for (GroupModel group : parent.getSubGroups()) {
+        return parent.getSubGroupsStream().map(group -> {
             String groupName = group.getName();
             String[] pathSegments = formatPathSegments(segments, index, groupName);
 
@@ -444,14 +432,11 @@ public final class KeycloakModelUtils {
                     if (index + 1 < pathSegments.length) {
                         GroupModel found = findSubGroup(pathSegments, index + 1, group);
                         if (found != null) return found;
-                    } else {
-                        return null;
                     }
                 }
-
             }
-        }
-        return null;
+            return null;
+        }).filter(Objects::nonNull).findFirst().orElse(null);
     }
 
     /**
@@ -504,26 +489,25 @@ public final class KeycloakModelUtils {
         }
         String[] split = path.split("/");
         if (split.length == 0) return null;
-        GroupModel found = null;
-        for (GroupModel group : realm.getTopLevelGroups()) {
+
+        return realm.getTopLevelGroupsStream().map(group -> {
             String groupName = group.getName();
             String[] pathSegments = formatPathSegments(split, 0, groupName);
 
             if (groupName.equals(pathSegments[0])) {
                 if (pathSegments.length == 1) {
-                    found = group;
-                    break;
+                    return group;
                 }
                 else {
                     if (pathSegments.length > 1) {
-                        found = findSubGroup(pathSegments, 1, group);
-                        if (found != null) break;
+                        GroupModel subGroup = findSubGroup(pathSegments, 1, group);
+                        if (subGroup != null) return subGroup;
                     }
                 }
 
             }
-        }
-        return found;
+            return null;
+        }).filter(Objects::nonNull).findFirst().orElse(null);
     }
 
     public static Set<RoleModel> getClientScopeMappings(ClientModel client, ScopeContainerModel container) {

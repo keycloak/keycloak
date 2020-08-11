@@ -25,6 +25,7 @@ import org.keycloak.models.UserModel;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Delegation pattern.  Used to proxy UserModel implementations.
@@ -224,8 +225,8 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public Set<GroupModel> getGroups() {
-        return delegate.getGroups();
+    public Stream<GroupModel> getGroupsStream() {
+        return delegate.getGroupsStream();
     }
 
     @Override

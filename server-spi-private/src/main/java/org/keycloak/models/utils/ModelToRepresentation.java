@@ -46,9 +46,9 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -139,63 +139,40 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static List<GroupRepresentation> searchForGroupByName(RealmModel realm, boolean full, String search, Integer first, Integer max) {
-        List<GroupRepresentation> result = new LinkedList<>();
-        List<GroupModel> groups = realm.searchForGroupByName(search, first, max);
-        if (Objects.isNull(groups)) return result;
-        for (GroupModel group : groups) {
-            GroupRepresentation rep = toGroupHierarchy(group, full);
-            result.add(rep);
-        }
-        return result;
+    public static Stream<GroupRepresentation> searchForGroupByName(RealmModel realm, boolean full, String search, Integer first, Integer max) {
+        return realm.searchForGroupByNameStream(search, first, max)
+                .map(g -> toGroupHierarchy(g, full));
     }
 
-    public static List<GroupRepresentation> searchForGroupByName(UserModel user, boolean full, String search, Integer first, Integer max) {
-        return user.getGroups(search, first, max).stream()
-                .map(group -> toRepresentation(group, full))
-                .collect(Collectors.toList());
+    public static Stream<GroupRepresentation> searchForGroupByName(UserModel user, boolean full, String search, Integer first, Integer max) {
+        return user.getGroupsStream(search, first, max)
+                .map(group -> toRepresentation(group, full));
     }
 
-    public static List<GroupRepresentation> toGroupHierarchy(RealmModel realm, boolean full, Integer first, Integer max) {
-        List<GroupRepresentation> hierarchy = new LinkedList<>();
-        List<GroupModel> groups = realm.getTopLevelGroups(first, max);
-        if (Objects.isNull(groups)) return hierarchy;
-        for (GroupModel group : groups) {
-            GroupRepresentation rep = toGroupHierarchy(group, full);
-            hierarchy.add(rep);
-        }
-        return hierarchy;
+    public static Stream<GroupRepresentation> toGroupHierarchy(RealmModel realm, boolean full, Integer first, Integer max) {
+        return realm.getTopLevelGroupsStream(first, max)
+                .map(g -> toGroupHierarchy(g, full));
     }
 
-    public static List<GroupRepresentation> toGroupHierarchy(UserModel user, boolean full, Integer first, Integer max) {
-        return user.getGroups(first, max).stream()
-                .map(group -> toRepresentation(group, full))
-                .collect(Collectors.toList());
+    public static Stream<GroupRepresentation> toGroupHierarchy(UserModel user, boolean full, Integer first, Integer max) {
+        return user.getGroupsStream(null, first, max)
+                .map(group -> toRepresentation(group, full));
     }
 
-    public static List<GroupRepresentation> toGroupHierarchy(RealmModel realm, boolean full) {
-        List<GroupRepresentation> hierarchy = new LinkedList<>();
-        List<GroupModel> groups = realm.getTopLevelGroups();
-        if (Objects.isNull(groups)) return hierarchy;
-        for (GroupModel group : groups) {
-            GroupRepresentation rep = toGroupHierarchy(group, full);
-            hierarchy.add(rep);
-        }
-        return hierarchy;
+    public static Stream<GroupRepresentation> toGroupHierarchy(RealmModel realm, boolean full) {
+        return realm.getTopLevelGroupsStream()
+                .map(g -> toGroupHierarchy(g, full));
     }
 
-    public static List<GroupRepresentation> toGroupHierarchy(UserModel user, boolean full) {
-        return user.getGroups().stream()
-                .map(group -> toRepresentation(group, full))
-                .collect(Collectors.toList());
+    public static Stream<GroupRepresentation> toGroupHierarchy(UserModel user, boolean full) {
+        return user.getGroupsStream()
+                .map(group -> toRepresentation(group, full));
     }
 
     public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full) {
         GroupRepresentation rep = toRepresentation(group, full);
-        List<GroupRepresentation> subGroups = new LinkedList<>();
-        for (GroupModel subGroup : group.getSubGroups()) {
-            subGroups.add(toGroupHierarchy(subGroup, full));
-        }
+        List<GroupRepresentation> subGroups = group.getSubGroupsStream()
+                .map(subGroup -> toGroupHierarchy(subGroup, full)).collect(Collectors.toList());
         rep.setSubGroups(subGroups);
         return rep;
     }
@@ -437,13 +414,10 @@ public class ModelToRepresentation {
             List<String> roleStrings = new ArrayList<>(defaultRoles);
             rep.setDefaultRoles(roleStrings);
         }
-        List<GroupModel> defaultGroups = realm.getDefaultGroups();
+        List<String> defaultGroups = realm.getDefaultGroupsStream()
+                .map(ModelToRepresentation::buildGroupPath).collect(Collectors.toList());
         if (!defaultGroups.isEmpty()) {
-            List<String> groupPaths = new LinkedList<>();
-            for (GroupModel group : defaultGroups) {
-                groupPaths.add(ModelToRepresentation.buildGroupPath(group));
-            }
-            rep.setDefaultGroups(groupPaths);
+            rep.setDefaultGroups(defaultGroups);
         }
 
         List<RequiredCredentialModel> requiredCredentialModels = realm.getRequiredCredentials();
@@ -502,8 +476,7 @@ public class ModelToRepresentation {
     }
 
     public static void exportGroups(RealmModel realm, RealmRepresentation rep) {
-        List<GroupRepresentation> groups = toGroupHierarchy(realm, true);
-        rep.setGroups(groups);
+        rep.setGroups(toGroupHierarchy(realm, true).collect(Collectors.toList()));
     }
 
     public static void exportAuthenticationFlows(RealmModel realm, RealmRepresentation rep) {

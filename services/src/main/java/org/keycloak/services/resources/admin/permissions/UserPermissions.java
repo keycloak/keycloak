@@ -546,10 +546,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     private boolean evaluateHierarchy(UserModel user, Predicate<GroupModel> eval) {
         Set<GroupModel> visited = new HashSet<>();
-        for (GroupModel group : user.getGroups()) {
-            if (evaluateHierarchy(eval, group, visited)) return true;
-        }
-        return false;
+        return user.getGroupsStream().anyMatch(group -> evaluateHierarchy(eval, group, visited));
     }
 
     private boolean evaluateHierarchy(Predicate<GroupModel> eval, GroupModel group, Set<GroupModel> visited) {

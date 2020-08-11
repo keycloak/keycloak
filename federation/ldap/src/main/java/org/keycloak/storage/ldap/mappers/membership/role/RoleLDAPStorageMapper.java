@@ -369,7 +369,7 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
         public boolean hasRole(RoleModel role) {
             Set<RoleModel> roles = getRoleMappings();
             return RoleUtils.hasRole(roles, role)
-              || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
+              || RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
         }
 
         @Override

@@ -50,7 +50,6 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 
 import javax.persistence.EntityManager;
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -110,9 +109,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         if (addDefaultRoles) {
             DefaultRoles.addDefaultRoles(realm, userModel);
 
-            for (GroupModel g : realm.getDefaultGroups()) {
-                userModel.joinGroupImpl(g); // No need to check if user has group as it's new user
-            }
+            // No need to check if user has group as it's new user
+            realm.getDefaultGroupsStream().forEach(userModel::joinGroupImpl);
         }
 
         if (addDefaultRequiredActions){

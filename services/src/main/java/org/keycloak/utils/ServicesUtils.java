@@ -19,7 +19,10 @@ package org.keycloak.utils;
 
 import org.jboss.logging.Logger;
 import org.keycloak.executors.ExecutorsProvider;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -52,5 +55,9 @@ public class ServicesUtils {
                 return Stream.empty();
             }
         };
+    }
+
+    public static GroupRepresentation groupToBriefRepresentation(GroupModel g) {
+        return ModelToRepresentation.toRepresentation(g, false);
     }
 }
