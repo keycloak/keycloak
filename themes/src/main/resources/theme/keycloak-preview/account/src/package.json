@@ -3,13 +3,18 @@
   "version": "1.0.0",
   "description": "keycloak-preview account management written in React",
   "scripts": {
-    "build": "snowpack --optimize && npm run check-types && npm run babel && npm run move-web_modules",
+    "build": "snowpack --optimize && npm run check-types && npm run babel && npm run move-web_modules && npm run copy-pf-resources",
     "babel": "babel --source-maps --extensions \".js,.ts,.tsx\" app/ --out-dir ../resources/",
     "babel:watch": "npm run babel -- --watch",
     "check-types": "tsc --noImplicitAny --strictNullChecks --jsx react -p ./",
     "check-types:watch": "npm run check-types -- -w",
     "lint": "eslint ./app/**/*.ts*",
-    "move-web_modules": "shx mv web_modules ../../../keycloak/common/resources"
+    "move-web_modules": "shx mv web_modules ../../../keycloak/common/resources",
+    "copy-pf-resources": "npm run move-app-css && npm run copy-base-css && npm run copy-fonts && npm run copy-pficon",
+    "move-app-css": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles && mv app.css ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles",
+    "copy-base-css": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles && cp node_modules/@patternfly/react-core/dist/styles/base.css ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles",
+    "copy-fonts": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles/assets/fonts/overpass-webfont && cp node_modules/@patternfly/react-core/dist/styles/assets/fonts/overpass-webfont/overpass*.woff2 ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles/assets/fonts/overpass-webfont",
+    "copy-pficon": "shx mkdir -p ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles/assets/pficon && cp node_modules/@patternfly/react-core/dist/styles/assets/pficon/pficon.woff2 ../../../keycloak/common/resources/web_modules/@patternfly/react-core/dist/styles/assets/pficon"
   },
   "keywords": [],
   "author": "Stan Silvert",
@@ -42,7 +47,6 @@
     "eslint-plugin-import": "^2.16.0",
     "eslint-plugin-jsx-a11y": "^6.2.1",
     "eslint-plugin-react": "^7.12.4",
-    "rollup-plugin-copy": "^3.3.0",
     "rollup-plugin-postcss": "^2.5.0",
     "shx": "^0.3.2",
     "snowpack": "^1.7.0",

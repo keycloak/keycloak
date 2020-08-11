@@ -83,12 +83,14 @@ public class AccountConsole {
         } else {
             Map<String, Object> map = new HashMap<>();
 
+            URI adminBaseUri = session.getContext().getUri(UrlType.ADMIN).getBaseUri();
             UriInfo uriInfo = session.getContext().getUri(UrlType.FRONTEND);
             URI authUrl = uriInfo.getBaseUri();
             map.put("authUrl", authUrl.toString());
             map.put("baseUrl", uriInfo.getBaseUriBuilder().path(RealmsResource.class).path(realm.getName()).path(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).build(realm).toString());
             map.put("realm", realm);
             map.put("resourceUrl", Urls.themeRoot(authUrl).getPath() + "/" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID + "/" + theme.getName());
+            map.put("resourceCommonUrl", Urls.themeRoot(adminBaseUri).getPath() + "/common/keycloak");
             map.put("resourceVersion", Version.RESOURCES_VERSION);
             
             String[] referrer = getReferrer();
