@@ -33,24 +33,24 @@ public class DefaultValidationProvider implements ValidationProvider {
 
         registry.register("builtin_user_username_validation",
                 createUsernameValidation(), ValidationKey.USER_USERNAME,
-                ValidationContextKey.USER_PROFILE_CONTEXT_KEY, ValidationContextKey.USER_REGISTRATION_CONTEXT_KEY);
+                ValidationContextKey.USER_DEFAULT_CONTEXT_KEY);
 
         registry.register("builtin_user_email_validation",
                 createEmailValidation(), ValidationKey.USER_EMAIL,
-                ValidationContextKey.USER_PROFILE_CONTEXT_KEY, ValidationContextKey.USER_REGISTRATION_CONTEXT_KEY);
+                ValidationContextKey.USER_DEFAULT_CONTEXT_KEY);
 
         // TODO firstname / lastname validation could be merged?
         registry.register("builtin_user_firstname_validation",
                 createFirstnameValidation(), ValidationKey.USER_FIRSTNAME,
-                ValidationContextKey.USER_PROFILE_CONTEXT_KEY, ValidationContextKey.USER_REGISTRATION_CONTEXT_KEY);
+                ValidationContextKey.USER_DEFAULT_CONTEXT_KEY);
 
         registry.register("builtin_user_lastname_validation",
                 createLastnameValidation(), ValidationKey.USER_LASTNAME,
-                ValidationContextKey.USER_PROFILE_CONTEXT_KEY, ValidationContextKey.USER_REGISTRATION_CONTEXT_KEY);
+                ValidationContextKey.USER_DEFAULT_CONTEXT_KEY);
 
         registry.register("builtin_user_validation",
                 createUserValidation(), ValidationKey.USER,
-                ValidationContextKey.USER_PROFILE_CONTEXT_KEY, ValidationContextKey.USER_REGISTRATION_CONTEXT_KEY);
+                ValidationContextKey.USER_DEFAULT_CONTEXT_KEY);
     }
 
     protected Validation createUserValidation() {

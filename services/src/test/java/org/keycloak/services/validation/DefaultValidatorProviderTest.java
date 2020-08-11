@@ -7,11 +7,11 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.storage.adapter.InMemoryUserAdapter;
-import org.keycloak.validation.ValidationActionKey;
-import org.keycloak.validation.DelegatingValidation;
+import org.keycloak.validation.ConditionalValidation;
 import org.keycloak.validation.NamedValidation;
 import org.keycloak.validation.NestedValidationContext;
-import org.keycloak.validation.Validation.ValidationSupported;
+import org.keycloak.validation.Validation.ValidationCondition;
+import org.keycloak.validation.ValidationActionKey;
 import org.keycloak.validation.ValidationContext;
 import org.keycloak.validation.ValidationContextKey;
 import org.keycloak.validation.ValidationKey;
@@ -19,6 +19,7 @@ import org.keycloak.validation.ValidationProblem;
 import org.keycloak.validation.ValidationRegistry;
 import org.keycloak.validation.ValidationRegistry.MutableValidationRegistry;
 import org.keycloak.validation.ValidationResult;
+import org.keycloak.validation.ValidatorProvider;
 
 import java.net.URI;
 import java.util.Collections;
@@ -36,7 +37,8 @@ import static org.keycloak.validation.ValidationContextKey.USER_REGISTRATION_CON
 
 public class DefaultValidatorProviderTest {
 
-    DefaultValidatorProvider validator;
+    ValidatorProvider validator;
+
     MutableValidationRegistry registry;
 
     KeycloakSession session;
@@ -226,7 +228,7 @@ public class DefaultValidatorProviderTest {
     }
 
     @Test
-    public void validateWithCustomValidationsInBulkMode() {
+    public void validateWithCustomValidationsFailFastOff() {
 
         registry.register("custom_user_attribute1_validation",
                 CustomValidations::validateCustomAttribute1, CustomValidations.USER_ATTRIBUTES_CUSTOM,
@@ -252,7 +254,7 @@ public class DefaultValidatorProviderTest {
     }
 
     @Test
-    public void validateWithCustomValidationsWithoutBulkMode() {
+    public void validateWithCustomValidationsWithFailFast() {
 
         registry.register("custom_user_attribute1_validation",
                 CustomValidations::validateCustomAttribute1, CustomValidations.USER_ATTRIBUTES_CUSTOM,
@@ -262,7 +264,7 @@ public class DefaultValidatorProviderTest {
                 CustomValidations::validateCustomAttribute2, CustomValidations.USER_ATTRIBUTES_CUSTOM,
                 ValidationRegistry.DEFAULT_ORDER + 1000.0, CustomValidations.USER_CUSTOM_CONTEXT_KEY);
 
-        ValidationContext context = new ValidationContext(CustomValidations.USER_CUSTOM_CONTEXT_KEY).withBulkMode(false);
+        ValidationContext context = new ValidationContext(CustomValidations.USER_CUSTOM_CONTEXT_KEY).withFailFast(true);
 
         ValidationResult result = validator.validate(context, "value3", CustomValidations.USER_ATTRIBUTES_CUSTOM);
         assertFalse("An invalid custom attribute should be invalid", result.isValid());
@@ -329,7 +331,7 @@ public class DefaultValidatorProviderTest {
 
         registry.register("custom_user_registration_validation",
                 CustomValidations::validateCustomUserModel, ValidationKey.USER,
-                ValidationRegistry.DEFAULT_ORDER + 1000.0, USER_REGISTRATION_CONTEXT_KEY);
+                1000.0, USER_REGISTRATION_CONTEXT_KEY);
 
         ValidationContext context = new ValidationContext(USER_REGISTRATION_CONTEXT_KEY);
 
@@ -378,7 +380,7 @@ public class DefaultValidatorProviderTest {
     @Test
     public void validateWithConditionalValidation() {
 
-        org.keycloak.validation.Validation userAgeValidation = (key, value, context) -> {
+        org.keycloak.validation.Validation validation = (key, value, context) -> {
             int input = value instanceof Integer ? (Integer) value : -1;
             boolean valid = input >= 18;
             if (!valid) {
@@ -387,11 +389,11 @@ public class DefaultValidatorProviderTest {
             return valid;
         };
 
-        ValidationSupported userAgeValidationCondition = (key, value, context) ->
+        ValidationCondition condition = (key, value, context) ->
                 context.getAttributeAsBoolean("over18");
 
         registry.register("custom_user_age_validation",
-                new DelegatingValidation(userAgeValidation, userAgeValidationCondition), CustomValidations.USER_ATTRIBUTES_CUSTOM,
+                new ConditionalValidation(validation, condition), CustomValidations.USER_ATTRIBUTES_CUSTOM,
                 ValidationRegistry.DEFAULT_ORDER, USER_REGISTRATION_CONTEXT_KEY);
 
         ValidationContext context;
@@ -498,7 +500,7 @@ public class DefaultValidatorProviderTest {
         context = new ValidationContext(USER_DEFAULT_CONTEXT_KEY);
         result = validator.validate(context, null, CustomValidations.USER_ATTRIBUTES_CUSTOM);
         assertTrue("Should not check value for default ContextActionKey", result.isValid());
-      }
+    }
 
     protected void registerDefaultValidations() {
         new DefaultValidationProvider().register(registry);

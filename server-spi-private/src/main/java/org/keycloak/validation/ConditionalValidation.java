@@ -17,22 +17,22 @@
 package org.keycloak.validation;
 
 /**
- * {@link DelegatingValidation} allows to delegate to a given validation while customizing the checks for
+ * {@link ConditionalValidation} allows to delegate to a given validation while customizing the checks for
  * enablement and context-specific support.
  */
-public class DelegatingValidation implements Validation {
+public class ConditionalValidation implements Validation {
 
     private final Validation delegate;
 
-    private final ValidationSupported supported;
+    private final ValidationCondition condition;
 
-    public DelegatingValidation(Validation delegate) {
-        this(delegate, ValidationSupported.ALWAYS);
+    public ConditionalValidation(Validation delegate) {
+        this(delegate, ValidationCondition.ALWAYS);
     }
 
-    public DelegatingValidation(Validation delegate, ValidationSupported supported) {
+    public ConditionalValidation(Validation delegate, ValidationCondition condition) {
         this.delegate = delegate;
-        this.supported = supported;
+        this.condition = condition;
     }
 
     @Override
@@ -40,7 +40,7 @@ public class DelegatingValidation implements Validation {
         return this.delegate.validate(key, value, context);
     }
 
-    public boolean isSupported(ValidationKey key, Object value, ValidationContext context) {
-        return this.supported.test(key, value, context);
+    public boolean isApplicable(ValidationKey key, Object value, ValidationContext context) {
+        return this.condition.test(key, value, context);
     }
 }

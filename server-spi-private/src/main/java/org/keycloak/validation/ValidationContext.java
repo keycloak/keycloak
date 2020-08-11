@@ -51,9 +51,9 @@ public class ValidationContext {
     private final ClientModel client;
 
     /**
-     * Reports all discovered problems if true, otherwise stop on first Problem.
+     * If {@literal true} stop on first {@link ValidationProblem.Severity#ERROR}, otherwise perform all validations.
      */
-    private final boolean bulkMode;
+    private final boolean failFast;
 
     /**
      * Exposes the {@link ValidationActionKey} e.g. default, create, update etc.
@@ -63,19 +63,19 @@ public class ValidationContext {
     // TODO add support to skip certain validations for ValidationKey
 
     public ValidationContext(ValidationContext that) {
-        this(that.getContextKey(), that.getAttributes(), that.getRealm(), that.getUser(), that.getClient(), that.isBulkMode(), that.getActionKey());
+        this(that.getContextKey(), that.getAttributes(), that.getRealm(), that.getUser(), that.getClient(), that.isFailFast(), that.getActionKey());
     }
 
     public ValidationContext(ValidationContextKey contextKey) {
-        this(contextKey, Collections.emptyMap(), null, null, null, true, ValidationActionKey.DEFAULT);
+        this(contextKey, Collections.emptyMap(), null, null, null, false, ValidationActionKey.DEFAULT);
     }
 
     public ValidationContext(ValidationContextKey contextKey, RealmModel realm) {
-        this(contextKey, Collections.emptyMap(), realm, null, null, true, ValidationActionKey.DEFAULT);
+        this(contextKey, Collections.emptyMap(), realm, null, null, false, ValidationActionKey.DEFAULT);
     }
 
     public ValidationContext(ValidationContextKey contextKey, Map<String, Object> attributes) {
-        this(contextKey, attributes, null, null, null, true, ValidationActionKey.DEFAULT);
+        this(contextKey, attributes, null, null, null, false, ValidationActionKey.DEFAULT);
     }
 
     /**
@@ -84,15 +84,15 @@ public class ValidationContext {
      * @param attributes
      * @param user
      * @param client
-     * @param bulkMode
+     * @param failFast
      */
-    public ValidationContext(ValidationContextKey contextKey, Map<String, Object> attributes, RealmModel realm, UserModel user, ClientModel client, boolean bulkMode, ValidationActionKey actionKey) {
+    public ValidationContext(ValidationContextKey contextKey, Map<String, Object> attributes, RealmModel realm, UserModel user, ClientModel client, boolean failFast, ValidationActionKey actionKey) {
         this.realm = realm;
         this.contextKey = contextKey;
         this.attributes = attributes;
         this.user = user;
         this.client = client;
-        this.bulkMode = bulkMode;
+        this.failFast = failFast;
         this.actionKey = actionKey;
     }
 
@@ -132,8 +132,8 @@ public class ValidationContext {
         return client;
     }
 
-    public boolean isBulkMode() {
-        return bulkMode;
+    public boolean isFailFast() {
+        return failFast;
     }
 
     public ValidationActionKey getActionKey() {
@@ -147,7 +147,7 @@ public class ValidationContext {
      * @return
      */
     public ValidationContext withRealm(RealmModel realm) {
-        return new ValidationContext(contextKey, attributes, realm, user, client, bulkMode, actionKey);
+        return new ValidationContext(contextKey, attributes, realm, user, client, failFast, actionKey);
     }
 
     /**
@@ -157,7 +157,7 @@ public class ValidationContext {
      * @return
      */
     public ValidationContext withUser(UserModel user) {
-        return new ValidationContext(contextKey, attributes, realm, user, client, bulkMode, actionKey);
+        return new ValidationContext(contextKey, attributes, realm, user, client, failFast, actionKey);
     }
 
     /**
@@ -167,17 +167,18 @@ public class ValidationContext {
      * @return
      */
     public ValidationContext withClient(ClientModel client) {
-        return new ValidationContext(contextKey, attributes, realm, user, client, bulkMode, actionKey);
+        return new ValidationContext(contextKey, attributes, realm, user, client, failFast, actionKey);
     }
 
     /**
-     * Returns a shallow-copy of the current {@link ValidationContext} with the given bulkMode.
+     * Returns a shallow-copy of the current {@link ValidationContext} with the given failFast.
      *
-     * @param bulkMode
+     * @param failFast
      * @return
+     * @see #failFast
      */
-    public ValidationContext withBulkMode(boolean bulkMode) {
-        return new ValidationContext(contextKey, attributes, realm, user, client, bulkMode, actionKey);
+    public ValidationContext withFailFast(boolean failFast) {
+        return new ValidationContext(contextKey, attributes, realm, user, client, failFast, actionKey);
     }
 
     /**
@@ -187,7 +188,7 @@ public class ValidationContext {
      * @return
      */
     public ValidationContext withAttributes(Map<String, Object> attributes) {
-        return new ValidationContext(contextKey, attributes, realm, user, client, bulkMode, actionKey);
+        return new ValidationContext(contextKey, attributes, realm, user, client, failFast, actionKey);
     }
 
     /**
@@ -197,6 +198,6 @@ public class ValidationContext {
      * @return
      */
     public ValidationContext withActionKey(ValidationActionKey actionKey) {
-        return new ValidationContext(contextKey, attributes, realm, user, client, bulkMode, actionKey);
+        return new ValidationContext(contextKey, attributes, realm, user, client, failFast, actionKey);
     }
 }

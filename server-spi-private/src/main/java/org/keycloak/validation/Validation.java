@@ -43,19 +43,19 @@ public interface Validation {
      * @param value
      * @return
      */
-    default boolean isSupported(ValidationKey key, Object value, ValidationContext context) {
+    default boolean isApplicable(ValidationKey key, Object value, ValidationContext context) {
         return true;
     }
 
     /**
      * Function interface to check if the current {@link Validation} is supported in the given {@link ValidationContext}.
      *
-     * @see #isSupported(ValidationKey, Object, ValidationContext)
+     * @see #isApplicable(ValidationKey, Object, ValidationContext)
      */
     @FunctionalInterface
-    interface ValidationSupported {
+    interface ValidationCondition {
 
-        ValidationSupported ALWAYS = (key, value, context) -> true;
+        ValidationCondition ALWAYS = (key, value, context) -> true;
 
         /**
          * @param key

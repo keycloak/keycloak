@@ -108,7 +108,7 @@ public class DefaultValidationRegistry implements ValidationRegistry.MutableVali
 
     protected Stream<NamedValidation> filterSupportedValidationsStream(ValidationKey key, Stream<ValidationRegistration> registrations, ValidationContext context, Object value) {
         return filterEligibleRegistrationsStream(registrations, context)
-                .filter(v -> v.isSupported(key, value, context));
+                .filter(v -> v.isApplicable(key, value, context));
     }
 
     protected Stream<NamedValidation> filterEligibleRegistrationsStream(Stream<ValidationRegistration> registrations, ValidationContext context) {

@@ -91,11 +91,11 @@ public class DefaultValidatorProvider implements ValidatorProvider {
         return null;
     }
 
-    protected boolean validateInternal(NestedValidationContext context, Object value, Map<ValidationKey, List<NamedValidation>> validators) {
+    protected boolean validateInternal(NestedValidationContext context, Object value, Map<ValidationKey, List<NamedValidation>> validations) {
 
         boolean valid = true;
 
-        for (Map.Entry<ValidationKey, List<NamedValidation>> entry : validators.entrySet()) {
+        for (Map.Entry<ValidationKey, List<NamedValidation>> entry : validations.entrySet()) {
             for (NamedValidation validation : entry.getValue()) {
 
                 ValidationKey key = entry.getKey();
@@ -108,7 +108,7 @@ public class DefaultValidatorProvider implements ValidatorProvider {
                     return false;
                 }
 
-                if (!valid && !context.isBulkMode()) {
+                if (!valid && context.isFailFast()) {
                     return false;
                 }
             }
