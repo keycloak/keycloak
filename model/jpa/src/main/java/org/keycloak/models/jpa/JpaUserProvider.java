@@ -78,6 +78,7 @@ import javax.persistence.LockModeType;
 public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     private static final String EMAIL = "email";
+    private static final String EMAIL_VERIFIED = "emailVerified";
     private static final String USERNAME = "username";
     private static final String FIRST_NAME = "firstName";
     private static final String LAST_NAME = "lastName";
@@ -687,6 +688,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                 case UserModel.EMAIL:
                     restrictions.add(qb.like(from.get("email"), "%" + value + "%"));
                     break;
+                case UserModel.EMAIL_VERIFIED:
+                    restrictions.add(qb.equal(from.get("emailVerified"), Boolean.parseBoolean(value.toLowerCase())));
+                    break;
             }
         }
 
@@ -732,6 +736,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                     break;
                 case UserModel.EMAIL:
                     restrictions.add(qb.like(from.get("user").get("email"), "%" + value + "%"));
+                    break;
+                case UserModel.EMAIL_VERIFIED:
+                    restrictions.add(qb.equal(from.get("emailVerified"), Boolean.parseBoolean(value.toLowerCase())));
                     break;
             }
         }
@@ -874,6 +881,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                     } else {
                         predicates.add(builder.like(builder.lower(root.get(key)), "%" + value.toLowerCase() + "%"));
                     }
+                    break;
+                case EMAIL_VERIFIED:
+                    predicates.add(builder.equal(root.get(key), Boolean.parseBoolean(value.toLowerCase())));
                     break;
                 case UserModel.ENABLED:
                     predicates.add(builder.equal(builder.lower(root.get(key)), Boolean.parseBoolean(value.toLowerCase())));

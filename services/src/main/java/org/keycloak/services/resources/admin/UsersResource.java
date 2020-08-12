@@ -208,6 +208,7 @@ public class UsersResource {
                                              @QueryParam("firstName") String first,
                                              @QueryParam("email") String email,
                                              @QueryParam("username") String username,
+                                             @QueryParam("emailVerified") Boolean emailVerified,
                                              @QueryParam("first") Integer firstResult,
                                              @QueryParam("max") Integer maxResults,
                                              @QueryParam("enabled") Boolean enabled,
@@ -225,7 +226,7 @@ public class UsersResource {
             if (search.startsWith(SEARCH_ID_PARAMETER)) {
                 UserModel userModel = session.users().getUserById(search.substring(SEARCH_ID_PARAMETER.length()).trim(), realm);
                 if (userModel != null) {
-                    userModels = Arrays.asList(userModel);
+                    userModels = Collections.singletonList(userModel);
                 }
             } else {
                 Map<String, String> attributes = new HashMap<>();
@@ -235,7 +236,7 @@ public class UsersResource {
                 }
                 return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult, maxResults, false);
             }
-        } else if (last != null || first != null || email != null || username != null || enabled != null || exact != null) {
+        } else if (last != null || first != null || email != null || username != null  || emailVerified != null || enabled != null || exact != null) {
             Map<String, String> attributes = new HashMap<>();
             if (last != null) {
                 attributes.put(UserModel.LAST_NAME, last);
@@ -254,6 +255,9 @@ public class UsersResource {
             }
             if (exact != null) {
                 attributes.put(UserModel.EXACT, exact.toString());
+            }
+            if (emailVerified != null) {
+                attributes.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
             }
             return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult, maxResults, true);
         } else {
@@ -293,6 +297,7 @@ public class UsersResource {
                                  @QueryParam("lastName") String last,
                                  @QueryParam("firstName") String first,
                                  @QueryParam("email") String email,
+                                 @QueryParam("emailVerified") Boolean emailVerified,
                                  @QueryParam("username") String username) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
         userPermissionEvaluator.requireQuery();
@@ -306,7 +311,7 @@ public class UsersResource {
             } else {
                 return session.users().getUsersCount(search.trim(), realm, auth.groups().getGroupsWithViewPermission());
             }
-        } else if (last != null || first != null || email != null || username != null) {
+        } else if (last != null || first != null || email != null || username != null || emailVerified != null) {
             Map<String, String> parameters = new HashMap<>();
             if (last != null) {
                 parameters.put(UserModel.LAST_NAME, last);
@@ -319,6 +324,9 @@ public class UsersResource {
             }
             if (username != null) {
                 parameters.put(UserModel.USERNAME, username);
+            }
+            if (emailVerified != null) {
+                parameters.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
             }
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(parameters, realm);
