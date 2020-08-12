@@ -90,13 +90,13 @@
     }
 
     function refreshToken(minValidity) {
-        keycloak.updateToken(minValidity).success(function(refreshed) {
+        keycloak.updateToken(minValidity).then(function(refreshed) {
             if (refreshed) {
                 output(keycloak.tokenParsed);
             } else {
                 output('Token not refreshed, valid for ' + Math.round(keycloak.tokenParsed.exp + keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds');
             }
-        }).error(function() {
+        }).catch(function() {
             output('Failed to refresh token');
         });
     }
@@ -173,9 +173,9 @@
         flow: 'standard'
     };
 
-    keycloak.init(initOptions).success(function(authenticated) {
+    keycloak.init(initOptions).then(function(authenticated) {
         output('Init Success (' + (authenticated ? 'Authenticated' : 'Not Authenticated') + ')');
-    }).error(function() {
+    }).catch(function() {
         output('Init Error');
     });
 
