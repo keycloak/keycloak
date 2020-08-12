@@ -29,9 +29,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.validation.ValidationContextKey.CLIENT_DEFAULT_CONTEXT_KEY;
+import static org.keycloak.validation.ValidationContextKey.CLIENT_CONTEXT_KEY;
 import static org.keycloak.validation.ValidationContextKey.DEFAULT_CONTEXT_KEY;
-import static org.keycloak.validation.ValidationContextKey.USER_DEFAULT_CONTEXT_KEY;
+import static org.keycloak.validation.ValidationContextKey.USER_CONTEXT_KEY;
 import static org.keycloak.validation.ValidationContextKey.USER_PROFILE_CONTEXT_KEY;
 import static org.keycloak.validation.ValidationContextKey.USER_REGISTRATION_CONTEXT_KEY;
 
@@ -172,6 +172,7 @@ public class DefaultValidatorProviderTest {
 
         registerDefaultValidations();
 
+        // replaces the existing validation for ValidationKey.USER_EMAIL
         registry.insertValidation("custom_user_email_validation",
                 ValidationKey.USER_EMAIL, CustomValidations::validateEmailCustom,
                 ValidationRegistry.DEFAULT_ORDER, USER_REGISTRATION_CONTEXT_KEY);
@@ -473,9 +474,9 @@ public class DefaultValidatorProviderTest {
             }
 
             return true;
-        }, CLIENT_DEFAULT_CONTEXT_KEY);
+        }, CLIENT_CONTEXT_KEY);
 
-        ValidationContext context = new ValidationContext(CLIENT_DEFAULT_CONTEXT_KEY);
+        ValidationContext context = new ValidationContext(CLIENT_CONTEXT_KEY);
         ValidationResult result = validator.validate(context, "http://app/oidc_callback", CustomValidations.CLIENT_REDIRECT_URI);
 
         assertTrue("Validation with warning should still pass", result.isValid());
@@ -511,7 +512,7 @@ public class DefaultValidatorProviderTest {
         ValidationResult result;
 
         // validation should run and fail with action update
-        context = new ValidationContext(USER_DEFAULT_CONTEXT_KEY).withActionKey(ValidationActionKey.UPDATE);
+        context = new ValidationContext(USER_CONTEXT_KEY).withActionKey(ValidationActionKey.UPDATE);
         result = validator.validate(context, null, CustomValidations.USER_ATTRIBUTES_CUSTOM);
         assertFalse("Conditional validation should fail the validation", result.isValid());
         assertTrue("Conditional validation should cause problems", result.hasProblems());
@@ -519,7 +520,7 @@ public class DefaultValidatorProviderTest {
         assertEquals(CustomValidations.INVALID_ATTRIBUTE, problem.getMessage());
 
         // validation should run and pass without action update
-        context = new ValidationContext(USER_DEFAULT_CONTEXT_KEY);
+        context = new ValidationContext(USER_CONTEXT_KEY);
         result = validator.validate(context, null, CustomValidations.USER_ATTRIBUTES_CUSTOM);
         assertTrue("Should not check value for default ContextActionKey", result.isValid());
     }
@@ -542,7 +543,7 @@ public class DefaultValidatorProviderTest {
 
         String WARNING_SECURITY_HTTPS_RECOMMENDED = "warning_security_https_recommended";
 
-        ValidationContextKey USER_CUSTOM_CONTEXT_KEY = ValidationContextKey.newCustomValidationContextKey("user.custom", USER_DEFAULT_CONTEXT_KEY);
+        ValidationContextKey USER_CUSTOM_CONTEXT_KEY = ValidationContextKey.newCustomValidationContextKey("user.custom", USER_CONTEXT_KEY);
 
         ValidationContextKey USER_CUSTOM_CONTEXT1_KEY = ValidationContextKey.newCustomValidationContextKey("user.custom1", USER_CUSTOM_CONTEXT_KEY);
 

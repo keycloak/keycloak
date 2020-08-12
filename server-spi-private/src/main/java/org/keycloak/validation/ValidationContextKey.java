@@ -35,39 +35,39 @@ public interface ValidationContextKey {
 
     ValidationContextKey DEFAULT_CONTEXT_KEY = new BuiltInValidationContextKey("", null);
 
-    ValidationContextKey REALM_DEFAULT_CONTEXT_KEY =
+    ValidationContextKey REALM_CONTEXT_KEY =
             new BuiltInValidationContextKey("realm", DEFAULT_CONTEXT_KEY);
 
-    ValidationContextKey CLIENT_DEFAULT_CONTEXT_KEY =
+    ValidationContextKey CLIENT_CONTEXT_KEY =
             new BuiltInValidationContextKey("client", DEFAULT_CONTEXT_KEY);
 
-    ValidationContextKey USER_DEFAULT_CONTEXT_KEY =
+    ValidationContextKey USER_CONTEXT_KEY =
             new BuiltInValidationContextKey("user", DEFAULT_CONTEXT_KEY);
 
     ValidationContextKey USER_RESOURCE_CONTEXT_KEY =
-            new BuiltInValidationContextKey("user.resource", USER_DEFAULT_CONTEXT_KEY);
+            new BuiltInValidationContextKey("user.resource", USER_CONTEXT_KEY);
 
     ValidationContextKey USER_PROFILE_CONTEXT_KEY =
-            new BuiltInValidationContextKey("user.profile", USER_DEFAULT_CONTEXT_KEY);
+            new BuiltInValidationContextKey("user.profile", USER_CONTEXT_KEY);
 
     ValidationContextKey USER_REGISTRATION_CONTEXT_KEY =
-            new BuiltInValidationContextKey("user.registration", USER_DEFAULT_CONTEXT_KEY);
+            new BuiltInValidationContextKey("user.registration", USER_CONTEXT_KEY);
 
     ValidationContextKey USER_PROFILE_REGISTRATION_CONTEXT_KEY =
-            new BuiltInValidationContextKey("user.profile.registration", USER_DEFAULT_CONTEXT_KEY);
+            new BuiltInValidationContextKey("user.profile.registration", USER_CONTEXT_KEY);
 
     ValidationContextKey USER_PROFILE_IDP_REVIEW_CONTEXT_KEY =
-            new BuiltInValidationContextKey("user.profile.idp_review", USER_DEFAULT_CONTEXT_KEY);
+            new BuiltInValidationContextKey("user.profile.idp_review", USER_CONTEXT_KEY);
 
     List<ValidationContextKey> ALL_CONTEXT_KEYS = Collections.unmodifiableList(Arrays.asList(
 
             DEFAULT_CONTEXT_KEY,
 
-            REALM_DEFAULT_CONTEXT_KEY,
+            REALM_CONTEXT_KEY,
 
-            CLIENT_DEFAULT_CONTEXT_KEY,
+            CLIENT_CONTEXT_KEY,
 
-            USER_DEFAULT_CONTEXT_KEY,
+            USER_CONTEXT_KEY,
 
             USER_RESOURCE_CONTEXT_KEY,
             USER_PROFILE_CONTEXT_KEY,

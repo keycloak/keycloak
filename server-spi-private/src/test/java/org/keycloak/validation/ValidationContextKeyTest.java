@@ -22,11 +22,11 @@ public class ValidationContextKeyTest {
     @Test
     public void getOrCreate() {
 
-        assertEquals(ValidationContextKey.REALM_DEFAULT_CONTEXT_KEY, ValidationContextKey.getOrCreate("realm", null));
+        assertEquals(ValidationContextKey.REALM_CONTEXT_KEY, ValidationContextKey.getOrCreate("realm", null));
 
-        ValidationContextKey custom = ValidationContextKey.getOrCreate("realm.doesnotexist", ValidationContextKey.REALM_DEFAULT_CONTEXT_KEY);
+        ValidationContextKey custom = ValidationContextKey.getOrCreate("realm.doesnotexist", ValidationContextKey.REALM_CONTEXT_KEY);
         assertNotNull(custom);
         assertTrue(custom instanceof ValidationContextKey.CustomValidationContextKey);
-        assertEquals(ValidationContextKey.REALM_DEFAULT_CONTEXT_KEY, custom.getParent());
+        assertEquals(ValidationContextKey.REALM_CONTEXT_KEY, custom.getParent());
     }
 }

@@ -34,20 +34,20 @@ public class DefaultValidationProvider implements ValidationProvider {
         UserValidation userValidation = createUserValidation();
 
         registry.addValidation("builtin_user_username_validation", ValidationKey.USER_USERNAME, userValidation::validateUsername,
-                ValidationContextKey.USER_DEFAULT_CONTEXT_KEY);
+                ValidationContextKey.USER_CONTEXT_KEY);
 
         registry.addValidation("builtin_user_email_validation", ValidationKey.USER_EMAIL, userValidation::validateEmail,
-                ValidationContextKey.USER_DEFAULT_CONTEXT_KEY);
+                ValidationContextKey.USER_CONTEXT_KEY);
 
         // TODO firstname / lastname validation could be merged?
         registry.addValidation("builtin_user_firstname_validation", ValidationKey.USER_FIRSTNAME, userValidation::validateFirstname,
-                ValidationContextKey.USER_DEFAULT_CONTEXT_KEY);
+                ValidationContextKey.USER_CONTEXT_KEY);
 
         registry.addValidation("builtin_user_lastname_validation", ValidationKey.USER_LASTNAME, userValidation::validateLastname,
-                ValidationContextKey.USER_DEFAULT_CONTEXT_KEY);
+                ValidationContextKey.USER_CONTEXT_KEY);
 
         registry.addValidation("builtin_user_validation", ValidationKey.USER, userValidation::validateUser,
-                ValidationContextKey.USER_DEFAULT_CONTEXT_KEY);
+                ValidationContextKey.USER_CONTEXT_KEY);
     }
 
     protected UserValidation createUserValidation() {
