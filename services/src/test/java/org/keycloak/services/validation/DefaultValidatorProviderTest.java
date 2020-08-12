@@ -214,10 +214,12 @@ public class DefaultValidatorProviderTest {
     @Test
     public void customValidationInDifferentValidationContextsForSameValidationKey() {
 
+        // allows value1 only
         registry.addValidation("custom_attribute_context1_validation",
                 CustomValidations.USER_ATTRIBUTES_CUSTOM, CustomValidations::validateCustomAttributeContext1,
                 CustomValidations.USER_CUSTOM_CONTEXT1_KEY);
 
+        // allows value2 only
         registry.addValidation("custom_attribute_context2_validation",
                 CustomValidations.USER_ATTRIBUTES_CUSTOM, CustomValidations::validateCustomAttributeContext2,
                 CustomValidations.USER_CUSTOM_CONTEXT2_KEY);

@@ -43,4 +43,12 @@ public class ConditionalValidation implements Validation {
     public boolean isApplicable(ValidationKey key, Object value, ValidationContext context) {
         return this.condition.test(key, value, context);
     }
+
+    public Validation getDelegate() {
+        return delegate;
+    }
+
+    public ValidationCondition getCondition() {
+        return condition;
+    }
 }
