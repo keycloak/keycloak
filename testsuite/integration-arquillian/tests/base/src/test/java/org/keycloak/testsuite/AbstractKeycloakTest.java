@@ -76,6 +76,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.function.Consumer;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -490,6 +491,12 @@ public abstract class AbstractKeycloakTest {
         homer.setRequiredActions(Arrays.asList(requiredActions));
 
         return ApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
+    }
+
+    public String createUser(String realm, String username, String password, String firstName, String lastName, String email, Consumer<UserRepresentation> customizer) {
+        UserRepresentation user = createUserRepresentation(username, email, firstName, lastName, true, password);
+        customizer.accept(user);
+        return ApiUtil.createUserWithAdminClient(adminClient.realm(realm), user);
     }
 
     public String createUser(String realm, String username, String password, String firstName, String lastName, String email) {

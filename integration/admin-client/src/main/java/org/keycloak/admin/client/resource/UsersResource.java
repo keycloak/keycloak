@@ -55,6 +55,26 @@ public interface UsersResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> search(@QueryParam("username") String username,
+                                    @QueryParam("firstName") String firstName,
+                                    @QueryParam("lastName") String lastName,
+                                    @QueryParam("email") String email,
+                                    @QueryParam("emailVerified") Boolean emailVerified,
+                                    @QueryParam("first") Integer firstResult,
+                                    @QueryParam("max") Integer maxResults,
+                                    @QueryParam("enabled") Boolean enabled,
+                                    @QueryParam("briefRepresentation") Boolean briefRepresentation);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> search(@QueryParam("emailVerified") Boolean emailVerified,
+                                    @QueryParam("first") Integer firstResult,
+                                    @QueryParam("max") Integer maxResults,
+                                    @QueryParam("enabled") Boolean enabled,
+                                    @QueryParam("briefRepresentation") Boolean briefRepresentation);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
     List<UserRepresentation> search(@QueryParam("username") String username);
 
     @GET
@@ -155,6 +175,38 @@ public interface UsersResource {
                   @QueryParam("firstName") String first,
                   @QueryParam("email") String email,
                   @QueryParam("username") String username);
+
+    /**
+     * Returns the number of users that can be viewed and match the given filters.
+     * If none of the filters is specified this is equivalent to {{@link #count()}}.
+     *
+     * @param last          last name field of a user
+     * @param first         first name field of a user
+     * @param email         email field of a user
+     * @param emailVerified emailVerified field of a user
+     * @param username      username field of a user
+     * @return number of users matching the given filters
+     */
+    @Path("count")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    Integer count(@QueryParam("lastName") String last,
+                  @QueryParam("firstName") String first,
+                  @QueryParam("email") String email,
+                  @QueryParam("emailVerified") Boolean emailVerified,
+                  @QueryParam("username") String username);
+
+    /**
+     * Returns the number of users with the given status for emailVerified.
+     * If none of the filters is specified this is equivalent to {{@link #count()}}.
+     *
+     * @param emailVerified emailVerified field of a user
+     * @return number of users matching the given filters
+     */
+    @Path("count")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    Integer countEmailVerified(@QueryParam("emailVerified") Boolean emailVerified);
 
     @Path("{id}")
     UserResource get(@PathParam("id") String id);
