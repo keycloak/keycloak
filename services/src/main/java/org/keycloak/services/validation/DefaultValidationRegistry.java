@@ -117,12 +117,12 @@ public class DefaultValidationRegistry implements ValidationRegistry.MutableVali
     }
 
     @Override
-    public void addValidation(ValidationKey key, Validation validation, String name, Set<ValidationContextKey> contextKeys) {
+    public void addValidation(String name, ValidationKey key, Validation validation, Set<ValidationContextKey> contextKeys) {
         insertValidationForKeyInternal(key, validation, null, name, contextKeys);
     }
 
     @Override
-    public void insertValidation(ValidationKey key, Validation validation, Double order, String name, Set<ValidationContextKey> contextKeys) {
+    public void insertValidation(String name, ValidationKey key, Validation validation, Double order, Set<ValidationContextKey> contextKeys) {
         insertValidationForKeyInternal(key, validation, order, name, contextKeys);
     }
 

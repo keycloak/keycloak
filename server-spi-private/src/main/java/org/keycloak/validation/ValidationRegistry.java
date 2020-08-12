@@ -74,50 +74,46 @@ public interface ValidationRegistry {
 
         /**
          * Registers a new {@link Validation} for the given {@link ValidationKey} that can be applied in the given validation context keys.
-         *
+         *  @param name        a logical name for the new {@link Validation}
          * @param key         the key referencing the validation target
          * @param validation  the validation logic
-         * @param name        a logical name for the new {@link Validation}
          * @param contextKeys controls in which context the given {@link Validation} should be considered
          */
-        void addValidation(ValidationKey key, Validation validation, String name, Set<ValidationContextKey> contextKeys);
+        void addValidation(String name, ValidationKey key, Validation validation, Set<ValidationContextKey> contextKeys);
 
         /**
          * Adds a new {@link Validation} for the given {@link ValidationKey} that can be applied in the given validation context keys.
-         *
+         *  @param name        a logical name for the new {@link Validation}
          * @param key         the key referencing the validation target
          * @param validation  the validation logic
-         * @param name        a logical name for the new {@link Validation}
          * @param contextKeys controls in which context the given {@link Validation} should be considered
          */
-        default void addValidation(ValidationKey key, Validation validation, String name, ValidationContextKey... contextKeys) {
-            addValidation(key, validation, name, new LinkedHashSet<>(Arrays.asList(contextKeys)));
+        default void addValidation(String name, ValidationKey key, Validation validation, ValidationContextKey... contextKeys) {
+            addValidation(name, key, validation, new LinkedHashSet<>(Arrays.asList(contextKeys)));
         }
 
         /**
          * Inserts a new {@link Validation} for the given {@link ValidationKey} that can be applied in the given validation context keys at the position indicated by the given order.
          * Note that this can be used to replace existing validations.
-         *
+         *  @param name
          * @param key
          * @param validation
          * @param order
-         * @param name
          * @param contextKeys
          */
-        void insertValidation(ValidationKey key, Validation validation, Double order, String name, Set<ValidationContextKey> contextKeys);
+        void insertValidation(String name, ValidationKey key, Validation validation, Double order, Set<ValidationContextKey> contextKeys);
 
         /**
          * Inserts a new {@link Validation} for the given {@link ValidationKey} that can be applied in the given validation context keys at the position indicated by the given order.
          * Note that this can be used to replace existing validations.
-         *
+         *  @param name
          * @param key
          * @param validation
          * @param order
-         * @param name
          * @param contextKeys
          */
-        default void insertValidation(ValidationKey key, Validation validation, Double order, String name, ValidationContextKey... contextKeys) {
-            insertValidation(key, validation, order, name, new LinkedHashSet<>(Arrays.asList(contextKeys)));
+        default void insertValidation(String name, ValidationKey key, Validation validation, Double order, ValidationContextKey... contextKeys) {
+            insertValidation(name, key, validation, order, new LinkedHashSet<>(Arrays.asList(contextKeys)));
         }
     }
 }
