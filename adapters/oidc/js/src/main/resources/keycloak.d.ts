@@ -546,13 +546,13 @@ declare namespace Keycloak {
 		 *          still valid, or if the token is no longer valid.
 		 * @example
 		 * ```js
-		 * keycloak.updateToken(5).success(function(refreshed) {
+		 * keycloak.updateToken(5).then(function(refreshed) {
 		 *   if (refreshed) {
 		 *     alert('Token was successfully refreshed');
 		 *   } else {
 		 *     alert('Token is still valid');
 		 *   }
-		 * }).error(function() {
+		 * }).catch(function() {
 		 *   alert('Failed to refresh the token, or the session has expired');
 		 * });
 		 */
