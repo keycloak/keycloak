@@ -156,9 +156,8 @@ public class DockerAuthV2Protocol implements LoginProtocol {
     }
 
     @Override
-    public void backchannelLogout(final UserSessionModel userSession, final AuthenticatedClientSessionModel clientSession) {
-        errorResponse(userSession, "backchannelLogout");
-
+    public Response backchannelLogout(final UserSessionModel userSession, final AuthenticatedClientSessionModel clientSession) {
+        return errorResponse(userSession, "backchannelLogout");
     }
 
     @Override

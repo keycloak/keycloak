@@ -671,13 +671,14 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     @Override
-    public void backchannelLogout(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
+    public Response backchannelLogout(UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
         ClientModel client = clientSession.getClient();
         SamlClient samlClient = new SamlClient(client);
         String logoutUrl = getLogoutServiceUrl(session, client, SAML_POST_BINDING);
         if (logoutUrl == null) {
-            logger.warnf("Can't do backchannel logout. No SingleLogoutService POST Binding registered for client: %s", client.getClientId());
-            return;
+            logger.warnf("Can't do backchannel logout. No SingleLogoutService POST Binding registered for client: %s",
+                    client.getClientId());
+            return Response.serverError().build();
         }
 
         String logoutRequestString = null;
@@ -688,7 +689,7 @@ public class SamlProtocol implements LoginProtocol {
             logoutRequestString = binding.postBinding(SAML2Request.convert(logoutRequest)).encoded();
         } catch (Exception e) {
             logger.warn("failed to send saml logout", e);
-            return;
+            return Response.serverError().build();
         }
 
         HttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
@@ -724,10 +725,11 @@ public class SamlProtocol implements LoginProtocol {
                 }
             } catch (IOException e) {
                 logger.warn("failed to send saml logout", e);
+                return Response.serverError().build();
             }
             break;
         }
-
+        return Response.ok().build();
     }
 
     protected LogoutRequestType createLogoutRequest(String logoutUrl, AuthenticatedClientSessionModel clientSession, ClientModel client, NodeGenerator... extensions) throws ConfigurationException {

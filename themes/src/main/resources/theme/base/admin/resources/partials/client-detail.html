@@ -359,6 +359,20 @@
 
                 <kc-tooltip>{{:: 'web-origins.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="backchannelLogoutUrl">{{:: 'backchannel-logout-url' | translate}}</label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" name="backchannelLogoutUrl" id="backchannelLogoutUrl" data-ng-model="clientEdit.attributes['backchannel.logout.url']">
+                </div>
+                <kc-tooltip>{{:: 'backchannel-logout-url.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="backchannelLogoutSessionRequired">{{:: 'backchannel-logout-session-required' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="backchannelLogoutSessionRequired" name="backchannelLogoutSessionRequired" id="backchannelLogoutSessionRequired" onoffswitch ng-click="switchChange()" on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'backchannel-logout-session-required.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
         <fieldset data-ng-show="protocol == 'saml'">
             <legend collapsed><span class="text">{{:: 'fine-saml-endpoint-conf' | translate}}</span>  <kc-tooltip>{{:: 'fine-saml-endpoint-conf.tooltip' | translate}}</kc-tooltip></legend>

@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -46,6 +47,9 @@ import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.CacheControlUtil;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.OPTIONS;
@@ -59,8 +63,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * Resource class for the oauth/openid connect token service
@@ -69,6 +71,8 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public class OIDCLoginProtocolService {
+
+    private static final Logger logger = Logger.getLogger(OIDCLoginProtocolService.class);
 
     private RealmModel realm;
     private TokenManager tokenManager;
@@ -240,6 +244,8 @@ public class OIDCLoginProtocolService {
         return endpoint;
     }
 
+    /* old deprecated logout endpoint needs to be removed in the future
+    * https://issues.redhat.com/browse/KEYCLOAK-2940 */
     @Path("logout")
     public Object logout() {
         LogoutEndpoint endpoint = new LogoutEndpoint(tokenManager, realm, event);

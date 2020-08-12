@@ -143,6 +143,9 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
             config.setRevocationEndpointAuthSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(false));
         }
 
+        config.setBackchannelLogoutSupported(true);
+        config.setBackchannelLogoutSessionSupported(true);
+
         return config;
     }
 
