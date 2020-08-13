@@ -129,6 +129,25 @@ See link:{adapterguide_link}[{adapterguide_name}] for more information.
 To fill in the `Web Origins` data, enter in a base URL and click the + sign to add.  Click the - sign next to URLs you want to remove.
 Remember that you still have to click the `Save` button!
 
+*Backchannel Logout URL*
+
+When {project_name} receives a logout request via `end_session_endpoint` it will post a backchannel logout request at this URL like described in the
+https://openid.net/specs/openid-connect-backchannel-1_0.html[OpenID Connect specification].
+This causes the client to log itself out.
+
+*Backchannel Logout Session Required*
+
+If enabled, the session id is included in the logout token when a backchannel logout request is sent.
+This results in only logging out a specific session. If disabled, all sessions of the corresponding
+user will be logged out.
+
+*Backchannel Logout Revoke Offline Sessions*
+
+If enabled, a `revoke_offline_access` event is added to the logout token. This should result in also logging out offline
+sessions with a backchannel logout request. This event is not specified by the https://openid.net/specs/openid-connect-backchannel-1_0.html[OpenID Connect specification]
+and may have to change in the future. Keycloak itself will respect the `revoke_offline_access` in a logout token when receiving
+a backchannel logout request.
+
 ==== Advanced Settings
 
 [[_mtls-client-certificate-bound-tokens]]

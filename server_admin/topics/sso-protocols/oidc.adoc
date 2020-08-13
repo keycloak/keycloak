@@ -316,6 +316,36 @@ User Resolver Provider is provided as SPI provider so that users of {project_nam
 * `username` of UserModel in {project_name} is used to represent the user on CD, {project_name} and the authentication entity.
 
 
+[[_oidc-logout]]
+
+==== OIDC Logout
+
+OIDC has three different specifications relevant to logout mechanisms, all of these are currently in draft status:
+
+. https://openid.net/specs/openid-connect-session-1_0.html[Session Management]
+. https://openid.net/specs/openid-connect-frontchannel-1_0.html[Front-Channel Logout]
+. https://openid.net/specs/openid-connect-backchannel-1_0.html[Back-Channel Logout]
+
+Again since all of this is described in the OIDC specification we will only give a brief overview here.
+
+===== Session Management
+
+This is a browser-based logout. The application obtains session status information from {project_name} at a regular basis.
+When the session is terminated at {project_name} the application will notice and trigger it's own logout.
+
+===== Frontchannel Logout
+
+This is also a browser-based logout. In contrast to the Session Managment based logout approach {project_name} will send logout
+requests to the clients. Applications or clients need to have a frontchannel logout URL registered at {project_name}.
+After triggering a logout at {project_name}, it will send logout requests to these registered URLs that will terminate the client sessions.
+
+===== Backchannel Logout
+
+This is a non browser-based logout that uses direct backchannel communication between {project_name} and clients. 
+{project_name} sends a HTTP POST request containing a logout token to all clients logged into {project_name}. These
+requests are sent to a registered backchannel logout URLs at {project_name} and are supposed to trigger a logout at client side.
+
+
 [[_oidc-endpoints]]
 ====  {project_name} Server OIDC URI Endpoints
 
@@ -343,5 +373,7 @@ You can also find these endpoints under "OpenID Endpoint Configuration" in your 
   This is the URL endpoint for Device Authorization Grant to obtain a device code and a user code.
 /realms/{realm-name}/protocol/openid-connect/ext/ciba/auth::
   This is the URL endpoint for Client Initiated Backchannel Authentication Grant to obtain an auth_req_id that identifies the authentication request made by the client.
+/realms/{realm-name}/protocol/openid-connect/logout/backchannel-logout::
+  This is the URL endpoint for performing backchannel logouts described in the OIDC specification.
 
 In all of these replace _{realm-name}_ with the name of the realm.
