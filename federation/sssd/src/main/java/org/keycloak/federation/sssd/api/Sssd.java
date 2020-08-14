@@ -28,6 +28,7 @@ import org.keycloak.models.UserModel;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Vector;
 
 /**
@@ -114,7 +115,7 @@ public class Sssd {
         return user;
     }
 
-    public class User {
+    public static class User {
 
         private final String email;
         private final String firstName;
@@ -139,32 +140,10 @@ public class Sssd {
             return lastName;
         }
 
-        @Override
-        public boolean equals(Object o) {
-            if (o == null) return false;
-
-            UserModel userModel = (UserModel) o;
-            if (firstName != null && !firstName.equals(userModel.getFirstName())) {
-                return false;
-            }
-            if (lastName != null && !lastName.equals(userModel.getLastName())) {
-                return false;
-            }
-            if (email != null) {
-                return email.equals(userModel.getEmail());
-            }
-            if (email != userModel.getEmail()) {
-                return false;
-            }
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = email != null ? email.hashCode() : 0;
-            result = 31 * result + (firstName != null ? firstName.hashCode() : 0);
-            result = 31 * result + (lastName != null ? lastName.hashCode() : 0);
-            return result;
+        public boolean equivalentTo(UserModel user) {
+            return Objects.equals(email, user.getEmail()) &&
+                    Objects.equals(firstName, user.getFirstName()) &&
+                    Objects.equals(lastName, user.getLastName());
         }
     }
 }

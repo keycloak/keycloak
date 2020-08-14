@@ -148,19 +148,19 @@ public class SSSDFederationProvider implements UserStorageProvider,
 
     @Override
     public void preRemove(RealmModel realm, RoleModel role) {
-        // complete we dont'care if a role is removed
+        // complete we don't care if a role is removed
 
     }
 
     @Override
     public void preRemove(RealmModel realm, GroupModel group) {
-        // complete we dont'care if a role is removed
+        // complete we don't care if a role is removed
 
     }
 
     public boolean isValid(RealmModel realm, UserModel local) {
         User user = new Sssd(local.getUsername()).getUser();
-        return user.equals(local);
+        return user.equivalentTo(local);
     }
 
     @Override

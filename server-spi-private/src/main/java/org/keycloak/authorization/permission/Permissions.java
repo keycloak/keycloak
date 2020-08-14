@@ -18,14 +18,7 @@
 
 package org.keycloak.authorization.permission;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -80,7 +73,7 @@ public final class Permissions {
         });
 
         // resource server isn't current user
-        if (resourceServer.getId() != identity.getId()) {
+        if (!Objects.equals(resourceServer.getId(), identity.getId())) {
             // obtain all resources where owner is the current user
             resourceStore.findByOwner(identity.getId(), resourceServer.getId(), resource -> {
                 if (limit.decrementAndGet() >= 0) {

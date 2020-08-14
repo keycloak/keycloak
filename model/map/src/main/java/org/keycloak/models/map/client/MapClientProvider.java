@@ -57,7 +57,7 @@ public class MapClientProvider implements ClientProvider {
         public int compare(MapClientEntity o1, MapClientEntity o2) {
             String c1 = o1 == null ? null : o1.getClientId();
             String c2 = o2 == null ? null : o2.getClientId();
-            return c1 == c2 ? 0
+            return Objects.equals(c1, c2) ? 0
               : c1 == null ? -1
               : c2 == null ? 1
               : c1.compareTo(c2);
