@@ -18,8 +18,12 @@
 package org.keycloak;
 
 import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.DecryptionVerifierContext;
 import org.keycloak.exceptions.TokenNotActiveException;
 import org.keycloak.exceptions.TokenSignatureInvalidException;
+import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwe.JWEHeader;
+import org.keycloak.jose.jwe.JWEInput;
 import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
@@ -196,18 +200,32 @@ public class TokenVerifier<T extends JsonWebToken> {
     private final LinkedList<Predicate<? super T>> checks = new LinkedList<>();
 
     private JWSInput jws;
+
+    private JWEInput jwe;
+
     private T token;
 
-    private SignatureVerifierContext verifier = null;
+    private SignatureVerifierContext verifier;
+
+    private DecryptionVerifierContext decrypter;
 
     public TokenVerifier<T> verifierContext(SignatureVerifierContext verifier) {
         this.verifier = verifier;
         return this;
     }
 
+    public TokenVerifier<T> decrypterContext(DecryptionVerifierContext decrypter) {
+        this.decrypter = decrypter;
+        return this;
+    }
+
     protected TokenVerifier(String tokenString, Class<T> clazz) {
         this.tokenString = tokenString;
         this.clazz = clazz;
+    }
+
+    protected TokenVerifier(TokenVerifier that) {
+        this(that.tokenString, that.clazz);
     }
 
     protected TokenVerifier(T token) {
@@ -384,17 +402,29 @@ public class TokenVerifier<T extends JsonWebToken> {
     }
 
     public TokenVerifier<T> parse() throws VerificationException {
-        if (jws == null) {
-            if (tokenString == null) {
-                throw new VerificationException("Token not set");
-            }
 
+        if (tokenString == null) {
+            throw new VerificationException("Token not set");
+        }
+
+        if (isJwe(tokenString)) {
+            if (jwe == null) {
+                // JWEs require multiple steps for parsing
+                // 1) parse the JWE object
+                // 2) in verify() decrypt JWE content to extract the nested JWS. Set tokenString to nested JWS
+                // 3) parse tokenString into JWS and validate signature.
+                try {
+                    jwe = new JWEInput(tokenString);
+                } catch (JWSInputException e) {
+                    throw new VerificationException("Failed to parse JWT (JWE)", e);
+                }
+            }
+        } else if (jws == null) {
             try {
                 jws = new JWSInput(tokenString);
             } catch (JWSInputException e) {
-                throw new VerificationException("Failed to parse JWT", e);
+                throw new VerificationException("Failed to parse JWT (JWS)", e);
             }
-
 
             try {
                 token = jws.readJsonContent(clazz);
@@ -402,7 +432,24 @@ public class TokenVerifier<T extends JsonWebToken> {
                 throw new VerificationException("Failed to read access token from JWT", e);
             }
         }
+
         return this;
+    }
+
+    public static boolean isJwe(String tokenString) {
+
+        if (tokenString == null || tokenString.isEmpty()) {
+            return false;
+        }
+
+        int dots = 0;
+        for(int i = 0, len = tokenString.length(); i < len && dots < 5; i++) {
+            if (tokenString.charAt(i) == '.') {
+                dots++;
+            }
+        }
+
+        return dots == 4; // JWE contains 5 parts separated by 4 dots
     }
 
     public T getToken() throws VerificationException {
@@ -415,6 +462,11 @@ public class TokenVerifier<T extends JsonWebToken> {
     public JWSHeader getHeader() throws VerificationException {
         parse();
         return jws.getHeader();
+    }
+
+    public JWEHeader getJWEHeader() throws VerificationException {
+        parse();
+        return jwe.getHeader();
     }
 
     public void verifySignature() throws VerificationException {
@@ -458,6 +510,19 @@ public class TokenVerifier<T extends JsonWebToken> {
         if (getToken() == null) {
             parse();
         }
+
+        if (jwe != null) {
+            // use nested JWS
+            try {
+                this.tokenString = decryptJwe();
+            } catch(JWEException jwee) {
+                throw new VerificationException("Could not decrypt JWE", jwee);
+            }
+
+            // parse nested JWS extracted from JWE
+            parse();
+        }
+
         if (jws != null) {
             verifySignature();
         }
@@ -469,6 +534,15 @@ public class TokenVerifier<T extends JsonWebToken> {
         }
 
         return this;
+    }
+
+    public String decryptJwe() throws JWEException {
+
+        if (jwe == null ) {
+            return null;
+        }
+
+        return decrypter.decrypt(jwe.getWireString(), jwe.getHeader());
     }
 
     /**

@@ -21,12 +21,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
-import org.keycloak.crypto.SignatureProvider;
-import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.utils.JWETokenVerifier;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.services.Urls;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.core.MediaType;
@@ -73,12 +72,7 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
         AccessToken accessToken;
 
         try {
-            TokenVerifier<AccessToken> verifier = TokenVerifier.create(token, AccessToken.class)
-                    .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
-
-            SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
-            verifier.verifierContext(verifierContext);
-
+            TokenVerifier<AccessToken> verifier = JWETokenVerifier.createTokenVerifier(token, AccessToken.class, session, realm, (ClientModel) null);
             accessToken = verifier.verify().getToken();
         } catch (VerificationException e) {
             return null;
