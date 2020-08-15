@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.client;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
@@ -24,6 +25,7 @@ import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -34,7 +36,12 @@ import org.keycloak.util.JsonSerialization;
 import javax.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
@@ -42,6 +49,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
@@ -439,6 +447,66 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         try {
             authNoAccess();
             deleteClient(client);
+            fail("Expected 403");
+        } catch (ClientRegistrationException e) {
+            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    public void registerClientAsAdminWithScope() throws ClientRegistrationException {
+        authManageClients();
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId(CLIENT_ID);
+        client.setSecret(CLIENT_SECRET);
+        ArrayList<String> optionalClientScopes = new ArrayList<>(Arrays.asList("address","phone"));
+        client.setOptionalClientScopes(optionalClientScopes);
+
+        ClientRepresentation createdClient = reg.create(client);
+        assertEquals(CLIENT_ID, createdClient.getClientId());
+        client = adminClient.realm(REALM_NAME).clients().get(createdClient.getId()).toRepresentation();
+        assertEquals(CLIENT_ID, client.getClientId());
+        // Remove this client after test
+        getCleanup().addClientUuid(createdClient.getId());
+
+        Set<String> requestedClientScopes = new HashSet<>(optionalClientScopes);
+        Set<String> registeredClientScopes = new HashSet<>(client.getOptionalClientScopes());
+        assertTrue(requestedClientScopes.equals(registeredClientScopes));
+        assertTrue(client.getDefaultClientScopes().isEmpty());
+    }
+
+    @Test
+    public void registerClientAsAdminWithoutScope() throws ClientRegistrationException {
+        Set<String> realmDefaultClientScopes = new HashSet<>(adminClient.realm(REALM_NAME).getDefaultDefaultClientScopes()
+                .stream().map(i->i.getName()).collect(Collectors.toList()));
+        Set<String> realmOptionalClientScopes = new HashSet<>(adminClient.realm(REALM_NAME).getDefaultOptionalClientScopes()
+                .stream().map(i->i.getName()).collect(Collectors.toList()));
+
+        authManageClients();
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId(CLIENT_ID);
+        client.setSecret(CLIENT_SECRET);
+
+        ClientRepresentation createdClient = reg.create(client);
+        assertEquals(CLIENT_ID, createdClient.getClientId());
+        client = adminClient.realm(REALM_NAME).clients().get(createdClient.getId()).toRepresentation();
+        assertEquals(CLIENT_ID, client.getClientId());
+        // Remove this client after test
+        getCleanup().addClientUuid(createdClient.getId());
+
+        assertTrue(realmDefaultClientScopes.equals(new HashSet<>(client.getDefaultClientScopes())));
+        assertTrue(realmOptionalClientScopes.equals(new HashSet<>(client.getOptionalClientScopes())));
+    }
+
+    @Test
+    public void registerClientAsAdminWithNotDefinedScope() throws ClientRegistrationException {
+        authManageClients();
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId(CLIENT_ID);
+        client.setSecret(CLIENT_SECRET);
+        client.setOptionalClientScopes(new ArrayList<>(Arrays.asList("notdefinedscope","phone")));
+        try {
+            registerClient(client);
             fail("Expected 403");
         } catch (ClientRegistrationException e) {
             assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
