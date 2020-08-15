@@ -41,6 +41,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.oidc.utils.TokenVerifierUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
@@ -87,11 +88,13 @@ public class UserInfoEndpoint {
     private final org.keycloak.protocol.oidc.TokenManager tokenManager;
     private final AppAuthManager appAuthManager;
     private final RealmModel realm;
+    private final EventBuilder event;
 
-    public UserInfoEndpoint(org.keycloak.protocol.oidc.TokenManager tokenManager, RealmModel realm) {
+    public UserInfoEndpoint(org.keycloak.protocol.oidc.TokenManager tokenManager, RealmModel realm, EventBuilder event) {
         this.realm = realm;
         this.tokenManager = tokenManager;
         this.appAuthManager = new AppAuthManager();
+        this.event = event;
     }
 
     @Path("/")
@@ -149,6 +152,18 @@ public class UserInfoEndpoint {
 
         AccessToken token;
         ClientModel clientModel;
+
+        try {
+            // try to extract the client from basic auth or from client_id / client_secret from parameters of a confidential client
+            ClientModel clientFromBasicAuth = AuthorizeClientUtil.authorizeClient(session, event).getClient();
+            if (clientFromBasicAuth != null) {
+                // set the authenticated client in the KeycloakContext to check it for the potentially required JWE encryption configuration
+                session.getContext().setClient(clientFromBasicAuth);
+            }
+        } catch(Exception ignored) {
+            // ignore
+        }
+
         try {
             TokenVerifier<AccessToken> verifier = TokenVerifierUtils.createTokenVerifier(tokenString, AccessToken.class, session);
             token = verifier.verify().getToken();

@@ -54,8 +54,12 @@ public class TokenVerifierUtils {
 
     private static class JWETokenVerifier<T extends JsonWebToken> extends TokenVerifier<T> {
 
-        public JWETokenVerifier(TokenVerifier<T> tokenVerifier, KeycloakSession session, ClientModel client) {
+        public JWETokenVerifier(TokenVerifier<T> tokenVerifier, KeycloakSession session, ClientModel client) throws VerificationException{
             super(tokenVerifier);
+
+            if (client == null) {
+                throw new VerificationException("Client missing for JWETokenVerifier setup.");
+            }
 
             OIDCAdvancedConfigWrapper oidcConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
 

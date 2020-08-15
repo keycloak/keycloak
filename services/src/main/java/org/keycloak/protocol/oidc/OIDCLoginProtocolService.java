@@ -239,7 +239,7 @@ public class OIDCLoginProtocolService {
 
     @Path("userinfo")
     public Object issueUserInfo() {
-        UserInfoEndpoint endpoint = new UserInfoEndpoint(tokenManager, realm);
+        UserInfoEndpoint endpoint = new UserInfoEndpoint(tokenManager, realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
     }
