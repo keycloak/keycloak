@@ -21,6 +21,7 @@ package org.keycloak.testsuite.client;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.client.registration.Auth;
@@ -44,9 +45,11 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
@@ -468,5 +471,64 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         return ApiUtil.findClientByClientId(adminClient.realms().realm(REALM_NAME), clientId).toRepresentation();
     }
 
+    @Test
+    public void testClientWithScope() throws Exception {
+        OIDCClientRepresentation clientRep = null;
+        OIDCClientRepresentation response = null;
+        String clientScope = "phone address";
 
+        clientRep = createRep();
+        clientRep.setScope(clientScope);
+        response = reg.oidc().create(clientRep);
+
+        Set<String> clientScopes = new HashSet<>(Arrays.asList(clientScope.split(" ")));
+        Set<String> registeredClientScopes = new HashSet<>(Arrays.asList(response.getScope().split(" ")));
+        assertTrue(clientScopes.equals(registeredClientScopes));
+
+        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(response.getClientId());
+        assertTrue(clientResource.toRepresentation().getDefaultClientScopes().isEmpty());
+
+    }
+
+    @Test
+    public void testClientWithNotDefinedScope() throws Exception {
+        OIDCClientRepresentation clientRep = null;
+        OIDCClientRepresentation response = null;
+
+        String clientScope = "notdefinedscope address";
+
+        clientRep = createRep();
+        clientRep.setScope(clientScope);
+        try {
+            response = reg.oidc().create(clientRep);
+            fail("Expected 403");
+        } catch (ClientRegistrationException e) {
+            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    public void testClientWithoutScope() throws ClientRegistrationException {
+        Set<String> realmOptionalClientScopes = new HashSet<>(adminClient.realm(REALM_NAME).getDefaultOptionalClientScopes()
+                .stream().map(i->i.getName()).collect(Collectors.toList()));
+
+        OIDCClientRepresentation clientRep = null;
+        OIDCClientRepresentation response = null;
+
+        clientRep = createRep();
+        response = reg.oidc().create(clientRep);
+
+        Set<String> registeredClientScopes = new HashSet<>(Arrays.asList(response.getScope().split(" ")));
+        assertTrue(realmOptionalClientScopes.equals(new HashSet<>(registeredClientScopes)));
+
+        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(response.getClientId());
+        ClientRepresentation rep = clientResource.toRepresentation();
+
+        Set<String> realmDefaultClientScopes = new HashSet<>(adminClient.realm(REALM_NAME).getDefaultDefaultClientScopes()
+                .stream().map(i->i.getName()).collect(Collectors.toList()));
+
+        Set<String> registeredDefaultClientScopes = new HashSet<>(rep.getDefaultClientScopes());
+        assertTrue(realmDefaultClientScopes.equals(new HashSet<>(registeredDefaultClientScopes)));
+
+    }
 }
