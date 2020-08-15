@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.apache.http.client.utils.URIBuilder;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import javax.ws.rs.BadRequestException;
@@ -34,6 +35,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.forms.account.freemarker.model.TotpBean;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -43,6 +45,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
@@ -50,6 +53,8 @@ import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -68,11 +73,13 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserSessionManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.storage.ReadOnlyException;
+import org.keycloak.utils.CredentialHelper;
 import org.keycloak.utils.ProfileHelper;
 
 import javax.ws.rs.Consumes;
@@ -549,6 +556,60 @@ public class UserResource {
             AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, true);
         }
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
+    }
+
+    /**
+     * Generate TOTP secret for user
+     * 
+     * @return
+     */
+    @Path("get-totp-secret")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public TotpBean getTotpSecret(@QueryParam("url") String url) {
+        auth.users().requireManage(user);
+        if (Validation.isBlank(url) ) {
+            throw new BadRequestException("Empty url not allowed");
+        } 
+        return new TotpBean(session, realm, user, UriBuilder.fromUri(url));
+    }
+
+    /**
+     * Add TOTP to user
+     * 
+     * @param totp
+     * @param secret 
+     * @param userLabel
+     * @param url
+     * @return
+     */
+    @Path("add-totp")
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response addTotpToUser(@QueryParam("totpSecret") String totpSecret, @QueryParam("userLabel") String userLabel, @QueryParam("totp") String totp, @QueryParam("url") String url) {
+        auth.users().requireManage(user);
+
+        if (Validation.isBlank(totp) ) {
+            return ErrorResponse.error("Empty totp not allowed", Status.BAD_REQUEST);
+        } 
+        if (Validation.isBlank(totpSecret)) {
+            return ErrorResponse.error("Empty totpSecret not allowed", Status.BAD_REQUEST);
+        } 
+        if (Validation.isBlank(url) ) {
+            return ErrorResponse.error("Empty url not allowed", Status.BAD_REQUEST);
+        } 
+
+        OTPPolicy policy = realm.getOTPPolicy();
+        OTPCredentialModel credentialModel = OTPCredentialModel.createFromPolicy(realm, totpSecret, userLabel);
+
+        if (!CredentialValidation.validOTP(totp, credentialModel, policy.getLookAheadWindow())) {
+            return ErrorResponse.error("The totp is invalid", Status.BAD_REQUEST);
+        }
+        if (!CredentialHelper.createOTPCredential(session, realm, user, totp, credentialModel)) {
+            return ErrorResponse.error("Internal error when creating the otp credentails", Status.INTERNAL_SERVER_ERROR);
+        }
+        
+        return Response.noContent().build();
     }
 
     /**
