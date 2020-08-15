@@ -24,6 +24,7 @@ import org.keycloak.exceptions.TokenSignatureInvalidException;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwe.JWEInput;
+import org.keycloak.jose.jwe.JWEInputException;
 import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
@@ -415,7 +416,7 @@ public class TokenVerifier<T extends JsonWebToken> {
                 // 3) parse tokenString into JWS and validate signature.
                 try {
                     jwe = new JWEInput(tokenString);
-                } catch (JWSInputException e) {
+                } catch (JWEInputException e) {
                     throw new VerificationException("Failed to parse JWT (JWE)", e);
                 }
             }

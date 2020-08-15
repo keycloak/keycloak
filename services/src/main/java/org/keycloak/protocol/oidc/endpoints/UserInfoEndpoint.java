@@ -26,7 +26,6 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
-import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -42,7 +41,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.utils.JWETokenVerifier;
+import org.keycloak.protocol.oidc.utils.TokenVerifierUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
@@ -151,8 +150,7 @@ public class UserInfoEndpoint {
         AccessToken token;
         ClientModel clientModel;
         try {
-            // TODO how to extract client model here ???
-            TokenVerifier<AccessToken> verifier = JWETokenVerifier.createTokenVerifier(tokenString, AccessToken.class, session, realm, (ClientModel) null);
+            TokenVerifier<AccessToken> verifier = TokenVerifierUtils.createTokenVerifier(tokenString, AccessToken.class, session);
             token = verifier.verify().getToken();
 
             clientModel = realm.getClientByClientId(token.getIssuedFor());

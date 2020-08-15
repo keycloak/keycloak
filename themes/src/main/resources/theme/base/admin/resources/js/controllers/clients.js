@@ -1248,6 +1248,10 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             }
         }
 
+        $scope.jweTokenKeystoreLocation = $scope.client.attributes['jwe.token.keystore.location'];
+        $scope.jweTokenKeystorePassword = $scope.client.attributes['jwe.token.keystore.password'];
+        $scope.jweTokenKeystoreKeyPassword = $scope.client.attributes['jwe.token.keystore.key.password'];
+
         $scope.accessTokenSignedResponseAlg = $scope.client.attributes['access.token.signed.response.alg'];
         $scope.accessTokenEncryptedResponseAlg = $scope.client.attributes['access.token.encrypted.response.alg'];
         $scope.accessTokenEncryptedResponseEnc = $scope.client.attributes['access.token.encrypted.response.enc'];
@@ -1384,6 +1388,18 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
 
     $scope.changeSamlSigKeyNameTranformer = function() {
         $scope.clientEdit.attributes['saml.server.signature.keyinfo.xmlSigKeyInfoKeyNameTransformer'] = $scope.samlXmlKeyNameTranformer;
+    };
+
+    $scope.changeJweTokenKeystoreLocation = function() {
+        $scope.clientEdit.attributes['jwe.token.keystore.location'] = $scope.jweTokenKeystoreLocation;
+    };
+
+    $scope.changeJweTokenKeystorePassword = function() {
+        $scope.clientEdit.attributes['jwe.token.keystore.password'] = $scope.jweTokenKeystorePassword;
+    };
+
+    $scope.changeJweTokenKeystoreKeyPassword = function() {
+        $scope.clientEdit.attributes['jwe.token.keystore.key.password'] = $scope.jweTokenKeystoreKeyPassword;
     };
 
     $scope.changeAccessTokenSignedResponseAlg = function() {

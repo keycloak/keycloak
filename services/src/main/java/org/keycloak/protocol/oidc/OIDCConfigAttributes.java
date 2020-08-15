@@ -41,11 +41,17 @@ public final class OIDCConfigAttributes {
 
     public static final String ID_TOKEN_ENCRYPTED_RESPONSE_ENC = "id.token.encrypted.response.enc";
 
-    public static final String ACCESS_TOKEN_ENCRYPTED_RESPONSE_ENC = "access.token.encrypted.response.enc";
-
     public static final String ACCESS_TOKEN_SIGNED_RESPONSE_ALG = "access.token.signed.response.alg";
 
+    public static final String ACCESS_TOKEN_ENCRYPTED_RESPONSE_ENC = "access.token.encrypted.response.enc";
+
     public static final String ACCESS_TOKEN_ENCRYPTED_RESPONSE_ALG = "access.token.encrypted.response.alg";
+
+    public static final String JWE_TOKEN_KEYSTORE_LOCATION = "jwe.token.keystore.location";
+
+    public static final String JWE_TOKEN_KEYSTORE_PASSWORD = "jwe.token.keystore.password";
+
+    public static final String JWE_TOKEN_KEYSTORE_KEY_PASSWORD = "jwe.token.keystore.key.password";
 
     public static final String ACCESS_TOKEN_LIFESPAN = "access.token.lifespan";
     public static final String CLIENT_SESSION_IDLE_TIMEOUT = "client.session.idle.timeout";
