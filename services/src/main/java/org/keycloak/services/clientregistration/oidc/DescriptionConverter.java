@@ -165,6 +165,18 @@ public class DescriptionConverter {
             configWrapper.setAccessTokenEncryptedResponseEnc(clientOIDC.getAccessTokenEncryptedResponseEnc());
         }
 
+        if (clientOIDC.getJweTokenKeystoreLocation() != null ) {
+            configWrapper.setJweTokenKeystoreLocation(clientOIDC.getJweTokenKeystoreLocation());
+        }
+
+        if (clientOIDC.getJweTokenKeystorePassword() != null ) {
+            configWrapper.setJweTokenKeystorePassword(clientOIDC.getJweTokenKeystorePassword());
+        }
+
+        if (clientOIDC.getJweTokenKeystoreKeyPassword() != null ) {
+            configWrapper.setJweTokenKeystoreKeyPassword(clientOIDC.getJweTokenKeystoreKeyPassword());
+        }
+
         return client;
     }
 
@@ -273,6 +285,18 @@ public class DescriptionConverter {
         }
         if (config.getAccessTokenEncryptedResponseEnc() != null) {
             response.setAccessTokenEncryptedResponseEnc(config.getAccessTokenEncryptedResponseEnc());
+        }
+
+        if (config.getJweTokenKeystoreLocation() != null) {
+            response.setJweTokenKeystoreLocation(config.getJweTokenKeystoreLocation());
+        }
+
+        if (config.getJweTokenKeystorePassword() != null) {
+            response.setJweTokenKeystorePassword(config.getJweTokenKeystorePassword());
+        }
+
+        if (config.getJweTokenKeystoreKeyPassword() != null) {
+            response.setJweTokenKeystoreKeyPassword(config.getJweTokenKeystoreKeyPassword());
         }
 
         List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(client);

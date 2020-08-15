@@ -28,7 +28,7 @@ public class JWEInput {
 
     private final byte[] authenticationTag;
 
-    public JWEInput(String wire) throws JWSInputException {
+    public JWEInput(String wire) throws JWEInputException {
 
         try {
             this.wireString = wire;
@@ -52,7 +52,7 @@ public class JWEInput {
             byte[] headerBytes = Base64Url.decode(encodedHeader);
             header = JsonSerialization.readValue(headerBytes, JWEHeader.class);
         } catch (Throwable t) {
-            throw new JWSInputException(t);
+            throw new JWEInputException(t);
         }
     }
 
