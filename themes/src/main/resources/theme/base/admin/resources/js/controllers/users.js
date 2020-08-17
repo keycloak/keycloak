@@ -839,8 +839,9 @@ module.controller('UserFederationCtrl', function($scope, $location, $route, real
     $scope.getInstancePriority = function(instance) {
         if (!instance.config['priority']) {
             console.log('getInstancePriority is undefined');
+            return -1;
         }
-        return instance.config['priority'][0];
+        return +instance.config['priority'][0];
     }
 
     Components.query({realm: realm.realm,
