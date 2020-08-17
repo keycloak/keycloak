@@ -127,7 +127,7 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
 
 
 
-    private class TruststoreCertificatesLoader {
+    private static class TruststoreCertificatesLoader {
 
         private Map<X500Principal, X509Certificate> trustedRootCerts = new HashMap<>();
         private Map<X500Principal, X509Certificate> intermediateCerts = new HashMap<>();

@@ -75,7 +75,7 @@ public class UserStorageSyncManager {
         });
     }
 
-    private class Holder {
+    private static class Holder {
         ExecutionResult<SynchronizationResult> result;
     }
 

@@ -43,7 +43,7 @@ public class TestClassProvider {
         server.stop();
     }
 
-    public class ClassPathResourceManager implements ResourceManager {
+    public static class ClassPathResourceManager implements ResourceManager {
 
         @Override
         public Resource getResource(String className) {

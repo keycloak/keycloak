@@ -1025,7 +1025,7 @@ public class TokenManager {
 
     }
 
-    public class RefreshResult {
+    public static class RefreshResult {
 
         private final AccessTokenResponse response;
         private final boolean offlineToken;

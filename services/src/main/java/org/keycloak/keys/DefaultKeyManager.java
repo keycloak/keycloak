@@ -268,7 +268,7 @@ public class DefaultKeyManager implements KeyManager {
         return providers;
     }
 
-    private class ProviderComparator implements Comparator<ComponentModel> {
+    private static class ProviderComparator implements Comparator<ComponentModel> {
 
         @Override
         public int compare(ComponentModel o1, ComponentModel o2) {

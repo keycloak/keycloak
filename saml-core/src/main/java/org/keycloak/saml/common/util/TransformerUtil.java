@@ -435,7 +435,7 @@ public class TransformerUtil {
             return null;
         }
 
-        private class CustomHolder {
+        private static class CustomHolder {
             public Document doc;
 
             public boolean encounteredTextNode = false;
