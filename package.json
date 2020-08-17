@@ -4,6 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
+    "postinstall": "grunt",
     "start": "snowpack dev",
     "start:dev": "env-cmd -f .env.dev yarn start",
     "start:rh-sso": "env-cmd -f .env.rh-sso yarn start",
@@ -49,6 +50,8 @@
     "env-cmd": "^10.1.0",
     "eslint": "^7.6.0",
     "eslint-plugin-react": "^7.20.5",
+    "grunt": "^1.2.1",
+    "grunt-contrib-copy": "^1.0.0",
     "jest": "^25.4.0",
     "postcss": "^7.0.32",
     "postcss-cli": "^7.1.1",
