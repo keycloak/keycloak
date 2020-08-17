@@ -93,7 +93,7 @@ public class AccountFederatedIdentityBean {
         return removeLinkPossible;
     }
 
-    public class FederatedIdentityEntry implements OrderedModel {
+    public static class FederatedIdentityEntry implements OrderedModel {
 
         private FederatedIdentityModel federatedIdentityModel;
         private final String providerId;

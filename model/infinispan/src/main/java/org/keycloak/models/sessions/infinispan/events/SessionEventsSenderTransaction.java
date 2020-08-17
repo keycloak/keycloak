@@ -61,7 +61,7 @@ public class SessionEventsSenderTransaction extends AbstractKeycloakTransaction 
     }
 
 
-    private class DCEventContext {
+    private static class DCEventContext {
         private final ClusterProvider.DCNotify dcNotify;
         private final SessionClusterEvent event;
 

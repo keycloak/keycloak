@@ -1351,7 +1351,7 @@ public class TokenEndpoint {
         return codeVerifierEncoded;
     }
 
-    private class TokenExchangeSamlProtocol extends SamlProtocol {
+    private static class TokenExchangeSamlProtocol extends SamlProtocol {
         final SamlClient samlClient;
 
         TokenExchangeSamlProtocol(SamlClient samlClient) {

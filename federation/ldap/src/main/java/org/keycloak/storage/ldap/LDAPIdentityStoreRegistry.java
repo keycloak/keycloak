@@ -104,7 +104,7 @@ public class LDAPIdentityStoreRegistry {
     }
 
 
-    private class LDAPIdentityStoreContext {
+    private static class LDAPIdentityStoreContext {
 
         private LDAPIdentityStoreContext(LDAPConfig config, LDAPIdentityStore store) {
             this.config = config;

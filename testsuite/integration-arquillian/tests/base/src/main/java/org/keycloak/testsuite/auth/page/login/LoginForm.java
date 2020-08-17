@@ -157,7 +157,7 @@ public class LoginForm extends Form {
         return getTextFromElement(rememberMeLabel);
     }
 
-    public class TotpSetupForm extends Form {
+    public static class TotpSetupForm extends Form {
         @FindBy(id = "totp")
         private WebElement totpInputField;
 

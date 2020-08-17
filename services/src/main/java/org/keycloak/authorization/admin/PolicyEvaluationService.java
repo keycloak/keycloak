@@ -308,7 +308,7 @@ public class PolicyEvaluationService {
         return new CloseableKeycloakIdentity(accessToken, keycloakSession, userSession);
     }
 
-    public class EvaluationDecisionCollector extends DecisionPermissionCollector {
+    public static class EvaluationDecisionCollector extends DecisionPermissionCollector {
 
         public EvaluationDecisionCollector(AuthorizationProvider authorizationProvider, ResourceServer resourceServer, AuthorizationRequest request) {
             super(authorizationProvider, resourceServer, request);

@@ -179,7 +179,7 @@ public class RemoteCacheInvoker {
     }
 
 
-    private class RemoteCacheContext {
+    private static class RemoteCacheContext {
 
         private final RemoteCache remoteCache;
         private final MaxIdleTimeLoader maxIdleTimeLoader;

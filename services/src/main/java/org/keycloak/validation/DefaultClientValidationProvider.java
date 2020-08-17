@@ -91,7 +91,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         }
     }
 
-    class ValidationException extends Exception {
+    static class ValidationException extends Exception {
 
         public ValidationException(String message) {
             super(message, null, false, false);
