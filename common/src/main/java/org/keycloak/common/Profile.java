@@ -121,16 +121,20 @@ public class Profile {
                     break;
                 case DEPRECATED:
                     deprecatedFeatures.add(f);
+                    if (enabled == null || !enabled) {
+                        disabledFeatures.add(f);
+                    } else {
+                        logger.warnf("Deprecated feature enabled: " + f.name().toLowerCase());
+                    }
+                    if (Feature.UPLOAD_SCRIPTS.equals(f)) {
+                        previewFeatures.add(Feature.SCRIPTS);
+                        disabledFeatures.remove(Feature.SCRIPTS);
+                        logger.warnf("Preview feature enabled: " + Feature.SCRIPTS.name().toLowerCase());
+                    }
+                    break;
                 case DISABLED_BY_DEFAULT:
                     if (enabled == null || !enabled) {
                         disabledFeatures.add(f);
-                    } else if (DEPRECATED.equals(type)) {
-                        logger.warnf("Deprecated feature enabled: " + f.name().toLowerCase());
-                        if (Feature.UPLOAD_SCRIPTS.equals(f)) {
-                            previewFeatures.add(Feature.SCRIPTS);
-                            disabledFeatures.remove(Feature.SCRIPTS);
-                            logger.warnf("Preview feature enabled: " + Feature.SCRIPTS.name().toLowerCase());
-                        }
                     }
                     break;
                 case PREVIEW:
@@ -148,6 +152,9 @@ public class Profile {
                     } else {
                         logger.warn("Experimental feature enabled: " + f.name().toLowerCase());
                     }
+                    break;
+                default:
+                    logger.warn("Unexpected type: " + type);
                     break;
             }
         }

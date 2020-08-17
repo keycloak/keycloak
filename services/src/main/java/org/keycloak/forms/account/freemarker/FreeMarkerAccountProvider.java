@@ -162,6 +162,8 @@ public class FreeMarkerAccountProvider implements AccountProvider {
         attributes.put("account", new AccountBean(user, profileFormData));
 
         switch (page) {
+            case ACCOUNT:
+                break;
             case TOTP:
                 attributes.put("totp", new TotpBean(session, realm, user, uriInfo.getRequestUriBuilder()));
                 break;
@@ -186,11 +188,16 @@ public class FreeMarkerAccountProvider implements AccountProvider {
                     return Response.status(Status.FORBIDDEN).build();
                 }
                 attributes.put("authorization", new AuthorizationBean(session, user, uriInfo));
+                break;
             case RESOURCE_DETAIL:
                 if (!realm.isUserManagedAccessAllowed()) {
                     return Response.status(Status.FORBIDDEN).build();
                 }
                 attributes.put("authorization", new AuthorizationBean(session, user, uriInfo));
+                break;
+            default:
+                logger.warn("Unexpected AccountPages: " + page);
+                break;
         }
 
         return processTemplate(theme, page, attributes, locale);
