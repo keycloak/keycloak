@@ -10,7 +10,7 @@
     "start:rh-sso": "env-cmd -f .env.rh-sso yarn start",
     "build": "snowpack build",
     "test": "jest",
-    "format": "prettier --single-quote --write \"src/**/*.{js,jsx,ts,tsx}\"",
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
     "lint": "eslint ./src/**/*.ts*",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook"
