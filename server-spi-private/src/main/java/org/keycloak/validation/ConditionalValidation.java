@@ -22,30 +22,30 @@ package org.keycloak.validation;
  */
 public class ConditionalValidation implements Validation {
 
-    private final Validation delegate;
+    private final Validation validation;
 
     private final ValidationCondition condition;
 
-    public ConditionalValidation(Validation delegate) {
-        this(delegate, ValidationCondition.ALWAYS);
+    public ConditionalValidation(Validation validation) {
+        this(validation, ValidationCondition.ALWAYS);
     }
 
-    public ConditionalValidation(Validation delegate, ValidationCondition condition) {
-        this.delegate = delegate;
+    public ConditionalValidation(Validation validation, ValidationCondition condition) {
+        this.validation = validation;
         this.condition = condition;
     }
 
     @Override
     public boolean validate(ValidationKey key, Object value, NestedValidationContext context) {
-        return this.delegate.validate(key, value, context);
+        return this.validation.validate(key, value, context);
     }
 
     public boolean isApplicable(ValidationKey key, Object value, ValidationContext context) {
         return this.condition.test(key, value, context);
     }
 
-    public Validation getDelegate() {
-        return delegate;
+    public Validation getValidation() {
+        return validation;
     }
 
     public ValidationCondition getCondition() {
