@@ -6,8 +6,7 @@ import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.crypto.CekManagementProvider;
 import org.keycloak.crypto.ContentEncryptionProvider;
 import org.keycloak.crypto.DecryptionKEKAccessor;
-import org.keycloak.crypto.DecryptionVerifierContext;
-import org.keycloak.crypto.DefaultDecryptionVerifierContext;
+import org.keycloak.crypto.DefaultDecryptionContext;
 import org.keycloak.crypto.DelegatingSignatureVerfierContext;
 import org.keycloak.crypto.JWEAlgorithmProviderAccessor;
 import org.keycloak.crypto.JWEEncryptionProviderAccessor;
@@ -84,7 +83,7 @@ public class TokenVerifierUtils {
             // we need to delay the encryption provider resolving here, since we need to parse the token first
             JWEEncryptionProviderAccessor jweEncryptionProviderAccessor = enc -> session.getProvider(ContentEncryptionProvider.class, enc).jweEncryptionProvider();
 
-            decrypterContext(new DefaultDecryptionVerifierContext(decryptionKeyAccessor, jweAlgorithmProviderAccessor, jweEncryptionProviderAccessor));
+            decryptionContext(new DefaultDecryptionContext(decryptionKeyAccessor, jweAlgorithmProviderAccessor, jweEncryptionProviderAccessor));
 
             // we need to wrap the SignatureVerifierContext here, to postpone the actual signature validation until the nested JWS was extracted from the JWE.
             verifierContext(new DelegatingSignatureVerfierContext(

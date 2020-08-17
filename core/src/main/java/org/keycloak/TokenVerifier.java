@@ -18,7 +18,7 @@
 package org.keycloak;
 
 import org.keycloak.common.VerificationException;
-import org.keycloak.crypto.DecryptionVerifierContext;
+import org.keycloak.crypto.DecryptionContext;
 import org.keycloak.exceptions.TokenNotActiveException;
 import org.keycloak.exceptions.TokenSignatureInvalidException;
 import org.keycloak.jose.jwe.JWEException;
@@ -37,6 +37,7 @@ import org.keycloak.util.TokenUtil;
 
 import javax.crypto.SecretKey;
 
+import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
 import java.util.*;
 import java.util.logging.Level;
@@ -208,14 +209,14 @@ public class TokenVerifier<T extends JsonWebToken> {
 
     private SignatureVerifierContext verifier;
 
-    private DecryptionVerifierContext decrypter;
+    private DecryptionContext decrypter;
 
     public TokenVerifier<T> verifierContext(SignatureVerifierContext verifier) {
         this.verifier = verifier;
         return this;
     }
 
-    public TokenVerifier<T> decrypterContext(DecryptionVerifierContext decrypter) {
+    public TokenVerifier<T> decryptionContext(DecryptionContext decrypter) {
         this.decrypter = decrypter;
         return this;
     }
@@ -471,9 +472,18 @@ public class TokenVerifier<T extends JsonWebToken> {
     }
 
     public void verifySignature() throws VerificationException {
+
+        if (this.jws == null) {
+            if (isJwe(tokenString)) {
+                throw new VerificationException("Nested JWS part from JWE not decrypted yet");
+            } else {
+                throw new VerificationException("JWS not parsed yet");
+            }
+        }
+
         if (this.verifier != null) {
             try {
-                if (!verifier.verify(jws.getEncodedSignatureInput().getBytes("UTF-8"), jws.getSignature())) {
+                if (!verifier.verify(jws.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8), jws.getSignature())) {
                     throw new TokenSignatureInvalidException(token, "Invalid token signature");
                 }
             } catch (Exception e) {

@@ -9,13 +9,13 @@ import org.keycloak.util.TokenUtil;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 
-public class DefaultDecryptionVerifierContext implements DecryptionVerifierContext{
+public class DefaultDecryptionContext implements DecryptionContext {
 
     private final DecryptionKEKAccessor decryptionKEKAccessor;
     private final JWEAlgorithmProviderAccessor algoProviderAccessor;
     private final JWEEncryptionProviderAccessor encProviderAccessor;
 
-    public DefaultDecryptionVerifierContext(DecryptionKEKAccessor decryptionKEKAccessor, JWEAlgorithmProviderAccessor algoProviderAccessor, JWEEncryptionProviderAccessor encProviderAccessor) {
+    public DefaultDecryptionContext(DecryptionKEKAccessor decryptionKEKAccessor, JWEAlgorithmProviderAccessor algoProviderAccessor, JWEEncryptionProviderAccessor encProviderAccessor) {
         this.decryptionKEKAccessor = decryptionKEKAccessor;
         this.algoProviderAccessor = algoProviderAccessor;
         this.encProviderAccessor = encProviderAccessor;
