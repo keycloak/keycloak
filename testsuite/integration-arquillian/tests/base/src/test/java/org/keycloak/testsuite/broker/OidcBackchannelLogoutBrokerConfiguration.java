@@ -77,7 +77,6 @@ public class OidcBackchannelLogoutBrokerConfiguration implements NestedBrokerCon
     @Override
     public List<ClientRepresentation> createProviderClients() {
         ClientRepresentation client = new ClientRepresentation();
-        client.setId(CLIENT_ID);
         client.setClientId(getIDPClientIdInProviderRealm());
         client.setName(CLIENT_ID);
         client.setSecret(CLIENT_SECRET);
@@ -185,7 +184,6 @@ public class OidcBackchannelLogoutBrokerConfiguration implements NestedBrokerCon
     @Override
     public List<ClientRepresentation> createConsumerClients() {
         ClientRepresentation client = new ClientRepresentation();
-        client.setId(CONSUMER_CLIENT_ID);
         client.setClientId(CONSUMER_CLIENT_ID);
         client.setName(CONSUMER_CLIENT_ID);
         client.setSecret(CONSUMER_CLIENT_SECRET);

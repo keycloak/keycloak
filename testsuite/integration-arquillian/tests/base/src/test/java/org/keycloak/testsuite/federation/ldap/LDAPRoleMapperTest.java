@@ -96,7 +96,7 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             // create a client to set the roles in it
-            ClientModel rolesClient = appRealm.addClient("role-mapper-client", "role-mapper-client");
+            ClientModel rolesClient = session.clients().addClient(appRealm, "role-mapper-client");
 
             try {
                 ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "rolesMapper");
@@ -136,7 +136,7 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
                 Assert.assertThat(session.users().getRoleMembers(appRealm, group3), Matchers.empty());
 
             } finally {
-                appRealm.removeClient(rolesClient.getClientId());
+                appRealm.removeClient(rolesClient.getId());
             }
         });
     }
