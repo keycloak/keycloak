@@ -18,6 +18,7 @@
 package org.keycloak.storage.ldap.mappers.membership.group;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ModelException;
@@ -835,20 +836,46 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
     }
 
     /**
-     * Provides a list of all KC groups (with their sub groups) from groups path.
+     * Provides a list of all KC groups (with their sub groups) from groups path configured by the "Groups Path" configuration property.
      */
     protected List<GroupModel> getAllKcGroups(RealmModel realm) {
-        List<GroupModel> allGroups = new ArrayList<>();
-        for (GroupModel group : getKcSubGroups(realm, null)) {
-            addGroupAndSubGroups(group, allGroups);
+        Long start = null;
+        if (logger.isTraceEnabled()) {
+            logger.trace("Calling getAllKcGroups started");
+            start = Time.currentTimeMillis();
         }
-        return allGroups;
-    }
 
-    private void addGroupAndSubGroups(GroupModel group, List<GroupModel> allGroups) {
-        allGroups.add(group);
-        for (GroupModel subGroup : group.getSubGroups()) {
-            addGroupAndSubGroups(subGroup, allGroups);
+        GroupModel topParentGroup = getKcGroupsPathGroup(realm);
+
+        List<GroupModel> allGroups = realm.getGroups();
+        List<GroupModel> filtered = new ArrayList<>();
+        for (GroupModel group : allGroups) {
+            if (topParentGroup == null) {
+                filtered.add(group);
+            } else {
+                // Check if group is descendant of the topParentGroup (which is group configured by "Groups Path")
+                boolean finished = false;
+                GroupModel parent = group.getParent();
+                while (!finished) {
+                    if (parent == null) {
+                        finished = true;
+                    } else {
+                        if (parent.getId().equals(topParentGroup.getId())) {
+                            filtered.add(group);
+                            finished = true;
+                        } else {
+                            parent = parent.getParent();
+                        }
+                    }
+                }
+            }
         }
+
+        if (logger.isTraceEnabled()) {
+            long took = Time.currentTimeMillis() - start;
+            logger.tracef("Calling getAllKcGroups took %d ms. Count of groups %d", took, filtered.size());
+        }
+
+        return filtered;
     }
 }
