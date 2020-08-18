@@ -11,6 +11,38 @@ It's recommended to build the workspace including distribution.
     cd distribution
     mvn clean install
 
+### Running tests in the development mode (Keycloak on embedded undertow)
+
+After build sources and distribution, it is possible to run the base testsuite
+
+    mvn -f testsuite/integration-arquillian/pom.xml clean install
+
+Running single test can be achieved for example like this
+
+    mvn -f testsuite/integration-arquillian/pom.xml clean install -Dtest=LoginTest
+
+By default, the development setup is used with the Keycloak server deployed on
+embedded undertow server. That setup doesn't even require to build the distribution or re-build
+the distribution after doing changes in the code.
+
+For example when you do some fix in some class in the `services` module, you can re-build just that module
+
+    mvn -f services/pom.xml clean install
+
+And then re-run the LoginTest (or any other test you wish) and the changes should be applied when running the tests.
+
+If you use Intellij Idea, you don't even need to re-build anything with the maven. After doing any
+change in the codebase, the change is immediately effective when running the test with Junit runner. 
+
+### Running tests in the production mode (Keycloak on Wildfly)
+
+For the "production" testing, it is possible to run the Keycloak server deployed on real Wildfly server.
+This can be achieved by add the `auth-server-wildfly` profile when running the testsuite.
+
+    mvn -f testsuite/integration-arquillian/pom.xml -Pauth-server-wildfly clean install
+
+Unlike the "development" setup described above, this requires re-build the whole distribution
+after doing any change in the code.
 
 ## Debugging - tips & tricks
 
