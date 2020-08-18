@@ -250,6 +250,23 @@ public interface UserResource {
     @Path("execute-actions-email")
     void executeActionsEmail(@QueryParam("client_id") String clientId, @QueryParam("redirect_uri") String redirectUri, List<String> actions);
 
+    /**
+     * Create action token
+     *
+     * A token to perform a set of required actions.
+     *
+     * @param redirectUri Redirect uri
+     * @param clientId Client id
+     * @param lifespan Number of seconds after which the generated token expires
+     * @param actions required actions the user needs to complete
+     */
+    @Path("generate-action-token")
+    @POST
+    Response generateActionToken(@QueryParam("redirectUri") String redirectUri,
+                                        @QueryParam("clientId") String clientId,
+                                        @QueryParam("lifespan") Integer lifespan,
+                                        List<String> actions);
+
     @PUT
     @Path("send-verify-email")
     void sendVerifyEmail();

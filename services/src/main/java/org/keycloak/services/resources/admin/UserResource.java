@@ -753,32 +753,27 @@ public class UserResource {
         return executeActionsEmail(redirectUri, clientId, null, actions);
     }
 
-
     /**
-     * Send a update account email to the user
-     *
-     * An email contains a link the user can click to perform a set of required actions.
-     * The redirectUri and clientId parameters are optional. If no redirect is given, then there will
-     * be no link back to click after actions have completed.  Redirect uri must be a valid uri for the
-     * particular clientId.
-     *
+     * Create action token 
+     * 
+     * A token to perform a set of required actions. The clientId parameters are
+     * optional.
+     * 
      * @param redirectUri Redirect uri
      * @param clientId Client id
      * @param lifespan Number of seconds after which the generated token expires
      * @param actions required actions the user needs to complete
      * @return
      */
-    @Path("execute-actions-email")
-    @PUT
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response executeActionsEmail(@QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri,
-                                        @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId,
-                                        @QueryParam("lifespan") Integer lifespan,
-                                        List<String> actions) {
+    public ExecuteActionsActionToken createActionToken(@QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri,
+                                                       @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId,
+                                                       @QueryParam("lifespan") Integer lifespan,
+                                                       List<String> actions) {
         auth.users().requireManage(user);
 
         if (user.getEmail() == null) {
-            return ErrorResponse.error("User email missing", Status.BAD_REQUEST);
+            throw new WebApplicationException(
+             ErrorResponse.error("User email missing", Status.BAD_REQUEST));
         }
 
         if (!user.isEnabled()) {
@@ -820,7 +815,37 @@ public class UserResource {
             lifespan = realm.getActionTokenGeneratedByAdminLifespan();
         }
         int expiration = Time.currentTime() + lifespan;
-        ExecuteActionsActionToken token = new ExecuteActionsActionToken(user.getId(), expiration, actions, redirectUri, clientId);
+        return new ExecuteActionsActionToken(user.getId(), expiration, actions, redirectUri, clientId);
+    }
+
+    /**
+     * Send a update account email to the user
+     *
+     * An email contains a link the user can click to perform a set of required actions.
+     * The redirectUri and clientId parameters are optional. If no redirect is given, then there will
+     * be no link back to click after actions have completed.  Redirect uri must be a valid uri for the
+     * particular clientId.
+     *
+     * @param redirectUri Redirect uri
+     * @param clientId Client id
+     * @param lifespan Number of seconds after which the generated token expires
+     * @param actions required actions the user needs to complete
+     * @return
+     */
+    @Path("execute-actions-email")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+     public Response executeActionsEmail(@QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri,
+                                         @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId,
+                                         @QueryParam("lifespan") Integer lifespan,
+                                         List<String> actions) {
+        auth.users().requireManage(user);
+
+        if (lifespan == null) {
+            lifespan = realm.getActionTokenGeneratedByAdminLifespan();
+        }
+
+        ExecuteActionsActionToken token = createActionToken(redirectUri, clientId, lifespan, actions);
 
         try {
             UriBuilder builder = LoginActionsService.actionTokenProcessor(session.getContext().getUri());
@@ -835,7 +860,6 @@ public class UserResource {
               .sendExecuteActions(link, TimeUnit.SECONDS.toMinutes(lifespan));
 
             //audit.user(user).detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, accessCode.getCodeId()).success();
-
             adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
 
             return Response.noContent().build();
@@ -844,6 +868,29 @@ public class UserResource {
             return ErrorResponse.error("Failed to send execute actions email", Status.INTERNAL_SERVER_ERROR);
         }
     }
+
+    /**
+     * Create action token 
+     * 
+     * A token to perform a set of required actions. The clientId parameters are
+     * optional.
+     * 
+     * @param redirectUri Redirect uri
+     * @param clientId Client id
+     * @param lifespan Number of seconds after which the generated token expires
+     * @param actions required actions the user needs to complete
+     * @return
+     */
+    @Path("generate-action-token")
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response generateActionToken(@QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri,
+                                        @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId,
+                                        @QueryParam("lifespan") Integer lifespan,
+                                        List<String> actions) {
+        return Response.ok(createActionToken(redirectUri, clientId, lifespan, actions), MediaType.APPLICATION_JSON).build();
+    }
+
 
     /**
      * Send an email-verification email to the user
