@@ -137,11 +137,29 @@ public interface UserModel extends RoleMapperModel {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    default Stream<GroupModel> getGroupsStream(String search, int first, int max) {
-        return getGroupsStream()
-                .filter(group -> search == null || group.getName().toLowerCase().contains(search.toLowerCase()))
-                .skip(first)
-                .limit(max);
+    /**
+     * Returns a paginated stream of groups within this.realm with search in the name
+     *
+     * @param search Case insensitive string which will be searched for. Ignored if null.
+     * @param first Index of first group to return. Ignored if negative or {@code null}.
+     * @param max Maximum number of records to return. Ignored if negative or {@code null}.
+     * @return Stream of desired groups.
+     */
+    default Stream<GroupModel> getGroupsStream(String search, Integer first, Integer max) {
+        if (search != null) search = search.toLowerCase();
+        final String finalSearch = search;
+        Stream<GroupModel> groupModelStream = getGroupsStream()
+                .filter(group -> finalSearch == null || group.getName().toLowerCase().contains(finalSearch));
+
+        if (first != null && first > 0) {
+            groupModelStream = groupModelStream.skip(first);
+        }
+
+        if (max != null && max >= 0) {
+            groupModelStream = groupModelStream.limit(max);
+        }
+
+        return groupModelStream;
     }
 
     default long getGroupsCount() {

@@ -466,7 +466,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     static String getRealmByNameCacheKey(String name) {
         return "realm.query.by.name." + name;
     }
-    
+
     @Override
     public List<RealmModel> getRealmsWithProviderType(Class<?> type) {
         // Retrieve realms from backend
@@ -589,12 +589,12 @@ public class RealmCacheSession implements CacheRealmProvider {
         
         if (client.isServiceAccountsEnabled()) {
             UserModel serviceAccount = session.users().getServiceAccount(client);
-            
+
             if (serviceAccount != null) {
                 session.users().removeUser(realm, serviceAccount);
             }
         }
-        
+
         return getClientDelegate().removeClient(realm, id);
     }
 
@@ -687,7 +687,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         }
         return list.stream();
     }
-    
+
     @Override
     public Stream<RoleModel> getRealmRolesStream(RealmModel realm, Integer first, Integer max) {
         return getRoleDelegate().getRealmRolesStream(realm, first, max);
@@ -697,7 +697,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     public Stream<RoleModel> getClientRolesStream(ClientModel client, Integer first, Integer max) {
         return getRoleDelegate().getClientRolesStream(client, first, max);
     }
-    
+
     @Override
     public Stream<RoleModel> searchForClientRolesStream(ClientModel client, String search, Integer first, Integer max) {
         return getRoleDelegate().searchForClientRolesStream(client, search, first, max);
@@ -899,7 +899,16 @@ public class RealmCacheSession implements CacheRealmProvider {
             list.add(group);
         }
 
-        return list.stream().sorted(Comparator.comparing(GroupModel::getName));
+        return list.stream().sorted(GroupModel.COMPARE_BY_NAME);
+    }
+
+    public Stream<GroupModel> getGroupsStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
+        return getGroupDelegate().getGroupsStream(realm, ids, search, first, max);
+    }
+
+    @Override
+    public Long getGroupsCount(RealmModel realm, Stream<String> ids, String search) {
+        return getGroupDelegate().getGroupsCount(realm, ids, search);
     }
 
     @Override
@@ -916,9 +925,9 @@ public class RealmCacheSession implements CacheRealmProvider {
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
         return getGroupDelegate().getGroupsCountByNameContaining(realm, search);
     }
-    
+
     @Override
-    public Stream<GroupModel> getGroupsByRoleStream(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+    public Stream<GroupModel> getGroupsByRoleStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
     	return getGroupDelegate().getGroupsByRoleStream(realm, role, firstResult, maxResults);
     }
 
@@ -956,13 +965,14 @@ public class RealmCacheSession implements CacheRealmProvider {
             list.add(group);
         }
 
-        return list.stream().sorted(Comparator.comparing(GroupModel::getName));
+        return list.stream().sorted(GroupModel.COMPARE_BY_NAME);
     }
 
     @Override
     public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, Integer first, Integer max) {
         String cacheKey = getTopGroupsQueryCacheKey(realm.getId() + first + max);
-        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId() + first + max);
+        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId() + first + max)
+                || listInvalidations.contains(realm.getId());
         if (queryDB) {
             return getGroupDelegate().getTopLevelGroupsStream(realm, first, max);
         }
@@ -993,7 +1003,7 @@ public class RealmCacheSession implements CacheRealmProvider {
             list.add(group);
         }
 
-        return list.stream().sorted(Comparator.comparing(GroupModel::getName));
+        return list.stream().sorted(GroupModel.COMPARE_BY_NAME);
     }
 
     @Override
@@ -1041,6 +1051,11 @@ public class RealmCacheSession implements CacheRealmProvider {
 
         getGroupDelegate().addTopLevelGroup(realm, subGroup);
 
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, RoleModel role) {
+        getGroupDelegate().preRemove(realm, role);
     }
 
     private void addGroupEventIfAbsent(InvalidationEvent eventToAdd) {

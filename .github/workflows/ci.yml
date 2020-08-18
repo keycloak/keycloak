@@ -71,4 +71,4 @@ jobs:
       - name: Build testsuite
         run: mvn clean install -B -DskipTests -f testsuite/pom.xml
       - name: Run base tests - undertow
-        run: mvn clean install -B -f testsuite/integration-arquillian/tests/base/pom.xml -Dkeycloak.client.provider=map | misc/log/trimmer.sh; exit ${PIPESTATUS[0]}
+        run: mvn clean install -B -f testsuite/integration-arquillian/tests/base/pom.xml -Dkeycloak.client.provider=map -Dkeycloak.group.provider=map | misc/log/trimmer.sh; exit ${PIPESTATUS[0]}

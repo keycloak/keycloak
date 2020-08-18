@@ -161,12 +161,10 @@ public class RealmEntity {
     @JoinTable(name="REALM_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="REALM_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
     protected Collection<RoleEntity> defaultRoles;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="REALM_DEFAULT_GROUPS", joinColumns = { @JoinColumn(name="REALM_ID")}, inverseJoinColumns = { @JoinColumn(name="GROUP_ID")})
-    protected Collection<GroupEntity> defaultGroups;
-
-    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
-    protected Collection<GroupEntity> groups;
+    @ElementCollection
+    @Column(name="GROUP_ID")
+    @CollectionTable(name="REALM_DEFAULT_GROUPS", joinColumns={ @JoinColumn(name="REALM_ID") })
+    protected Set<String> defaultGroupIds;
 
     @Column(name="EVENTS_ENABLED")
     protected boolean eventsEnabled;
@@ -467,26 +465,15 @@ public class RealmEntity {
         this.defaultRoles = defaultRoles;
     }
 
-    public Collection<GroupEntity> getDefaultGroups() {
-        if (defaultGroups == null) {
-            defaultGroups = new LinkedList<>();
+    public Set<String> getDefaultGroupIds() {
+        if (defaultGroupIds == null) {
+            defaultGroupIds = new HashSet<>();
         }
-        return defaultGroups;
+        return defaultGroupIds;
     }
 
-    public void setDefaultGroups(Collection<GroupEntity> defaultGroups) {
-        this.defaultGroups = defaultGroups;
-    }
-
-    public Collection<GroupEntity> getGroups() {
-        if (groups == null) {
-            groups = new LinkedList<>();
-        }
-        return groups;
-    }
-
-    public void setGroups(Collection<GroupEntity> groups) {
-        this.groups = groups;
+    public void setDefaultGroupIds(Set<String> defaultGroups) {
+        this.defaultGroupIds = defaultGroups;
     }
 
     public String getPasswordPolicy() {

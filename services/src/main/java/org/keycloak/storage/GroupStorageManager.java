@@ -75,6 +75,11 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
     }
 
     @Override
+    public Stream<GroupModel> getGroupsStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
+        return session.groupLocalStorage().getGroupsStream(realm, ids, search, first, max);
+    }
+
+    @Override
     public Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups) {
         return session.groupLocalStorage().getGroupsCount(realm, onlyTopGroups);
     }
@@ -85,7 +90,7 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
     }
 
     @Override
-    public Stream<GroupModel> getGroupsByRoleStream(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+    public Stream<GroupModel> getGroupsByRoleStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
         return session.groupLocalStorage().getGroupsByRoleStream(realm, role, firstResult, maxResults);
     }
 
@@ -117,6 +122,11 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
     @Override
     public void addTopLevelGroup(RealmModel realm, GroupModel subGroup) {
         session.groupLocalStorage().addTopLevelGroup(realm, subGroup);
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, RoleModel role) {
+        session.groupLocalStorage().preRemove(realm, role);
     }
 
     @Override

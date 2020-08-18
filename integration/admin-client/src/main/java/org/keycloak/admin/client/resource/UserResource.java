@@ -82,6 +82,10 @@ public interface UserResource {
                                      @QueryParam("max") Integer maxResults,
                                      @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation);
 
+    @Path("groups/count")
+    @GET
+    Map<String, Long> groupsCount(@QueryParam("search") String search);
+
     @Path("groups/{groupId}")
     @PUT
     void joinGroup(@PathParam("groupId") String groupId);

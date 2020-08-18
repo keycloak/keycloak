@@ -19,6 +19,7 @@ package org.keycloak.models;
 
 import org.keycloak.provider.ProviderEvent;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,6 +36,9 @@ public interface GroupModel extends RoleMapperModel {
         GroupModel getGroup();
         KeycloakSession getKeycloakSession();
     }
+    
+    Comparator<GroupModel> COMPARE_BY_NAME = Comparator.comparing(GroupModel::getName);
+
     String getId();
 
     String getName();

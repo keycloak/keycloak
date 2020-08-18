@@ -515,6 +515,18 @@ public class GroupTest extends AbstractGroupTest {
         assertNames(group1.getSubGroups(), "mygroup2");
         Assert.assertEquals("/mygroup1/mygroup2", group2.getPath());
 
+        assertAdminEvents.clear();
+
+        // Create top level group with the same name
+        group = GroupBuilder.create()
+                .name("mygroup2")
+                .build();
+        GroupRepresentation group3 = createGroup(realm, group);
+        // Try to move top level "mygroup2" as child of "mygroup1". It should fail as there is already a child group
+        // of "mygroup1" with name "mygroup2"
+        response = realm.groups().group(group1.getId()).subGroup(group3);
+        Assert.assertEquals(409, response.getStatus());
+        realm.groups().group(group3.getId()).remove();
 
         // Move "mygroup2" back under parent
         response = realm.groups().add(group2);
