@@ -43,12 +43,14 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.persistence.LockModeType;
 
@@ -356,7 +358,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         user.setEmailVerified(verified);
     }
 
-    private TypedQuery<String> createGetGroupsQuery(String search, Integer first, Integer max) {
+    private TypedQuery<String> createGetGroupsQuery() {
         // we query ids only as the group  might be cached and following the @ManyToOne will result in a load
         // even if we're getting just the id.
         CriteriaBuilder builder = em.getCriteriaBuilder();
@@ -365,23 +367,14 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
         List<Predicate> predicates = new ArrayList<>();
         predicates.add(builder.equal(root.get("user"), getEntity()));
-        Join<UserGroupMembershipEntity, GroupEntity> join = root.join("group");
-        if (Objects.nonNull(search) && !search.isEmpty()) {
-            predicates.add(builder.like(builder.lower(join.get("name")), builder.lower(builder.literal("%" + search + "%"))));
-        }
 
         queryBuilder.select(root.get("groupId"));
         queryBuilder.where(predicates.toArray(new Predicate[0]));
-        queryBuilder.orderBy(builder.asc(join.get("name")));
 
-        TypedQuery<String> query = em.createQuery(queryBuilder);
-        if (Objects.nonNull(first) && Objects.nonNull(max)) {
-            query.setFirstResult(first).setMaxResults(max);
-        }
-        return query;
+        return em.createQuery(queryBuilder);
     }
 
-    private TypedQuery<Long> createCountGroupsQuery(String search) {
+    private TypedQuery<Long> createCountGroupsQuery() {
         // we query ids only as the group  might be cached and following the @ManyToOne will result in a load
         // even if we're getting just the id.
         CriteriaBuilder builder = em.getCriteriaBuilder();
@@ -390,38 +383,31 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
         List<Predicate> predicates = new ArrayList<>();
         predicates.add(builder.equal(root.get("user"), getEntity()));
-        if (Objects.nonNull(search) && !search.isEmpty()) {
-            Join<UserGroupMembershipEntity, GroupEntity> join = root.join("group");
-            predicates.add(builder.like(join.get("name"), builder.literal("%" + search + "%")));
-        }
 
         queryBuilder.select(builder.count(root));
         queryBuilder.where(predicates.toArray(new Predicate[0]));
         return em.createQuery(queryBuilder);
     }
 
-    private Stream<GroupModel> getGroupModels(Stream<String> groupIds) {
-        return groupIds.map(realm::getGroupById);
-    }
-
     @Override
     public Stream<GroupModel> getGroupsStream() {
-        return closing(getGroupModels(createGetGroupsQuery(null, null, null).getResultStream()));
+        return getGroupsStream(null, null, null);
     }
 
     @Override
-    public Stream<GroupModel> getGroupsStream(String search, int first, int max) {
-        return closing(getGroupModels(createGetGroupsQuery(search, first, max).getResultStream()));
+    public Stream<GroupModel> getGroupsStream(String search, Integer first, Integer max) {
+        return session.groups().getGroupsStream(realm, closing(createGetGroupsQuery().getResultStream()), search, first, max);
     }
 
     @Override
     public long getGroupsCount() {
-        return createCountGroupsQuery(null).getSingleResult();
+        return createCountGroupsQuery().getSingleResult();
     }
 
     @Override
     public long getGroupsCountByNameContaining(String search) {
-        return createCountGroupsQuery(search).getSingleResult();
+        if (search == null) return getGroupsCount();
+        return session.groups().getGroupsCount(realm, closing(createGetGroupsQuery().getResultStream()), search);
     }
 
     @Override

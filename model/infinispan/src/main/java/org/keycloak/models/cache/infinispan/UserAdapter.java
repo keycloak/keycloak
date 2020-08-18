@@ -342,6 +342,12 @@ public class UserAdapter implements CachedUserModel {
     }
 
     @Override
+    public long getGroupsCountByNameContaining(String search) {
+        if (updated != null) return updated.getGroupsCountByNameContaining(search);
+        return modelSupplier.get().getGroupsCountByNameContaining(search);
+    }
+
+    @Override
     public void joinGroup(GroupModel group) {
         getDelegateForUpdate();
         updated.joinGroup(group);

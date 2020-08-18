@@ -56,6 +56,7 @@ import java.util.Map;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -176,6 +177,7 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
                 .build("demo").toString();
 
         driver.navigate().to(logoutUri);
+        waitForPageToLoad();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);

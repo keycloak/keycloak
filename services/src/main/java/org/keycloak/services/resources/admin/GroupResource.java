@@ -146,10 +146,6 @@ public class GroupResource {
     public Response addChild(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
 
-        if (group.getSubGroupsStream().map(GroupModel::getName).anyMatch(Predicate.isEqual(rep.getName()))) {
-            return ErrorResponse.exists("Parent already contains subgroup named '" + rep.getName() + "'");
-        }
-
         Response.ResponseBuilder builder = Response.status(204);
         GroupModel child = null;
         if (rep.getId() != null) {

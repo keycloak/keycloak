@@ -10,6 +10,7 @@ import org.keycloak.common.util.Resteasy;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -107,6 +108,11 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         if (throwable instanceof JsonParseException) {
             status = Response.Status.BAD_REQUEST.getStatusCode();
         }
+        
+        if (throwable instanceof ModelDuplicateException) {
+            status = Response.Status.CONFLICT.getStatusCode();
+        }
+        
         return status;
     }
 

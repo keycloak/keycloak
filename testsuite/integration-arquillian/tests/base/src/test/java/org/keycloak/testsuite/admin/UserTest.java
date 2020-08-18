@@ -2226,10 +2226,12 @@ public class UserTest extends AbstractAdminTest {
         }
 
         List<GroupRepresentation> groups = realm.users().get(userId).groups("-3", 0, 10);
+        assertThat(realm.users().get(userId).groupsCount("-3").get("count"), is(1L));
         assertEquals(1, groups.size());
         assertNames(groups, "group-3");
 
         List<GroupRepresentation> groups2 = realm.users().get(userId).groups("1", 0, 10);
+        assertThat(realm.users().get(userId).groupsCount("1").get("count"), is(2L));
         assertEquals(2, groups2.size());
         assertNames(groups2, "group-1", "group-10");
 
@@ -2237,6 +2239,7 @@ public class UserTest extends AbstractAdminTest {
         assertEquals(0, groups3.size());
 
         List<GroupRepresentation> groups4 = realm.users().get(userId).groups("gr", 2, 10);
+        assertThat(realm.users().get(userId).groupsCount("gr").get("count"), is(10L));
         assertEquals(8, groups4.size());
 
         List<GroupRepresentation> groups5 = realm.users().get(userId).groups("Gr", 2, 10);

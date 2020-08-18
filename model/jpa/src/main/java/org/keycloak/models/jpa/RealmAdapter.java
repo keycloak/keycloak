@@ -789,38 +789,27 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public Stream<GroupModel> getDefaultGroupsStream() {
-        Collection<GroupEntity> entities = realm.getDefaultGroups();
-        if (entities == null || entities.isEmpty()) return Stream.empty();
-        return entities.stream().map(GroupEntity::getId).map(this::getGroupById);
+        return realm.getDefaultGroupIds().stream().map(this::getGroupById);
     }
 
     @Override
     public void addDefaultGroup(GroupModel group) {
-        Collection<GroupEntity> entities = realm.getDefaultGroups();
-        for (GroupEntity entity : entities) {
-            if (entity.getId().equals(group.getId())) return;
-        }
-        GroupEntity groupEntity = GroupAdapter.toEntity(group, em);
-        realm.getDefaultGroups().add(groupEntity);
-        em.flush();
+        Collection<String> groupsIds = realm.getDefaultGroupIds();
+        if (groupsIds.contains(group.getId())) return;
 
+        groupsIds.add(group.getId());
+        em.flush();
     }
 
     @Override
     public void removeDefaultGroup(GroupModel group) {
-        GroupEntity found = null;
-        for (GroupEntity defaultGroup : realm.getDefaultGroups()) {
-            if (defaultGroup.getId().equals(group.getId())) {
-                found = defaultGroup;
-                break;
-            }
-        }
-        if (found != null) {
-            realm.getDefaultGroups().remove(found);
+        Collection<String> groupIds = realm.getDefaultGroupIds();
+
+        if (groupIds.remove(group.getId())) {
             em.flush();
         }
-
     }
+
     @Override
     public Stream<ClientModel> getClientsStream() {
         return session.clients().getClientsStream(this);
