@@ -175,7 +175,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
         switch (editMode) {
             case READ_ONLY:
+                if (model.isImportEnabled()) {
+                    proxied = new ReadonlyLDAPUserModelDelegate(local);
+                } else {
                     proxied = new ReadOnlyUserModelDelegate(local);
+                }
                 break;
             case WRITABLE:
             case UNSYNCED:
