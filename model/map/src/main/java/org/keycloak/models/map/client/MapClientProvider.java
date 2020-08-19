@@ -100,7 +100,7 @@ public class MapClientProvider implements ClientProvider {
             @Override
             public void updateClient() {
                 // commit
-                MapClientProvider.this.tx.replace(entity.getId(), this.entity);
+                //MapClientProvider.this.tx.replace(entity.getId(), this.entity);
                 session.getKeycloakSessionFactory().publish(clientUpdatedEvent(this));
             }
 

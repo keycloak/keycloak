@@ -45,7 +45,7 @@
     },
 
     "client": {
-        "provider": "${keycloak.client.provider:jpa}"
+        "provider": "${keycloak.client.provider:map}"
     },
 
     "group": {
