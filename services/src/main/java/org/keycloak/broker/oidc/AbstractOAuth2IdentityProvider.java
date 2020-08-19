@@ -76,7 +76,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -453,6 +452,10 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         public Response authResponse(@QueryParam(AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_STATE) String state,
                                      @QueryParam(AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_CODE) String authorizationCode,
                                      @QueryParam(OAuth2Constants.ERROR) String error) {
+            if (state == null) {
+                return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_MISSING_STATE_ERROR);
+            }
+
             if (error != null) {
                 logger.error(error + " for broker login " + getConfig().getProviderId());
                 if (error.equals(ACCESS_DENIED)) {
@@ -488,9 +491,13 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             } catch (Exception e) {
                 logger.error("Failed to make identity provider oauth callback", e);
             }
+            return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+        }
+
+        private Response errorIdentityProviderLogin(String message) {
             event.event(EventType.LOGIN);
             event.error(Errors.IDENTITY_PROVIDER_LOGIN_FAILURE);
-            return ErrorPage.error(session, null, Response.Status.BAD_GATEWAY, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+            return ErrorPage.error(session, null, Response.Status.BAD_GATEWAY, message);
         }
 
         public SimpleHttp generateTokenRequest(String authorizationCode) {

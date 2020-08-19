@@ -167,6 +167,8 @@ public class Messages {
 
     public static final String IDENTITY_PROVIDER_UNEXPECTED_ERROR = "identityProviderUnexpectedErrorMessage";
 
+    public static final String IDENTITY_PROVIDER_MISSING_STATE_ERROR = "identityProviderMissingStateMessage";
+
     public static final String IDENTITY_PROVIDER_NOT_FOUND = "identityProviderNotFoundMessage";
 
     public static final String IDENTITY_PROVIDER_LINK_SUCCESS = "identityProviderLinkSuccess";
