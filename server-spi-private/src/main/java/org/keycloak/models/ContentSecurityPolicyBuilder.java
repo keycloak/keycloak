@@ -2,9 +2,9 @@ package org.keycloak.models;
 
 public class ContentSecurityPolicyBuilder {
 
-    private String frameSrc = "self";
-    private String frameAncestors = "self";
-    private String objectSrc = "none";
+    private String frameSrc = "'self'";
+    private String frameAncestors = "'self'";
+    private String objectSrc = "'none'";
 
     private boolean first;
     private StringBuilder sb;
@@ -41,7 +41,7 @@ public class ContentSecurityPolicyBuilder {
             }
             first = false;
 
-            sb.append(k).append(" '").append(v).append("';");
+            sb.append(k).append(" ").append(v).append(";");
         }
     }
 
