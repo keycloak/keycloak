@@ -18,29 +18,41 @@
 
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-cache-server</artifactId>
         <version>14.0.0-SNAPSHOT</version>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-servers-cache-server-jboss</artifactId>
     <packaging>pom</packaging>
-    <name>Cache Server - JBoss Family</name>
+    <artifactId>integration-arquillian-servers-cache-server-infinispan</artifactId>
+    <name>Keycloak Arquillian Integration TestSuite - Cache Server - Infinispan</name>
 
     <properties>
         <common.resources>${project.parent.basedir}/common</common.resources>
         <assembly.xml>${project.parent.basedir}/assembly.xml</assembly.xml>
-        <cache.server.jboss.home>${containers.home}/${cache.server.jboss.unpacked.folder.name}</cache.server.jboss.home>
-        <cache.server.jboss.cache-authorization-disabled>true</cache.server.jboss.cache-authorization-disabled>
-        <cache.server.jboss.jdg-transactions-enabled>true</cache.server.jboss.jdg-transactions-enabled>
+        
+        <cache.server.infinispan.home>${containers.home}/${cache.server.infinispan.unpacked.folder.name}</cache.server.infinispan.home>
+        <cache.server.infinispan.jdg-transactions-enabled>true</cache.server.infinispan.jdg-transactions-enabled>
+        <cache.server.infinispan.config.dir>${cache.server.infinispan.home}/server/conf</cache.server.infinispan.config.dir>
+        
+        <cache.server.cache-auth-xsl>cache-authentication-disabled.xsl</cache.server.cache-auth-xsl>
     </properties>
 
     <profiles>
+        
+        <profile>
+            <id>cache-auth</id>
+            <properties>
+                <cache.server.cache-auth-xsl>cache-authentication-enabled.xsl</cache.server.cache-auth-xsl>
+            </properties>
+        </profile>
 
         <profile>
-            <id>cache-server-jboss-submodules</id>
+            <id>cache-server-infinispan-submodules</id>
             <activation>
                 <file>
                     <exists>src</exists>
@@ -59,12 +71,10 @@
                                 <configuration>
                                     <rules>
                                         <requireProperty>
-                                            <property>cache.server</property>
-                                            <property>cache.server.jboss.cache-authorization-enabled</property>
-                                            <property>cache.server.jboss.groupId</property>
-                                            <property>cache.server.jboss.artifactId</property>
-                                            <property>cache.server.jboss.version</property>
-                                            <property>cache.server.jboss.unpacked.folder.name</property>
+                                            <property>cache.server.infinispan.groupId</property>
+                                            <property>cache.server.infinispan.artifactId</property>
+                                            <property>cache.server.infinispan.version</property>
+                                            <property>cache.server.infinispan.unpacked.folder.name</property>
                                         </requireProperty>
                                     </rules>
                                 </configuration>
@@ -87,9 +97,9 @@
 
                                         <!-- Configure dc-0 site in file clustered-1.xml -->
                                         <transformationSet>
-                                            <dir>${cache.server.jboss.home}/standalone/configuration</dir>
+                                            <dir>${cache.server.infinispan.config.dir}</dir>
                                             <includes>
-                                                <include>clustered.xml</include>
+                                                <include>infinispan-xsite.xml</include>
                                             </includes>
                                             <stylesheet>${common.resources}/add-keycloak-caches.xsl</stylesheet>
                                             <parameters>
@@ -103,10 +113,10 @@
                                                 </parameter>
                                                 <parameter>
                                                     <name>transactions.enabled</name>
-                                                    <value>${cache.server.jboss.jdg-transactions-enabled}</value>
+                                                    <value>${cache.server.infinispan.jdg-transactions-enabled}</value>
                                                 </parameter>
                                             </parameters>
-                                            <outputDir>${cache.server.jboss.home}/standalone/configuration</outputDir>
+                                            <outputDir>${cache.server.infinispan.config.dir}</outputDir>
                                             <fileMappers>
                                                 <fileMapper implementation="org.codehaus.plexus.components.io.filemappers.RegExpFileMapper">
                                                     <pattern>^(.*)\.xml$</pattern>
@@ -117,9 +127,9 @@
 
                                         <!-- Configure dc-1 site in file clustered-2.xml -->
                                         <transformationSet>
-                                            <dir>${cache.server.jboss.home}/standalone/configuration</dir>
+                                            <dir>${cache.server.infinispan.config.dir}</dir>
                                             <includes>
-                                                <include>clustered.xml</include>
+                                                <include>infinispan-xsite.xml</include>
                                             </includes>
                                             <stylesheet>${common.resources}/add-keycloak-caches.xsl</stylesheet>
                                             <parameters>
@@ -133,10 +143,10 @@
                                                 </parameter>
                                                 <parameter>
                                                     <name>transactions.enabled</name>
-                                                    <value>${cache.server.jboss.jdg-transactions-enabled}</value>
+                                                    <value>${cache.server.infinispan.jdg-transactions-enabled}</value>
                                                 </parameter>
                                             </parameters>
-                                            <outputDir>${cache.server.jboss.home}/standalone/configuration</outputDir>
+                                            <outputDir>${cache.server.infinispan.config.dir}</outputDir>
                                             <fileMappers>
                                                 <fileMapper implementation="org.codehaus.plexus.components.io.filemappers.RegExpFileMapper">
                                                     <pattern>^(.*)\.xml$</pattern>
@@ -156,52 +166,27 @@
                                     <goal>transform</goal>
                                 </goals>
                                 <configuration>
-                                    <skip>${cache.server.jboss.cache-authorization-disabled}</skip>
                                     <transformationSets>
                                         <!-- Configure authorization in files clustered-__dc__.xml -->
                                         <transformationSet>
-                                            <dir>${cache.server.jboss.home}/standalone/configuration</dir>
+                                            <dir>${cache.server.infinispan.config.dir}</dir>
                                             <includes>
-                                                <include>clustered-1.xml</include>
-                                                <include>clustered-2.xml</include>
+                                                <include>infinispan-xsite-1.xml</include>
+                                                <include>infinispan-xsite-2.xml</include>
                                             </includes>
-                                            <stylesheet>${common.resources}/cache-authorization.xsl</stylesheet>
-                                            <outputDir>${cache.server.jboss.home}/standalone/configuration</outputDir>
-                                        </transformationSet>
-                                    </transformationSets>
-                                </configuration>
-                            </execution>
-
-                            <execution>
-                                <id>io-worker-threads</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>transform</goal>
-                                </goals>
-                                <configuration>
-                                    <transformationSets>
-                                        <transformationSet>
-                                            <dir>${cache.server.jboss.home}/standalone/configuration</dir>
-                                            <includes>
-                                                <include>standalone.xml</include>
-                                                <include>standalone-ha.xml</include>
-                                            </includes>
-                                            <stylesheet>${common.resources}/io.xsl</stylesheet>
-                                            <outputDir>${cache.server.jboss.home}/standalone/configuration</outputDir>
+                                            <stylesheet>${common.resources}/${cache.server.cache-auth-xsl}</stylesheet>
                                             <parameters>
                                                 <parameter>
-                                                    <name>worker.io-threads</name>
-                                                    <value>${cache.server.worker.io-threads}</value>
-                                                </parameter>
-                                                <parameter>
-                                                    <name>worker.task-max-threads</name>
-                                                    <value>${cache.server.worker.task-max-threads}</value>
+                                                    <name>hotrod.sasl.mechanism</name>
+                                                    <value>${hotrod.sasl.mechanism}</value>
                                                 </parameter>
                                             </parameters>
+                                            <outputDir>${cache.server.infinispan.config.dir}</outputDir>
                                         </transformationSet>
                                     </transformationSets>
                                 </configuration>
                             </execution>
+                            
                         </executions>
                     </plugin>
                     
@@ -209,36 +194,19 @@
                         <artifactId>maven-resources-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>enable-jboss-mgmt-admin</id>
-                                <phase>process-resources</phase>
+                                <id>copy-server-keystore</id>
+                                <phase>process-test-resources</phase>
                                 <goals>
                                     <goal>copy-resources</goal>
                                 </goals>
                                 <configuration>
-                                    <outputDirectory>${cache.server.jboss.home}/standalone/configuration</outputDirectory>
+                                    <outputDirectory>${cache.server.infinispan.config.dir}</outputDirectory>
                                     <resources>
                                         <resource>
                                             <directory>${common.resources}</directory>
                                             <includes>
-                                                <include>mgmt-users.properties</include>
+                                                <include>server.jks</include>
                                             </includes>
-                                        </resource>
-                                    </resources>
-                                    <overwrite>true</overwrite>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>copy-cache-server-configuration-for-dc-2</id>
-                                <phase>process-resources</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>${cache.server.jboss.home}/standalone-dc-2/deployments</outputDirectory>
-                                    <includeEmptyDirs>true</includeEmptyDirs>
-                                    <resources>
-                                        <resource>
-                                            <directory>${cache.server.jboss.home}/standalone/deployments</directory>
                                         </resource>
                                     </resources>
                                     <overwrite>true</overwrite>
@@ -246,7 +214,53 @@
                             </execution>
                         </executions>
                     </plugin>
-
+                    
+                    
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>remove-empty-xmlns</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <replace file="${cache.server.infinispan.config.dir}/infinispan-xsite-1.xml" token="xmlns=&quot;&quot;" value=""/>
+                                        <replace file="${cache.server.infinispan.config.dir}/infinispan-xsite-2.xml" token="xmlns=&quot;&quot;" value=""/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.0.0</version>
+                        <executions>
+                            <execution>
+                                <id>create-infinispan-user</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>${cache.server.infinispan.home}/bin/cli.sh</executable>
+                                    <workingDirectory>${cache.server.infinispan.home}/bin</workingDirectory>
+                                    <arguments>
+                                        <argument>user</argument>
+                                        <argument>create</argument>
+                                        <argument>myuser</argument>
+                                        <argument>-p</argument>
+                                        <argument>"qwer1234!"</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    
                     <plugin>
                         <artifactId>maven-assembly-plugin</artifactId>
                         <executions>
@@ -277,11 +291,12 @@
             </modules>
         </profile>
         <profile>
-            <id>cache-server-jdg</id>
+            <id>cache-server-datagrid</id>
             <modules>
-                <module>jdg</module>
+                <module>datagrid</module>
             </modules>
         </profile>
+        
     </profiles>
 
 </project>

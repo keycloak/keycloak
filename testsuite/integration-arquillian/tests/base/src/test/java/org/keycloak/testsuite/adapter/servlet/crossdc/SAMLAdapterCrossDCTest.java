@@ -31,7 +31,7 @@ import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 import org.keycloak.testsuite.crossdc.ServerSetup;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlServletDeployment;
 
 /**
@@ -46,7 +46,7 @@ public class SAMLAdapterCrossDCTest extends AbstractSAMLAdapterClusteredTest {
 
     @BeforeClass
     public static void checkCrossDcTest() {
-        Assume.assumeThat("Seems not to be running cross-DC tests", System.getProperty("cache.server"), not(is("undefined")));
+        Assume.assumeThat("Seems not to be running cross-DC tests", System.getProperty("cache.server"), is(notNullValue()));
     }
 
     private static final String SESSION_CACHE_NAME = EmployeeServletDistributable.DEPLOYMENT_NAME + "-cache";

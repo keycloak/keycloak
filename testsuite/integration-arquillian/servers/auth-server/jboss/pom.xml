@@ -70,6 +70,8 @@
 
         <!-- Path to testsuite/test resources : Themes-->
         <keycloak.base.test.resource>${project.parent.basedir}/../../../tests/base/src/test/resources</keycloak.base.test.resource>
+        
+        <crossdc.cache.auth>false</crossdc.cache.auth>
     </properties>
 
     <profiles>
@@ -270,9 +272,12 @@
                                                  There's also another case, when we have a dynamic property (like "keycloak.connectionsJpa.url")
                                                  that can change in the runtime. In such cases, we CAN NOT put is as a property (or
                                                  Ant will see outdated values, not the dynamic ones). -->
+                                            <property name="auth.server.home">${auth.server.home}</property>
                                             <property name="session.cache.owners" value="${session.cache.owners}" />
                                             <property name="offline.session.cache.owners" value="${offline.session.cache.owners}" />
                                             <property name="login.failure.cache.owners" value="${login.failure.cache.owners}" />
+                                            <property name="crossdc.cache.auth" value="${crossdc.cache.auth}" />
+                                            <property name="hotrod.sasl.mechanism" value="${hotrod.sasl.mechanism}" />
                                         </ant>
                                     </target>
                                 </configuration>
@@ -695,6 +700,13 @@
                 <mariadb.database>keycloak</mariadb.database>
                 <mariadb.options></mariadb.options>
                 <keycloak.connectionsJpa.url>jdbc:mariadb:${mariadb.ha.mode}://${mariadb.hosts}/${mariadb.database}${mariadb.options}</keycloak.connectionsJpa.url>
+            </properties>
+        </profile>
+        
+        <profile>
+            <id>cache-auth</id>
+            <properties>
+                <crossdc.cache.auth>true</crossdc.cache.auth>
             </properties>
         </profile>
 

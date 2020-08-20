@@ -80,6 +80,11 @@
             </xsl:element>
         </xsl:copy>
     </xsl:template>
+    
+    <!-- Configure SSL --> 
+    <xsl:template match="//*[local-name()='keystore' and @path='application.keystore']">
+        <keystore path="server.jks" relative-to="jboss.server.config.dir" keystore-password="password" alias="server" key-password="password" />
+    </xsl:template>
 
     <xsl:template match="@*|node()">
         <xsl:copy>

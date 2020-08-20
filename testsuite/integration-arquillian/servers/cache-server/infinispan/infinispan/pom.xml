@@ -20,31 +20,22 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
-        <artifactId>integration-arquillian-servers-cache-server-jboss</artifactId>
+        <artifactId>integration-arquillian-servers-cache-server-infinispan</artifactId>
         <version>14.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-servers-cache-server-infinispan</artifactId>
+    <artifactId>integration-arquillian-servers-cache-server-infinispan-infinispan</artifactId>
     <packaging>pom</packaging>
-    <name>Cache Server - JBoss - Infinispan</name>
+    <name>Keycloak Arquillian Integration TestSuite - Cache Server - Infinispan - Infinispan</name>
     
     <properties>
         <cache.server>infinispan</cache.server>
-        <cache.server.container>cache-server-${cache.server}</cache.server.container>
-        <cache.server.home>${containers.home}/${cache.server.container}</cache.server.home>
         
-        <cache.server.jboss.cache-authorization-disabled>true</cache.server.jboss.cache-authorization-disabled>
-        <cache.server.jboss.jdg-transactions-enabled>false</cache.server.jboss.jdg-transactions-enabled>
-        <cache.server.jboss.groupId>org.infinispan.server</cache.server.jboss.groupId>
-        <cache.server.jboss.artifactId>infinispan-server</cache.server.jboss.artifactId>
-        <!-- This version is here temporarily. It should be updated to use the ${infinispan.version}, however latest infinispan-server
-             is not based on Wildfly (and does not work with Arquillian ManagedDeployableContainer) -->
-        <cache.server.jboss.version>9.4.18.Final</cache.server.jboss.version>
-        <cache.server.jboss.unpacked.folder.name>${cache.server.jboss.artifactId}-${cache.server.jboss.version}</cache.server.jboss.unpacked.folder.name>
-        
-        <cache.server.worker.io-threads>${cache.default.worker.io-threads}</cache.server.worker.io-threads>
-        <cache.server.worker.task-max-threads>${cache.default.worker.task-max-threads}</cache.server.worker.task-max-threads>
+        <cache.server.infinispan.groupId>org.infinispan.server</cache.server.infinispan.groupId>
+        <cache.server.infinispan.artifactId>infinispan-server</cache.server.infinispan.artifactId>
+        <cache.server.infinispan.version>${infinispan.version}</cache.server.infinispan.version>
+        <cache.server.infinispan.unpacked.folder.name>${cache.server.infinispan.artifactId}-${cache.server.infinispan.version}</cache.server.infinispan.unpacked.folder.name>
     </properties>
 
     <build>
@@ -60,7 +51,7 @@
                             <goal>wget</goal>
                         </goals>
                         <configuration>
-                            <url>http://downloads.jboss.org/infinispan/${cache.server.jboss.version}/infinispan-server-${cache.server.jboss.version}.zip</url>
+                            <url>http://downloads.jboss.org/infinispan/${cache.server.infinispan.version}/infinispan-server-${cache.server.infinispan.version}.zip</url>
                             <unpack>true</unpack>
                             <outputDirectory>${containers.home}</outputDirectory>
                         </configuration>
