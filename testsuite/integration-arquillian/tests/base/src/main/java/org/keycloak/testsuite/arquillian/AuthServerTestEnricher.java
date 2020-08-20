@@ -259,11 +259,15 @@ public class AuthServerTestEnricher {
                     });
 
             containers.stream()
-                    .filter(c -> c.getQualifier().startsWith("cache-server-cross-dc-"))
+                    .filter(c -> c.getQualifier().startsWith("cache-server-"))
                     .sorted((a, b) -> a.getQualifier().compareTo(b.getQualifier()))
                     .forEach(containerInfo -> {
-                        int prefixSize = "cache-server-cross-dc-".length();
-                        int dcIndex = Integer.parseInt(containerInfo.getQualifier().substring(prefixSize)) -1;
+                        
+                        log.info(String.format("cache container: %s", containerInfo.getQualifier()));
+                        
+                        int prefixSize = containerInfo.getQualifier().lastIndexOf("-") + 1;
+                        int dcIndex = Integer.parseInt(containerInfo.getQualifier().substring(prefixSize)) - 1;
+                        
                         suiteContext.addCacheServerInfo(dcIndex, containerInfo);
                     });
 

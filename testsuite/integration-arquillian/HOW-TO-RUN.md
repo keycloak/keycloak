@@ -800,17 +800,39 @@ land by adjusting load balancer configuration (e.g. to direct the traffic to onl
 
 For an example of a test, see [org.keycloak.testsuite.crossdc.ActionTokenCrossDCTest](tests/base/src/test/java/org/keycloak/testsuite/crossdc/ActionTokenCrossDCTest.java).
 
-The cross DC requires setting a profile specifying used cache server by specifying
-`cache-server-infinispan` or `cache-server-jdg` profile in maven.
+The cross DC requires setting a profile specifying the used cache server.
+Use `cache-server-infinispan` Maven profile for Infinispan 10 or higher, or `cache-server-legacy-infinispan` profile for Infinispan 9 and lower.
+Use `cache-server-datagrid` Maven profile for Datagrid 8 or higher, or `cache-server-legacy-datagrid` profile for Datagrid 7 and lower.
 
-Since JDG does not distribute `infinispan-server` zip artifact anymore, for `cache-server-jdg` profile it is
-necessary to download the artifact and install it to local Maven repository. For JDG 7.3.8, the command is the following:
+To specify a custom Java platform to run the cache server it is possible to set parameter: `-Dcache.server.java.home=<PATH_TO_JDK>`.
+
+### Cache Authentication
+
+With WildFLy/EAP based auth server option it is possible to enable authentication for the HotRod protocol by enabling profile `cache-auth`.
+
+It is possible to specify additional parameters:
+- `-Dhotrod.sasl.mechanism`: SASL mechanism used by the hotrod protocol. Default value is `DIGEST-MD5`.
+- `-Dkeycloak.connectionsInfinispan.hotrodProtocolVersion`: Version of the hotrod protocol.
+
+Example: `-Pauth-server-wildfly,cache-server-infinispan,cache-auth -Dhotrod.sasl.mechanism=SCRAM-SHA-512`
+
+Note: The `cache-auth` profile currently doesn't work with the legacy Infinispan/Datagrid modules. See: [KEYCLOAK-18336](https://issues.redhat.com/browse/KEYCLOAK-18336).
+
+### Data Grid
+
+Since Datagrid does not distribute `infinispan-server` zip artifact, for `cache-server-datagrid` profile it is
+necessary to download the artifact and install it to local Maven repository. For Red Hat Data Grid 8 and above, the command is the following:
 
     mvn install:install-file \
-    -DgroupId=org.infinispan.server -DartifactId=infinispan-server -Dpackaging=zip -Dclassifier=bin -DgeneratePom=true \
-    -Dversion=9.4.21.Final-redhat-00002 -Dfile=jboss-datagrid-7.3.8-server.zip
+    -DgroupId=com.redhat -DartifactId=datagrid -Dpackaging=zip -Dclassifier=bin -DgeneratePom=true \
+    -Dversion=${DATAGRID_VERSION} -Dfile=redhat-datagrid-${DATAGRID_VERSION}-server.zip
 
-#### Run Cross-DC Tests from Maven
+For Data Grid 7 and older use: `-Dfile=jboss-datagrid-${DATAGRID_VERSION}-server.zip`.
+
+### Run Cross-DC Tests from Maven
+
+Note: Profile `auth-servers-crossdc-undertow` currently doesn't work (see [KEYCLOAK-18335](https://issues.redhat.com/browse/KEYCLOAK-18335)).
+Use `-Pauth-servers-crossdc-jboss,auth-server-wildfly` instead.
 
 a) Prepare the environment. Compile the infinispan server and eventually Keycloak on JBoss server.
 
@@ -819,14 +841,14 @@ Infinispan/JDG test server via the following command:
 
   `mvn -Pcache-server-infinispan,auth-servers-crossdc-undertow -f testsuite/integration-arquillian -DskipTests clean install`
 
-*note: 'cache-server-infinispan' can be replaced by 'cache-server-jdg'*
+*note: 'cache-server-infinispan' can be replaced by 'cache-server-datagrid'*
 
 a2) If you want to use **JBoss-based** Keycloak backend containers instead of containers on Embedded Undertow,
  you need to prepare both the Infinispan/JDG test server and the Keycloak server on Wildfly/EAP. Run following command:
 
   `mvn -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly -f testsuite/integration-arquillian -DskipTests clean install`
 
-*note: 'cache-server-infinispan' can be replaced by 'cache-server-jdg'*
+*note: 'cache-server-infinispan' can be replaced by 'cache-server-datagrid'*
 
 *note: 'auth-server-wildfly' can be replaced by 'auth-server-eap'*
 
@@ -838,7 +860,7 @@ b1) For **Undertow** Keycloak backend containers, you can run the tests using th
 
   `mvn -Pcache-server-infinispan,auth-servers-crossdc-undertow -Dtest=org.keycloak.testsuite.crossdc.**.*Test -pl testsuite/integration-arquillian/tests/base clean install`
 
-*note: 'cache-server-infinispan' can be replaced by 'cache-server-jdg'*
+*note: 'cache-server-infinispan' can be replaced by 'cache-server-datagrid'*
 
 *note: It can be useful to add additional system property to enable logging:*
 
@@ -848,7 +870,7 @@ b2) For **JBoss-based** Keycloak backend containers, you can run the tests like 
 
   `mvn -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly -Dtest=org.keycloak.testsuite.crossdc.**.*Test -pl testsuite/integration-arquillian/tests/base clean install`
 
-*note: 'cache-server-infinispan' can be replaced by 'cache-server-jdg'*
+*note: 'cache-server-infinispan' can be replaced by 'cache-server-datagrid'*
 
 *note: 'auth-server-wildfly can be replaced by auth-server-eap'*
 
@@ -858,7 +880,9 @@ For **JBoss-based** Keycloak backend containers on real DB, the previous command
   `mvn -f testsuite/integration-arquillian -Dtest=org.keycloak.testsuite.crossdc.**.*Test -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly,jpa,db-mariadb clean install`
 
 
-#### Run Cross-DC Tests from Intellij IDEA
+### Run Cross-DC Tests from Intellij IDEA
+
+Note: Profile `auth-servers-crossdc-undertow` which is required in step (3) currently doesn't work (see [KEYCLOAK-18335](https://issues.redhat.com/browse/KEYCLOAK-18335)).
 
 First we will manually download, configure and run infinispan servers. Then we can run the tests from IDE against the servers.
 It's more effective during development as there is no need to restart infinispan server(s) among test runs.

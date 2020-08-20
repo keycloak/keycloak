@@ -17,7 +17,7 @@
 
 <assembly>
     
-    <id>${cache.server.jboss}</id>
+    <id>cache-server-${cache.server}</id>
     
     <formats>
         <format>zip</format>
@@ -27,7 +27,7 @@
 
     <fileSets>
         <fileSet>
-            <directory>${cache.server.jboss.home}</directory>
+            <directory>${cache.server.infinispan.home}</directory>
             <outputDirectory>cache-server-${cache.server}</outputDirectory>
             <excludes>
                 <exclude>**/*.sh</exclude>
@@ -35,7 +35,7 @@
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>${cache.server.jboss.home}</directory>
+            <directory>${cache.server.infinispan.home}</directory>
             <outputDirectory>cache-server-${cache.server}</outputDirectory>
             <includes>
                 <include>**/*.sh</include>

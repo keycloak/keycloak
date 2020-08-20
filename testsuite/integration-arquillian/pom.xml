@@ -38,6 +38,7 @@
         <auth.server.java.home>${java.home}</auth.server.java.home>
         <app.server.java.home>${java.home}</app.server.java.home>
         <app.server>undertow</app.server>
+        <cache.server.java.home>${java.home}</cache.server.java.home>
 
         <!-- Wildfly deprecated versions -->
         <wildfly.deprecated.version>21.0.2.Final</wildfly.deprecated.version>

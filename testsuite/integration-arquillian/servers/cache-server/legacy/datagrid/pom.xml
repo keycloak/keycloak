@@ -20,27 +20,25 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
-        <artifactId>integration-arquillian-servers-cache-server-jboss</artifactId>
+        <artifactId>integration-arquillian-servers-cache-server-legacy</artifactId>
         <version>14.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-servers-cache-server-jdg</artifactId>
+    <artifactId>integration-arquillian-servers-cache-server-legacy-datagrid</artifactId>
     <packaging>pom</packaging>
-    <name>Cache Server - JDG</name>
+    <name>Keycloak Arquillian Integration TestSuite - Cache Server - Legacy Datagrid</name>
     
     <properties>
-        <cache.server>jdg</cache.server>
-        <cache.server.container>cache-server-${cache.server}</cache.server.container>
-        <cache.server.home>${containers.home}/${cache.server.container}</cache.server.home>
+        <cache.server>legacy-datagrid</cache.server>
         
-        <cache.server.jboss.cache-authorization-disabled>true</cache.server.jboss.cache-authorization-disabled>
-        <cache.server.jboss.jdg-transactions-enabled>true</cache.server.jboss.jdg-transactions-enabled>
-        <cache.server.jboss.groupId>org.infinispan.server</cache.server.jboss.groupId>
-        <cache.server.jboss.artifactId>infinispan-server</cache.server.jboss.artifactId>
-        <cache.server.jboss.version>${jdg.version}</cache.server.jboss.version>
-        <cache.server.jboss.unpacked.folder.name>${cache.server.jboss.artifactId}-${jdg.version}</cache.server.jboss.unpacked.folder.name>
+        <cache.server.legacy.groupId>com.redhat</cache.server.legacy.groupId>
+        <cache.server.legacy.artifactId>datagrid</cache.server.legacy.artifactId>
+        <cache.server.legacy.version>7.3.8</cache.server.legacy.version><!--9.4.18.Final-redhat-00001-->
+        <cache.server.legacy.unpacked.folder.name>jboss-datagrid-${cache.server.legacy.version}-server</cache.server.legacy.unpacked.folder.name>
         
+        <cache.server.legacy.cache-authorization-disabled>true</cache.server.legacy.cache-authorization-disabled>
+        <cache.server.legacy.jdg-transactions-enabled>true</cache.server.legacy.jdg-transactions-enabled>
         <cache.server.worker.io-threads>${cache.default.worker.io-threads}</cache.server.worker.io-threads>
         <cache.server.worker.task-max-threads>${cache.default.worker.task-max-threads}</cache.server.worker.task-max-threads>
     </properties>
@@ -59,9 +57,9 @@
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
-                                    <groupId>${cache.server.jboss.groupId}</groupId>
-                                    <artifactId>${cache.server.jboss.artifactId}</artifactId>
-                                    <version>${cache.server.jboss.version}</version>
+                                    <groupId>${cache.server.legacy.groupId}</groupId>
+                                    <artifactId>${cache.server.legacy.artifactId}</artifactId>
+                                    <version>${cache.server.legacy.version}</version>
                                     <type>zip</type>
                                     <classifier>bin</classifier>
                                     <outputDirectory>${containers.home}</outputDirectory>
