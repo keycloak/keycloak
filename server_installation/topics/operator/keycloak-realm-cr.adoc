@@ -17,7 +17,7 @@ metadata:
   name: test
   labels:
 ifeval::[{project_community}==true]
-    app: app=example-keycloak
+    app: example-keycloak
 endif::[]  
 ifeval::[{project_product}==true]
     app: sso
