@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.10.5",
+    "@babel/preset-typescript": "^7.10.4",
     "@snowpack/app-scripts-react": "^1.4.0",
     "@snowpack/plugin-parcel": "^1.3.0",
     "@storybook/addon-actions": "^5.3.19",
