@@ -1,7 +1,9 @@
 <?xml version="1.0" ?>
-<layer-spec xmlns="urn:jboss:galleon:layer-spec:1.0" name="keycloak-elytron-oidc">
+<layer-spec xmlns="urn:jboss:galleon:layer-spec:1.0" name="keycloak-client-oidc">
     <dependencies>
+        <layer name="ee"/>
         <layer name="elytron"/>
+        <layer name="undertow"/>
     </dependencies>
      <feature spec="subsystem.keycloak"/>
     <feature spec="subsystem.elytron.custom-realm">
