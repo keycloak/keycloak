@@ -7,7 +7,6 @@ import { Client } from './clients/client-model';
 import { Page, PageSection } from '@patternfly/react-core';
 import { Header } from './PageHeader';
 import { PageNav } from './PageNav';
-import { NewRealmForm } from './forms/realm/NewRealmForm';
 
 export const App = () => {
   const httpClient = useContext(HttpClientContext);
@@ -18,7 +17,7 @@ export const App = () => {
       .then((r) => r.data as Client[]);
   };
   return (
-    <Page header={<Header />} sidebar={<PageNav />}>
+    <Page header={<Header />} isManagedSidebar sidebar={<PageNav />}>
       <PageSection variant="light">
         <DataLoader loader={loader}>
           {(clients) => <ClientList clients={clients} />}

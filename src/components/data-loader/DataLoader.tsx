@@ -19,7 +19,7 @@ export function DataLoader<T>(props: DataLoaderProps<T>) {
     loadData();
   }, [props]);
 
-  if (!!data) {
+  if (data) {
     if (props.children instanceof Function) {
       return props.children(data.result);
     }

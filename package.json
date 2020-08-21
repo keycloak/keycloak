@@ -16,10 +16,10 @@
     "build-storybook": "build-storybook"
   },
   "dependencies": {
-    "@patternfly/patternfly": "^4.16.7",
-    "@patternfly/react-core": "^4.23.1",
-    "@patternfly/react-icons": "^4.4.2",
-    "@patternfly/react-table": "^4.12.1",
+    "@patternfly/patternfly": "^4.31.6",
+    "@patternfly/react-core": "^4.40.4",
+    "@patternfly/react-icons": "^4.7.2",
+    "@patternfly/react-table": "^4.15.5",
     "i18next": "^19.6.2",
     "i18next-http-backend": "^1.0.17",
     "keycloak-js": "^11.0.0",

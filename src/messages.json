@@ -11,7 +11,13 @@
       "applicationsIntroMessage": "Track and manage your app permission to access your account",
       "fullName": "{{givenName}} {{familyName}}",
       "unknownUser": "Anonymous",
-      "Keycloak Administration Console": "RH-SSO Administration Console"
+      "Keycloak Administration Console": "RH-SSO Administration Console",
+
+      "********* MASTHEAD *********": "",
+      "Sign out": "Sign out",
+      "Manage account": "Manage account",
+      "Server info": "Server info",
+      "Help": "Help"
     }
   }
 }
