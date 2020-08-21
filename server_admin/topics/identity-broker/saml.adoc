@@ -80,15 +80,17 @@ You can also import all this configuration data by providing a URL or XML file t
 [[_identity_broker_saml_sp_descriptor]]
 ==== SP Descriptor
 
-Once you create a SAML provider, there is an `EXPORT` button that appears when viewing that provider.
-Clicking this button will export a SAML SP entity descriptor which you can use to import into the external SP.
+If you need to access the provider's SAML SP metadata, look for the `Endpoints` item in the identity provider configuration settings. It contains a link called 
+`SAML 2.0 Service Provider Metadata` that generates the SAML entity descriptor for the Service Provider. You can either download it or copy its URL and then import it in the remote Identity Provider.
 
-This metadata is also available publicly by going to the URL.
+This metadata is also available publicly by going to the URL:
 
 [source]
 ----
 http[s]://{host:port}/auth/realms/{realm-name}/broker/{broker-alias}/endpoint/descriptor
 ----
+
+Make sure to save any configuration changes before accessing the descriptor or they will not be reflected in the metadata.
 
 [[_identity_broker_saml_login_hint]]
 ==== Send Subject in SAML requests
