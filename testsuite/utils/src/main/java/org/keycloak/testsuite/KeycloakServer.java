@@ -137,7 +137,9 @@ public class KeycloakServer {
         File f = new File(System.getProperty("user.home"), ".keycloak-server.properties");
         if (f.isFile()) {
             Properties p = new Properties();
-            p.load(new FileInputStream(f));
+            try (FileInputStream is = new FileInputStream(f)) {
+                p.load(is);
+            }
             System.getProperties().putAll(p);
         }
 
