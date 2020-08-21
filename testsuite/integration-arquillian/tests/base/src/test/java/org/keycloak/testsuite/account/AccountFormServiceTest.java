@@ -196,7 +196,12 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
     @Before
     public void before() {
-        userId = findUser("test-user@localhost").getId();
+        UserRepresentation user = findUser("test-user@localhost");
+
+        user.setEmail("test-user@localhost");
+        updateUser(user);
+
+        userId = user.getId();
 
         // Revert any password policy and user password changes
         setPasswordPolicy("");
@@ -395,7 +400,6 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
     }
 
-    // KEYCLOAK-12729
     @Test
     public void changePasswordWithNotUsernamePolicy() {
         setPasswordPolicy("notUsername(1)");
@@ -414,6 +418,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         events.expectAccount(EventType.UPDATE_PASSWORD).assertEvent();
     }
 
+    // KEYCLOAK-12729
     @Test
     public void changePasswordWithNotEmailPolicy() {
         setPasswordPolicy("notEmail(1)");

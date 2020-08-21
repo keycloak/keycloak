@@ -22,11 +22,14 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 /**
+ * A {@link PasswordPolicyProvider} which does not allow to use the current email as password.
+ *
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
 public class NotEmailPasswordPolicyProvider implements PasswordPolicyProvider {
 
     private static final String ERROR_MESSAGE = "invalidPasswordNotEmailMessage";
+    private static final PolicyError POLICY_ERROR = new PolicyError(ERROR_MESSAGE);
 
     private KeycloakContext context;
 
@@ -39,7 +42,7 @@ public class NotEmailPasswordPolicyProvider implements PasswordPolicyProvider {
         if (email == null) {
             return null;
         }
-        return email.equals(password) ? new PolicyError(ERROR_MESSAGE) : null;
+        return email.equals(password) ? POLICY_ERROR : null;
     }
 
     @Override
