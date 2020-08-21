@@ -232,7 +232,9 @@ public class FluentTestsHelper {
      * @see #importTestRealm(InputStream)
      */
     public FluentTestsHelper importTestRealm(String realmJsonPath) throws IOException {
-        return importTestRealm(FluentTestsHelper.class.getResourceAsStream(realmJsonPath));
+        try (InputStream fis = FluentTestsHelper.class.getResourceAsStream(realmJsonPath)) {
+            return importTestRealm(fis);
+        }
     }
 
     /**

@@ -56,15 +56,16 @@ public class TestJavascriptResource {
     }
 
     private String resourceToString(String path) throws IOException {
-        InputStream is = TestingResourceProvider.class.getResourceAsStream(path);
-        BufferedReader buf = new BufferedReader(new InputStreamReader(is));
-        String line = buf.readLine();
-        StringBuilder sb = new StringBuilder();
-        while (line != null) {
-            sb.append(line).append("\n");
-            line = buf.readLine();
-        }
+        try (InputStream is = TestingResourceProvider.class.getResourceAsStream(path);
+             BufferedReader buf = new BufferedReader(new InputStreamReader(is))) {
+            String line = buf.readLine();
+            StringBuilder sb = new StringBuilder();
+            while (line != null) {
+                sb.append(line).append("\n");
+                line = buf.readLine();
+            }
 
-        return sb.toString().replace("${js-adapter.auth-server-url}", getAuthServerContextRoot() + "/auth");
+            return sb.toString().replace("${js-adapter.auth-server-url}", getAuthServerContextRoot() + "/auth");
+        }
     }
 }

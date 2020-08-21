@@ -345,17 +345,18 @@ public class SimpleHttp {
                             }
                         }
 
-                        InputStreamReader reader = charset == null ? new InputStreamReader(is) :
-                                new InputStreamReader(is, charset);
+                        try (InputStreamReader reader = charset == null ? new InputStreamReader(is) :
+                                new InputStreamReader(is, charset)) {
 
-                        StringWriter writer = new StringWriter();
+                            StringWriter writer = new StringWriter();
 
-                        char[] buffer = new char[1024 * 4];
-                        for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
-                            writer.write(buffer, 0, n);
+                            char[] buffer = new char[1024 * 4];
+                            for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
+                                writer.write(buffer, 0, n);
+                            }
+
+                            responseString = writer.toString();
                         }
-
-                        responseString = writer.toString();
                     } finally {
                         if (is != null) {
                             is.close();

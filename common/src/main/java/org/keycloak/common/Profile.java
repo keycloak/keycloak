@@ -207,7 +207,9 @@ public class Profile {
                 if (jbossServerConfigDir != null) {
                     File file = new File(jbossServerConfigDir, "profile.properties");
                     if (file.isFile()) {
-                        properties.load(new FileInputStream(file));
+                        try (FileInputStream is = new FileInputStream(file)) {
+                            properties.load(is);
+                        }
                     }
                 }
             } catch (IOException e) {
