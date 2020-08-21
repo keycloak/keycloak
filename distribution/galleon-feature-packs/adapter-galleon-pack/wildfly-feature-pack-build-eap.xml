@@ -30,10 +30,17 @@
             </packages>
             <default-configs inherit="false"/>
         </dependency>
-    </transitive>
-    <dependencies>
         <dependency group-id="org.jboss.eap" artifact-id="wildfly-ee-galleon-pack">
             <name>org.jboss.eap:wildfly-ee-galleon-pack</name>
+            <packages inherit="false">
+                <exclude name="product.conf"/>
+            </packages>
+            <default-configs inherit="false"/>
+        </dependency>
+    </transitive>
+    <dependencies>
+        <dependency group-id="org.jboss.eap" artifact-id="wildfly-galleon-pack">
+            <name>org.jboss.eap:wildfly-galleon-pack</name>
             <packages inherit="false">
                  <exclude name="product.conf"/>
             </packages>

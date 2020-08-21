@@ -258,13 +258,13 @@
             <properties>
                 <galleon-adapter-group-id>org.keycloak</galleon-adapter-group-id>
                 <version.org.wildfly>20.0.0.Final</version.org.wildfly>
-                <version.org.wildfly.core>12.0.0.Final</version.org.wildfly.core>
-                <version.org.wildfly.common>1.5.1.Final</version.org.wildfly.common>
+                <version.org.wildfly.core>12.0.1.Final</version.org.wildfly.core>
+                <version.org.wildfly.common>1.5.4.Final</version.org.wildfly.common>
             </properties>
             <dependencies>
                 <dependency>
                     <groupId>org.wildfly</groupId>
-                    <artifactId>wildfly-ee-galleon-pack</artifactId>
+                    <artifactId>wildfly-galleon-pack</artifactId>
                     <version>${version.org.wildfly}</version>
                     <type>zip</type>
                     <scope>provided</scope>
@@ -287,7 +287,7 @@
             <dependencies>
                 <dependency>
                     <groupId>org.jboss.eap</groupId>
-                    <artifactId>wildfly-ee-galleon-pack</artifactId>
+                    <artifactId>wildfly-galleon-pack</artifactId>
                     <version>${version.org.jboss.eap}</version>
                     <type>zip</type>
                     <scope>provided</scope>
