@@ -7,9 +7,11 @@ import { Client } from './clients/client-model';
 import { Page, PageSection } from '@patternfly/react-core';
 import { Header } from './PageHeader';
 import { PageNav } from './PageNav';
+import { KeycloakContext } from './auth/KeycloakContext';
 
 export const App = () => {
   const httpClient = useContext(HttpClientContext);
+  const keycloak = useContext(KeycloakContext);
 
   const loader = async () => {
     return await httpClient
@@ -20,7 +22,12 @@ export const App = () => {
     <Page header={<Header />} isManagedSidebar sidebar={<PageNav />}>
       <PageSection variant="light">
         <DataLoader loader={loader}>
-          {(clients) => <ClientList clients={clients} />}
+          {(clients) => (
+            <ClientList
+              clients={clients}
+              baseUrl={keycloak!.authServerUrl()!}
+            />
+          )}
         </DataLoader>
       </PageSection>
     </Page>

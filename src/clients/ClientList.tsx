@@ -1,5 +1,12 @@
-import React, { Fragment } from 'react';
-import { Table, TableBody, TableHeader } from '@patternfly/react-table';
+import React from 'react';
+import {
+  Table,
+  TableBody,
+  TableHeader,
+  TableVariant,
+  IFormatter,
+  IFormatterValueType,
+} from '@patternfly/react-table';
 import {
   ToolbarContent,
   ToolbarItem,
@@ -8,6 +15,8 @@ import {
   InputGroup,
   TextInput,
   Button,
+  Badge,
+  ToggleTemplateProps,
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 
@@ -15,14 +24,25 @@ import { Client } from './client-model';
 
 type ClientListProps = {
   clients?: Client[];
+  baseUrl: string;
 };
 
-const columns: (keyof Client)[] = ['clientId', 'protocol', 'baseUrl'];
+const columns: (keyof Client)[] = [
+  'clientId',
+  'protocol',
+  'description',
+  'baseUrl',
+];
 
-export const ClientList = ({ clients }: ClientListProps) => {
+export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
   const pagination = (variant: 'top' | 'bottom' = 'top') => (
     <Pagination
       isCompact
+      toggleTemplate={({ firstIndex, lastIndex }: ToggleTemplateProps) => (
+        <b>
+          {firstIndex} - {lastIndex}
+        </b>
+      )}
       itemCount={100}
       page={1}
       perPage={10}
@@ -30,11 +50,40 @@ export const ClientList = ({ clients }: ClientListProps) => {
     />
   );
 
-  const data = clients!.map((c) => {
-    return { cells: columns.map((col) => c[col]) };
-  });
+  const enabled = (): IFormatter => (data?: IFormatterValueType) => {
+    const field = data!.toString();
+    const value = field.substring(0, field.indexOf('#'));
+    return field.indexOf('true') != -1 ? (
+      <>{value}</>
+    ) : (
+      <>
+        {value} <Badge isRead>Disabled</Badge>
+      </>
+    );
+  };
+
+  const emptyFormatter = (): IFormatter => (data?: IFormatterValueType) => {
+    return data ? data : '—';
+  };
+
+  const replaceBaseUrl = (r: Client) =>
+    r.rootUrl &&
+    r.rootUrl
+      .replace('${authBaseUrl}', baseUrl)
+      .replace('${authAdminUrl}', baseUrl) +
+      (r.baseUrl ? r.baseUrl.substr(1) : '');
+
+  const data = clients!
+    .map((r) => {
+      r.clientId = r.clientId + '#' + r.enabled;
+      r.baseUrl = replaceBaseUrl(r);
+      return r;
+    })
+    .map((c) => {
+      return { cells: columns.map((col) => c[col]) };
+    });
   return (
-    <Fragment>
+    <>
       <Toolbar>
         <ToolbarContent>
           <ToolbarItem>
@@ -53,7 +102,13 @@ export const ClientList = ({ clients }: ClientListProps) => {
         </ToolbarContent>
       </Toolbar>
       <Table
-        cells={['Client Id', 'Type', 'Base URL']}
+        variant={TableVariant.compact}
+        cells={[
+          { title: 'Client ID', cellFormatters: [enabled()] },
+          'Type',
+          { title: 'Description', cellFormatters: [emptyFormatter()] },
+          { title: 'Home URL', cellFormatters: [emptyFormatter()] },
+        ]}
         rows={data}
         aria-label="Client list"
       >
@@ -63,6 +118,6 @@ export const ClientList = ({ clients }: ClientListProps) => {
       <Toolbar>
         <ToolbarItem>{pagination('bottom')}</ToolbarItem>
       </Toolbar>
-    </Fragment>
+    </>
   );
 };

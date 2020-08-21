@@ -6,8 +6,8 @@ import { ClientList } from './ClientList';
 
 test('renders ClientList', () => {
   const { getByText } = render(
-    <ClientList clients={clientMock} />
+    <ClientList clients={clientMock} baseUrl="http://blog.nerdin.ch" />
   );
-  const headerElement = getByText(/Client Id/i);
+  const headerElement = getByText(/Client ID/i);
   expect(headerElement).toBeInTheDocument();
 });
