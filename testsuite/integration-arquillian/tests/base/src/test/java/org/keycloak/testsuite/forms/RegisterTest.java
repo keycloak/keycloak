@@ -497,20 +497,23 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
         RealmRepresentation notEmailRealm = RealmBuilder.create().passwordPolicy("notEmail").build();
         notEmailRealm.setRegistrationEmailAsUsername(true);
+        try {
+            adminClient.realm("test").update(notEmailRealm);
 
-        adminClient.realm("test").update(notEmailRealm);
+            loginPage.open();
 
-        loginPage.open();
+            assertTrue(loginPage.isCurrent());
 
-        assertTrue(loginPage.isCurrent());
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
 
-        loginPage.clickRegister();
-        registerPage.assertCurrent();
+            registerPage.registerWithEmailAsUsername("firstName", "lastName", "registerUserNotEmail@email", "registerUserNotEmail@email", "registerUserNotEmail@email");
 
-        registerPage.registerWithEmailAsUsername("firstName", "lastName", "registerUserNotEmail@email", "registerUserNotEmail@email", "registerUserNotEmail@email");
-
-        assertTrue(registerPage.isCurrent());
-        assertEquals("Invalid password: must not be equal to the email.", registerPage.getError());
+            assertTrue(registerPage.isCurrent());
+            assertEquals("Invalid password: must not be equal to the email.", registerPage.getError());
+        } finally {
+            configureRealmRegistrationEmailAsUsername(false);
+        }
     }
 
     protected UserRepresentation getUser(String userId) {
