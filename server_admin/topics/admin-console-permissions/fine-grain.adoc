@@ -14,13 +14,13 @@ and assign restricted access policies for managing a realm.  Things like:
 * Managing users that belong to a specific group
 * Managing membership of a group
 * Limited user management.
-* Fine grain impersonization control
+* Fine grain impersonation control
 * Being able to assign a specific restricted set of roles to users.
 * Being able to assign a specific restricted set of roles to a composite role.
 * Being able to assign a specific restricted set of roles to a client's scope.
 * New general policies for viewing and managing users, groups, roles, and clients.
 
-There's some important things to note about fine grain admin permissions:
+There are some important things to note about fine grain admin permissions:
 
 * Fine grain admin permissions were implemented on top of link:{authorizationguide_link}[Authorization Services].  It is highly recommended that you read up on those features before diving into fine grain permissions.
 * Fine grain permissions are only available within <<_per_realm_admin_permissions, dedicated admin consoles>> and admins defined within those realms.  You cannot define cross-realm fine grain permissions.
@@ -30,8 +30,8 @@ There's some important things to note about fine grain admin permissions:
 ==== Managing One Specific Client
 
 Let's look first at allowing
-an admin to manage one client and one client only.  In our example we have a realm
-called `test` and a client called `sales-application`.  In realm `test` we will give a
+an admin to manage one client and one client only.  In our example, we have a realm
+called `test` and a client called `sales-application`.  In the realm `test` we will give a
 user in that realm permission to only manage that application.
 
 IMPORTANT: You cannot do cross realm fine grain permissions.  Admins in the `master` realm are limited to the predefined admin roles defined in previous chapters.
@@ -39,7 +39,7 @@ IMPORTANT: You cannot do cross realm fine grain permissions.  Admins in the `mas
 ===== Permission Setup
 
 The first thing we must do is login to the Admin Console so we can set up permissions for that client.  We navigate to the management section
-of the client we want to define fine-grain permissions for.
+of the client, we want to define fine-grain permissions for.
 
 .Client Management
 image:{project_images}/fine-grain-client.png[]
@@ -77,7 +77,7 @@ rules in JavaScript.  For this simple example, we're going to create a `User Pol
 .User Policy
 image:{project_images}/fine-grain-client-user-policy.png[]
 
-This policy will match a hard-coded user in the user database.  In this case it is the `sales-admin` user.  We must then go back to the
+This policy will match a hard-coded user in the user database.  In this case, it is the `sales-admin` user.  We must then go back to the
 `sales-application` client's `manage` permission page and assign the policy to the permission object.
 
 .Assign User Policy
@@ -100,7 +100,7 @@ IMPORTANT If you do not set the `query-clients` role, restricted admins like `sa
 
 ===== Testing It Out.
 
-Next we log out of the master realm and re-login to the <<_per_realm_admin_permissions, dedicated admin console>> for the `test` realm
+Next, we log out of the master realm and re-login to the <<_per_realm_admin_permissions, dedicated admin console>> for the `test` realm
 using the `sales-admin` as a username.  This is located under `/auth/admin/test/console`.
 
 .Sales Admin Login
@@ -110,9 +110,9 @@ This admin is now able to manage this one client.
 
 ==== Restrict User Role Mapping
 
-Another thing you might want to do is to restrict the set a roles an admin is allowed
+Another thing you might want to do is to restrict the set roles an admin is allowed
 to assign to a user.  Continuing our last example, let's expand the permission set of the 'sales-admin'
-user so that he can also control which users are allowed to access this application.  Through fine grain permissions we can
+user so that he can also control which users are allowed to access this application.  Through fine grain permissions, we can
 enable it so that the `sales-admin` can only assign roles that grant specific access to
 the `sales-application`.  We can also restrict it so that the admin can only map roles
 and not perform any other types of user administration.
@@ -164,12 +164,12 @@ image:{project_images}/fine-grain-add-view-users.png[]
 
 ===== Testing It Out.
 
-Next we log out of the master realm and re-login to the <<_per_realm_admin_permissions, dedicated admin console>> for the `test` realm
+Next, we log out of the master realm and re-login to the <<_per_realm_admin_permissions, dedicated admin console>> for the `test` realm
 using the `sales-admin` as a username.  This is located under `/auth/admin/test/console`.
 
 You will see that now the `sales-admin` can view users in the system.  If you select one of the
 users you'll see that each user detail page is read only, except for the `Role Mappings` tab.
-Going to these tab you'll find that there are no `Available` roles for the admin to
+Going to this tab you'll find that there are no `Available` roles for the admin to
 map to the user except when we browse the `sales-application` roles.
 
 .Add viewLeads
@@ -187,7 +187,7 @@ by a client.  If we log back into the admin console to our master realm admin an
 .Client map-roles Permission
 image:{project_images}/fine-grain-client-permissions-tab-on.png[]
 
-If you grant access to this particular parmission to an admin, that admin will be able
+If you grant access to this particular permission to an admin, that admin will be able
 map any role defined by the client.
 
 ==== Full List of Permissions
@@ -208,7 +208,7 @@ map-role::
     role mapping permissions.  See <<_users-permissions, Users Permissions>> for more information.
 map-role-composite::
     Policies that decide if an admin can map this role as a composite to another role.
-    An admin can define roles for a client if he has manage permissions for that client
+    An admin can define roles for a client if he has to manage permissions for that client
     but he will not be able to add composites to those roles unless he has the
     `map-role-composite` privileges for the role he wants to add as a composite.
 map-role-client-scope::
@@ -226,18 +226,18 @@ view::
     Policies that decide if an admin can view the client's configuration.
 manage::
     Policies that decide if an admin can view and manage the client's configuration.
-    There is some issues with this in that privileges could be leaked unintentionally.
+    There are some issues with this in that privileges could be leaked unintentionally.
     For example, the admin could define a protocol mapper that hardcoded a role
     even if the admin does not have privileges to map the role to the client's scope.
     This is currently the limitation of protocol mappers as they don't have a way
     to assign individual permissions to them like roles do.
 configure::
-    Reduced set of prileges to manage the client.  Its like the `manage` scope except
+    Reduced set of privileges to manage the client.  It is like the `manage` scope except
     the admin is not allowed to define protocol mappers, change the client template,
     or the client's scope.
 map-roles::
     Policies that decide if an admin can map any role defined by the client to a user.
-    This is a shortcut, easy-of-use feature to avoid having to defin policies
+    This is a shortcut, easy-of-use feature to avoid having to define policies
     for each and every role defined by the client.
 map-roles-composite::
     Policies that decide if an admin can map any role defined by the client
@@ -260,7 +260,7 @@ view::
     Policies that decide if an admin can view all users in the realm.
 manage::
     Policies that decide if an admin can manage all users in the realm.  This
-    permission grants the admin the privilege to perfor user role mappings, but
+    permission grants the admin the privilege to perform user role mappings, but
     it does not specify which roles the admin is allowed to map.  You'll need to
     define the privilege for each role you want the admin to be able to map.
 map-roles::
@@ -300,31 +300,5 @@ manage-members::
 manage-membership::
     Policies that decide if an admin can change the membership of the group.  Add or
     remove members from the group.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
