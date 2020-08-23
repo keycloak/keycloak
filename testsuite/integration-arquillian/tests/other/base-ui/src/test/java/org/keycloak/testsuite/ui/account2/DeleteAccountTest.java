@@ -17,11 +17,8 @@
 
 package org.keycloak.testsuite.ui.account2;
 
-import java.net.URI;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
@@ -32,15 +29,13 @@ import org.keycloak.models.AccountRoles;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.ui.account2.page.AIALoginPage;
 import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
+import org.keycloak.testsuite.ui.account2.page.DeleteAccountActionConfirmPage;
 import org.keycloak.testsuite.ui.account2.page.DeleteAccountPage;
 import org.keycloak.testsuite.ui.account2.page.WelcomeScreen;
-import org.keycloak.testsuite.util.UserBuilder;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
 
 /**
  * @author Zakaria Amine <zakaria.amine88@gmail.com>
@@ -53,6 +48,12 @@ public class DeleteAccountTest extends BaseAccountPageTest {
   @Page
   private WelcomeScreen welcomeScreen;
 
+  @Page
+  private AIALoginPage aiaLoginPage;
+
+  @Page
+  private DeleteAccountActionConfirmPage deleteAccountActionConfirmPage;
+
   @Rule
   public AssertEvents events = new AssertEvents(this);
 
@@ -63,7 +64,8 @@ public class DeleteAccountTest extends BaseAccountPageTest {
 
   @Override
   public void navigateBeforeTest() {
-    super.navigateBeforeTest();
+    getAccountPage().navigateTo();
+    loginToAccount();
   }
 
   @Override
@@ -80,8 +82,7 @@ public class DeleteAccountTest extends BaseAccountPageTest {
   @Test
   public void deleteOwnAccountPageNotVisibleAndNotAccessibleWithoutUserRole() {
     enableDeleteAccountRequiredAction();
-    List<WebElement> accountLinks = driver.findElements(By.cssSelector("div[id^=\"landing-\"]"));
-   Assert.assertTrue(accountLinks.stream().noneMatch(link -> link.getAttribute("id").contains("delete-account")));
+   Assert.assertFalse(welcomeScreen.isDeleteAccountLinkVisible());
     deleteAccountPage.navigateTo();
     pageNotFound.assertCurrent();
     //reset role back since realm is shared among tests
@@ -92,8 +93,7 @@ public class DeleteAccountTest extends BaseAccountPageTest {
   @Test
   public void deleteOwnAccountPageNotVisibleAndNotAccessibleWithoutDeleteAccountActionEnabled() {
     addDeleteAccountRoleToUserClientRoles();
-    List<WebElement>  accountLinks = driver.findElements(By.cssSelector("div[id^=\"landing-\"]"));
-    Assert.assertTrue(accountLinks.stream().noneMatch(link -> link.getAttribute("id").contains("delete-account")));
+    Assert.assertFalse(welcomeScreen.isDeleteAccountLinkVisible());
     deleteAccountPage.navigateTo();
     pageNotFound.assertCurrent();
     removeDeleteAccountRoleToUserClientRoles();
@@ -103,13 +103,12 @@ public class DeleteAccountTest extends BaseAccountPageTest {
   public void deleteOwnAccountAIACancellationSucceeds() {
     enableDeleteAccountRequiredAction();
     addDeleteAccountRoleToUserClientRoles();
+    driver.navigate().refresh();
     deleteAccountPage.navigateTo();
-    deleteAccountPage.getDeleteAccountButton().click();
-    loginToAccount();
-    URI uri = URI.create(driver.getCurrentUrl());
-    Assert.assertTrue(uri.getPath().contains("login-actions"));
-    Assert.assertTrue(uri.getQuery().contains("execution=delete_account"));
-    driver.findElement(By.cssSelector("button[name='cancel-aia']")).click();
+    deleteAccountPage.clickDeleteAccountButton();
+    aiaLoginPage.form().login(testUser);
+    Assert.assertTrue(deleteAccountActionConfirmPage.isCurrent());
+    deleteAccountActionConfirmPage.clickCancelAIA();
     Assert.assertTrue(deleteAccountPage.isCurrent());
     disableDeleteAccountRequiredAction();
     removeDeleteAccountRoleToUserClientRoles();
@@ -120,60 +119,36 @@ public class DeleteAccountTest extends BaseAccountPageTest {
     enableDeleteAccountRequiredAction();
     addDeleteAccountRoleToUserClientRoles();
     deleteAccountPage.navigateTo();
-    deleteAccountPage.getDeleteAccountButton().click();
-    loginToAccount();
+    deleteAccountPage.clickDeleteAccountButton();
+    aiaLoginPage.form().login(testUser);
+    Assert.assertTrue(deleteAccountActionConfirmPage.isCurrent());
     disableDeleteAccountRequiredAction();
-    driver.findElement(By.cssSelector("input[type='submit']")).click();
-    Assert.assertEquals(driver.findElements(By.cssSelector(".alert-error")).size(), 1);
-    Assert.assertEquals(driver.findElement(By.cssSelector("#kc-content-wrapper > div > span.kc-feedback-text")).getText(), "You do not have enough permissions to delete your own account, contact admin.");
+    deleteAccountActionConfirmPage.clickConfirmAction();
+    Assert.assertTrue(deleteAccountActionConfirmPage.isErrorMessageDisplayed());
+    Assert.assertEquals(deleteAccountActionConfirmPage.getErrorMessageText(), "You do not have enough permissions to delete your own account, contact admin.");
     removeDeleteAccountRoleToUserClientRoles();
   }
 
   @Test
   public void deleteOwnAccountSucceeds() {
-    String userId = createUserToBeDeleted("test-user-to-be-deleted@localhost", "password");
     enableDeleteAccountRequiredAction();
-    addDeleteAccountRoleToUserClientRoles(userId);
     addDeleteAccountRoleToUserClientRoles();
     deleteAccountPage.navigateTo();
-    deleteAccountPage.header().clickLogoutBtn();
-    welcomeScreen.header().clickLoginBtn();
-    loginPage.form().login("test-user-to-be-deleted@localhost", "password");
-    deleteAccountPage.navigateTo();
     Assert.assertTrue(deleteAccountPage.isCurrent());
-    deleteAccountPage.getDeleteAccountButton().click();
-    driver.findElement(By.id("username")).sendKeys("test-user-to-be-deleted@localhost");
-    driver.findElement(By.id("password")).sendKeys("password");
-    driver.findElement(By.id("kc-login")).click();
-    driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
-    driver.findElement(By.cssSelector("input[type='submit']")).click();
+    deleteAccountPage.clickDeleteAccountButton();
+    Assert.assertTrue(aiaLoginPage.isCurrent());
+    aiaLoginPage.form().login(testUser);
+    deleteAccountActionConfirmPage.isCurrent();
+    deleteAccountActionConfirmPage.clickConfirmAction();
     events.expectAccount(EventType.DELETE_ACCOUNT);
-    Assert.assertTrue(testRealmResource().users().search("test-user-to-be-deleted@localhost").isEmpty());
+    Assert.assertTrue(testRealmResource().users().search(testUser.getUsername()).isEmpty());
     disableDeleteAccountRequiredAction();
     //no need to clean account role, user is deleted
   }
 
-  public String createUserToBeDeleted(String username, String password) {
-    UserRepresentation userToBeDeleted = UserBuilder.create()
-        .enabled(true)
-        .username(username)
-        .email(username)
-        .password(password)
-        .build();
-
-    testRealmResource().users().create(userToBeDeleted);
-    return testRealmResource().users().search(username).get(0).getId();
-  }
-
-
   private void addDeleteAccountRoleToUserClientRoles() {
     createDeleteAccountRoleIfNotExists();
     ApiUtil.assignClientRoles(testRealmResource(), testUser.getId(), "account",AccountRoles.DELETE_ACCOUNT);
-  }
-
-  private void addDeleteAccountRoleToUserClientRoles(String userId) {
-    createDeleteAccountRoleIfNotExists();
-    ApiUtil.assignClientRoles(testRealmResource(), userId, "account",AccountRoles.DELETE_ACCOUNT);
   }
 
   private void createDeleteAccountRoleIfNotExists() {

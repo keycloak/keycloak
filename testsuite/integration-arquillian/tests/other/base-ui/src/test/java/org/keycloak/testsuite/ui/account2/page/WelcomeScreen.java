@@ -17,6 +17,9 @@
 
 package org.keycloak.testsuite.ui.account2.page;
 
+import java.util.List;
+import java.util.Objects;
+
 import org.keycloak.testsuite.ui.account2.page.fragment.WelcomeScreenHeader;
 import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.WebElement;
@@ -59,6 +62,8 @@ public class WelcomeScreen extends AbstractAccountPage {
     private WebElement myResourcesLink;
     @FindBy(id = "landingLogo")
     private WebElement logoLink;
+    @FindBy(css = "div[id^=\"landing-\"]")
+    private List<WebElement> consoleLandingLinks;
 
     @FindBy(id = "landingWelcomeMessage")
     private WebElement welcomeMessage; // used only for i18n testing
@@ -135,5 +140,9 @@ public class WelcomeScreen extends AbstractAccountPage {
         navigateTo();
         this.referrer = null;
         this.referrerUri = null;
+    }
+
+    public boolean isDeleteAccountLinkVisible() {
+        return consoleLandingLinks.stream().anyMatch(link -> link.getAttribute("id").contains("delete-account"));
     }
 }

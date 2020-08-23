@@ -444,7 +444,7 @@ public class RealmManager {
             manageConsentRole.addCompositeRole(viewConsentRole);
 
             RoleModel deleteOwnAccount = accountClient.addRole(AccountRoles.DELETE_ACCOUNT);
-            deleteOwnAccount.setDescription("${"+AccountRoles.DELETE_ACCOUNT+"}");
+            deleteOwnAccount.setDescription("${role_"+AccountRoles.DELETE_ACCOUNT+"}");
 
             ClientModel accountConsoleClient = realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID);
             if (accountConsoleClient == null) {

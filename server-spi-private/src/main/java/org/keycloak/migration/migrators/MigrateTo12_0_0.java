@@ -18,7 +18,7 @@ public class MigrateTo12_0_0 implements Migration {
         .map(realm -> realm.getClientByClientId("account"))
         .filter(client -> Objects.isNull(client.getRole(AccountRoles.DELETE_ACCOUNT)))
         .forEach(client -> client.addRole(AccountRoles.DELETE_ACCOUNT)
-            .setDescription("${" + AccountRoles.DELETE_ACCOUNT + "}"));
+            .setDescription("${role_"+AccountRoles.DELETE_ACCOUNT+"}"));
   }
 
   @Override
