@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   Text,
   PageSection,
@@ -11,13 +11,14 @@ import {
   ActionGroup,
   Button,
   Divider,
-} from "@patternfly/react-core";
+} from '@patternfly/react-core';
 
 //type NewRealmFormProps = {
 //  realm: string;
 //};
 
-export const NewRealmForm = () => { //({ realm }: NewRealmFormProps) => {
+export const NewRealmForm = () => {
+  //({ realm }: NewRealmFormProps) => {
   return (
     <>
       <PageSection variant="light">

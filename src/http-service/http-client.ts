@@ -114,7 +114,7 @@ export class HttpClient {
       );
     }
 
-    return url + searchParams.toString();
+    return url + '?' + searchParams.toString();
   }
 
   private makeConfig(config: RequestInit = {}): Promise<RequestInit> {
