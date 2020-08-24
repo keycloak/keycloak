@@ -36,32 +36,32 @@ public class IdentityProviderBeanTest {
     @Test
     public void testIdentityProviderComparator() {
 
-        IdentityProvider o1 = new IdentityProvider("alias1", "displayName1", "id1", "ur1", null);
-        IdentityProvider o2 = new IdentityProvider("alias2", "displayName2", "id2", "ur2", null);
+        IdentityProvider o1 = new IdentityProvider("alias1", "displayName1", "id1", "ur1", null, false);
+        IdentityProvider o2 = new IdentityProvider("alias2", "displayName2", "id2", "ur2", null, false);
 
         // guiOrder not defined at any object
         Assert.assertEquals(0, IdentityProviderBean.IDP_COMPARATOR_INSTANCE.compare(o1, o2));
         Assert.assertEquals(0, IdentityProviderBean.IDP_COMPARATOR_INSTANCE.compare(o2, o1));
 
         // guiOrder is not a number so it is same as not defined
-        o1 = new IdentityProvider("alias1", "displayName1", "id1", "ur1", "not a number");
+        o1 = new IdentityProvider("alias1", "displayName1", "id1", "ur1", "not a number", false);
         Assert.assertEquals(0, IdentityProviderBean.IDP_COMPARATOR_INSTANCE.compare(o1, o2));
         Assert.assertEquals(0, IdentityProviderBean.IDP_COMPARATOR_INSTANCE.compare(o2, o1));
 
         // guiOrder is defined for one only to it is always first
-        o1 = new IdentityProvider("alias1", "displayName1", "id1", "ur1", "0");
+        o1 = new IdentityProvider("alias1", "displayName1", "id1", "ur1", "0", false);
         Assert.assertEquals(-10000, IdentityProviderBean.IDP_COMPARATOR_INSTANCE.compare(o1, o2));
         Assert.assertEquals(10000, IdentityProviderBean.IDP_COMPARATOR_INSTANCE.compare(o2, o1));
 
         // guiOrder is defined for both but is same
-        o1 = new IdentityProvider("alias1", "displayName1", "id1", "ur1", "0");
-        o2 = new IdentityProvider("alias2", "displayName2", "id2", "ur2", "0");
+        o1 = new IdentityProvider("alias1", "displayName1", "id1", "ur1", "0", false);
+        o2 = new IdentityProvider("alias2", "displayName2", "id2", "ur2", "0", false);
         Assert.assertEquals(0, IdentityProviderBean.IDP_COMPARATOR_INSTANCE.compare(o1, o2));
         Assert.assertEquals(0, IdentityProviderBean.IDP_COMPARATOR_INSTANCE.compare(o2, o1));
 
         // guiOrder is reflected
-        o1 = new IdentityProvider("alias1", "displayName1", "id1", "ur1", "0");
-        o2 = new IdentityProvider("alias2", "displayName2", "id2", "ur2", "1");
+        o1 = new IdentityProvider("alias1", "displayName1", "id1", "ur1", "0", false);
+        o2 = new IdentityProvider("alias2", "displayName2", "id2", "ur2", "1", false);
         Assert.assertEquals(-1, IdentityProviderBean.IDP_COMPARATOR_INSTANCE.compare(o1, o2));
         Assert.assertEquals(1, IdentityProviderBean.IDP_COMPARATOR_INSTANCE.compare(o2, o1));
 
@@ -70,8 +70,8 @@ public class IdentityProviderBeanTest {
 
     @Test
     public void testIdentityProviderComparatorForEqualObjects() {
-        IdentityProvider o1 = new IdentityProvider("alias1", "displayName1", "id1", "ur1", null);
-        IdentityProvider o2 = new IdentityProvider("alias2", "displayName2", "id2", "ur2", null);
+        IdentityProvider o1 = new IdentityProvider("alias1", "displayName1", "id1", "ur1", null, false);
+        IdentityProvider o2 = new IdentityProvider("alias2", "displayName2", "id2", "ur2", null, false);
 
         // Gui order is not specified on the objects, but those are 2 different objects. Assert we have 2 items in the list and first is lower
         List<IdentityProvider> idp2 = new ArrayList<>();

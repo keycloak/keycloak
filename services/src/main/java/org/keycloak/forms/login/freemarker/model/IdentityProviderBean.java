@@ -36,7 +36,6 @@ public class IdentityProviderBean {
 
     public static OrderedModel.OrderedModelComparator<IdentityProvider> IDP_COMPARATOR_INSTANCE = new OrderedModel.OrderedModelComparator<>();
 
-    private boolean displaySocial;
     private List<IdentityProvider> providers;
     private RealmModel realm;
     private final KeycloakSession session;
@@ -56,7 +55,6 @@ public class IdentityProviderBean {
             if (!orderedList.isEmpty()) {
                 orderedList.sort(IDP_COMPARATOR_INSTANCE);
                 providers = orderedList;
-                displaySocial = true;
             }
         }
     }
@@ -66,11 +64,10 @@ public class IdentityProviderBean {
         String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, identityProvider);
         Map<String, String> config = identityProvider.getConfig();
         boolean hideOnLoginPage = config != null && Boolean.parseBoolean(config.get("hideOnLoginPage"));
-        if (!hideOnLoginPage) {
-            orderedSet.add(new IdentityProvider(identityProvider.getAlias(),
-                    displayName, identityProvider.getProviderId(), loginUrl,
-                    config != null ? config.get("guiOrder") : null));
-        }
+
+        orderedSet.add(new IdentityProvider(identityProvider.getAlias(),
+                displayName, identityProvider.getProviderId(), loginUrl,
+                config != null ? config.get("guiOrder") : null, hideOnLoginPage));
     }
 
     public List<IdentityProvider> getProviders() {
@@ -78,7 +75,15 @@ public class IdentityProviderBean {
     }
 
     public boolean isDisplayInfo() {
-        return  realm.isRegistrationAllowed() || displaySocial;
+        return realm.isRegistrationAllowed() || isDisplaySocial();
+    }
+
+    public boolean isDisplaySocial() {
+        return getVisibleProvidersCount() > 0;
+    }
+
+    public int getVisibleProvidersCount() {
+        return providers == null ? 0: (int)providers.stream().filter(idp -> !idp.hideOnLoginPage).count();
     }
 
     public static class IdentityProvider implements OrderedModel {
@@ -88,13 +93,15 @@ public class IdentityProviderBean {
         private final String loginUrl;
         private final String guiOrder;
         private final String displayName;
+        private final boolean hideOnLoginPage;
 
-        public IdentityProvider(String alias, String displayName, String providerId, String loginUrl, String guiOrder) {
+        public IdentityProvider(String alias, String displayName, String providerId, String loginUrl, String guiOrder, boolean hideOnLoginPage) {
             this.alias = alias;
             this.displayName = displayName;
             this.providerId = providerId;
             this.loginUrl = loginUrl;
             this.guiOrder = guiOrder;
+            this.hideOnLoginPage = hideOnLoginPage;
         }
 
         public String getAlias() {
@@ -116,6 +123,10 @@ public class IdentityProviderBean {
 
         public String getDisplayName() {
             return displayName;
+        }
+
+        public boolean isHideOnLoginPage() {
+            return hideOnLoginPage;
         }
     }
 
