@@ -643,7 +643,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, null, "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, null, "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test
@@ -655,7 +655,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, null, "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, null, "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test
@@ -667,7 +667,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, null, "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, null, "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test
@@ -682,7 +682,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, null, "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, null, "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test
@@ -697,7 +697,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, "unknown-client", "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, "unknown-client", "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test
@@ -839,7 +839,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     @Test
     public void testMissingSubjectClaim() throws Exception {
         OAuthClient.AccessTokenResponse response = testMissingClaim("subject");
-        assertError(response, null, "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, null, "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test

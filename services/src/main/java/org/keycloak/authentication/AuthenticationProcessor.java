@@ -806,7 +806,7 @@ public class AuthenticationProcessor {
                 return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", e.getMessage());
             } else {
                 event.error(Errors.INVALID_CLIENT_CREDENTIALS);
-                return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", e.getError().toString() + ": " + e.getMessage());
+                return ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", e.getError().toString() + ": " + e.getMessage());
             }
         } else {
             ServicesLogger.LOGGER.errorAuthenticatingClient(failure);
