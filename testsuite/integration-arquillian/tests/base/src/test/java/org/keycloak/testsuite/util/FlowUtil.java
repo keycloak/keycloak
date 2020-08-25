@@ -78,6 +78,10 @@ public class FlowUtil {
         return copyFlow(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW, newFlowAlias);
     }
 
+    public FlowUtil copyRegistrationFlow(String newFlowAlias) {
+        return copyFlow(DefaultAuthenticationFlows.REGISTRATION_FLOW, newFlowAlias);
+    }
+
     public FlowUtil copyFlow(String original, String newFlowAlias) {
         flowAlias = newFlowAlias;
         AuthenticationFlowModel existingBrowserFlow = realm.getFlowByAlias(original);
@@ -172,6 +176,10 @@ public class FlowUtil {
         realm.setResetCredentialsFlow(currentFlow);
         return this;
     }
+    public FlowUtil defineAsRegistrationFlow() {
+        realm.setRegistrationFlow(currentFlow);
+        return this;
+    }
 
     public FlowUtil usesInIdentityProvider(String idpAlias) {
         // Setup new FirstBrokerLogin flow to identity provider
@@ -216,6 +224,10 @@ public class FlowUtil {
 
         AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
         execution.setRequirement(requirement);
+        //KEYCLOAK-14161
+        if (flowModel.getProviderId() == "form-flow") {
+            execution.setAuthenticator("registration-page-form");
+        }
         execution.setAuthenticatorFlow(true);
         execution.setPriority(priority);
         execution.setFlowId(flowModel.getId());
