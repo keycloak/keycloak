@@ -77,6 +77,26 @@ This link is an XML document describing metadata about the IDP.
 
 You can also import all this configuration data by providing a URL or XML file that points to the entity descriptor of the external SAML IDP you want to connect to.
 
+[[_identity_broker_saml_requested_authncontext]]
+==== Requesting specific AuthnContexts
+Some Identity Providers let the clients specify particular constraints on the authentication method used to verify the user identity (e.g. asking for MFA, Kerberos authentication, security requirements, etc.). These are specified using particular AuthnContext criteria. A client can ask for one or more criteria and also specify how the Identity Provider should match the requested AuthnContext - exactly, or by satisfying same-or-better equivalents.
+
+You can list the criteria your Service Provider requires by adding one or more ClassRef or DeclRef in the Requested AuthnContext Constraints section. Usually you will need to provide either ClassRefs or DeclRefs - you should check with your Identity Provider docs which values are supported. If no ClassRefs or DeclRefs are present, the Identity Provider will not enforce additional constraints.
+
+.Requested AuthnContext Constraints
+|===
+|Configuration|Description
+
+|Comparison
+|The comparison method the Identity Provider should use to evaluate the context requirements. Available values are `Exact`, `Minimum`, `Maximum` or `Better`. Default value is `Exact`.
+
+|AuthnContext ClassRefs
+|One or more AuthnContext ClassRefs that describe the required criteria.
+
+|AuthnContext DeclRefs
+|One or more AuthnContext DeclRefs that describe the required criteria.
+|===
+
 [[_identity_broker_saml_sp_descriptor]]
 ==== SP Descriptor
 
