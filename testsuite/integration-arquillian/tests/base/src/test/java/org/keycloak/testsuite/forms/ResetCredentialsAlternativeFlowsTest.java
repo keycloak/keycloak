@@ -18,6 +18,7 @@
 
 package org.keycloak.testsuite.forms;
 
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
@@ -52,13 +53,17 @@ import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 
 import javax.mail.internet.MimeMessage;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
@@ -434,8 +439,8 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
             pageSource = driver.getPageSource();
 
             // Check if OTP credential with empty label was created successfully
-            final String emptyOtpLabelPresentInAuthenticatorTable = "(?s)<td class=\"provider\"/>";
-            Assert.assertTrue(Pattern.compile(emptyOtpLabelPresentInAuthenticatorTable).matcher(pageSource).find());
+            assertThat(driver.findElements(By.className("provider")).stream()
+                    .map(WebElement::getText).collect(Collectors.toList()), Matchers.hasItem(""));
             accountTotpPage.removeTotp();
 
             // Logout
@@ -473,11 +478,9 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
             accountTotpPage.open();
             Assert.assertTrue(accountTotpPage.isCurrent());
 
-            // Get the updated Account TOTP page source post OTP credential creation
-            pageSource = driver.getPageSource();
-
             // Check if OTP credential with empty label was created successfully
-            Assert.assertTrue(Pattern.compile(emptyOtpLabelPresentInAuthenticatorTable).matcher(pageSource).find());
+            assertThat(driver.findElements(By.className("provider")).stream()
+                    .map(WebElement::getText).collect(Collectors.toList()), Matchers.hasItem(""));;
 
             // Logout
             oauth.openLogout();
