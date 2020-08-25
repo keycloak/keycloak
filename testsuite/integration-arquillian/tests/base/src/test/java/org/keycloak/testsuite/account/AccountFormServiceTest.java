@@ -80,9 +80,13 @@ import java.util.Map;
 
 import org.hamcrest.Matchers;
 import org.junit.Assume;
+
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -1152,8 +1156,8 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         Assert.assertTrue(sessionsPage.isCurrent());
 
         List<List<String>> sessions = sessionsPage.getSessions();
-        Assert.assertEquals(1, sessions.size());
-        Assert.assertEquals("127.0.0.1", sessions.get(0).get(0));
+        assertThat(sessions, hasSize(1));
+        assertThat(sessions.get(0).get(0), anyOf(equalTo("127.0.0.1"), equalTo("0:0:0:0:0:0:0:1")));
 
         // Create second session
         try {
