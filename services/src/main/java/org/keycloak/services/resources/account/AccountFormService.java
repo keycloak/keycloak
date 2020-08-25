@@ -157,7 +157,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
         String requestOrigin = UriUtils.getOrigin(session.getContext().getUri().getBaseUri());
 
         String origin = headers.getRequestHeaders().getFirst("Origin");
-        if (origin != null && !requestOrigin.equals(origin)) {
+        if (origin != null && !origin.equals("null") && !requestOrigin.equals(origin)) {
             throw new ForbiddenException();
         }
 
