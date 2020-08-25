@@ -20,8 +20,12 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.authentication.AuthenticationFlow;
+import org.keycloak.authentication.authenticators.browser.CookieAuthenticatorFactory;
+import org.keycloak.authentication.forms.*;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
@@ -590,6 +594,17 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    //KEYCLOAK-14161
+    @Test
+    public void customRegistrationPageFormTest() {
+        String newFlowAlias = "register - custom";
+        configureRegistrationFlowWithCustomRegistrationPageForm(newFlowAlias);
+
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+    }
+
     protected void configureRealmRegistrationEmailAsUsername(final boolean value) {
         RealmRepresentation realm = testRealm().toRepresentation();
         realm.setRegistrationEmailAsUsername(value);
@@ -600,6 +615,24 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         RealmRepresentation testRealm = testRealm().toRepresentation();
         testRealm.setDuplicateEmailsAllowed(allowed);
         testRealm().update(testRealm);
+    }
+
+    private void configureRegistrationFlowWithCustomRegistrationPageForm(String newFlowAlias) {
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyRegistrationFlow(newFlowAlias));
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
+                .selectFlow(newFlowAlias)
+                        .clear()
+                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.ALTERNATIVE, CookieAuthenticatorFactory.PROVIDER_ID)
+                        .addSubFlowExecution("Sub Flow", AuthenticationFlow.BASIC_FLOW, AuthenticationExecutionModel.Requirement.ALTERNATIVE, subflow -> subflow
+                                .addSubFlowExecution("Sub sub Form Flow", AuthenticationFlow.FORM_FLOW, AuthenticationExecutionModel.Requirement.REQUIRED, subsubflow -> subsubflow
+                                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, RegistrationUserCreation.PROVIDER_ID)
+                                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, RegistrationProfile.PROVIDER_ID)
+                                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, RegistrationPassword.PROVIDER_ID)
+                                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.DISABLED, RegistrationRecaptcha.PROVIDER_ID)
+                                )
+                        )
+                .defineAsRegistrationFlow() // Activate this new flow
+        );
     }
 
 }

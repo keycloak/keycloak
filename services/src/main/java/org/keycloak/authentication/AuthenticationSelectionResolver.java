@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -213,8 +214,10 @@ class AuthenticationSelectionResolver {
                 return false;
             }
 
+            FormAuthenticatorFactory factory = (FormAuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(FormAuthenticator.class, requiredExecution.getAuthenticator());
+
             // Recursively add credentials from required execution
-            if (requiredExecution.isAuthenticatorFlow()) {
+            if (requiredExecution.isAuthenticatorFlow() && factory == null) {
                 return addAllExecutionsFromSubflow(processor, requiredExecution.getFlowId(), typeAuthExecMap, nonCredentialExecutions);
             } else {
                 addSimpleAuthenticationExecution(processor, requiredExecution, typeAuthExecMap, nonCredentialExecutions);
