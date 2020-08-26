@@ -18,6 +18,7 @@ package org.keycloak.services.resources;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.config.ConfigProviderFactory;
@@ -160,7 +161,6 @@ public class KeycloakApplication extends Application {
         sessionFactory.publish(new PostMigrationEvent());
 
         setupScheduledTasks(sessionFactory);
-
     }
 
     protected void shutdown() {

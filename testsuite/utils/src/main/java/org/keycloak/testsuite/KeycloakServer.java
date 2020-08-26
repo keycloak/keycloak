@@ -374,6 +374,7 @@ public class KeycloakServer {
         long start = System.currentTimeMillis();
 
         ResteasyDeployment deployment = new ResteasyDeployment();
+
         deployment.setApplicationClass(KeycloakApplication.class.getName());
 
         Builder builder = Undertow.builder()
