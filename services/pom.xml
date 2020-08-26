@@ -32,6 +32,7 @@
 
     <properties>
         <version.swagger.doclet>1.1.2</version.swagger.doclet>
+        <mockito.version>1.9.5</mockito.version>
     </properties>
 
     <dependencies>
@@ -164,6 +165,12 @@
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
+            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
