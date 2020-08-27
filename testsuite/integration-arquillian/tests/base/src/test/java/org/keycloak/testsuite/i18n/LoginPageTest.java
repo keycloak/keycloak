@@ -252,8 +252,8 @@ public class LoginPageTest extends AbstractI18NTest {
         Assert.assertTrue(pageSource.contains(expectedGermanMessage));
 
         // Revert language
-        page.openLanguage("English");
-        Assert.assertEquals("English", page.getLanguageDropdownText());
+        page.openLanguage("Englisch");
+        Assert.assertEquals("Englisch", page.getLanguageDropdownText());
         pageSource = driver.getPageSource();
         Assert.assertTrue(pageSource.contains(expectedEnglishMessage));
         Assert.assertFalse(pageSource.contains(expectedGermanMessage));

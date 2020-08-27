@@ -147,7 +147,7 @@ public class EmailTest extends AbstractI18NTest {
         
         infoPage.clickToContinueDe();
         
-        loginPasswordUpdatePage.openLanguage("English");
+        loginPasswordUpdatePage.openLanguage("Englisch");
         loginPasswordUpdatePage.changePassword("pass", "pass");
         WaitUtils.waitForPageToLoad();
         
