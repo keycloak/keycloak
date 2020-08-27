@@ -86,7 +86,7 @@ public class LoginPageTest extends AbstractI18NTest {
         ProfileAssume.assumeCommunity();
 
         loginPage.open();
-        Assert.assertEquals("English", loginPage.getLanguageDropdownText());
+        Assert.assertEquals("Englisch", loginPage.getLanguageDropdownText());
 
         switchLanguageToGermanAndBack("Username or email", "Benutzername oder E-Mail", loginPage);
     }
@@ -158,7 +158,7 @@ public class LoginPageTest extends AbstractI18NTest {
 
         loginPage.login("test-user@localhost", "password");
         changePasswordPage.assertCurrent();
-        Assert.assertEquals("English", changePasswordPage.getLanguageDropdownText());
+        Assert.assertEquals("Englisch", changePasswordPage.getLanguageDropdownText());
 
         // Switch language
         switchLanguageToGermanAndBack("Update password", "Passwort aktualisieren", changePasswordPage);
