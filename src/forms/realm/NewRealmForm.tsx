@@ -11,7 +11,7 @@ import {
   ActionGroup,
   Button,
   Divider,
-} from '@patternfly/react-core';
+} from "@patternfly/react-core";
 
 //type NewRealmFormProps = {
 //  realm: string;

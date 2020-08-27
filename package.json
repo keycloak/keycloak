@@ -25,7 +25,8 @@
     "keycloak-js": "^11.0.0",
     "react": "^16.8.5",
     "react-dom": "^16.8.5",
-    "react-i18next": "^11.7.0"
+    "react-i18next": "^11.7.0",
+    "react-router-dom": "^5.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.10.5",
@@ -43,6 +44,7 @@
     "@types/jest": "^26.0.4",
     "@types/react": "^16.9.23",
     "@types/react-dom": "^16.9.5",
+    "@types/react-router-dom": "^5.1.5",
     "@typescript-eslint/eslint-plugin": "^3.8.0",
     "@typescript-eslint/parser": "^3.8.0",
     "babel-loader": "^8.1.0",

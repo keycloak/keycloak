@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import {
   Dropdown,
   DropdownToggle,
@@ -15,8 +16,11 @@ type RealmSelectorProps = {
 
 export const RealmSelector = ({ realm, realmList }: RealmSelectorProps) => {
   const [open, setOpen] = useState(false);
+  const history = useHistory();
   const dropdownItems = realmList.map((r) => (
-    <DropdownItem key={r}>{r}</DropdownItem>
+    <DropdownItem component="a" href="/" key={r}>
+      {r}
+    </DropdownItem>
   ));
   return (
     <Dropdown
@@ -34,8 +38,8 @@ export const RealmSelector = ({ realm, realmList }: RealmSelectorProps) => {
       }
       dropdownItems={[
         ...dropdownItems,
-        <DropdownItem key="add">
-          <Button isBlock>Add Realm</Button>
+        <DropdownItem component="div" key="add">
+          <Button onClick={() => history.push('/add-realm')}>Add Realm</Button>
         </DropdownItem>,
       ]}
     />

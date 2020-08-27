@@ -17,12 +17,18 @@ import {
 } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 import { KeycloakContext } from './auth/KeycloakContext';
+import { Link } from 'react-router-dom';
 
 export const Header = () => {
   return (
     <PageHeader
       showNavToggle
-      logo={<Brand src="/logo.svg" alt="Logo" />}
+      logo={
+        <Link to="/">
+          <Brand src="/logo.svg" alt="Logo" />
+        </Link>
+      }
+      logoComponent="div"
       headerTools={headerTools()}
     />
   );
