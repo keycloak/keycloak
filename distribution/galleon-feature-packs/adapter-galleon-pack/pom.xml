@@ -261,6 +261,15 @@
                 <version.org.wildfly.core>12.0.1.Final</version.org.wildfly.core>
                 <version.org.wildfly.common>1.5.4.Final</version.org.wildfly.common>
             </properties>
+            <repositories>
+                <repository>
+                    <id>jboss</id>
+                    <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
             <dependencies>
                 <dependency>
                     <groupId>org.wildfly</groupId>
@@ -280,9 +289,9 @@
             </activation>
             <properties>
                 <galleon-adapter-group-id>org.jboss.sso</galleon-adapter-group-id>
-                <version.org.jboss.eap>7.3.2.GA-redhat-SNAPSHOT</version.org.jboss.eap>
-                <version.org.wildfly.core>10.1.11.Final-redhat-SNAPSHOT</version.org.wildfly.core>
-                <version.org.wildfly.common>1.5.1.Final-redhat-00001</version.org.wildfly.common>
+                <version.org.jboss.eap>7.3.2.GA-redhat-00002</version.org.jboss.eap>
+                <version.org.wildfly.core>10.1.11.Final-redhat-00001</version.org.wildfly.core>
+                <version.org.wildfly.common>1.5.2.Final-redhat-00002</version.org.wildfly.common>
             </properties>
             <dependencies>
                 <dependency>
