@@ -832,6 +832,17 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
+    public UserSessionModel getOfflineUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId) {
+        List<UserSessionModel> userSessions = getUserSessions(realm, UserSessionPredicate.create(realm.getId()).brokerSessionId(brokerSessionId), true);
+        return userSessions.isEmpty() ? null : userSessions.get(0);
+    }
+
+    @Override
+    public List<UserSessionModel> getOfflineUserSessionByBrokerUserId(RealmModel realm, String brokerUserId) {
+        return getUserSessions(realm, UserSessionPredicate.create(realm.getId()).brokerUserId(brokerUserId), true);
+    }
+
+    @Override
     public void removeOfflineUserSession(RealmModel realm, UserSessionModel userSession) {
         UserSessionEntity userSessionEntity = getUserSessionEntity(realm, userSession, true);
         if (userSessionEntity != null) {

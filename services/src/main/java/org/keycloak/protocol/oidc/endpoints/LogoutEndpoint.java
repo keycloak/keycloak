@@ -320,12 +320,24 @@ public class LogoutEndpoint {
             UserSessionModel userSession = session.sessions().getUserSessionByBrokerSessionId(realm,
                     identityProviderAlias + "." + sessionId);
 
+            if (logoutOfflineSessions) {
+                logoutOfflineUserSession(identityProviderAlias + "." + sessionId);
+            }
+
             if (userSession != null) {
-                backchannelLogoutResponse = logoutUserSession(userSession, logoutOfflineSessions);
+                backchannelLogoutResponse = logoutUserSession(userSession);
             }
         }
 
         return backchannelLogoutResponse;
+    }
+
+    private void logoutOfflineUserSession(String brokerSessionId) {
+        UserSessionModel offlineUserSession =
+                session.sessions().getOfflineUserSessionByBrokerSessionId(realm, brokerSessionId);
+        if (offlineUserSession != null) {
+            new UserSessionManager(session).revokeOfflineUserSession(offlineUserSession);
+        }
     }
 
     private BackchannelLogoutResponse backchannelLogoutFederatedUserId(String federatedUserId,
@@ -336,9 +348,13 @@ public class LogoutEndpoint {
             List<UserSessionModel> userSessions = session.sessions().getUserSessionByBrokerUserId(realm,
                     identityProviderAlias + "." + federatedUserId);
 
+            if (logoutOfflineSessions) {
+                logoutOfflineUserSessions(identityProviderAlias + "." + federatedUserId);
+            }
+
             for (UserSessionModel userSession : userSessions) {
                 BackchannelLogoutResponse userBackchannelLogoutResponse;
-                userBackchannelLogoutResponse = logoutUserSession(userSession, logoutOfflineSessions);
+                userBackchannelLogoutResponse = logoutUserSession(userSession);
                 backchannelLogoutResponse.setLocalLogoutSucceeded(backchannelLogoutResponse.getLocalLogoutSucceeded()
                         && userBackchannelLogoutResponse.getLocalLogoutSucceeded());
                 userBackchannelLogoutResponse.getClientResponses()
@@ -349,11 +365,19 @@ public class LogoutEndpoint {
         return backchannelLogoutResponse;
     }
 
-    private BackchannelLogoutResponse logoutUserSession(UserSessionModel userSession, boolean logoutOfflineSessions) {
-        BackchannelLogoutResponse backchannelLogoutResponse =
-                AuthenticationManager.backchannelLogout(session, realm, userSession,
-                        session.getContext().getUri(),
-                        clientConnection, headers, false, logoutOfflineSessions);
+    private void logoutOfflineUserSessions(String brokerUserId) {
+        List<UserSessionModel> offlineUserSessions =
+                session.sessions().getOfflineUserSessionByBrokerUserId(realm, brokerUserId);
+
+        UserSessionManager userSessionManager = new UserSessionManager(session);
+        for (UserSessionModel offlineUserSession : offlineUserSessions) {
+            userSessionManager.revokeOfflineUserSession(offlineUserSession);
+        }
+    }
+
+    private BackchannelLogoutResponse logoutUserSession(UserSessionModel userSession) {
+        BackchannelLogoutResponse backchannelLogoutResponse = AuthenticationManager.backchannelLogout(session, realm,
+                userSession, session.getContext().getUri(), clientConnection, headers, false);
 
         if (backchannelLogoutResponse.getLocalLogoutSucceeded()) {
             event.user(userSession.getUser())

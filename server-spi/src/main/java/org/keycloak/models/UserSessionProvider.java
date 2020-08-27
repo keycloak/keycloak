@@ -86,6 +86,8 @@ public interface UserSessionProvider extends Provider {
     /** Will automatically attach newly created offline client session to the offlineUserSession **/
     AuthenticatedClientSessionModel createOfflineClientSession(AuthenticatedClientSessionModel clientSession, UserSessionModel offlineUserSession);
     List<UserSessionModel> getOfflineUserSessions(RealmModel realm, UserModel user);
+    UserSessionModel getOfflineUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId);
+    List<UserSessionModel> getOfflineUserSessionByBrokerUserId(RealmModel realm, String brokerUserId);
 
     long getOfflineSessionsCount(RealmModel realm, ClientModel client);
     List<UserSessionModel> getOfflineUserSessions(RealmModel realm, ClientModel client, int first, int max);
@@ -95,4 +97,5 @@ public interface UserSessionProvider extends Provider {
 
     void close();
 
+    
 }

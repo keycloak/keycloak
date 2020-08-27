@@ -578,6 +578,38 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
                 sessionIdProviderRealm);
     }
 
+    @Test
+    public void postBackchannelLogoutNestedBrokeringRevokeOfflineSessionsWithoutActiveUserSession() throws Exception {
+        String consumerClientId =
+                getClientId(nbc.consumerRealmName(), OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID);
+        subConsumerIdpRequestsOfflineSessions();
+
+        logInAsUserInNestedIDPForFirstTime();
+        String userIdConsumerRealm = getUserIdConsumerRealm();
+        String sessionIdProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
+
+        String sessionIdConsumerRealm = assertConsumerLoginEvent(userIdConsumerRealm,
+                OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID);
+        assertActiveSessionInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
+                sessionIdConsumerRealm);
+
+        logoutFromRealm(getConsumerRoot(), nbc.consumerRealmName());
+        assertNoSessionsInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
+                sessionIdConsumerRealm);
+        assertActiveOfflineSessionInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
+                sessionIdConsumerRealm);
+
+        String logoutTokenEncoded = getLogoutTokenEncodedAndSigned(userIdProviderRealm, sessionIdProviderRealm, true);
+        
+        oauth.realm(nbc.consumerRealmName());
+        try (CloseableHttpResponse response = oauth.doBackchannelLogout(logoutTokenEncoded)) {
+            assertThat(response, Matchers.statusCodeIsHC(Response.Status.OK));
+        }
+        
+        assertNoOfflineSessionsInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm,
+                sessionIdConsumerRealm);
+    }
+
     private void subConsumerIdpRequestsOfflineSessions() {
         IdentityProviderResource subConsumerIDPResource = adminClient.realm(nbc.subConsumerRealmName())
                 .identityProviders().get(nbc.getSubConsumerIDPDisplayName());
