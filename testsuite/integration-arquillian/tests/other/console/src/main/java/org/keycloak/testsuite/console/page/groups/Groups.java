@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.console.page.users;
+package org.keycloak.testsuite.console.page.groups;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.keycloak.representations.idm.UserRepresentation;

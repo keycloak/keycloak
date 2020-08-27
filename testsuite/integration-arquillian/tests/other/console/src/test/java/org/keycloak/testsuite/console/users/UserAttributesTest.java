@@ -27,6 +27,8 @@ import org.keycloak.testsuite.console.page.users.UserAttributes;
 import org.keycloak.testsuite.console.page.groups.CreateGroup;
 import org.keycloak.testsuite.console.page.groups.Groups;
 
+import java.util.ArrayList;
+
 import static org.junit.Assert.*;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
