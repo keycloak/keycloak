@@ -66,6 +66,7 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
+import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
 import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -121,7 +122,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.xml.namespace.QName;
 import java.io.IOException;
-import java.security.MessageDigest;
 
 import java.util.List;
 import java.util.Map;
@@ -510,7 +510,7 @@ public class TokenEndpoint {
             // plain or S256
             if (codeChallengeMethod != null && codeChallengeMethod.equals(OAuth2Constants.PKCE_METHOD_S256)) {
                 logger.debugf("PKCE codeChallengeMethod = %s", codeChallengeMethod);
-                codeVerifierEncoded = generateS256CodeChallenge(codeVerifier);
+                codeVerifierEncoded = PkceUtils.generateS256CodeChallenge(codeVerifier);
             } else {
                 logger.debug("PKCE codeChallengeMethod is plain");
                 codeVerifierEncoded = codeVerifier;
@@ -1356,16 +1356,8 @@ public class TokenEndpoint {
         return m.matches();
     }
 
-    // https://tools.ietf.org/html/rfc7636#section-4.6
-    private String generateS256CodeChallenge(String codeVerifier) throws Exception {
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        md.update(codeVerifier.getBytes("ISO_8859_1"));
-        byte[] digestBytes = md.digest();
-        String codeVerifierEncoded = Base64Url.encode(digestBytes);
-        return codeVerifierEncoded;
-    }
-
     private static class TokenExchangeSamlProtocol extends SamlProtocol {
+
         final SamlClient samlClient;
 
         TokenExchangeSamlProtocol(SamlClient samlClient) {

@@ -25,6 +25,7 @@ import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
@@ -44,12 +45,14 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.resources.RealmsResource;
@@ -68,7 +71,6 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.security.PublicKey;
-import java.util.UUID;
 
 /**
  * @author Pedro Igor
@@ -84,6 +86,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public static final String ACCESS_TOKEN_EXPIRATION = "accessTokenExpiration";
     public static final String EXCHANGE_PROVIDER = "EXCHANGE_PROVIDER";
     private static final String BROKER_NONCE_PARAM = "BROKER_NONCE";
+    private static final String BROKER_CODE_CHALLENGE_PARAM = "BROKER_CODE_CHALLENGE";
+    private static final String BROKER_CODE_CHALLENGE_METHOD_PARAM = "BROKER_CODE_CHALLENGE_METHOD";
 
     public OIDCIdentityProvider(KeycloakSession session, OIDCIdentityProviderConfig config) {
         super(session, config);
@@ -317,6 +321,27 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             super(callback, realm, event);
         }
 
+        @Override
+        public SimpleHttp generateTokenRequest(String authorizationCode) {
+            SimpleHttp simpleHttp = super.generateTokenRequest(authorizationCode);
+
+            if (getConfig().isPkceEnabled()) {
+
+                // reconstruct the original code verifier that was used to generate the code challenge.
+                String stateParam = httpRequest.getUri().getQueryParameters().getFirst(OAuth2Constants.STATE);
+                // TODO handle state param missing
+
+                IdentityBrokerState idpBrokerState = IdentityBrokerState.encoded(stateParam);
+                ClientModel client = realm.getClientByClientId(idpBrokerState.getClientId());
+                AuthenticationSessionModel authSession = ClientSessionCode.getClientSession(idpBrokerState.getEncoded(), idpBrokerState.getTabId(), session, realm, client, event, AuthenticationSessionModel.class);
+                // TODO handle authSession missing
+
+                simpleHttp.param(OAuth2Constants.CODE_VERIFIER, authSession.getClientNote(BROKER_CODE_CHALLENGE_PARAM));
+                simpleHttp.param(OAuth2Constants.CODE_CHALLENGE_METHOD, getConfig().getPkceMethod());
+            }
+
+            return simpleHttp;
+        }
 
         @GET
         @Path("logout_response")
@@ -760,7 +785,18 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         authenticationSession.setClientNote(BROKER_NONCE_PARAM, nonce);
         uriBuilder.queryParam(OIDCLoginProtocol.NONCE_PARAM, nonce);
-        
+
+        if (getConfig().isPkceEnabled()) {
+            String codeVerifier = PkceUtils.generateCodeVerifier();
+            String codeChallengeMethod = getConfig().getPkceMethod();
+            authenticationSession.setClientNote(BROKER_CODE_CHALLENGE_PARAM, codeVerifier);
+            authenticationSession.setClientNote(BROKER_CODE_CHALLENGE_METHOD_PARAM, codeChallengeMethod);
+
+            String codeChallenge = PkceUtils.encodeCodeChallenge(codeVerifier, codeChallengeMethod);
+            uriBuilder.queryParam(OAuth2Constants.CODE_CHALLENGE, codeChallenge);
+            uriBuilder.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
+        }
+
         return uriBuilder;
     }
 

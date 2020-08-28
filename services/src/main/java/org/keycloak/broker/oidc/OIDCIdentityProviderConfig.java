@@ -18,10 +18,12 @@ package org.keycloak.broker.oidc;
 
 import static org.keycloak.common.util.UriUtils.checkUrl;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+
+import java.util.Arrays;
 
 /**
  * @author Pedro Igor
@@ -32,7 +34,8 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
 
     public static final String USE_JWKS_URL = "useJwksUrl";
     public static final String VALIDATE_SIGNATURE = "validateSignature";
-
+    public static final String PKCE_ENABLED = "pkceEnabled";
+    public static final String PKCE_METHOD = "pkceMethod";
 
     public OIDCIdentityProviderConfig(IdentityProviderModel identityProviderModel) {
         super(identityProviderModel);
@@ -132,11 +135,34 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
         }
     }
 
+    public boolean isPkceEnabled() {
+        return Boolean.parseBoolean(getConfig().getOrDefault(PKCE_ENABLED, "false"));
+    }
+
+    public void setPkceEnabled(boolean enabled) {
+        getConfig().put(PKCE_ENABLED, String.valueOf(enabled));
+    }
+
+    public String getPkceMethod() {
+        return getConfig().get(PKCE_METHOD);
+    }
+
+    public String setPkceMethod(String method) {
+        return getConfig().put(PKCE_METHOD, method);
+    }
+
     @Override 
     public void validate(RealmModel realm) {
         super.validate(realm);
         SslRequired sslRequired = realm.getSslRequired();
         checkUrl(sslRequired, getJwksUrl(), "jwks_url");
         checkUrl(sslRequired, getLogoutUrl(), "logout_url");
+
+        if (isPkceEnabled()) {
+            String pkceMethod = getPkceMethod();
+            if (!Arrays.asList(OAuth2Constants.PKCE_METHOD_PLAIN, OAuth2Constants.PKCE_METHOD_S256).contains(pkceMethod)) {
+                throw new IllegalArgumentException("PKCE Method not supported: " + pkceMethod);
+            }
+        }
     }
 }
