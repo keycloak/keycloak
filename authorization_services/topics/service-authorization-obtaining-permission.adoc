@@ -56,7 +56,7 @@ This parameter is *optional*. An integer N that defines a limit for the amount o
 * **submit_request**
 +
 This parameter is *optional*. A boolean value indicating whether the server should create permission requests to the resources and scopes referenced by a permission ticket.
-This parameter only have effect if used together with the `ticket` parameter as part of a UMA authorization process.
+This parameter only has effect if used together with the `ticket` parameter as part of a UMA authorization process.
 +
 * **response_mode**
 +
