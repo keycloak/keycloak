@@ -59,6 +59,7 @@ import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 
 import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -260,8 +261,8 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         groupManagerRep.addUser("noMapperGroupManager");
         ResourceServer server = permissions.realmResourceServer();
         Policy groupManagerPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(groupManagerRep, server);
-        Policy groupManagerPermission = permissions.groups().manageMembersPermission(group);
-        groupManagerPermission.addAssociatedPolicy(groupManagerPolicy);
+        permissions.groups().manageMembersPermission(group).addAssociatedPolicy(groupManagerPolicy);
+        permissions.groups().manageMembershipPermission(group).addAssociatedPolicy(groupManagerPolicy);
         permissions.groups().viewPermission(group).addAssociatedPolicy(groupManagerPolicy);
 
         UserModel clientMapper = session.users().addUser(realm, "clientMapper");
@@ -372,6 +373,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             Assert.assertFalse(permissionsForAdmin.users().canView(user));
             UserModel member = session.users().getUserByUsername("groupMember", realm);
             Assert.assertTrue(permissionsForAdmin.users().canManage(member));
+            Assert.assertTrue(permissionsForAdmin.users().canManageGroupMembership(member));
             Assert.assertTrue(permissionsForAdmin.users().canView(member));
             Assert.assertTrue(permissionsForAdmin.roles().canMapRole(realmRole));
             Assert.assertTrue(permissionsForAdmin.roles().canMapRole(clientRole));
@@ -624,6 +626,45 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
                 for (UserRepresentation user : queryUsers) {
                     System.out.println(user.getUsername());
                 }
+            }
+        }
+
+        // KEYCLOAK-11261 : user creation via fine grain admin
+
+        {
+            try (Keycloak realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                    TEST, "noMapperGroupManager", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
+                // Should only return the list of users that belong to "top" group
+                List<UserRepresentation> queryUsers = realmClient.realm(TEST).users().list();
+                Assert.assertEquals(1, queryUsers.size());
+
+                UserRepresentation newGroupMemberWithoutGroup = createUserRepresentation("new-group-member",
+                        "new-group-member@keycloak.org", "New", "Member", true);
+                try {
+                    ApiUtil.createUserWithAdminClient(realmClient.realm(TEST), newGroupMemberWithoutGroup);
+                    Assert.fail("should fail with HTTP response code 403 Forbidden");
+                } catch (WebApplicationException e) {
+                    Assert.assertEquals(403, e.getResponse().getStatus());
+                }
+
+                UserRepresentation newGroupMemberWithAWrongGroup = createUserRepresentation("new-group-member",
+                        "new-group-member@keycloak.org", "New", "Member",
+                        Arrays.asList("wrong-group"),true);
+                try {
+                    ApiUtil.createUserWithAdminClient(realmClient.realm(TEST), newGroupMemberWithAWrongGroup);
+                    Assert.fail("should fail with HTTP response code 400 Bad Request");
+                } catch (WebApplicationException e) {
+                    Assert.assertEquals(400, e.getResponse().getStatus());
+                }
+
+                UserRepresentation newGroupMember = createUserRepresentation("new-group-member",
+                        "new-group-member@keycloak.org", "New", "Member",
+                        Arrays.asList("top"), true);
+                ApiUtil.createUserWithAdminClient(realmClient.realm(TEST), newGroupMember);
+
+                // Should only return the list of users that belong to "top" group + the new one
+                queryUsers = realmClient.realm(TEST).users().list();
+                Assert.assertEquals(2, queryUsers.size());
             }
         }
     }

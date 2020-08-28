@@ -497,14 +497,19 @@ public abstract class AbstractKeycloakTest {
         return ApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
     }
 
-    public static UserRepresentation createUserRepresentation(String username, String email, String firstName, String lastName, boolean enabled) {
+    public static UserRepresentation createUserRepresentation(String username, String email, String firstName, String lastName, List<String> groups, boolean enabled) {
         UserRepresentation user = new UserRepresentation();
         user.setUsername(username);
         user.setEmail(email);
         user.setFirstName(firstName);
         user.setLastName(lastName);
+        user.setGroups(groups);
         user.setEnabled(enabled);
         return user;
+    }
+
+    public static UserRepresentation createUserRepresentation(String username, String email, String firstName, String lastName, boolean enabled) {
+        return createUserRepresentation(username, email, firstName, lastName, null, enabled);
     }
 
     public static UserRepresentation createUserRepresentation(String username, String email, String firstName, String lastName, boolean enabled, String password) {

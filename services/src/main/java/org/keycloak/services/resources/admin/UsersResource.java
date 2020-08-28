@@ -109,19 +109,27 @@ public class UsersResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createUser(final UserRepresentation rep) {
-        // if groups is part of the user rep, check if admin has manage_members and manage_membership on each group
-        if (rep.getGroups() != null) {
-            for (String groupPath : rep.getGroups()) {
-                GroupModel group = KeycloakModelUtils.findGroupByPath(realm, groupPath);
-                if (group != null) {
-                    auth.groups().requireManageMembers(group);
-                    auth.groups().requireManageMembership(group);
-                } else {
-                    return ErrorResponse.error(String.format("Group %s not found", groupPath), Response.Status.BAD_REQUEST);
-                }
-            }
-        } else {
+        // first check if user has manage rights
+        try {
             auth.users().requireManage();
+        }
+        catch (ForbiddenException exception) {
+            // if user does not have manage rights, fallback to fine grain admin permissions per group
+            if (rep.getGroups() != null) {
+                // if groups is part of the user rep, check if admin has manage_members and manage_membership on each group
+                for (String groupPath : rep.getGroups()) {
+                    GroupModel group = KeycloakModelUtils.findGroupByPath(realm, groupPath);
+                    if (group != null) {
+                        auth.groups().requireManageMembers(group);
+                        auth.groups().requireManageMembership(group);
+                    } else {
+                        return ErrorResponse.error(String.format("Group %s not found", groupPath), Response.Status.BAD_REQUEST);
+                    }
+                }
+            } else {
+                // propagate exception if no group specified
+                throw exception;
+            }
         }
 
         String username = rep.getUsername();
