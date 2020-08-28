@@ -1,0 +1,11 @@
+
+.panel {
+  padding: 24px;
+  border-style: solid;
+  border-color: var(--pf-global--BorderColor--100);
+  border-width: var(--pf-global--BorderWidth--sm);
+}
+
+.title {
+  padding-bottom: 8px;
+}
