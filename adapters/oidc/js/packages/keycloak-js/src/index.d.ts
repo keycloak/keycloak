@@ -20,7 +20,7 @@
  */
 export as namespace Keycloak;
 
-export = Keycloak;
+export default Keycloak;
 
 /**
  * Creates a new Keycloak client instance.

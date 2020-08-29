@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "workspaces": [
+    "packages/keycloak-js",
+    "packages/keycloak-authz"
+  ],
+  "engines": {
+    "node": "^12"
+  },
+  "devDependencies": {
+    "copyfiles": "^2.3.0",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.0.2"
+  }
+}
