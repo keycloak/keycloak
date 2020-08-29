@@ -159,7 +159,7 @@
         <osgi.bundle.plugin.version>2.3.7</osgi.bundle.plugin.version>
         <wildfly.plugin.version>2.0.1.Final</wildfly.plugin.version>
         <nexus.staging.plugin.version>1.6.5</nexus.staging.plugin.version>
-        <frontend.plugin.version>1.8.0</frontend.plugin.version>
+        <frontend.plugin.version>1.11.3</frontend.plugin.version>
         <docker.maven.plugin.version>0.28.0</docker.maven.plugin.version>
 
         <!-- Surefire Settings -->
