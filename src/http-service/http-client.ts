@@ -11,8 +11,8 @@ export interface RequestInitWithParams extends RequestInit {
 }
 
 export class AccountServiceError extends Error {
-  constructor(public response: HttpResponse) {
-    super(response.statusText);
+  constructor(message: string) {
+    super(message);
   }
 }
 
@@ -82,7 +82,6 @@ export class HttpClient {
 
     if (!response.ok) {
       this.handleError(response);
-      throw new AccountServiceError(response);
     }
 
     return response;
@@ -95,12 +94,9 @@ export class HttpClient {
     }
 
     if (response != null && response.data != null) {
-      console.error(response.data);
-      //     ContentAlert.danger(
-      //         `${response.statusText}: ${response.data['errorMessage'] ? response.data['errorMessage'] : ''} ${response.data['error'] ? response.data['error'] : ''}`
-      //     );
-      // } else {
-      //     ContentAlert.danger(response.statusText);
+      throw new AccountServiceError((response.data as any).errorMessage);
+    } else {
+      throw new AccountServiceError(response.statusText);
     }
   }
 

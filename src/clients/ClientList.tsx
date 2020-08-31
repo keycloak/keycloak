@@ -9,14 +9,14 @@ import {
 } from '@patternfly/react-table';
 import { Badge } from '@patternfly/react-core';
 
-import { Client } from './client-model';
+import { ClientRepresentation } from '../model/client-model';
 
 type ClientListProps = {
-  clients?: Client[];
+  clients?: ClientRepresentation[];
   baseUrl: string;
 };
 
-const columns: (keyof Client)[] = [
+const columns: (keyof ClientRepresentation)[] = [
   'clientId',
   'protocol',
   'description',
@@ -40,7 +40,7 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
     return data ? data : '—';
   };
 
-  const replaceBaseUrl = (r: Client) =>
+  const replaceBaseUrl = (r: ClientRepresentation) =>
     r.rootUrl &&
     r.rootUrl
       .replace('${authBaseUrl}', baseUrl)

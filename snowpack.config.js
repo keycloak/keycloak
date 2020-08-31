@@ -4,7 +4,7 @@ module.exports = {
     "build:css": "postcss"
   },
   "proxy": {
-    "/realms": process.env.BACKEND_URL
+    "/admin": process.env.BACKEND_URL
   },
   "plugins": ["@snowpack/plugin-parcel"]
 

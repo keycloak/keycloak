@@ -1,10 +1,10 @@
-import React from 'react';
+import React from "react";
 import {
   AlertGroup,
   Alert,
   AlertActionCloseButton,
   AlertVariant,
-} from '@patternfly/react-core';
+} from "@patternfly/react-core";
 
 export type AlertType = {
   key: number;
@@ -22,8 +22,10 @@ export function AlertPanel({ alerts, onCloseAlert }: AlertPanelProps) {
     <AlertGroup isToast>
       {alerts.map(({ key, variant, message }) => (
         <Alert
+          key={key}
           isLiveRegion
           variant={AlertVariant[variant]}
+          variantLabel=""
           title={message}
           actionClose={
             <AlertActionCloseButton
@@ -32,7 +34,6 @@ export function AlertPanel({ alerts, onCloseAlert }: AlertPanelProps) {
               onClose={() => onCloseAlert(key)}
             />
           }
-          key={key}
         />
       ))}
     </AlertGroup>
