@@ -44,9 +44,7 @@ public class StackUtil {
      * level, then returns stack trace, else returns empty {@link StringBuilder}
      */
     public static StringBuilder getShortStackTrace(String prefix) {
-        if (! LOG.isTraceEnabled()) {
-            return EMPTY;
-        }
+        if (! isShortStackTraceEnabled()) return EMPTY;
 
         StringBuilder sb = new StringBuilder();
         StackTraceElement[] stackTrace = (new Throwable()).getStackTrace();
@@ -61,5 +59,9 @@ public class StackUtil {
             sb.append(prefix).append(st);
         }
         return sb;
+    }
+
+    public static boolean isShortStackTraceEnabled() {
+        return LOG.isTraceEnabled();
     }
 }

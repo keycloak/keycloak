@@ -29,6 +29,8 @@ import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Supplier;
 import javax.ws.rs.core.Response.Status;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
@@ -62,6 +64,7 @@ public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2
     private URI targetUri;
     private String targetAttribute;
     private Binding targetBinding;
+    private Supplier<String> documentSupplier;
 
     public ModifySamlResponseStepBuilder(Binding binding, SamlClientBuilder clientBuilder) {
         super(clientBuilder);
@@ -81,6 +84,15 @@ public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2
         }
 
         throw new RuntimeException("Unknown binding for " + ModifySamlResponseStepBuilder.class.getName());
+    }
+
+    public Supplier<String> documentSupplier() {
+        return documentSupplier;
+    }
+
+    public ModifySamlResponseStepBuilder documentSupplier(Supplier<String> documentSupplier) {
+        this.documentSupplier = documentSupplier;
+        return this;
     }
 
     public Binding targetBinding() {
@@ -119,86 +131,108 @@ public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2
     }
 
     protected HttpUriRequest handleRedirectBinding(CloseableHttpResponse currentResponse) throws Exception, IOException, URISyntaxException {
-        NameValuePair samlParam = null;
+        String samlDoc;
+        final String attrName;
+        final URI uri;
+        final List<NameValuePair> params;
 
-        assertThat(currentResponse, statusCodeIsHC(Status.FOUND));
-        String location = currentResponse.getFirstHeader("Location").getValue();
-        URI locationUri = URI.create(location);
+        if (documentSupplier != null) {
+            Objects.requireNonNull(this.targetUri, "Set targetUri");
+            Objects.requireNonNull(this.targetAttribute, "Set targetAttribute");
 
-        List<NameValuePair> params = URLEncodedUtils.parse(locationUri, "UTF-8");
-        for (Iterator<NameValuePair> it = params.iterator(); it.hasNext();) {
-            NameValuePair param = it.next();
-            if ("SAMLResponse".equals(param.getName()) || "SAMLRequest".equals(param.getName())) {
-                assertThat("Only one SAMLRequest/SAMLResponse check", samlParam, nullValue());
-                samlParam = param;
-                it.remove();
+            samlDoc = documentSupplier.get();
+            uri = this.targetUri;
+            attrName = this.targetAttribute;
+            params = new LinkedList<>();
+        } else {
+            NameValuePair samlParam = null;
+
+            assertThat(currentResponse, statusCodeIsHC(Status.FOUND));
+            String location = currentResponse.getFirstHeader("Location").getValue();
+            URI locationUri = URI.create(location);
+
+            params = URLEncodedUtils.parse(locationUri, "UTF-8");
+            for (Iterator<NameValuePair> it = params.iterator(); it.hasNext();) {
+                NameValuePair param = it.next();
+                if ("SAMLResponse".equals(param.getName()) || "SAMLRequest".equals(param.getName())) {
+                    assertThat("Only one SAMLRequest/SAMLResponse check", samlParam, nullValue());
+                    samlParam = param;
+                    it.remove();
+                }
             }
+
+            assertThat(samlParam, notNullValue());
+
+            String base64EncodedSamlDoc = samlParam.getValue();
+            InputStream decoded = RedirectBindingUtil.base64DeflateDecode(base64EncodedSamlDoc);
+            samlDoc = IOUtils.toString(decoded, GeneralConstants.SAML_CHARSET);
+            IOUtils.closeQuietly(decoded);
+            
+            uri = this.targetUri != null
+               ? this.targetUri
+               : locationUri;
+            attrName = this.targetAttribute != null ? this.targetAttribute : samlParam.getName();
         }
 
-        assertThat(samlParam, notNullValue());
-
-        String base64EncodedSamlDoc = samlParam.getValue();
-        InputStream decoded = RedirectBindingUtil.base64DeflateDecode(base64EncodedSamlDoc);
-        String samlDoc = IOUtils.toString(decoded, GeneralConstants.SAML_CHARSET);
-        IOUtils.closeQuietly(decoded);
-
-        String transformed = getTransformer().transform(samlDoc);
-        if (transformed == null) {
-            return null;
-        }
-
-        final String attrName = this.targetAttribute != null ? this.targetAttribute : samlParam.getName();
-
-        final URI uri = this.targetUri != null
-          ? this.targetUri
-          : locationUri;
-
-        return createRequest(uri, attrName, transformed, params);
+        return createRequest(uri, attrName, samlDoc, params);
     }
 
     private HttpUriRequest handlePostBinding(CloseableHttpResponse currentResponse) throws Exception {
-        assertThat(currentResponse, statusCodeIsHC(Status.OK));
+        String samlDoc;
+        final String attrName;
+        final URI uri;
+        final List<NameValuePair> params = new LinkedList<>();
 
-        final String htmlBody = EntityUtils.toString(currentResponse.getEntity());
-        assertThat(htmlBody, Matchers.containsString("SAML"));
-        org.jsoup.nodes.Document theResponsePage = Jsoup.parse(htmlBody);
-        Elements samlResponses = theResponsePage.select("input[name=SAMLResponse]");
-        Elements samlRequests = theResponsePage.select("input[name=SAMLRequest]");
-        Elements forms = theResponsePage.select("form");
-        Elements relayStates = theResponsePage.select("input[name=RelayState]");
-        int size = samlResponses.size() + samlRequests.size();
-        assertThat("Checking uniqueness of SAMLResponse/SAMLRequest input field in the page", size, is(1));
-        assertThat("Checking uniqueness of forms in the page", forms, hasSize(1));
+        if (documentSupplier != null) {
+            Objects.requireNonNull(this.targetUri, "Set targetUri");
+            Objects.requireNonNull(this.targetAttribute, "Set targetAttribute");
 
-        Element respElement = samlResponses.isEmpty() ? samlRequests.first() : samlResponses.first();
-        Element form = forms.first();
+            samlDoc = documentSupplier.get();
+            uri = this.targetUri;
+            attrName = this.targetAttribute;
+        } else {
+            assertThat(currentResponse, statusCodeIsHC(Status.OK));
 
-        String base64EncodedSamlDoc = respElement.val();
-        InputStream decoded = PostBindingUtil.base64DecodeAsStream(base64EncodedSamlDoc);
-        String samlDoc = IOUtils.toString(decoded, GeneralConstants.SAML_CHARSET);
-        IOUtils.closeQuietly(decoded);
+            final String htmlBody = EntityUtils.toString(currentResponse.getEntity());
+            assertThat(htmlBody, Matchers.containsString("SAML"));
+            org.jsoup.nodes.Document theResponsePage = Jsoup.parse(htmlBody);
+            Elements samlResponses = theResponsePage.select("input[name=SAMLResponse]");
+            Elements samlRequests = theResponsePage.select("input[name=SAMLRequest]");
+            Elements forms = theResponsePage.select("form");
+            Elements relayStates = theResponsePage.select("input[name=RelayState]");
+            int size = samlResponses.size() + samlRequests.size();
+            assertThat("Checking uniqueness of SAMLResponse/SAMLRequest input field in the page", size, is(1));
+            assertThat("Checking uniqueness of forms in the page", forms, hasSize(1));
 
+            Element respElement = samlResponses.isEmpty() ? samlRequests.first() : samlResponses.first();
+            Element form = forms.first();
+
+            String base64EncodedSamlDoc = respElement.val();
+            InputStream decoded = PostBindingUtil.base64DecodeAsStream(base64EncodedSamlDoc);
+            samlDoc = IOUtils.toString(decoded, GeneralConstants.SAML_CHARSET);
+            IOUtils.closeQuietly(decoded);
+
+            attrName = this.targetAttribute != null
+              ? this.targetAttribute
+              : respElement.attr("name");
+
+            if (! relayStates.isEmpty()) {
+                params.add(new BasicNameValuePair(GeneralConstants.RELAY_STATE, relayStates.first().val()));
+            }
+            uri = this.targetUri != null
+              ? this.targetUri
+              : URI.create(form.attr("action"));
+        }
+
+        return createRequest(uri, attrName, samlDoc, params);
+    }
+
+    protected HttpUriRequest createRequest(URI locationUri, String attributeName, String samlDoc, List<NameValuePair> parameters) throws Exception {
         String transformed = getTransformer().transform(samlDoc);
         if (transformed == null) {
             return null;
         }
 
-        final String attributeName = this.targetAttribute != null
-          ? this.targetAttribute
-          : respElement.attr("name");
-        List<NameValuePair> parameters = new LinkedList<>();
-
-        if (! relayStates.isEmpty()) {
-            parameters.add(new BasicNameValuePair(GeneralConstants.RELAY_STATE, relayStates.first().val()));
-        }
-        URI locationUri = this.targetUri != null
-          ? this.targetUri
-          : URI.create(form.attr("action"));
-
-        return createRequest(locationUri, attributeName, transformed, parameters);
-    }
-
-    protected HttpUriRequest createRequest(URI locationUri, String attributeName, String transformed, List<NameValuePair> parameters) throws IOException, URISyntaxException {
         switch (this.targetBinding) {
             case POST:
                 return createPostRequest(locationUri, attributeName, transformed, parameters);

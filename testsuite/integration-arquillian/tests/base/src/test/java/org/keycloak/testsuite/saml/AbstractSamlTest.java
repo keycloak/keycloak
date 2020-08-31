@@ -93,6 +93,13 @@ public abstract class AbstractSamlTest extends AbstractAuthTest {
                 .build(realm, SamlProtocol.LOGIN_PROTOCOL);
     }
 
+    protected URI getAuthServerBrokerSamlEndpoint(String realm, String identityProviderAlias) throws IllegalArgumentException, UriBuilderException {
+        return RealmsResource
+                .realmBaseUrl(UriBuilder.fromUri(getAuthServerRoot()))
+                .path("broker/{idp-name}/endpoint")
+                .build(realm, identityProviderAlias);
+    }
+
     protected URI getAuthServerRealmBase(String realm) throws IllegalArgumentException, UriBuilderException {
         return RealmsResource
                 .realmBaseUrl(UriBuilder.fromUri(getAuthServerRoot()))
