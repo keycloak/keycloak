@@ -1,0 +1,197 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`renders global alerts 1`] = `
+<AlertPanel
+  alerts={Array []}
+  onCloseAlert={[Function]}
+>
+  <AlertGroup
+    isToast={true}
+  >
+    <Portal
+      containerInfo={
+        <div>
+          <ul
+            class="pf-c-alert-group pf-m-toast"
+          />
+        </div>
+      }
+    >
+      <AlertGroupInline
+        isToast={true}
+      >
+        <ul
+          className="pf-c-alert-group pf-m-toast"
+        />
+      </AlertGroupInline>
+    </Portal>
+  </AlertGroup>
+</AlertPanel>
+`;
+
+exports[`renders global alerts 2`] = `
+<WithButton>
+  <AlertPanel
+    alerts={Array []}
+    onCloseAlert={[Function]}
+  >
+    <AlertGroup
+      isToast={true}
+    >
+      <Portal
+        containerInfo={
+          <div>
+            <ul
+              class="pf-c-alert-group pf-m-toast"
+            >
+              <li>
+                <div
+                  aria-atomic="false"
+                  aria-label="Default Alert"
+                  aria-live="polite"
+                  class="pf-c-alert"
+                  data-ouia-component-id="1"
+                  data-ouia-component-type="PF4/Alert"
+                  data-ouia-safe="true"
+                >
+                  <div
+                    class="pf-c-alert__icon"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style="vertical-align: -0.125em;"
+                      viewBox="0 64 896 1024"
+                      width="1em"
+                    >
+                      <path
+                        d="M320.060356,128 L575.938356,128 C575.938356,57.3 518.639356,-0.001 448.000356,-0.001 L448.000356,-0.001 C377.361356,-0.001 320.060356,57.3 320.060356,128 L320.060356,128 Z M64.2023555,192 C25.9623555,192 0.202355518,223.199 -2.84217094e-13,256 L-2.84217094e-13,256 C-0.0976444824,271.1 5.22235552,286.54 17.2223555,299.419 L17.2223555,299.419 C55.8623555,340.94 128.161356,403.399 128.161356,608 L128.161356,608 C128.161356,763.4 237.121356,887.8 384.040356,918.32 L384.040356,918.32 L384.040356,960 C384.040356,995.339 412.679356,1024 448.000356,1024 L448.000356,1024 C483.319356,1024 511.959356,995.339 511.959356,960 L511.959356,960 L511.959356,918.32 C658.878356,887.8 767.837356,763.4 767.837356,608 L767.837356,608 C767.837356,403.4 840.138356,340.94 878.778356,299.42 L878.778356,299.42 C890.777356,286.52 896.096356,271.1 895.999684,256 L895.999684,256 C895.777356,223.2 870.037356,192 831.798356,192 L831.798356,192 L64.2023555,192 Z"
+                        transform="rotate(180 0 512) scale(-1 1)"
+                      />
+                    </svg>
+                  </div>
+                  <h4
+                    class="pf-c-alert__title"
+                  >
+                    <span
+                      class="pf-u-screen-reader"
+                    >
+                      Default alert:
+                    </span>
+                    Hello
+                  </h4>
+                  <div
+                    class="pf-c-alert__action"
+                  >
+                    <button
+                      aria-disabled="false"
+                      aria-label="Close default alert alert: Hello"
+                      class="pf-c-button pf-m-plain"
+                      data-ouia-component-id="2"
+                      data-ouia-component-type="PF4/Button"
+                      data-ouia-safe="true"
+                      title="Hello"
+                      type="button"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        fill="currentColor"
+                        height="1em"
+                        role="img"
+                        style="vertical-align: -0.125em;"
+                        viewBox="0 0 352 512"
+                        width="1em"
+                      >
+                        <path
+                          d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                          transform=""
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                  
+                </div>
+              </li>
+            </ul>
+          </div>
+        }
+      >
+        <AlertGroupInline
+          isToast={true}
+        >
+          <ul
+            className="pf-c-alert-group pf-m-toast"
+          />
+        </AlertGroupInline>
+      </Portal>
+    </AlertGroup>
+  </AlertPanel>
+  <Button
+    onClick={[Function]}
+  >
+    <button
+      aria-disabled={false}
+      aria-label={null}
+      className="pf-c-button pf-m-primary"
+      data-ouia-component-id={0}
+      data-ouia-component-type="PF4/Button"
+      data-ouia-safe={true}
+      disabled={false}
+      onClick={[Function]}
+      type="button"
+    >
+      Add
+    </button>
+  </Button>
+</WithButton>
+`;
+
+exports[`renders global alerts 3`] = `
+<WithButton>
+  <AlertPanel
+    alerts={Array []}
+    onCloseAlert={[Function]}
+  >
+    <AlertGroup
+      isToast={true}
+    >
+      <Portal
+        containerInfo={
+          <div>
+            <ul
+              class="pf-c-alert-group pf-m-toast"
+            />
+          </div>
+        }
+      >
+        <AlertGroupInline
+          isToast={true}
+        >
+          <ul
+            className="pf-c-alert-group pf-m-toast"
+          />
+        </AlertGroupInline>
+      </Portal>
+    </AlertGroup>
+  </AlertPanel>
+  <Button
+    onClick={[Function]}
+  >
+    <button
+      aria-disabled={false}
+      aria-label={null}
+      className="pf-c-button pf-m-primary"
+      data-ouia-component-id={0}
+      data-ouia-component-type="PF4/Button"
+      data-ouia-safe={true}
+      disabled={false}
+      onClick={[Function]}
+      type="button"
+    >
+      Add
+    </button>
+  </Button>
+</WithButton>
+`;
