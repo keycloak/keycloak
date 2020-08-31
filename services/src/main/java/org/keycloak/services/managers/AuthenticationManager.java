@@ -1359,7 +1359,7 @@ public class AuthenticationManager {
         }
     }
 
-    protected static void logSuccess(KeycloakSession session, AuthenticationSessionModel authSession) {
+    public static void logSuccess(KeycloakSession session, AuthenticationSessionModel authSession) {
         RealmModel realm = session.getContext().getRealm();
         if (realm.isBruteForceProtected()) {
             UserModel user = lookupUserForBruteForceLog(session, realm, authSession);
