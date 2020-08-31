@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.util;
 
+import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.page.AbstractPage;
 import org.keycloak.testsuite.util.SamlClient.Binding;
@@ -35,13 +36,14 @@ import org.keycloak.testsuite.util.saml.LoginBuilder;
 import org.keycloak.testsuite.util.saml.UpdateProfileBuilder;
 import org.keycloak.testsuite.util.saml.ModifySamlResponseStepBuilder;
 import org.keycloak.testsuite.util.saml.RequiredConsentBuilder;
+import java.util.function.Function;
 import javax.ws.rs.core.Response.Status;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.hamcrest.Matcher;
 import org.junit.Assert;
 import org.w3c.dom.Document;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.keycloak.testsuite.util.saml.SamlDocumentStepBuilder.saml2Object2String;
 
 /**
  *
@@ -114,6 +116,10 @@ public class SamlClientBuilder {
         return this;
     }
 
+    public <T> T andThen(Function<SamlClientBuilder, T> next) {
+        return next.apply(this);
+    }
+
     public SamlClientBuilder assertResponse(Matcher<? super CloseableHttpResponse> matcher) {
         steps.add((client, currentURI, currentResponse, context) -> {
             Assert.assertThat(currentResponse, matcher);
@@ -162,6 +168,22 @@ public class SamlClientBuilder {
     /** Issues the given AuthnRequest to the SAML endpoint */
     public CreateLogoutRequestStepBuilder logoutRequest(URI authServerSamlUrl, String issuer, Binding requestBinding) {
         return addStepBuilder(new CreateLogoutRequestStepBuilder(authServerSamlUrl, issuer, requestBinding, this));
+    }
+
+    /** Issues the given SAML document to the SAML endpoint */
+    public ModifySamlResponseStepBuilder submitSamlDocument(URI authServerSamlUrl, String samlDocument, Binding binding) {
+        return addStepBuilder(new ModifySamlResponseStepBuilder(binding, this)
+          .targetUri(authServerSamlUrl)
+          .documentSupplier(() -> samlDocument)
+        );
+    }
+
+    /** Issues the given SAML document to the SAML endpoint */
+    public ModifySamlResponseStepBuilder submitSamlDocument(URI authServerSamlUrl, SAML2Object samlObject, Binding binding) {
+        return addStepBuilder(new ModifySamlResponseStepBuilder(binding, this)
+          .targetUri(authServerSamlUrl)
+          .documentSupplier(() -> saml2Object2String(samlObject))
+        );
     }
 
     /** Handles login page */
