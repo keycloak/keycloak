@@ -6,6 +6,6 @@ module.exports = {
   "proxy": {
     "/admin": process.env.BACKEND_URL
   },
-  "plugins": ["@snowpack/plugin-parcel"]
+  "plugins": ["@snowpack/plugin-webpack"]
 
 }

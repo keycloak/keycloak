@@ -31,8 +31,8 @@
   "devDependencies": {
     "@babel/core": "^7.10.5",
     "@babel/preset-typescript": "^7.10.4",
-    "@snowpack/app-scripts-react": "^1.4.0",
-    "@snowpack/plugin-parcel": "^1.3.0",
+    "@snowpack/app-scripts-react": "^1.10.0",
+    "@snowpack/plugin-webpack": "^2.0.6",
     "@storybook/addon-actions": "^5.3.19",
     "@storybook/addon-info": "^5.3.19",
     "@storybook/addon-links": "^5.3.19",
@@ -41,10 +41,12 @@
     "@testing-library/jest-dom": "^5.11.0",
     "@testing-library/react": "^10.4.6",
     "@types/dot": "^1.1.4",
+    "@types/enzyme": "^3.10.5",
     "@types/jest": "^26.0.4",
     "@types/react": "^16.9.23",
     "@types/react-dom": "^16.9.5",
     "@types/react-router-dom": "^5.1.5",
+    "@types/snowpack-env": "^2.3.0",
     "@typescript-eslint/eslint-plugin": "^3.8.0",
     "@typescript-eslint/parser": "^3.8.0",
     "babel-loader": "^8.1.0",
@@ -64,7 +66,7 @@
     "postcss-import": "^12.0.1",
     "prettier": "^2.0.5",
     "react-scripts": "^3.4.1",
-    "snowpack": "^2.6.4",
+    "snowpack": "^2.10.0",
     "typescript": "^3.8.3"
   }
 }
