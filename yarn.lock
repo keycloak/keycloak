@@ -2701,6 +2701,11 @@
     dotenv "^8.2.0"
     dotenv-expand "^5.1.0"
 
+"@snowpack/plugin-postcss@^1.0.2":
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/@snowpack/plugin-postcss/-/plugin-postcss-1.0.2.tgz#902eacf40ecd465be52137b01dbbfc773902be6c"
+  integrity sha512-DRRBe2uySvuQ9AEeOnJEtZEcjS8h9g3f8idGHohVcU0G1Anff+MQgEEZ2sFgrFuERVFaqoFTz3av3ArBkT5G8A==
+
 "@snowpack/plugin-react-refresh@^2.1.0":
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/@snowpack/plugin-react-refresh/-/plugin-react-refresh-2.1.0.tgz#7e8c66250e5823413155c027d2cd4f3d1216d1e1"

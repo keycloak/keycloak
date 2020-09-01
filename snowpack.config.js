@@ -1,11 +1,7 @@
 module.exports = {
-  "extends": "@snowpack/app-scripts-react",
-  "scripts": {
-    "build:css": "postcss"
+  extends: "@snowpack/app-scripts-react",
+  proxy: {
+    "/admin": process.env.BACKEND_URL,
   },
-  "proxy": {
-    "/admin": process.env.BACKEND_URL
-  },
-  "plugins": ["@snowpack/plugin-webpack"]
-
-}
+  plugins: ["@snowpack/plugin-postcss", "@snowpack/plugin-webpack"],
+};

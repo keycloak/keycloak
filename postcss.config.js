@@ -1,5 +1,6 @@
+const postImport = require('postcss-import');
 module.exports = {
   plugins: [
-    require('postcss-import')({path: ['node_modules/@patternfly/patternfly/']}),
+    postImport({path: ['./node_modules/@patternfly/patternfly/']}),
   ]
 }
