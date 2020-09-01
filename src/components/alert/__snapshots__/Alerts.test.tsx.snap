@@ -77,9 +77,7 @@ exports[`renders global alerts 2`] = `
                   >
                     <span
                       class="pf-u-screen-reader"
-                    >
-                      Default alert:
-                    </span>
+                    />
                     Hello
                   </h4>
                   <div

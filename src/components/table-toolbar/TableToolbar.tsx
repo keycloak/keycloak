@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   ToggleTemplateProps,
   Toolbar,
@@ -8,8 +8,8 @@ import {
   TextInput,
   Button,
   Pagination,
-} from '@patternfly/react-core';
-import { SearchIcon } from '@patternfly/react-icons';
+} from "@patternfly/react-core";
+import { SearchIcon } from "@patternfly/react-icons";
 
 type TableToolbarProps = {
   count: number;
@@ -33,7 +33,7 @@ export const TableToolbar = ({
   children,
 }: TableToolbarProps) => {
   const page = first / max;
-  const pagination = (variant: 'top' | 'bottom' = 'top') => (
+  const pagination = (variant: "top" | "bottom" = "top") => (
     <Pagination
       isCompact
       toggleTemplate={({ firstIndex, lastIndex }: ToggleTemplateProps) => (
@@ -63,15 +63,13 @@ export const TableToolbar = ({
               </Button>
             </InputGroup>
           </ToolbarItem>
-          { toolbarItem && <ToolbarItem>
-            { toolbarItem }
-          </ToolbarItem>}
+          {toolbarItem && <ToolbarItem>{toolbarItem}</ToolbarItem>}
           <ToolbarItem variant="pagination">{pagination()}</ToolbarItem>
         </ToolbarContent>
       </Toolbar>
       {children}
       <Toolbar>
-        <ToolbarItem>{pagination('bottom')}</ToolbarItem>
+        <ToolbarItem>{pagination("bottom")}</ToolbarItem>
       </Toolbar>
     </>
   );

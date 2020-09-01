@@ -1,13 +1,13 @@
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
 // import backend from "i18next-http-backend";
 
-import messages from './messages.json';
+import messages from "./messages.json";
 
 const initOptions = {
   resources: messages,
-  lng: 'en',
-  fallbackLng: 'en',
+  lng: "en",
+  fallbackLng: "en",
   saveMissing: true,
 
   interpolation: {

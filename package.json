@@ -11,6 +11,7 @@
     "build": "snowpack build",
     "test": "jest",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\"",
     "lint": "eslint ./src/**/*.ts*",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook"

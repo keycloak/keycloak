@@ -1,7 +1,7 @@
-import React from 'react';
-import { Title } from '@patternfly/react-core';
+import React from "react";
+import { Title } from "@patternfly/react-core";
 
-import style from './form-panel.module.css';
+import style from "./form-panel.module.css";
 
 interface FormPanelProps extends React.HTMLProps<HTMLFormElement> {
   title: string;

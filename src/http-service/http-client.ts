@@ -1,4 +1,4 @@
-import { KeycloakService } from '../auth/keycloak.service';
+import { KeycloakService } from "../auth/keycloak.service";
 
 type ConfigResolve = (config: RequestInit) => void;
 
@@ -31,14 +31,14 @@ export class HttpClient {
     endpoint: string,
     config?: RequestInitWithParams
   ): Promise<HttpResponse<T>> {
-    return this.doRequest(endpoint, { ...config, method: 'get' });
+    return this.doRequest(endpoint, { ...config, method: "get" });
   }
 
   public async doDelete<T>(
     endpoint: string,
     config?: RequestInitWithParams
   ): Promise<HttpResponse<T>> {
-    return this.doRequest(endpoint, { ...config, method: 'delete' });
+    return this.doRequest(endpoint, { ...config, method: "delete" });
   }
 
   public async doPost<T>(
@@ -49,7 +49,7 @@ export class HttpClient {
     return this.doRequest(endpoint, {
       ...config,
       body: JSON.stringify(body),
-      method: 'post',
+      method: "post",
     });
   }
 
@@ -61,7 +61,7 @@ export class HttpClient {
     return this.doRequest(endpoint, {
       ...config,
       body: JSON.stringify(body),
-      method: 'put',
+      method: "put",
     });
   }
 
@@ -103,14 +103,14 @@ export class HttpClient {
   private makeUrl(url: string, config?: RequestInitWithParams): string {
     const searchParams = new URLSearchParams();
     // add request params
-    if (config && {}.hasOwnProperty.call(config, 'params')) {
+    if (config && {}.hasOwnProperty.call(config, "params")) {
       const params: { [name: string]: string } = (config.params as {}) || {};
       Object.keys(params).forEach((key) =>
         searchParams.append(key, params[key])
       );
     }
 
-    return url + '?' + searchParams.toString();
+    return url + "?" + searchParams.toString();
   }
 
   private makeConfig(config: RequestInit = {}): Promise<RequestInit> {
@@ -121,9 +121,9 @@ export class HttpClient {
           resolve({
             ...config,
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
               ...config.headers,
-              Authorization: 'Bearer ' + token,
+              Authorization: "Bearer " + token,
             },
           });
         })
@@ -135,7 +135,7 @@ export class HttpClient {
 }
 
 window.addEventListener(
-  'unhandledrejection',
+  "unhandledrejection",
   (event: PromiseRejectionEvent) => {
     event.promise.catch((error) => {
       if (error instanceof AccountServiceError) {

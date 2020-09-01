@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { AlertType } from './AlertPanel';
-import { AlertVariant } from '@patternfly/react-core';
+import { useState } from "react";
+import { AlertType } from "./AlertPanel";
+import { AlertVariant } from "@patternfly/react-core";
 
 export function useAlerts(): [
   (message: string, type: AlertVariant) => void,

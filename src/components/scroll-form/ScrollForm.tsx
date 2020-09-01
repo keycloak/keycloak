@@ -1,8 +1,8 @@
-import React, { Children, useEffect, useState } from 'react';
-import { Form, Grid, GridItem, Title } from '@patternfly/react-core';
+import React, { Children, useEffect, useState } from "react";
+import { Form, Grid, GridItem, Title } from "@patternfly/react-core";
 
-import { FormPanel } from './FormPanel';
-import style from './scroll-form.module.css';
+import { FormPanel } from "./FormPanel";
+import style from "./scroll-form.module.css";
 
 type ScrollFormProps = {
   sections: string[];
@@ -26,7 +26,7 @@ export const ScrollForm = ({ sections, children }: ScrollFormProps) => {
 
   const [active, setActive] = useState(sections[0]);
   useEffect(() => {
-    window.addEventListener('scroll', () => {
+    window.addEventListener("scroll", () => {
       const active = getCurrentSection();
       if (active) {
         setActive(active);
@@ -44,7 +44,7 @@ export const ScrollForm = ({ sections, children }: ScrollFormProps) => {
           {sections.map((cat) => (
             <li
               className={
-                'pf-c-tabs__item' + (active === cat ? ' pf-m-current' : '')
+                "pf-c-tabs__item" + (active === cat ? " pf-m-current" : "")
               }
               key={cat}
             >
@@ -54,7 +54,7 @@ export const ScrollForm = ({ sections, children }: ScrollFormProps) => {
                 onClick={() =>
                   document
                     .getElementById(cat)
-                    ?.scrollIntoView({ behavior: 'smooth' })
+                    ?.scrollIntoView({ behavior: "smooth" })
                 }
               >
                 <span className="pf-c-tabs__item-text">{cat}</span>

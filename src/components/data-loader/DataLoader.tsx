@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Spinner } from '@patternfly/react-core';
+import React, { useEffect, useState } from "react";
+import { Spinner } from "@patternfly/react-core";
 
 type DataLoaderProps<T> = {
   loader: () => Promise<T>;
@@ -26,7 +26,7 @@ export function DataLoader<T>(props: DataLoaderProps<T>) {
     return props.children;
   }
   return (
-    <div style={{ textAlign: 'center' }}>
+    <div style={{ textAlign: "center" }}>
       <Spinner />
     </div>
   );

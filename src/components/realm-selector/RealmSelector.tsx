@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { useState } from "react";
+import { useHistory } from "react-router-dom";
 import {
   Dropdown,
   DropdownToggle,
   DropdownItem,
   Button,
-} from '@patternfly/react-core';
+} from "@patternfly/react-core";
 
-import style from './realm-selector.module.css';
+import style from "./realm-selector.module.css";
 
 type RealmSelectorProps = {
   realm: string;
@@ -39,7 +39,7 @@ export const RealmSelector = ({ realm, realmList }: RealmSelectorProps) => {
       dropdownItems={[
         ...dropdownItems,
         <DropdownItem component="div" key="add">
-          <Button onClick={() => history.push('/add-realm')}>Add Realm</Button>
+          <Button onClick={() => history.push("/add-realm")}>Add Realm</Button>
         </DropdownItem>,
       ]}
     />

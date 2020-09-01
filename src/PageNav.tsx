@@ -1,6 +1,6 @@
-import React from 'react';
-import { Nav, NavItem, NavList, PageSidebar } from '@patternfly/react-core';
-import { RealmSelector } from './components/realm-selector/RealmSelector';
+import React from "react";
+import { Nav, NavItem, NavList, PageSidebar } from "@patternfly/react-core";
+import { RealmSelector } from "./components/realm-selector/RealmSelector";
 
 export const PageNav = () => {
   return (
@@ -8,7 +8,7 @@ export const PageNav = () => {
       nav={
         <Nav>
           <NavList>
-            <RealmSelector realm="Master" realmList={['Photoz']} />
+            <RealmSelector realm="Master" realmList={["Photoz"]} />
             <NavItem id="default-link1" to="/default-link1" itemId={0}>
               Link 1
             </NavItem>

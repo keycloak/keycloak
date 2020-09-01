@@ -1,5 +1,5 @@
-import { KeycloakLoginOptions } from 'keycloak-js';
-import { useTranslation } from 'react-i18next';
+import { KeycloakLoginOptions } from "keycloak-js";
+import { useTranslation } from "react-i18next";
 
 export type KeycloakClient = Keycloak.KeycloakInstance;
 
@@ -26,7 +26,7 @@ export class KeycloakService {
     this.keycloakAuth.login(options);
   }
 
-  public logout(redirectUri: string = ''): void {
+  public logout(redirectUri: string = ""): void {
     this.keycloakAuth.logout({ redirectUri: redirectUri });
   }
 
@@ -36,9 +36,9 @@ export class KeycloakService {
 
   public authServerUrl(): string | undefined {
     const authServerUrl = this.keycloakAuth.authServerUrl;
-    return authServerUrl!.charAt(authServerUrl!.length - 1) === '/'
+    return authServerUrl!.charAt(authServerUrl!.length - 1) === "/"
       ? authServerUrl
-      : authServerUrl + '/';
+      : authServerUrl + "/";
   }
 
   public realm(): string | undefined {
@@ -51,13 +51,13 @@ export class KeycloakService {
   }
 
   private loggedInUserName = (t: Function, tokenParsed: Token) => {
-    let userName = t('unknownUser');
+    let userName = t("unknownUser");
     if (tokenParsed) {
       const givenName = tokenParsed.given_name;
       const familyName = tokenParsed.family_name;
       const preferredUsername = tokenParsed.preferred_username;
       if (givenName && familyName) {
-        userName = t('fullName', { givenName, familyName });
+        userName = t("fullName", { givenName, familyName });
       } else {
         userName = givenName || familyName || preferredUsername || userName;
       }
@@ -74,10 +74,10 @@ export class KeycloakService {
             resolve(this.keycloakAuth.token as string);
           })
           .catch(() => {
-            reject('Failed to refresh token');
+            reject("Failed to refresh token");
           });
       } else {
-        reject('Not logged in');
+        reject("Not logged in");
       }
     });
   }

@@ -1,14 +1,14 @@
-import React from 'react';
-import ReactDom from 'react-dom';
-import { I18nextProvider } from 'react-i18next';
-import { i18n } from './i18n';
+import React from "react";
+import ReactDom from "react-dom";
+import { I18nextProvider } from "react-i18next";
+import { i18n } from "./i18n";
 
-import { App } from './App';
-import init from './auth/keycloak';
-import { KeycloakContext } from './auth/KeycloakContext';
-import { KeycloakService } from './auth/keycloak.service';
-import { HttpClientContext } from './http-service/HttpClientContext';
-import { HttpClient } from './http-service/http-client';
+import { App } from "./App";
+import init from "./auth/keycloak";
+import { KeycloakContext } from "./auth/KeycloakContext";
+import { KeycloakService } from "./auth/keycloak.service";
+import { HttpClientContext } from "./http-service/HttpClientContext";
+import { HttpClient } from "./http-service/http-client";
 
 init().then((keycloak) => {
   const keycloakService = new KeycloakService(keycloak);
@@ -20,10 +20,10 @@ init().then((keycloak) => {
         </HttpClientContext.Provider>
       </KeycloakContext.Provider>
     </I18nextProvider>,
-    document.getElementById('app')
+    document.getElementById("app")
   );
 });
 
-(document.getElementById('favicon') as HTMLAnchorElement).href = `${
+(document.getElementById("favicon") as HTMLAnchorElement).href = `${
   import.meta.env.SNOWPACK_PUBLIC_FAVICON
 }`;

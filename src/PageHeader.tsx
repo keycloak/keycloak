@@ -1,5 +1,5 @@
-import React, { useContext, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import React, { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Avatar,
   Button,
@@ -14,10 +14,10 @@ import {
   PageHeaderTools,
   PageHeaderToolsItem,
   PageHeaderToolsGroup,
-} from '@patternfly/react-core';
-import { HelpIcon } from '@patternfly/react-icons';
-import { KeycloakContext } from './auth/KeycloakContext';
-import { Link } from 'react-router-dom';
+} from "@patternfly/react-core";
+import { HelpIcon } from "@patternfly/react-icons";
+import { KeycloakContext } from "./auth/KeycloakContext";
+import { Link } from "react-router-dom";
 
 export const Header = () => {
   return (
@@ -39,7 +39,7 @@ const ManageAccountDropdownItem = () => {
   const { t } = useTranslation();
   return (
     <DropdownItem key="manage account" onClick={() => keycloak?.account()}>
-      {t('Manage account')}
+      {t("Manage account")}
     </DropdownItem>
   );
 };
@@ -49,19 +49,19 @@ const SignOutDropdownItem = () => {
   const { t } = useTranslation();
   return (
     <DropdownItem key="sign out" onClick={() => keycloak?.logout()}>
-      {t('Sign out')}
+      {t("Sign out")}
     </DropdownItem>
   );
 };
 
 const ServerInfoDropdownItem = () => {
   const { t } = useTranslation();
-  return <DropdownItem key="server info">{t('Server info')}</DropdownItem>;
+  return <DropdownItem key="server info">{t("Server info")}</DropdownItem>;
 };
 
 const HelpDropdownItem = () => {
   const { t } = useTranslation();
-  const help = t('Help');
+  const help = t("Help");
   return (
     <DropdownItem>
       <HelpIcon />
@@ -90,8 +90,8 @@ const headerTools = () => {
     <PageHeaderTools>
       <PageHeaderToolsGroup
         visibility={{
-          default: 'hidden',
-          md: 'visible',
+          default: "hidden",
+          md: "visible",
         }} /** the settings and help icon buttons are only visible on desktop sizes and replaced by a kebab dropdown for other sizes */
       >
         <PageHeaderToolsItem>
@@ -104,15 +104,15 @@ const headerTools = () => {
       <PageHeaderToolsGroup>
         <PageHeaderToolsItem
           visibility={{
-            md: 'hidden',
+            md: "hidden",
           }} /** this kebab dropdown replaces the icon buttons and is hidden for desktop sizes */
         >
           <KebabDropdown />
         </PageHeaderToolsItem>
         <PageHeaderToolsItem
           visibility={{
-            default: 'hidden',
-            md: 'visible',
+            default: "hidden",
+            md: "visible",
           }} /** this user dropdown is hidden on mobile sizes */
         >
           <UserDropdown />
