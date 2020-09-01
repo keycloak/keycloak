@@ -9,6 +9,7 @@ import {
 } from '@patternfly/react-table';
 import { Badge } from '@patternfly/react-core';
 
+import { ExternalLink } from '../components/external-link/ExternalLink';
 import { ClientRepresentation } from '../model/client-model';
 
 type ClientListProps = {
@@ -27,7 +28,7 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
   const enabled = (): IFormatter => (data?: IFormatterValueType) => {
     const field = data!.toString();
     const value = field.substring(0, field.indexOf('#'));
-    return field.indexOf('true') != -1 ? (
+    return field.indexOf('true') !== -1 ? (
       <>{value}</>
     ) : (
       <>
@@ -38,6 +39,12 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
 
   const emptyFormatter = (): IFormatter => (data?: IFormatterValueType) => {
     return data ? data : '—';
+  };
+
+  const externalLink = (): IFormatter => (data?: IFormatterValueType) => {
+    return (data ? (
+      <ExternalLink href={data.toString()} />
+    ) : undefined) as object;
   };
 
   const replaceBaseUrl = (r: ClientRepresentation) =>
@@ -63,7 +70,10 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
         { title: 'Client ID', cellFormatters: [enabled()] },
         'Type',
         { title: 'Description', cellFormatters: [emptyFormatter()] },
-        { title: 'Home URL', cellFormatters: [emptyFormatter()] },
+        {
+          title: 'Home URL',
+          cellFormatters: [externalLink(), emptyFormatter()],
+        },
       ]}
       rows={data}
       aria-label="Client list"

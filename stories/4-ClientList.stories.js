@@ -6,6 +6,6 @@ import clientMock from '../src/clients/mock-clients.json';
 
 storiesOf('Client list page', module)
   .add('view', () => {
-    return (<ClientList clients={clientMock} baseUrl="http://test.nl"/>
+    return (<ClientList clients={clientMock} baseUrl="http://test.nl/"/>
     );
   })
