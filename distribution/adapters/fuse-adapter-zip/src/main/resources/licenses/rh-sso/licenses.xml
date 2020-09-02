@@ -92,33 +92,11 @@
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
-      <version>4.5.12.redhat-00001</version>
-      <licenses>
-        <license>
-          <name>Apache Software License 2.0</name>
-          <url>https://git-wip-us.apache.org/repos/asf?p=httpcomponents-client.git;a=blob_plain;f=LICENSE.txt;hb=refs/tags/rel/v4.5.12</url>
-        </license>
-      </licenses>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
       <version>4.5.2.redhat-2</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
           <url>https://git-wip-us.apache.org/repos/asf?p=httpcomponents-client.git;a=blob_plain;f=LICENSE.txt;hb=refs/tags/rel/v4.5.2</url>
-        </license>
-      </licenses>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpcore</artifactId>
-      <version>4.4.13.redhat-00001</version>
-      <licenses>
-        <license>
-          <name>Apache Software License 2.0</name>
-          <url>https://git-wip-us.apache.org/repos/asf?p=httpcomponents-core.git;a=blob_plain;f=LICENSE.txt;hb=refs/tags/rel/v4.4.13</url>
         </license>
       </licenses>
     </dependency>

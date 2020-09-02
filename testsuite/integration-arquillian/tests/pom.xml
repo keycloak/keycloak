@@ -214,14 +214,14 @@
         <skip.add.user.json>false</skip.add.user.json>
         <skip.clean.second.cache>true</skip.clean.second.cache>
         <skip.copy.auth.crossdc.nodes>true</skip.copy.auth.crossdc.nodes>
-        <client.certificate.keystore>${auth.server.config.dir}/client.jks</client.certificate.keystore>
-        <client.certificate.keystore.passphrase>secret</client.certificate.keystore.passphrase>
-        <client.truststore>${auth.server.config.dir}/keycloak.truststore</client.truststore>
-        <client.truststore.passphrase>secret</client.truststore.passphrase>
         <client.certificate.ca.path>${auth.server.config.dir}/ca.crt</client.certificate.ca.path>
         <client.certificate.file>${auth.server.config.dir}/client.crt</client.certificate.file>
+        <client.certificate.keystore>${auth.server.config.dir}/client.jks</client.certificate.keystore>
+        <client.certificate.keystore.passphrase>secret</client.certificate.keystore.passphrase>
         <client.key.file>${auth.server.config.dir}/client.key</client.key.file>
         <client.key.passphrase>secret</client.key.passphrase>
+        <client.truststore>${auth.server.config.dir}/keycloak.truststore</client.truststore>
+        <client.truststore.passphrase>secret</client.truststore.passphrase>
 
         <!-- KEYCLOAK-6771 Certificate Bound Token -->
         <hok.client.certificate.keystore>${auth.server.config.dir}/other_client.jks</hok.client.certificate.keystore>
@@ -601,13 +601,13 @@
                             <project.version>${project.version}</project.version>
 
                             <client.certificate.ca.path>${client.certificate.ca.path}</client.certificate.ca.path>
+                            <client.certificate.file>${client.certificate.file}</client.certificate.file>
                             <client.certificate.keystore>${client.certificate.keystore}</client.certificate.keystore>
                             <client.certificate.keystore.passphrase>${client.certificate.keystore.passphrase}</client.certificate.keystore.passphrase>
-                            <client.truststore>${client.truststore}</client.truststore>
-                            <client.truststore.passphrase>${client.truststore.passphrase}</client.truststore.passphrase>
-                            <client.certificate.file>${client.certificate.file}</client.certificate.file>
                             <client.key.file>${client.key.file}</client.key.file>
                             <client.key.passphrase>${client.key.passphrase}</client.key.passphrase>
+                            <client.truststore>${client.truststore}</client.truststore>
+                            <client.truststore.passphrase>${client.truststore.passphrase}</client.truststore.passphrase>
 
                             <!-- KEYCLOAK-6771 Certificate Bound Token -->
                             <hok.client.certificate.keystore>${hok.client.certificate.keystore}</hok.client.certificate.keystore>
@@ -653,6 +653,12 @@
                             <keycloak.connectionsJpa.database>${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.database>
                             <keycloak.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.connectionsJpa.user>
                             <keycloak.connectionsJpa.password>${keycloak.connectionsJpa.password}</keycloak.connectionsJpa.password>
+
+                            <!--
+                              ~ Used for Wildfly Elytron 1.13.0.CR3+ RESTEasy client SSL truststore configuration.
+                              ~ See KEYCLOAK-15692, ELY-1891 issues & PRs of EAP7-1219 issue for details.
+                              -->
+                            <wildfly.config.url>${project.build.directory}/dependency/wildfly-config.xml</wildfly.config.url>
                         </systemPropertyVariables>
                         <properties>
                             <property>
