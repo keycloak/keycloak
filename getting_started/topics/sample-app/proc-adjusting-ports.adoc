@@ -15,7 +15,7 @@ To avoid port conflicts, you need different ports to run {project_name} and {app
 .Procedure
 
 ifeval::[{project_community}==true]
-. Download WildFly from link:https://wildfly.org[WildFly.org].
+. Download WildFly from link:https://www.wildfly.org/[WildFly.org].
 endif::[]
 ifeval::[{project_product}==true]
 . Download JBoss EAP 7.3 from the https://access.redhat.com/jbossnetwork/restricted/listSoftware.html?product=appplatform&downloadType=distributions[Red Hat customer portal].
