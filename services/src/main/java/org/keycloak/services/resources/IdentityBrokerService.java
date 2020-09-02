@@ -26,6 +26,8 @@ import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.broker.util.PostBrokerLoginConstants;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
+import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
@@ -54,6 +56,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -120,6 +123,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * <p></p>
@@ -1007,6 +1011,10 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     private void updateFederatedIdentity(BrokeredIdentityContext context, UserModel federatedUser) {
         FederatedIdentityModel federatedIdentityModel = this.session.users().getFederatedIdentity(federatedUser, context.getIdpConfig().getAlias(), this.realmModel);
 
+        if (context.getIdpConfig().getSyncMode() == IdentityProviderSyncMode.FORCE) {
+            setBasicUserAttributes(context, federatedUser);
+        }
+
         // Skip DB write if tokens are null or equal
         updateToken(context, federatedUser, federatedIdentityModel);
         context.getIdp().updateBrokeredUser(session, realmModel, federatedUser, context);
@@ -1019,6 +1027,19 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             }
         }
 
+    }
+
+    private void setBasicUserAttributes(BrokeredIdentityContext context, UserModel federatedUser) {
+        setDiffAttrToConsumer(federatedUser.getEmail(), context.getEmail(), federatedUser::setEmail);
+        setDiffAttrToConsumer(federatedUser.getFirstName(), context.getFirstName(), federatedUser::setFirstName);
+        setDiffAttrToConsumer(federatedUser.getLastName(), context.getLastName(), federatedUser::setLastName);
+    }
+
+    private void setDiffAttrToConsumer(String actualValue, String newValue, Consumer<String> consumer) {
+        String actualValueNotNull = Optional.ofNullable(actualValue).orElse("");
+        if (newValue != null && !newValue.equals(actualValueNotNull)) {
+            consumer.accept(newValue);
+        }
     }
 
     private void migrateFederatedIdentityId(BrokeredIdentityContext context, UserModel federatedUser) {
