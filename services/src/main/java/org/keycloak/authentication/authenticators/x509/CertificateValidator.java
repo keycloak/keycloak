@@ -18,8 +18,13 @@
 
 package org.keycloak.authentication.authenticators.x509;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+
 import org.keycloak.common.util.OCSPUtils;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.saml.common.exceptions.ProcessingException;
@@ -43,7 +48,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLConnection;
 import java.security.GeneralSecurityException;
 import java.security.cert.CRLException;
 import java.security.cert.CertPathValidatorException;
@@ -217,10 +221,10 @@ public class CertificateValidator {
 
         private final List<CRLLoaderImpl> delegates;
 
-        public CRLListLoader(String cRLConfigValue) {
+        public CRLListLoader(KeycloakSession session, String cRLConfigValue) {
             String[] delegatePaths = Constants.CFG_DELIMITER_PATTERN.split(cRLConfigValue);
             this.delegates = Arrays.stream(delegatePaths)
-                    .map(CRLFileLoader::new)
+                    .map(cRLPath -> new CRLFileLoader(session, cRLPath))
                     .collect(Collectors.toList());
         }
 
@@ -237,21 +241,25 @@ public class CertificateValidator {
 
     public static class CRLFileLoader extends CRLLoaderImpl {
 
+        private final KeycloakSession session;
         private final String cRLPath;
         private final LdapContext ldapContext;
 
-        public CRLFileLoader(String cRLPath) {
+        public CRLFileLoader(KeycloakSession session, String cRLPath) {
+            this.session = session;
             this.cRLPath = cRLPath;
             ldapContext = new LdapContext();
         }
 
-        public CRLFileLoader(String cRLPath, LdapContext ldapContext) {
+        public CRLFileLoader(KeycloakSession session, String cRLPath, LdapContext ldapContext) {
+            this.session = session;
             this.cRLPath = cRLPath;
             this.ldapContext = ldapContext;
 
             if (ldapContext == null)
                 throw new NullPointerException("Context cannot be null");
         }
+
         public Collection<X509CRL> getX509CRLs() throws GeneralSecurityException {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             Collection<X509CRL> crlColl = null;
@@ -287,11 +295,18 @@ public class CertificateValidator {
             try {
                 logger.debugf("Loading CRL from %s", remoteURI.toString());
 
-                URLConnection conn = remoteURI.toURL().openConnection();
-                conn.setDoInput(true);
-                conn.setUseCaches(false);
-                X509CRL crl = loadFromStream(cf, conn.getInputStream());
-                return Collections.singleton(crl);
+                HttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+                HttpGet get = new HttpGet(remoteURI);
+                get.setHeader("Pragma", "no-cache");
+                get.setHeader("Cache-Control", "no-cache, no-store");
+                HttpResponse response = httpClient.execute(get);
+                InputStream content = response.getEntity().getContent();
+                try {
+                    X509CRL crl = loadFromStream(cf, content);
+                    return Collections.singleton(crl);
+                } finally {
+                    content.close();
+                }
             }
             catch(IOException ex) {
                 logger.errorf(ex.getMessage());
@@ -584,7 +599,7 @@ public class CertificateValidator {
         }
         for (String dp : distributionPoints) {
             logger.tracef("CRL Distribution point: \"%s\"", dp);
-            checkRevocationStatusUsingCRL(certs, new CRLFileLoader(dp), session);
+            checkRevocationStatusUsingCRL(certs, new CRLFileLoader(session, dp), session);
         }
     }
 
@@ -756,7 +771,7 @@ public class CertificateValidator {
             public class GotCRLDP {
                 public GotCRLRelativePath cRLrelativePath(String value) {
                     if (value != null)
-                        _crlLoader = new CRLListLoader(value);
+                        _crlLoader = new CRLListLoader(session, value);
                     return new GotCRLRelativePath();
                 }
 
@@ -809,7 +824,7 @@ public class CertificateValidator {
 
         public CertificateValidator build(X509Certificate[] certs) {
             if (_crlLoader == null) {
-                 _crlLoader = new CRLFileLoader("");
+                 _crlLoader = new CRLFileLoader(session, "");
             }
             return new CertificateValidator(certs, _keyUsageBits, _extendedKeyUsage,
                     _crlCheckingEnabled, _crldpEnabled, _crlLoader, _ocspEnabled,
