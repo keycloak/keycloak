@@ -26,7 +26,9 @@ import java.util.Set;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
@@ -69,9 +71,10 @@ public class ClientScopeEntity {
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "clientScope")
     protected Collection<ClientScopeAttributeEntity> attributes;
 
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinTable(name="CLIENT_SCOPE_ROLE_MAPPING", joinColumns = { @JoinColumn(name="SCOPE_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
-    protected Set<RoleEntity> scopeMapping = new HashSet<>();
+    @ElementCollection
+    @Column(name="ROLE_ID")
+    @CollectionTable(name="CLIENT_SCOPE_ROLE_MAPPING", joinColumns = { @JoinColumn(name="SCOPE_ID")})
+    private Set<String> scopeMappingIds = new HashSet<>();
 
     public RealmEntity getRealm() {
         return realm;
@@ -135,12 +138,12 @@ public class ClientScopeEntity {
         this.attributes = attributes;
     }
 
-    public Set<RoleEntity> getScopeMapping() {
-        return scopeMapping;
+    public Set<String> getScopeMappingIds() {
+        return scopeMappingIds;
     }
 
-    public void setScopeMapping(Set<RoleEntity> scopeMapping) {
-        this.scopeMapping = scopeMapping;
+    public void setScopeMappingIds(Set<String> scopeMappingIds) {
+        this.scopeMappingIds = scopeMappingIds;
     }
 
     @Override

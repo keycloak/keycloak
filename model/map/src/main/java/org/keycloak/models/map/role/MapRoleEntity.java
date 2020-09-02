@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2020 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,22 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.storage.user;
+package org.keycloak.models.map.role;
 
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
+import java.util.UUID;
 
-/**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
- */
-public interface UserBulkUpdateProvider {
-    
-    /**
-     * Grants the given role to all users from particular realm. The role has to
-     * belong to the realm. 
-     * @param realm Realm
-     * @param role Role to be granted
-     */
-    void grantToAllUsers(RealmModel realm, RoleModel role);
+public class MapRoleEntity extends AbstractRoleEntity<UUID> {
+
+    protected MapRoleEntity() {
+        super();
+    }
+
+    public MapRoleEntity(UUID id, String realmId) {
+        super(id, realmId);
+    }
+
 }

@@ -33,6 +33,7 @@ import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Objects.nonNull;
@@ -705,74 +706,47 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         return realm.getRequiredCredentials().stream().map(this::toRequiredCredentialModel);
     }
 
-
     @Override
     public Stream<String> getDefaultRolesStream() {
-        Collection<RoleEntity> entities = realm.getDefaultRoles();
-        if (entities == null || entities.isEmpty()) return Stream.empty();
-        return entities.stream().map(RoleEntity::getName);
+        return realm.getDefaultRolesIds().stream().map(this::getRoleNameById);
+    }
+
+    private String getRoleNameById(String id) {
+        return getRoleById(id).getName();
     }
 
     @Override
     public void addDefaultRole(String name) {
+        if (realm.getDefaultRolesIds().add(getOrAddRoleId(name))) {
+            em.flush();
+        }
+    }
+
+    private String getOrAddRoleId(String name) {
         RoleModel role = getRole(name);
         if (role == null) {
             role = addRole(name);
         }
-        Collection<RoleEntity> entities = realm.getDefaultRoles();
-        for (RoleEntity entity : entities) {
-            if (entity.getId().equals(role.getId())) {
-                return;
-            }
-        }
-        RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
-        entities.add(roleEntity);
-        em.flush();
-    }
-
-    public static boolean contains(String str, String[] array) {
-        for (String s : array) {
-            if (str.equals(s)) return true;
-        }
-        return false;
+        return role.getId();
     }
 
     @Override
     public void updateDefaultRoles(String[] defaultRoles) {
-        Collection<RoleEntity> entities = realm.getDefaultRoles();
-        Set<String> already = new HashSet<String>();
-        List<RoleEntity> remove = new ArrayList<RoleEntity>();
-        for (RoleEntity rel : entities) {
-            if (!contains(rel.getName(), defaultRoles)) {
-                remove.add(rel);
-            } else {
-                already.add(rel.getName());
-            }
-        }
-        for (RoleEntity entity : remove) {
-            entities.remove(entity);
-        }
-        em.flush();
-        for (String roleName : defaultRoles) {
-            if (!already.contains(roleName)) {
-                addDefaultRole(roleName);
-            }
-        }
+        Set<String> newDefaultRolesIds = Arrays.stream(defaultRoles)
+                .map(this::getOrAddRoleId)
+                .collect(Collectors.toSet());
+        realm.getDefaultRolesIds().retainAll(newDefaultRolesIds);
+        realm.getDefaultRolesIds().addAll(newDefaultRolesIds);
         em.flush();
     }
 
     @Override
     public void removeDefaultRoles(String... defaultRoles) {
-        Collection<RoleEntity> entities = realm.getDefaultRoles();
-        List<RoleEntity> remove = new ArrayList<RoleEntity>();
-        for (RoleEntity rel : entities) {
-            if (contains(rel.getName(), defaultRoles)) {
-                remove.add(rel);
-            }
-        }
-        for (RoleEntity entity : remove) {
-            entities.remove(entity);
-        }
+        Arrays.stream(defaultRoles)
+                .map(this::getRole)
+                .filter(Objects::nonNull)
+                .map(RoleModel::getId)
+                .forEach(realm.getDefaultRolesIds()::remove);
         em.flush();
     }
 
