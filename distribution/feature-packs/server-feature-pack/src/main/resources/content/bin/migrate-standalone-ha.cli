@@ -782,4 +782,18 @@ if (result != org.keycloak.keycloak-model-infinispan) of /subsystem=infinispan/c
     echo
 end-if
 
+# Migrate from 11.0.0 to 12.0.0
+
+if (result != expression "${jboss.mail.server.host:localhost}") of /socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=mail-smtp:read-attribute(name=host)
+    echo Adding host expression to the SMTP configuration of a remote destination outbound socket binding in the mail subsystem
+    /socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=mail-smtp:write-attribute(name=host, value=expression "${jboss.mail.server.host:localhost}")
+    echo
+end-if
+
+if (result != expression "${jboss.mail.server.port:25}") of /socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=mail-smtp:read-attribute(name=port)
+    echo Adding port expression to the SMTP configuration of a remote destination outbound socket binding in the mail subsystem
+    /socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=mail-smtp:write-attribute(name=port, value=expression "${jboss.mail.server.port:25}")
+    echo
+end-if
+
 echo *** End Migration ***
