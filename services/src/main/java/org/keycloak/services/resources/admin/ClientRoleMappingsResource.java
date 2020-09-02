@@ -45,12 +45,10 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -94,15 +92,10 @@ public class ClientRoleMappingsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getClientRoleMappings() {
+    public Stream<RoleRepresentation> getClientRoleMappings() {
         viewPermission.require();
 
-        Set<RoleModel> mappings = user.getClientRoleMappings(client);
-        List<RoleRepresentation> mapRep = new ArrayList<RoleRepresentation>();
-        for (RoleModel roleModel : mappings) {
-            mapRep.add(ModelToRepresentation.toBriefRepresentation(roleModel));
-        }
-        return mapRep;
+        return user.getClientRoleMappingsStream(client).map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**
@@ -184,19 +177,13 @@ public class ClientRoleMappingsResource {
         managePermission.require();
 
         if (roles == null) {
-            Set<RoleModel> roleModels = user.getClientRoleMappings(client);
-            roles = new LinkedList<>();
-
-            for (RoleModel roleModel : roleModels) {
-                if (roleModel.getContainer() instanceof ClientModel) {
-                    ClientModel client = (ClientModel) roleModel.getContainer();
-                    if (!client.getId().equals(this.client.getId())) continue;
-                }
-                auth.roles().requireMapRole(roleModel);
-                user.deleteRoleMapping(roleModel);
-                roles.add(ModelToRepresentation.toBriefRepresentation(roleModel));
-            }
-
+            roles = user.getClientRoleMappingsStream(client)
+                    .peek(roleModel -> {
+                        auth.roles().requireMapRole(roleModel);
+                        user.deleteRoleMapping(roleModel);
+                    })
+                    .map(ModelToRepresentation::toBriefRepresentation)
+                    .collect(Collectors.toList());
         } else {
             for (RoleRepresentation role : roles) {
                 RoleModel roleModel = client.getRole(role.getName());

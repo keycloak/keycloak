@@ -17,13 +17,17 @@
 
 package org.keycloak.models.utils;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -88,6 +92,15 @@ public class RoleUtils {
             if (mapping.hasRole(targetRole)) return true;
         }
         return false;
+    }
+
+    /**
+     * @param roles
+     * @param targetRole
+     * @return true if targetRole is in roles (directly or indirectly via composite role)
+     */
+    public static boolean hasRole(Stream<RoleModel> roles, RoleModel targetRole) {
+        return roles.anyMatch(role -> Objects.equals(role, targetRole) || role.hasRole(targetRole));
     }
 
     /**
@@ -163,7 +176,7 @@ public class RoleUtils {
                 sb.add(current);
 
                 if (current.isComposite()) {
-                    current.getComposites().stream()
+                    current.getCompositesStream()
                             .filter(r -> !visited.contains(r))
                             .forEach(r -> {
                                 visited.add(r);
@@ -205,16 +218,38 @@ public class RoleUtils {
      * @return all user role mappings including all groups of user. Composite roles will be expanded
      */
     public static Set<RoleModel> getDeepUserRoleMappings(UserModel user) {
-        Set<RoleModel> roleMappings = new HashSet<>(user.getRoleMappings());
+        Set<RoleModel> roleMappings = user.getRoleMappingsStream().collect(Collectors.toSet());
         user.getGroupsStream().forEach(group -> addGroupRoles(group, roleMappings));
         return expandCompositeRoles(roleMappings);
     }
 
 
     private static void addGroupRoles(GroupModel group, Set<RoleModel> roleMappings) {
-        roleMappings.addAll(group.getRoleMappings());
+        roleMappings.addAll(group.getRoleMappingsStream().collect(Collectors.toSet()));
         if (group.getParentId() == null) return;
         addGroupRoles(group.getParent(), roleMappings);
     }
 
+    public static boolean isRealmRole(RoleModel r) {
+        return r.getContainer() instanceof RealmModel;
+    }
+
+    public static boolean isRealmRole(RoleModel r, RealmModel realm) {
+        if (isRealmRole(r)) {
+            if (Objects.equals(r.getContainer().getId(), realm.getId()))
+                return true;
+        }
+        return false;
+    }
+
+    public static boolean isClientRole(RoleModel r, ClientModel c) {
+        RoleContainerModel container = r.getContainer();
+        if (container instanceof ClientModel) {
+            ClientModel appModel = (ClientModel) container;
+            if (Objects.equals(appModel.getId(), c.getId())) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

@@ -30,6 +30,7 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -128,8 +129,6 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-1842
     @Test
     public void testRoleMappingsInvalidatedWhenClientRemoved() {
- 
-    
       	testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
             
@@ -137,27 +136,20 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
             ClientModel client = realm.addClient("foo");
             RoleModel fooRole = client.addRole("foo-role");
             user.grantRole(fooRole);
-       }); 
-
-       
-      	int gRolesCount=0;
+       });
 
         testingClient.server().run(session -> {  
         	RealmModel realm = session.realms().getRealmByName("test");
             UserModel user = session.users().getUserByUsername("joel", realm);
-            int grantedRolesCount = user.getRoleMappings().size();
+            long grantedRolesCount = user.getRoleMappingsStream().count();
 
             ClientModel client = realm.getClientByClientId("foo");
             realm.removeClient(client.getId());
-        
-        
 
-
-        
             realm = session.realms().getRealmByName("test");
             user = session.users().getUserByUsername("joel", realm);
         
-            Set<RoleModel> roles = user.getRoleMappings();
+            Set<RoleModel> roles = user.getRoleMappingsStream().collect(Collectors.toSet());
             for (RoleModel role : roles) {
                 Assert.assertNotNull(role.getContainer());
             }

@@ -161,13 +161,13 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public Set<RoleModel> getRealmRoleMappings() {
-        return delegate.getRealmRoleMappings();
+    public Stream<RoleModel> getRealmRoleMappingsStream() {
+        return delegate.getRealmRoleMappingsStream();
     }
 
     @Override
-    public Set<RoleModel> getClientRoleMappings(ClientModel app) {
-        return delegate.getClientRoleMappings(app);
+    public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
+        return delegate.getClientRoleMappingsStream(app);
     }
 
     @Override
@@ -181,8 +181,8 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public Set<RoleModel> getRoleMappings() {
-        return delegate.getRoleMappings();
+    public Stream<RoleModel> getRoleMappingsStream() {
+        return delegate.getRoleMappingsStream();
     }
 
     @Override

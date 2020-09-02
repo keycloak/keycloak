@@ -457,8 +457,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
     /*************** Default roles ****************/
 
     @Override
-    public List<String> getDefaultRoles() {
-        return entity.getDefaultRoles();
+    public Stream<String> getDefaultRolesStream() {
+        return entity.getDefaultRoles().stream();
     }
 
     @Override

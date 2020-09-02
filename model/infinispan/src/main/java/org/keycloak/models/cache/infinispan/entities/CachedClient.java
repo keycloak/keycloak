@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -92,9 +93,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         fullScopeAllowed = model.isFullScopeAllowed();
         redirectUris.addAll(model.getRedirectUris());
         webOrigins.addAll(model.getWebOrigins());
-        for (RoleModel role : model.getScopeMappings())  {
-            scope.add(role.getId());
-        }
+        scope.addAll(model.getScopeMappingsStream().map(RoleModel::getId).collect(Collectors.toSet()));
         for (ProtocolMapperModel mapper : model.getProtocolMappers()) {
             this.protocolMappers.add(mapper);
         }
@@ -102,7 +101,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         managementUrl = model.getManagementUrl();
         rootUrl = model.getRootUrl();
         baseUrl = model.getBaseUrl();
-        defaultRoles.addAll(model.getDefaultRoles());
+        defaultRoles.addAll(model.getDefaultRolesStream().collect(Collectors.toList()));
         bearerOnly = model.isBearerOnly();
         consentRequired = model.isConsentRequired();
         standardFlowEnabled = model.isStandardFlowEnabled();

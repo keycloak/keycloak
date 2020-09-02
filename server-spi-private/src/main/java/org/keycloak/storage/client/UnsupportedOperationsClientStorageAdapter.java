@@ -20,8 +20,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RoleModel;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.stream.Stream;
 
 /**
@@ -67,8 +65,8 @@ public abstract class UnsupportedOperationsClientStorageAdapter implements Clien
     }
 
     @Override
-    public final List<String> getDefaultRoles() {
-        return Collections.EMPTY_LIST;
+    public final Stream<String> getDefaultRolesStream() {
+        return Stream.empty();
     }
 
     @Override

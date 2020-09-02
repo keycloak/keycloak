@@ -340,7 +340,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
         }
         session.users().preRemove(realm, role);
         RoleContainerModel container = role.getContainer();
-        if (container.getDefaultRoles().contains(role.getName())) {
+        if (container.getDefaultRolesStream().anyMatch(r -> Objects.equals(r, role.getName()))) {
             container.removeDefaultRoles(role.getName());
         }
         RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());

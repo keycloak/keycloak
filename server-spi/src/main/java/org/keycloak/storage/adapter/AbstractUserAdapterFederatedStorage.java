@@ -22,7 +22,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModelDefaultMethods;
@@ -160,17 +159,8 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
      * @return
      */
     @Override
-    public Set<RoleModel> getRealmRoleMappings() {
-        Set<RoleModel> roleMappings = getRoleMappings();
-
-        Set<RoleModel> realmRoles = new HashSet<>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof RealmModel) {
-                realmRoles.add(role);
-            }
-        }
-        return realmRoles;
+    public Stream<RoleModel> getRealmRoleMappingsStream() {
+        return getRoleMappingsStream().filter(RoleUtils::isRealmRole);
     }
 
     /**
@@ -182,26 +172,13 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
      * @return
      */
     @Override
-    public Set<RoleModel> getClientRoleMappings(ClientModel app) {
-        Set<RoleModel> roleMappings = getRoleMappings();
-
-        Set<RoleModel> roles = new HashSet<>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof ClientModel) {
-                ClientModel appModel = (ClientModel) container;
-                if (appModel.getId().equals(app.getId())) {
-                    roles.add(role);
-                }
-            }
-        }
-        return roles;
+    public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
+        return getRoleMappingsStream().filter(r -> RoleUtils.isClientRole(r, app));
     }
 
     @Override
     public boolean hasRole(RoleModel role) {
-        Set<RoleModel> roles = getRoleMappings();
-        return RoleUtils.hasRole(roles, role)
+        return RoleUtils.hasRole(getRoleMappingsStream(), role)
           || RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
     }
 
@@ -222,8 +199,8 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
         return true;
     }
 
-    protected Set<RoleModel> getRoleMappingsInternal() {
-        return Collections.emptySet();
+    protected Stream<RoleModel> getRoleMappingsInternal() {
+        return Stream.empty();
     }
 
     /**
@@ -234,15 +211,14 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
      * @return
      */
     @Override
-    public Set<RoleModel> getRoleMappings() {
-        Set<RoleModel> set = new HashSet<>(getFederatedRoleMappings());
-        if (appendDefaultRolesToRoleMappings()) set.addAll(DefaultRoles.getDefaultRoles(realm));
-        set.addAll(getRoleMappingsInternal());
-        return set;
+    public Stream<RoleModel> getRoleMappingsStream() {
+        Stream<RoleModel> roleMappings = getFederatedRoleMappings();
+        if (appendDefaultRolesToRoleMappings()) roleMappings = Stream.concat(roleMappings, DefaultRoles.getDefaultRoles(realm));
+        return Stream.concat(roleMappings, getRoleMappingsInternal());
     }
 
-    protected Set<RoleModel> getFederatedRoleMappings() {
-        return getFederatedStorage().getRoleMappings(realm, this.getId());
+    protected Stream<RoleModel> getFederatedRoleMappings() {
+        return getFederatedStorage().getRoleMappingsStream(realm, this.getId());
     }
 
     @Override

@@ -48,7 +48,6 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -164,7 +163,7 @@ public class ExportUtils {
 
             // Scopes of clients
             for (ClientModel client : allClients) {
-                Set<RoleModel> clientScopes = client.getScopeMappings();
+                Set<RoleModel> clientScopes = client.getScopeMappingsStream().collect(Collectors.toSet());
                 ScopeMappingRepresentation scopeMappingRep = null;
                 for (RoleModel scope : clientScopes) {
                     if (scope.getContainer() instanceof RealmModel) {
@@ -201,7 +200,7 @@ public class ExportUtils {
 
         // Scopes of client scopes
         for (ClientScopeModel clientScope : realm.getClientScopes()) {
-            Set<RoleModel> clientScopes = clientScope.getScopeMappings();
+            Set<RoleModel> clientScopes = clientScope.getScopeMappingsStream().collect(Collectors.toSet());
             ScopeMappingRepresentation scopeMappingRep = null;
             for (RoleModel scope : clientScopes) {
                 if (scope.getContainer() instanceof RealmModel) {
@@ -428,7 +427,7 @@ public class ExportUtils {
     public static RoleRepresentation exportRole(RoleModel role) {
         RoleRepresentation roleRep = ModelToRepresentation.toRepresentation(role);
 
-        Set<RoleModel> composites = role.getComposites();
+        Set<RoleModel> composites = role.getCompositesStream().collect(Collectors.toSet());
         if (composites != null && composites.size() > 0) {
             Set<String> compositeRealmRoles = null;
             Map<String, List<String>> compositeClientRoles = null;
@@ -493,7 +492,7 @@ public class ExportUtils {
 
         // Role mappings
         if (options.isGroupsAndRolesIncluded()) {
-            Set<RoleModel> roles = user.getRoleMappings();
+            Set<RoleModel> roles = user.getRoleMappingsStream().collect(Collectors.toSet());
             List<String> realmRoleNames = new ArrayList<>();
             Map<String, List<String>> clientRoleNames = new HashMap<>();
             for (RoleModel role : roles) {
@@ -673,7 +672,7 @@ public class ExportUtils {
 
         // Role mappings
         if (options.isGroupsAndRolesIncluded()) {
-            Set<RoleModel> roles = session.userFederatedStorage().getRoleMappings(realm, id);
+            Set<RoleModel> roles = session.userFederatedStorage().getRoleMappingsStream(realm, id).collect(Collectors.toSet());
             List<String> realmRoleNames = new ArrayList<>();
             Map<String, List<String>> clientRoleNames = new HashMap<>();
             for (RoleModel role : roles) {

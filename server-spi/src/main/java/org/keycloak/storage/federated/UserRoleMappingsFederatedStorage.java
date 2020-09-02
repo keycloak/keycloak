@@ -20,6 +20,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -29,7 +31,12 @@ public interface UserRoleMappingsFederatedStorage {
 
     void grantRole(RealmModel realm, String userId, RoleModel role);
 
-    Set<RoleModel> getRoleMappings(RealmModel realm,String userId);
+    @Deprecated
+    default Set<RoleModel> getRoleMappings(RealmModel realm,String userId) {
+        return getRoleMappingsStream(realm, userId).collect(Collectors.toSet());
+    }
+
+    Stream<RoleModel> getRoleMappingsStream(RealmModel realm, String userId);
 
     void deleteRoleMapping(RealmModel realm, String userId, RoleModel role);
 }

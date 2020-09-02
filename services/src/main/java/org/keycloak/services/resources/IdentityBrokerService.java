@@ -25,8 +25,6 @@ import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.broker.util.PostBrokerLoginConstants;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
-import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
-import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
@@ -123,6 +121,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * <p></p>
@@ -279,7 +278,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
             // Ensure user has role and client has "role scope" for this role
             ClientSessionContext ctx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession, session);
-            Set<RoleModel> userAccountRoles = ctx.getRoles();
+            Set<RoleModel> userAccountRoles = ctx.getRolesStream().collect(Collectors.toSet());
 
             if (!userAccountRoles.contains(manageAccountRole)) {
                 RoleModel linkRole = accountService.getRole(AccountRoles.MANAGE_ACCOUNT_LINKS);

@@ -21,9 +21,9 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.infinispan.entities.CachedGroup;
+import org.keycloak.models.utils.RoleUtils;
 
 import java.util.HashSet;
 import java.util.List;
@@ -149,35 +149,15 @@ public class GroupAdapter implements GroupModel {
     }
 
     @Override
-    public Set<RoleModel> getRealmRoleMappings() {
-        if (isUpdated()) return updated.getRealmRoleMappings();
-        Set<RoleModel> roleMappings = getRoleMappings();
-        Set<RoleModel> realmMappings = new HashSet<>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof RealmModel) {
-                if (((RealmModel) container).getId().equals(realm.getId())) {
-                    realmMappings.add(role);
-                }
-            }
-        }
-        return realmMappings;
+    public Stream<RoleModel> getRealmRoleMappingsStream() {
+        if (isUpdated()) return updated.getRealmRoleMappingsStream();
+        return getRoleMappingsStream().filter(r -> RoleUtils.isRealmRole(r, realm));
     }
 
     @Override
-    public Set<RoleModel> getClientRoleMappings(ClientModel app) {
-        if (isUpdated()) return updated.getClientRoleMappings(app);
-        Set<RoleModel> roleMappings = getRoleMappings();
-        Set<RoleModel> appMappings = new HashSet<>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof ClientModel) {
-                if (((ClientModel) container).getId().equals(app.getId())) {
-                    appMappings.add(role);
-                }
-            }
-        }
-        return appMappings;
+    public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
+        if (isUpdated()) return updated.getClientRoleMappingsStream(app);
+        return getRoleMappingsStream().filter(r -> RoleUtils.isClientRole(r, app));
     }
 
     @Override
@@ -185,11 +165,7 @@ public class GroupAdapter implements GroupModel {
         if (isUpdated()) return updated.hasRole(role);
         if (cached.getRoleMappings(modelSupplier).contains(role.getId())) return true;
 
-        Set<RoleModel> mappings = getRoleMappings();
-        for (RoleModel mapping: mappings) {
-            if (mapping.hasRole(role)) return true;
-        }
-        return false;
+        return getRoleMappingsStream().anyMatch(r -> r.hasRole(role));
     }
 
     @Override
@@ -199,20 +175,20 @@ public class GroupAdapter implements GroupModel {
     }
 
     @Override
-    public Set<RoleModel> getRoleMappings() {
-        if (isUpdated()) return updated.getRoleMappings();
+    public Stream<RoleModel> getRoleMappingsStream() {
+        if (isUpdated()) return updated.getRoleMappingsStream();
         Set<RoleModel> roles = new HashSet<>();
         for (String id : cached.getRoleMappings(modelSupplier)) {
             RoleModel roleById = keycloakSession.roles().getRoleById(realm, id);
             if (roleById == null) {
                 // chance that role was removed, so just delegate to persistence and get user invalidated
                 getDelegateForUpdate();
-                return updated.getRoleMappings();
+                return updated.getRoleMappingsStream();
             }
             roles.add(roleById);
 
         }
-        return roles;
+        return roles.stream();
     }
 
     @Override

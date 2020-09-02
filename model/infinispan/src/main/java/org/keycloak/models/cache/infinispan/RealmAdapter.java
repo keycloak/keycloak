@@ -725,9 +725,9 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public List<String> getDefaultRoles() {
-        if (isUpdated()) return updated.getDefaultRoles();
-        return cached.getDefaultRoles();
+    public Stream<String> getDefaultRolesStream() {
+        if (isUpdated()) return updated.getDefaultRolesStream();
+        return cached.getDefaultRoles().stream();
     }
 
     @Override

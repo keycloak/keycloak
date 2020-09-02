@@ -46,9 +46,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 /**
  * Map realm roles or roles of particular client to LDAP groups
@@ -330,47 +332,42 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
         }
 
         @Override
-        public Set<RoleModel> getRealmRoleMappings() {
+        public Stream<RoleModel> getRealmRoleMappingsStream() {
             if (roleContainer.equals(realm)) {
-                Set<RoleModel> ldapRoleMappings = getLDAPRoleMappingsConverted();
+                Stream<RoleModel> ldapRoleMappings = getLDAPRoleMappingsConverted();
 
                 if (config.getMode() == LDAPGroupMapperMode.LDAP_ONLY) {
                     // Use just role mappings from LDAP
                     return ldapRoleMappings;
                 } else {
                     // Merge mappings from both DB and LDAP
-                    Set<RoleModel> modelRoleMappings = super.getRealmRoleMappings();
-                    ldapRoleMappings.addAll(modelRoleMappings);
-                    return ldapRoleMappings;
+                    return Stream.concat(ldapRoleMappings, super.getRealmRoleMappingsStream());
                 }
             } else {
-                return super.getRealmRoleMappings();
+                return super.getRealmRoleMappingsStream();
             }
         }
 
         @Override
-        public Set<RoleModel> getClientRoleMappings(ClientModel client) {
+        public Stream<RoleModel> getClientRoleMappingsStream(ClientModel client) {
             if (roleContainer.equals(client)) {
-                Set<RoleModel> ldapRoleMappings = getLDAPRoleMappingsConverted();
+                Stream<RoleModel> ldapRoleMappings = getLDAPRoleMappingsConverted();
 
                 if (config.getMode() == LDAPGroupMapperMode.LDAP_ONLY) {
                     // Use just role mappings from LDAP
                     return ldapRoleMappings;
                 } else {
                     // Merge mappings from both DB and LDAP
-                    Set<RoleModel> modelRoleMappings = super.getClientRoleMappings(client);
-                    ldapRoleMappings.addAll(modelRoleMappings);
-                    return ldapRoleMappings;
+                    return Stream.concat(ldapRoleMappings, super.getClientRoleMappingsStream(client));
                 }
             } else {
-                return super.getClientRoleMappings(client);
+                return super.getClientRoleMappingsStream(client);
             }
         }
 
         @Override
         public boolean hasRole(RoleModel role) {
-            Set<RoleModel> roles = getRoleMappings();
-            return RoleUtils.hasRole(roles, role)
+            return RoleUtils.hasRole(getRoleMappingsStream(), role)
               || RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
         }
 
@@ -392,47 +389,38 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
         }
 
         @Override
-        public Set<RoleModel> getRoleMappings() {
-            Set<RoleModel> modelRoleMappings = super.getRoleMappings();
+        public Stream<RoleModel> getRoleMappingsStream() {
+            Stream<RoleModel> modelRoleMappings = super.getRoleMappingsStream();
 
-            Set<RoleModel> ldapRoleMappings = getLDAPRoleMappingsConverted();
+            Stream<RoleModel> ldapRoleMappings = getLDAPRoleMappingsConverted();
 
             if (config.getMode() == LDAPGroupMapperMode.LDAP_ONLY) {
                 // For LDAP-only we want to retrieve role mappings of target container just from LDAP
-                Set<RoleModel> modelRolesCopy = new HashSet<>(modelRoleMappings);
-                for (RoleModel role : modelRolesCopy) {
-                    if (role.getContainer().equals(roleContainer)) {
-                        modelRoleMappings.remove(role);
-                    }
-                }
+                modelRoleMappings = modelRoleMappings.filter(role -> !Objects.equals(role.getContainer(), roleContainer));
             }
 
-            modelRoleMappings.addAll(ldapRoleMappings);
-            return modelRoleMappings;
+            return Stream.concat(modelRoleMappings, ldapRoleMappings);
         }
 
-        protected Set<RoleModel> getLDAPRoleMappingsConverted() {
+        protected Stream<RoleModel> getLDAPRoleMappingsConverted() {
             if (cachedLDAPRoleMappings != null) {
-                return new HashSet<>(cachedLDAPRoleMappings);
+                return cachedLDAPRoleMappings.stream();
             }
 
             List<LDAPObject> ldapRoles = getLDAPRoleMappings(ldapUser);
-
-            Set<RoleModel> roles = new HashSet<>();
             String roleNameLdapAttr = config.getRoleNameLdapAttribute();
-            for (LDAPObject role : ldapRoles) {
-                String roleName = role.getAttributeAsString(roleNameLdapAttr);
-                RoleModel modelRole = roleContainer.getRole(roleName);
-                if (modelRole == null) {
-                    // Add role to local DB
-                    modelRole = roleContainer.addRole(roleName);
-                }
-                roles.add(modelRole);
-            }
+            cachedLDAPRoleMappings = ldapRoles.stream()
+                    .map(role -> {
+                        String roleName = role.getAttributeAsString(roleNameLdapAttr);
+                        RoleModel modelRole = roleContainer.getRole(roleName);
+                        if (modelRole == null) {
+                            // Add role to local DB
+                            modelRole = roleContainer.addRole(roleName);
+                        }
+                        return modelRole;
+                    }).collect(Collectors.toSet());
 
-            cachedLDAPRoleMappings = new HashSet<>(roles);
-
-            return roles;
+            return cachedLDAPRoleMappings.stream();
         }
 
         @Override

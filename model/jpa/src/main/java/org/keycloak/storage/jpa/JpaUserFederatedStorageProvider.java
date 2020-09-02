@@ -544,17 +544,10 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public Set<RoleModel> getRoleMappings(RealmModel realm, String userId) {
-        Set<RoleModel> set = new HashSet<>();
+    public Stream<RoleModel> getRoleMappingsStream(RealmModel realm, String userId) {
         TypedQuery<FederatedUserRoleMappingEntity> query = em.createNamedQuery("feduserRoleMappings", FederatedUserRoleMappingEntity.class);
         query.setParameter("userId", userId);
-        List<FederatedUserRoleMappingEntity> results = query.getResultList();
-        if (results.size() == 0) return set;
-        for (FederatedUserRoleMappingEntity entity : results) {
-            RoleModel role = realm.getRoleById(entity.getRoleId());
-            set.add(role);
-        }
-        return set;
+        return closing(query.getResultStream().map(FederatedUserRoleMappingEntity::getRoleId).map(realm::getRoleById));
     }
 
     @Override

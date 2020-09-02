@@ -34,6 +34,7 @@ import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
@@ -52,7 +53,7 @@ public class CompositeRolesModelTest extends AbstractTestRealmKeycloakTest {
 
         Set<RoleModel> requestedRoles = new HashSet<>();
 
-        Set<RoleModel> roleMappings = user.getRoleMappings();
+        Set<RoleModel> roleMappings = user.getRoleMappingsStream().collect(Collectors.toSet());
         Stream<RoleModel> scopeMappings = Stream.concat(application.getScopeMappingsStream(), application.getRolesStream());
 
         scopeMappings.forEach(scope -> roleMappings.forEach(role -> {
@@ -75,9 +76,7 @@ public class CompositeRolesModelTest extends AbstractTestRealmKeycloakTest {
         }
         if (!scope.isComposite()) return;
 
-        for (RoleModel contained : scope.getComposites()) {
-            applyScope(role, contained, visited, requested);
-        }
+        scope.getCompositesStream().forEach(contained -> applyScope(role, contained, visited, requested));
     }
 
     private static RoleModel getRole(RealmModel realm, String appName, String roleName) {
