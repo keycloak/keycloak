@@ -42,6 +42,7 @@ __all__ = [
     'getTaskLogger',
     'getPomDependencyByArtifactId',
     'getPomProperty',
+    'getPomPropertyFromRemoteXml',
     'getVersionOfPomDependency',
     'getXmlRoot',
     'isWellFormedWildflyTag',
@@ -54,18 +55,29 @@ __all__ = [
 
 __author__  = "Jan Lieskovsky <jlieskov@redhat.com>"
 __status__  = "Alpha"
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 #
-# Various data structures for the module
+# Various constants / data structures for the module
 #
+
+# Empty string
+_empty_string                             = ''
+# Base URL of the Keycloak's main pom.xml file from GitHub master branch
+_keycloak_github_master_main_pom_base_url = "https://raw.githubusercontent.com/keycloak/keycloak/master/pom.xml"
+# Base URL of the Wildfly's main pom.xml file from GitHub tag / release branch
+# Note: To get final version of the URL '%s' format specifier needs to be expanded to a specific Wildfly tag / release!
+_wildfly_github_tag_main_pom_base_url     = "https://raw.githubusercontent.com/wildfly/wildfly/%s/pom.xml"
+
+# POM namespace prefix definition for lxml
+_pom_ns                                   = "http://maven.apache.org/POM/4.0.0"
+
 # Module loggers
-_moduleLoggers = {}
-# 'pom' namespace prefix definition for lxml
-_pom_ns = "http://maven.apache.org/POM/4.0.0"
-# Maven GAV (groupId:artifactId:version) related stuff
-_gav_elements = ['groupId', 'artifactId', 'version']
-_gav_delimiter = ':'
+_moduleLoggers                            = {}
+
+# Maven GAV (groupId:artifactId:version) related constants / data structures
+_gav_delimiter                            = ':'
+_gav_elements                             = ['groupId', 'artifactId', 'version']
 
 #
 # Various base helper routines
@@ -211,6 +223,31 @@ def getPomProperty(xmlTree, propertyText):
     Returns empty list if no such element with 'propertyText' is found.
     """
     return xmlTree.xpath('/pom:project/pom:properties/pom:%s' % propertyText, namespaces = { "pom" : "%s" % _pom_ns })
+
+def getPomPropertyFromRemoteXml(xmlUrl, propertyText, errorMessage = None, expectedElementsCount = None):
+    """
+    Given the URL to the remote XML file as 'xmlUrl' and name of the property
+    to be retrieved from the XML file as 'propertyText' perform:
+    * Save the remote XML to local file,
+    * Obtain the XML root from the content,
+    * Locate the specified POM property element within the file.
+
+    Moreover, if both 'errorMessage' and 'expectedElementsCount' are provided,
+    display the 'errorMessage' error message and exit with failure if the count
+    of found elements matching the 'propertyText' doesn't match the
+    'expectedElemsCount' value.
+
+    Returns list of matching property elements or exits with error if count
+    other than specified in 'expectedElementsCount' is found.
+    """
+
+    xmlFile = saveUrlToNamedTemporaryFile(xmlUrl)
+    xmlRoot = getXmlRoot(xmlFile)
+    propertyElement = getPomProperty(xmlRoot, propertyText)
+    if None not in (errorMessage, expectedElementsCount) and len(propertyElement) != expectedElementsCount:
+        _logErrorAndExitIf(errorMessage, True)
+
+    return propertyElement
 
 def getVersionOfPomDependency(xmlElem, groupIdText, artifactIdText):
     """
@@ -418,7 +455,7 @@ def loadGavDictionaryFromXmlFile(xmlFile, xPathPrefix = '/pom:project/pom:depend
                 # 'project.version' value. Create a custom XPath query to fetch the actual numeric value
                 if not propertyElem:
                     # Build xpath from version value, turn e.g. 'project.version' to '/pom:project/pom:version'
-                    customXPath = ''.join(list(map(lambda x: '/pom:' + x, gavDictValue.split('.'))))
+                    customXPath = _empty_string.join(list(map(lambda x: '/pom:' + x, gavDictValue.split('.'))))
                     # Fetch the numeric version
                     propertyElem = getElementsByXPath(xmlRoot, customXPath)
                     # Exit with error if it wasn't possible to determine the artifact version even this way
@@ -995,3 +1032,100 @@ def performRhssoAdapterLicenseFilesUpdateTask(wildflyPomFile, wildflyCorePomFile
                     nameSpace = {},
                     licenseFile = os.path.join(root, filename)
                 )
+
+def performDeprecatedWildflyTestingModuleUpdateTask():
+    """
+    Update the properties of the deprecated Wildfly testing module present in
+    the Arquillian testsuite if necessary. The properties are needed to be
+    updated if and only if the Wildfly and Wildfly Core versions in the main
+    Keycloak pom.xml file from the local Keycloak git clone are higher than
+    Widfly and Wildfly Core versions in the main Keycloak pom.xml file of the
+    master branch of official Keycloak GitHub repository (IOW if and only the
+    main Keycloak pom.xml file in the local repository got already updated with
+    new Wildfly and Wildfly Core artifact versions from the new tag)
+    """
+    # Prepare / hold the expected future values of the properties of the
+    # deprecated Wildfly testing module present in Arquillian testsuite
+    deprecatedWildflyModuleProperties = {}
+
+    deprecatedWildflyModuleProperties['wildfly.deprecated.version'] = getPomPropertyFromRemoteXml(
+        _keycloak_github_master_main_pom_base_url,
+        'wildfly.version',
+        errorMessage = "Unable to locate 'wildfly.version' property element in the remote XML file!",
+        expectedElementsCount = 1
+    )[0].text
+
+    deprecatedWildflyModuleProperties['wildfly.deprecated.wildfly.core.version'] = getPomPropertyFromRemoteXml(
+        _keycloak_github_master_main_pom_base_url,
+        'wildfly.core.version',
+        errorMessage = "Unable to locate 'wildfly.core.version' property element in the remote XML file!",
+        expectedElementsCount = 1
+    )[0].text
+
+    deprecatedWildflyModuleProperties['wildfly.deprecated.arquillian.wildfly.container'] = getPomPropertyFromRemoteXml(
+        _wildfly_github_tag_main_pom_base_url % deprecatedWildflyModuleProperties['wildfly.deprecated.version'],
+        'version.org.wildfly.arquillian',
+        errorMessage = "Unable to locate 'version.org.wildfly.arquillian' property element in the remote XML file!",
+        expectedElementsCount = 1
+    )[0].text
+
+    taskLogger = getTaskLogger('Update Deprecated Wildfly Testing Module')
+    taskLogger.info('Updating properties of the deprecated Wildfly testing module...')
+    stepLogger = getStepLogger()
+
+    # Absolute path to main Keycloak pom.xml within the local repo
+    mainKeycloakPomPath = getKeycloakGitRepositoryRoot() + "/pom.xml"
+    mainKeycloakPomXmlRoot = getXmlRoot(mainKeycloakPomPath)
+    # Absolute path to pom.xml file of the Arquillian testsuite within the local repo
+    arqTestSuitePomPath = getKeycloakGitRepositoryRoot() + "/testsuite/integration-arquillian/pom.xml"
+    arqTestSuitePomXmlRoot = getXmlRoot(arqTestSuitePomPath)
+
+    # Determine the current value of the 'wildfly.version' property element
+    # from the main pom.xml file of the local Keycloak git repository clone
+    currentLocalWildflyVersionElem = getPomProperty(mainKeycloakPomXmlRoot, 'wildfly.version')
+    _logErrorAndExitIf(
+        "Unable to determine the value of the 'wildfly.version' property element in the main Keycloak pom.xml file!",
+        len(currentLocalWildflyVersionElem) != 1
+    )
+    currentLocalWildflyVersion = currentLocalWildflyVersionElem[0].text
+    # Determine the current value of the 'wildfly.core.version' property
+    # element from the main pom.xml file of the local Keycloak git repository
+    # clone
+    currentLocalWildflyCoreVersionElem = getPomProperty(mainKeycloakPomXmlRoot, 'wildfly.core.version')
+    _logErrorAndExitIf(
+        "Unable to determine the value of the 'wildfly.core.version' property element in the main Keycloak pom.xml file!",
+        len(currentLocalWildflyCoreVersionElem) != 1
+    )
+    currentLocalWildflyCoreVersion = currentLocalWildflyCoreVersionElem[0].text
+    # Update the properties of the deprecated Wildfly testing module present
+    # in the Arquillian testsuite if the local Wildfly and Wildfly Core version
+    # is higher than their counterparts currently present in the master branch
+    # of the Keycloak GitHub repository (IOW only if main Keycloak's pom.xml
+    # got previously already updated with artifact versions from the new
+    # Wildfly tag)
+    if parseVersion(currentLocalWildflyVersion) > parseVersion(deprecatedWildflyModuleProperties['wildfly.deprecated.version']) and \
+       parseVersion(currentLocalWildflyCoreVersion) > parseVersion(deprecatedWildflyModuleProperties['wildfly.deprecated.wildfly.core.version']):
+
+        for deprecatedProperty in deprecatedWildflyModuleProperties.keys():
+            arqTestSuitePropertyElem = getPomProperty(arqTestSuitePomXmlRoot, deprecatedProperty)
+            _logErrorAndExitIf(
+                "Unable to locate the '%s' element in the pom.xml file of the Arquillian testsuite!",
+                len(arqTestSuitePropertyElem) != 1
+            )
+            stepLogger.debug(
+                "Updating value of the '%s' property of the deprecated Wildfly module to '%s'" %
+                (deprecatedProperty, deprecatedWildflyModuleProperties[deprecatedProperty])
+            )
+            arqTestSuitePropertyElem[0].text = deprecatedWildflyModuleProperties[deprecatedProperty]
+    else:
+        updateNotNecessaryMessage = (
+            "Not updating the values of the properties of the deprecated Wildfly testing module!"
+            "\n\t\t Versions of Wildfly and Wildfly Core artifacts found in the main pom.xml file"
+            "\n\t\t of this repository are equal, or lower when compared to their respective versions"
+            "\n\t\t currently present in the 'master' branch of the upstream GitHub Keycloak repository."
+            "\n\t\t Update is not needed."
+        )
+        stepLogger.debug(_empty_string.join(updateNotNecessaryMessage))
+
+    lxml.etree.ElementTree(arqTestSuitePomXmlRoot).write(arqTestSuitePomPath, encoding = "UTF-8", pretty_print = True, xml_declaration = True)
+    stepLogger.info('Done syncing necessary changes to the deprecated Wildfly testing module!')

@@ -63,6 +63,8 @@ if __name__ == '__main__':
         wu.performKeycloakAdapterLicenseFilesUpdateTask(wildflyPomFile, wildflyCorePomFile)
         # Subtask - Update RH-SSO adapters
         wu.performRhssoAdapterLicenseFilesUpdateTask(wildflyPomFile, wildflyCorePomFile)
+        # Subtask - Update properties of the deprecated Wildfly testing module if necessary
+        wu.performDeprecatedWildflyTestingModuleUpdateTask()
 
         for filename in [wildflyPomFile, wildflyCorePomFile]:
             os.remove(filename)
