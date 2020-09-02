@@ -16,7 +16,7 @@
  */
 package org.keycloak.testsuite.federation;
 
-import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.List;
 import java.util.stream.Stream;
@@ -179,7 +179,7 @@ public class HardcodedRoleStorageProvider implements RoleStorageProvider {
         }
 
         @Override
-        public void setAttribute(String name, Collection<String> values) {
+        public void setAttribute(String name, List<String> values) {
             throw new ReadOnlyException("role is read only");
         }
 
