@@ -55,7 +55,7 @@ public class MetricsRestServiceTest extends AbstractKeycloakTest {
 
         try (Response response = client.target("http://" + MGMT_HOST + ":" + MGMT_PORT + "/health").request().get()) {
             Assert.assertThat(response, statusCodeIs(Status.OK));
-            Assert.assertThat(response, body(containsString("{\"status\":\"UP\",\"checks\":[]}")));
+            Assert.assertThat(response, body(containsString("{\"status\":\"UP\",\"checks\":[{")));
         } finally {
             client.close();
         }

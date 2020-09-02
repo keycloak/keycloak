@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version='1.0' encoding='UTF-8'?>
 <!--
 ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
 ~ and other contributors as indicated by the @author tags.
@@ -15,9 +15,7 @@
 ~ See the License for the specific language governing permissions and
 ~ limitations under the License.
 -->
-
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
@@ -42,9 +40,9 @@
         <app.server>undertow</app.server>
 
         <!-- Wildfly deprecated versions -->
-        <wildfly.deprecated.version>19.1.0.Final</wildfly.deprecated.version>
-        <wildfly.deprecated.wildfly.core.version>11.1.1.Final</wildfly.deprecated.wildfly.core.version>
-        <wildfly.deprecated.arquillian.wildfly.container>2.1.1.Final</wildfly.deprecated.arquillian.wildfly.container>
+        <wildfly.deprecated.version>20.0.1.Final</wildfly.deprecated.version>
+        <wildfly.deprecated.wildfly.core.version>12.0.3.Final</wildfly.deprecated.wildfly.core.version>
+        <wildfly.deprecated.arquillian.wildfly.container>2.2.0.Final</wildfly.deprecated.arquillian.wildfly.container>
 
         <!--component versions-->
         <arquillian-core.version>1.6.0.Final</arquillian-core.version>
@@ -442,7 +440,7 @@
                 <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>
                 <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
                 <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
-                <keycloak.connectionsJpa.password></keycloak.connectionsJpa.password>
+                <keycloak.connectionsJpa.password/>
                 <keycloak.connectionsJpa.url>jdbc:h2:mem:test;MVCC=TRUE;DB_CLOSE_DELAY=-1</keycloak.connectionsJpa.url>
             </properties>
         </profile>

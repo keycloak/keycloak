@@ -18,7 +18,7 @@
 package org.keycloak.common.util;
 
 
-import org.bouncycastle.openssl.PEMWriter;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -131,7 +131,7 @@ public final class PemUtils {
 
         try {
             StringWriter writer = new StringWriter();
-            PEMWriter pemWriter = new PEMWriter(writer);
+            JcaPEMWriter pemWriter = new JcaPEMWriter(writer);
             pemWriter.writeObject(obj);
             pemWriter.flush();
             pemWriter.close();

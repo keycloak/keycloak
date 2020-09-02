@@ -178,20 +178,17 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         boolean clustered = config.getBoolean("clustered", false);
         boolean async = config.getBoolean("async", false);
-        boolean allowDuplicateJMXDomains = config.getBoolean("allowDuplicateJMXDomains", true);
 
         this.topologyInfo = new TopologyInfo(cacheManager, config, true);
 
         if (clustered) {
             String jgroupsUdpMcastAddr = config.get("jgroupsUdpMcastAddr", System.getProperty(InfinispanConnectionProvider.JGROUPS_UDP_MCAST_ADDR));
             configureTransport(gcb, topologyInfo.getMyNodeName(), topologyInfo.getMySiteName(), jgroupsUdpMcastAddr);
-            gcb.globalJmxStatistics()
+            gcb.jmx()
               .jmxDomain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + topologyInfo.getMyNodeName());
         }
 
-        gcb.globalJmxStatistics()
-          .allowDuplicateDomains(allowDuplicateJMXDomains)
-          .enable();
+        gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN).enable();
 
         // For Infinispan 10, we go with the JBoss marshalling.
         // TODO: This should be replaced later with the marshalling recommended by infinispan. Probably protostream.
@@ -484,7 +481,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     }
 
 
-                    transportBuilder.globalJmxStatistics()
+                    transportBuilder.jmx()
                         .jmxDomain(InfinispanConnectionProvider.JMX_DOMAIN + "-" + nodeName)
                         .enable();
 
