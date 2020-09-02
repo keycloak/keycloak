@@ -874,7 +874,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                     }
                     break;
                 case UserModel.ENABLED:
-                    predicates.add(builder.equal(builder.lower(root.get(key)), Boolean.parseBoolean(value.toLowerCase())));
+                    predicates.add(builder.equal(root.get(key), Boolean.parseBoolean(value.toLowerCase())));
             }
         }
 
