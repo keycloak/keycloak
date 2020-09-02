@@ -91,7 +91,7 @@ public class AggregatePolicyManagementTest extends AbstractAuthorizationSettings
         policyC.setName("Policy C");
         policyC.addUser("test");
 
-        policies.user().create(policyC);
+        policies.user().create(policyC).close();
     }
 
     @Test

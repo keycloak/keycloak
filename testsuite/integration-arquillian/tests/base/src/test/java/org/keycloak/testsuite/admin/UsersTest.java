@@ -266,7 +266,7 @@ public class UsersTest extends AbstractAdminTest {
             String policyName = "test-policy";
             policy.setName(policyName);
             policy.setUsers(Collections.singleton(testUserId));
-            authorizationResource.policies().user().create(policy);
+            authorizationResource.policies().user().create(policy).close();
             PolicyRepresentation policyRepresentation = authorizationResource.policies().findByName(policyName);
             //add the policy to grp1
             Optional<GroupRepresentation> optional = groups.stream().filter(g -> g.getName().equals("grp1")).findFirst();
