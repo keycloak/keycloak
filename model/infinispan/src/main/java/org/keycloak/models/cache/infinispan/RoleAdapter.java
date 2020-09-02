@@ -26,12 +26,13 @@ import org.keycloak.models.cache.infinispan.entities.CachedRole;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -125,21 +126,22 @@ public class RoleAdapter implements RoleModel {
     }
 
     @Override
-    public Set<RoleModel> getComposites() {
-        if (isUpdated()) return updated.getComposites();
+    public Stream<RoleModel> getCompositesStream() {
+        if (isUpdated()) return updated.getCompositesStream();
 
         if (composites == null) {
             composites = new HashSet<>();
-            for (String id : cached.getComposites()) {
-                RoleModel role = realm.getRoleById(id);
-                if (role == null) {
-                    throw new IllegalStateException("Could not find composite in role " + getName() + ": " + id);
-                }
-                composites.add(role);
-            }
+            composites = cached.getComposites().stream()
+                    .map(id -> {
+                        RoleModel role = realm.getRoleById(id);
+                        if (role == null) {
+                            throw new IllegalStateException("Could not find composite in role " + getName() + ": " + id);
+                        }
+                        return role;
+                    }).collect(Collectors.toSet());
         }
 
-        return composites;
+        return composites.stream();
     }
 
     @Override
@@ -201,16 +203,16 @@ public class RoleAdapter implements RoleModel {
     }
 
     @Override
-    public List<String> getAttribute(String name) {
+    public Stream<String> getAttributeStream(String name) {
         if (updated != null) {
-            return updated.getAttribute(name);
+            return updated.getAttributeStream(name);
         }
 
         List<String> result = cached.getAttributes(modelSupplier).get(name);
         if (result == null) {
-            result = Collections.emptyList();
+            return Stream.empty();
         }
-        return result;
+        return result.stream();
     }
 
     @Override

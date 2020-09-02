@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
@@ -122,12 +124,12 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
 
     @Override
-    public Set<RoleModel> getRoles() {
+    public Stream<RoleModel> getRolesStream() {
         // Load roles if not yet present
         if (roles == null) {
             roles = loadRoles();
         }
-        return roles;
+        return roles.stream();
     }
 
 
@@ -225,7 +227,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
             return true;
         }
 
-        Set<RoleModel> clientScopeRoles = clientScope.getScopeMappings();
+        Set<RoleModel> clientScopeRoles = clientScope.getScopeMappingsStream().collect(Collectors.toSet());
 
         // Client scope is automatically permitted if it doesn't have any role scope mappings
         if (clientScopeRoles.isEmpty()) {

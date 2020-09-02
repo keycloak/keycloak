@@ -37,9 +37,20 @@ public interface ScopeContainerModel {
     /**
      * From the scope mappings returned by {@link #getScopeMappings()} returns only those
      * that belong to the realm that owns this scope container.
-     * @return
+     * @return set of {@link RealmModel}
+     * @deprecated Use {@link #getRealmScopeMappingsStream()} getRealmScopeMappingsStream} instead.
      */
-    Set<RoleModel> getRealmScopeMappings();
+    @Deprecated
+    default Set<RoleModel> getRealmScopeMappings() {
+        return getRealmScopeMappingsStream().collect(Collectors.toSet());
+    }
+
+    /**
+     * From the scope mappings returned by {@link #getScopeMappingsStream()} ()} returns only those
+     * that belong to the realm that owns this scope container.
+     * @return stream of {@link RoleModel}
+     */
+    Stream<RoleModel> getRealmScopeMappingsStream();
 
     void addScopeMapping(RoleModel role);
 

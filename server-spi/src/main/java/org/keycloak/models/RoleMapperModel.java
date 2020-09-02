@@ -18,6 +18,8 @@
 package org.keycloak.models;
 
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -27,15 +29,36 @@ public interface RoleMapperModel {
     /**
      * Returns set of realm roles that are directly set to this object.
      * @return see description
+     * @deprecated Use {@link #getRealmRoleMappingsStream()} getRealmRoleMappingsStream} instead.
      */
-    Set<RoleModel> getRealmRoleMappings();
+    @Deprecated
+    default Set<RoleModel> getRealmRoleMappings() {
+        return getRealmRoleMappingsStream().collect(Collectors.toSet());
+    }
+
+    /**
+     * Returns stream of realm roles that are directly set to this object.
+     * @return stream of {@link RoleModel}
+     */
+    Stream<RoleModel> getRealmRoleMappingsStream();
 
     /**
      * Returns set of client roles that are directly set to this object for the given client.
      * @param app Client to get the roles for
      * @return see description
+     * @deprecated Use {@link #getClientRoleMappingsStream(ClientModel)} getClientRoleMappingsStream} instead.
      */
-    Set<RoleModel> getClientRoleMappings(ClientModel app);
+    @Deprecated
+    default Set<RoleModel> getClientRoleMappings(ClientModel app) {
+        return getClientRoleMappingsStream(app).collect(Collectors.toSet());
+    }
+
+    /**
+     * Returns stream of client roles that are directly set to this object for the given client.
+     * @param app Client to get the roles for
+     * @return stream of {@link RoleModel}
+     */
+    Stream<RoleModel> getClientRoleMappingsStream(ClientModel app);
 
     /**
      * Returns {@code true} if this object is directly or indirectly assigned the given role, {@code false} otherwise.
@@ -60,8 +83,18 @@ public interface RoleMapperModel {
     /**
      * Returns set of all role (both realm all client) that are directly set to this object.
      * @return
+     * @deprecated Use {@link #getRoleMappingsStream()} getRoleMappingsStream} instead.
      */
-    Set<RoleModel> getRoleMappings();
+    @Deprecated
+    default Set<RoleModel> getRoleMappings() {
+        return getRoleMappingsStream().collect(Collectors.toSet());
+    }
+
+    /**
+     * Returns stream of all role (both realm all client) that are directly set to this object.
+     * @return stream of {@link RoleModel}
+     */
+    Stream<RoleModel> getRoleMappingsStream();
 
     /**
      * Removes the given role mapping from this object.

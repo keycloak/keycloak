@@ -22,7 +22,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModelDefaultMethods;
@@ -135,40 +134,18 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
     }
 
     @Override
-    public Set<RoleModel> getRealmRoleMappings() {
-        Set<RoleModel> roleMappings = getRoleMappings();
-
-        Set<RoleModel> realmRoles = new HashSet<>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof RealmModel) {
-                realmRoles.add(role);
-            }
-        }
-        return realmRoles;
+    public Stream<RoleModel> getRealmRoleMappingsStream() {
+        return getRoleMappingsStream().filter(RoleUtils::isRealmRole);
     }
 
     @Override
-    public Set<RoleModel> getClientRoleMappings(ClientModel app) {
-        Set<RoleModel> roleMappings = getRoleMappings();
-
-        Set<RoleModel> roles = new HashSet<>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof ClientModel) {
-                ClientModel appModel = (ClientModel) container;
-                if (appModel.getId().equals(app.getId())) {
-                    roles.add(role);
-                }
-            }
-        }
-        return roles;
+    public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
+        return getRoleMappingsStream().filter(r -> RoleUtils.isClientRole(r, app));
     }
 
     @Override
     public boolean hasRole(RoleModel role) {
-        Set<RoleModel> roles = getRoleMappings();
-        return RoleUtils.hasRole(roles, role)
+        return RoleUtils.hasRole(getRoleMappingsStream(), role)
           || RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
     }
 
@@ -189,16 +166,15 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
         return true;
     }
 
-    protected Set<RoleModel> getRoleMappingsInternal() {
-        return Collections.emptySet();
+    protected Stream<RoleModel> getRoleMappingsInternal() {
+        return Stream.empty();
     }
 
     @Override
-    public Set<RoleModel> getRoleMappings() {
-        Set<RoleModel> set = new HashSet<>();
-        if (appendDefaultRolesToRoleMappings()) set.addAll(DefaultRoles.getDefaultRoles(realm));
-        set.addAll(getRoleMappingsInternal());
-        return set;
+    public Stream<RoleModel> getRoleMappingsStream() {
+        Stream<RoleModel> roleMappings = getRoleMappingsInternal();
+        if (appendDefaultRolesToRoleMappings()) return Stream.concat(roleMappings, DefaultRoles.getDefaultRoles(realm));
+        return roleMappings;
     }
 
 

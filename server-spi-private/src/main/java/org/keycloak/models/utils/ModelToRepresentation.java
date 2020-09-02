@@ -119,7 +119,7 @@ public class ModelToRepresentation {
         rep.setPath(buildGroupPath(group));
         if (!full) return rep;
         // Role mappings
-        Set<RoleModel> roles = group.getRoleMappings();
+        Set<RoleModel> roles = group.getRoleMappingsStream().collect(Collectors.toSet());
         List<String> realmRoleNames = new ArrayList<>();
         Map<String, List<String>> clientRoleNames = new HashMap<>();
         for (RoleModel role : roles) {
@@ -409,10 +409,9 @@ public class ModelToRepresentation {
         if (realm.getClientAuthenticationFlow() != null) rep.setClientAuthenticationFlow(realm.getClientAuthenticationFlow().getAlias());
         if (realm.getDockerAuthenticationFlow() != null) rep.setDockerAuthenticationFlow(realm.getDockerAuthenticationFlow().getAlias());
 
-        List<String> defaultRoles = realm.getDefaultRoles();
+        List<String> defaultRoles = realm.getDefaultRolesStream().collect(Collectors.toList());
         if (!defaultRoles.isEmpty()) {
-            List<String> roleStrings = new ArrayList<>(defaultRoles);
-            rep.setDefaultRoles(roleStrings);
+            rep.setDefaultRoles(defaultRoles);
         }
         List<String> defaultGroups = realm.getDefaultGroupsStream()
                 .map(ModelToRepresentation::buildGroupPath).collect(Collectors.toList());
@@ -650,8 +649,9 @@ public class ModelToRepresentation {
             rep.setWebOrigins(new LinkedList<>(webOrigins));
         }
 
-        if (!clientModel.getDefaultRoles().isEmpty()) {
-            rep.setDefaultRoles(clientModel.getDefaultRoles().toArray(new String[0]));
+        String[] defaultRoles = clientModel.getDefaultRolesStream().toArray(String[]::new);
+        if (defaultRoles.length > 0) {
+            rep.setDefaultRoles(defaultRoles);
         }
 
         if (!clientModel.getRegisteredNodes().isEmpty()) {

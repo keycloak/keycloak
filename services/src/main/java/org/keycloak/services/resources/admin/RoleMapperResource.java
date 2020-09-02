@@ -53,12 +53,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -124,7 +123,7 @@ public class RoleMapperResource {
         ClientModel clientModel;
         ClientMappingsRepresentation mappings;
 
-        for (RoleModel roleMapping : roleMapper.getRoleMappings()) {
+        for (RoleModel roleMapping : roleMapper.getRoleMappingsStream().collect(Collectors.toSet())) {
             RoleContainerModel container = roleMapping.getContainer();
             if (container instanceof RealmModel) {
                 realmRolesRepresentation.add(ModelToRepresentation.toBriefRepresentation(roleMapping));
@@ -157,15 +156,10 @@ public class RoleMapperResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RoleRepresentation> getRealmRoleMappings() {
+    public Stream<RoleRepresentation> getRealmRoleMappings() {
         viewPermission.require();
 
-        Set<RoleModel> realmMappings = roleMapper.getRealmRoleMappings();
-        List<RoleRepresentation> realmMappingsRep = new ArrayList<RoleRepresentation>();
-        for (RoleModel roleModel : realmMappings) {
-            realmMappingsRep.add(ModelToRepresentation.toBriefRepresentation(roleModel));
-        }
-        return realmMappingsRep;
+        return roleMapper.getRealmRoleMappingsStream().map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**
@@ -250,14 +244,13 @@ public class RoleMapperResource {
 
         logger.debug("deleteRealmRoleMappings");
         if (roles == null) {
-            Set<RoleModel> roleModels = roleMapper.getRealmRoleMappings();
-            roles = new LinkedList<>();
-
-            for (RoleModel roleModel : roleModels) {
-                auth.roles().requireMapRole(roleModel);
-                roleMapper.deleteRoleMapping(roleModel);
-                roles.add(ModelToRepresentation.toBriefRepresentation(roleModel));
-            }
+            roles = roleMapper.getRealmRoleMappingsStream()
+                    .peek(roleModel -> {
+                        auth.roles().requireMapRole(roleModel);
+                        roleMapper.deleteRoleMapping(roleModel);
+                    })
+                    .map(ModelToRepresentation::toBriefRepresentation)
+                    .collect(Collectors.toList());
 
         } else {
             for (RoleRepresentation role : roles) {

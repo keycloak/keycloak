@@ -70,13 +70,18 @@ public interface RoleContainerModel {
 
     Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max);
 
-    List<String> getDefaultRoles();
+    @Deprecated
+    default List<String> getDefaultRoles() {
+        return getDefaultRolesStream().collect(Collectors.toList());
+    }
+
+    Stream<String> getDefaultRolesStream();
 
     void addDefaultRole(String name);
 
     default void updateDefaultRoles(String... defaultRoles) {
         List<String> defaultRolesArray = Arrays.asList(defaultRoles);
-        Collection<String> entities = getDefaultRoles();
+        Collection<String> entities = getDefaultRolesStream().collect(Collectors.toList());
         Set<String> already = new HashSet<>();
         ArrayList<String> remove = new ArrayList<>();
         for (String rel : entities) {

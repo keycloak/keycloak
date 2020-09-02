@@ -285,8 +285,8 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
         }
 
         @Override
-        public Set<RoleModel> getRealmScopeMappings() {
-            return Collections.EMPTY_SET;
+        public Stream<RoleModel> getRealmScopeMappingsStream() {
+            return Stream.empty();
         }
 
         @Override

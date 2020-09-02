@@ -350,8 +350,8 @@ public final class OpenshiftSAClientAdapter extends AbstractReadOnlyClientStorag
     }
 
     @Override
-    public Set<RoleModel> getRealmScopeMappings() {
-        return Collections.emptySet();
+    public Stream<RoleModel> getRealmScopeMappingsStream() {
+        return Stream.empty();
     }
 
     @Override
@@ -469,8 +469,8 @@ public final class OpenshiftSAClientAdapter extends AbstractReadOnlyClientStorag
             }
 
             @Override
-            public Set<RoleModel> getRealmScopeMappings() {
-                return Collections.emptySet();
+            public Stream<RoleModel> getRealmScopeMappingsStream() {
+                return Stream.empty();
             }
 
             @Override

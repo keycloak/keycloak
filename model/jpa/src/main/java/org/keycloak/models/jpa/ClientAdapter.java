@@ -23,7 +23,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.ClientAttributeEntity;
 import org.keycloak.models.jpa.entities.ClientEntity;
@@ -31,6 +30,7 @@ import org.keycloak.models.jpa.entities.ClientScopeClientMappingEntity;
 import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
 import javax.persistence.EntityManager;
@@ -46,7 +46,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -239,20 +238,8 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     }
 
     @Override
-    public Set<RoleModel> getRealmScopeMappings() {
-        Set<RoleModel> roleMappings = getScopeMappings();
-
-        Set<RoleModel> appRoles = new HashSet<>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof RealmModel) {
-                if (((RealmModel) container).getId().equals(realm.getId())) {
-                    appRoles.add(role);
-                }
-            }
-        }
-
-        return appRoles;
+    public Stream<RoleModel> getRealmScopeMappingsStream() {
+        return getScopeMappingsStream().filter(r -> RoleUtils.isRealmRole(r, realm));
     }
 
     @Override
@@ -690,24 +677,17 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     public boolean hasScope(RoleModel role) {
         if (isFullScopeAllowed()) return true;
 
-        Predicate<RoleModel> hasRoleOrEquals = r -> (Objects.equals(r, role) || r.hasRole(role));
-
-        if (getScopeMappingsStream().anyMatch(hasRoleOrEquals)) {
+        if (RoleUtils.hasRole(getScopeMappingsStream(), role))
             return true;
-        }
 
-        return getRolesStream().anyMatch(hasRoleOrEquals);
+        return RoleUtils.hasRole(getRolesStream(), role);
     }
 
     @Override
-    public List<String> getDefaultRoles() {
+    public Stream<String> getDefaultRolesStream() {
         Collection<RoleEntity> entities = entity.getDefaultRoles();
-        List<String> roles = new ArrayList<String>();
-        if (entities == null) return roles;
-        for (RoleEntity entity : entities) {
-            roles.add(entity.getName());
-        }
-        return roles;
+        if (entities == null) return Stream.empty();
+        return entities.stream().map(RoleEntity::getName);
     }
 
     @Override

@@ -26,11 +26,8 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.group.GroupStorageProvider;
 import org.keycloak.storage.group.GroupStorageProviderModel;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class HardcodedGroupStorageProvider implements GroupStorageProvider {
@@ -93,13 +90,13 @@ public class HardcodedGroupStorageProvider implements GroupStorageProvider {
         }
 
         @Override
-        public Set<RoleModel> getRealmRoleMappings() {
-            return null;
+        public Stream<RoleModel> getRealmRoleMappingsStream() {
+            return Stream.empty();
         }
 
         @Override
-        public Set<RoleModel> getClientRoleMappings(ClientModel app) {
-            return null;
+        public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
+            return Stream.empty();
         }
 
         @Override
@@ -108,8 +105,8 @@ public class HardcodedGroupStorageProvider implements GroupStorageProvider {
         }
 
         @Override
-        public Set<RoleModel> getRoleMappings() {
-            return null;
+        public Stream<RoleModel> getRoleMappingsStream() {
+            return Stream.empty();
         }
 
         @Override

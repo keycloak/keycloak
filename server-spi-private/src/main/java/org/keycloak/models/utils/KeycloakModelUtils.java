@@ -191,12 +191,9 @@ public final class KeycloakModelUtils {
             return false;
         }
 
-        Set<RoleModel> compositeRoles = composite.getComposites();
+        Set<RoleModel> compositeRoles = composite.getCompositesStream().collect(Collectors.toSet());
         return compositeRoles.contains(role) ||
-                        compositeRoles.stream()
-                                .filter(x -> x.isComposite() && searchFor(role, x, visited))
-                                .findFirst()
-                                .isPresent();
+                        compositeRoles.stream().anyMatch(x -> x.isComposite() && searchFor(role, x, visited));
     }
 
     /**
@@ -510,19 +507,21 @@ public final class KeycloakModelUtils {
         }).filter(Objects::nonNull).findFirst().orElse(null);
     }
 
+    /**
+     * @deprecated Use {@link #getClientScopeMappingsStream(ClientModel, ScopeContainerModel)}  getClientScopeMappingsStream} instead.
+     * @param client {@link ClientModel}
+     * @param container {@link ScopeContainerModel}
+     * @return
+     */
+    @Deprecated
     public static Set<RoleModel> getClientScopeMappings(ClientModel client, ScopeContainerModel container) {
-        Set<RoleModel> mappings = container.getScopeMappings();
-        Set<RoleModel> result = new HashSet<>();
-        for (RoleModel role : mappings) {
-            RoleContainerModel roleContainer = role.getContainer();
-            if (roleContainer instanceof ClientModel) {
-                if (client.getId().equals(((ClientModel)roleContainer).getId())) {
-                    result.add(role);
-                }
+        return getClientScopeMappingsStream(client, container).collect(Collectors.toSet());
+    }
 
-            }
-        }
-        return result;
+    public static Stream<RoleModel> getClientScopeMappingsStream(ClientModel client, ScopeContainerModel container) {
+        return container.getScopeMappingsStream()
+                .filter(role -> role.getContainer() instanceof ClientModel &&
+                        Objects.equals(client.getId(), role.getContainer().getId()));
     }
 
     // Used in various role mappers

@@ -18,6 +18,8 @@
 package org.keycloak.models;
 
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Request-scoped context object
@@ -35,7 +37,12 @@ public interface ClientSessionContext {
     /**
      * @return expanded roles (composite roles already applied)
      */
-    Set<RoleModel> getRoles();
+    @Deprecated
+    default Set<RoleModel> getRoles() {
+        return getRolesStream().collect(Collectors.toSet());
+    }
+
+    Stream<RoleModel> getRolesStream();
 
     Set<ProtocolMapperModel> getProtocolMappers();
 

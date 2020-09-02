@@ -718,14 +718,10 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
 
     @Override
-    public List<String> getDefaultRoles() {
+    public Stream<String> getDefaultRolesStream() {
         Collection<RoleEntity> entities = realm.getDefaultRoles();
-        if (entities == null || entities.isEmpty()) return Collections.emptyList();
-        List<String> roles = new LinkedList<>();
-        for (RoleEntity entity : entities) {
-            roles.add(entity.getName());
-        }
-        return Collections.unmodifiableList(roles);
+        if (entities == null || entities.isEmpty()) return Stream.empty();
+        return entities.stream().map(RoleEntity::getName);
     }
 
     @Override
