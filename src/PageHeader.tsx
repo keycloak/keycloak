@@ -2,8 +2,6 @@ import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Avatar,
-  Button,
-  ButtonVariant,
   Brand,
   Dropdown,
   DropdownItem,
@@ -17,6 +15,7 @@ import {
 } from "@patternfly/react-core";
 import { HelpIcon } from "@patternfly/react-icons";
 import { KeycloakContext } from "./auth/KeycloakContext";
+import { HelpHeader } from "./components/help-enabler/HelpHeader";
 import { Link } from "react-router-dom";
 
 export const Header = () => {
@@ -95,9 +94,7 @@ const headerTools = () => {
         }} /** the settings and help icon buttons are only visible on desktop sizes and replaced by a kebab dropdown for other sizes */
       >
         <PageHeaderToolsItem>
-          <Button aria-label="Help actions" variant={ButtonVariant.plain}>
-            <HelpIcon />
-          </Button>
+          <HelpHeader />
         </PageHeaderToolsItem>
       </PageHeaderToolsGroup>
 

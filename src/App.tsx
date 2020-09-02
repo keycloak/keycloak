@@ -9,6 +9,7 @@ import { PageNav } from "./PageNav";
 import { KeycloakContext } from "./auth/KeycloakContext";
 import { TableToolbar } from "./components/table-toolbar/TableToolbar";
 
+import { Help } from "./components/help-enabler/HelpHeader";
 import {
   BrowserRouter as Router,
   Route,
@@ -65,15 +66,17 @@ export const App = () => {
   };
   return (
     <Router>
-      <Page header={<Header />} isManagedSidebar sidebar={<PageNav />}>
-        <PageSection variant="light">
-          <Switch>
-            <Route exact path="/add-realm" component={NewRealmForm}></Route>
-            <Route exact path="/add-client" component={NewClientForm}></Route>
-            <Route exact path="/" component={Clients}></Route>
-          </Switch>
-        </PageSection>
-      </Page>
+      <Help>
+        <Page header={<Header />} isManagedSidebar sidebar={<PageNav />}>
+          <PageSection variant="light">
+            <Switch>
+              <Route exact path="/add-realm" component={NewRealmForm}></Route>
+              <Route exact path="/add-client" component={NewClientForm}></Route>
+              <Route exact path="/" component={Clients}></Route>
+            </Switch>
+          </PageSection>
+        </Page>
+      </Help>
     </Router>
   );
 };
