@@ -157,9 +157,10 @@ public class RealmEntity {
     @CollectionTable(name="REALM_SMTP_CONFIG", joinColumns={ @JoinColumn(name="REALM_ID") })
     protected Map<String, String> smtpConfig;
 
-    @OneToMany(fetch = FetchType.LAZY, cascade ={CascadeType.REMOVE}, orphanRemoval = true)
-    @JoinTable(name="REALM_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="REALM_ID")}, inverseJoinColumns = { @JoinColumn(name="ROLE_ID")})
-    protected Collection<RoleEntity> defaultRoles;
+    @ElementCollection
+    @Column(name="ROLE_ID")
+    @CollectionTable(name="REALM_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="REALM_ID")})
+    protected Set<String> defaultRolesIds;
 
     @ElementCollection
     @Column(name="GROUP_ID")
@@ -454,15 +455,15 @@ public class RealmEntity {
         this.smtpConfig = smtpConfig;
     }
 
-    public Collection<RoleEntity> getDefaultRoles() {
-        if (defaultRoles == null) {
-            defaultRoles = new LinkedList<>();
+    public Set<String> getDefaultRolesIds() {
+        if (defaultRolesIds == null) {
+            defaultRolesIds = new HashSet<>();
         }
-        return defaultRoles;
+        return defaultRolesIds;
     }
 
-    public void setDefaultRoles(Collection<RoleEntity> defaultRoles) {
-        this.defaultRoles = defaultRoles;
+    public void setDefaultRolesIds(Set<String> defaultRolesIds) {
+        this.defaultRolesIds = defaultRolesIds;
     }
 
     public Set<String> getDefaultGroupIds() {

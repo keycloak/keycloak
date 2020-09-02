@@ -28,7 +28,6 @@ import org.keycloak.models.jpa.entities.ClientAttributeEntity;
 import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.models.jpa.entities.ClientScopeClientMappingEntity;
 import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
-import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -37,8 +36,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 
 import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -46,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -66,6 +65,7 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
         this.entity = entity;
     }
 
+    @Override
     public ClientEntity getEntity() {
         return entity;
     }
@@ -148,7 +148,7 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public Set<String> getWebOrigins() {
-        Set<String> result = new HashSet<String>();
+        Set<String> result = new HashSet<>();
         result.addAll(entity.getWebOrigins());
         return result;
     }
@@ -172,7 +172,7 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public Set<String> getRedirectUris() {
-        Set<String> result = new HashSet<String>();
+        Set<String> result = new HashSet<>();
         result.addAll(entity.getRedirectUris());
         return result;
     }
@@ -244,21 +244,19 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public Stream<RoleModel> getScopeMappingsStream() {
-        return getEntity().getScopeMapping().stream()
-                .map(RoleEntity::getId)
+        return entity.getScopeMappingIds().stream()
                 .map(realm::getRoleById)
                 .filter(Objects::nonNull);
     }
 
     @Override
     public void addScopeMapping(RoleModel role) {
-        RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
-        getEntity().getScopeMapping().add(roleEntity);
+        entity.getScopeMappingIds().add(role.getId());
     }
 
     @Override
     public void deleteScopeMapping(RoleModel role) {
-        getEntity().getScopeMapping().remove(RoleAdapter.toRoleEntity(role, em));
+        entity.getScopeMappingIds().remove(role.getId());
     }
 
     @Override
@@ -684,68 +682,50 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public Stream<String> getDefaultRolesStream() {
-        Collection<RoleEntity> entities = entity.getDefaultRoles();
-        if (entities == null) return Stream.empty();
-        return entities.stream().map(RoleEntity::getName);
+        return entity.getDefaultRolesIds().stream().map(this::getRoleNameById);
+    }
+
+    private String getRoleNameById(String id) {
+        RoleModel roleById = session.roles().getRoleById(realm, id);
+        if (roleById == null) {
+            return null;
+        }
+        return roleById.getName();
     }
 
     @Override
     public void addDefaultRole(String name) {
+        if (entity.getDefaultRolesIds().add(getOrAddRoleId(name))) {
+            em.flush();
+        }
+    }
+
+    private String getOrAddRoleId(String name) {
         RoleModel role = getRole(name);
         if (role == null) {
             role = addRole(name);
         }
-        Collection<RoleEntity> entities = entity.getDefaultRoles();
-        for (RoleEntity entity : entities) {
-            if (entity.getId().equals(role.getId())) {
-                return;
-            }
-        }
-        RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
-        entities.add(roleEntity);
+        return role.getId();
     }
 
     @Override
     public void updateDefaultRoles(String... defaultRoles) {
-        Collection<RoleEntity> entities = entity.getDefaultRoles();
-        Set<String> already = new HashSet<String>();
-        List<RoleEntity> remove = new ArrayList<>();
-        for (RoleEntity rel : entities) {
-            if (!contains(rel.getName(), defaultRoles)) {
-                remove.add(rel);
-            } else {
-                already.add(rel.getName());
-            }
-        }
-        for (RoleEntity entity : remove) {
-            entities.remove(entity);
-        }
-        em.flush();
-        for (String roleName : defaultRoles) {
-            if (!already.contains(roleName)) {
-                addDefaultRole(roleName);
-            }
-        }
+        Set<String> newDefaultRolesIds = Arrays.stream(defaultRoles)
+                .map(this::getOrAddRoleId)
+                .collect(Collectors.toSet());
+        entity.getDefaultRolesIds().retainAll(newDefaultRolesIds);
+        entity.getDefaultRolesIds().addAll(newDefaultRolesIds);
         em.flush();
     }
 
     @Override
     public void removeDefaultRoles(String... defaultRoles) {
-        Collection<RoleEntity> entities = entity.getDefaultRoles();
-        List<RoleEntity> remove = new ArrayList<RoleEntity>();
-        for (RoleEntity rel : entities) {
-            if (contains(rel.getName(), defaultRoles)) {
-                remove.add(rel);
-            }
-        }
-        for (RoleEntity entity : remove) {
-            entities.remove(entity);
-        }
+        Arrays.stream(defaultRoles)
+                .map(this::getRole)
+                .filter(Objects::nonNull)
+                .forEach(role -> entity.getDefaultRolesIds().remove(role.getId()));
         em.flush();
     }
-
-
-
 
     @Override
     public int getNodeReRegistrationTimeout() {

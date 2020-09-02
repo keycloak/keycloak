@@ -163,7 +163,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
             adapter.removeClientScope(a.getId());
         }
 
-        removeRoles(adapter);
+        session.roles().removeRoles(adapter);
 
         adapter.getTopLevelGroupsStream().forEach(adapter::removeGroup);
 
@@ -738,8 +738,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
         if (client == null) return false;
 
         session.users().preRemove(realm, client);
-
-        removeRoles(client);
+        session.roles().removeRoles(client);
 
         ClientEntity clientEntity = em.find(ClientEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
 

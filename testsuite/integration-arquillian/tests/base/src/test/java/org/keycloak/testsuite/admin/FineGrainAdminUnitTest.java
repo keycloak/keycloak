@@ -65,7 +65,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import static org.hamcrest.Matchers.hasItem;
+import static org.junit.Assert.assertThat;
 
 import static org.keycloak.testsuite.admin.ImpersonationDisabledTest.IMPERSONATION_DISABLED;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -839,7 +842,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             newRealm.setId("anotherRealm");
             newRealm.setEnabled(true);
             realmClient.realms().create(newRealm);
-
+            
             ClientRepresentation newClient = new ClientRepresentation();
 
             newClient.setName("newClient");
@@ -851,12 +854,17 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             newClient.setEnabled(true);
             Response response = realmClient.realm("anotherRealm").clients().create(newClient);
             Assert.assertEquals(403, response.getStatus());
+            response.close();
 
             realmClient.close();
+            //creating new client to refresh token
             realmClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
                     "master", "admin", "admin", "fullScopedClient", "618268aa-51e6-4e64-93c4-3c0bc65b8171");
+            assertThat(realmClient.realms().findAll().stream().map(RealmRepresentation::getRealm).collect(Collectors.toSet()),
+                    hasItem("anotherRealm"));
             response = realmClient.realm("anotherRealm").clients().create(newClient);
             Assert.assertEquals(201, response.getStatus());
+            response.close();
         } finally {
             adminClient.realm("anotherRealm").remove();
             realmClient.close();
@@ -896,6 +904,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             newClient.setEnabled(true);
             Response response = adminClient.realm("anotherRealm").clients().create(newClient);
             Assert.assertEquals(201, response.getStatus());
+            response.close();            
         } finally {
             adminClient.realm("anotherRealm").remove();
 
