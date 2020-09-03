@@ -49,6 +49,8 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.map.client.MapClientEntity;
 import org.keycloak.models.map.client.MapClientProvider;
+import org.keycloak.models.map.common.StreamUtils;
+import org.keycloak.models.map.common.StreamUtils.Pair;
 
 public class MapRoleProvider implements RoleProvider {
 
@@ -190,23 +192,11 @@ public class MapRoleProvider implements RoleProvider {
         realm.removeDefaultRoles(role.getName());
         
         //TODO composite realm roles - stream
-        getRealmRolesStream(realm).forEach(realmRole -> {
-            if (realmRole.isComposite()) {
-                for (RoleModel compositeRole : realmRole.getComposites()) {
-                    if (role.equals(compositeRole)) {
-                        realmRole.removeCompositeRole(role);
-                    }
-                }
-            }
-        });
-
-        getRealmRolesStream(realm)
-                .filter(RoleModel::isComposite)
-                .map((RoleModel realmRoleMarkedAsComposite) -> {
-                    realmRoleMarkedAsComposite.getComposites().stream()
-                            .filter(composite -> composite.equals(role))
-                            .forEach(composite -> composite.removeCompositeRole(role));
-                });
+        try (Stream<RoleModel> baseStream = getRealmRolesStream(realm).filter(RoleModel::isComposite)) {
+            StreamUtils.leftInnerJoinIterable(baseStream, RoleModel::getComposites)
+              .filter(pair -> role.equals(pair.getK()))
+              .forEach(pair -> pair.getK().removeCompositeRole(role));
+        }
         //TODO composite realm roles - up to here
 
         
