@@ -65,6 +65,8 @@ if __name__ == '__main__':
         wu.performRhssoAdapterLicenseFilesUpdateTask(wildflyPomFile, wildflyCorePomFile)
         # Subtask - Update properties of the deprecated Wildfly testing module if necessary
         wu.performDeprecatedWildflyTestingModuleUpdateTask()
+        # Subtask - Update version of jboss-parent if necessary
+        wu.performJbossParentVersionUpdateTask(wildflyPomFile, wildflyCorePomFile)
 
         for filename in [wildflyPomFile, wildflyCorePomFile]:
             os.remove(filename)

@@ -131,14 +131,18 @@ def _emptyNewLine():
     """
     print()
 
-def _logErrorAndExitIf(errorMessage, condition):
+def _logErrorAndExitIf(errorMessage, condition, logger = None):
     """
-    Log particular error message and exit with error if specified condition was
-    met.
+    Log particular error message using either the default or custom logger
+    specified via the 'logger' parameter, and exit with error if the specified
+    condition was met.
     """
+    # Use the default logger if a custom one wasn't requested
+    if logger is None:
+        logger = getModuleLogger()
     if condition:
         _emptyNewLine()
-        getModuleLogger().error(errorMessage)
+        logger.error(errorMessage)
         _emptyNewLine()
         sys.exit(1)
 
@@ -849,7 +853,8 @@ def updateAdapterLicenseFile(gavDictionary, xPathPrefix, nameSpace, licenseFile)
         groupIdElem, artifactIdElem, versionElem = gavEntry[0], gavEntry[1], gavEntry[2]
         _logErrorAndExitIf(
             "Failed to update '%s' XML dependency!" % gavEntry,
-            groupIdElem is None or artifactIdElem is None or versionElem is None
+            groupIdElem is None or artifactIdElem is None or versionElem is None,
+            logger = stepLogger
         )
         currentArtifactVersion = versionElem.text
         gavDictKey = groupIdElem.text + _gav_delimiter + artifactIdElem.text
@@ -879,7 +884,8 @@ def updateAdapterLicenseFile(gavDictionary, xPathPrefix, nameSpace, licenseFile)
                 urlElements = getElementsByXPath(dependencyElem, './licenses/license/url', nameSpace)
                 _logErrorAndExitIf(
                     "Failed to retrieve <url> element of the '%s' artifact!" % gavDictKey,
-                    len(urlElements) != 1
+                    len(urlElements) != 1,
+                    logger = stepLogger
                 )
                 urlElem = urlElements[0]
                 # Strip the '.redhat-\d+' suffix from artifact versions when processing RH-SSO adapters
@@ -907,7 +913,8 @@ def updateAdapterLicenseFile(gavDictionary, xPathPrefix, nameSpace, licenseFile)
                     else:
                         _logErrorAndExitIf(
                             "Unable to locate previous '%s' artifact version in the URL!" % gavDictKey,
-                            True
+                            True,
+                            logger = stepLogger
                         )
                 else:
                     try:
@@ -922,7 +929,8 @@ def updateAdapterLicenseFile(gavDictionary, xPathPrefix, nameSpace, licenseFile)
                         else:
                             _logErrorAndExitIf(
                                 "Unable to locate previous '%s' artifact version in the URL!" % gavDictKey,
-                                True
+                                True,
+                                logger = stepLogger
                             )
                     except AttributeError:
                         # Ignore generic URLs not containing 'major.minor.micro' information of this specific artifact
@@ -1085,7 +1093,8 @@ def performDeprecatedWildflyTestingModuleUpdateTask():
     currentLocalWildflyVersionElem = getPomProperty(mainKeycloakPomXmlRoot, 'wildfly.version')
     _logErrorAndExitIf(
         "Unable to determine the value of the 'wildfly.version' property element in the main Keycloak pom.xml file!",
-        len(currentLocalWildflyVersionElem) != 1
+        len(currentLocalWildflyVersionElem) != 1,
+        logger = stepLogger
     )
     currentLocalWildflyVersion = currentLocalWildflyVersionElem[0].text
     # Determine the current value of the 'wildfly.core.version' property
@@ -1094,7 +1103,8 @@ def performDeprecatedWildflyTestingModuleUpdateTask():
     currentLocalWildflyCoreVersionElem = getPomProperty(mainKeycloakPomXmlRoot, 'wildfly.core.version')
     _logErrorAndExitIf(
         "Unable to determine the value of the 'wildfly.core.version' property element in the main Keycloak pom.xml file!",
-        len(currentLocalWildflyCoreVersionElem) != 1
+        len(currentLocalWildflyCoreVersionElem) != 1,
+        logger = stepLogger
     )
     currentLocalWildflyCoreVersion = currentLocalWildflyCoreVersionElem[0].text
     # Update the properties of the deprecated Wildfly testing module present
@@ -1110,7 +1120,8 @@ def performDeprecatedWildflyTestingModuleUpdateTask():
             arqTestSuitePropertyElem = getPomProperty(arqTestSuitePomXmlRoot, deprecatedProperty)
             _logErrorAndExitIf(
                 "Unable to locate the '%s' element in the pom.xml file of the Arquillian testsuite!",
-                len(arqTestSuitePropertyElem) != 1
+                len(arqTestSuitePropertyElem) != 1,
+                logger = stepLogger
             )
             stepLogger.debug(
                 "Updating value of the '%s' property of the deprecated Wildfly module to '%s'" %
@@ -1129,3 +1140,66 @@ def performDeprecatedWildflyTestingModuleUpdateTask():
 
     lxml.etree.ElementTree(arqTestSuitePomXmlRoot).write(arqTestSuitePomPath, encoding = "UTF-8", pretty_print = True, xml_declaration = True)
     stepLogger.info('Done syncing necessary changes to the deprecated Wildfly testing module!')
+
+def performJbossParentVersionUpdateTask(wildflyPomFile, wildflyCorePomFile):
+    taskLogger = getTaskLogger('Update Version of jboss-parent')
+    taskLogger.info("Checking if the 'jboss-parent' version needs to be updated...")
+    stepLogger = getStepLogger()
+
+    # Absolute path to main Keycloak pom.xml within the local repo
+    mainKeycloakPomPath = getKeycloakGitRepositoryRoot() + "/pom.xml"
+    mainKeycloakPomXmlRoot = getXmlRoot(mainKeycloakPomPath)
+    # Absolute path to the Keycloak's 'boms/pom.xml' location within the local repo
+    keycloakBomsPomPath = getKeycloakGitRepositoryRoot() + "/boms/pom.xml"
+    keycloakBomsPomXmlRoot = getXmlRoot(keycloakBomsPomPath)
+
+    # Retrieve the current versions of the 'jboss-parent' from the:
+    jbossParentVersionElems = {}
+    # Main pom.xml file of the Wildfly repository
+    jbossParentVersionElems['from.main.wildfly.pom']      = getElementsByXPath(getXmlRoot(wildflyPomFile), '/pom:project/pom:parent/pom:version')
+    # Main pom.xml file of the Wildfly Core repository
+    jbossParentVersionElems['from.main.wildfly.core.pom'] = getElementsByXPath(getXmlRoot(wildflyCorePomFile), '/pom:project/pom:parent/pom:version')
+    # Main pom.xml file of the local Keycloak repository
+    jbossParentVersionElems['from.main.keycloak.pom']     = getElementsByXPath(mainKeycloakPomXmlRoot, '/pom:project/pom:parent/pom:version')
+    # The boms/pom.xml file of the local Keycloak repository
+    jbossParentVersionElems['from.keycloak.boms.pom']     = getElementsByXPath(keycloakBomsPomXmlRoot, '/pom:project/pom:parent/pom:version')
+
+    # Sanity check if jboss-parent elements were retrieved correctly from all of the four files
+    # (in each case there should be exactly one 'jboss-parent' element present in the pom.xml)
+    for key, value in jbossParentVersionElems.items():
+        location = key.replace('boms.pom', "'boms/pom'").replace('keycloak', 'Keycloak').replace('wildfly', 'Wildfly').replace('core', 'Core') \
+                      .replace('from', 'from the').replace('pom', 'pom.xml').replace('.', ' ')
+
+        _logErrorAndExitIf(
+            "Unable to determine the version of the 'jboss-parent' element %s file!" % location,
+            len(value) != 1,
+            logger = stepLogger
+        )
+        # Turn list containing one XML element into just the XML element itself
+        jbossParentVersionElems[key] = value[0]
+
+    # Synchronize the jboss-parent version in both the main Keycloak pom.xml file and in the 'boms/pom.xml' file
+    # (if their version differs from the current versions used by Wildfly / Wildfly Core)
+    if jbossParentVersionElems['from.main.wildfly.pom'].text == jbossParentVersionElems['from.main.wildfly.core.pom'].text and \
+       jbossParentVersionElems['from.main.wildfly.pom'].text != jbossParentVersionElems['from.main.keycloak.pom'].text or \
+       jbossParentVersionElems['from.main.wildfly.pom'].text != jbossParentVersionElems['from.keycloak.boms.pom'].text:
+
+        updatedJBossParentVersion = jbossParentVersionElems['from.main.wildfly.pom'].text
+        stepLogger.info("Updating version of 'jboss-parent' in the main Keycloak pom.xml file...")
+        jbossParentVersionElems['from.main.keycloak.pom'].text = updatedJBossParentVersion
+        lxml.etree.ElementTree(mainKeycloakPomXmlRoot).write(mainKeycloakPomPath, encoding = "UTF-8", pretty_print = True, xml_declaration = True)
+        stepLogger.info("'jboss-parent' version updated to '%s' to match the current version used by Wildfly (Wildfly Core)!" % updatedJBossParentVersion)
+
+        stepLogger.info("Updating version of 'jboss-parent' in the Keycloak's 'boms/pom.xml' file...")
+        jbossParentVersionElems['from.keycloak.boms.pom'].text = updatedJBossParentVersion
+        lxml.etree.ElementTree(keycloakBomsPomXmlRoot).write(keycloakBomsPomPath, encoding = "UTF-8", pretty_print = True, xml_declaration = True)
+        stepLogger.info("'jboss-parent' version updated to '%s' to match the current version used by Wildfly (Wildfly Core)!" % updatedJBossParentVersion)
+
+    # No update necessary ('jboss-parent' versions are already equal)
+    else:
+        jbossParentVersionUpdateNotNecessaryMsg = (
+            "Update of the 'jboss-parent' version is not necessary!",
+            "\n\t\tCurrent '%s' version used by Keycloak matches the current '%s' version used by Wildfly (Wildfly Core)." %
+            (jbossParentVersionElems['from.main.keycloak.pom'].text, jbossParentVersionElems['from.main.wildfly.pom'].text)
+        )
+        stepLogger.info(_empty_string.join(jbossParentVersionUpdateNotNecessaryMsg))
