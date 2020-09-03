@@ -1,8 +1,13 @@
 import React from "react";
-import { storiesOf } from "@storybook/react";
-import { ScrollForm } from "../src/components/scroll-form/ScrollForm";
+import { Meta } from "@storybook/react";
+import { ScrollForm } from "../components/scroll-form/ScrollForm";
 
-storiesOf("Scroll Spy form", module).add("view", () => {
+export default {
+  title: "Scroll spy scroll form",
+  component: ScrollForm,
+} as Meta;
+
+export const View = () => {
   return (
     <ScrollForm sections={["Revocation", "Clustering", "Fine grain stuff"]}>
       <div style={{ height: "2400px" }}>One</div>
@@ -10,4 +15,4 @@ storiesOf("Scroll Spy form", module).add("view", () => {
       <div style={{ height: "2400px" }}>fine grain</div>
     </ScrollForm>
   );
-});
+};
