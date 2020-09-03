@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.account;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -31,7 +30,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.credential.CredentialTypeMetadata;
-import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
@@ -54,7 +52,6 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
-import org.keycloak.services.resources.account.AccountCredentialResource.PasswordUpdate;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
@@ -258,21 +255,6 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         // Update with read only
         assertEquals(403, SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(viewToken.getToken()).json(new UserRepresentation()).asStatus());
     }
-    
-    @Test
-    public void testProfilePreviewPermissions() throws IOException {
-        TokenUtil noaccessToken = new TokenUtil("no-account-access", "password");
-        TokenUtil viewToken = new TokenUtil("view-account-access", "password");
-        
-        // Read password details with no access
-        assertEquals(403, SimpleHttp.doGet(getAccountUrl("credentials/password"), httpClient).header("Accept", "application/json").auth(noaccessToken.getToken()).asStatus());
-        
-        // Update password with no access
-        assertEquals(403, SimpleHttp.doPost(getAccountUrl("credentials/password"), httpClient).auth(noaccessToken.getToken()).json(new PasswordUpdate()).asStatus());
-        
-        // Update password with read only
-        assertEquals(403, SimpleHttp.doPost(getAccountUrl("credentials/password"), httpClient).auth(viewToken.getToken()).json(new PasswordUpdate()).asStatus());
-    }
 
     @Test
     public void testUpdateProfilePermissions() throws IOException {
@@ -283,68 +265,6 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         TokenUtil viewToken = new TokenUtil("view-account-access", "password");
         status = SimpleHttp.doGet(getAccountUrl(null), httpClient).header("Accept", "application/json").auth(viewToken.getToken()).asStatus();
         assertEquals(200, status);
-    }
-
-    @Test
-    public void testGetPasswordDetails() throws IOException {
-        getPasswordDetails();
-    }
-
-    @Test
-    public void testPostPasswordUpdate() throws IOException {
-        //Get the time of lastUpdate
-        AccountCredentialResource.PasswordDetails initialDetails = getPasswordDetails();
-
-        // ignore login event
-        events.poll();
-
-        //Change the password
-        updatePassword("password", "Str0ng3rP4ssw0rd", 204);
-
-        //Get the new value for lastUpdate
-        AccountCredentialResource.PasswordDetails updatedDetails = getPasswordDetails();
-        assertTrue(initialDetails.getLastUpdate() < updatedDetails.getLastUpdate());
-        Assert.assertEquals(EventType.UPDATE_PASSWORD.name(), events.poll().getType());
-
-        //Try to change password again; should fail as current password is incorrect
-        updatePassword("password", "Str0ng3rP4ssw0rd", 400);
-
-        //Verify that lastUpdate hasn't changed
-        AccountCredentialResource.PasswordDetails finalDetails = getPasswordDetails();
-        assertEquals(updatedDetails.getLastUpdate(), finalDetails.getLastUpdate());
-
-        //Change the password back
-        updatePassword("Str0ng3rP4ssw0rd", "password", 204);
-   }
-
-    @Test
-    public void testPasswordConfirmation() throws IOException {
-        updatePassword("password", "Str0ng3rP4ssw0rd", "confirmationDoesNotMatch", 400);
-
-        updatePassword("password", "Str0ng3rP4ssw0rd", "Str0ng3rP4ssw0rd", 204);
-
-        //Change the password back
-        updatePassword("Str0ng3rP4ssw0rd", "password", 204);
-    }
-
-    private AccountCredentialResource.PasswordDetails getPasswordDetails() throws IOException {
-        AccountCredentialResource.PasswordDetails details = SimpleHttp.doGet(getAccountUrl("credentials/password"), httpClient).auth(tokenUtil.getToken()).asJson(new TypeReference<AccountCredentialResource.PasswordDetails>() {});
-        assertTrue(details.isRegistered());
-        assertNotNull(details.getLastUpdate());
-        return details;
-    }
-
-    private void updatePassword(String currentPass, String newPass, int expectedStatus) throws IOException {
-        updatePassword(currentPass, newPass, null, expectedStatus);
-    }
-
-    private void updatePassword(String currentPass, String newPass, String confirmation, int expectedStatus) throws IOException {
-        AccountCredentialResource.PasswordUpdate passwordUpdate = new AccountCredentialResource.PasswordUpdate();
-        passwordUpdate.setCurrentPassword(currentPass);
-        passwordUpdate.setNewPassword(newPass);
-        passwordUpdate.setConfirmation(confirmation);
-        int status = SimpleHttp.doPost(getAccountUrl("credentials/password"), httpClient).auth(tokenUtil.getToken()).json(passwordUpdate).asStatus();
-        assertEquals(expectedStatus, status);
     }
 
     @Test

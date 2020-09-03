@@ -63,7 +63,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -75,7 +74,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.keycloak.common.Profile;
-import org.keycloak.credential.CredentialModel;
 import org.keycloak.theme.Theme;
 
 /**
@@ -265,7 +263,7 @@ public class AccountRestService {
     @Path("/credentials")
     public AccountCredentialResource credentials() {
         checkAccountApiEnabled();
-        return new AccountCredentialResource(session, event, user, auth);
+        return new AccountCredentialResource(session, user, auth);
     }
 
     @Path("/resources")
@@ -394,17 +392,6 @@ public class AccountRestService {
     public Response updateConsent(final @PathParam("clientId") String clientId,
                                   final ConsentRepresentation consent) {
         return upsert(clientId, consent);
-    }
-    
-    @Path("/totp/remove")
-    @DELETE
-    public Response removeTOTP() {
-        auth.require(AccountRoles.MANAGE_ACCOUNT);
-        
-        session.userCredentialManager().disableCredentialType(realm, user, CredentialModel.OTP);
-        event.event(EventType.REMOVE_TOTP).client(auth.getClient()).user(auth.getUser()).success();
-        
-        return Cors.add(request, Response.noContent()).build();
     }
 
     /**
