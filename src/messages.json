@@ -12,6 +12,7 @@
       "fullName": "{{givenName}} {{familyName}}",
       "unknownUser": "Anonymous",
       "Keycloak Administration Console": "RH-SSO Administration Console",
+      "confirmImportClear": "If you clear this file, you need to click Browse button to re-import a valid file",
 
       "********* MASTHEAD *********": "",
       "Sign out": "Sign out",

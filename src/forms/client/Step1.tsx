@@ -1,16 +1,17 @@
 import React, { useState, FormEvent, useEffect, useContext } from "react";
 import {
   FormGroup,
-  TextInput,
   Form,
   Select,
   SelectVariant,
   SelectOption,
 } from "@patternfly/react-core";
+
 import { HttpClientContext } from "../../http-service/HttpClientContext";
 import { sortProvider } from "../../util";
 import { ServerInfoRepresentation } from "../../model/server-info";
 import { ClientRepresentation } from "../../model/client-model";
+import { ClientDescription } from "./ClientDescription";
 
 type Step1Props = {
   onChange: (value: string, event: FormEvent<HTMLInputElement>) => void;
@@ -67,33 +68,7 @@ export const Step1 = ({ client, onChange }: Step1Props) => {
           ))}
         </Select>
       </FormGroup>
-      <FormGroup label="Client ID" fieldId="kc-client-id">
-        <TextInput
-          type="text"
-          id="kc-client-id"
-          name="clientId"
-          value={client.clientId}
-          onChange={onChange}
-        />
-      </FormGroup>
-      <FormGroup label="Name" fieldId="kc-name">
-        <TextInput
-          type="text"
-          id="kc-name"
-          name="name"
-          value={client.name}
-          onChange={onChange}
-        />
-      </FormGroup>
-      <FormGroup label="Description" fieldId="kc-description">
-        <TextInput
-          type="text"
-          id="kc-description"
-          name="description"
-          value={client.description}
-          onChange={onChange}
-        />
-      </FormGroup>
+      <ClientDescription onChange={onChange} client={client} />
     </Form>
   );
 };
