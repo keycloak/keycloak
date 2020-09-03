@@ -22,7 +22,7 @@
     "@patternfly/react-icons": "^4.7.2",
     "@patternfly/react-table": "^4.15.5",
     "i18next": "^19.6.2",
-    "i18next-http-backend": "^1.0.17",
+    "i18next-http-backend": "^1.0.18",
     "keycloak-js": "^11.0.0",
     "react": "^16.8.5",
     "react-dom": "^16.8.5",
