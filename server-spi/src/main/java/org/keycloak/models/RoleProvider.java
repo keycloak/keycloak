@@ -102,7 +102,9 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
      * @param name String name of the role.
      * @return Model of the created role.
      */
-    RoleModel addClientRole(ClientModel client, String name);
+    default RoleModel addClientRole(ClientModel client, String name) {
+        return addClientRole(client, null, name);
+    }
 
     /**
      * Adds a client role with given internal ID and {@code name} to the given client.

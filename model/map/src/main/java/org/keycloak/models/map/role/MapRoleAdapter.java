@@ -92,7 +92,7 @@ public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements 
 
     @Override
     public RoleContainerModel getContainer() {
-        return isClientRole() ? session.clients().getClientById(realm, entity.getClientId()) : realm;
+        return isClientRole() ? session.clients().getClientById(realm, entity.getContainerId()) : realm;
     }
 
     @Override

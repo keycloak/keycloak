@@ -16,7 +16,6 @@
  */
 package org.keycloak.models.map.role;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -33,7 +32,6 @@ public abstract class AbstractRoleEntity<K> implements AbstractEntity<K> {
     private String name;
     private String description;
     private boolean clientRole;
-    private String clientId;
     private Set<K> compositeRoles = new HashSet<>();
     private Map<String, List<String>> attributes = new HashMap<>();
 
@@ -63,15 +61,6 @@ public abstract class AbstractRoleEntity<K> implements AbstractEntity<K> {
     @Override
     public boolean isUpdated() {
         return this.updated;
-    }
-
-    public String getClientId() {
-        return clientId;
-    }
-
-    public void setClientId(String clientId) {
-        this.updated |= ! Objects.equals(this.clientId, clientId);
-        this.clientId = clientId;
     }
 
     public String getName() {

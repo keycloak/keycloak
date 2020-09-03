@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -89,6 +90,31 @@ public class MapRoleProvider implements RoleProvider {
         return res;
     }
 
+    private Predicate<MapRoleEntity> entityRealmFilter(RealmModel realm) {
+        if (realm == null || realm.getId() == null) {
+            return MapRoleProvider.ALWAYS_FALSE;
+        }
+        String realmId = realm.getId();
+        return entity -> ! entity.isClientRole() && 
+                Objects.equals(realmId, entity.getContainerId());
+    }
+
+    private Predicate<MapRoleEntity> entityClientFilter(ClientModel client) {
+        if (client == null || client.getId() == null) {
+            return MapRoleProvider.ALWAYS_FALSE;
+        }
+        String clientId = client.getId();
+        return entity -> entity.isClientRole() && 
+                Objects.equals(clientId, entity.getContainerId());
+    }
+
+    private Stream<MapRoleEntity> getNotRemovedUpdatedRolesStream() {
+        Stream<MapRoleEntity> updatedAndNotRemovedRolesStream = roleStore.entrySet().stream()
+          .map(tx::getUpdated)    // If the role has been removed, tx.get will return null, otherwise it will return me.getValue()
+          .filter(Objects::nonNull);
+        return Stream.concat(tx.createdValuesStream(roleStore.keySet()), updatedAndNotRemovedRolesStream);
+    }
+
     @Override
     public RoleModel addRealmRole(RealmModel realm, String id, String name) {
         final UUID entityId = id == null ? UUID.randomUUID() : UUID.fromString(id);
@@ -116,59 +142,109 @@ public class MapRoleProvider implements RoleProvider {
 
     @Override
     public Stream<RoleModel> getRealmRolesStream(RealmModel realm) {
-        return getNotRemovedUpdatedRealmRolesStream()
+        return getNotRemovedUpdatedRolesStream()
                 .filter(entityRealmFilter(realm))
                 .sorted(COMPARE_BY_NAME)
                 .map(entityToAdapterFunc(realm));
     }
 
-    private Predicate<MapRoleEntity> entityRealmFilter(RealmModel realm) {
-        if (realm == null || realm.getId() == null) {
-            return MapRoleProvider.ALWAYS_FALSE;
-        }
-        String realmId = realm.getId();
-        return entity -> Objects.equals(realmId, entity.getContainerId());
-    }
-
-    private Stream<MapClientEntity> getNotRemovedUpdatedClientsStream() {
-        Stream<MapClientEntity> updatedAndNotRemovedClientsStream = clientStore.entrySet().stream()
-          .map(tx::getUpdated)    // If the client has been removed, tx.get will return null, otherwise it will return me.getValue()
-          .filter(Objects::nonNull);
-        return Stream.concat(tx.createdValuesStream(clientStore.keySet()), updatedAndNotRemovedClientsStream);
-    }
-
-    @Override
-    public boolean removeRole(RoleModel role) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void removeRoles(RealmModel realm) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public RoleModel addClientRole(ClientModel client, String name) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
     @Override
     public RoleModel addClientRole(ClientModel client, String id, String name) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        final UUID entityId = id == null ? UUID.randomUUID() : UUID.fromString(id);
+
+        MapRoleEntity entity = new MapRoleEntity(entityId, client.getId());
+        entity.setName(name);
+        entity.setClientRole(true);
+        if (tx.get(entity.getId(), roleStore::get) != null) {
+            throw new ModelDuplicateException("Role exists: " + id);
+        }
+        tx.putIfAbsent(entity.getId(), entity);
+        return entityToAdapterFunc(client.getRealm()).apply(entity);
     }
 
     @Override
     public Stream<RoleModel> getClientRolesStream(ClientModel client, Integer first, Integer max) {
+        Stream<RoleModel> s = getClientRolesStream(client);
+        if (first != null && first >= 0) {
+            s = s.skip(first);
+        }
+        if (max != null && max >= 0) {
+            s = s.limit(max);
+        }
+        return s;
+    }
+
+    @Override
+    public Stream<RoleModel> getClientRolesStream(ClientModel client) {
+        return getNotRemovedUpdatedRolesStream()
+                .filter(entityClientFilter(client))
+                .sorted(COMPARE_BY_NAME)
+                .map(entityToAdapterFunc(client.getRealm()));
+    }
+    @Override
+    public boolean removeRole(RoleModel role) {
+        RealmModel realm = role.isClientRole() ? ((ClientModel)role.getContainer()).getRealm() : (RealmModel)role.getContainer();
+
+        session.users().preRemove(realm, role);
+
+        realm.removeDefaultRoles(role.getName());
+        
+        //TODO composite realm roles - stream
+        getRealmRolesStream(realm).forEach(realmRole -> {
+            if (realmRole.isComposite()) {
+                for (RoleModel compositeRole : realmRole.getComposites()) {
+                    if (role.equals(compositeRole)) {
+                        realmRole.removeCompositeRole(role);
+                    }
+                }
+            }
+        });
+
+        getRealmRolesStream(realm)
+                .filter(RoleModel::isComposite)
+                .map((RoleModel realmRoleMarkedAsComposite) -> {
+                    realmRoleMarkedAsComposite.getComposites().stream()
+                            .filter(composite -> composite.equals(role))
+                            .forEach(composite -> composite.removeCompositeRole(role));
+                });
+        //TODO composite realm roles - up to here
+
+        
+        session.clients().getClientsStream(realm).forEach(client -> {
+            client.deleteScopeMapping(role);
+            getClientRolesStream(client).forEach(clienRole -> {
+                if (clienRole.isComposite()) {
+                    for (RoleModel compositeRole : clienRole.getComposites()) {
+                        if (role.equals(compositeRole)) {
+                            clienRole.removeCompositeRole(role);
+                        }
+                    }
+                }
+            });
+        });
+        
+//        session.groups().
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        
+    }
+
+    @Override
+    public void removeRoles(RealmModel realm) {
+        getRealmRolesStream(realm).forEach(this::removeRole);
     }
 
     @Override
     public void removeRoles(ClientModel client) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        getClientRolesStream(client).forEach(this::removeRole);
     }
 
     @Override
     public RoleModel getRealmRole(RealmModel realm, String name) {
+        if (name == null) {
+            return null;
+        }
+        LOG.tracef("getRealmRole(%s, %s)%s", realm, name, getShortStackTrace());
+        
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
