@@ -2,13 +2,13 @@ import React from "react";
 import { Nav, NavItem, NavList, PageSidebar } from "@patternfly/react-core";
 import { RealmSelector } from "./components/realm-selector/RealmSelector";
 
-export const PageNav = () => {
+export const PageNav: React.FunctionComponent = () => {
   return (
     <PageSidebar
       nav={
         <Nav>
           <NavList>
-            <RealmSelector realm="Master" realmList={["Photoz"]} />
+            <RealmSelector />
             <NavItem id="default-link1" to="/default-link1" itemId={0}>
               Link 1
             </NavItem>

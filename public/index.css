@@ -3,3 +3,7 @@
 .pf-c-brand {
   height: 35px;
 }
+
+button.pf-c-button.pf-m-primary.realmSelectButton {
+  width: 100%;
+}
