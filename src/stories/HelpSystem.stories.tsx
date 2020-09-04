@@ -5,7 +5,7 @@ import {
   PageHeaderTools,
   PageHeaderToolsItem,
 } from "@patternfly/react-core";
-import { Meta } from "@storybook/react/types-6-0";
+import { Meta } from "@storybook/react";
 
 import {
   Help,
