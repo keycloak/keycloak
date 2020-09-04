@@ -36,6 +36,7 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.authentication.JWTClientCredentialsProvider;
 import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
@@ -744,7 +745,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, "client1", "unauthorized_client", "client_credentials_setup_required");
+        assertError(response, "client1", OAuthErrorException.INVALID_CLIENT, "client_credentials_setup_required");
 
         ClientManager.realm(adminClient.realm("test")).clientId("client1").updateAttribute(JWTClientAuthenticator.CERTIFICATE_ATTR, backupClient1Cert.certificate);
     }
@@ -762,7 +763,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, "client1", "unauthorized_client", AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED.toString().toLowerCase());
+        assertError(response, "client1", OAuthErrorException.INVALID_CLIENT, AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED.toString().toLowerCase());
     }
 
 
@@ -782,7 +783,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
         setTimeOffset(0);
 
-        assertError(response, "client1", "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, "client1", OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test
@@ -801,7 +802,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
         setTimeOffset(0);
 
-        assertError(response, "client1", "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, "client1", OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
 
@@ -820,14 +821,14 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         response = doClientCredentialsGrantRequest(clientJwt);
 
         assertEquals(400, response.getStatusCode());
-        assertEquals("unauthorized_client", response.getError());
+        assertEquals(OAuthErrorException.INVALID_CLIENT, response.getError());
     }
 
 
     @Test
     public void testMissingIdClaim() throws Exception {
         OAuthClient.AccessTokenResponse response = testMissingClaim("id");
-        assertError(response, app1.getClientId(), "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test
@@ -845,7 +846,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     @Test
     public void testMissingAudienceClaim() throws Exception {
         OAuthClient.AccessTokenResponse response = testMissingClaim("audience");
-        assertError(response, app1.getClientId(), "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test
@@ -863,11 +864,11 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
         // Test expired lifespan
         response = testMissingClaim(-11, "expiration");
-        assertError(response, app1.getClientId(), "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
 
         // Missing exp and issuedAt should return error
         response = testMissingClaim("expiration", "issuedAt");
-        assertError(response, app1.getClientId(), "unauthorized_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
     }
 
     @Test
@@ -934,7 +935,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
     @Test
     public void testCodeToTokenRequestFailureRS256() throws Exception {
-        testCodeToTokenRequestFailure(Algorithm.RS256, "unauthorized_client", "client_credentials_setup_required");
+        testCodeToTokenRequestFailure(Algorithm.RS256, OAuthErrorException.INVALID_CLIENT, "client_credentials_setup_required");
     }
 
     @Test
@@ -1012,7 +1013,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
             OAuthClient.AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", getClient2SignedJWT());
 
             assertEquals(400, response.getStatusCode());
-            assertEquals("unauthorized_client", response.getError());
+            assertEquals(OAuthErrorException.INVALID_CLIENT, response.getError());
 
             events.expect(EventType.LOGIN_ERROR)
                     .client("client2")
