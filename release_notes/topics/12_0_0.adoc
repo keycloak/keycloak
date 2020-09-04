@@ -1,0 +1,7 @@
+= Highlights
+
+== Ability to request AuthnContext in SAML identity provider
+
+Support for specification of AuthnContext section in authentication requests issued by SAML identity provider has been added.
+
+Thanks to https://github.com/lscorcia[lscorcia]
