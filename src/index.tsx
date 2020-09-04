@@ -23,7 +23,3 @@ init().then((keycloak) => {
     document.getElementById("app")
   );
 });
-
-(document.getElementById("favicon") as HTMLAnchorElement).href = `${
-  import.meta.env.SNOWPACK_PUBLIC_FAVICON
-}`;

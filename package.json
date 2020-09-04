@@ -6,8 +6,6 @@
   "scripts": {
     "postinstall": "grunt",
     "start": "snowpack dev",
-    "start:dev": "env-cmd -f .env.dev yarn start",
-    "start:rh-sso": "env-cmd -f .env.rh-sso yarn start",
     "build": "snowpack build",
     "test": "jest",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
@@ -58,7 +56,6 @@
     "babel-loader": "^8.1.0",
     "decompress": "^4.2.1",
     "decompress-targz": "^4.1.1",
-    "env-cmd": "^10.1.0",
     "enzyme": "^3.11.0",
     "enzyme-adapter-react-16": "^1.15.3",
     "enzyme-to-json": "^3.5.0",

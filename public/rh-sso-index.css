@@ -1,0 +1,10 @@
+@import "@patternfly/patternfly/patternfly.min.css";
+
+.pf-c-brand {
+  height: 16px;
+}
+
+body {
+  --pf-global--primary-color--100: red;
+  --pf-global--active-color--400: darkred;
+}

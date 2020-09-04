@@ -1,19 +1,29 @@
-module.exports = function (grunt) {
+const path = require("path");
 
-  grunt.loadNpmTasks('grunt-contrib-copy');
+module.exports = function (grunt) {
+  grunt.loadNpmTasks("grunt-contrib-copy");
 
   grunt.initConfig({
     // …
     copy: {
-      files: {
-        cwd: './node_modules/@patternfly/patternfly/assets/',
-        src: '**/*',
-        dest: 'public/assets/',
-        expand: true
-      }
-    }
+      main: {
+        cwd: "./node_modules/@patternfly/patternfly/assets/",
+        src: "**/*",
+        dest: "public/assets/",
+        expand: true,
+      },
+      sso: {
+        expand: true,
+        cwd: "./public/",
+        src: "rh-sso-*",
+        dest: "public",
+        rename: function (dest, matchedSrcPath) {
+          return path.join(dest, matchedSrcPath.substring("rh-sso-".length));
+        },
+      },
+    },
   });
 
-  grunt.registerTask('default', ['copy']);
-
+  grunt.registerTask("default", ["copy:main"]);
+  grunt.registerTask("switch-rh-sso", ["copy:sso"]);
 };

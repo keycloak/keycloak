@@ -23,7 +23,7 @@ For development on this project you will need a running Keycloak server listenin
 1. Install dependecies and run:
     ```bash
     $> yarn
-    $> yarn start:dev
+    $> yarn start
     ```
 
 ### Additionally there are some nice scripts to format and lint
@@ -32,3 +32,11 @@ For development on this project you will need a running Keycloak server listenin
 $> yarn format
 $> yarn lint
 ```
+
+To switch to a RH-SSO themed version of this console you can run:
+
+```bash
+$> npx grunt switch-rh-sso
+```
+
+To switch back just do a `git checkout public`
