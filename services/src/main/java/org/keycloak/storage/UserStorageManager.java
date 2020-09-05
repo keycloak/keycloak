@@ -527,7 +527,7 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
         int leftToFirstResult = firstResult;
 
         Iterator<Object> it = providers.iterator();
-        while (it.hasNext() && leftToRead != 0) {
+        while (it.hasNext() && leftToRead > 0) {
             Object provider = it.next();
             boolean exhausted = false;
             int index = 0;
