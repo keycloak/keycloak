@@ -15,28 +15,30 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.services.clientpolicy.condition;
+package org.keycloak.services.clientpolicy.condition;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RoleModel;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
-import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
 
-public class TestClientRolesCondition implements ClientPolicyConditionProvider {
-
-    private static final Logger logger = Logger.getLogger(TestClientRolesCondition.class);
+public class ClientRolesCondition implements ClientPolicyConditionProvider {
+    private static final Logger logger = Logger.getLogger(ClientRolesCondition.class);
 
     private final KeycloakSession session;
     private final ComponentModel componentModel;
 
-    public TestClientRolesCondition(KeycloakSession session, ComponentModel componentModel) {
+    public ClientRolesCondition(KeycloakSession session, ComponentModel componentModel) {
         this.session = session;
         this.componentModel = componentModel;
     }
@@ -61,24 +63,32 @@ public class TestClientRolesCondition implements ClientPolicyConditionProvider {
     private boolean isRolesMatched(ClientModel client) {
         if (client == null) return false;
 
-        List<String> rolesForMatching = getRolesForMatching();
+        Set<String> rolesForMatching = getRolesForMatching();
         if (rolesForMatching == null) return false;
 
-        client.getRolesStream().forEach(i -> ClientPolicyLogger.log(logger, "client role = " + i.getName()));
-        rolesForMatching.stream().forEach(i -> ClientPolicyLogger.log(logger, "roles expected = " + i));
+        // client.getRolesStream() never returns null according to {@link RoleProvider.getClientRolesStream}
+        Set<String> clientRoles = client.getRolesStream().map(RoleModel::getName).collect(Collectors.toSet());
 
-        boolean isMatched = rolesForMatching.stream()
-                .anyMatch(i -> client.getRolesStream().anyMatch(j -> j.getName().equals(i)));
+        if (logger.isTraceEnabled()) {
+            clientRoles.stream().forEach(i -> ClientPolicyLogger.log(logger, "client role assigned = " + i));
+            rolesForMatching.stream().forEach(i -> ClientPolicyLogger.log(logger, "client role for matching = " + i));
+        }
+
+        boolean isMatched = rolesForMatching.removeAll(clientRoles);
         if (isMatched) {
             ClientPolicyLogger.log(logger, "role matched.");
         } else {
             ClientPolicyLogger.log(logger, "role unmatched.");
         }
+
         return isMatched;
     }
 
-    private List<String> getRolesForMatching() {
-        return componentModel.getConfig().get(TestClientRolesConditionFactory.ROLES);
+    private Set<String> getRolesForMatching() {
+        if (componentModel.getConfig() == null) return null;
+        List<String> roles = componentModel.getConfig().get(ClientRolesConditionFactory.ROLES);
+        if (roles == null) return null;
+        return new HashSet<>(roles);
     }
 
     @Override
