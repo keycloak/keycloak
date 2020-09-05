@@ -10,7 +10,7 @@ exports[`renders realm selector 1`] = `
           component="div"
         >
           <Button
-            className="realmSelectButton"
+            isBlock={true}
             onClick={[Function]}
           >
             Create Realm
@@ -40,7 +40,7 @@ exports[`renders realm selector 1`] = `
             component="div"
           >
             <Button
-              className="realmSelectButton"
+              isBlock={true}
               onClick={[Function]}
             >
               Create Realm
@@ -138,7 +138,7 @@ exports[`renders realm selector 1`] = `
                     >
                       <button
                         aria-disabled="false"
-                        class="pf-c-button pf-m-primary realmSelectButton"
+                        class="pf-c-button pf-m-primary pf-m-block"
                         data-ouia-component-id="2"
                         data-ouia-component-type="PF4/Button"
                         data-ouia-safe="true"
@@ -225,7 +225,7 @@ exports[`renders realm selector 1`] = `
                       >
                         <button
                           aria-disabled="false"
-                          class="pf-c-button pf-m-primary realmSelectButton"
+                          class="pf-c-button pf-m-primary pf-m-block"
                           data-ouia-component-id="2"
                           data-ouia-component-type="PF4/Button"
                           data-ouia-safe="true"
@@ -303,7 +303,7 @@ exports[`renders realm selector 2`] = `
           component="div"
         >
           <Button
-            className="realmSelectButton"
+            isBlock={true}
             onClick={[Function]}
           >
             Create Realm
@@ -333,7 +333,7 @@ exports[`renders realm selector 2`] = `
             component="div"
           >
             <Button
-              className="realmSelectButton"
+              isBlock={true}
               onClick={[Function]}
             >
               Create Realm
@@ -431,7 +431,7 @@ exports[`renders realm selector 2`] = `
                     >
                       <button
                         aria-disabled="false"
-                        class="pf-c-button pf-m-primary realmSelectButton"
+                        class="pf-c-button pf-m-primary pf-m-block"
                         data-ouia-component-id="2"
                         data-ouia-component-type="PF4/Button"
                         data-ouia-safe="true"
@@ -518,7 +518,7 @@ exports[`renders realm selector 2`] = `
                       >
                         <button
                           aria-disabled="false"
-                          class="pf-c-button pf-m-primary realmSelectButton"
+                          class="pf-c-button pf-m-primary pf-m-block"
                           data-ouia-component-id="2"
                           data-ouia-component-type="PF4/Button"
                           data-ouia-safe="true"
