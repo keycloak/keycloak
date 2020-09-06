@@ -351,7 +351,9 @@ public class SAMLMetadataWriter extends BaseWriter {
         StaxUtil.writeStartElement(writer, METADATA_PREFIX, JBossSAMLConstants.ATTRIBUTE_CONSUMING_SERVICE.get(),
                 JBossSAMLURIConstants.METADATA_NSURI.get());
 
-        StaxUtil.writeAttribute(writer, JBossSAMLConstants.ISDEFAULT.get(), "" + attributeConsumer.isIsDefault());
+        if (attributeConsumer.isIsDefault() != null)
+           StaxUtil.writeAttribute(writer, JBossSAMLConstants.ISDEFAULT.get(), "" + attributeConsumer.isIsDefault());
+
         StaxUtil.writeAttribute(writer, JBossSAMLConstants.INDEX.get(), "" + attributeConsumer.getIndex());
 
         // Service Name
