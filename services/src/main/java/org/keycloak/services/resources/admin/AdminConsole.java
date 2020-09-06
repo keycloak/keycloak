@@ -166,6 +166,11 @@ public class AdminConsole {
         public void setLocale(Locale locale) {
             this.locale = locale;
         }
+
+        @JsonProperty(value = "locale")
+        public String getLocaleLanguageTag() {
+            return locale != null ? locale.toLanguageTag() : null;
+        }
     }
 
     /**

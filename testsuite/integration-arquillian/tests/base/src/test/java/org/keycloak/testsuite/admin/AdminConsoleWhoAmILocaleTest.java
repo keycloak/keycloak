@@ -36,7 +36,7 @@ public class AdminConsoleWhoAmILocaleTest extends AbstractKeycloakTest {
     private static final String DEFAULT_LOCALE = "en";
     private static final String REALM_LOCALE = "no";
     private static final String USER_LOCALE = "de";
-    private static final String EXTRA_LOCALE = "ru";
+    private static final String EXTRA_LOCALE = "zh-CN";
 
     private CloseableHttpClient client;
 
