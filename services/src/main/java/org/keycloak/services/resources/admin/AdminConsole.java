@@ -87,12 +87,10 @@ public class AdminConsole {
     @Context
     protected Providers providers;
 
-    protected AppAuthManager authManager;
     protected RealmModel realm;
 
     public AdminConsole(RealmModel realm) {
         this.realm = realm;
-        this.authManager = new AppAuthManager();
     }
 
     public static class WhoAmI {
@@ -195,7 +193,12 @@ public class AdminConsole {
     @NoCache
     public Response whoAmI(final @Context HttpHeaders headers) {
         RealmManager realmManager = new RealmManager(session);
-        AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(session, realm, session.getContext().getUri(), clientConnection, headers);
+        AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
+                .setRealm(realm)
+                .setConnection(clientConnection)
+                .setHeaders(headers)
+                .authenticate();
+
         if (authResult == null) {
             return Response.status(401).build();
         }

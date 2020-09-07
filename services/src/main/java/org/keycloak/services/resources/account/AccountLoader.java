@@ -114,7 +114,10 @@ public class AccountLoader {
     }
 
     private AccountRestService getAccountRestService(ClientModel client, String versionStr) {
-        AuthenticationManager.AuthResult authResult = new AppAuthManager().authenticateBearerToken(session);
+        AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
+                .setAudience(client.getClientId())
+                .authenticate();
+
         if (authResult == null) {
             throw new NotAuthorizedException("Bearer token required");
         }

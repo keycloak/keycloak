@@ -47,6 +47,7 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
@@ -73,6 +74,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
@@ -294,7 +296,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 null, UserModel.RequiredAction.UPDATE_PASSWORD.toString(), false, 1);
 
         CredentialRepresentation password1 = password.getUserCredentials().get(0);
-        Assert.assertNull(password1.getSecretData());
+        assertNull(password1.getSecretData());
         Assert.assertNotNull(password1.getCredentialData());
 
         AccountCredentialResource.CredentialContainer otp = credentials.get(1);
@@ -341,7 +343,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         Assert.assertEquals(1, credentials.size());
         password = credentials.get(0);
         Assert.assertEquals(PasswordCredentialModel.TYPE, password.getType());
-        Assert.assertNull(password.getUserCredentials());
+        assertNull(password.getUserCredentials());
     }
 
 
@@ -452,8 +454,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         credentials = getCredentials();
         assertExpectedCredentialTypes(credentials, PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE);
         AccountCredentialResource.CredentialContainer otpCredential = credentials.get(1);
-        Assert.assertNull(otpCredential.getCreateAction());
-        Assert.assertNull(otpCredential.getUpdateAction());
+        assertNull(otpCredential.getCreateAction());
+        assertNull(otpCredential.getUpdateAction());
 
         // Revert - re-enable requiredAction and remove OTP credential from the user
         setRequiredActionEnabledStatus(UserModel.RequiredAction.CONFIGURE_TOTP.name(), true);
@@ -578,7 +580,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     public void listApplications() throws Exception {
         oauth.clientId("in-use-client");
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
-        Assert.assertNull(tokenResponse.getErrorDescription());
+        assertNull(tokenResponse.getErrorDescription());
 
         TokenUtil token = new TokenUtil("view-applications-access", "password");
         List<ClientRepresentation> applications = SimpleHttp
@@ -600,7 +602,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     public void listApplicationsFiltered() throws Exception {
         oauth.clientId("in-use-client");
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
-        Assert.assertNull(tokenResponse.getErrorDescription());
+        assertNull(tokenResponse.getErrorDescription());
 
         TokenUtil token = new TokenUtil("view-applications-access", "password");
         List<ClientRepresentation> applications = SimpleHttp
@@ -623,7 +625,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.clientId("offline-client");
         OAuthClient.AccessTokenResponse offlineTokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
-        Assert.assertNull(offlineTokenResponse.getErrorDescription());
+        assertNull(offlineTokenResponse.getErrorDescription());
 
         TokenUtil token = new TokenUtil("view-applications-access", "password");
         List<ClientRepresentation> applications = SimpleHttp
@@ -687,7 +689,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     public void listApplicationsWithRootUrl() throws Exception {
         oauth.clientId("root-url-client");
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "view-applications-access", "password");
-        Assert.assertNull(tokenResponse.getErrorDescription());
+        assertNull(tokenResponse.getErrorDescription());
 
         TokenUtil token = new TokenUtil("view-applications-access", "password");
         List<ClientRepresentation> applications = SimpleHttp
@@ -1100,7 +1102,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.clientId("offline-client");
         OAuthClient.AccessTokenResponse offlineTokenResponse = oauth.doGrantAccessTokenRequest("secret1", "view-applications-access", "password");
-        Assert.assertNull(offlineTokenResponse.getErrorDescription());
+        assertNull(offlineTokenResponse.getErrorDescription());
 
         TokenUtil token = new TokenUtil("view-applications-access", "password");
 
@@ -1141,5 +1143,48 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         SimpleHttp.Response response = SimpleHttp.doGet(getAccountUrl("credentials"), httpClient).auth(tokenUtil.getToken()).asResponse();
         assertEquals("API version not found", response.asJson().get("error").textValue());
         assertEquals(404, response.getStatus());
+    }
+
+    @Test
+    public void testAudience() throws Exception {
+        oauth.clientId("custom-audience");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        assertNull(tokenResponse.getErrorDescription());
+
+        SimpleHttp.Response response = SimpleHttp.doGet(getAccountUrl(null), httpClient)
+                .auth(tokenResponse.getAccessToken())
+                .header("Accept", "application/json")
+                .asResponse();
+        assertEquals(401, response.getStatus());
+
+        // update to correct audience
+        org.keycloak.representations.idm.ClientRepresentation clientRep = testRealm().clients().findByClientId("custom-audience").get(0);
+        ProtocolMapperRepresentation mapperRep = clientRep.getProtocolMappers().stream().filter(m -> m.getName().equals("aud")).findFirst().orElse(null);
+        assertNotNull("Audience mapper not found", mapperRep);
+        mapperRep.getConfig().put("included.custom.audience", "account");
+        testRealm().clients().get(clientRep.getId()).getProtocolMappers().update(mapperRep.getId(), mapperRep);
+
+        tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        assertNull(tokenResponse.getErrorDescription());
+
+        response = SimpleHttp.doGet(getAccountUrl(null), httpClient)
+                .auth(tokenResponse.getAccessToken())
+                .header("Accept", "application/json")
+                .asResponse();
+        assertEquals(200, response.getStatus());
+
+        // remove audience completely
+        testRealm().clients().get(clientRep.getId()).getProtocolMappers().delete(mapperRep.getId());
+
+        tokenResponse = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        assertNull(tokenResponse.getErrorDescription());
+
+        response = SimpleHttp.doGet(getAccountUrl(null), httpClient)
+                .auth(tokenResponse.getAccessToken())
+                .header("Accept", "application/json")
+                .asResponse();
+        assertEquals(401, response.getStatus());
+
+        // custom-audience client is used only in this test so no need to revert the changes
     }
 }

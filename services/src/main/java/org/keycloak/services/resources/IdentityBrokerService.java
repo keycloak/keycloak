@@ -448,8 +448,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         this.event.event(EventType.IDENTITY_PROVIDER_RETRIEVE_TOKEN);
 
         try {
-            AppAuthManager authManager = new AppAuthManager();
-            AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(this.session, this.realmModel, this.session.getContext().getUri(), this.clientConnection, this.request.getHttpHeaders());
+            AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
+                    .setRealm(realmModel)
+                    .setConnection(clientConnection)
+                    .setHeaders(request.getHttpHeaders())
+                    .authenticate();
 
             if (authResult != null) {
                 AccessToken token = authResult.getToken();

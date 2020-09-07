@@ -414,7 +414,77 @@
       "enabled": true,
       "directAccessGrantsEnabled": true,
       "secret": "password",
-      "webOrigins": [ "http://localtest.me:8180" ]
+      "webOrigins": [ "http://localtest.me:8180" ],
+      "protocolMappers": [
+        {
+          "name": "aud-account",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "account",
+            "id.token.claim": "true",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "aud-admin",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "security-admin-console",
+            "id.token.claim": "true",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    },
+
+    {
+      "clientId": "custom-audience",
+      "enabled": true,
+      "directAccessGrantsEnabled": true,
+      "secret": "password",
+      "protocolMappers": [
+        {
+          "name": "aud",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "included.custom.audience": "foo-bar"
+          }
+        },
+        {
+          "name": "client roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-client-role-mapper",
+          "config": {
+            "user.attribute": "foo",
+            "access.token.claim": "true",
+            "claim.name": "resource_access.${client_id}.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        },
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "config": {
+            "user.attribute": "foo",
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "profile",
+        "email"
+      ]
     }
   ],
   "roles" : {
