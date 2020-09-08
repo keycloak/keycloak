@@ -67,7 +67,7 @@ public class MapClientProvider implements ClientProvider {
         this.clientStore = clientStore;
         this.clientRegisteredNodesStore = clientRegisteredNodesStore;
         this.tx = new MapKeycloakTransaction<>(clientStore);
-        session.getTransactionManager().enlistAfterCompletion(tx);
+        session.getTransactionManager().enlist(tx);
     }
 
     private ClientUpdatedEvent clientUpdatedEvent(ClientModel c) {
