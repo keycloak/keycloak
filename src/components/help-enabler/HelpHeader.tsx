@@ -3,14 +3,14 @@ import {
   Dropdown,
   DropdownItem,
   DropdownToggle,
+  Split,
+  SplitItem,
   Switch,
   Text,
   TextVariants,
 } from "@patternfly/react-core";
 import { Trans, useTranslation } from "react-i18next";
 import { HelpIcon, ExternalLinkAltIcon } from "@patternfly/react-icons";
-
-import style from "./help-header.module.css";
 
 type HelpProps = {
   children: ReactNode;
@@ -46,30 +46,34 @@ export const HelpHeader = () => {
 
   const dropdownItems = [
     <DropdownItem key="link" id="link">
-      {t("Documentation") + " "}
-      <ExternalLinkAltIcon />
+      <Split>
+        <SplitItem isFilled>{t("Documentation")}</SplitItem>
+        <SplitItem>
+          <ExternalLinkAltIcon />
+        </SplitItem>
+      </Split>
     </DropdownItem>,
     <DropdownItem
       key="enable"
       id="enable"
-      component="div"
-      className={style.helpDropdownItem}
+      description={
+        <Trans>
+          This toggle will enable / disable part of the help info in the
+          console. Includes any help text, links and popovers.
+        </Trans>
+      }
     >
-      {t("Enable help mode") + " "}
-      <Switch
-        id="enableHelp"
-        aria-label="Help is enabled"
-        isChecked={help.enabled}
-        onChange={() => help.toggleHelp()}
-      />
-      <div>
-        <Text component={TextVariants.small} className={style.helpText}>
-          <Trans>
-            This toggle will enable / disable part of the help info in the
-            console. Includes any help text, links and popovers.
-          </Trans>
-        </Text>
-      </div>
+      <Split>
+        <SplitItem isFilled>{t("Enable help mode")}</SplitItem>
+        <SplitItem>
+          <Switch
+            id="enableHelp"
+            aria-label="Help is enabled"
+            isChecked={help.enabled}
+            onChange={() => help.toggleHelp()}
+          />
+        </SplitItem>
+      </Split>
     </DropdownItem>,
   ];
   return (

@@ -47,78 +47,104 @@ exports[`<HelpHeader /> enable help 1`] = `
           class="pf-c-dropdown__menu-item"
           tabindex="-1"
         >
-          Documentation 
-          <svg
-            aria-hidden="true"
-            fill="currentColor"
-            height="1em"
-            role="img"
-            style="vertical-align: -0.125em;"
-            viewBox="0 0 512 512"
-            width="1em"
+          <div
+            class="pf-l-split"
           >
-            <path
-              d="M432,320H400a16,16,0,0,0-16,16V448H64V128H208a16,16,0,0,0,16-16V80a16,16,0,0,0-16-16H48A48,48,0,0,0,0,112V464a48,48,0,0,0,48,48H400a48,48,0,0,0,48-48V336A16,16,0,0,0,432,320ZM488,0h-128c-21.37,0-32.05,25.91-17,41l35.73,35.73L135,320.37a24,24,0,0,0,0,34L157.67,377a24,24,0,0,0,34,0L435.28,133.32,471,169c15,15,41,4.5,41-17V24A24,24,0,0,0,488,0Z"
-              transform=""
-            />
-          </svg>
+            <div
+              class="pf-l-split__item pf-m-fill"
+            >
+              Documentation
+            </div>
+            <div
+              class="pf-l-split__item"
+            >
+              <svg
+                aria-hidden="true"
+                fill="currentColor"
+                height="1em"
+                role="img"
+                style="vertical-align: -0.125em;"
+                viewBox="0 0 512 512"
+                width="1em"
+              >
+                <path
+                  d="M432,320H400a16,16,0,0,0-16,16V448H64V128H208a16,16,0,0,0,16-16V80a16,16,0,0,0-16-16H48A48,48,0,0,0,0,112V464a48,48,0,0,0,48,48H400a48,48,0,0,0,48-48V336A16,16,0,0,0,432,320ZM488,0h-128c-21.37,0-32.05,25.91-17,41l35.73,35.73L135,320.37a24,24,0,0,0,0,34L157.67,377a24,24,0,0,0,34,0L435.28,133.32,471,169c15,15,41,4.5,41-17V24A24,24,0,0,0,488,0Z"
+                  transform=""
+                />
+              </svg>
+            </div>
+          </div>
         </a>
       </li>
       <li
         id="enable"
         role="menuitem"
       >
-        <div
-          class="pf-c-dropdown__menu-item"
+        <a
+          aria-disabled="false"
+          class="pf-c-dropdown__menu-item pf-m-description"
           tabindex="-1"
         >
-          Enable help mode 
-          <label
-            class="pf-c-switch"
-            data-ouia-component-id="6"
-            data-ouia-component-type="PF4/Switch"
-            data-ouia-safe="true"
-            for="enableHelp"
+          <div
+            class="pf-c-dropdown__menu-item-main"
           >
-            <input
-              aria-label="Help is enabled"
-              checked=""
-              class="pf-c-switch__input"
-              id="enableHelp"
-              type="checkbox"
-            />
-            <span
-              class="pf-c-switch__toggle"
+            <div
+              class="pf-l-split"
             >
               <div
-                aria-hidden="true"
-                class="pf-c-switch__toggle-icon"
+                class="pf-l-split__item pf-m-fill"
               >
-                <svg
-                  aria-hidden="true"
-                  fill="currentColor"
-                  height="1em"
-                  role="img"
-                  viewBox="0 0 512 512"
-                  width="1em"
-                >
-                  <path
-                    d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.204c9.997-9.998 26.207-9.998 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.207-9.997 36.204 0l36.203 36.204c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.401c-9.998 9.997-26.207 9.997-36.204-.001z"
-                    transform=""
-                  />
-                </svg>
+                Enable help mode
               </div>
-            </span>
-          </label>
-          <div>
-            <small
-              class=""
-              data-pf-content="true"
-            >
-              This toggle will enable / disable part of the help info in the console. Includes any help text, links and popovers.
-            </small>
+              <div
+                class="pf-l-split__item"
+              >
+                <label
+                  class="pf-c-switch"
+                  data-ouia-component-id="6"
+                  data-ouia-component-type="PF4/Switch"
+                  data-ouia-safe="true"
+                  for="enableHelp"
+                >
+                  <input
+                    aria-label="Help is enabled"
+                    checked=""
+                    class="pf-c-switch__input"
+                    id="enableHelp"
+                    type="checkbox"
+                  />
+                  <span
+                    class="pf-c-switch__toggle"
+                  >
+                    <div
+                      aria-hidden="true"
+                      class="pf-c-switch__toggle-icon"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        fill="currentColor"
+                        height="1em"
+                        role="img"
+                        viewBox="0 0 512 512"
+                        width="1em"
+                      >
+                        <path
+                          d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.204c9.997-9.998 26.207-9.998 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.207-9.997 36.204 0l36.203 36.204c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.401c-9.998 9.997-26.207 9.997-36.204-.001z"
+                          transform=""
+                        />
+                      </svg>
+                    </div>
+                  </span>
+                </label>
+              </div>
+            </div>
           </div>
-        </div>
+          <div
+            class="pf-c-dropdown__menu-item-description"
+          >
+            This toggle will enable / disable part of the help info in the console. Includes any help text, links and popovers.
+          </div>
+        </a>
       </li>
     </ul>
   </div>
@@ -177,78 +203,104 @@ exports[`<HelpHeader /> open dropdown 1`] = `
           class="pf-c-dropdown__menu-item"
           tabindex="-1"
         >
-          Documentation 
-          <svg
-            aria-hidden="true"
-            fill="currentColor"
-            height="1em"
-            role="img"
-            style="vertical-align: -0.125em;"
-            viewBox="0 0 512 512"
-            width="1em"
+          <div
+            class="pf-l-split"
           >
-            <path
-              d="M432,320H400a16,16,0,0,0-16,16V448H64V128H208a16,16,0,0,0,16-16V80a16,16,0,0,0-16-16H48A48,48,0,0,0,0,112V464a48,48,0,0,0,48,48H400a48,48,0,0,0,48-48V336A16,16,0,0,0,432,320ZM488,0h-128c-21.37,0-32.05,25.91-17,41l35.73,35.73L135,320.37a24,24,0,0,0,0,34L157.67,377a24,24,0,0,0,34,0L435.28,133.32,471,169c15,15,41,4.5,41-17V24A24,24,0,0,0,488,0Z"
-              transform=""
-            />
-          </svg>
+            <div
+              class="pf-l-split__item pf-m-fill"
+            >
+              Documentation
+            </div>
+            <div
+              class="pf-l-split__item"
+            >
+              <svg
+                aria-hidden="true"
+                fill="currentColor"
+                height="1em"
+                role="img"
+                style="vertical-align: -0.125em;"
+                viewBox="0 0 512 512"
+                width="1em"
+              >
+                <path
+                  d="M432,320H400a16,16,0,0,0-16,16V448H64V128H208a16,16,0,0,0,16-16V80a16,16,0,0,0-16-16H48A48,48,0,0,0,0,112V464a48,48,0,0,0,48,48H400a48,48,0,0,0,48-48V336A16,16,0,0,0,432,320ZM488,0h-128c-21.37,0-32.05,25.91-17,41l35.73,35.73L135,320.37a24,24,0,0,0,0,34L157.67,377a24,24,0,0,0,34,0L435.28,133.32,471,169c15,15,41,4.5,41-17V24A24,24,0,0,0,488,0Z"
+                  transform=""
+                />
+              </svg>
+            </div>
+          </div>
         </a>
       </li>
       <li
         id="enable"
         role="menuitem"
       >
-        <div
-          class="pf-c-dropdown__menu-item"
+        <a
+          aria-disabled="false"
+          class="pf-c-dropdown__menu-item pf-m-description"
           tabindex="-1"
         >
-          Enable help mode 
-          <label
-            class="pf-c-switch"
-            data-ouia-component-id="3"
-            data-ouia-component-type="PF4/Switch"
-            data-ouia-safe="true"
-            for="enableHelp"
+          <div
+            class="pf-c-dropdown__menu-item-main"
           >
-            <input
-              aria-label="Help is enabled"
-              checked=""
-              class="pf-c-switch__input"
-              id="enableHelp"
-              type="checkbox"
-            />
-            <span
-              class="pf-c-switch__toggle"
+            <div
+              class="pf-l-split"
             >
               <div
-                aria-hidden="true"
-                class="pf-c-switch__toggle-icon"
+                class="pf-l-split__item pf-m-fill"
               >
-                <svg
-                  aria-hidden="true"
-                  fill="currentColor"
-                  height="1em"
-                  role="img"
-                  viewBox="0 0 512 512"
-                  width="1em"
-                >
-                  <path
-                    d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.204c9.997-9.998 26.207-9.998 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.207-9.997 36.204 0l36.203 36.204c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.401c-9.998 9.997-26.207 9.997-36.204-.001z"
-                    transform=""
-                  />
-                </svg>
+                Enable help mode
               </div>
-            </span>
-          </label>
-          <div>
-            <small
-              class=""
-              data-pf-content="true"
-            >
-              This toggle will enable / disable part of the help info in the console. Includes any help text, links and popovers.
-            </small>
+              <div
+                class="pf-l-split__item"
+              >
+                <label
+                  class="pf-c-switch"
+                  data-ouia-component-id="3"
+                  data-ouia-component-type="PF4/Switch"
+                  data-ouia-safe="true"
+                  for="enableHelp"
+                >
+                  <input
+                    aria-label="Help is enabled"
+                    checked=""
+                    class="pf-c-switch__input"
+                    id="enableHelp"
+                    type="checkbox"
+                  />
+                  <span
+                    class="pf-c-switch__toggle"
+                  >
+                    <div
+                      aria-hidden="true"
+                      class="pf-c-switch__toggle-icon"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        fill="currentColor"
+                        height="1em"
+                        role="img"
+                        viewBox="0 0 512 512"
+                        width="1em"
+                      >
+                        <path
+                          d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.204c9.997-9.998 26.207-9.998 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.207-9.997 36.204 0l36.203 36.204c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.401c-9.998 9.997-26.207 9.997-36.204-.001z"
+                          transform=""
+                        />
+                      </svg>
+                    </div>
+                  </span>
+                </label>
+              </div>
+            </div>
           </div>
-        </div>
+          <div
+            class="pf-c-dropdown__menu-item-description"
+          >
+            This toggle will enable / disable part of the help info in the console. Includes any help text, links and popovers.
+          </div>
+        </a>
       </li>
     </ul>
   </div>

@@ -61,12 +61,7 @@ const ServerInfoDropdownItem = () => {
 const HelpDropdownItem = () => {
   const { t } = useTranslation();
   const help = t("Help");
-  return (
-    <DropdownItem>
-      <HelpIcon />
-      {` ${help}`}
-    </DropdownItem>
-  );
+  return <DropdownItem icon={<HelpIcon />}>{`${help}`}</DropdownItem>;
 };
 
 const kebabDropdownItems = [
