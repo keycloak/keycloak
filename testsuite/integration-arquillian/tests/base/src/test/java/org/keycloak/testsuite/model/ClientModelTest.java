@@ -17,6 +17,7 @@
  */
 package org.keycloak.testsuite.model;
 
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.ClientModel;
@@ -557,5 +558,42 @@ public class ClientModelTest extends AbstractKeycloakTest {
             realm.removeDefaultClientScope(scope3Atomic.get());
             realm.removeClientScope(scope3Atomic.get().getId());
         });
+    }
+
+    @Test
+    @ModelTest
+    public void getAllClientsRolesFromRealm(KeycloakSession session) {
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session1) -> {
+            RealmModel realm = session1.realms().getRealmByName(realmName);
+            assertThat(realm, Matchers.notNullValue());
+
+            client = setUpClient(realm);
+            assertThat(client, Matchers.notNullValue());
+
+            final long INIT_CLIENTS_COUNT = realm.getClientsStream().count();
+            final long INIT_DEFAULT_CLIENTS_COUNT = realm.getClientsWithDefaultRolesStream().count();
+
+            makeClientAndAddSomeRoles(realm, "test-client1", 3,2);
+            makeClientAndAddSomeRoles(realm, "test-client2", 4,2);
+            makeClientAndAddSomeRoles(realm, "test-client3", 0,1);
+            makeClientAndAddSomeRoles(realm, "test-client4", 3,0);
+            makeClientAndAddSomeRoles(realm, "test-client5", 2,0);
+
+            assertThat(realm.getClientsWithDefaultRolesStream().count(), Matchers.is(INIT_DEFAULT_CLIENTS_COUNT + 3));
+            assertThat(realm.getClientsStream().count(), Matchers.is(INIT_CLIENTS_COUNT + 5));
+        });
+    }
+
+    private ClientModel makeClientAndAddSomeRoles(RealmModel realm, String clientId, int rolesCount, int defaultRolesCount) {
+        ClientModel client = realm.addClient(clientId);
+        for (int i = 0; i < rolesCount; i++) {
+            client.addRole("role-" + clientId + "-" + i);
+        }
+
+        for (int i = 0; i < defaultRolesCount; i++) {
+            client.addDefaultRole("defaultRole-" + clientId + "-" + i);
+        }
+
+        return client;
     }
 }

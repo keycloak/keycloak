@@ -796,6 +796,16 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public Stream<ClientModel> getClientsWithDefaultRolesStream() {
+        return cacheSession.getClientsWithDefaultRolesStream(this);
+    }
+
+    @Override
+    public Stream<ClientModel> getClientsWithDefaultRolesStream(Integer firstResult, Integer maxResults) {
+        return cacheSession.getClientsWithDefaultRolesStream(this, firstResult, maxResults);
+    }
+
+    @Override
     public Long getClientsCount() {
         return cacheSession.getClientsCount(this);
     }

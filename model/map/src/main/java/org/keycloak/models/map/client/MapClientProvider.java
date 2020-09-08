@@ -158,6 +158,28 @@ public class MapClientProvider implements ClientProvider {
     }
 
     @Override
+    public Stream<ClientModel> getClientsWithDefaultRolesStream(RealmModel realm, Integer firstResult, Integer maxResults) {
+        Stream<ClientModel> s = getClientsWithDefaultRolesStream(realm);
+        if (firstResult != null && firstResult >= 0) {
+            s = s.skip(firstResult);
+        }
+        if (maxResults != null && maxResults >= 0) {
+            s = s.limit(maxResults);
+        }
+        return s;
+    }
+
+    @Override
+    public Stream<ClientModel> getClientsWithDefaultRolesStream(RealmModel realm) {
+        Predicate<MapClientEntity> hasDefaultRoles = client -> !client.getDefaultRoles().isEmpty();
+        return getNotRemovedUpdatedClientsStream()
+                .filter(entityRealmFilter(realm))
+                .filter(hasDefaultRoles)
+                .sorted(COMPARE_BY_CLIENT_ID)
+                .map(entityToAdapterFunc(realm));
+    }
+
+    @Override
     public ClientModel addClient(RealmModel realm, String id, String clientId) {
         final UUID entityId = id == null ? UUID.randomUUID() : UUID.fromString(id);
 

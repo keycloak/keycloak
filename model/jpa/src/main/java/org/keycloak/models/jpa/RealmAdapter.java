@@ -836,6 +836,16 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public Stream<ClientModel> getClientsWithDefaultRolesStream() {
+        return session.clients().getClientsWithDefaultRolesStream(this);
+    }
+
+    @Override
+    public Stream<ClientModel> getClientsWithDefaultRolesStream(Integer firstResult, Integer maxResults) {
+        return session.clients().getClientsWithDefaultRolesStream(this, firstResult, maxResults);
+    }
+
+    @Override
     public Stream<ClientModel> getAlwaysDisplayInConsoleClientsStream() {
         return session.clients().getAlwaysDisplayInConsoleClientsStream(this);
     }

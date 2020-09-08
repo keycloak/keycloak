@@ -562,6 +562,16 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
+    public Stream<ClientModel> getClientsWithDefaultRolesStream(RealmModel realm) {
+        return getClientDelegate().getClientsWithDefaultRolesStream(realm);
+    }
+
+    @Override
+    public Stream<ClientModel> getClientsWithDefaultRolesStream(RealmModel realm, Integer firstResult, Integer maxResults) {
+        return getClientDelegate().getClientsWithDefaultRolesStream(realm, firstResult, maxResults);
+    }
+
+    @Override
     public Stream<ClientModel> getAlwaysDisplayInConsoleClientsStream(RealmModel realm) {
         return getClientDelegate().getAlwaysDisplayInConsoleClientsStream(realm);
     }

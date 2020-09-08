@@ -191,6 +191,16 @@ public class ClientStorageManager implements ClientProvider {
     }
 
     @Override
+    public Stream<ClientModel> getClientsWithDefaultRolesStream(RealmModel realm, Integer firstResult, Integer maxResults) {
+        return session.clientLocalStorage().getClientsWithDefaultRolesStream(realm, firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<ClientModel> getClientsWithDefaultRolesStream(RealmModel realm) {
+        return session.clientLocalStorage().getClientsWithDefaultRolesStream(realm);
+    }
+
+    @Override
     public long getClientsCount(RealmModel realm) {
         return session.clientLocalStorage().getClientsCount(realm);
     }

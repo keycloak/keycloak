@@ -76,6 +76,25 @@ public interface ClientProvider extends ClientLookupProvider, Provider {
     }
 
     /**
+     * Returns the clients which contain default roles of the given realm as a stream.
+     * @param realm Realm.
+     * @param firstResult First result to return. Ignored if negative or {@code null}.
+     * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
+     * @return Stream of the clients. Never returns {@code null}.
+     */
+    Stream<ClientModel> getClientsWithDefaultRolesStream(RealmModel realm, Integer firstResult, Integer maxResults);
+
+    /**
+     * Returns all the clients which contain default roles of the given realm as a stream.
+     * Effectively the same as the call {@code getClientsStream(realm, null, null)}.
+     * @param realm Realm.
+     * @return Stream of the clients. Never returns {@code null}.
+     */
+    default Stream<ClientModel> getClientsWithDefaultRolesStream(RealmModel realm) {
+        return this.getClientsWithDefaultRolesStream(realm, null, null);
+    }
+
+    /**
      * Adds a client with given {@code clientId} to the given realm.
      * The internal ID of the client will be created automatically.
      * @param realm Realm owning this client.

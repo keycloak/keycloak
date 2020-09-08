@@ -603,6 +603,26 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
     }
 
     @Override
+    public Stream<ClientModel> getClientsWithDefaultRolesStream(RealmModel realm, Integer firstResult, Integer maxResults) {
+        TypedQuery<String> query = em.createNamedQuery("getClientsIdsWithDefaultRoles", String.class);
+        if (firstResult != null && firstResult > 0) {
+            query.setFirstResult(firstResult);
+        }
+        if (maxResults != null && maxResults > 0) {
+            query.setMaxResults(maxResults);
+        }
+        query.setParameter("realm", realm.getId());
+        Stream<String> clients = query.getResultStream();
+
+        return closing(clients.map(client -> session.clients().getClientById(realm,client)).filter(Objects::nonNull));
+    }
+
+    @Override
+    public Stream<ClientModel> getClientsWithDefaultRolesStream(RealmModel realm) {
+        return getClientsWithDefaultRolesStream(realm, null, null);
+    }
+
+    @Override
     public Stream<ClientModel> getClientsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
         TypedQuery<String> query = em.createNamedQuery("getClientIdsByRealm", String.class);
         if (firstResult != null && firstResult > 0) {

@@ -22,11 +22,9 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -40,10 +38,10 @@ public class DefaultRoles {
         }
 
         Function<ClientModel, Set<RoleModel>> defaultRoles = i -> i.getDefaultRoles().stream().map(i::getRole).collect(Collectors.toSet());
-        realm.getClientsStream().map(defaultRoles).forEach(set::addAll);
-
+        realm.getClientsWithDefaultRolesStream().map(defaultRoles).forEach(set::addAll);
         return set;
     }
+
     public static void addDefaultRoles(RealmModel realm, UserModel userModel) {
         for (RoleModel role : getDefaultRoles(realm)) {
             userModel.grantRole(role);

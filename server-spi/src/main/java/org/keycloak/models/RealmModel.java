@@ -308,6 +308,10 @@ public interface RealmModel extends RoleContainerModel {
 
     Stream<ClientModel> getClientsStream(Integer firstResult, Integer maxResults);
 
+    Stream<ClientModel> getClientsWithDefaultRolesStream();
+
+    Stream<ClientModel> getClientsWithDefaultRolesStream(Integer firstResult,Integer maxResults);
+
     Long getClientsCount();
 
     @Deprecated
