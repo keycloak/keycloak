@@ -7,24 +7,31 @@ import {
 } from "@patternfly/react-core";
 import { Meta } from "@storybook/react";
 
+import { HelpItem } from "../components/help-enabler/HelpItem";
 import {
   Help,
   HelpContext,
   HelpHeader,
 } from "../components/help-enabler/HelpHeader";
+import { I18nextProvider } from "react-i18next";
+import { i18n } from "../i18n";
 
 export default {
   title: "Help System Example",
   component: HelpHeader,
 } as Meta;
 
-export const HelpSystem = () => {
-  return (
-    <Help>
-      <HelpSystemTest />
-    </Help>
-  );
-};
+export const HelpSystem = () => (
+  <Help>
+    <HelpSystemTest />
+  </Help>
+);
+
+export const HelpItemz = () => (
+  <I18nextProvider i18n={i18n}>
+    <HelpItem item="storybook" />
+  </I18nextProvider>
+);
 
 const HelpSystemTest = () => {
   const { enabled } = useContext(HelpContext);
