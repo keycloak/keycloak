@@ -41,19 +41,25 @@ import org.keycloak.saml.SamlProtocolExtensionsAwareBuilder.NodeGenerator;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
+import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import javax.xml.crypto.dsig.CanonicalizationMethod;
 import java.net.URI;
+import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -331,6 +337,26 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             String descriptor = SPMetadataDescriptor.getSPDescriptor(authnBinding, endpoint, endpoint,
               wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted,
               entityId, nameIDPolicyFormat, signingKeys, encryptionKeys);
+
+            // Metadata signing
+            if (getConfig().isSignSpMetadata())
+            {
+                KeyManager.ActiveRsaKey activeKey = session.keys().getActiveRsaKey(realm);
+                String keyName = getConfig().getXmlSigKeyInfoKeyNameTransformer().getKeyName(activeKey.getKid(), activeKey.getCertificate());
+                KeyPair keyPair = new KeyPair(activeKey.getPublicKey(), activeKey.getPrivateKey());
+
+                Document metadataDocument = DocumentUtil.getDocument(descriptor);
+                SAML2Signature signatureHelper = new SAML2Signature();
+                signatureHelper.setSignatureMethod(getSignatureAlgorithm().getXmlSignatureMethod());
+                signatureHelper.setDigestMethod(getSignatureAlgorithm().getXmlSignatureDigestMethod());
+
+                Node nextSibling = metadataDocument.getDocumentElement().getFirstChild();
+                signatureHelper.setNextSibling(nextSibling);
+
+                signatureHelper.signSAMLDocument(metadataDocument, keyName, keyPair, CanonicalizationMethod.EXCLUSIVE);
+
+                descriptor = DocumentUtil.getDocumentAsString(metadataDocument);
+            }
 
             return Response.ok(descriptor, MediaType.APPLICATION_XML_TYPE).build();
         } catch (Exception e) {

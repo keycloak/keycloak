@@ -56,6 +56,7 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final String AUTHN_CONTEXT_COMPARISON_TYPE = "authnContextComparisonType";
     public static final String AUTHN_CONTEXT_CLASS_REFS = "authnContextClassRefs";
     public static final String AUTHN_CONTEXT_DECL_REFS = "authnContextDeclRefs";
+    public static final String SIGN_SP_METADATA = "signSpMetadata";
 
     public SAMLIdentityProviderConfig() {
     }
@@ -315,6 +316,14 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     public void setAuthnContextDeclRefs(String authnContextDeclRefs) {
         getConfig().put(AUTHN_CONTEXT_DECL_REFS, authnContextDeclRefs);
+    }
+
+    public boolean isSignSpMetadata() {
+        return Boolean.valueOf(getConfig().get(SIGN_SP_METADATA));
+    }
+
+    public void setSignSpMetadata(boolean signSpMetadata) {
+        getConfig().put(SIGN_SP_METADATA, String.valueOf(signSpMetadata));
     }
 
     @Override
