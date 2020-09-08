@@ -36,6 +36,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLMetadataWriter;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -60,6 +61,7 @@ public class SPMetadataDescriptor {
         SAMLMetadataWriter metadataWriter = new SAMLMetadataWriter(writer);
 
         EntityDescriptorType entityDescriptor = new EntityDescriptorType(entityId);
+        entityDescriptor.setID(IDGenerator.create("ID_"));
 
         SPSSODescriptorType spSSODescriptor = new SPSSODescriptorType(Arrays.asList(PROTOCOL_NSURI.get()));
         spSSODescriptor.setAuthnRequestsSigned(wantAuthnRequestsSigned);

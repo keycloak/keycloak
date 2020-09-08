@@ -42,12 +42,17 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.broker.OIDCIdentityProviderConfigRep;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminEventPaths;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import javax.ws.rs.ClientErrorException;
@@ -87,6 +92,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.XMLDSIG_NSURI;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
@@ -1006,5 +1012,70 @@ public class IdentityProviderTest extends AbstractAdminTest {
         System.out.println(info);
         Assert.assertEquals("id", id, info.get("id"));
         Assert.assertEquals("name", name, info.get("name"));
+    }
+
+    @Test
+    public void testSamlExportSignatureOff() throws URISyntaxException, IOException, ConfigurationException, ParsingException, ProcessingException {
+        // Use import-config to convert IDPSSODescriptor file into key value pairs
+        // to use when creating a SAML Identity Provider
+        MultipartFormDataOutput form = new MultipartFormDataOutput();
+        form.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
+
+        URL idpMeta = getClass().getClassLoader().getResource("admin-test/saml-idp-metadata.xml");
+        byte [] content = Files.readAllBytes(Paths.get(idpMeta.toURI()));
+        String body = new String(content, Charset.forName("utf-8"));
+        form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata.xml");
+
+        Map<String, String> result = realm.identityProviders().importFrom(form);
+
+        // Explicitly disable SP Metadata Signature
+        result.put(SAMLIdentityProviderConfig.SIGN_SP_METADATA, "false");
+
+        // Create new SAML identity provider using configuration retrieved from import-config
+        IdentityProviderRepresentation idpRep = createRep("saml", "saml", true, result);
+        create(idpRep);
+
+        // Perform export, and make sure some of the values are like they're supposed to be
+        Response response = realm.identityProviders().get("saml").export("xml");
+        Assert.assertEquals(200, response.getStatus());
+        body = response.readEntity(String.class);
+        response.close();
+
+        Document document = DocumentUtil.getDocument(body);
+        Element signatureElement = DocumentUtil.getDirectChildElement(document.getDocumentElement(), XMLDSIG_NSURI.get(), "Signature");
+        Assert.assertNull(signatureElement);
+    }
+
+    @Test
+    public void testSamlExportSignatureOn() throws URISyntaxException, IOException, ConfigurationException, ParsingException, ProcessingException {
+        // Use import-config to convert IDPSSODescriptor file into key value pairs
+        // to use when creating a SAML Identity Provider
+        MultipartFormDataOutput form = new MultipartFormDataOutput();
+        form.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
+
+        URL idpMeta = getClass().getClassLoader().getResource("admin-test/saml-idp-metadata.xml");
+        byte [] content = Files.readAllBytes(Paths.get(idpMeta.toURI()));
+        String body = new String(content, Charset.forName("utf-8"));
+        form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata.xml");
+
+        Map<String, String> result = realm.identityProviders().importFrom(form);
+
+        // Explicitly enable SP Metadata Signature
+        result.put(SAMLIdentityProviderConfig.SIGN_SP_METADATA, "true");
+
+        // Create new SAML identity provider using configuration retrieved from import-config
+        IdentityProviderRepresentation idpRep = createRep("saml", "saml", true, result);
+        create(idpRep);
+
+        // Perform export, and make sure some of the values are like they're supposed to be
+        Response response = realm.identityProviders().get("saml").export("xml");
+        Assert.assertEquals(200, response.getStatus());
+        body = response.readEntity(String.class);
+        response.close();
+
+        Document document = DocumentUtil.getDocument(body);
+
+        Element signatureElement = DocumentUtil.getDirectChildElement(document.getDocumentElement(), XMLDSIG_NSURI.get(), "Signature");
+        Assert.assertNotNull(signatureElement);
     }
 }
