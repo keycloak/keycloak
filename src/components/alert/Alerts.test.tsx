@@ -1,7 +1,6 @@
 import React from "react";
 import { Button, AlertVariant } from "@patternfly/react-core";
 import { mount } from "enzyme";
-import EnzymeToJson from "enzyme-to-json";
 import { act } from "react-dom/test-utils";
 
 import { AlertPanel } from "./AlertPanel";
@@ -20,9 +19,7 @@ const WithButton = () => {
 };
 
 it("renders global alerts", () => {
-  const empty = EnzymeToJson(
-    mount(<AlertPanel alerts={[]} onCloseAlert={() => {}} />)
-  );
+  const empty = mount(<AlertPanel alerts={[]} onCloseAlert={() => {}} />);
   expect(empty).toMatchSnapshot();
 
   const tree = mount(<WithButton />);
@@ -32,10 +29,10 @@ it("renders global alerts", () => {
   act(() => {
     button!.simulate("click");
   });
-  expect(EnzymeToJson(tree)).toMatchSnapshot();
+  expect(tree).toMatchSnapshot();
 
   act(() => {
     jest.runAllTimers();
   });
-  expect(EnzymeToJson(tree)).toMatchSnapshot();
+  expect(tree).toMatchSnapshot();
 });

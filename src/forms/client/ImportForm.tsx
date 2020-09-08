@@ -6,41 +6,25 @@ import {
   Divider,
   Form,
   FormGroup,
-  FileUpload,
   TextInput,
   ActionGroup,
   Button,
   AlertVariant,
-  Modal,
-  ModalVariant,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 
 import { ClientRepresentation } from "../../model/client-model";
 import { ClientDescription } from "./ClientDescription";
 import { HttpClientContext } from "../../http-service/HttpClientContext";
+import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
 import { useAlerts } from "../../components/alert/Alerts";
 import { AlertPanel } from "../../components/alert/AlertPanel";
-
-type FileUpload = {
-  value: string | File;
-  filename: string;
-  isLoading: boolean;
-  modal: boolean;
-};
 
 export const ImportForm = () => {
   const { t } = useTranslation();
   const httpClient = useContext(HttpClientContext)!;
 
   const [add, alerts, hide] = useAlerts();
-  const defaultUpload = {
-    value: "",
-    filename: "",
-    isLoading: false,
-    modal: false,
-  };
-  const [fileUpload, setFileUpload] = useState<FileUpload>(defaultUpload);
   const defaultClient = {
     protocol: "",
     clientId: "",
@@ -49,21 +33,11 @@ export const ImportForm = () => {
   };
   const [client, setClient] = useState<ClientRepresentation>(defaultClient);
 
-  const handleFileChange = (value: string | File, filename: string) => {
-    if (value === "" && client.protocol !== "") {
-      // clear clicked
-      setFileUpload({ ...fileUpload, modal: true });
-    } else {
-      setFileUpload({
-        ...fileUpload,
-        value,
-        filename,
-      });
-      setClient({
-        ...client,
-        ...(value ? JSON.parse(value as string) : defaultClient),
-      });
-    }
+  const handleFileChange = (value: string | File) => {
+    setClient({
+      ...client,
+      ...(value ? JSON.parse(value as string) : defaultClient),
+    });
   };
   const handleDescriptionChange = (
     value: string,
@@ -72,7 +46,6 @@ export const ImportForm = () => {
     const name = (event.target as HTMLInputElement).name;
     setClient({ ...client, [name]: value });
   };
-  const removeDialog = () => setFileUpload({ ...fileUpload, modal: false });
 
   const save = async () => {
     try {
@@ -95,56 +68,8 @@ export const ImportForm = () => {
       </PageSection>
       <Divider />
       <PageSection variant="light">
-        {fileUpload.modal && (
-          <Modal
-            variant={ModalVariant.small}
-            title={t("Clear this file")}
-            isOpen
-            onClose={removeDialog}
-            actions={[
-              <Button
-                key="confirm"
-                variant="primary"
-                onClick={() => {
-                  setClient(defaultClient);
-                  setFileUpload(defaultUpload);
-                }}
-              >
-                {t("Clear")}
-              </Button>,
-              <Button key="cancel" variant="link" onClick={removeDialog}>
-                {t("Cancel")}
-              </Button>,
-            ]}
-          >
-            {t("confirmImportClear")}
-          </Modal>
-        )}
         <Form isHorizontal>
-          <FormGroup
-            label={t("Resource file")}
-            fieldId="realm-file"
-            helperText="Upload a JSON file"
-          >
-            <FileUpload
-              id="realm-file"
-              type="text"
-              value={fileUpload.value}
-              filename={fileUpload.filename}
-              onChange={handleFileChange}
-              allowEditingUploadedText
-              onReadStarted={() =>
-                setFileUpload({ ...fileUpload, isLoading: true })
-              }
-              onReadFinished={() =>
-                setFileUpload({ ...fileUpload, isLoading: false })
-              }
-              isLoading={fileUpload.isLoading}
-              dropzoneProps={{
-                accept: ".json",
-              }}
-            />
-          </FormGroup>
+          <JsonFileUpload id="realm-file" onChange={handleFileChange} />
           <ClientDescription
             onChange={handleDescriptionChange}
             client={client}
