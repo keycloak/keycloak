@@ -1,36 +1,23 @@
 import React from "react";
-import { Button, AlertVariant } from "@patternfly/react-core";
 import { mount } from "enzyme";
-import EnzymeToJson from "enzyme-to-json";
-import { act } from "react-dom/test-utils";
+import { act } from "@testing-library/react";
 
 import { AlertPanel } from "../alert/AlertPanel";
 import { useAlerts } from "../alert/Alerts";
 
 import { RealmSelector } from "./RealmSelector";
 
-const WithButton = () => {
-  const [add, alerts, hide] = useAlerts();
-  return (
-    <>
-      <AlertPanel alerts={alerts} onCloseAlert={hide} />
-      <Button onClick={() => add("Hello", AlertVariant.default)}>Add</Button>
-    </>
+it("renders realm selector", async () => {
+  const wrapper = mount(
+    <RealmSelector realm="test" realmList={[{ id: "321", realm: "another" }]} />
   );
-};
 
-it("renders realm selector", () => {
-  const tree = mount(<RealmSelector />);
-  const button = tree.find("button");
-  expect(button).not.toBeNull();
+  expect(wrapper.text()).toBe("test");
 
+  const expandButton = wrapper.find("button");
   act(() => {
-    button!.simulate("click");
+    expandButton!.simulate("click");
   });
-  expect(EnzymeToJson(tree)).toMatchSnapshot();
 
-  act(() => {
-    jest.runAllTimers();
-  });
-  expect(EnzymeToJson(tree)).toMatchSnapshot();
+  expect(wrapper.html()).toMatchSnapshot();
 });

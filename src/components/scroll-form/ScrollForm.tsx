@@ -10,29 +10,29 @@ type ScrollFormProps = {
 };
 
 export const ScrollForm = ({ sections, children }: ScrollFormProps) => {
-  const getCurrentSection = () => {
-    for (let sectionName of sections) {
-      const section = document.getElementById(sectionName)!;
-      const startAt = section.offsetTop;
-      const endAt = startAt + section.offsetHeight;
-      const currentPosition =
-        document.documentElement.scrollTop || document.body.scrollTop;
-      const isInView = currentPosition >= startAt && currentPosition < endAt;
-      if (isInView) {
-        return sectionName;
-      }
-    }
-  };
-
   const [active, setActive] = useState(sections[0]);
   useEffect(() => {
+    const getCurrentSection = () => {
+      for (let sectionName of sections) {
+        const section = document.getElementById(sectionName)!;
+        const startAt = section.offsetTop;
+        const endAt = startAt + section.offsetHeight;
+        const currentPosition =
+          document.documentElement.scrollTop || document.body.scrollTop;
+        const isInView = currentPosition >= startAt && currentPosition < endAt;
+        if (isInView) {
+          return sectionName;
+        }
+      }
+    };
+
     window.addEventListener("scroll", () => {
       const active = getCurrentSection();
       if (active) {
         setActive(active);
       }
     });
-  }, [active]);
+  }, [active, sections]);
 
   const Nav = () => (
     <div className={style.sticky}>

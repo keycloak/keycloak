@@ -11,33 +11,24 @@ import {
 } from "@patternfly/react-core";
 
 import style from "./realm-selector.module.css";
-import { HttpClientContext } from "../../http-service/HttpClientContext";
 
-export const RealmSelector = () => {
+type RealmSelectorProps = {
+  realm: string;
+  realmList: Realm[];
+};
+
+export const RealmSelector = ({ realm, realmList }: RealmSelectorProps) => {
   const [open, setOpen] = useState(false);
   const history = useHistory();
-  const httpClient = useContext(HttpClientContext);
-  const [realms, setRealms] = useState([] as Realm[]);
-  const [currentRealm, setCurrentRealm] = useState("Master");
+  const [currentRealm, setCurrentRealm] = useState(realm);
 
-  const getRealms = async () => {
-    return await httpClient
-      ?.doGet("/admin/realms")
-      .then((r) => r.data as Realm[]);
-  };
-
-  useEffect(() => {
-    getRealms().then((result) => {
-      setRealms(result || []);
-    });
-  }, []);
-
-  const dropdownItems = realms.map((r) => (
+  const dropdownItems = realmList.map((r) => (
     <DropdownItem
-      component="a"
-      href={"/#/realms/" + r.id}
       key={r.id}
-      onClick={() => setCurrentRealm(r.realm)}
+      onClick={() => {
+        setCurrentRealm(r.realm);
+        setOpen(!open);
+      }}
     >
       {r.realm.charAt(0).toUpperCase() + r.realm.slice(1)}
     </DropdownItem>
