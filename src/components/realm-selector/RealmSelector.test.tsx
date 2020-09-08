@@ -4,6 +4,9 @@ import { mount } from "enzyme";
 import EnzymeToJson from "enzyme-to-json";
 import { act } from "react-dom/test-utils";
 
+import { AlertPanel } from "../alert/AlertPanel";
+import { useAlerts } from "../alert/Alerts";
+
 import { RealmSelector } from "./RealmSelector";
 
 const WithButton = () => {

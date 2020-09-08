@@ -28,7 +28,7 @@ export const RealmSelector = () => {
 
   useEffect(() => {
     getRealms().then((result) => {
-      setRealms(result) !== undefined ? result : [];
+      setRealms(result || []);
     });
   }, []);
 

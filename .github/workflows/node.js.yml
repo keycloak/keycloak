@@ -28,6 +28,7 @@ jobs:
     - run: npm install -g yarn
     - run: yarn install
     - run: yarn format:check
+    - run: yarn check-types
     - run: yarn build
     - run: yarn lint
     - run: yarn test

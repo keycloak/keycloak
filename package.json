@@ -8,6 +8,7 @@
     "start": "snowpack dev",
     "build": "snowpack build",
     "test": "jest",
+    "check-types": "tsc -p ./",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\"",
     "lint": "eslint ./src/**/*.ts*",
