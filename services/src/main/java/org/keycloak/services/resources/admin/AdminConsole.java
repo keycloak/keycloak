@@ -58,6 +58,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -235,28 +236,41 @@ public class AdminConsole {
     private void addRealmAccess(RealmModel realm, UserModel user, Map<String, Set<String>> realmAdminAccess) {
         RealmManager realmManager = new RealmManager(session);
         ClientModel realmAdminApp = realm.getClientByClientId(realmManager.getRealmAdminClientId(realm));
-        getRealmAdminAccess(realmAdminApp, user, realmAdminAccess);
+        getRealmAdminAccess(realm, realmAdminApp, user, realmAdminAccess);
     }
 
     private void addMasterRealmAccess(UserModel user, Map<String, Set<String>> realmAdminAccess) {
         List<RealmModel> realms = session.realms().getRealms();
         for (RealmModel realm : realms) {
             ClientModel realmAdminApp = realm.getMasterAdminClient();
-            getRealmAdminAccess(realmAdminApp, user, realmAdminAccess);
+            getRealmAdminAccess(realm, realmAdminApp, user, realmAdminAccess);
         }
     }
 
-    private void getRealmAdminAccess(ClientModel client, UserModel user, Map<String, Set<String>> realmAdminAccess) {
-        Set<String> roles = client.getRolesStream().filter(user::hasRole)
-                .map(RoleModel::getName).collect(Collectors.toSet());
 
-        if (!roles.isEmpty()) {
-            if (!realmAdminAccess.containsKey(realm.getName())) {
-                realmAdminAccess.put(realm.getName(), roles);
-            } else {
-                realmAdminAccess.get(realm.getName()).addAll(roles);
-            }
+    private static <T> HashSet<T> union(Set<T> set1, Set<T> set2) {
+        if (set1 == null && set2 == null) {
+            return null;
         }
+        HashSet<T> res;
+        if (set1 instanceof HashSet) {
+            res = (HashSet <T>) set1;
+        } else {
+            res = set1 == null ? new HashSet<>() : new HashSet<>(set1);
+        }
+        if (set2 != null) {
+            res.addAll(set2);
+        }
+        return res;
+    }
+
+    private void getRealmAdminAccess(RealmModel realm, ClientModel client, UserModel user, Map<String, Set<String>> realmAdminAccess) {
+        Set<String> realmRoles = client.getRolesStream()
+          .filter(user::hasRole)
+          .map(RoleModel::getName)
+          .collect(Collectors.toSet());
+
+        realmAdminAccess.merge(realm.getName(), realmRoles, AdminConsole::union);
     }
 
     /**
