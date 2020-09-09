@@ -21,6 +21,7 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -83,11 +84,25 @@ public class AccountLoader {
                 accountFormService.init();
                 return accountFormService;
             } else {
+                //FIXME: Remove when KEYCLOAK-15480 is done.
+                checkManageAccountPermissions(client);
                 AccountConsole console = new AccountConsole(realm, client, theme);
                 ResteasyProviderFactory.getInstance().injectProperties(console);
                 console.init();
                 return console;
             }
+        }
+    }
+
+    //FIXME: This method has been introduced as a workaround for KEYCLOAK-15480.
+    //       Once KEYCLOAK-15480 gets implemented, it should be removed.
+    private void checkManageAccountPermissions(ClientModel client) {
+        AuthenticationManager.AuthResult authResult = new AppAuthManager().authenticateIdentityCookie(session, session.getContext().getRealm());
+        if (authResult != null) {
+            // We allow not logged users to visit the welcome page. Once a user is logged in,
+            // we need to validate his permissions.
+            Auth auth = new Auth(session.getContext().getRealm(), authResult.getToken(), authResult.getUser(), client, authResult.getSession(), true);
+            auth.require(AccountRoles.MANAGE_ACCOUNT);
         }
     }
 
