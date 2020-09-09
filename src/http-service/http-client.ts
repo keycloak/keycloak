@@ -74,10 +74,13 @@ export class HttpClient {
       await this.makeConfig(config)
     );
 
-    try {
-      response.data = await response.json();
-    } catch (e) {
-      console.warn(e);
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.indexOf("application/json") !== -1) {
+      try {
+        response.data = await response.json();
+      } catch (e) {
+        console.warn(e);
+      }
     }
 
     if (!response.ok) {
