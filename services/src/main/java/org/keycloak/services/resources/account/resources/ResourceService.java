@@ -66,8 +66,8 @@ public class ResourceService extends AbstractResourceService {
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getResource() {
-        return cors(Response.ok(new Resource(resource, provider)));
+    public Resource getResource() {
+        return new Resource(resource, provider);
     }
 
     /**
@@ -78,7 +78,7 @@ public class ResourceService extends AbstractResourceService {
     @GET
     @Path("permissions")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response toPermissions() {
+    public Collection<Permission> toPermissions() {
         Map<String, String> filters = new HashMap<>();
 
         filters.put(PermissionTicket.OWNER, user.getId());
@@ -92,7 +92,7 @@ public class ResourceService extends AbstractResourceService {
             permissions = resources.iterator().next().getPermissions();
         }
 
-        return cors(Response.ok(permissions));
+        return permissions;
     }
 
     @GET
@@ -101,9 +101,9 @@ public class ResourceService extends AbstractResourceService {
     public Response user(@QueryParam("value") String value) {
         try {
             final UserModel user = getUser(value);
-            return cors(Response.ok(toRepresentation(provider.getKeycloakSession(), provider.getRealm(), user)));
+            return Response.ok(toRepresentation(provider.getKeycloakSession(), provider.getRealm(), user)).build();
         } catch (NotFoundException e) {
-            return cors(Response.noContent());
+            return Response.noContent().build();
         }
     }
 
@@ -172,7 +172,7 @@ public class ResourceService extends AbstractResourceService {
             }
         }
 
-        return cors(Response.noContent());
+        return Response.noContent().build();
     }
 
     /**
@@ -183,7 +183,7 @@ public class ResourceService extends AbstractResourceService {
     @GET
     @Path("permissions/requests")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getPermissionRequests() {
+    public Collection<Permission> getPermissionRequests() {
         Map<String, String> filters = new HashMap<>();
 
         filters.put(PermissionTicket.OWNER, user.getId());
@@ -196,7 +196,7 @@ public class ResourceService extends AbstractResourceService {
             requests.computeIfAbsent(ticket.getRequester(), requester -> new Permission(ticket, provider)).addScope(ticket.getScope().getName());
         }
         
-        return cors(Response.ok(requests.values()));
+        return requests.values();
     }
 
     private void grantPermission(UserModel user, String scopeId) {
