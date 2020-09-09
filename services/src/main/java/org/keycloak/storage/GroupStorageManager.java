@@ -23,6 +23,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.storage.group.GroupLookupProvider;
 import org.keycloak.storage.group.GroupStorageProvider;
+import org.keycloak.storage.group.GroupStorageProviderFactory;
 import org.keycloak.storage.group.GroupStorageProviderModel;
 
 import java.util.stream.Stream;
@@ -30,7 +31,8 @@ import java.util.stream.Stream;
 public class GroupStorageManager extends AbstractStorageManager<GroupStorageProvider, GroupStorageProviderModel> implements GroupProvider {
 
     public GroupStorageManager(KeycloakSession session) {
-        super(session, GroupStorageProvider.class, GroupStorageProviderModel::new, "group");
+        super(session, GroupStorageProviderFactory.class, GroupStorageProvider.class,
+                GroupStorageProviderModel::new, "group");
     }
 
     /* GROUP PROVIDER LOOKUP METHODS - implemented by group storage providers */
@@ -42,7 +44,7 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
             return session.groupLocalStorage().getGroupById(realm, id);
         }
 
-        GroupLookupProvider provider = getStorageProviderInstance(realm, storageId.getProviderId());
+        GroupLookupProvider provider = getStorageProviderInstance(realm, storageId.getProviderId(), GroupLookupProvider.class);
         if (provider == null) return null;
 
         return provider.getGroupById(realm, id);
@@ -59,8 +61,8 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
     @Override
     public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
         Stream<GroupModel> local = session.groupLocalStorage().searchForGroupByNameStream(realm, search,  firstResult, maxResults);
-        Stream<GroupModel> ext = applyOnEnabledStorageProvidersWithTimeout(realm,
-                        p -> ((GroupLookupProvider) p).searchForGroupByNameStream(realm, search, firstResult, maxResults));
+        Stream<GroupModel> ext = applyOnEnabledStorageProvidersWithTimeout(realm, GroupLookupProvider.class,
+                        p -> p.searchForGroupByNameStream(realm, search, firstResult, maxResults));
         
         return Stream.concat(local, ext);
     }
