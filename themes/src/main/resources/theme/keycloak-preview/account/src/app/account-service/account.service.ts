@@ -18,6 +18,8 @@
 import {KeycloakService} from '../keycloak-service/keycloak.service';
 import {ContentAlert} from '../content/ContentAlert';
 
+declare const baseUrl: string;
+
 type ConfigResolve = (config: RequestInit) => void;
 
 export interface HttpResponse<T = {}> extends Response {
@@ -88,12 +90,16 @@ export class AccountServiceClient {
     }
 
     private handleError(response: HttpResponse): void {
-        if (response != null && response.status === 401) {
+        if (response !== null && response.status === 401) {
             // session timed out?
             this.kcSvc.login();
         }
 
-        if (response != null && response.data != null) {
+        if (response !== null && response.status === 403) {
+            window.location.href = baseUrl + '/#/forbidden';
+        }
+
+        if (response !== null && response.data != null) {
             ContentAlert.danger(
                 `${response.statusText}: ${response.data['errorMessage'] ? response.data['errorMessage'] : ''} ${response.data['error'] ? response.data['error'] : ''}`
             );
