@@ -24,6 +24,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,7 +45,6 @@ import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.resources.Cors;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -73,9 +73,8 @@ public class SessionResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Response toRepresentation() {
-        return Cors.add(request, Response.ok(session.sessions().getUserSessions(realm, user).stream()
-                .map(this::toRepresentation).collect(Collectors.toList()))).auth().allowedOrigins(auth.getToken()).build();
+    public List<SessionRepresentation> toRepresentation() {
+        return session.sessions().getUserSessions(realm, user).stream().map(this::toRepresentation).collect(Collectors.toList());
     }
 
     /**
@@ -87,7 +86,7 @@ public class SessionResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Response devices() {
+    public Collection<DeviceRepresentation> devices() {
         Map<String, DeviceRepresentation> reps = new HashMap<>();
         List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
 
@@ -117,7 +116,7 @@ public class SessionResource {
             rep.addSession(createSessionRepresentation(s, device));
         }
 
-        return Cors.add(request, Response.ok(reps.values())).auth().allowedOrigins(auth.getToken()).build();
+        return reps.values();
     }
 
     /**
@@ -139,7 +138,7 @@ public class SessionResource {
             }
         }
 
-        return Cors.add(request, Response.noContent()).auth().allowedOrigins(auth.getToken()).build();
+        return Response.noContent().build();
     }
 
     /**
@@ -158,7 +157,7 @@ public class SessionResource {
         if (userSession != null && userSession.getUser().equals(user)) {
             AuthenticationManager.backchannelLogout(session, userSession, true);
         }
-        return Cors.add(request, Response.noContent()).auth().allowedOrigins(auth.getToken()).build();
+        return Response.noContent().build();
     }
 
     private SessionRepresentation createSessionRepresentation(UserSessionModel s, DeviceRepresentation device) {

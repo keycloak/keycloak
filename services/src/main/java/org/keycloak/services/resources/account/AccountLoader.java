@@ -18,6 +18,7 @@ package org.keycloak.services.resources.account;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.events.EventBuilder;
@@ -28,6 +29,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.resources.Cors;
 import org.keycloak.theme.Theme;
 
 import javax.ws.rs.HttpMethod;
@@ -37,6 +39,7 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
@@ -50,6 +53,11 @@ public class AccountLoader {
 
     private KeycloakSession session;
     private EventBuilder event;
+
+    @Context
+    private HttpRequest request;
+    @Context
+    private HttpResponse response;
 
     private static final Logger logger = Logger.getLogger(AccountLoader.class);
 
@@ -94,6 +102,9 @@ public class AccountLoader {
     @Path("{version : v\\d[0-9a-zA-Z_\\-]*}")
     @Produces(MediaType.APPLICATION_JSON)
     public Object getVersionedAccountRestService(final @PathParam("version") String version) {
+        if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
+            return new CorsPreflightService(request);
+        }
         return getAccountRestService(getAccountManagementClient(session.getContext().getRealm()), version);
     }
 
@@ -121,6 +132,9 @@ public class AccountLoader {
         if (authResult == null) {
             throw new NotAuthorizedException("Bearer token required");
         }
+        Auth auth = new Auth(session.getContext().getRealm(), authResult.getToken(), authResult.getUser(), client, authResult.getSession(), false);
+
+        Cors.add(request).allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().build(response);
 
         if (authResult.getUser().getServiceAccountClientLink() != null) {
             throw new NotAuthorizedException("Service accounts are not allowed to access this service");
@@ -137,7 +151,6 @@ public class AccountLoader {
             }
         }
 
-        Auth auth = new Auth(session.getContext().getRealm(), authResult.getToken(), authResult.getUser(), client, authResult.getSession(), false);
         AccountRestService accountRestService = new AccountRestService(session, auth, client, event, version);
         ResteasyProviderFactory.getInstance().injectProperties(accountRestService);
         accountRestService.init();
