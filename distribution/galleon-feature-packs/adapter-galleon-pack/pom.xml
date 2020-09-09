@@ -218,13 +218,13 @@
                     <dependency>
                         <groupId>org.wildfly.core</groupId>
                         <artifactId>wildfly-embedded</artifactId>
-                        <version>${version.org.wildfly.core}</version>
+                        <version>${wildfly.core.version}</version>
                     </dependency>
                     <!-- If you add a dependency on wildfly-embedded you need to bring your own transitives -->
                     <dependency>
                         <groupId>org.wildfly.common</groupId>
                         <artifactId>wildfly-common</artifactId>
-                        <version>${version.org.wildfly.common}</version>
+                        <version>${wildfly.common.version}</version>
                     </dependency>
                 </dependencies>
                 <executions>
@@ -257,9 +257,6 @@
             </activation>
             <properties>
                 <galleon-adapter-group-id>org.keycloak</galleon-adapter-group-id>
-                <version.org.wildfly>20.0.0.Final</version.org.wildfly>
-                <version.org.wildfly.core>12.0.1.Final</version.org.wildfly.core>
-                <version.org.wildfly.common>1.5.4.Final</version.org.wildfly.common>
             </properties>
             <repositories>
                 <repository>
@@ -274,7 +271,7 @@
                 <dependency>
                     <groupId>org.wildfly</groupId>
                     <artifactId>wildfly-galleon-pack</artifactId>
-                    <version>${version.org.wildfly}</version>
+                    <version>${wildfly.version}</version>
                     <type>zip</type>
                     <scope>provided</scope>
                 </dependency>
@@ -289,15 +286,12 @@
             </activation>
             <properties>
                 <galleon-adapter-group-id>org.jboss.sso</galleon-adapter-group-id>
-                <version.org.jboss.eap>7.3.2.GA-redhat-00002</version.org.jboss.eap>
-                <version.org.wildfly.core>10.1.11.Final-redhat-00001</version.org.wildfly.core>
-                <version.org.wildfly.common>1.5.2.Final-redhat-00002</version.org.wildfly.common>
             </properties>
             <dependencies>
                 <dependency>
                     <groupId>org.jboss.eap</groupId>
                     <artifactId>wildfly-galleon-pack</artifactId>
-                    <version>${version.org.jboss.eap}</version>
+                    <version>${eap.version}</version>
                     <type>zip</type>
                     <scope>provided</scope>
                 </dependency>

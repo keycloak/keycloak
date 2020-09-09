@@ -5,7 +5,7 @@
         <layer name="elytron"/>
         <layer name="undertow"/>
     </dependencies>
-     <feature spec="subsystem.keycloak"/>
+    <feature spec="subsystem.keycloak"/>
     <feature spec="subsystem.elytron.custom-realm">
         <param name="custom-realm" value="KeycloakOIDCRealm"/>
         <param name="class-name" value="org.keycloak.adapters.elytron.KeycloakSecurityRealm"/>
