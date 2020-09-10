@@ -191,31 +191,40 @@ public class MapRoleProvider implements RoleProvider {
 
         realm.removeDefaultRoles(role.getName());
         
-        //TODO composite realm roles - stream
+        //remove role from realm-roles composites
         try (Stream<RoleModel> baseStream = getRealmRolesStream(realm).filter(RoleModel::isComposite)) {
             StreamUtils.leftInnerJoinIterable(baseStream, RoleModel::getComposites)
               .filter(pair -> role.equals(pair.getK()))
               .forEach(pair -> pair.getK().removeCompositeRole(role));
         }
-        //TODO composite realm roles - up to here
-
         
+        //remove role from client-roles composites
         session.clients().getClientsStream(realm).forEach(client -> {
             client.deleteScopeMapping(role);
-            getClientRolesStream(client).forEach(clienRole -> {
-                if (clienRole.isComposite()) {
-                    for (RoleModel compositeRole : clienRole.getComposites()) {
-                        if (role.equals(compositeRole)) {
-                            clienRole.removeCompositeRole(role);
-                        }
-                    }
-                }
-            });
+            try (Stream<RoleModel> baseStream = getClientRolesStream(client).filter(RoleModel::isComposite)) {
+                StreamUtils.leftInnerJoinIterable(baseStream, RoleModel::getComposites)
+                    .filter(pair -> role.equals(pair.getK()))
+                    .forEach(pair -> pair.getK().removeCompositeRole(role));
+            }
         });
-        
-//        session.groups().
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        
+
+        // TODO: Sending an event should be extracted to store layer
+        session.getKeycloakSessionFactory().publish(new RoleContainerModel.RoleRemovedEvent() {
+            @Override
+            public RoleModel getRole() {
+                return role;
+            }
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
+        // TODO: ^^^^^^^ Up to here
+
+        tx.remove(UUID.fromString(role.getId()));
+
+        return true;
     }
 
     @Override
@@ -234,28 +243,94 @@ public class MapRoleProvider implements RoleProvider {
             return null;
         }
         LOG.tracef("getRealmRole(%s, %s)%s", realm, name, getShortStackTrace());
-        
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
 
-    @Override
-    public RoleModel getRoleById(RealmModel realm, String id) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+        String roleNameLower = name.toLowerCase();
 
-    @Override
-    public Stream<RoleModel> searchForRolesStream(RealmModel realm, String search, Integer first, Integer max) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return getNotRemovedUpdatedRolesStream()
+                .filter(entityRealmFilter(realm))
+                .filter(entity -> entity.getName()!= null && Objects.equals(entity.getName().toLowerCase(), roleNameLower))
+                .map(entityToAdapterFunc(realm))
+                .findFirst()
+                .orElse(null);
     }
 
     @Override
     public RoleModel getClientRole(ClientModel client, String name) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if (name == null) {
+            return null;
+        }
+        LOG.tracef("getClientRole(%s, %s)%s", client, name, getShortStackTrace());
+
+        String roleNameLower = name.toLowerCase();
+
+        return getNotRemovedUpdatedRolesStream()
+                .filter(entityClientFilter(client))
+                .filter(entity -> entity.getName()!= null && Objects.equals(entity.getName().toLowerCase(), roleNameLower))
+                .map(entityToAdapterFunc(client.getRealm()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
+    public RoleModel getRoleById(RealmModel realm, String id) {
+        if (id == null) {
+            return null;
+        }
+
+        LOG.tracef("getRoleById(%s, %s)%s", realm, id, getShortStackTrace());
+
+        MapRoleEntity entity = tx.get(UUID.fromString(id), roleStore::get);
+        return (entity == null || ! entityRealmFilter(realm).test(entity))
+          ? null
+          : entityToAdapterFunc(realm).apply(entity);
+    }
+
+    @Override
+    public Stream<RoleModel> searchForRolesStream(RealmModel realm, String search, Integer first, Integer max) {
+        if (search == null) {
+            return Stream.empty();
+        }
+        String searchLower = search.toLowerCase();
+        Stream<MapRoleEntity> s = getNotRemovedUpdatedRolesStream()
+            .filter(entityRealmFilter(realm))
+            .filter(entity -> 
+                (entity.getName() != null && entity.getName().toLowerCase().contains(searchLower)) || 
+                (entity.getDescription() != null && entity.getDescription().toLowerCase().contains(searchLower))
+            )
+            .sorted(COMPARE_BY_NAME);
+
+        if (first != null && first >= 0) {
+            s = s.skip(first);
+        }
+        if (max != null && max >= 0) {
+            s = s.limit(max);
+        }
+
+        return s.map(entityToAdapterFunc(realm));
     }
 
     @Override
     public Stream<RoleModel> searchForClientRolesStream(ClientModel client, String search, Integer first, Integer max) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if (search == null) {
+            return Stream.empty();
+        }
+        String searchLower = search.toLowerCase();
+        Stream<MapRoleEntity> s = getNotRemovedUpdatedRolesStream()
+            .filter(entityClientFilter(client))
+            .filter(entity -> 
+                (entity.getName() != null && entity.getName().toLowerCase().contains(searchLower)) || 
+                (entity.getDescription() != null && entity.getDescription().toLowerCase().contains(searchLower))
+            )
+            .sorted(COMPARE_BY_NAME);
+
+        if (first != null && first >= 0) {
+            s = s.skip(first);
+        }
+        if (max != null && max >= 0) {
+            s = s.limit(max);
+        }
+
+        return s.map(entityToAdapterFunc(client.getRealm()));
     }
 
     @Override
