@@ -35,7 +35,6 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@Provider
 public class ObjectMapperResolver implements ContextResolver<ObjectMapper> {
     protected ObjectMapper mapper = new ObjectMapper();
 
