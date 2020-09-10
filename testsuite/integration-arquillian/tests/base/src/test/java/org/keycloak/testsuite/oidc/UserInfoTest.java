@@ -24,6 +24,8 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientScopesResource;
+import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.PemUtils;
@@ -36,6 +38,8 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
@@ -72,10 +76,14 @@ import java.net.URI;
 import java.security.PublicKey;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 
@@ -118,7 +126,8 @@ public class UserInfoTest extends AbstractKeycloakTest {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 
-            testSuccessfulUserInfoResponse(response);
+            UserInfo userInfo = testSuccessfulUserInfoResponse(response);
+            testRolesAreNotInUserInfoResponse(userInfo);
 
         } finally {
             client.close();
@@ -550,6 +559,25 @@ public class UserInfoTest extends AbstractKeycloakTest {
         }
     }
 
+    @Test
+    public void testRolesAreAvailable_getMethod_header() throws Exception {
+
+        switchIncludeRolesInUserInfoEndpoint(true);
+
+        Client client = ClientBuilder.newClient();
+
+        try {
+            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
+            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+
+            UserInfo userInfo = testSuccessfulUserInfoResponse(response);
+            testRolesInUserInfoResponse(userInfo);
+        } finally {
+            client.close();
+            switchIncludeRolesInUserInfoEndpoint(false);
+        }
+    }
+
     private AccessTokenResponse executeGrantAccessTokenRequest(Client client) {
         return executeGrantAccessTokenRequest(client, false);
     }
@@ -583,11 +611,11 @@ public class UserInfoTest extends AbstractKeycloakTest {
         return accessTokenResponse;
     }
 
-    private void testSuccessfulUserInfoResponse(Response response) {
-        testSuccessfulUserInfoResponse(response, "test-app");
+    private UserInfo testSuccessfulUserInfoResponse(Response response) {
+        return testSuccessfulUserInfoResponse(response, "test-app");
     }
 
-    private void testSuccessfulUserInfoResponse(Response response, String expectedClientId) {
+    private UserInfo testSuccessfulUserInfoResponse(Response response, String expectedClientId) {
         events.expect(EventType.USER_INFO_REQUEST)
                 .session(Matchers.notNullValue(String.class))
                 .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
@@ -596,7 +624,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
                 .client(expectedClientId)
                 .assertEvent();
         UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost").get(0);
-        UserInfoClientUtil.testSuccessfulUserInfoResponse(response, user.getId(), "test-user@localhost", "test-user@localhost");
+        return UserInfoClientUtil.testSuccessfulUserInfoResponse(response, user.getId(), "test-user@localhost", "test-user@localhost");
     }
 
     private void testSuccessSignedResponse(Algorithm sigAlg) throws Exception {
@@ -674,5 +702,46 @@ public class UserInfoTest extends AbstractKeycloakTest {
         loginPage.assertCurrent();
 
         return tokenResponse;
+    }
+
+    private void switchIncludeRolesInUserInfoEndpoint(boolean includeRoles) {
+        ClientScopesResource clientScopesResource = adminClient.realm("test").clientScopes();
+        ClientScopeRepresentation rolesClientScope = clientScopesResource.findAll().stream()
+                .filter(clientScope -> "roles".equals(clientScope.getName()))
+                .findAny()
+                .get();
+
+        ProtocolMappersResource protocolMappersResource =
+                clientScopesResource.get(rolesClientScope.getId()).getProtocolMappers();
+
+        ProtocolMapperRepresentation realmRolesMapper = protocolMappersResource.getMappers().stream()
+                .filter(mapper -> "realm roles".equals(mapper.getName()))
+                .findAny()
+                .get();
+
+        realmRolesMapper.getConfig().put(INCLUDE_IN_USERINFO, String.valueOf(includeRoles));
+
+        ProtocolMapperRepresentation clientRolesMapper = protocolMappersResource.getMappers().stream()
+                .filter(mapper -> "client roles".equals(mapper.getName()))
+                .findAny()
+                .get();
+
+        clientRolesMapper.getConfig().put(INCLUDE_IN_USERINFO, String.valueOf(includeRoles));
+
+        protocolMappersResource.update(realmRolesMapper.getId(), realmRolesMapper);
+        protocolMappersResource.update(clientRolesMapper.getId(), clientRolesMapper);
+    }
+
+    private void testRolesInUserInfoResponse(UserInfo userInfo) {
+        Map<String, Set<String>> realmAccess = (Map<String, Set<String>>) userInfo.getOtherClaims().get("realm_access");
+        Map<String, Map<String, Set<String>>> resourceAccess = (Map<String, Map<String, Set<String>>>) userInfo.getOtherClaims().get("resource_access");
+
+        org.hamcrest.MatcherAssert.assertThat(realmAccess.get("roles"), CoreMatchers.hasItems("offline_access", "user"));
+        org.hamcrest.MatcherAssert.assertThat(resourceAccess.get("test-app").get("roles"), CoreMatchers.hasItems("customer-user"));
+    }
+
+    private void testRolesAreNotInUserInfoResponse(UserInfo userInfo) {
+        assertNull(userInfo.getOtherClaims().get("realm_access"));
+        assertNull(userInfo.getOtherClaims().get("resource_access"));
     }
 }
