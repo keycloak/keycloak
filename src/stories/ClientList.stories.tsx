@@ -2,7 +2,7 @@ import React from "react";
 import { Meta } from "@storybook/react";
 
 import { ClientList } from "../clients/ClientList";
-import clientMock from "../clients/mock-clients.json";
+import clientMock from "../clients/__tests__/mock-clients.json";
 
 export default {
   title: "Client List",

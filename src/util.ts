@@ -1,4 +1,4 @@
-import { ProviderRepresentation } from "./model/server-info";
+import { ProviderRepresentation } from "./clients/models/server-info";
 
 export const sortProvider = (
   a: [string, ProviderRepresentation],

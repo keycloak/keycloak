@@ -1,7 +1,7 @@
 import React from "react";
 import { Meta } from "@storybook/react";
 import { Page } from "@patternfly/react-core";
-import { NewRealmForm } from "../forms/realm/NewRealmForm";
+import { NewRealmForm } from "../realm/add/NewRealmForm";
 
 export default {
   title: "New reaml form",

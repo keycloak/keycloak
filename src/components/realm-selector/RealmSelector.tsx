@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from "react";
 import { useHistory } from "react-router-dom";
-import { Realm } from "../../models/Realm";
+import { Realm } from "../../realm/models/Realm";
 
 import {
   Dropdown,

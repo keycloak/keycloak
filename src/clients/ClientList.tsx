@@ -1,4 +1,5 @@
 import React, { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Table,
   TableBody,
@@ -8,14 +9,13 @@ import {
   IFormatterValueType,
 } from "@patternfly/react-table";
 import { Badge, AlertVariant } from "@patternfly/react-core";
-import { saveAs } from "file-saver";
+import FileSaver from "file-saver";
 
 import { ExternalLink } from "../components/external-link/ExternalLink";
-import { ClientRepresentation } from "../model/client-model";
 import { HttpClientContext } from "../http-service/HttpClientContext";
 import { useAlerts } from "../components/alert/Alerts";
 import { AlertPanel } from "../components/alert/AlertPanel";
-import { useTranslation } from "react-i18next";
+import { ClientRepresentation } from "./models/client-model";
 
 type ClientListProps = {
   clients?: ClientRepresentation[];
@@ -30,8 +30,8 @@ const columns: (keyof ClientRepresentation)[] = [
 ];
 
 export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
+  const { t } = useTranslation("clients");
   const httpClient = useContext(HttpClientContext)!;
-  const { t } = useTranslation();
   const [add, alerts, hide] = useAlerts();
 
   const convertClientId = (clientId: string) =>
@@ -58,6 +58,7 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
     ) : undefined) as object;
   };
 
+  /* eslint-disable no-template-curly-in-string */
   const replaceBaseUrl = (r: ClientRepresentation) =>
     r.rootUrl &&
     r.rootUrl
@@ -91,7 +92,7 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
         rows={data}
         actions={[
           {
-            title: t("Export"),
+            title: t("common:Export"),
             onClick: (_, rowId) => {
               const clientCopy = JSON.parse(JSON.stringify(data[rowId].client));
               clientCopy.clientId = convertClientId(clientCopy.clientId);
@@ -103,7 +104,7 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
                 }
               }
 
-              saveAs(
+              FileSaver.saveAs(
                 new Blob([JSON.stringify(clientCopy, null, 2)], {
                   type: "application/json",
                 }),
@@ -112,7 +113,7 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
             },
           },
           {
-            title: t("Delete"),
+            title: t("common:Delete"),
             onClick: (_, rowId) => {
               try {
                 httpClient.doDelete(
@@ -128,7 +129,7 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
             },
           },
         ]}
-        aria-label="Client list"
+        aria-label={t("Client list")}
       >
         <TableHeader />
         <TableBody />

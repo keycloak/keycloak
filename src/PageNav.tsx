@@ -4,7 +4,7 @@ import { Nav, NavItem, NavGroup, PageSidebar } from "@patternfly/react-core";
 import { RealmSelector } from "./components/realm-selector/RealmSelector";
 import { DataLoader } from "./components/data-loader/DataLoader";
 import { HttpClientContext } from "./http-service/HttpClientContext";
-import { Realm } from "./models/Realm";
+import { Realm } from "./realm/models/Realm";
 
 export const PageNav: React.FunctionComponent = () => {
   const httpClient = useContext(HttpClientContext)!;

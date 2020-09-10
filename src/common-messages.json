@@ -1,0 +1,19 @@
+{
+  "common": {
+    "fullName": "{{givenName}} {{familyName}}",
+    "unknownUser": "Anonymous",
+
+    "Save": "Save",
+    "Cancel": "Cancel",
+    "Delete": "Delete",
+    "Export": "Export",
+    "Resource file": "Resource file",
+
+    "Sign out": "Sign out",
+    "Manage account": "Manage account",
+    "Server info": "Server info",
+    "Help": "Help",
+    "Documentation": "Documentation",
+    "Enable help mode": "Enable help mode"
+  }
+}
