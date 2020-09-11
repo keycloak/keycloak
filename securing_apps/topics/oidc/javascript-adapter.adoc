@@ -24,17 +24,24 @@ The following example shows how to initialize the JavaScript adapter:
 
 [source,html]
 ----
+<html>
 <head>
     <script src="keycloak.js"></script>
     <script>
-        var keycloak = new Keycloak();
-        keycloak.init().then(function(authenticated) {
-            alert(authenticated ? 'authenticated' : 'not authenticated');
-        }).catch(function() {
-            alert('failed to initialize');
-        });
+        function initKeycloak() {
+            var keycloak = new Keycloak();
+            keycloak.init().then(function(authenticated) {
+                alert(authenticated ? 'authenticated' : 'not authenticated');
+            }).catch(function() {
+                alert('failed to initialize');
+            });
+        }
     </script>
 </head>
+<body onload="initKeycloak()">
+    <!-- your page content goes here -->
+</body>
+</html>
 ----
 
 If the `keycloak.json` file is in a different location you can specify it:
