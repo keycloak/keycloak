@@ -58,6 +58,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
@@ -75,6 +76,7 @@ import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvide
 import org.keycloak.services.clientpolicy.condition.ClientUpdateContextConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
+import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFactory;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -104,6 +106,9 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
     static final String CLIENTROLES_CONDITION_ALPHA_NAME = "ClientRolesCondition-alpha";
     static final String CLIENTROLES_CONDITION_BETA_NAME = "ClientRolesCondition-beta";
 
+    static final String SECURERESPONSETYPE_EXECUTOR_NAME = "SecureResponseTypeExecutor";
+    
+    
     ClientRegistration reg;
 
     @Rule
@@ -583,6 +588,74 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         }
     }
 
+    @Test
+    public void testSecureResponseTypeExecutor() throws ClientRegistrationException, ClientPolicyException {
+        String policyName = "MyPolicy";
+        createPolicy(policyName, DefaultClientPolicyProviderFactory.PROVIDER_ID, null, null, null);
+        logger.info("... Created Policy : " + policyName);
+
+        createCondition(CLIENTROLES_CONDITION_NAME, ClientRolesConditionFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+            setConditionClientRoles(provider, new ArrayList<>(Arrays.asList("sample-client-role")));
+        });
+        registerCondition(CLIENTROLES_CONDITION_NAME, policyName);
+        logger.info("... Registered Condition : " + CLIENTROLES_CONDITION_NAME);
+
+        createExecutor(SECURERESPONSETYPE_EXECUTOR_NAME, SecureResponseTypeExecutorFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+        });
+        registerExecutor(SECURERESPONSETYPE_EXECUTOR_NAME, policyName);
+        logger.info("... Registered Executor : " + SECURERESPONSETYPE_EXECUTOR_NAME);
+
+        String clientId = "Zahlungs-App";
+        String clientSecret = "secret";
+        String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            String[] defaultRoles = {"sample-client-role"};
+            clientRep.setDefaultRoles(defaultRoles);
+            clientRep.setSecret(clientSecret);
+            clientRep.setStandardFlowEnabled(Boolean.TRUE);
+            clientRep.setImplicitFlowEnabled(Boolean.TRUE);
+            clientRep.setPublicClient(Boolean.FALSE);
+        });
+
+        try {
+            oauth.clientId(clientId);
+            oauth.openLoginForm();
+            assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+            assertEquals("invalid response_type", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+
+            oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " "  + OIDCResponseType.TOKEN);
+            oauth.nonce("cie8cjcwiw");
+            oauth.doLogin("test-user@localhost", "password");
+
+            EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
+            String sessionId = loginEvent.getSessionId();
+            String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+            String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
+            OAuthClient.AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
+            assertEquals(200, res.getStatusCode());
+            events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
+
+            oauth.doLogout(res.getRefreshToken(), clientSecret);
+            events.expectLogout(sessionId).client(clientId).clearDetails().assertEvent();
+
+            oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
+            oauth.nonce("vbwe566fsfffds");
+            oauth.doLogin("test-user@localhost", "password");
+
+            loginEvent = events.expectLogin().client(clientId).assertEvent();
+            sessionId = loginEvent.getSessionId();
+            codeId = loginEvent.getDetails().get(Details.CODE_ID);
+            code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
+            res = oauth.doAccessTokenRequest(code, clientSecret);
+            assertEquals(200, res.getStatusCode());
+            events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
+
+            oauth.doLogout(res.getRefreshToken(), clientSecret);
+            events.expectLogout(sessionId).client(clientId).clearDetails().assertEvent();
+        } finally {
+            deleteClientByAdmin(cid);
+        }
+    }
+
     private void setupPolicyAcceptableAuthType(String policyName) {
 
         createPolicy(policyName, DefaultClientPolicyProviderFactory.PROVIDER_ID, null, null, null);
@@ -657,8 +730,8 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
     private void failLoginByNotFollowingPKCE(String clientId) {
         oauth.clientId(clientId);
         oauth.openLoginForm();
-        assertEquals("invalid_request", oauth.getCurrentQuery().get("error"));
-        assertEquals("Missing parameter: code_challenge_method", oauth.getCurrentQuery().get("error_description"));
+        assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals("Missing parameter: code_challenge_method", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
     }
 
     private String generateS256CodeChallenge(String codeVerifier) throws Exception {
