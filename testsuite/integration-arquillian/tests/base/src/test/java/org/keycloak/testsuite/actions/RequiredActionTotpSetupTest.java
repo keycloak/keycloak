@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -329,6 +330,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void setupTotpExisting() {
         loginPage.open();
+
         loginPage.login("test-user@localhost", "password");
 
         totpPage.assertCurrent();
@@ -358,7 +360,29 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().assertEvent();
     }
 
+    //KEYCLOAK-15511
+    @Test
+    public void setupTotpEnforcedBySessionNotForUserInGeneral() {
+        String username = "test-user@localhost";
+        String configureTotp = UserModel.RequiredAction.CONFIGURE_TOTP.name();
 
+        // Remove required action from the user
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        UserRepresentation userRepresentation = user.toRepresentation();
+        userRepresentation.getRequiredActions().remove(configureTotp);
+        user.update(userRepresentation);
+
+        // login
+        loginPage.open();
+        loginPage.login(username, "password");
+
+        // ensure TOTP configuration is enforced for current authentication session
+        totpPage.assertCurrent();
+
+        // ensure TOTP configuration it is not enforced for the user in general
+        userRepresentation = user.toRepresentation();
+        assertFalse(userRepresentation.getRequiredActions().contains(configureTotp));
+    }
 
     @Test
     public void setupTotpRegisteredAfterTotpRemoval() {
