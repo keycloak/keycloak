@@ -1,35 +1,54 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`renders global alerts 1`] = `
-<AlertPanel
-  alerts={Array []}
-  onCloseAlert={[Function]}
->
-  <AlertGroup
-    isToast={true}
+exports[`remove alert after timeout: cleared alert 1`] = `
+<WithButton>
+  <AlertPanel
+    alerts={Array []}
+    onCloseAlert={[Function]}
   >
-    <Portal
-      containerInfo={
-        <div>
-          <ul
-            class="pf-c-alert-group pf-m-toast"
-          />
-        </div>
-      }
+    <AlertGroup
+      isToast={true}
     >
-      <AlertGroupInline
-        isToast={true}
+      <Portal
+        containerInfo={
+          <div>
+            <ul
+              class="pf-c-alert-group pf-m-toast"
+            />
+          </div>
+        }
       >
-        <ul
-          className="pf-c-alert-group pf-m-toast"
-        />
-      </AlertGroupInline>
-    </Portal>
-  </AlertGroup>
-</AlertPanel>
+        <AlertGroupInline
+          isToast={true}
+        >
+          <ul
+            className="pf-c-alert-group pf-m-toast"
+          />
+        </AlertGroupInline>
+      </Portal>
+    </AlertGroup>
+  </AlertPanel>
+  <Button
+    onClick={[Function]}
+  >
+    <button
+      aria-disabled={false}
+      aria-label={null}
+      className="pf-c-button pf-m-primary"
+      data-ouia-component-id={0}
+      data-ouia-component-type="PF4/Button"
+      data-ouia-safe={true}
+      disabled={false}
+      onClick={[Function]}
+      type="button"
+    >
+      Add
+    </button>
+  </Button>
+</WithButton>
 `;
 
-exports[`renders global alerts 2`] = `
+exports[`remove alert after timeout: with alert 1`] = `
 <WithButton>
   <AlertPanel
     alerts={Array []}
@@ -146,50 +165,31 @@ exports[`renders global alerts 2`] = `
 </WithButton>
 `;
 
-exports[`renders global alerts 3`] = `
-<WithButton>
-  <AlertPanel
-    alerts={Array []}
-    onCloseAlert={[Function]}
+exports[`renders empty alert panel 1`] = `
+<AlertPanel
+  alerts={Array []}
+  onCloseAlert={[Function]}
+>
+  <AlertGroup
+    isToast={true}
   >
-    <AlertGroup
-      isToast={true}
-    >
-      <Portal
-        containerInfo={
-          <div>
-            <ul
-              class="pf-c-alert-group pf-m-toast"
-            />
-          </div>
-        }
-      >
-        <AlertGroupInline
-          isToast={true}
-        >
+    <Portal
+      containerInfo={
+        <div>
           <ul
-            className="pf-c-alert-group pf-m-toast"
+            class="pf-c-alert-group pf-m-toast"
           />
-        </AlertGroupInline>
-      </Portal>
-    </AlertGroup>
-  </AlertPanel>
-  <Button
-    onClick={[Function]}
-  >
-    <button
-      aria-disabled={false}
-      aria-label={null}
-      className="pf-c-button pf-m-primary"
-      data-ouia-component-id={0}
-      data-ouia-component-type="PF4/Button"
-      data-ouia-safe={true}
-      disabled={false}
-      onClick={[Function]}
-      type="button"
+        </div>
+      }
     >
-      Add
-    </button>
-  </Button>
-</WithButton>
+      <AlertGroupInline
+        isToast={true}
+      >
+        <ul
+          className="pf-c-alert-group pf-m-toast"
+        />
+      </AlertGroupInline>
+    </Portal>
+  </AlertGroup>
+</AlertPanel>
 `;

@@ -18,10 +18,12 @@ const WithButton = () => {
   );
 };
 
-it("renders global alerts", () => {
+it("renders empty alert panel", () => {
   const empty = mount(<AlertPanel alerts={[]} onCloseAlert={() => {}} />);
   expect(empty).toMatchSnapshot();
+});
 
+it("remove alert after timeout", () => {
   const tree = mount(<WithButton />);
   const button = tree.find("button");
   expect(button).not.toBeNull();
@@ -29,10 +31,10 @@ it("renders global alerts", () => {
   act(() => {
     button!.simulate("click");
   });
-  expect(tree).toMatchSnapshot();
+  expect(tree).toMatchSnapshot("with alert");
 
   act(() => {
     jest.runAllTimers();
   });
-  expect(tree).toMatchSnapshot();
+  expect(tree).toMatchSnapshot("cleared alert");
 });
