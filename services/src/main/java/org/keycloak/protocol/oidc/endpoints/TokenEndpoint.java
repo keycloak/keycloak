@@ -23,6 +23,7 @@ import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.authorization.AuthorizationTokenService;
@@ -36,10 +37,13 @@ import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.provider.IdentityProviderMapperSyncModeDelegate;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
+import org.keycloak.common.VerificationException;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -1209,6 +1213,14 @@ public class TokenEndpoint {
             AccessToken accessToken = Tokens.getAccessToken(session);
 
             if (accessToken == null) {
+                try {
+                    // In case the access token is invalid because it's expired or the user is disabled, identify the client
+                    // from the access token anyway in order to set correct CORS headers.
+                    AccessToken invalidToken = new JWSInput(accessTokenString).readJsonContent(AccessToken.class);
+                    ClientModel client = realm.getClientByClientId(invalidToken.getIssuedFor());
+                    cors.allowedOrigins(session, client);
+                } catch (JWSInputException ignore) {
+                }
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Invalid bearer token", Status.UNAUTHORIZED);
             }
 
