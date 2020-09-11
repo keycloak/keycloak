@@ -6,9 +6,12 @@
 include::topics/templates/document-attributes-product.adoc[]
 
 :server_administration_guide:
+:context: server_administration_guide
 
 = {adminguide_name}
 
 include::topics/templates/making-open-source-more-inclusive.adoc[]
 
 include::topics.adoc[]
+
+:context:
