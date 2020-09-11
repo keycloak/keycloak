@@ -25,6 +25,7 @@ import org.keycloak.authentication.ValidationContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.events.user.UserEvents;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
@@ -44,6 +45,8 @@ import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
 import org.keycloak.userprofile.utils.UserUpdateHelper;
 import org.keycloak.userprofile.profile.DefaultUserProfileContext;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
+
+import static org.keycloak.events.user.UserEvents.UserEventContext;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.List;
@@ -123,6 +126,8 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
                 .detail(Details.REGISTER_METHOD, "form")
                 .detail(Details.EMAIL, email);
 
+        UserEventContext userEvent = UserEvents.createSelfRegister(context.getSession(), username, email).firePreEvent();
+
         UserModel user = context.getSession().users().addUser(context.getRealm(), username);
         user.setEnabled(true);
         UserUpdateHelper.updateRegistrationUserCreation(context.getRealm(), user, updatedProfile);
@@ -140,6 +145,8 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         if (authType != null) {
             context.getEvent().detail(Details.AUTH_TYPE, authType);
         }
+
+        userEvent.firePostEvent();
     }
 
     @Override

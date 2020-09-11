@@ -24,6 +24,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
+import org.keycloak.testsuite.rest.representation.TestUserEvent;
 import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.Consumes;
@@ -170,6 +171,31 @@ public interface TestingResource {
     @Path("/on-admin-event")
     @Consumes(MediaType.APPLICATION_JSON)
     void onAdminEvent(final AdminEventRepresentation rep, @QueryParam("includeRepresentation") boolean includeRepresentation);
+
+    @POST
+    @Path("/poll-user-pre-event-queue")
+    @Produces(MediaType.APPLICATION_JSON)
+    TestUserEvent getUserPreEvent();
+
+    @POST
+    @Path("/poll-user-post-event-queue")
+    @Produces(MediaType.APPLICATION_JSON)
+    TestUserEvent getUserPostEvent();
+
+    @POST
+    @Path("/clear-user-event-queue")
+    @Produces(MediaType.APPLICATION_JSON)
+    Response clearUserEventQueue();
+
+    @GET
+    @Path("/user-pre-events-count")
+    @Produces(MediaType.TEXT_PLAIN_UTF_8)
+    int getUserPreEventCount();
+
+    @GET
+    @Path("/user-post-events-count")
+    @Produces(MediaType.TEXT_PLAIN_UTF_8)
+    int getUserPostEventCount();
 
     @GET
     @Path("/get-sso-cookie")
