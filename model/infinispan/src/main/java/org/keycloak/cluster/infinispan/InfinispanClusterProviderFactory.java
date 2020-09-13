@@ -150,9 +150,9 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
             try {
                 V result;
                 if (taskTimeoutInSeconds > 0) {
-                    result = (V) crossDCAwareCacheFactory.getCache().putIfAbsent(key, value);
-                } else {
                     result = (V) crossDCAwareCacheFactory.getCache().putIfAbsent(key, value, taskTimeoutInSeconds, TimeUnit.SECONDS);
+                } else {
+                    result = (V) crossDCAwareCacheFactory.getCache().putIfAbsent(key, value);
                 }
                 resultRef.set(result);
 
