@@ -1,0 +1,46 @@
+
+
+=== Enabling account deletion by users
+
+{project_name} can allow applications end users to delete their account through the Account Console. The functionality is not enabled by default. To enable it, the following steps needs be taken:
+
+* Enabling the "Delete Account" Required Action
+
+Allowing the user to delete their account is done through an AIA (Application Initiated Action). You need first of all to enable the action from the admin console. In Authentication menu, go to the Required Actions tab and tick the enabled checkbox for the "Delete Account" action. 
+
+image:{project_images}/enable-delete-account-action.png[]
+
+* Making sure the Account Console client has the `delete-account` role:
+
+The second requirement to enable the delete account functionality is to make sure the "account" client has the `delete-account` role. The `delete-account` role is assigned by default, unless removed by the {project_name} admin. To enable the delete account role, go to Clients menu, and click on the "account" client. 
+Then go to the roles tab, and check if the `delete-account` is among the roles. In case it is not, you can add it by clicking on "Add Role". 
+
+image:{project_images}/delete-account-role.png[]
+
+
+=== Deleting a user in action
+
+
+Once the functionlity is enabled, the user will see a new section named "Delete Account" appear in the user's account console
+
+image:{project_images}/delete-account-landing-screen.png[]
+
+
+image:{project_images}/delete-account-page.png[]
+
+
+As stated by the warning message, this action is irreversible, and it implies the deletion of all the user's data in Keycloak. 
+
+Once the user clicks on Delete, he will be prompted to enter his credentials again and redirected to the final confirmation step:
+
+
+image:{project_images}/delete-account-confirm.png[]
+
+
+
+After confirming, the user's account will be deleted.
+
+
+
+
+
