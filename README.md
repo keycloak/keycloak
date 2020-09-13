@@ -15,7 +15,7 @@ For development on this project you will need a running Keycloak server listenin
         ```bash
         $> ./start.js
         ```
-1. Add the client
+1. Go to the clients section of the exising Keycloak Admin Console and add the client
     * like this:
     ![realm settings](./realm-settings.png "Realm Settings")
     * or click on the "Select file" button and import `security-admin-console-v2.json`
