@@ -30,16 +30,22 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -88,18 +94,22 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
     @Override
     public void processAction(RequiredActionContext context) {
         EventBuilder event = context.getEvent();
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        RealmModel realm = context.getRealm();
+        UserModel user = context.getUser();
+        KeycloakSession session = context.getSession();
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         event.event(EventType.UPDATE_PASSWORD);
         String passwordNew = formData.getFirst("password-new");
         String passwordConfirm = formData.getFirst("password-confirm");
 
         EventBuilder errorEvent = event.clone().event(EventType.UPDATE_PASSWORD_ERROR)
-                .client(context.getAuthenticationSession().getClient())
-                .user(context.getAuthenticationSession().getAuthenticatedUser());
+                .client(authSession.getClient())
+                .user(authSession.getAuthenticatedUser());
 
         if (Validation.isBlank(passwordNew)) {
             Response challenge = context.form()
-                    .setAttribute("username", context.getAuthenticationSession().getAuthenticatedUser().getUsername())
+                    .setAttribute("username", authSession.getAuthenticatedUser().getUsername())
                     .setError(Messages.MISSING_PASSWORD)
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
@@ -107,7 +117,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
             return;
         } else if (!passwordNew.equals(passwordConfirm)) {
             Response challenge = context.form()
-                    .setAttribute("username", context.getAuthenticationSession().getAuthenticatedUser().getUsername())
+                    .setAttribute("username", authSession.getAuthenticatedUser().getUsername())
                     .setError(Messages.NOTMATCH_PASSWORD)
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
@@ -115,13 +125,24 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
             return;
         }
 
+        if (getId().equals(authSession.getClientNote(Constants.KC_ACTION_EXECUTING))
+                && "on".equals(formData.getFirst("logout-sessions")))
+        {
+            List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
+            for (UserSessionModel s : sessions) {
+                if (!s.getId().equals(authSession.getParentSession().getId())) {
+                    AuthenticationManager.backchannelLogout(session, realm, s, session.getContext().getUri(), context.getConnection(), context.getHttpRequest().getHttpHeaders(), true);
+                }
+            }
+        }
+
         try {
-            context.getSession().userCredentialManager().updateCredential(context.getRealm(), context.getUser(), UserCredentialModel.password(passwordNew, false));
+            session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password(passwordNew, false));
             context.success();
         } catch (ModelException me) {
             errorEvent.detail(Details.REASON, me.getMessage()).error(Errors.PASSWORD_REJECTED);
             Response challenge = context.form()
-                    .setAttribute("username", context.getAuthenticationSession().getAuthenticatedUser().getUsername())
+                    .setAttribute("username", authSession.getAuthenticatedUser().getUsername())
                     .setError(me.getMessage(), me.getParameters())
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
@@ -129,7 +150,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         } catch (Exception ape) {
             errorEvent.detail(Details.REASON, ape.getMessage()).error(Errors.PASSWORD_REJECTED);
             Response challenge = context.form()
-                    .setAttribute("username", context.getAuthenticationSession().getAuthenticatedUser().getUsername())
+                    .setAttribute("username", authSession.getAuthenticatedUser().getUsername())
                     .setError(ape.getMessage())
                     .createResponse(UserModel.RequiredAction.UPDATE_PASSWORD);
             context.challenge(challenge);
