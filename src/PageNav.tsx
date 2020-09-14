@@ -1,6 +1,12 @@
 import React, { useState, useContext } from "react";
 import { useHistory } from "react-router-dom";
-import { Nav, NavItem, NavGroup, PageSidebar } from "@patternfly/react-core";
+import {
+  Nav,
+  NavItem,
+  NavGroup,
+  NavList,
+  PageSidebar,
+} from "@patternfly/react-core";
 import { RealmSelector } from "./components/realm-selector/RealmSelector";
 import { DataLoader } from "./components/data-loader/DataLoader";
 import { HttpClientContext } from "./http-service/HttpClientContext";
@@ -49,11 +55,15 @@ export const PageNav: React.FunctionComponent = () => {
     <PageSidebar
       nav={
         <Nav onSelect={onSelect}>
-          <DataLoader loader={realmLoader}>
-            {(realmList) => (
-              <RealmSelector realm="Master" realmList={realmList || []} />
-            )}
-          </DataLoader>
+          <NavList>
+            <NavItem className="keycloak__page_nav__nav_item__realm-selector">
+              <DataLoader loader={realmLoader}>
+                {(realmList) => (
+                  <RealmSelector realm="Master" realmList={realmList || []} />
+                )}
+              </DataLoader>
+            </NavItem>
+          </NavList>
           <NavGroup title="Manage">
             {makeNavItem("Clients", "clients")}
             {makeNavItem("Client Scopes", "client-scopes")}

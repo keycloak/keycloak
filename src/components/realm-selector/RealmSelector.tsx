@@ -10,7 +10,7 @@ import {
   Divider,
 } from "@patternfly/react-core";
 
-import style from "./realm-selector.module.css";
+import "./realm-selector.css";
 
 type RealmSelectorProps = {
   realm: string;
@@ -37,13 +37,13 @@ export const RealmSelector = ({ realm, realmList }: RealmSelectorProps) => {
   return (
     <Dropdown
       id="realm-select"
-      className={style.dropdown}
+      className="keycloak__realm_selector__dropdown"
       isOpen={open}
       toggle={
         <DropdownToggle
           id="realm-select-toggle"
           onToggle={() => setOpen(!open)}
-          className={style.toggle}
+          className="keycloak__realm_selector_dropdown__toggle"
         >
           {currentRealm}
         </DropdownToggle>
