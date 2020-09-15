@@ -258,6 +258,7 @@ public class SAMLEndpoint {
             RequestAbstractType requestAbstractType = (RequestAbstractType) holder.getSamlObject();
             // validate destination
             if (requestAbstractType.getDestination() == null && containsUnencryptedSignature(holder)) {
+                event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, "missing_required_destination");
                 event.error(Errors.INVALID_REQUEST);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
@@ -518,6 +519,7 @@ public class SAMLEndpoint {
             StatusResponseType statusResponse = (StatusResponseType)holder.getSamlObject();
             // validate destination
             if (statusResponse.getDestination() == null && containsUnencryptedSignature(holder)) {
+                event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, "missing_required_destination");
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
