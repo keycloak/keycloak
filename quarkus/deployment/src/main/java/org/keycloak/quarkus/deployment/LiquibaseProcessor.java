@@ -29,7 +29,7 @@ import liquibase.parser.ChangeLogParser;
 import liquibase.parser.core.xml.XMLChangeLogSAXParser;
 import liquibase.servicelocator.LiquibaseService;
 import liquibase.sqlgenerator.SqlGenerator;
-import org.keycloak.runtime.KeycloakRecorder;
+import org.keycloak.quarkus.KeycloakRecorder;
 
 class LiquibaseProcessor {
 

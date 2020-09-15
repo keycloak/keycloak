@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 case "`uname`" in
     CYGWIN*)
@@ -23,11 +23,12 @@ fi
 GREP="grep"
 DIRNAME=`dirname "$RESOLVED_NAME"`
 
-SERVER_OPTS="-Dkeycloak.home.dir=$DIRNAME/../ -Djboss.server.config.dir=$DIRNAME/../conf -Dkeycloak.theme.dir=$DIRNAME/../themes -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+SERVER_OPTS="-Dkc.home.dir=$DIRNAME/../ -Djboss.server.config.dir=$DIRNAME/../conf -Dkeycloak.theme.dir=$DIRNAME/../themes -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 
 DEBUG_MODE="${DEBUG:-false}"
 DEBUG_PORT="${DEBUG_PORT:-8787}"
 
+CONFIG_ARGS=${CONFIG_ARGS:-""}
 IS_CONFIGURE="false"
 
 while [ "$#" -gt 0 ]
@@ -40,18 +41,16 @@ do
               shift
           fi
           ;;
-      --config-file)
-          SERVER_OPTS="$SERVER_OPTS -Dkeycloak.config.file=$2"
-          shift
-          ;;
-      config)
-          IS_CONFIGURE=true
-          ;;
       --)
           shift
-          break;;
+          break
+          ;;
       *)
-          SERVER_OPTS="$SERVER_OPTS $1"
+          if [[ $1 = --* || ! $1 =~ ^-.* ]]; then
+            CONFIG_ARGS="$CONFIG_ARGS $1"
+          else
+            SERVER_OPTS="$SERVER_OPTS $1"
+          fi
           ;;
     esac
     shift
@@ -78,9 +77,4 @@ fi
 
 CLASSPATH_OPTS="$DIRNAME/../lib/quarkus-run.jar:$DIRNAME/../lib/main/*"
 
-if [ "$IS_CONFIGURE" = true ] ; then
-    echo "Updating the configuration and installing your custom providers, if any. Please wait."
-    exec java -Dquarkus.launch.rebuild=true $JAVA_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint "$@"
-else
-    exec java $JAVA_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint "$@"
-fi
+exec java $JAVA_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}

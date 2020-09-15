@@ -105,7 +105,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
     private Process startContainer() throws IOException {
         ProcessBuilder pb = new ProcessBuilder(getProcessCommands());
         File wrkDir = configuration.getProvidersPath().resolve("bin").toFile();
-        ProcessBuilder builder = pb.directory(wrkDir).inheritIO();
+        ProcessBuilder builder = pb.directory(wrkDir).inheritIO().redirectErrorStream(true);
 
         String javaOpts = configuration.getJavaOpts();
 
@@ -146,14 +146,14 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             commands.add(System.getProperty("auth.server.debug.port", "5005"));
         }
 
-        commands.add("-Dquarkus.http.port=" + configuration.getBindHttpPort());
-        commands.add("-Dquarkus.http.ssl-port=" + configuration.getBindHttpsPort());
+        commands.add("--http-port=" + configuration.getBindHttpPort());
+        commands.add("--https-port=" + configuration.getBindHttpsPort());
 
         if (configuration.getRoute() != null) {
             commands.add("-Djboss.node.name=" + configuration.getRoute());
         }
 
-        commands.add("-Dquarkus.profile=" + System.getProperty("auth.server.quarkus.config", "local"));
+        commands.add("--profile=" + System.getProperty("auth.server.quarkus.config", "local"));
 
         return commands.toArray(new String[commands.size()]);
     }

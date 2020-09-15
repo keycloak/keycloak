@@ -72,7 +72,7 @@ public final class StringPropertyReplacer
      */
     public static String replaceProperties(final String string)
     {
-        return replaceProperties(string, null);
+        return replaceProperties(string, (Properties) null);
     }
 
     /**
@@ -95,7 +95,19 @@ public final class StringPropertyReplacer
      * @return the input string with all property references replaced if any.
      *    If there are no valid references the input string will be returned.
      */
-    public static String replaceProperties(final String string, final Properties props)
+    public static String replaceProperties(final String string, final Properties props) {
+        if (props == null) {
+            return replaceProperties(string, (PropertyResolver) null);
+        }
+        return replaceProperties(string, new PropertyResolver() {
+            @Override
+            public String resolve(String property) {
+                return props.getProperty(property);
+            }
+        });
+    }
+
+    public static String replaceProperties(final String string, PropertyResolver resolver)
     {
         if(string == null) {
             return null;
@@ -151,8 +163,8 @@ public final class StringPropertyReplacer
                     else
                     {
                         // check from the properties
-                        if (props != null)
-                            value = props.getProperty(key);
+                        if (resolver != null)
+                            value = resolver.resolve(key);
                         else
                             value = System.getProperty(key);
 
@@ -163,15 +175,15 @@ public final class StringPropertyReplacer
                             if (colon > 0)
                             {
                                 String realKey = key.substring(0, colon);
-                                if (props != null)
-                                    value = props.getProperty(realKey);
+                                if (resolver != null)
+                                    value = resolver.resolve(realKey);
                                 else
                                     value = System.getProperty(realKey);
 
                                 if (value == null)
                                 {
                                     // Check for a composite key, "key1,key2"
-                                    value = resolveCompositeKey(realKey, props);
+                                    value = resolveCompositeKey(realKey, resolver);
 
                                     // Not a composite key either, use the specified default
                                     if (value == null)
@@ -181,7 +193,7 @@ public final class StringPropertyReplacer
                             else
                             {
                                 // No default, check for a composite key, "key1,key2"
-                                value = resolveCompositeKey(key, props);
+                                value = resolveCompositeKey(key, resolver);
                             }
                         }
                     }
@@ -212,6 +224,10 @@ public final class StringPropertyReplacer
         if (start != chars.length)
             buffer.append(string.substring(start, chars.length));
 
+        if (buffer.indexOf("${") != -1) {
+            return replaceProperties(buffer.toString(), resolver);
+        }
+        
         // Done
         return buffer.toString();
     }
@@ -227,7 +243,19 @@ public final class StringPropertyReplacer
      * @param props the properties to use
      * @return the resolved key or null
      */
-    private static String resolveCompositeKey(String key, Properties props)
+    private static String resolveCompositeKey(String key, final Properties props) {
+        if (props == null) {
+            return resolveCompositeKey(key, (PropertyResolver) null);
+        }
+        return resolveCompositeKey(key, new PropertyResolver() {
+            @Override
+            public String resolve(String property) {
+                return props.getProperty(property);
+            }
+        });        
+    }
+
+    private static String resolveCompositeKey(String key, PropertyResolver resolver)
     {
         String value = null;
 
@@ -240,8 +268,8 @@ public final class StringPropertyReplacer
             {
                 // Check the first part
                 String key1 = key.substring(0, comma);
-                if (props != null)
-                    value = props.getProperty(key1);
+                if (resolver != null)
+                    value = resolver.resolve(key1);
                 else
                     value = System.getProperty(key1);
             }
@@ -249,13 +277,17 @@ public final class StringPropertyReplacer
             if (value == null && comma < key.length() - 1)
             {
                 String key2 = key.substring(comma + 1);
-                if (props != null)
-                    value = props.getProperty(key2);
+                if (resolver != null)
+                    value = resolver.resolve(key2);
                 else
                     value = System.getProperty(key2);
             }
         }
         // Return whatever we've found or null
         return value;
+    }
+    
+    public interface PropertyResolver {
+        String resolve(String property);
     }
 }

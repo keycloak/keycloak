@@ -24,7 +24,7 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
     private int bindHttpsPortOffset = 0;
     private int bindHttpsPort = Integer.valueOf(System.getProperty("auth.server.https.port", "8543"));
     private Path providersPath = Paths.get(System.getProperty("auth.server.home"));
-    private int startupTimeoutInSeconds = 60;
+    private int startupTimeoutInSeconds = 300;
     private String route;
     private String keycloakConfigPropertyOverrides;
     private HashMap<String, Object> keycloakConfigPropertyOverridesMap;

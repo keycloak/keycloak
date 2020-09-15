@@ -40,6 +40,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.console.page.AdminConsole;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
@@ -217,6 +218,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         client.close();
     }
 
+    @AuthServerContainerExclude(value = AuthServerContainerExclude.AuthServer.QUARKUS, details = "Unstable for Quarkus, review later")
     @Test
     public void loginWithLongRedirectUri() throws Exception {
         try (AutoCloseable c = new RealmAttributeUpdater(adminClient.realm("test"))
