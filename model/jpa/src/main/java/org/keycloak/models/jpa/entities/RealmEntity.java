@@ -160,7 +160,7 @@ public class RealmEntity {
     @ElementCollection
     @Column(name="ROLE_ID")
     @CollectionTable(name="REALM_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="REALM_ID")})
-    protected Collection<String> defaultRoleIds;
+    protected Set<String> defaultRolesIds;
 
     @ElementCollection
     @Column(name="GROUP_ID")
@@ -455,15 +455,15 @@ public class RealmEntity {
         this.smtpConfig = smtpConfig;
     }
 
-    public Collection<String> getDefaultRoleIds() {
-        if (defaultRoleIds == null) {
-            defaultRoleIds = new LinkedList<>();
+    public Set<String> getDefaultRolesIds() {
+        if (defaultRolesIds == null) {
+            defaultRolesIds = new HashSet<>();
         }
-        return defaultRoleIds;
+        return defaultRolesIds;
     }
 
-    public void setDefaultRoleIds(Collection<String> defaultRoleIds) {
-        this.defaultRoleIds = defaultRoleIds;
+    public void setDefaultRolesIds(Set<String> defaultRolesIds) {
+        this.defaultRolesIds = defaultRolesIds;
     }
 
     public Set<String> getDefaultGroupIds() {
