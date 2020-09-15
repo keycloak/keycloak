@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState, FormEvent, useContext } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Text,
   PageSection,
@@ -7,22 +8,51 @@ import {
   Form,
   TextInput,
   Switch,
-  FileUpload,
   ActionGroup,
   Button,
   Divider,
+  AlertVariant,
 } from "@patternfly/react-core";
-import { useTranslation } from "react-i18next";
 
-//type NewRealmFormProps = {
-//  realm: string;
-//};
+import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
+import { RealmRepresentation } from "../models/Realm";
+import { HttpClientContext } from "../../http-service/HttpClientContext";
+import { useAlerts } from "../../components/alert/Alerts";
 
 export const NewRealmForm = () => {
   const { t } = useTranslation("realm");
-  //({ realm }: NewRealmFormProps) => {
+  const httpClient = useContext(HttpClientContext)!;
+  const [add, Alerts] = useAlerts();
+
+  const defaultRealm = { id: "", realm: "", enabled: true };
+  const [realm, setRealm] = useState<RealmRepresentation>(defaultRealm);
+
+  const handleFileChange = (value: string | File) => {
+    setRealm({
+      ...realm,
+      ...(value ? JSON.parse(value as string) : defaultRealm),
+    });
+  };
+  const handleChange = (
+    value: string | boolean,
+    event: FormEvent<HTMLInputElement>
+  ) => {
+    const name = (event.target as HTMLInputElement).name;
+    setRealm({ ...realm, [name]: value });
+  };
+
+  const save = async () => {
+    try {
+      await httpClient.doPost("/admin/realms", realm);
+      add(t("Realm created"), AlertVariant.success);
+    } catch (error) {
+      add(`${t("Could not create realm:")} '${error}'`, AlertVariant.danger);
+    }
+  };
+
   return (
     <>
+      <Alerts />
       <PageSection variant="light">
         <TextContent>
           <Text component="h1">Create Realm</Text>
@@ -31,40 +61,31 @@ export const NewRealmForm = () => {
       <Divider />
       <PageSection variant="light">
         <Form isHorizontal>
-          <FormGroup label={t("Upload JSON file")} fieldId="kc-realm-filename">
-            <FileUpload
-              id="simple-text-file"
-              type="text"
-              //   value={value}
-              //   filename={filename}
-              //   onChange={this.handleFileChange}
-              //   onReadStarted={this.handleFileReadStarted}
-              //   onReadFinished={this.handleFileReadFinished}
-              //   isLoading={isLoading}
-            />
-          </FormGroup>
+          <JsonFileUpload id="kc-realm-filename" onChange={handleFileChange} />
           <FormGroup label={t("Realm name")} isRequired fieldId="kc-realm-name">
             <TextInput
               isRequired
               type="text"
               id="kc-realm-name"
-              name="kc-realm-name"
-              // value={value2}
-              // onChange={this.handleTextInputChange2}
+              name="realm"
+              value={realm.realm}
+              onChange={handleChange}
             />
           </FormGroup>
           <FormGroup label={t("Enabled")} fieldId="kc-realm-enabled-switch">
             <Switch
               id="kc-realm-enabled-switch"
-              name="kc-realm-enabled-switch"
+              name="enabled"
               label={t("On")}
               labelOff={t("Off")}
-              // isChecked={isChecked}
-              // onChange={this.handleChange}
+              isChecked={realm.enabled}
+              onChange={handleChange}
             />
           </FormGroup>
           <ActionGroup>
-            <Button variant="primary">{t("Create")}</Button>
+            <Button variant="primary" onClick={() => save()}>
+              {t("Create")}
+            </Button>
             <Button variant="link">{t("Cancel")}</Button>
           </ActionGroup>
         </Form>

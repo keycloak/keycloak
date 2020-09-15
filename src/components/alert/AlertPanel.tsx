@@ -30,7 +30,6 @@ export function AlertPanel({ alerts, onCloseAlert }: AlertPanelProps) {
           actionClose={
             <AlertActionCloseButton
               title={message}
-              variantLabel={`${variant} alert`}
               onClose={() => onCloseAlert(key)}
             />
           }

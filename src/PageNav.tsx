@@ -10,12 +10,14 @@ import {
 import { RealmSelector } from "./components/realm-selector/RealmSelector";
 import { DataLoader } from "./components/data-loader/DataLoader";
 import { HttpClientContext } from "./http-service/HttpClientContext";
-import { Realm } from "./realm/models/Realm";
+import { RealmRepresentation } from "./realm/models/Realm";
 
 export const PageNav: React.FunctionComponent = () => {
   const httpClient = useContext(HttpClientContext)!;
   const realmLoader = async () => {
-    const response = await httpClient.doGet<Realm[]>("/admin/realms");
+    const response = await httpClient.doGet<RealmRepresentation[]>(
+      "/admin/realms"
+    );
     return response.data;
   };
 

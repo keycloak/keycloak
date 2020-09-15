@@ -1,6 +1,6 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState } from "react";
 import { useHistory } from "react-router-dom";
-import { Realm } from "../../realm/models/Realm";
+import { RealmRepresentation } from "../../realm/models/Realm";
 
 import {
   Dropdown,
@@ -14,7 +14,7 @@ import "./realm-selector.css";
 
 type RealmSelectorProps = {
   realm: string;
-  realmList: Realm[];
+  realmList: RealmRepresentation[];
 };
 
 export const RealmSelector = ({ realm, realmList }: RealmSelectorProps) => {

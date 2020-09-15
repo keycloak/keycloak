@@ -14,7 +14,6 @@ import FileSaver from "file-saver";
 import { ExternalLink } from "../components/external-link/ExternalLink";
 import { HttpClientContext } from "../http-service/HttpClientContext";
 import { useAlerts } from "../components/alert/Alerts";
-import { AlertPanel } from "../components/alert/AlertPanel";
 import { ClientRepresentation } from "./models/client-model";
 
 type ClientListProps = {
@@ -32,7 +31,7 @@ const columns: (keyof ClientRepresentation)[] = [
 export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
   const { t } = useTranslation("clients");
   const httpClient = useContext(HttpClientContext)!;
-  const [add, alerts, hide] = useAlerts();
+  const [add, Alerts] = useAlerts();
 
   const convertClientId = (clientId: string) =>
     clientId.substring(0, clientId.indexOf("#"));
@@ -77,7 +76,7 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
     });
   return (
     <>
-      <AlertPanel alerts={alerts} onCloseAlert={hide} />
+      <Alerts />
       <Table
         variant={TableVariant.compact}
         cells={[

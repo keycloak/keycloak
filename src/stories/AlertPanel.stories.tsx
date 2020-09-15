@@ -17,10 +17,10 @@ export const Api = () => (
   />
 );
 export const AddAlert = () => {
-  const [add, alerts, hide] = useAlerts();
+  const [add, Alerts] = useAlerts();
   return (
     <>
-      <AlertPanel alerts={alerts} onCloseAlert={hide} />
+      <Alerts />
       <Button onClick={() => add("Hello", AlertVariant.default)}>Add</Button>
     </>
   );

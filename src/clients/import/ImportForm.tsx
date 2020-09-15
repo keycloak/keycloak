@@ -18,13 +18,12 @@ import { ClientDescription } from "../ClientDescription";
 import { HttpClientContext } from "../../http-service/HttpClientContext";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
 import { useAlerts } from "../../components/alert/Alerts";
-import { AlertPanel } from "../../components/alert/AlertPanel";
 
 export const ImportForm = () => {
   const { t } = useTranslation("clients");
   const httpClient = useContext(HttpClientContext)!;
 
-  const [add, alerts, hide] = useAlerts();
+  const [add, Alerts] = useAlerts();
   const defaultClient = {
     protocol: "",
     clientId: "",
@@ -57,7 +56,7 @@ export const ImportForm = () => {
   };
   return (
     <>
-      <AlertPanel alerts={alerts} onCloseAlert={hide} />
+      <Alerts />
       <PageSection variant="light">
         <TextContent>
           <Text component="h1">{t("Import client")}</Text>
