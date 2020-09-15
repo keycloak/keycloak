@@ -33,6 +33,7 @@ import org.infinispan.manager.DefaultCacheManager;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ManagedCacheManagerProvider;
 import org.keycloak.Config;
+import org.keycloak.util.Environment;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -65,7 +66,7 @@ public final class QuarkusCacheManagerProvider implements ManagedCacheManagerPro
     }
 
     private InputStream loadConfiguration(Config.Scope config) throws FileNotFoundException {
-        String homeDir = System.getProperty("keycloak.home.dir");
+        String homeDir = Environment.getHomeDir();
         
         if (homeDir == null) {
             log.warn("Keycloak home directory not set.");

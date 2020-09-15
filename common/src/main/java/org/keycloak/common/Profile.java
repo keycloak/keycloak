@@ -92,7 +92,7 @@ public class Profile {
         PREVIEW
     }
 
-    private static Profile CURRENT = new Profile();
+    private static Profile CURRENT;
 
     private final ProductValue product;
 
@@ -103,7 +103,10 @@ public class Profile {
     private final Set<Feature> experimentalFeatures = new HashSet<>();
     private final Set<Feature> deprecatedFeatures = new HashSet<>();
 
-    private Profile() {
+    private final PropertyResolver propertyResolver;
+    
+    public Profile(PropertyResolver resolver) {
+        this.propertyResolver = resolver;
         Config config = new Config();
 
         product = "rh-sso".equals(Version.NAME) ? ProductValue.RHSSO : ProductValue.KEYCLOAK;
@@ -153,32 +156,43 @@ public class Profile {
         }
     }
 
+    private static Profile getInstance() {
+        if (CURRENT == null) {
+            CURRENT = new Profile(null);
+        }
+        return CURRENT;
+    }
+
     public static void init() {
-        CURRENT = new Profile();
+        CURRENT = new Profile(null);
+    }
+    
+    public static void setInstance(Profile instance) {
+        CURRENT = instance;
     }
 
     public static String getName() {
-        return CURRENT.profile.name().toLowerCase();
+        return getInstance().profile.name().toLowerCase();
     }
 
     public static Set<Feature> getDisabledFeatures() {
-        return CURRENT.disabledFeatures;
+        return getInstance().disabledFeatures;
     }
 
     public static Set<Feature> getPreviewFeatures() {
-        return CURRENT.previewFeatures;
+        return getInstance().previewFeatures;
     }
 
     public static Set<Feature> getExperimentalFeatures() {
-        return CURRENT.experimentalFeatures;
+        return getInstance().experimentalFeatures;
     }
 
     public static Set<Feature> getDeprecatedFeatures() {
-        return CURRENT.deprecatedFeatures;
+        return getInstance().deprecatedFeatures;
     }
 
     public static boolean isFeatureEnabled(Feature feature) {
-        return !CURRENT.disabledFeatures.contains(feature);
+        return !getInstance().disabledFeatures.contains(feature);
     }
 
     private class Config {
@@ -202,7 +216,7 @@ public class Profile {
         }
 
         public String getProfile() {
-            String profile = System.getProperty("keycloak.profile");
+            String profile = getProperty("keycloak.profile");
             if (profile != null) {
                 return profile;
             }
@@ -216,7 +230,8 @@ public class Profile {
         }
 
         public Boolean getConfig(Feature feature) {
-            String config = System.getProperty("keycloak.profile.feature." + feature.name().toLowerCase());
+            String config = getProperty("keycloak.profile.feature." + feature.name().toLowerCase());
+
             if (config == null) {
                 config = properties.getProperty("feature." + feature.name().toLowerCase());
             }
@@ -231,6 +246,24 @@ public class Profile {
                 throw new RuntimeException("Invalid value for feature " + config);
             }
         }
+
+        private String getProperty(String name) {
+            String value = System.getProperty(name);
+
+            if (value != null) {
+                return value;
+            }
+            
+            if (propertyResolver != null) {
+                return propertyResolver.resolve(name);
+            }
+            
+            return null;
+        }
+    }
+    
+    public interface PropertyResolver {
+        String resolve(String feature);
     }
 
 }

@@ -31,11 +31,12 @@
     <packaging>pom</packaging>
 
     <properties>
-        <quarkus.version>1.7.0.Final</quarkus.version>
+        <quarkus.version>1.8.0.Final</quarkus.version>
         <resteasy.version>4.5.6.Final</resteasy.version>
         <jackson.version>2.11.2</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
-        <hibernate.version>5.4.19.Final</hibernate.version>
+        <hibernate.version>5.4.21.Final</hibernate.version>
+        <picocli.version>4.5.1</picocli.version>
         <snakeyaml.version>1.20</snakeyaml.version>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
         <wildfly.common.format.version>1.5.0.Final-format-001</wildfly.common.format.version>
@@ -126,32 +127,4 @@
         <module>server</module>
     </modules>
     
-    <!-- Temporary definition while Quarkus 1.7.0.Final is not released -->
-    <repositories>
-        <repository>
-            <id>dependency-snapshots-repo</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-
-    <!-- Temporary definition while Quarkus 1.7.0.Final is not released -->
-    <pluginRepositories>
-        <pluginRepository>
-            <id>dependency-snapshots-repo</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </pluginRepository>
-    </pluginRepositories>
-
 </project>

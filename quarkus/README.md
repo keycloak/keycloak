@@ -32,8 +32,11 @@ The distribution packages (ZIP and TAR) should be available at [../distribution/
 
 ## Running
 
-    java -jar server/target/lib/quarkus-run.jar
-    
+By default, the HTTP port is disabled and you need to provide the key material to configure HTTPS. If you want to enable
+the HTTP port, run the server in development mode as follows:
+
+    java -jar server/target/lib/quarkus-run.jar --profile=dev
+
 ## Contributing
 
 ### Development Mode

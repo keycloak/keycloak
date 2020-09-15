@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.provider.quarkus;
+package org.keycloak.configuration;
 
 import java.io.BufferedReader;
 import java.io.Closeable;
@@ -34,14 +34,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 import org.jboss.logging.Logger;
 
 import io.smallrye.config.PropertiesConfigSource;
 
 import static org.keycloak.common.util.StringPropertyReplacer.replaceProperties;
-import static org.keycloak.provider.quarkus.MicroProfileConfigProvider.NS_KEYCLOAK;
-import static org.keycloak.provider.quarkus.MicroProfileConfigProvider.NS_QUARKUS;
+import static org.keycloak.configuration.MicroProfileConfigProvider.NS_KEYCLOAK;
+import static org.keycloak.configuration.MicroProfileConfigProvider.NS_QUARKUS;
 
 /**
  * A configuration source for {@code keycloak.properties}.
@@ -49,6 +50,8 @@ import static org.keycloak.provider.quarkus.MicroProfileConfigProvider.NS_QUARKU
 public abstract class KeycloakPropertiesConfigSource extends PropertiesConfigSource {
 
     private static final Logger log = Logger.getLogger(KeycloakPropertiesConfigSource.class);
+
+    private static final Pattern DOT_SPLIT = Pattern.compile("\\.");
     static final String KEYCLOAK_PROPERTIES = "keycloak.properties";
 
     KeycloakPropertiesConfigSource(InputStream is, int ordinal) {
@@ -98,23 +101,21 @@ public abstract class KeycloakPropertiesConfigSource extends PropertiesConfigSou
 
     public static final class InFileSystem extends KeycloakPropertiesConfigSource {
 
-        public InFileSystem(String fileName) {
-            super(openStream(fileName), 255);
+        public InFileSystem(Path path) {
+            super(openStream(path), 255);
         }
 
-        private static InputStream openStream(String fileName) {
-            final Path path = Paths.get(fileName);
-            if (Files.exists(path)) {
-                try {
-                    log.debugf("Loading the server configuration from %s", fileName);
-                    return Files.newInputStream(path);
-                } catch (NoSuchFileException | FileNotFoundException e) {
-                    return null;
-                } catch (IOException e) {
-                    throw new IOError(e);
-                }
-            } else {
-                return null;
+        private static InputStream openStream(Path path) {
+            if (path == null) {
+                throw new IllegalArgumentException("Configuration file path can not be null");
+            }
+            try {
+                log.debugf("Loading the server configuration from %s", path);
+                return Files.newInputStream(path);
+            } catch (NoSuchFileException | FileNotFoundException e) {
+                throw new IllegalArgumentException("Configuration file not found at [" + path + "]");
+            } catch (IOException e) {
+                throw new RuntimeException("Unexpected error reading configuration file at [" + path + "]", e);
             }
         }
     }
@@ -134,29 +135,24 @@ public abstract class KeycloakPropertiesConfigSource extends PropertiesConfigSou
      */
     private static String transformKey(String key) {
         String namespace;
-        String[] keyParts = key.split("\\.");
+        String[] keyParts = DOT_SPLIT.split(key);
         String extension = keyParts[0];
         String profile = "";
+        String transformed = key;
 
         if (extension.startsWith("%")) {
             profile = String.format("%s.", keyParts[0]);
             extension = keyParts[1];
-            key = key.substring(key.indexOf('.') + 1);
+            transformed = key.substring(key.indexOf('.') + 1);
         }
 
-        switch (extension) {
-            case "hibernate-orm":
-            case "datasource":
-            case "http":
-            case "vertx":
-            case "log":
-                namespace = NS_QUARKUS;
-                break;
-            default:
-                namespace = NS_KEYCLOAK;
+        if (extension.equalsIgnoreCase(NS_QUARKUS)) {
+            return key;
+        } else {
+            namespace = NS_KEYCLOAK;
         }
 
-        return profile + namespace + "." + key;
+        return profile + namespace + "." + transformed;
 
     }
 }

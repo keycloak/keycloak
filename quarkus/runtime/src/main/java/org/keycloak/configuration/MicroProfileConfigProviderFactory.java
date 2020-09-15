@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2019 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,21 +15,18 @@
  * limitations under the License.
  */
 
-package org.keycloak.provider.quarkus;
+package org.keycloak.configuration;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import java.util.Optional;
 
-public class MicroProfileConfigProviderTest {
+import org.keycloak.Config;
+import org.keycloak.config.ConfigProviderFactory;
 
-    public MicroProfileConfigProviderTest() {
+public class MicroProfileConfigProviderFactory implements ConfigProviderFactory {
+
+    @Override
+    public Optional<Config.ConfigProvider> create() {
+        return Optional.of(new MicroProfileConfigProvider());
     }
 
-    @Test
-    public void testCamelCase() {
-        ClassLoader cl = this.getClass().getClassLoader().getParent();
-        MicroProfileConfigProvider provider = new MicroProfileConfigProvider(cl);
-        String value = provider.scope("camelCaseScope").get("camelCaseProp");
-        assertEquals(value, "foobar");
-    }
 }
