@@ -6,7 +6,7 @@ This project is the next generation of the Keycloak Administration Console.  It 
 For development on this project you will need a running Keycloak server listening on port 8180.  You will also need [yarn installed on your local machine.](https://classic.yarnpkg.com)
 
 1. Start keycloak
-    * Download Keycloak server from [https://www.keycloak.org/downloads]()
+    * Download Keycloak server from [https://www.keycloak.org/downloads](https://www.keycloak.org/downloads)
     * Start Keycloak server like this from the bin directory:
         ```bash
         $> standalone -Djboss.socket.binding.port-offset=100
