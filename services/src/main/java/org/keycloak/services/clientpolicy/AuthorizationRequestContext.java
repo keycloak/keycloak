@@ -17,6 +17,8 @@
 
 package org.keycloak.services.clientpolicy;
 
+import javax.ws.rs.core.MultivaluedMap;
+
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -27,13 +29,16 @@ public class AuthorizationRequestContext implements ClientPolicyContext {
     private final OIDCResponseType parsedResponseType;
     private final AuthorizationEndpointRequest request;
     private final String redirectUri;
+    private final MultivaluedMap<String, String> requestParameters;
 
     public AuthorizationRequestContext(OIDCResponseType parsedResponseType,
             AuthorizationEndpointRequest request,
-            String redirectUri) {
+            String redirectUri,
+            MultivaluedMap<String, String> requestParameters) {
         this.parsedResponseType = parsedResponseType;
         this.request = request;
         this.redirectUri = redirectUri;
+        this.requestParameters = requestParameters;
     }
 
     @Override
@@ -53,4 +58,7 @@ public class AuthorizationRequestContext implements ClientPolicyContext {
         return redirectUri;
     }
  
+    public MultivaluedMap<String, String> getRequestParameters() {
+        return requestParameters;
+    }
 }
