@@ -158,7 +158,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         }
 
         try {
-            session.clientPolicy().triggerOnEvent(new AuthorizationRequestContext(parsedResponseType, request, redirectUri));
+            session.clientPolicy().triggerOnEvent(new AuthorizationRequestContext(parsedResponseType, request, redirectUri, params));
         } catch (ClientPolicyException cpe) {
             return redirectErrorToClient(parsedResponseMode, cpe.getError(), cpe.getErrorDetail());
         }

@@ -61,6 +61,11 @@ public interface TestOIDCEndpointsApplicationResource {
                         @QueryParam("jwaAlgorithm") String jwaAlgorithm);
 
     @GET
+    @Path("/register-oidc-request")
+    @Produces(org.keycloak.utils.MediaType.APPLICATION_JWT)
+    void registerOIDCRequest(@QueryParam("requestObject") String encodedRequestObject, @QueryParam("jwaAlgorithm") String jwaAlgorithm);
+
+    @GET
     @Path("/get-oidc-request")
     @Produces(org.keycloak.utils.MediaType.APPLICATION_JWT)
     String getOIDCRequest();
