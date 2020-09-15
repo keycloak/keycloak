@@ -65,6 +65,9 @@ You must define the SAML configuration options as well.  They basically describe
 |Validating X509 Certificate
 |The public certificate that will be used to validate the signatures of SAML requests and responses from the external IDP.
 
+|Sign Service Provider Metadata
+|If true, it will use the realm's keypair to sign the <<_identity_broker_saml_sp_descriptor, SAML Service Provider Metadata descriptor>>.
+
 |Pass subject
 |Whether or not a `login_hint` query parameter should be forwarded to the IDP. When provided, this login_hint parameter is added to AuthnRequest's Subject. This allows destination providers to prefill their login form. When no login_hint is provided, nothing is forwarded as an AuthnRequest Subject.
 |===
