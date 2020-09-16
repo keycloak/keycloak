@@ -69,12 +69,12 @@ public class MainCommand {
     @CommandLine.Parameters(paramLabel = "system properties", description = "Any Java system property you want set")
     List<String> systemProperties;
 
-    @Option(names = "--profile", arity = "1", description = "Set the profile. Use 'dev' profile to enable development mode")
+    @Option(names = "--profile", arity = "1", description = "Set the profile. Use 'dev' profile to enable development mode", scope = CommandLine.ScopeType.INHERIT)
     public void setProfile(String profile) {
         System.setProperty("kc.profile", profile);
     }
 
-    @Option(names = "--config-file", arity = "1", description = "Set the path to a configuration file", paramLabel = "<path>")
+    @Option(names = "--config-file", arity = "1", description = "Set the path to a configuration file", paramLabel = "<path>", scope = CommandLine.ScopeType.INHERIT)
     public void setConfigFile(String path) {
         System.setProperty(KeycloakConfigSourceProvider.KEYCLOAK_CONFIG_FILE_PROP, path);
     }
