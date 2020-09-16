@@ -23,6 +23,7 @@ import org.keycloak.provider.Provider;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -39,14 +40,43 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
 
     ClientScopeModel getClientScopeById(String id, RealmModel realm);
 
-    List<RealmModel> getRealms();
-    List<RealmModel> getRealmsWithProviderType(Class<?> type);
+    /**
+     * @deprecated Use {@link #getRealmsStream()  getRealmsStream} instead.
+     */
+    @Deprecated
+    default List<RealmModel> getRealms() {
+        return getRealmsStream().collect(Collectors.toList());
+    }
+
+    Stream<RealmModel> getRealmsStream();
+
+    /**
+     * @deprecated Use {@link #getRealmsWithProviderTypeStream(Class)}   getRealmsWithProviderTypeStream} instead.
+     */
+    @Deprecated
+    default List<RealmModel> getRealmsWithProviderType(Class<?> type) {
+        return getRealmsWithProviderTypeStream(type).collect(Collectors.toList());
+    }
+
+    Stream<RealmModel> getRealmsWithProviderTypeStream(Class<?> type);
+
+
     boolean removeRealm(String id);
 
     ClientInitialAccessModel createClientInitialAccessModel(RealmModel realm, int expiration, int count);
     ClientInitialAccessModel getClientInitialAccessModel(RealmModel realm, String id);
     void removeClientInitialAccessModel(RealmModel realm, String id);
-    List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm);
+
+    /**
+     * @deprecated Use {@link #listClientInitialAccessStream(RealmModel)}   listClientInitialAccessStream} instead.
+     */
+    @Deprecated
+    default List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm) {
+        return listClientInitialAccessStream(realm).collect(Collectors.toList());
+    }
+
+    Stream<ClientInitialAccessModel> listClientInitialAccessStream(RealmModel realm);
+
     void removeExpiredClientInitialAccess();
     void decreaseRemainingCount(RealmModel realm, ClientInitialAccessModel clientInitialAccess); // Separate provider method to ensure we decrease remainingCount atomically instead of doing classic update
 

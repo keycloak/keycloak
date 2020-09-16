@@ -468,27 +468,20 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
-    public List<RealmModel> getRealmsWithProviderType(Class<?> type) {
+    public Stream<RealmModel> getRealmsWithProviderTypeStream(Class<?> type) {
         // Retrieve realms from backend
-        List<RealmModel> backendRealms = getRealmDelegate().getRealmsWithProviderType(type);
-        return getRealms(backendRealms);
+        return getRealms(getRealmDelegate().getRealmsWithProviderTypeStream(type));
     }
 
     @Override
-    public List<RealmModel> getRealms() {
+    public Stream<RealmModel> getRealmsStream() {
         // Retrieve realms from backend
-        List<RealmModel> backendRealms = getRealmDelegate().getRealms();
-        return getRealms(backendRealms);
+        return getRealms(getRealmDelegate().getRealmsStream());
     }
 
-    private List<RealmModel> getRealms(List<RealmModel> backendRealms) {
+    private Stream<RealmModel> getRealms(Stream<RealmModel> backendRealms) {
         // Return cache delegates to ensure cache invalidated during write operations
-        List<RealmModel> cachedRealms = new LinkedList<>();
-        for (RealmModel realm : backendRealms) {
-            RealmModel cached = getRealm(realm.getId());
-            cachedRealms.add(cached);
-        }
-        return cachedRealms;
+        return backendRealms.map(RealmModel::getId).map(this::getRealm);
     }
 
     @Override
@@ -1240,8 +1233,8 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
-    public List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm) {
-        return getRealmDelegate().listClientInitialAccess(realm);
+    public Stream<ClientInitialAccessModel> listClientInitialAccessStream(RealmModel realm) {
+        return getRealmDelegate().listClientInitialAccessStream(realm);
     }
 
     @Override

@@ -25,8 +25,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.RealmRepresentation;
 
-import java.util.List;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -39,11 +37,7 @@ public class MigrateTo1_5_0 implements Migration {
     }
 
     public void migrate(KeycloakSession session) {
-        List<RealmModel> realms = session.realms().getRealms();
-        for (RealmModel realm : realms) {
-            migrateRealm(session, realm);
-        }
-
+        session.realms().getRealmsStream().forEach(realm -> migrateRealm(session, realm));
     }
 
     @Override

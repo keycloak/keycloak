@@ -36,7 +36,7 @@ import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
+import java.util.function.Predicate;
 
 public class AdminEventBuilder {
 
@@ -94,19 +94,16 @@ public class AdminEventBuilder {
     }
     
     private AdminEventBuilder addListeners(KeycloakSession session) {
-        Set<String> extraListeners = realm.getEventsListeners();
-        if (extraListeners != null && !extraListeners.isEmpty()) {
-            for (String id : extraListeners) {
-                if (!listeners.containsKey(id)) {
+        realm.getEventsListenersStream()
+                .filter(((Predicate<String>) listeners::containsKey).negate())
+                .forEach(id -> {
                     EventListenerProvider listener = session.getProvider(EventListenerProvider.class, id);
                     if (listener != null) {
                         listeners.put(id, listener);
                     } else {
                         ServicesLogger.LOGGER.providerNotFound(id);
                     }
-                }
-            }
-        }
+                });
         return this;
     }
 

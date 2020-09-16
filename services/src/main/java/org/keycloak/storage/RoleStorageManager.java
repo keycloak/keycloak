@@ -16,8 +16,7 @@
  */
 package org.keycloak.storage;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.reflections.Types;
@@ -69,8 +68,23 @@ public class RoleStorageManager implements RoleProvider {
     }
 
 
-    public static List<RoleStorageProviderModel> getStorageProviders(RealmModel realm) {
-        return realm.getRoleStorageProviders();
+    public static <T> Stream<RoleStorageProviderModel> getStorageProviders(RealmModel realm, KeycloakSession session, Class<T> type) {
+        return realm.getRoleStorageProvidersStream()
+                .filter(model -> {
+                    RoleStorageProviderFactory factory = getRoleStorageProviderFactory(model, session);
+                    if (factory == null) {
+                        logger.warnv("Configured RoleStorageProvider {0} of provider id {1} does not exist in realm {2}",
+                                model.getName(), model.getProviderId(), realm.getName());
+                        return false;
+                    } else {
+                        return Types.supports(type, factory, RoleStorageProviderFactory.class);
+                    }
+                });
+    }
+
+    private static RoleStorageProviderFactory getRoleStorageProviderFactory(RoleStorageProviderModel model, KeycloakSession session) {
+        return (RoleStorageProviderFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(RoleStorageProvider.class, model.getProviderId());
     }
 
     public static RoleStorageProvider getStorageProviderInstance(KeycloakSession session, RoleStorageProviderModel model, RoleStorageProviderFactory factory) {
@@ -86,38 +100,16 @@ public class RoleStorageManager implements RoleProvider {
     }
 
 
-    public static <T> List<T> getStorageProviders(KeycloakSession session, RealmModel realm, Class<T> type) {
-        List<T> list = new LinkedList<>();
-        for (RoleStorageProviderModel model : getStorageProviders(realm)) {
-            RoleStorageProviderFactory factory = (RoleStorageProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(RoleStorageProvider.class, model.getProviderId());
-            if (factory == null) {
-                logger.warnv("Configured RoleStorageProvider {0} of provider id {1} does not exist in realm {2}", model.getName(), model.getProviderId(), realm.getName());
-                continue;
-            }
-            if (Types.supports(type, factory, RoleStorageProviderFactory.class)) {
-                list.add(type.cast(getStorageProviderInstance(session, model, factory)));
-            }
-
-
-        }
-        return list;
+    public static <T> Stream<T> getStorageProviders(KeycloakSession session, RealmModel realm, Class<T> type) {
+        return getStorageProviders(realm, session, type)
+                .map(model -> type.cast(getStorageProviderInstance(session, model, getRoleStorageProviderFactory(model, session))));
     }
 
 
-    public static <T> List<T> getEnabledStorageProviders(KeycloakSession session, RealmModel realm, Class<T> type) {
-        List<T> list = new LinkedList<>();
-        for (RoleStorageProviderModel model : getStorageProviders(realm)) {
-            if (!model.isEnabled()) continue;
-            RoleStorageProviderFactory factory = (RoleStorageProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(RoleStorageProvider.class, model.getProviderId());
-            if (factory == null) {
-                logger.warnv("Configured RoleStorageProvider {0} of provider id {1} does not exist in realm {2}", model.getName(), model.getProviderId(), realm.getName());
-                continue;
-            }
-            if (Types.supports(type, factory, RoleStorageProviderFactory.class)) {
-                list.add(type.cast(getStorageProviderInstance(session, model, factory)));
-            }
-        }
-        return list;
+    public static <T> Stream<T> getEnabledStorageProviders(KeycloakSession session, RealmModel realm, Class<T> type) {
+        return getStorageProviders(realm, session, type)
+                .filter(RoleStorageProviderModel::isEnabled)
+                .map(model -> type.cast(getStorageProviderInstance(session, model, getRoleStorageProviderFactory(model, session))));
     }
 
     @Override
@@ -134,11 +126,11 @@ public class RoleStorageManager implements RoleProvider {
     public RoleModel getRealmRole(RealmModel realm, String name) {
         RoleModel realmRole = session.roleLocalStorage().getRealmRole(realm, name);
         if (realmRole != null) return realmRole;
-        for (RoleLookupProvider enabledStorageProvider : getEnabledStorageProviders(session, realm, RoleLookupProvider.class)) {
-            realmRole = enabledStorageProvider.getRealmRole(realm, name);
-            if (realmRole != null) return realmRole;
-        }
-        return null;
+        return getEnabledStorageProviders(session, realm, RoleLookupProvider.class)
+                .map(provider -> provider.getRealmRole(realm, name))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
 
     @Override
@@ -168,7 +160,7 @@ public class RoleStorageManager implements RoleProvider {
     @Override
     public Stream<RoleModel> searchForRolesStream(RealmModel realm, String search, Integer first, Integer max) {
         Stream<RoleModel> local = session.roleLocalStorage().searchForRolesStream(realm, search, first, max);
-        Stream<RoleModel> ext = getEnabledStorageProviders(session, realm, RoleLookupProvider.class).stream()
+        Stream<RoleModel> ext = getEnabledStorageProviders(session, realm, RoleLookupProvider.class)
                 .flatMap(ServicesUtils.timeBound(session,
                         roleStorageProviderTimeout,
                         p -> ((RoleLookupProvider) p).searchForRolesStream(realm, search, first, max)));
@@ -208,11 +200,11 @@ public class RoleStorageManager implements RoleProvider {
     public RoleModel getClientRole(ClientModel client, String name) {
         RoleModel clientRole = session.roleLocalStorage().getClientRole(client, name);
         if (clientRole != null) return clientRole;
-        for (RoleLookupProvider enabledStorageProvider : getEnabledStorageProviders(session, client.getRealm(), RoleLookupProvider.class)) {
-            clientRole = enabledStorageProvider.getClientRole(client, name);
-            if (clientRole != null) return clientRole;
-        }
-        return null;
+        return getEnabledStorageProviders(session, client.getRealm(), RoleLookupProvider.class)
+                .map(provider -> provider.getClientRole(client, name))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
 
     @Override
@@ -235,7 +227,7 @@ public class RoleStorageManager implements RoleProvider {
     @Override
     public Stream<RoleModel> searchForClientRolesStream(ClientModel client, String search, Integer first, Integer max) {
         Stream<RoleModel> local = session.roleLocalStorage().searchForClientRolesStream(client, search, first, max);
-        Stream<RoleModel> ext = getEnabledStorageProviders(session, client.getRealm(), RoleLookupProvider.class).stream()
+        Stream<RoleModel> ext = getEnabledStorageProviders(session, client.getRealm(), RoleLookupProvider.class)
                 .flatMap(ServicesUtils.timeBound(session,
                         roleStorageProviderTimeout,
                         p -> ((RoleLookupProvider) p).searchForClientRolesStream(client, search, first, max)));

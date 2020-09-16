@@ -22,14 +22,12 @@ import static org.keycloak.util.JsonSerialization.readValue;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.ws.rs.BadRequestException;
@@ -61,11 +59,9 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.email.EmailTemplateProvider;
-import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
-import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -116,7 +112,6 @@ import org.keycloak.services.managers.UserStorageSyncManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
-import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.utils.ReservedCharValidator;
 
@@ -235,21 +230,19 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-default-client-scopes")
-    public List<ClientScopeRepresentation> getDefaultDefaultClientScopes() {
+    public Stream<ClientScopeRepresentation> getDefaultDefaultClientScopes() {
         return getDefaultClientScopes(true);
     }
 
-    private List<ClientScopeRepresentation> getDefaultClientScopes(boolean defaultScope) {
+    private Stream<ClientScopeRepresentation> getDefaultClientScopes(boolean defaultScope) {
         auth.clients().requireViewClientScopes();
 
-        List<ClientScopeRepresentation> defaults = new LinkedList<>();
-        for (ClientScopeModel clientScope : realm.getDefaultClientScopes(defaultScope)) {
+        return realm.getDefaultClientScopesStream(defaultScope).map(clientScope -> {
             ClientScopeRepresentation rep = new ClientScopeRepresentation();
             rep.setId(clientScope.getId());
             rep.setName(clientScope.getName());
-            defaults.add(rep);
-        }
-        return defaults;
+            return rep;
+        });
     }
 
 
@@ -298,7 +291,7 @@ public class RealmAdminResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-optional-client-scopes")
-    public List<ClientScopeRepresentation> getDefaultOptionalClientScopes() {
+    public Stream<ClientScopeRepresentation> getDefaultOptionalClientScopes() {
         return getDefaultClientScopes(false);
     }
 
@@ -432,11 +425,9 @@ public class RealmAdminResource {
             RepresentationToModel.updateRealm(rep, realm, session);
 
             // Refresh periodic sync tasks for configured federationProviders
-            List<UserStorageProviderModel> federationProviders = realm.getUserStorageProviders();
             UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
-            for (final UserStorageProviderModel fedProvider : federationProviders) {
-                usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false);
-            }
+            realm.getUserStorageProvidersStream().forEachOrdered(fedProvider ->
+                    usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false));
 
             adminEvent.operation(OperationType.UPDATE).representation(StripSecretsUtils.strip(rep)).success();
             
@@ -616,7 +607,7 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Map<String, String>> getClientSessionStats() {
+    public Stream<Map<String, String>> getClientSessionStats() {
         auth.realm().requireViewRealm();
 
         Map<String, Map<String, String>> data = new HashMap<>();
@@ -651,10 +642,8 @@ public class RealmAdminResource {
                 map.put("offline", entry.getValue().toString());
             }
         }
-        List<Map<String, String>> result = new LinkedList<>();
-        for (Map<String, String> item : data.values())
-            result.add(item);
-        return result;
+
+        return data.values().stream();
     }
 
     /**
@@ -724,7 +713,7 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<EventRepresentation> getEvents(@QueryParam("type") List<String> types, @QueryParam("client") String client,
+    public Stream<EventRepresentation> getEvents(@QueryParam("type") List<String> types, @QueryParam("client") String client,
                                                @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
                                                @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
                                                @QueryParam("max") Integer maxResults) {
@@ -783,15 +772,7 @@ public class RealmAdminResource {
             query.maxResults(Constants.DEFAULT_MAX_RESULTS);
         }
 
-        return toEventListRep(query.getResultList());
-    }
-
-    private List<EventRepresentation> toEventListRep(List<Event> events) {
-        List<EventRepresentation> reps = new ArrayList<>();
-        for (Event event : events) {
-            reps.add(ModelToRepresentation.toRepresentation(event));
-        }
-        return reps;
+        return query.getResultStream().map(ModelToRepresentation::toRepresentation);
     }
 
     /**
@@ -815,7 +796,7 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<AdminEventRepresentation> getEvents(@QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
+    public Stream<AdminEventRepresentation> getEvents(@QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
                                                     @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
                                                     @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
                                                     @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
@@ -895,16 +876,7 @@ public class RealmAdminResource {
             query.maxResults(Constants.DEFAULT_MAX_RESULTS);
         }
 
-        return toAdminEventRep(query.getResultList());
-    }
-
-    private List<AdminEventRepresentation> toAdminEventRep(List<AdminEvent> events) {
-        List<AdminEventRepresentation> reps = new ArrayList<>();
-        for (AdminEvent event : events) {
-            reps.add(ModelToRepresentation.toRepresentation(event));
-        }
-
-        return reps;
+        return query.getResultStream().map(ModelToRepresentation::toRepresentation);
     }
 
     /**
@@ -1215,13 +1187,12 @@ public class RealmAdminResource {
     @Path("credential-registrators")
     @NoCache
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-    public List<String> getCredentialRegistrators(){
+    public Stream<String> getCredentialRegistrators(){
         auth.realm().requireViewRealm();
-        return session.getContext().getRealm().getRequiredActionProviders().stream()
+        return session.getContext().getRealm().getRequiredActionProvidersStream()
                 .filter(ra -> ra.isEnabled())
                 .map(RequiredActionProviderModel::getProviderId)
-                .filter(providerId ->  session.getProvider(RequiredActionProvider.class, providerId) instanceof CredentialRegistrator)
-                .collect(Collectors.toList());
+                .filter(providerId ->  session.getProvider(RequiredActionProvider.class, providerId) instanceof CredentialRegistrator);
     }
 
 }

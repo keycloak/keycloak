@@ -25,6 +25,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -76,12 +77,12 @@ public abstract class AbstractLoginProtocolFactory implements LoginProtocolFacto
     }
 
     protected void addDefaultClientScopes(RealmModel realm, Stream<ClientModel> newClients) {
-        Set<ClientScopeModel> defaultClientScopes = realm.getDefaultClientScopes(true).stream()
-                .filter(clientScope -> getId().equals(clientScope.getProtocol()))
+        Set<ClientScopeModel> defaultClientScopes = realm.getDefaultClientScopesStream(true)
+                .filter(clientScope -> Objects.equals(getId(), clientScope.getProtocol()))
                 .collect(Collectors.toSet());
 
-        Set<ClientScopeModel> nonDefaultClientScopes = realm.getDefaultClientScopes(false).stream()
-                .filter(clientScope -> getId().equals(clientScope.getProtocol()))
+        Set<ClientScopeModel> nonDefaultClientScopes = realm.getDefaultClientScopesStream(false)
+                .filter(clientScope -> Objects.equals(getId(), clientScope.getProtocol()))
                 .collect(Collectors.toSet());
 
         Consumer<ClientModel> addDefault = c -> c.addClientScopes(defaultClientScopes, true);

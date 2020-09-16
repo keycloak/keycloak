@@ -127,8 +127,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
@@ -1051,33 +1053,34 @@ public class TokenEndpoint {
     }
 
     public Response exchangeExternalToken(String issuer, String subjectToken) {
-        ExchangeExternalToken externalIdp = null;
-        IdentityProviderModel externalIdpModel = null;
+        AtomicReference<ExchangeExternalToken> externalIdp = new AtomicReference<>(null);
+        AtomicReference<IdentityProviderModel> externalIdpModel = new AtomicReference<>(null);
 
-        for (IdentityProviderModel idpModel : realm.getIdentityProviders()) {
+        realm.getIdentityProvidersStream().filter(idpModel -> {
             IdentityProviderFactory factory = IdentityBrokerService.getIdentityProviderFactory(session, idpModel);
             IdentityProvider idp = factory.create(session, idpModel);
             if (idp instanceof ExchangeExternalToken) {
                 ExchangeExternalToken external = (ExchangeExternalToken) idp;
                 if (idpModel.getAlias().equals(issuer) || external.isIssuer(issuer, formParams)) {
-                    externalIdp = external;
-                    externalIdpModel = idpModel;
-                    break;
+                    externalIdp.set(external);
+                    externalIdpModel.set(idpModel);
+                    return true;
                 }
             }
-        }
+            return false;
+        }).findFirst();
 
 
-        if (externalIdp == null) {
+        if (externalIdp.get() == null) {
             event.error(Errors.INVALID_ISSUER);
             throw new CorsErrorResponseException(cors, Errors.INVALID_ISSUER, "Invalid " + OAuth2Constants.SUBJECT_ISSUER + " parameter", Response.Status.BAD_REQUEST);
         }
-        if (!AdminPermissions.management(session, realm).idps().canExchangeTo(client, externalIdpModel)) {
+        if (!AdminPermissions.management(session, realm).idps().canExchangeTo(client, externalIdpModel.get())) {
             event.detail(Details.REASON, "client not allowed to exchange subject_issuer");
             event.error(Errors.NOT_ALLOWED);
             throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
         }
-        BrokeredIdentityContext context = externalIdp.exchangeExternal(event, formParams);
+        BrokeredIdentityContext context = externalIdp.get().exchangeExternal(event, formParams);
         if (context == null) {
             event.error(Errors.INVALID_ISSUER);
             throw new CorsErrorResponseException(cors, Errors.INVALID_ISSUER, "Invalid " + OAuth2Constants.SUBJECT_ISSUER + " parameter", Response.Status.BAD_REQUEST);
@@ -1086,10 +1089,10 @@ public class TokenEndpoint {
         UserModel user = importUserFromExternalIdentity(context);
 
         UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "external-exchange", false, null, null);
-        externalIdp.exchangeExternalComplete(userSession, context, formParams);
+        externalIdp.get().exchangeExternalComplete(userSession, context, formParams);
 
         // this must exist so that we can obtain access token from user session if idp's store tokens is off
-        userSession.setNote(IdentityProvider.EXTERNAL_IDENTITY_PROVIDER, externalIdpModel.getAlias());
+        userSession.setNote(IdentityProvider.EXTERNAL_IDENTITY_PROVIDER, externalIdpModel.get().getAlias());
         userSession.setNote(IdentityProvider.FEDERATED_ACCESS_TOKEN, subjectToken);
 
         return exchangeClientToClient(user, userSession);
@@ -1106,13 +1109,12 @@ public class TokenEndpoint {
         //session.getContext().setClient(authenticationSession.getClient());
 
         context.getIdp().preprocessFederatedIdentity(session, realm, context);
-        Set<IdentityProviderMapperModel> mappers = realm.getIdentityProviderMappersByAlias(context.getIdpConfig().getAlias());
-        if (mappers != null) {
-            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-            for (IdentityProviderMapperModel mapper : mappers) {
-                IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
-                target.preprocessFederatedIdentity(session, realm, mapper, context);
-            }
+        Set<IdentityProviderMapperModel> mappers = realm.getIdentityProviderMappersByAliasStream(context.getIdpConfig().getAlias())
+                .collect(Collectors.toSet());
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        for (IdentityProviderMapperModel mapper : mappers) {
+            IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+            target.preprocessFederatedIdentity(session, realm, mapper, context);
         }
 
         FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(providerId, context.getId(),
@@ -1163,12 +1165,10 @@ public class TokenEndpoint {
             session.users().addFederatedIdentity(realm, user, federatedIdentityModel);
 
             context.getIdp().importNewUser(session, realm, user, context);
-            if (mappers != null) {
-                KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-                for (IdentityProviderMapperModel mapper : mappers) {
-                    IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
-                    target.importNewUser(session, realm, user, mapper, context);
-                }
+
+            for (IdentityProviderMapperModel mapper : mappers) {
+                IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+                target.importNewUser(session, realm, user, mapper, context);
             }
 
             if (context.getIdpConfig().isTrustEmail() && !Validation.isBlank(user.getEmail())) {
@@ -1188,12 +1188,10 @@ public class TokenEndpoint {
             }
 
             context.getIdp().updateBrokeredUser(session, realm, user, context);
-            if (mappers != null) {
-                KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-                for (IdentityProviderMapperModel mapper : mappers) {
-                    IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
-                    IdentityProviderMapperSyncModeDelegate.delegateUpdateBrokeredUser(session, realm, user, mapper, context, target);
-                }
+
+            for (IdentityProviderMapperModel mapper : mappers) {
+                IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+                IdentityProviderMapperSyncModeDelegate.delegateUpdateBrokeredUser(session, realm, user, mapper, context, target);
             }
         }
         return user;

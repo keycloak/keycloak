@@ -28,7 +28,6 @@ import org.keycloak.models.cache.infinispan.ClientAdapter;
 import org.keycloak.models.cache.infinispan.RealmAdapter;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -74,19 +73,15 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
 	        
 	       
 	            // update realm, then get an AppModel and change it.  The AppModel would not be a cache adapter
-	     
 
-	            // KEYCLOAK-1240 - obtain the realm via session.realms().getRealms()
-	            realm = null;
-	            List<RealmModel> realms = session.realms().getRealms();
+	            realm = session.realms().getRealmsStream().filter(r -> {
+					assertTrue(r instanceof RealmAdapter);
+					if ("test".equals(r.getName()))
+						return true;
+					return false;
+				}).findFirst().orElse(null);
 
-	            for (RealmModel current : realms) {
-	                assertTrue(current instanceof RealmAdapter);
-	                if ("test".equals(current.getName())) {
-	                    realm = current;
-	                    break;
-	                }
-	            }
+	            assertNotNull(realm);
 
 	            realm.setAccessCodeLifespanLogin(200);
 	            testApp = realm.getClientByClientId("test-app");

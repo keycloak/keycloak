@@ -17,14 +17,8 @@
 
 package org.keycloak.testsuite.util.cli;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
@@ -73,7 +67,8 @@ public class LdapManyObjectsInitializerCommand extends AbstractCommand {
         int countGroups = getIntArg(5);
 
         RealmModel realm = session.realms().getRealmByName(realmName);
-        List<ComponentModel> components = realm.getComponents(realm.getId(), UserStorageProvider.class.getName());
+        List<ComponentModel> components = realm.getComponentsStream(realm.getId(), UserStorageProvider.class.getName())
+                .collect(Collectors.toList());
         if (components.size() != 1) {
             log.errorf("Expected 1 LDAP Provider, but found: %d providers", components.size());
             throw new HandledException();
@@ -130,17 +125,16 @@ public class LdapManyObjectsInitializerCommand extends AbstractCommand {
 
 
     private ComponentModel getMapperModel(RealmModel realm, ComponentModel ldapModel, String mapperName) {
-        List<ComponentModel> ldapMappers = realm.getComponents(ldapModel.getId(), LDAPStorageMapper.class.getName());
-        Optional<ComponentModel> optional = ldapMappers.stream().filter((ComponentModel mapper) -> {
-            return mapper.getName().equals(mapperName);
-        }).findFirst();
+        Optional<ComponentModel> first = realm.getComponentsStream(ldapModel.getId(), LDAPStorageMapper.class.getName())
+                .filter(component -> Objects.equals(component.getName(), mapperName))
+                .findFirst();
 
-        if (!optional.isPresent()) {
+        if (first.isPresent()) {
+            return first.get();
+        } else {
             log.errorf("Not present LDAP mapper called '%s'", mapperName);
-            throw new HandledException();
+            throw new RuntimeException();
         }
-
-        return optional.get();
     }
 
 

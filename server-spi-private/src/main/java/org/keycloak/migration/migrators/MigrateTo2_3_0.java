@@ -19,7 +19,6 @@ package org.keycloak.migration.migrators;
 
 
 import org.keycloak.migration.ModelVersion;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -33,17 +32,13 @@ public class MigrateTo2_3_0 implements Migration {
 
     @Override
     public void migrate(KeycloakSession session) {
-        for (RealmModel realm : session.realms().getRealms()) {
-            migrateRealm(realm);
-        }
+        session.realms().getRealmsStream().forEach(this::migrateRealm);
     }
 
     protected void migrateRealm(RealmModel realm) {
         realm.getClientsStream().forEach(MigrationUtils::updateProtocolMappers);
 
-        for (ClientScopeModel clientScope : realm.getClientScopes()) {
-            MigrationUtils.updateProtocolMappers(clientScope);
-        }
+        realm.getClientScopesStream().forEach(MigrationUtils::updateProtocolMappers);
     }
 
     @Override

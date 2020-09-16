@@ -46,7 +46,6 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.DefaultClientPolicyManager;
 import org.keycloak.services.clientpolicy.LogoutRequestContext;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionManager;
@@ -63,7 +62,8 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -270,10 +270,9 @@ public class LogoutEndpoint {
 
         LogoutToken logoutToken = tokenManager.toLogoutToken(encodedLogoutToken).get();
 
-        List<String> identityProviderAliases = tokenManager.getValidOIDCIdentityProvidersForBackchannelLogout(realm,
-                session, encodedLogoutToken, logoutToken).stream()
-                .map(idp -> idp.getConfig().getAlias())
-                .collect(Collectors.toList());
+        Stream<String> identityProviderAliases = tokenManager.getValidOIDCIdentityProvidersForBackchannelLogout(realm,
+                session, encodedLogoutToken, logoutToken)
+                .map(idp -> idp.getConfig().getAlias());
 
         boolean logoutOfflineSessions = Boolean.parseBoolean(logoutToken.getEvents()
                 .getOrDefault(TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT_REVOKE_OFFLINE_TOKENS, false).toString());
@@ -313,10 +312,10 @@ public class LogoutEndpoint {
     }
 
     private BackchannelLogoutResponse backchannelLogoutWithSessionId(String sessionId,
-            List<String> identityProviderAliases, boolean logoutOfflineSessions) {
-        BackchannelLogoutResponse backchannelLogoutResponse = new BackchannelLogoutResponse();
-        backchannelLogoutResponse.setLocalLogoutSucceeded(true);
-        for (String identityProviderAlias : identityProviderAliases) {
+            Stream<String> identityProviderAliases, boolean logoutOfflineSessions) {
+        AtomicReference<BackchannelLogoutResponse> backchannelLogoutResponse = new AtomicReference<>(new BackchannelLogoutResponse());
+        backchannelLogoutResponse.get().setLocalLogoutSucceeded(true);
+        identityProviderAliases.forEach(identityProviderAlias -> {
             UserSessionModel userSession = session.sessions().getUserSessionByBrokerSessionId(realm,
                     identityProviderAlias + "." + sessionId);
 
@@ -325,11 +324,11 @@ public class LogoutEndpoint {
             }
 
             if (userSession != null) {
-                backchannelLogoutResponse = logoutUserSession(userSession);
+                backchannelLogoutResponse.set(logoutUserSession(userSession));
             }
-        }
+        });
 
-        return backchannelLogoutResponse;
+        return backchannelLogoutResponse.get();
     }
 
     private void logoutOfflineUserSession(String brokerSessionId) {
@@ -341,10 +340,11 @@ public class LogoutEndpoint {
     }
 
     private BackchannelLogoutResponse backchannelLogoutFederatedUserId(String federatedUserId,
-            List<String> identityProviderAliases, boolean logoutOfflineSessions) {
+                                                                       Stream<String> identityProviderAliases,
+                                                                       boolean logoutOfflineSessions) {
         BackchannelLogoutResponse backchannelLogoutResponse = new BackchannelLogoutResponse();
         backchannelLogoutResponse.setLocalLogoutSucceeded(true);
-        for (String identityProviderAlias : identityProviderAliases) {
+        identityProviderAliases.forEach(identityProviderAlias -> {
             List<UserSessionModel> userSessions = session.sessions().getUserSessionByBrokerUserId(realm,
                     identityProviderAlias + "." + federatedUserId);
 
@@ -360,7 +360,7 @@ public class LogoutEndpoint {
                 userBackchannelLogoutResponse.getClientResponses()
                         .forEach(backchannelLogoutResponse::addClientResponses);
             }
-        }
+        });
 
         return backchannelLogoutResponse;
     }

@@ -47,6 +47,8 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -119,13 +121,10 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setClaimTypesSupported(DEFAULT_CLAIM_TYPES_SUPPORTED);
         config.setClaimsParameterSupported(true);
 
-        List<ClientScopeModel> scopes = realm.getClientScopes();
-        List<String> scopeNames = new LinkedList<>();
-        for (ClientScopeModel clientScope : scopes) {
-            if (OIDCLoginProtocol.LOGIN_PROTOCOL.equals(clientScope.getProtocol())) {
-                scopeNames.add(clientScope.getName());
-            }
-        }
+        List<String> scopeNames = realm.getClientScopesStream()
+                .filter(clientScope -> Objects.equals(OIDCLoginProtocol.LOGIN_PROTOCOL, clientScope.getProtocol()))
+                .map(ClientScopeModel::getName)
+                .collect(Collectors.toList());
         scopeNames.add(0, OAuth2Constants.SCOPE_OPENID);
         config.setScopesSupported(scopeNames);
 

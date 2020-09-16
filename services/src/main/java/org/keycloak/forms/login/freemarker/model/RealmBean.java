@@ -17,8 +17,9 @@
 package org.keycloak.forms.login.freemarker.model;
 
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
+
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -86,12 +87,8 @@ public class RealmBean {
     }
 
     public boolean isPassword() {
-        for (RequiredCredentialModel r : realm.getRequiredCredentials()) {
-            if (r.getType().equals(CredentialRepresentation.PASSWORD)) {
-                return true;
-            }
-        }
-        return false;
+        return realm.getRequiredCredentialsStream()
+                .anyMatch(r -> Objects.equals(r.getType(), CredentialRepresentation.PASSWORD));
     }
 
 }

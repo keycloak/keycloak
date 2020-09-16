@@ -17,8 +17,6 @@
 
 package org.keycloak.utils;
 
-import javax.ws.rs.core.Response;
-
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
@@ -29,16 +27,15 @@ import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionFactory;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
-import org.keycloak.forms.account.AccountPages;
 import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
-import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+
+import java.util.Objects;
 
 /**
  * used to set an execution a state based on type.
@@ -61,22 +58,25 @@ public class CredentialHelper {
     }
 
     public static void setOrReplaceAuthenticationRequirement(KeycloakSession session, RealmModel realm, String type, AuthenticationExecutionModel.Requirement requirement, AuthenticationExecutionModel.Requirement currentRequirement) {
-        for (AuthenticationFlowModel flow : realm.getAuthenticationFlows()) {
-            for (AuthenticationExecutionModel execution : realm.getAuthenticationExecutions(flow.getId())) {
-                String providerId = execution.getAuthenticator();
-                ConfigurableAuthenticatorFactory factory = getConfigurableAuthenticatorFactory(session, providerId);
-                if (factory == null) continue;
-                if (type.equals(factory.getReferenceCategory())) {
-                    if (currentRequirement == null || currentRequirement.equals(execution.getRequirement())) {
-                        execution.setRequirement(requirement);
-                        realm.updateAuthenticatorExecution(execution);
-                        logger.debugf("Authenticator execution '%s' switched to '%s'", execution.getAuthenticator(), requirement.toString());
-                    } else {
-                        logger.debugf("Skip switch authenticator execution '%s' to '%s' as it's in state %s", execution.getAuthenticator(), requirement.toString(), execution.getRequirement());
+        realm.getAuthenticationFlowsStream().forEach(flow -> realm.getAuthenticationExecutionsStream(flow.getId())
+                .filter(exe -> {
+                    ConfigurableAuthenticatorFactory factory = getConfigurableAuthenticatorFactory(session, exe.getAuthenticator());
+                    return Objects.nonNull(factory) && Objects.equals(type, factory.getReferenceCategory());
+                })
+                .filter(exe -> {
+                    if (Objects.isNull(currentRequirement) || Objects.equals(exe.getRequirement(), currentRequirement))
+                        return true;
+                    else {
+                        logger.debugf("Skip switch authenticator execution '%s' to '%s' as it's in state %s",
+                                exe.getAuthenticator(), requirement.toString(), exe.getRequirement());
+                        return false;
                     }
-                }
-            }
-        }
+                })
+                .forEachOrdered(exe -> {
+                    exe.setRequirement(requirement);
+                    realm.updateAuthenticatorExecution(exe);
+                    logger.debugf("Authenticator execution '%s' switched to '%s'", exe.getAuthenticator(), requirement.toString());
+                }));
     }
 
      public static ConfigurableAuthenticatorFactory getConfigurableAuthenticatorFactory(KeycloakSession session, String providerId) {

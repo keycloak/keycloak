@@ -27,9 +27,10 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.resources.account.AccountFormService;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -39,41 +40,36 @@ public class AccountFederatedIdentityBean {
 
     private static OrderedModel.OrderedModelComparator<FederatedIdentityEntry> IDP_COMPARATOR_INSTANCE = new OrderedModel.OrderedModelComparator<>();
 
-    private final List<FederatedIdentityEntry> identities = new ArrayList<>();
+    private final List<FederatedIdentityEntry> identities;
     private final boolean removeLinkPossible;
     private final KeycloakSession session;
 
     public AccountFederatedIdentityBean(KeycloakSession session, RealmModel realm, UserModel user, URI baseUri, String stateChecker) {
         this.session = session;
 
-        List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
         Set<FederatedIdentityModel> identities = session.users().getFederatedIdentities(user, realm);
 
-        int availableIdentities = 0;
-        if (identityProviders != null && !identityProviders.isEmpty()) {
-            for (IdentityProviderModel provider : identityProviders) {
-                if (!provider.isEnabled()) {
-                    continue;
-                }
-                String providerId = provider.getAlias();
+        AtomicInteger availableIdentities = new AtomicInteger(0);
+        this.identities = realm.getIdentityProvidersStream()
+                .filter(IdentityProviderModel::isEnabled)
+                .map(provider -> {
+                    String providerId = provider.getAlias();
 
-                FederatedIdentityModel identity = getIdentity(identities, providerId);
+                    FederatedIdentityModel identity = getIdentity(identities, providerId);
 
-                if (identity != null) {
-                    availableIdentities++;
-                }
+                    if (identity != null) {
+                        availableIdentities.getAndIncrement();
+                    }
 
-                String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, provider);
-                FederatedIdentityEntry entry = new FederatedIdentityEntry(identity, displayName, provider.getAlias(), provider.getAlias(),
-                		  															provider.getConfig() != null ? provider.getConfig().get("guiOrder") : null);
-                this.identities.add(entry);
-            }
-        }
-        
-        this.identities.sort(IDP_COMPARATOR_INSTANCE);
+                    String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, provider);
+                    return new FederatedIdentityEntry(identity, displayName, provider.getAlias(), provider.getAlias(),
+                            provider.getConfig() != null ? provider.getConfig().get("guiOrder") : null);
+                })
+                .sorted(IDP_COMPARATOR_INSTANCE)
+                .collect(Collectors.toList());
 
         // Removing last social provider is not possible if you don't have other possibility to authenticate
-        this.removeLinkPossible = availableIdentities > 1 || user.getFederationLink() != null || AccountFormService.isPasswordSet(session, realm, user);
+        this.removeLinkPossible = availableIdentities.get() > 1 || user.getFederationLink() != null || AccountFormService.isPasswordSet(session, realm, user);
     }
 
     private FederatedIdentityModel getIdentity(Set<FederatedIdentityModel> identities, String providerId) {

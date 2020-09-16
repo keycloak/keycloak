@@ -69,7 +69,12 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import org.keycloak.utils.ReservedCharValidator;
@@ -182,17 +187,12 @@ public class AuthenticationManagementResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<AuthenticationFlowRepresentation> getFlows() {
+    public Stream<AuthenticationFlowRepresentation> getFlows() {
         auth.realm().requireViewAuthenticationFlows();
 
-        List<AuthenticationFlowRepresentation> flows = new LinkedList<>();
-        for (AuthenticationFlowModel flow : realm.getAuthenticationFlows()) {
-            // KEYCLOAK-3517, we need a better way to filter non-configurable internal flows
-            if (flow.isTopLevel() && !flow.getAlias().equals(DefaultAuthenticationFlows.SAML_ECP_FLOW)) {
-                flows.add(ModelToRepresentation.toRepresentation(realm, flow));
-            }
-        }
-        return flows;
+        return realm.getAuthenticationFlowsStream()
+                .filter(flow -> flow.isTopLevel() && !Objects.equals(flow.getAlias(), DefaultAuthenticationFlows.SAML_ECP_FLOW))
+                .map(flow -> ModelToRepresentation.toRepresentation(realm, flow));
     }
 
     /**
@@ -321,12 +321,11 @@ public class AuthenticationManagementResource {
             throw new BadRequestException("Can't delete built in flow");
         }
         
-        List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutions(id);
-        for (AuthenticationExecutionModel execution : executions) {
-            if(execution.getFlowId() != null) {
-                deleteFlow(execution.getFlowId(), false);
-            }
-        }
+        realm.getAuthenticationExecutionsStream(id)
+                .map(AuthenticationExecutionModel::getFlowId)
+                .filter(Objects::nonNull)
+                .forEachOrdered(flowId -> deleteFlow(flowId, false));
+
         realm.removeAuthenticationFlow(flow);
 
         // Use just one event for top-level flow. Using separate events won't work properly for flows of depth 2 or bigger
@@ -380,7 +379,7 @@ public class AuthenticationManagementResource {
     }
 
     public static void copy(RealmModel realm, String newName, AuthenticationFlowModel from, AuthenticationFlowModel to) {
-        for (AuthenticationExecutionModel execution : realm.getAuthenticationExecutions(from.getId())) {
+        realm.getAuthenticationExecutionsStream(from.getId()).forEachOrdered(execution -> {
             if (execution.isAuthenticatorFlow()) {
                 AuthenticationFlowModel subFlow = realm.getAuthenticationFlowById(execution.getFlowId());
                 AuthenticationFlowModel copy = new AuthenticationFlowModel();
@@ -396,7 +395,7 @@ public class AuthenticationManagementResource {
             execution.setId(null);
             execution.setParentFlow(to.getId());
             realm.addAuthenticatorExecution(execution);
-        }
+        });
     }
 
     /**
@@ -448,7 +447,8 @@ public class AuthenticationManagementResource {
     }
 
     private int getNextPriority(AuthenticationFlowModel parentFlow) {
-        List<AuthenticationExecutionModel> executions = getSortedExecutions(parentFlow);
+        List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutionsStream(parentFlow.getId())
+                .collect(Collectors.toList());
         return executions.isEmpty() ? 0 : executions.get(executions.size() - 1).getPriority() + 1;
     }
 
@@ -535,13 +535,12 @@ public class AuthenticationManagementResource {
     }
 
     public void recurseExecutions(AuthenticationFlowModel flow, List<AuthenticationExecutionInfoRepresentation> result, int level) {
-        int index = 0;
-        List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutions(flow.getId());
-        for (AuthenticationExecutionModel execution : executions) {
+        AtomicInteger index = new AtomicInteger(0);
+        realm.getAuthenticationExecutionsStream(flow.getId()).forEachOrdered(execution -> {
             AuthenticationExecutionInfoRepresentation rep = new AuthenticationExecutionInfoRepresentation();
             rep.setLevel(level);
-            rep.setIndex(index++);
-            rep.setRequirementChoices(new LinkedList<String>());
+            rep.setIndex(index.getAndIncrement());
+            rep.setRequirementChoices(new LinkedList<>());
             if (execution.isAuthenticatorFlow()) {
                 AuthenticationFlowModel flowRef = realm.getAuthenticationFlowById(execution.getFlowId());
                 if (AuthenticationFlow.BASIC_FLOW.equals(flowRef.getProviderId())) {
@@ -595,7 +594,7 @@ public class AuthenticationManagementResource {
                 rep.setAuthenticationConfig(execution.getAuthenticatorConfig());
                 result.add(rep);
             }
-        }
+        });
     }
 
     /**
@@ -739,9 +738,9 @@ public class AuthenticationManagementResource {
         if (parentFlow.isBuiltIn()) {
             throw new BadRequestException("It is illegal to modify execution in a built in flow");
         }
-        List<AuthenticationExecutionModel> executions = getSortedExecutions(parentFlow);
+
         AuthenticationExecutionModel previous = null;
-        for (AuthenticationExecutionModel exe : executions) {
+        for (AuthenticationExecutionModel exe : realm.getAuthenticationExecutionsStream(parentFlow.getId()).collect(Collectors.toList())) {
             if (exe.getId().equals(model.getId())) {
                 break;
             }
@@ -756,12 +755,6 @@ public class AuthenticationManagementResource {
         realm.updateAuthenticatorExecution(model);
 
         adminEvent.operation(OperationType.UPDATE).resource(ResourceType.AUTH_EXECUTION).resourcePath(session.getContext().getUri()).success();
-    }
-
-    public List<AuthenticationExecutionModel> getSortedExecutions(AuthenticationFlowModel parentFlow) {
-        List<AuthenticationExecutionModel> executions = new LinkedList<>(realm.getAuthenticationExecutions(parentFlow.getId()));
-        Collections.sort(executions, AuthenticationExecutionModel.ExecutionComparator.SINGLETON);
-        return executions;
     }
 
     /**
@@ -785,8 +778,8 @@ public class AuthenticationManagementResource {
         if (parentFlow.isBuiltIn()) {
             throw new BadRequestException("It is illegal to modify execution in a built in flow");
         }
-        List<AuthenticationExecutionModel> executions = getSortedExecutions(parentFlow);
-        int i = 0;
+        List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutionsStream(parentFlow.getId()).collect(Collectors.toList());
+        int i;
         for (i = 0; i < executions.size(); i++) {
             if (executions.get(i).getId().equals(model.getId())) {
                 break;
@@ -903,29 +896,22 @@ public class AuthenticationManagementResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<Map<String, String>> getUnregisteredRequiredActions() {
+    public Stream<Map<String, String>> getUnregisteredRequiredActions() {
         auth.realm().requireViewRealm();
 
-        List<ProviderFactory> factories = session.getKeycloakSessionFactory().getProviderFactories(RequiredActionProvider.class);
-        List<Map<String, String>> unregisteredList = new LinkedList<>();
-        for (ProviderFactory factory : factories) {
-            RequiredActionFactory requiredActionFactory = (RequiredActionFactory) factory;
-            boolean found = false;
-            for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {
-                if (model.getProviderId().equals(factory.getId())) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                Map<String, String> data = new HashMap<>();
-                data.put("name", requiredActionFactory.getDisplayText());
-                data.put("providerId", requiredActionFactory.getId());
-                unregisteredList.add(data);
-            }
+        Set<String> providerIds = realm.getRequiredActionProvidersStream()
+                .map(RequiredActionProviderModel::getProviderId).collect(Collectors.toSet());
 
-        }
-        return unregisteredList;
+        return session.getKeycloakSessionFactory().getProviderFactories(RequiredActionProvider.class)
+                .stream()
+                .filter(factory -> !providerIds.contains(factory.getId()))
+                .map(factory -> {
+                    RequiredActionFactory r = (RequiredActionFactory) factory;
+                    Map<String, String> m = new HashMap<>();
+                    m.put("name", r.getDisplayText());
+                    m.put("providerId", r.getId());
+                    return m;
+                });
     }
 
     /**
@@ -956,7 +942,7 @@ public class AuthenticationManagementResource {
     }
 
     private int getNextRequiredActionPriority() {
-        List<RequiredActionProviderModel> actions = realm.getRequiredActionProviders();
+        List<RequiredActionProviderModel> actions = realm.getRequiredActionProvidersStream().collect(Collectors.toList());
         return actions.isEmpty() ? 0 : actions.get(actions.size() - 1).getPriority() + 1;
     }
 
@@ -970,15 +956,10 @@ public class AuthenticationManagementResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<RequiredActionProviderRepresentation> getRequiredActions() {
+    public Stream<RequiredActionProviderRepresentation> getRequiredActions() {
         auth.realm().requireViewRequiredActions();
 
-        List<RequiredActionProviderRepresentation> list = new LinkedList<>();
-        for (RequiredActionProviderModel model : realm.getRequiredActionProviders()) {
-            RequiredActionProviderRepresentation rep = toRepresentation(model);
-            list.add(rep);
-        }
-        return list;
+        return realm.getRequiredActionProvidersStream().map(AuthenticationManagementResource::toRepresentation);
     }
 
     public static RequiredActionProviderRepresentation toRepresentation(RequiredActionProviderModel model) {
@@ -1076,9 +1057,8 @@ public class AuthenticationManagementResource {
             throw new NotFoundException("Failed to find required action.");
         }
 
-        List<RequiredActionProviderModel> actions = realm.getRequiredActionProviders();
         RequiredActionProviderModel previous = null;
-        for (RequiredActionProviderModel action : actions) {
+        for (RequiredActionProviderModel action : realm.getRequiredActionProvidersStream().collect(Collectors.toList())) {
             if (action.getId().equals(model.getId())) {
                 break;
             }
@@ -1110,8 +1090,8 @@ public class AuthenticationManagementResource {
             throw new NotFoundException("Failed to find required action.");
         }
 
-        List<RequiredActionProviderModel> actions = realm.getRequiredActionProviders();
-        int i = 0;
+        List<RequiredActionProviderModel> actions = realm.getRequiredActionProvidersStream().collect(Collectors.toList());
+        int i;
         for (i = 0; i < actions.size(); i++) {
             if (actions.get(i).getId().equals(model.getId())) {
                 break;
@@ -1242,14 +1222,12 @@ public class AuthenticationManagementResource {
             throw new NotFoundException("Could not find authenticator config");
 
         }
-        for (AuthenticationFlowModel flow : realm.getAuthenticationFlows()) {
-            for (AuthenticationExecutionModel exe : realm.getAuthenticationExecutions(flow.getId())) {
-                if (id.equals(exe.getAuthenticatorConfig())) {
+        realm.getAuthenticationFlowsStream().forEach(flow -> realm.getAuthenticationExecutionsStream(flow.getId())
+                .filter(exe -> Objects.equals(id, exe.getAuthenticatorConfig()))
+                .forEachOrdered(exe -> {
                     exe.setAuthenticatorConfig(null);
                     realm.updateAuthenticatorExecution(exe);
-                }
-            }
-        }
+                }));
 
         realm.removeAuthenticatorConfig(config);
 

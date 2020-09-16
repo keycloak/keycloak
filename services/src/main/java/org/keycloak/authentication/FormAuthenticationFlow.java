@@ -42,6 +42,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -57,7 +58,7 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
     public FormAuthenticationFlow(AuthenticationProcessor processor, AuthenticationExecutionModel execution) {
         this.processor = processor;
         this.formExecution = execution;
-        formActionExecutions = processor.getRealm().getAuthenticationExecutions(execution.getFlowId());
+        formActionExecutions = processor.getRealm().getAuthenticationExecutionsStream(execution.getFlowId()).collect(Collectors.toList());
         formAuthenticator = processor.getSession().getProvider(FormAuthenticator.class, execution.getAuthenticator());
     }
 

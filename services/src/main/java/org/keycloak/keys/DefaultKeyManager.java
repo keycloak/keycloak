@@ -31,11 +31,8 @@ import javax.crypto.SecretKey;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -246,22 +243,22 @@ public class DefaultKeyManager implements KeyManager {
     private List<KeyProvider> getProviders(RealmModel realm) {
         List<KeyProvider> providers = providersMap.get(realm.getId());
         if (providers == null) {
-            providers = new LinkedList<>();
-
-            List<ComponentModel> components = new LinkedList<>(realm.getComponents(realm.getId(), KeyProvider.class.getName()));
-            components.sort(new ProviderComparator());
-
-            for (ComponentModel c : components) {
-                try {
-                    ProviderFactory<KeyProvider> f = session.getKeycloakSessionFactory().getProviderFactory(KeyProvider.class, c.getProviderId());
-                    KeyProviderFactory factory = (KeyProviderFactory) f;
-                    KeyProvider provider = factory.create(session, c);
-                    session.enlistForClose(provider);
-                    providers.add(provider);
-                } catch (Throwable t) {
-                    logger.errorv(t, "Failed to load provider {0}", c.getId());
-                }
-            }
+            providers = realm.getComponentsStream(realm.getId(), KeyProvider.class.getName())
+                    .sorted(new ProviderComparator())
+                    .map(c -> {
+                        try {
+                            ProviderFactory<KeyProvider> f = session.getKeycloakSessionFactory().getProviderFactory(KeyProvider.class, c.getProviderId());
+                            KeyProviderFactory factory = (KeyProviderFactory) f;
+                            KeyProvider provider = factory.create(session, c);
+                            session.enlistForClose(provider);
+                            return provider;
+                        } catch (Throwable t) {
+                            logger.errorv(t, "Failed to load provider {0}", c.getId());
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
 
             providersMap.put(realm.getId(), providers);
         }

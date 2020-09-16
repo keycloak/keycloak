@@ -43,7 +43,6 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -56,7 +55,6 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -98,23 +96,11 @@ public class ExportUtils {
         rep.setKeycloakVersion(Version.VERSION_KEYCLOAK);
 
         // Client Scopes
-        List<ClientScopeModel> clientScopeModels = realm.getClientScopes();
-        List<ClientScopeRepresentation> clientScopesReps = new ArrayList<>();
-        for (ClientScopeModel app : clientScopeModels) {
-            ClientScopeRepresentation clientRep = ModelToRepresentation.toRepresentation(app);
-            clientScopesReps.add(clientRep);
-        }
-        rep.setClientScopes(clientScopesReps);
-
-        List<String> defaultClientScopeNames = realm.getDefaultClientScopes(true).stream().map((ClientScopeModel clientScope) -> {
-            return clientScope.getName();
-        }).collect(Collectors.toList());
-        rep.setDefaultDefaultClientScopes(defaultClientScopeNames);
-
-        List<String> optionalClientScopeNames = realm.getDefaultClientScopes(false).stream().map((ClientScopeModel clientScope) -> {
-            return clientScope.getName();
-        }).collect(Collectors.toList());
-        rep.setDefaultOptionalClientScopes(optionalClientScopeNames);
+        rep.setClientScopes(realm.getClientScopesStream().map(ModelToRepresentation::toRepresentation).collect(Collectors.toList()));
+        rep.setDefaultDefaultClientScopes(realm.getDefaultClientScopesStream(true)
+                .map(ClientScopeModel::getName).collect(Collectors.toList()));
+        rep.setDefaultOptionalClientScopes(realm.getDefaultClientScopesStream(false)
+                .map(ClientScopeModel::getName).collect(Collectors.toList()));
 
         // Clients
         List<ClientModel> clients = Collections.emptyList();
@@ -199,7 +185,7 @@ public class ExportUtils {
         }
 
         // Scopes of client scopes
-        for (ClientScopeModel clientScope : realm.getClientScopes()) {
+        realm.getClientScopesStream().forEach(clientScope -> {
             Set<RoleModel> clientScopes = clientScope.getScopeMappingsStream().collect(Collectors.toSet());
             ScopeMappingRepresentation scopeMappingRep = null;
             for (RoleModel scope : clientScopes) {
@@ -232,7 +218,7 @@ public class ExportUtils {
                     currentClientTemplateScope.role(scope.getName());
                 }
             }
-        }
+        });
 
         if (clientScopeReps.size() > 0) {
             rep.setClientScopeMappings(clientScopeReps);
@@ -285,9 +271,8 @@ public class ExportUtils {
     }
 
     public static MultivaluedHashMap<String, ComponentExportRepresentation> exportComponents(RealmModel realm, String parentId) {
-        List<ComponentModel> componentList = realm.getComponents(parentId);
         MultivaluedHashMap<String, ComponentExportRepresentation> components = new MultivaluedHashMap<>();
-        for (ComponentModel component : componentList) {
+        realm.getComponentsStream(parentId).forEach(component -> {
             ComponentExportRepresentation compRep = new ComponentExportRepresentation();
             compRep.setId(component.getId());
             compRep.setProviderId(component.getProviderId());
@@ -296,7 +281,7 @@ public class ExportUtils {
             compRep.setSubType(component.getSubType());
             compRep.setSubComponents(exportComponents(realm, component.getId()));
             components.add(component.getProviderType(), compRep);
-        }
+        });
         return components;
     }
 

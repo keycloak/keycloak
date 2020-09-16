@@ -35,7 +35,6 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserCredentialModel;
@@ -296,21 +295,17 @@ public final class KeycloakModelUtils {
             return null;
         }
 
-        for (UserStorageProviderModel fedProvider : realm.getUserStorageProviders()) {
-            if (displayName.equals(fedProvider.getName())) {
-                return fedProvider;
-            }
-        }
-        return null;
+        return realm.getUserStorageProvidersStream()
+                .filter(fedProvider -> Objects.equals(fedProvider.getName(), displayName))
+                .findFirst()
+                .orElse(null);
     }
 
     public static UserStorageProviderModel findUserStorageProviderById(String fedProviderId, RealmModel realm) {
-        for (UserStorageProviderModel fedProvider : realm.getUserStorageProviders()) {
-            if (fedProviderId.equals(fedProvider.getId())) {
-                return fedProvider;
-            }
-        }
-        return null;
+        return realm.getUserStorageProvidersStream()
+                .filter(fedProvider -> Objects.equals(fedProvider.getId(), fedProviderId))
+                .findFirst()
+                .orElse(null);
     }
 
     public static ComponentModel createComponentModel(String name, String parentId, String providerId, String providerType, String... config) {
@@ -364,15 +359,14 @@ public final class KeycloakModelUtils {
      * @param result input should be empty list. At the end will be all executions added to this list
      */
     public static void deepFindAuthenticationExecutions(RealmModel realm, AuthenticationFlowModel flow, List<AuthenticationExecutionModel> result) {
-        List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutions(flow.getId());
-        for (AuthenticationExecutionModel execution : executions) {
+        realm.getAuthenticationExecutionsStream(flow.getId()).forEachOrdered(execution -> {
             if (execution.isAuthenticatorFlow()) {
                 AuthenticationFlowModel subFlow = realm.getAuthenticationFlowById(execution.getFlowId());
                 deepFindAuthenticationExecutions(realm, subFlow, result);
             } else {
                 result.add(execution);
             }
-        }
+        });
     }
 
     public static String resolveFirstAttribute(GroupModel group, String name) {
@@ -575,13 +569,9 @@ public final class KeycloakModelUtils {
         if ((realmFlow = realm.getResetCredentialsFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
         if ((realmFlow = realm.getDockerAuthenticationFlow()) != null && realmFlow.getId().equals(model.getId())) return true;
 
-        for (IdentityProviderModel idp : realm.getIdentityProviders()) {
-            if (model.getId().equals(idp.getFirstBrokerLoginFlowId())) return true;
-            if (model.getId().equals(idp.getPostBrokerLoginFlowId())) return true;
-        }
-
-        return false;
-
+        return realm.getIdentityProvidersStream().anyMatch(idp ->
+                Objects.equals(idp.getFirstBrokerLoginFlowId(), model.getId()) ||
+                Objects.equals(idp.getPostBrokerLoginFlowId(), model.getId()));
     }
 
     public static boolean isClientScopeUsed(RealmModel realm, ClientScopeModel clientScope) {
@@ -592,13 +582,14 @@ public final class KeycloakModelUtils {
     }
 
     public static ClientScopeModel getClientScopeByName(RealmModel realm, String clientScopeName) {
-        for (ClientScopeModel clientScope : realm.getClientScopes()) {
-            if (clientScopeName.equals(clientScope.getName())) {
-                return clientScope;
-            }
-        }
-        // check if we are referencing a client instead of a scope
-        return realm.getClientsStream().filter(c -> clientScopeName.equals(c.getClientId())).findFirst().orElse(null);
+        return realm.getClientScopesStream()
+                .filter(clientScope -> Objects.equals(clientScopeName, clientScope.getName()))
+                .findFirst()
+                // check if we are referencing a client instead of a scope
+                .orElse(realm.getClientsStream()
+                        .filter(c -> Objects.equals(clientScopeName, c.getClientId()))
+                        .findFirst()
+                        .orElse(null));
     }
 
     /**

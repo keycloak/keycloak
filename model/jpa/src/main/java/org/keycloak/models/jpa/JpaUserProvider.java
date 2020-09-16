@@ -57,15 +57,7 @@ import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Subquery;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.persistence.LockModeType;
 
@@ -114,12 +106,14 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             realm.getDefaultGroupsStream().forEach(userModel::joinGroupImpl);
         }
 
-        if (addDefaultRequiredActions){
-            for (RequiredActionProviderModel r : realm.getRequiredActionProviders()) {
-                if (r.isEnabled() && r.isDefaultAction()) {
-                    userModel.addRequiredAction(r.getAlias());
-                }
-            }
+        if (addDefaultRequiredActions) {
+            Optional<String> requiredAction = realm.getRequiredActionProvidersStream()
+                    .filter(RequiredActionProviderModel::isEnabled)
+                    .filter(RequiredActionProviderModel::isDefaultAction)
+                    .map(RequiredActionProviderModel::getAlias)
+                    .findFirst();
+            if (requiredAction.isPresent())
+                userModel.addRequiredAction(requiredAction.get());
         }
 
         return userModel;

@@ -100,12 +100,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -309,10 +310,10 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<EventRepresentation> queryEvents(@QueryParam("realmId") String realmId, @QueryParam("type") List<String> types, @QueryParam("client") String client,
-                                                 @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
-                                                 @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
-                                                 @QueryParam("max") Integer maxResults) {
+    public Stream<EventRepresentation> queryEvents(@QueryParam("realmId") String realmId, @QueryParam("type") List<String> types, @QueryParam("client") String client,
+                                                   @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
+                                                   @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
+                                                   @QueryParam("max") Integer maxResults) {
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
 
@@ -358,15 +359,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
             query.maxResults(maxResults);
         }
 
-        return toEventListRep(query.getResultList());
-    }
-
-    private List<EventRepresentation> toEventListRep(List<Event> events) {
-        List<EventRepresentation> reps = new ArrayList<>();
-        for (Event event : events) {
-            reps.add(ModelToRepresentation.toRepresentation(event));
-        }
-        return reps;
+        return query.getResultStream().map(ModelToRepresentation::toRepresentation);
     }
 
     @PUT
@@ -441,7 +434,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<AdminEventRepresentation> getAdminEvents(@QueryParam("realmId") String realmId, @QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
+    public Stream<AdminEventRepresentation> getAdminEvents(@QueryParam("realmId") String realmId, @QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
                                                          @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
                                                          @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
                                                          @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
@@ -503,7 +496,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
             query.maxResults(maxResults);
         }
 
-        return toAdminEventRep(query.getResultList());
+        return query.getResultStream().map(ModelToRepresentation::toRepresentation);
     }
 
     private Date formatDate(String date, String paramName) {
@@ -513,15 +506,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
         } catch (ParseException e) {
             throw new BadRequestException("Invalid value for '" + paramName + "', expected format is yyyy-MM-dd");
         }
-    }
-
-    private List<AdminEventRepresentation> toAdminEventRep(List<AdminEvent> events) {
-        List<AdminEventRepresentation> reps = new ArrayList<>();
-        for (AdminEvent event : events) {
-            reps.add(ModelToRepresentation.toRepresentation(event));
-        }
-
-        return reps;
     }
 
     @POST
@@ -677,17 +661,16 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/test-component")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, TestProvider.DetailsRepresentation> getTestComponentDetails() {
-        Map<String, TestProvider.DetailsRepresentation> reps = new HashMap<>();
-
         RealmModel realm = session.getContext().getRealm();
-        for (ComponentModel c : realm.getComponents(realm.getId(), TestProvider.class.getName())) {
-            ProviderFactory<TestProvider> f = session.getKeycloakSessionFactory().getProviderFactory(TestProvider.class, c.getProviderId());
-            TestProviderFactory factory = (TestProviderFactory) f;
-            TestProvider p = (TestProvider) factory.create(session, c);
-            reps.put(c.getName(), p.getDetails());
-        }
-
-        return reps;
+        return realm.getComponentsStream(realm.getId(), TestProvider.class.getName())
+                .collect(Collectors.toMap(ComponentModel::getName,
+                        componentModel -> {
+                            ProviderFactory<TestProvider> f = session.getKeycloakSessionFactory()
+                                .getProviderFactory(TestProvider.class, componentModel.getProviderId());
+                        TestProviderFactory factory = (TestProviderFactory) f;
+                        TestProvider p = (TestProvider) factory.create(session, componentModel);
+                        return p.getDetails();
+                        }));
     }
 
 

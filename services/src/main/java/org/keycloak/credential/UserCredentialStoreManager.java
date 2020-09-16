@@ -25,7 +25,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.models.cache.UserCache;
-import org.keycloak.provider.ProviderFactory;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageManager;
 import org.keycloak.storage.UserStorageProvider;
@@ -36,8 +35,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -172,11 +173,9 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
 
         if (toValidate.isEmpty()) return true;
 
-        List<CredentialInputValidator> credentialProviders = getCredentialProviders(session, realm, CredentialInputValidator.class);
-        for (CredentialInputValidator validator : credentialProviders) {
-            validate(realm, user, toValidate, validator);
+        getCredentialProviders(session, CredentialInputValidator.class)
+                .forEach(validator -> validate(realm, user, toValidate, validator));
 
-        }
         return toValidate.isEmpty();
     }
 
@@ -190,14 +189,11 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
         }
     }
 
-    public static <T> List<T> getCredentialProviders(KeycloakSession session, RealmModel realm, Class<T> type) {
-        List<T> list = new LinkedList<T>();
-        for (ProviderFactory f : session.getKeycloakSessionFactory().getProviderFactories(CredentialProvider.class)) {
-            if (!Types.supports(type, f, CredentialProviderFactory.class)) continue;
-            list.add((T) session.getProvider(CredentialProvider.class, f.getId()));
-        }
-        return list;
-
+    public static <T> Stream<T> getCredentialProviders(KeycloakSession session, Class<T> type) {
+        return session.getKeycloakSessionFactory().getProviderFactories(CredentialProvider.class)
+                .stream()
+                .filter(f -> Types.supports(type, f, CredentialProviderFactory.class))
+                .map(f -> (T) session.getProvider(CredentialProvider.class, f.getId()));
     }
 
     @Override
@@ -224,14 +220,9 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
             }
         }
 
-        List<CredentialInputUpdater> credentialProviders = getCredentialProviders(session, realm, CredentialInputUpdater.class);
-        for (CredentialInputUpdater updater : credentialProviders) {
-            if (!updater.supportsCredentialType(input.getType())) continue;
-            if (updater.updateCredential(realm, user, input)) return true;
-
-        }
-
-        return false;
+        return getCredentialProviders(session, CredentialInputUpdater.class)
+                .filter(updater -> updater.supportsCredentialType(input.getType()))
+                .anyMatch(updater -> updater.updateCredential(realm, user, input));
     }
 
     @Override
@@ -259,14 +250,9 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
 
         }
 
-        List<CredentialInputUpdater> credentialProviders = getCredentialProviders(session, realm, CredentialInputUpdater.class);
-        for (CredentialInputUpdater updater : credentialProviders) {
-            if (!updater.supportsCredentialType(credentialType)) continue;
-            updater.disableCredentialType(realm, user, credentialType);
-
-        }
-
-
+        getCredentialProviders(session, CredentialInputUpdater.class)
+                .filter(updater -> updater.supportsCredentialType(credentialType))
+                .forEach(updater -> updater.disableCredentialType(realm, user, credentialType));
     }
 
     @Override
@@ -291,10 +277,11 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
 
         }
 
-        List<CredentialInputUpdater> credentialProviders = getCredentialProviders(session, realm, CredentialInputUpdater.class);
-        for (CredentialInputUpdater updater : credentialProviders) {
-            types.addAll(updater.getDisableableCredentialTypes(realm, user));
-        }
+        types.addAll(getCredentialProviders(session, CredentialInputUpdater.class)
+                .map(updater -> updater.getDisableableCredentialTypes(realm, user))
+                .flatMap(Set::stream)
+                .collect(Collectors.toSet()));
+
         return types;
     }
 
@@ -347,50 +334,38 @@ public class UserCredentialStoreManager implements UserCredentialManager, OnUser
 
     @Override
     public boolean isConfiguredLocally(RealmModel realm, UserModel user, String type) {
-        List<CredentialInputValidator> credentialProviders = getCredentialProviders(session, realm, CredentialInputValidator.class);
-        for (CredentialInputValidator validator : credentialProviders) {
-            if (validator.supportsCredentialType(type) && validator.isConfiguredFor(realm, user, type)) {
-                return true;
-            }
-
-        }
-        return false;
+        return getCredentialProviders(session, CredentialInputValidator.class)
+                .anyMatch(validator -> validator.supportsCredentialType(type) && validator.isConfiguredFor(realm, user, type));
     }
 
     @Override
     public CredentialValidationOutput authenticate(KeycloakSession session, RealmModel realm, CredentialInput input) {
-        List<CredentialAuthentication> list = UserStorageManager.getEnabledStorageProviders(session, realm, CredentialAuthentication.class);
-        for (CredentialAuthentication auth : list) {
-            if (auth.supportsCredentialAuthenticationFor(input.getType())) {
-                CredentialValidationOutput output = auth.authenticate(realm, input);
-                if (output != null) return output;
-            }
-        }
+        CredentialValidationOutput output = authenticate(
+                UserStorageManager.getEnabledStorageProviders(session, realm, CredentialAuthentication.class),
+                realm, input);
 
-        list = getCredentialProviders(session, realm, CredentialAuthentication.class);
-        for (CredentialAuthentication auth : list) {
-            if (auth.supportsCredentialAuthenticationFor(input.getType())) {
-                CredentialValidationOutput output = auth.authenticate(realm, input);
-                if (output != null) return output;
-            }
-        }
+        return (output != null) ? output : authenticate(getCredentialProviders(session, CredentialAuthentication.class),
+                realm, input);
+    }
 
-        return null;
+    public CredentialValidationOutput authenticate(Stream<CredentialAuthentication> storageProviders,
+                                                       RealmModel realm, CredentialInput input) {
+        return storageProviders
+                .filter(auth -> auth.supportsCredentialAuthenticationFor(input.getType()))
+                .map(auth -> auth.authenticate(realm, input))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
 
     @Override
     public void onCache(RealmModel realm, CachedUserModel user, UserModel delegate) {
-        List<OnUserCache> credentialProviders = getCredentialProviders(session, realm, OnUserCache.class);
-        for (OnUserCache validator : credentialProviders) {
-            validator.onCache(realm, user, delegate);
-        }
+        getCredentialProviders(session, OnUserCache.class).forEach(validator -> validator.onCache(realm, user, delegate));
     }
 
     @Override
     public List<String> getConfiguredUserStorageCredentialTypes(RealmModel realm, UserModel user) {
-        List<CredentialProvider> credentialProviders = getCredentialProviders(session, realm, CredentialProvider.class);
-
-        return credentialProviders.stream().map(CredentialProvider::getType)
+        return getCredentialProviders(session, CredentialProvider.class).map(CredentialProvider::getType)
                 .filter(credentialType -> UserStorageCredentialConfigured.CONFIGURED == isConfiguredThroughUserStorage(realm, user, credentialType))
                 .collect(Collectors.toList());
     }

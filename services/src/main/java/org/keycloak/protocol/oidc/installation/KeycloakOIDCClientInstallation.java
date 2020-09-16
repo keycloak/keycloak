@@ -22,7 +22,6 @@ import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.authorization.admin.AuthorizationService;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -111,15 +110,15 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
         // Check if there is client scope with audience protocol mapper created for particular client. If yes, admin wants verifying token audience
         String clientId = client.getClientId();
 
-        for (ClientScopeModel clientScope : client.getRealm().getClientScopes()) {
+        return client.getRealm().getClientScopesStream().anyMatch(clientScope -> {
             for (ProtocolMapperModel protocolMapper : clientScope.getProtocolMappers()) {
-                if (AudienceProtocolMapper.PROVIDER_ID.equals(protocolMapper.getProtocolMapper()) && (clientId.equals(protocolMapper.getConfig().get(AudienceProtocolMapper.INCLUDED_CLIENT_AUDIENCE)))) {
+                if (AudienceProtocolMapper.PROVIDER_ID.equals(protocolMapper.getProtocolMapper()) &&
+                        (clientId.equals(protocolMapper.getConfig().get(AudienceProtocolMapper.INCLUDED_CLIENT_AUDIENCE)))) {
                     return true;
                 }
             }
-        }
-
-        return false;
+            return false;
+        });
     }
 
 

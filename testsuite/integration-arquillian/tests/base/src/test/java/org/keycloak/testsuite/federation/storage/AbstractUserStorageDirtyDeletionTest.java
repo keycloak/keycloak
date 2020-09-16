@@ -45,8 +45,8 @@ public abstract class AbstractUserStorageDirtyDeletionTest extends AbstractConcu
     public static void remove20UsersFromStorageProvider(KeycloakSession session) {
         assertThat(REMOVED_USERS_COUNT, Matchers.lessThan(NUM_USERS));
         final RealmModel realm = session.realms().getRealm(TEST_REALM_NAME);
-        UserStorageManager.getEnabledStorageProviders(session, realm, UserMapStorage.class).stream()
-          .forEach((UserMapStorage userMapStorage) -> {
+        UserStorageManager.getEnabledStorageProviders(session, realm, UserMapStorage.class)
+          .forEachOrdered((UserMapStorage userMapStorage) -> {
               Set<String> users = new HashSet<>(userMapStorage.getUsernames());
               users.stream()
                 .sorted()

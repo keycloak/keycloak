@@ -39,8 +39,6 @@ import org.keycloak.representations.idm.authorization.*;
 import org.keycloak.storage.StorageId;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -323,12 +321,10 @@ public class ModelToRepresentation {
         if (realm.getEventsExpiration() != 0) {
             rep.setEventsExpiration(realm.getEventsExpiration());
         }
-        if (realm.getEventsListeners() != null) {
-            rep.setEventsListeners(new LinkedList<>(realm.getEventsListeners()));
-        }
-        if (realm.getEnabledEventTypes() != null) {
-            rep.setEnabledEventTypes(new LinkedList<>(realm.getEnabledEventTypes()));
-        }
+
+        rep.setEventsListeners(realm.getEventsListenersStream().collect(Collectors.toList()));
+
+        rep.setEnabledEventTypes(realm.getEnabledEventTypesStream().collect(Collectors.toList()));
 
         rep.setAdminEventsEnabled(realm.isAdminEventsEnabled());
         rep.setAdminEventsDetailsEnabled(realm.isAdminEventsDetailsEnabled());
@@ -419,27 +415,23 @@ public class ModelToRepresentation {
             rep.setDefaultGroups(defaultGroups);
         }
 
-        List<RequiredCredentialModel> requiredCredentialModels = realm.getRequiredCredentials();
-        if (!requiredCredentialModels.isEmpty()) {
-            rep.setRequiredCredentials(new HashSet<>());
-            for (RequiredCredentialModel cred : requiredCredentialModels) {
-                rep.getRequiredCredentials().add(cred.getType());
-            }
+        Set<String> reqCredentials = realm.getRequiredCredentialsStream()
+                .map(RequiredCredentialModel::getType)
+                .collect(Collectors.toSet());
+        if (!reqCredentials.isEmpty()) {
+            rep.setRequiredCredentials(reqCredentials);
         }
 
-        for (IdentityProviderModel provider : realm.getIdentityProviders()) {
-            rep.addIdentityProvider(toRepresentation(realm, provider));
-        }
+        List<IdentityProviderRepresentation> identityProviders = realm.getIdentityProvidersStream()
+                .map(provider -> toRepresentation(realm, provider)).collect(Collectors.toList());
+        rep.setIdentityProviders(identityProviders);
 
-        for (IdentityProviderMapperModel mapper : realm.getIdentityProviderMappers()) {
-            rep.addIdentityProviderMapper(toRepresentation(mapper));
-        }
+        List<IdentityProviderMapperRepresentation> identityProviderMappers = realm.getIdentityProviderMappersStream()
+                .map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
+        rep.setIdentityProviderMappers(identityProviderMappers);
 
         rep.setInternationalizationEnabled(realm.isInternationalizationEnabled());
-        if (realm.getSupportedLocales() != null) {
-            rep.setSupportedLocales(new HashSet<>());
-            rep.getSupportedLocales().addAll(realm.getSupportedLocales());
-        }
+        rep.setSupportedLocales(realm.getSupportedLocalesStream().collect(Collectors.toSet()));
         rep.setDefaultLocale(realm.getDefaultLocale());
         if (internal) {
             exportAuthenticationFlows(realm, rep);
@@ -479,47 +471,22 @@ public class ModelToRepresentation {
     }
 
     public static void exportAuthenticationFlows(RealmModel realm, RealmRepresentation rep) {
-        rep.setAuthenticationFlows(new LinkedList<>());
-        rep.setAuthenticatorConfig(new LinkedList<>());
+        List<AuthenticationFlowRepresentation> authenticationFlows = realm.getAuthenticationFlowsStream()
+                .sorted(AuthenticationFlowModel.AuthenticationFlowComparator.SINGLETON)
+                .map(flow -> toRepresentation(realm, flow))
+                .collect(Collectors.toList());
+        rep.setAuthenticationFlows(authenticationFlows);
 
-        List<AuthenticationFlowModel> authenticationFlows = new ArrayList<>(realm.getAuthenticationFlows());
-        //ensure consistent ordering of authenticationFlows.
-        Collections.sort(authenticationFlows, new Comparator<AuthenticationFlowModel>() {
-            @Override
-            public int compare(AuthenticationFlowModel left, AuthenticationFlowModel right) {
-                String l = left.getAlias() != null ? left.getAlias() : "\0";
-                String r = right.getAlias() != null ? right.getAlias() : "\0";
-                return l.compareTo(r);
-            }
-        });
-
-        for (AuthenticationFlowModel model : authenticationFlows) {
-            AuthenticationFlowRepresentation flowRep = toRepresentation(realm, model);
-            rep.getAuthenticationFlows().add(flowRep);
-        }
-
-        List<AuthenticatorConfigModel> authenticatorConfigs = new ArrayList<>(realm.getAuthenticatorConfigs());
-        //ensure consistent ordering of authenticatorConfigs.
-        Collections.sort(authenticatorConfigs, new Comparator<AuthenticatorConfigModel>() {
-            @Override
-            public int compare(AuthenticatorConfigModel left, AuthenticatorConfigModel right) {
-                String l = left.getAlias() != null ? left.getAlias() : "\0";
-                String r = right.getAlias() != null ? right.getAlias() : "\0";
-                return l.compareTo(r);
-            }
-        });
-
-        for (AuthenticatorConfigModel model : authenticatorConfigs) {
-            rep.getAuthenticatorConfig().add(toRepresentation(model));
-        }
-
+        List<AuthenticatorConfigRepresentation> authenticationConfigs = realm.getAuthenticatorConfigsStream()
+                .sorted(AuthenticatorConfigModel.AuthenticationConfigComparator.SINGLETON)
+                .map(ModelToRepresentation::toRepresentation)
+                .collect(Collectors.toList());
+        rep.setAuthenticatorConfig(authenticationConfigs);
     }
 
     public static void exportRequiredActions(RealmModel realm, RealmRepresentation rep) {
-
-        rep.setRequiredActions(new LinkedList<>());
-
-        realm.getRequiredActionProviders().forEach(action -> rep.getRequiredActions().add(toRepresentation(action)));
+        rep.setRequiredActions(realm.getRequiredActionProvidersStream()
+                .map(ModelToRepresentation::toRepresentation).collect(Collectors.toList()));
     }
 
     public static RealmEventsConfigRepresentation toEventsConfigReprensetation(RealmModel realm) {
@@ -530,13 +497,9 @@ public class ModelToRepresentation {
             rep.setEventsExpiration(realm.getEventsExpiration());
         }
 
-        if (realm.getEventsListeners() != null) {
-            rep.setEventsListeners(new LinkedList<>(realm.getEventsListeners()));
-        }
+        rep.setEventsListeners(realm.getEventsListenersStream().collect(Collectors.toList()));
 
-        if (realm.getEnabledEventTypes() != null) {
-            rep.setEnabledEventTypes(new LinkedList<>(realm.getEnabledEventTypes()));
-        }
+        rep.setEnabledEventTypes(realm.getEnabledEventTypesStream().collect(Collectors.toList()));
 
         rep.setAdminEventsEnabled(realm.isAdminEventsEnabled());
 
@@ -763,12 +726,9 @@ public class ModelToRepresentation {
         rep.setProviderId(model.getProviderId());
         rep.setAlias(model.getAlias());
         rep.setDescription(model.getDescription());
-        rep.setAuthenticationExecutions(new LinkedList<>());
-        for (AuthenticationExecutionModel execution : realm.getAuthenticationExecutions(model.getId())) {
-            rep.getAuthenticationExecutions().add(toRepresentation(realm, execution));
-        }
+        rep.setAuthenticationExecutions(realm.getAuthenticationExecutionsStream(model.getId())
+                .map(e -> toRepresentation(realm, e)).collect(Collectors.toList()));
         return rep;
-
     }
 
     public static AuthenticationExecutionExportRepresentation toRepresentation(RealmModel realm, AuthenticationExecutionModel model) {

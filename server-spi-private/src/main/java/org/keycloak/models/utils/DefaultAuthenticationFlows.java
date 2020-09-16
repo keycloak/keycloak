@@ -24,10 +24,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -150,13 +147,7 @@ public class DefaultAuthenticationFlows {
     }
 
     private static boolean hasCredentialType(RealmModel realm, String type) {
-        for (RequiredCredentialModel requiredCredentialModel : realm.getRequiredCredentials()) {
-            if (type.equals(requiredCredentialModel.getType())) {
-                return true;
-            }
-
-        }
-        return false;
+        return realm.getRequiredCredentialsStream().anyMatch(r -> Objects.equals(r.getType(), type));
     }
 
     public static void resetCredentialsFlow(RealmModel realm) {
@@ -388,20 +379,16 @@ public class DefaultAuthenticationFlows {
     }
 
     public static void addIdentityProviderAuthenticator(RealmModel realm, String defaultProvider) {
-        String browserFlowId = null;
-        for (AuthenticationFlowModel f : realm.getAuthenticationFlows()) {
-            if (f.getAlias().equals(DefaultAuthenticationFlows.BROWSER_FLOW)) {
-                browserFlowId = f.getId();
-                break;
-            }
-        }
+        String browserFlowId = realm.getAuthenticationFlowsStream()
+                .filter(f -> Objects.equals(f.getAlias(), DefaultAuthenticationFlows.BROWSER_FLOW))
+                .map(AuthenticationFlowModel::getId)
+                .findFirst()
+                .orElse(null);
 
         if (browserFlowId != null) {
-            for (AuthenticationExecutionModel e : realm.getAuthenticationExecutions(browserFlowId)) {
-                if ("identity-provider-redirector".equals(e.getAuthenticator())) {
-                    return;
-                }
-            }
+            if (realm.getAuthenticationExecutionsStream(browserFlowId)
+                    .anyMatch(e -> Objects.equals(e.getAuthenticator(), "identity-provider-redirector")))
+                return;
 
             AuthenticationExecutionModel execution;
             execution = new AuthenticationExecutionModel();
@@ -618,7 +605,8 @@ public class DefaultAuthenticationFlows {
             KeycloakModelUtils.deepFindAuthenticationExecutions(realm, browserFlow, browserExecutions);
             for (AuthenticationExecutionModel browserExecution : browserExecutions) {
                 if (browserExecution.isAuthenticatorFlow()){
-                    if (realm.getAuthenticationExecutions(browserExecution.getFlowId()).stream().anyMatch(e -> e.getAuthenticator().equals("auth-otp-form"))){
+                    if (realm.getAuthenticationExecutionsStream(browserExecution.getFlowId())
+                            .anyMatch(e -> e.getAuthenticator().equals("auth-otp-form"))){
                         execution.setRequirement(browserExecution.getRequirement());
                     }
                 }

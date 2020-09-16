@@ -39,8 +39,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * @resource Client Initial Access
@@ -94,16 +93,10 @@ public class ClientInitialAccessResource {
     
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<ClientInitialAccessPresentation> list() {
+    public Stream<ClientInitialAccessPresentation> list() {
         auth.clients().requireView();
 
-        List<ClientInitialAccessModel> models = session.realms().listClientInitialAccess(realm);
-        List<ClientInitialAccessPresentation> reps = new LinkedList<>();
-        for (ClientInitialAccessModel m : models) {
-            ClientInitialAccessPresentation r = wrap(m);
-            reps.add(r);
-        }
-        return reps;
+        return session.realms().listClientInitialAccessStream(realm).map(this::wrap);
     }
 
     @DELETE

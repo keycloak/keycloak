@@ -38,11 +38,13 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.DISABLED;
 import static org.keycloak.utils.CredentialHelper.createUserStorageCredentialRepresentation;
@@ -147,7 +149,7 @@ public class AccountCredentialResource {
 
 
     /**
-     * Retrieve the list of credentials available to the current logged in user. It will return only credentials of enabled types,
+     * Retrieve the stream of credentials available to the current logged in user. It will return only credentials of enabled types,
      * which user can use to authenticate in some authentication flow.
      *
      * @param type Allows to filter just single credential type, which will be specified as this parameter. If null, it will return all credential types
@@ -158,14 +160,14 @@ public class AccountCredentialResource {
     @GET
     @NoCache
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-    public List<CredentialContainer> credentialTypes(@QueryParam(TYPE) String type,
+    public Stream<CredentialContainer> credentialTypes(@QueryParam(TYPE) String type,
                                                      @QueryParam(USER_CREDENTIALS) Boolean userCredentials) {
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
 
         boolean includeUserCredentials = userCredentials == null || userCredentials;
 
-        List<CredentialContainer> credentialTypes = new LinkedList<>();
-        List<CredentialProvider> credentialProviders = UserCredentialStoreManager.getCredentialProviders(session, realm, CredentialProvider.class);
+        List<CredentialProvider> credentialProviders = UserCredentialStoreManager.getCredentialProviders(session, CredentialProvider.class)
+                .collect(Collectors.toList());
         Set<String> enabledCredentialTypes = getEnabledCredentialTypes(credentialProviders);
 
         List<CredentialModel> models = includeUserCredentials ? session.userCredentialManager().getStoredCredentials(realm, user) : null;
@@ -177,21 +179,7 @@ public class AccountCredentialResource {
             }
         }
 
-        for (CredentialProvider credentialProvider : credentialProviders) {
-            String credentialProviderType = credentialProvider.getType();
-
-            // Filter just by single type
-            if (type != null && !type.equals(credentialProviderType)) {
-                continue;
-            }
-
-            boolean enabled = enabledCredentialTypes.contains(credentialProviderType);
-
-            // Filter disabled credential types
-            if (!enabled) {
-                continue;
-            }
-
+        Function<CredentialProvider, CredentialContainer> toCredentialContainer = (credentialProvider) -> {
             CredentialTypeMetadataContext ctx = CredentialTypeMetadataContext.builder()
                     .user(user)
                     .build(session);
@@ -205,56 +193,51 @@ public class AccountCredentialResource {
                         .collect(Collectors.toList());
 
                 if (userCredentialModels.isEmpty() &&
-                        session.userCredentialManager().isConfiguredFor(realm, user, credentialProviderType)) {
+                        session.userCredentialManager().isConfiguredFor(realm, user, credentialProvider.getType())) {
                     // In case user is federated in the userStorage, he may have credential configured on the userStorage side. We're
                     // creating "dummy" credential representing the credential provided by userStorage
-                    CredentialRepresentation credential = createUserStorageCredentialRepresentation(credentialProviderType);
-
+                    CredentialRepresentation credential = createUserStorageCredentialRepresentation(credentialProvider.getType());
                     userCredentialModels = Collections.singletonList(credential);
                 }
 
                 // In case that there are no userCredentials AND there are not required actions for setup new credential,
                 // we won't include credentialType as user won't be able to do anything with it
                 if (userCredentialModels.isEmpty() && metadata.getCreateAction() == null && metadata.getUpdateAction() == null) {
-                    continue;
+                    return null;
                 }
             }
 
-            CredentialContainer credType = new CredentialContainer(metadata, userCredentialModels);
-            credentialTypes.add(credType);
-        }
+            return new CredentialContainer(metadata, userCredentialModels);
+        };
 
-        credentialTypes.sort(Comparator.comparing(CredentialContainer::getMetadata));
-
-        return credentialTypes;
+        return credentialProviders.stream()
+                .filter(p -> type == null || Objects.equals(p.getType(), type))
+                .filter(p -> enabledCredentialTypes.contains(p.getType()))
+                .map(toCredentialContainer)
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(CredentialContainer::getMetadata));
     }
 
     // Going through all authentication flows and their authentication executions to see if there is any authenticator of the corresponding
     // credential type.
     private Set<String> getEnabledCredentialTypes(List<CredentialProvider> credentialProviders) {
-        Set<String> enabledCredentialTypes = new HashSet<>();
-
-        for (AuthenticationFlowModel flow : realm.getAuthenticationFlows()) {
-            // Ignore DISABLED executions and flows
-            if (isFlowEffectivelyDisabled(flow)) continue;
-
-            for (AuthenticationExecutionModel execution : realm.getAuthenticationExecutions(flow.getId())) {
-                if (execution.getAuthenticator() != null && DISABLED != execution.getRequirement()) {
-                    AuthenticatorFactory authenticatorFactory = (AuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, execution.getAuthenticator());
-                    if (authenticatorFactory != null && authenticatorFactory.getReferenceCategory() != null) {
-                        enabledCredentialTypes.add(authenticatorFactory.getReferenceCategory());
-                    }
-                }
-            }
-        }
+        Stream<String> enabledCredentialTypes = realm.getAuthenticationFlowsStream()
+                .filter(((Predicate<AuthenticationFlowModel>) this::isFlowEffectivelyDisabled).negate())
+                .flatMap(flow ->
+                        realm.getAuthenticationExecutionsStream(flow.getId())
+                                .filter(exe -> Objects.nonNull(exe.getAuthenticator()) && exe.getRequirement() != DISABLED)
+                                .map(exe -> (AuthenticatorFactory) session.getKeycloakSessionFactory()
+                                        .getProviderFactory(Authenticator.class, exe.getAuthenticator()))
+                                .filter(Objects::nonNull)
+                                .map(AuthenticatorFactory::getReferenceCategory)
+                                .filter(Objects::nonNull)
+                );
 
         Set<String> credentialTypes = credentialProviders.stream()
                 .map(CredentialProvider::getType)
                 .collect(Collectors.toSet());
 
-        enabledCredentialTypes.retainAll(credentialTypes);
-
-        return enabledCredentialTypes;
+        return enabledCredentialTypes.filter(credentialTypes::contains).collect(Collectors.toSet());
     }
 
     // Returns true if flow is effectively disabled - either it's execution or some parent execution is disabled

@@ -47,10 +47,10 @@ public class MigrateTo2_1_0 implements Migration {
     }
 
     public void migrate(KeycloakSession session) {
-        for (RealmModel realm : session.realms().getRealms()) {
+        session.realms().getRealmsStream().forEach(realm -> {
             migrateDefaultRequiredAction(realm);
             migrateRolePolicies(realm, session);
-        }
+        });
     }
 
     @Override

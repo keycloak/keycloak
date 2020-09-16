@@ -24,10 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-
 import org.jboss.logging.Logger;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -136,7 +132,8 @@ class AuthenticationSelectionResolver {
                 }
 
                 // Find the corresponding execution. If it is 1st REQUIRED execution in the particular subflow, we need to consider parent flow as well
-                List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutions(execution.getParentFlow());
+                List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutionsStream(execution.getParentFlow())
+                        .collect(Collectors.toList());
                 int executionIndex = executions.indexOf(execution);
                 if (executionIndex != 0) {
                     return flowId;
@@ -188,11 +185,9 @@ class AuthenticationSelectionResolver {
 
         logger.debugf("Going through the flow '%s' for adding executions", flowModel.getAlias());
 
-        List<AuthenticationExecutionModel> executions = processor.getRealm().getAuthenticationExecutions(flowId);
-
         List<AuthenticationExecutionModel> requiredList = new ArrayList<>();
         List<AuthenticationExecutionModel> alternativeList = new ArrayList<>();
-        flow.fillListsOfExecutions(executions, requiredList, alternativeList);
+        flow.fillListsOfExecutions(processor.getRealm().getAuthenticationExecutionsStream(flowId), requiredList, alternativeList);
 
         // If requiredList is not empty, we're going to collect just very first execution from the flow
         if (!requiredList.isEmpty()) {
