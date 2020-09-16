@@ -246,7 +246,15 @@ public interface RealmModel extends RoleContainerModel {
     int getActionTokenGeneratedByUserLifespan(String actionTokenType);
     void setActionTokenGeneratedByUserLifespan(String actionTokenType, Integer seconds);
 
-    List<RequiredCredentialModel> getRequiredCredentials();
+    /**
+     * @deprecated Use {@link #getRequiredCredentialsStream()  getRequiredCredentialsStream} instead.
+     */
+    @Deprecated
+    default List<RequiredCredentialModel> getRequiredCredentials() {
+        return getRequiredCredentialsStream().collect(Collectors.toList());
+    }
+
+    Stream<RequiredCredentialModel> getRequiredCredentialsStream();
 
     void addRequiredCredential(String cred);
 
@@ -360,42 +368,115 @@ public interface RealmModel extends RoleContainerModel {
     AuthenticationFlowModel getDockerAuthenticationFlow();
     void setDockerAuthenticationFlow(AuthenticationFlowModel flow);
 
-    List<AuthenticationFlowModel> getAuthenticationFlows();
+    /**
+     * @deprecated Use {@link #getAuthenticationFlowsStream()  getAuthenticationFlowsStream} instead.
+     */
+    @Deprecated
+    default List<AuthenticationFlowModel> getAuthenticationFlows() {
+        return getAuthenticationFlowsStream().collect(Collectors.toList());
+    }
+
+    Stream<AuthenticationFlowModel> getAuthenticationFlowsStream();
+
     AuthenticationFlowModel getFlowByAlias(String alias);
     AuthenticationFlowModel addAuthenticationFlow(AuthenticationFlowModel model);
     AuthenticationFlowModel getAuthenticationFlowById(String id);
     void removeAuthenticationFlow(AuthenticationFlowModel model);
     void updateAuthenticationFlow(AuthenticationFlowModel model);
 
-    List<AuthenticationExecutionModel> getAuthenticationExecutions(String flowId);
+    /**
+     * @deprecated Use {@link #getAuthenticationExecutionsStream(String) getAuthenticationExecutionsStream} instead.
+     */
+    @Deprecated
+    default List<AuthenticationExecutionModel> getAuthenticationExecutions(String flowId) {
+        return getAuthenticationExecutionsStream(flowId).collect(Collectors.toList());
+    }
+
+    /**
+     * Returns sorted {@link AuthenticationExecutionModel AuthenticationExecutionModel} as a stream.
+     * It should be used with forEachOrdered if the ordering is required.
+     * @return Sorted stream
+     */
+    Stream<AuthenticationExecutionModel> getAuthenticationExecutionsStream(String flowId);
+
     AuthenticationExecutionModel getAuthenticationExecutionById(String id);
     AuthenticationExecutionModel getAuthenticationExecutionByFlowId(String flowId);
     AuthenticationExecutionModel addAuthenticatorExecution(AuthenticationExecutionModel model);
     void updateAuthenticatorExecution(AuthenticationExecutionModel model);
     void removeAuthenticatorExecution(AuthenticationExecutionModel model);
 
+    /**
+     * @deprecated Use {@link #getAuthenticatorConfigsStream() getAuthenticatorConfigsStream} instead.
+     */
+    @Deprecated
+    default List<AuthenticatorConfigModel> getAuthenticatorConfigs() {
+        return getAuthenticatorConfigsStream().collect(Collectors.toList());
+    }
 
-    List<AuthenticatorConfigModel> getAuthenticatorConfigs();
+    Stream<AuthenticatorConfigModel> getAuthenticatorConfigsStream();
+
     AuthenticatorConfigModel addAuthenticatorConfig(AuthenticatorConfigModel model);
     void updateAuthenticatorConfig(AuthenticatorConfigModel model);
     void removeAuthenticatorConfig(AuthenticatorConfigModel model);
     AuthenticatorConfigModel getAuthenticatorConfigById(String id);
     AuthenticatorConfigModel getAuthenticatorConfigByAlias(String alias);
 
-    List<RequiredActionProviderModel> getRequiredActionProviders();
+    /**
+     * @deprecated Use {@link #getRequiredActionProvidersStream() getRequiredActionProvidersStream} instead.
+     */
+    @Deprecated
+    default List<RequiredActionProviderModel> getRequiredActionProviders() {
+        return getRequiredActionProvidersStream().collect(Collectors.toList());
+    }
+
+    /**
+     * Returns sorted {@link RequiredActionProviderModel RequiredActionProviderModel} as a stream.
+     * It should be used with forEachOrdered if the ordering is required.
+     * @return Sorted stream
+     */
+    Stream<RequiredActionProviderModel> getRequiredActionProvidersStream();
+
     RequiredActionProviderModel addRequiredActionProvider(RequiredActionProviderModel model);
     void updateRequiredActionProvider(RequiredActionProviderModel model);
     void removeRequiredActionProvider(RequiredActionProviderModel model);
     RequiredActionProviderModel getRequiredActionProviderById(String id);
     RequiredActionProviderModel getRequiredActionProviderByAlias(String alias);
 
-    List<IdentityProviderModel> getIdentityProviders();
+    /**
+     * @deprecated Use {@link #getIdentityProvidersStream() getIdentityProvidersStream} instead.
+     */
+    @Deprecated
+    default List<IdentityProviderModel> getIdentityProviders() {
+        return getIdentityProvidersStream().collect(Collectors.toList());
+    }
+
+    Stream<IdentityProviderModel> getIdentityProvidersStream();
+
     IdentityProviderModel getIdentityProviderByAlias(String alias);
     void addIdentityProvider(IdentityProviderModel identityProvider);
     void removeIdentityProviderByAlias(String alias);
     void updateIdentityProvider(IdentityProviderModel identityProvider);
-    Set<IdentityProviderMapperModel> getIdentityProviderMappers();
-    Set<IdentityProviderMapperModel> getIdentityProviderMappersByAlias(String brokerAlias);
+
+    /**
+     * @deprecated Use {@link #getIdentityProviderMappersStream() getIdentityProviderMappersStream} instead.
+     */
+    @Deprecated
+    default Set<IdentityProviderMapperModel> getIdentityProviderMappers() {
+        return getIdentityProviderMappersStream().collect(Collectors.toSet());
+    }
+
+    Stream<IdentityProviderMapperModel> getIdentityProviderMappersStream();
+
+    /**
+     * @deprecated Use {@link #getIdentityProviderMappersByAliasStream(String) getIdentityProviderMappersByAliasStream} instead.
+     */
+    @Deprecated
+    default Set<IdentityProviderMapperModel> getIdentityProviderMappersByAlias(String brokerAlias) {
+        return getIdentityProviderMappersByAliasStream(brokerAlias).collect(Collectors.toSet());
+    }
+
+    Stream<IdentityProviderMapperModel> getIdentityProviderMappersByAliasStream(String brokerAlias);
+
     IdentityProviderMapperModel addIdentityProviderMapper(IdentityProviderMapperModel model);
     void removeIdentityProviderMapper(IdentityProviderMapperModel mapping);
     void updateIdentityProviderMapper(IdentityProviderMapperModel mapping);
@@ -422,7 +503,15 @@ public interface RealmModel extends RoleContainerModel {
     void updateComponent(ComponentModel component);
     void removeComponent(ComponentModel component);
     void removeComponents(String parentId);
-    List<ComponentModel> getComponents(String parentId, String providerType);
+
+    /**
+     * @deprecated Use {@link #getComponentsStream(String, String) getComponentsStream} instead.
+     */
+    @Deprecated
+    default List<ComponentModel> getComponents(String parentId, String providerType) {
+        return getComponentsStream(parentId, providerType).collect(Collectors.toList());
+    }
+
 
     /**
      * Returns stream of ComponentModels for specific parentId and providerType.
@@ -430,43 +519,85 @@ public interface RealmModel extends RoleContainerModel {
      * @param providerType type of provider
      * @return stream of ComponentModels
      */
-    default Stream<ComponentModel> getComponentsStream(String parentId, String providerType) {
-        return getComponents(parentId, providerType).stream();
+    Stream<ComponentModel> getComponentsStream(String parentId, String providerType);
+
+    Stream<ComponentModel> getComponentsStream(String parentId);
+
+    /**
+     * @deprecated Use {@link #getComponentsStream(String) getComponentsStream} instead.
+     */
+    @Deprecated
+    default List<ComponentModel> getComponents(String parentId) {
+        return getComponentsStream(parentId).collect(Collectors.toList());
     }
 
-    List<ComponentModel> getComponents(String parentId);
+    /**
+     * @deprecated Use {@link #getComponentsStream() getComponentsStream} instead.
+     */
+    @Deprecated
+    default List<ComponentModel> getComponents() {
+        return getComponentsStream().collect(Collectors.toList());
+    }
 
-    List<ComponentModel> getComponents();
+    Stream<ComponentModel> getComponentsStream();
+
     ComponentModel getComponent(String id);
 
-    default
-    List<UserStorageProviderModel> getUserStorageProviders() {
-        List<UserStorageProviderModel> list = new LinkedList<>();
-        for (ComponentModel component : getComponents(getId(), UserStorageProvider.class.getName())) {
-            list.add(new UserStorageProviderModel(component));
-        }
-        Collections.sort(list, UserStorageProviderModel.comparator);
-        return list;
+    /**
+     * @deprecated Use {@link #getUserStorageProvidersStream() getUserStorageProvidersStream} instead.
+     */
+    @Deprecated
+    default List<UserStorageProviderModel> getUserStorageProviders() {
+        return getUserStorageProvidersStream().collect(Collectors.toList());
     }
 
-    default
-    List<ClientStorageProviderModel> getClientStorageProviders() {
-        List<ClientStorageProviderModel> list = new LinkedList<>();
-        for (ComponentModel component : getComponents(getId(), ClientStorageProvider.class.getName())) {
-            list.add(new ClientStorageProviderModel(component));
-        }
-        Collections.sort(list, ClientStorageProviderModel.comparator);
-        return list;
+    /**
+     * Returns sorted {@link UserStorageProviderModel UserStorageProviderModel} as a stream.
+     * It should be used with forEachOrdered if the ordering is required.
+     * @return Sorted stream
+     */
+    default Stream<UserStorageProviderModel> getUserStorageProvidersStream() {
+        return getComponentsStream(getId(), UserStorageProvider.class.getName())
+                .map(UserStorageProviderModel::new)
+                .sorted(UserStorageProviderModel.comparator);
     }
 
-    default
-    List<RoleStorageProviderModel> getRoleStorageProviders() {
-        List<RoleStorageProviderModel> list = new LinkedList<>();
-        for (ComponentModel component : getComponents(getId(), RoleStorageProvider.class.getName())) {
-            list.add(new RoleStorageProviderModel(component));
-        }
-        Collections.sort(list, RoleStorageProviderModel.comparator);
-        return list;
+    /**
+     * @deprecated Use {@link #getClientStorageProvidersStream() getClientStorageProvidersStream} instead.
+     */
+    @Deprecated
+    default List<ClientStorageProviderModel> getClientStorageProviders() {
+        return getClientStorageProvidersStream().collect(Collectors.toList());
+    }
+
+    /**
+     * Returns sorted {@link ClientStorageProviderModel ClientStorageProviderModel} as a stream.
+     * It should be used with forEachOrdered if the ordering is required.
+     * @return Sorted stream
+     */
+    default Stream<ClientStorageProviderModel> getClientStorageProvidersStream() {
+        return getComponentsStream(getId(), ClientStorageProvider.class.getName())
+                .map(ClientStorageProviderModel::new)
+                .sorted(ClientStorageProviderModel.comparator);
+    }
+
+    /**
+     * @deprecated Use {@link #getRoleStorageProvidersStream() getRoleStorageProvidersStream} instead.
+     */
+    @Deprecated
+    default List<RoleStorageProviderModel> getRoleStorageProviders() {
+        return getRoleStorageProvidersStream().collect(Collectors.toList());
+    }
+
+    /**
+     * Returns sorted {@link RoleStorageProviderModel RoleStorageProviderModel} as a stream.
+     * It should be used with forEachOrdered if the ordering is required.
+     * @return Sorted stream
+     */
+    default Stream<RoleStorageProviderModel> getRoleStorageProvidersStream() {
+        return getComponentsStream(getId(), RoleStorageProvider.class.getName())
+                .map(RoleStorageProviderModel::new)
+                .sorted(RoleStorageProviderModel.comparator);
     }
 
     /**
@@ -516,11 +647,27 @@ public interface RealmModel extends RoleContainerModel {
 
     void setEventsExpiration(long expiration);
 
-    Set<String> getEventsListeners();
+    /**
+     * @deprecated Use {@link #getEventsListenersStream() getEventsListenersStream} instead.
+     */
+    @Deprecated
+    default Set<String> getEventsListeners() {
+        return getEventsListenersStream().collect(Collectors.toSet());
+    }
+
+    Stream<String> getEventsListenersStream();
 
     void setEventsListeners(Set<String> listeners);
 
-    Set<String> getEnabledEventTypes();
+    /**
+     * @deprecated Use {@link #getEnabledEventTypesStream() getEnabledEventTypesStream} instead.
+     */
+    @Deprecated
+    default Set<String> getEnabledEventTypes() {
+        return getEnabledEventTypesStream().collect(Collectors.toSet());
+    }
+
+    Stream<String> getEnabledEventTypesStream();
 
     void setEnabledEventTypes(Set<String> enabledEventTypes);
 
@@ -540,7 +687,17 @@ public interface RealmModel extends RoleContainerModel {
 
     boolean isInternationalizationEnabled();
     void setInternationalizationEnabled(boolean enabled);
-    Set<String> getSupportedLocales();
+
+    /**
+     * @deprecated Use {@link #getSupportedLocalesStream() getSupportedLocalesStream} instead.
+     */
+    @Deprecated
+    default Set<String> getSupportedLocales() {
+        return getSupportedLocalesStream().collect(Collectors.toSet());
+    }
+
+    Stream<String> getSupportedLocalesStream();
+
     void setSupportedLocales(Set<String> locales);
     String getDefaultLocale();
     void setDefaultLocale(String locale);
@@ -561,6 +718,9 @@ public interface RealmModel extends RoleContainerModel {
 
     GroupModel getGroupById(String id);
 
+    /**
+     * @deprecated Use {@link #getGroupsStream() getGroupsStream} instead.
+     */
     @Deprecated
     default List<GroupModel> getGroups() {
         return getGroupsStream().collect(Collectors.toList());
@@ -571,6 +731,9 @@ public interface RealmModel extends RoleContainerModel {
     Long getGroupsCount(Boolean onlyTopGroups);
     Long getGroupsCountByNameContaining(String search);
 
+    /**
+     * @deprecated Use {@link #getTopLevelGroups() getTopLevelGroups} instead.
+     */
     @Deprecated
     default List<GroupModel> getTopLevelGroups() {
         return getTopLevelGroupsStream().collect(Collectors.toList());
@@ -578,6 +741,9 @@ public interface RealmModel extends RoleContainerModel {
 
     Stream<GroupModel> getTopLevelGroupsStream();
 
+    /**
+     * @deprecated Use {@link #getTopLevelGroupsStream(Integer, Integer) getTopLevelGroupsStream} instead.
+     */
     @Deprecated
     default List<GroupModel> getTopLevelGroups(Integer first, Integer max) {
         return getTopLevelGroupsStream(first, max).collect(Collectors.toList());
@@ -585,6 +751,9 @@ public interface RealmModel extends RoleContainerModel {
 
     Stream<GroupModel> getTopLevelGroupsStream(Integer first, Integer max);
 
+    /**
+     * @deprecated Use {@link #searchForGroupByNameStream(String, Integer, Integer) searchForGroupByName} instead.
+     */
     @Deprecated
     default List<GroupModel> searchForGroupByName(String search, Integer first, Integer max) {
         return searchForGroupByNameStream(search, first, max).collect(Collectors.toList());
@@ -595,7 +764,15 @@ public interface RealmModel extends RoleContainerModel {
     boolean removeGroup(GroupModel group);
     void moveGroup(GroupModel group, GroupModel toParent);
 
-    List<ClientScopeModel> getClientScopes();
+    /**
+     * @deprecated Use {@link #getClientScopesStream() getClientScopesStream} instead.
+     */
+    @Deprecated
+    default List<ClientScopeModel> getClientScopes() {
+        return getClientScopesStream().collect(Collectors.toList());
+    }
+
+    Stream<ClientScopeModel> getClientScopesStream();
 
     ClientScopeModel addClientScope(String name);
 
@@ -607,6 +784,14 @@ public interface RealmModel extends RoleContainerModel {
 
     void addDefaultClientScope(ClientScopeModel clientScope, boolean defaultScope);
     void removeDefaultClientScope(ClientScopeModel clientScope);
-    List<ClientScopeModel> getDefaultClientScopes(boolean defaultScope);
 
+    /**
+     * @deprecated Use {@link #getDefaultClientScopesStream(boolean) getDefaultClientScopesStream} instead.
+     */
+    @Deprecated
+    default List<ClientScopeModel> getDefaultClientScopes(boolean defaultScope) {
+        return getDefaultClientScopesStream(defaultScope).collect(Collectors.toList());
+    }
+
+    Stream<ClientScopeModel> getDefaultClientScopesStream(boolean defaultScope);
 }

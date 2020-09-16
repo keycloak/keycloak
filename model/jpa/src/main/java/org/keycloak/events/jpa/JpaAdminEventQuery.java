@@ -33,6 +33,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Stream;
+
+import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * @author <a href="mailto:giriraj.sharma27@gmail.com">Giriraj Sharma</a>
@@ -140,7 +143,7 @@ public class JpaAdminEventQuery implements AdminEventQuery {
     }
 
     @Override
-    public List<AdminEvent> getResultList() {
+    public Stream<AdminEvent> getResultStream() {
         if (!predicates.isEmpty()) {
             cq.where(cb.and(predicates.toArray(new Predicate[predicates.size()])));
         }
@@ -157,12 +160,7 @@ public class JpaAdminEventQuery implements AdminEventQuery {
             query.setMaxResults(maxResults);
         }
 
-        List<AdminEvent> events = new LinkedList<AdminEvent>();
-        for (AdminEventEntity e : query.getResultList()) {
-            events.add(JpaEventStoreProvider.convertAdminEvent(e));
-        }
-
-        return events;
+        return closing(query.getResultStream().map(JpaEventStoreProvider::convertAdminEvent));
     }
     
 }

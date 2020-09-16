@@ -20,9 +20,9 @@ package org.keycloak.theme.beans;
 import org.keycloak.models.RealmModel;
 
 import javax.ws.rs.core.UriBuilder;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -37,12 +37,13 @@ public class LocaleBean {
         this.currentLanguageTag = current.toLanguageTag();
         this.current = messages.getProperty("locale_" + this.currentLanguageTag, this.currentLanguageTag);
 
-        supported = new LinkedList<>();
-        for (String l : realm.getSupportedLocales()) {
-            String label = messages.getProperty("locale_" + l, l);
-            String url = uriBuilder.replaceQueryParam("kc_locale", l).build().toString();
-            supported.add(new Locale(l, label, url));
-        }
+        supported = realm.getSupportedLocalesStream()
+                .map(l -> {
+                    String label = messages.getProperty("locale_" + l, l);
+                    String url = uriBuilder.replaceQueryParam("kc_locale", l).build().toString();
+                    return new Locale(l, label, url);
+                })
+                .collect(Collectors.toList());
     }
 
     public String getCurrent() {

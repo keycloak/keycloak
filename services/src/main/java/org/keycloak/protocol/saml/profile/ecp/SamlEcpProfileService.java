@@ -45,6 +45,7 @@ import javax.xml.soap.SOAPHeaderElement;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -149,12 +150,9 @@ public class SamlEcpProfileService extends SamlService {
 
     @Override
     protected AuthenticationFlowModel getAuthenticationFlow(AuthenticationSessionModel authSession) {
-        for (AuthenticationFlowModel flowModel : realm.getAuthenticationFlows()) {
-            if (flowModel.getAlias().equals(DefaultAuthenticationFlows.SAML_ECP_FLOW)) {
-                return flowModel;
-            }
-        }
-
-        throw new RuntimeException("Could not resolve authentication flow for SAML ECP Profile.");
+        return realm.getAuthenticationFlowsStream()
+                .filter(flow -> Objects.equals(flow.getAlias(), DefaultAuthenticationFlows.SAML_ECP_FLOW))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Could not resolve authentication flow for SAML ECP Profile."));
     }
 }

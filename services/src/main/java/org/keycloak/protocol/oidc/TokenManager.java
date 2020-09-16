@@ -25,8 +25,6 @@ import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.IdentityProvider;
-import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
@@ -44,7 +42,6 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -78,7 +75,6 @@ import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -1092,13 +1088,14 @@ public class TokenManager {
         }
 
         LogoutToken logoutToken = logoutTokenOptional.get();
-        List<OIDCIdentityProvider> identityProviders = getOIDCIdentityProviders(realm, session);
+        List<OIDCIdentityProvider> identityProviders = getOIDCIdentityProviders(realm, session).collect(Collectors.toList());
         if (identityProviders.isEmpty()) {
             return LogoutTokenValidationCode.COULD_NOT_FIND_IDP;
         }
 
-        List<OIDCIdentityProvider> validOidcIdentityProviders = validateLogoutTokenAgainstIdpProvider(identityProviders, encodedLogoutToken, logoutToken);
-        if (validOidcIdentityProviders.isEmpty()) {
+        Stream<OIDCIdentityProvider> validOidcIdentityProviders =
+                validateLogoutTokenAgainstIdpProvider(identityProviders.stream(), encodedLogoutToken, logoutToken);
+        if (validOidcIdentityProviders.count() == 0) {
             return LogoutTokenValidationCode.TOKEN_VERIFICATION_WITH_IDP_FAILED;
         }
 
@@ -1135,43 +1132,37 @@ public class TokenManager {
     }
 
 
-    public List<OIDCIdentityProvider> getValidOIDCIdentityProvidersForBackchannelLogout(RealmModel realm, KeycloakSession session, String encodedLogoutToken, LogoutToken logoutToken) {
-        List<OIDCIdentityProvider> identityProviders = getOIDCIdentityProviders(realm, session);
-        return validateLogoutTokenAgainstIdpProvider(identityProviders, encodedLogoutToken, logoutToken);
+    public Stream<OIDCIdentityProvider> getValidOIDCIdentityProvidersForBackchannelLogout(RealmModel realm, KeycloakSession session, String encodedLogoutToken, LogoutToken logoutToken) {
+        return validateLogoutTokenAgainstIdpProvider(getOIDCIdentityProviders(realm, session), encodedLogoutToken, logoutToken);
     }
 
 
-    public List<OIDCIdentityProvider> validateLogoutTokenAgainstIdpProvider(List<OIDCIdentityProvider> oidcIdps, String encodedLogoutToken, LogoutToken logoutToken) {
-        List<OIDCIdentityProvider> validIdps = new ArrayList<>();
-        for (OIDCIdentityProvider oidcIdp : oidcIdps) {
-            if (oidcIdp.getConfig().getIssuer() != null) {
-                if (oidcIdp.isIssuer(logoutToken.getIssuer(), null)) {
-                    try {
-                        oidcIdp.validateToken(encodedLogoutToken);
-                        validIdps.add(oidcIdp);
-                    } catch (IdentityBrokerException e) {
-                        logger.debugf("LogoutToken verification with identity provider failed", e.getMessage());
-                    }
-                }
-            }
-        }
-        return validIdps;
+    public Stream<OIDCIdentityProvider> validateLogoutTokenAgainstIdpProvider(Stream<OIDCIdentityProvider> oidcIdps, String encodedLogoutToken, LogoutToken logoutToken) {
+            return oidcIdps
+                    .filter(oidcIdp -> oidcIdp.getConfig().getIssuer() != null)
+                    .filter(oidcIdp -> oidcIdp.isIssuer(logoutToken.getIssuer(), null))
+                    .filter(oidcIdp -> {
+                        try {
+                            oidcIdp.validateToken(encodedLogoutToken);
+                            return true;
+                        } catch (IdentityBrokerException e) {
+                            logger.debugf("LogoutToken verification with identity provider failed", e.getMessage());
+                            return false;
+                        }
+                    });
     }
 
-    private List<OIDCIdentityProvider> getOIDCIdentityProviders(RealmModel realm, KeycloakSession session) {
-        List<OIDCIdentityProvider> availableProviders = new ArrayList<>();
+    private Stream<OIDCIdentityProvider> getOIDCIdentityProviders(RealmModel realm, KeycloakSession session) {
         try {
-            for (IdentityProviderModel idpModel : realm.getIdentityProviders()) {
-                IdentityProviderFactory factory = IdentityBrokerService.getIdentityProviderFactory(session, idpModel);
-                IdentityProvider identityProvider = factory.create(session, idpModel);
-                if (identityProvider instanceof OIDCIdentityProvider) {
-                    availableProviders.add(((OIDCIdentityProvider) identityProvider));
-                }
-            }
+            return realm.getIdentityProvidersStream()
+                    .map(idpModel ->
+                        IdentityBrokerService.getIdentityProviderFactory(session, idpModel).create(session, idpModel))
+                    .filter(OIDCIdentityProvider.class::isInstance)
+                    .map(OIDCIdentityProvider.class::cast);
         } catch (IdentityBrokerException e) {
             logger.warnf("LogoutToken verification with identity provider failed", e.getMessage());
         }
-        return availableProviders;
+        return Stream.empty();
     }
 
     private boolean checkLogoutTokenForEvents(LogoutToken logoutToken) {

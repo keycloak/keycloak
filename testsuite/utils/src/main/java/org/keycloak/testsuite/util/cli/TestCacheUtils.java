@@ -45,9 +45,7 @@ public class TestCacheUtils {
 
         realm.getTopLevelGroupsStream().forEach(group -> cacheGroupRecursive(realm, group));
 
-        for (ClientScopeModel clientScope : realm.getClientScopes()) {
-            realm.getClientScopeById(clientScope.getId());
-        }
+        realm.getClientScopesStream().map(ClientScopeModel::getId).forEach(realm::getClientScopeById);
 
         for (UserModel user : session.users().getUsers(realm)) {
             session.users().getUserById(user.getId(), realm);

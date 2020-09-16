@@ -25,10 +25,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.storage.ldap.mappers.LDAPConfigDecorator;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -68,12 +66,9 @@ public class LDAPIdentityStoreRegistry {
 
         if (logger.isDebugEnabled()) {
             RealmModel realm = session.realms().getRealm(ldapModel.getParentId());
-            List<ComponentModel> mappers = realm.getComponents(ldapModel.getId());
-            mappers.stream().forEach((ComponentModel c) -> {
-
-                logger.debugf("Mapper for provider: %s, Mapper name: %s, Provider: %s, Mapper configuration: %s", ldapModel.getName(), c.getName(), c.getProviderId(), c.getConfig().toString());
-
-            });
+            realm.getComponentsStream(ldapModel.getId()).forEach(c ->
+                    logger.debugf("Mapper for provider: %s, Mapper name: %s, Provider: %s, Mapper configuration: %s",
+                            ldapModel.getName(), c.getName(), c.getProviderId(), c.getConfig().toString()));
         }
     }
 

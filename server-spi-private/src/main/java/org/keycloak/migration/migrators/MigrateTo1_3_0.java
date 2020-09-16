@@ -19,7 +19,6 @@ package org.keycloak.migration.migrators;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentFactory;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
@@ -44,11 +43,7 @@ public class MigrateTo1_3_0 implements Migration {
     }
 
     public void migrate(KeycloakSession session) {
-        List<RealmModel> realms = session.realms().getRealms();
-        for (RealmModel realm : realms) {
-            migrateLDAPProviders(session, realm);
-        }
-
+        session.realms().getRealmsStream().forEach(realm -> migrateLDAPProviders(session, realm));
     }
 
     @Override
@@ -57,9 +52,7 @@ public class MigrateTo1_3_0 implements Migration {
     }
 
     private void migrateLDAPProviders(KeycloakSession session, RealmModel realm) {
-        List<UserStorageProviderModel> federationProviders = realm.getUserStorageProviders();
-        for (UserStorageProviderModel fedProvider : federationProviders) {
-
+        realm.getUserStorageProvidersStream().forEachOrdered(fedProvider -> {
             if (fedProvider.getProviderId().equals(LDAPConstants.LDAP_PROVIDER)) {
                 fedProvider = new UserStorageProviderModel(fedProvider);  // copy don't want to muck with cache
                 MultivaluedHashMap<String, String> config = fedProvider.getConfig();
@@ -91,14 +84,13 @@ public class MigrateTo1_3_0 implements Migration {
                 realm.updateComponent(fedProvider);
 
                 // Create default mappers for LDAP
-                List<ComponentModel> mappers = realm.getComponents(fedProvider.getId());
-                if (mappers.isEmpty()) {
+                if (realm.getComponentsStream(fedProvider.getId()).count() == 0) {
                     ProviderFactory ldapFactory = session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, LDAPConstants.LDAP_PROVIDER);
                     if (ldapFactory != null) {
                         ((ComponentFactory) ldapFactory).onCreate(session, realm, fedProvider);
                     }
                 }
             }
-        }
+        });
     }
 }

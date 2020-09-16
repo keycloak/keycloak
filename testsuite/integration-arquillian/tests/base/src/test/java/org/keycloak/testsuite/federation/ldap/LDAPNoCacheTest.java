@@ -30,7 +30,6 @@ import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
@@ -89,11 +88,9 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
             appRealm.updateComponent(ctx.getLdapModel());
 
             // Switch mappers to "Always read value from LDAP". Changed attributes in LDAP should be immediately visible on Keycloak side
-            List<ComponentModel> ldapMappers = appRealm.getComponents(ctx.getLdapModel().getId());
-            ldapMappers.stream()
+            appRealm.getComponentsStream(ctx.getLdapModel().getId())
                     .filter(mapper -> UserAttributeLDAPStorageMapperFactory.PROVIDER_ID.equals(mapper.getProviderId()))
                     .forEach(mapper -> {
-
                         mapper.put(UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, true);
                         appRealm.updateComponent(mapper);
 

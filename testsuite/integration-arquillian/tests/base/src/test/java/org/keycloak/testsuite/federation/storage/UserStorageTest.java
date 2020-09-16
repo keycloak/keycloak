@@ -61,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static java.util.Calendar.DAY_OF_WEEK;
 import static java.util.Calendar.HOUR_OF_DAY;
@@ -221,7 +222,7 @@ public class UserStorageTest extends AbstractAuthTest {
     @Test
     @ModelTest
     public void testCast(KeycloakSession session) throws Exception {
-        List<CredentialAuthentication> list = UserCredentialStoreManager.getCredentialProviders(session, null, CredentialAuthentication.class);
+        UserCredentialStoreManager.getCredentialProviders(session, CredentialAuthentication.class).collect(Collectors.toList());
     }
 
     @Test

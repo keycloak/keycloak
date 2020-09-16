@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Various util methods, so the logic is not hardcoded in freemarker beans
@@ -78,8 +79,7 @@ public class LoginFormsUtil {
         }
     }
 
-    public static List<IdentityProviderModel> filterIdentityProviders(List<IdentityProviderModel> providers, KeycloakSession session, RealmModel realm,
-                                                                      Map<String, Object> attributes, MultivaluedMap<String, String> formData, AuthenticationFlowContext context) {
+    public static List<IdentityProviderModel> filterIdentityProviders(Stream<IdentityProviderModel> providers, KeycloakSession session, AuthenticationFlowContext context) {
 
         if (context != null) {
             AuthenticationSessionModel authSession = context.getAuthenticationSession();
@@ -87,11 +87,11 @@ public class LoginFormsUtil {
 
             if (serializedCtx != null) {
                 IdentityProviderModel idp = serializedCtx.deserialize(session, authSession).getIdpConfig();
-                return providers.stream()
+                return providers
                         .filter(p -> !Objects.equals(p.getAlias(), idp.getAlias()))
                         .collect(Collectors.toList());
             }
         }
-        return providers;
+        return providers.collect(Collectors.toList());
     }
 }

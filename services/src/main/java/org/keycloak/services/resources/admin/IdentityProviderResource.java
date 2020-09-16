@@ -21,15 +21,12 @@ import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import javax.ws.rs.NotFoundException;
-import org.keycloak.authorization.model.Resource;
-import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -63,16 +60,11 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @resource Identity Providers
@@ -133,10 +125,8 @@ public class IdentityProviderResource {
         session.users().preRemove(realm, identityProviderModel);
         this.realm.removeIdentityProviderByAlias(alias);
 
-        Set<IdentityProviderMapperModel> mappers = this.realm.getIdentityProviderMappersByAlias(alias);
-        for (IdentityProviderMapperModel mapper : mappers) {
-            this.realm.removeIdentityProviderMapper(mapper);
-        }
+        realm.getIdentityProviderMappersByAliasStream(alias)
+                .collect(Collectors.toList()).forEach(realm::removeIdentityProviderMapper);
 
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
 
@@ -206,26 +196,20 @@ public class IdentityProviderResource {
 
     // return ID of IdentityProvider from realm based on internalId of this provider
     private static String getProviderIdByInternalId(RealmModel realm, String providerInternalId) {
-        List<IdentityProviderModel> providerModels = realm.getIdentityProviders();
-        for (IdentityProviderModel providerModel : providerModels) {
-            if (providerModel.getInternalId().equals(providerInternalId)) {
-                return providerModel.getAlias();
-            }
-        }
-
-        return null;
+        return realm.getIdentityProvidersStream().filter(p -> Objects.equals(p.getInternalId(), providerInternalId))
+                .map(IdentityProviderModel::getAlias)
+                .findFirst()
+                .orElse(null);
     }
 
     // sets internalId to IdentityProvider based on alias
     private static void lookUpProviderIdByAlias(RealmModel realm, IdentityProviderRepresentation providerRep) {
-        List<IdentityProviderModel> providerModels = realm.getIdentityProviders();
-        for (IdentityProviderModel providerModel : providerModels) {
-            if (providerModel.getAlias().equals(providerRep.getAlias())) {
-                providerRep.setInternalId(providerModel.getInternalId());
-                return;
-            }
-        }
-        throw new javax.ws.rs.NotFoundException();
+        IdentityProviderModel identityProviderModel = realm.getIdentityProvidersStream()
+                .filter(p -> Objects.equals(p.getAlias(), providerRep.getAlias()))
+                .findFirst()
+                .orElseThrow(NotFoundException::new);
+
+        providerRep.setInternalId(identityProviderModel.getInternalId());
     }
 
     private static void updateUsersAfterProviderAliasChange(List<UserModel> users, String oldProviderId, String newProviderId, RealmModel realm, KeycloakSession session) {
@@ -326,18 +310,15 @@ public class IdentityProviderResource {
     @Path("mappers")
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<IdentityProviderMapperRepresentation> getMappers() {
+    public Stream<IdentityProviderMapperRepresentation> getMappers() {
         this.auth.realm().requireViewIdentityProviders();
 
         if (identityProviderModel == null) {
             throw new javax.ws.rs.NotFoundException();
         }
 
-        List<IdentityProviderMapperRepresentation> mappers = new LinkedList<>();
-        for (IdentityProviderMapperModel model : realm.getIdentityProviderMappersByAlias(identityProviderModel.getAlias())) {
-            mappers.add(ModelToRepresentation.toRepresentation(model));
-        }
-        return mappers;
+        return realm.getIdentityProviderMappersByAliasStream(identityProviderModel.getAlias())
+                .map(ModelToRepresentation::toRepresentation);
     }
 
     /**

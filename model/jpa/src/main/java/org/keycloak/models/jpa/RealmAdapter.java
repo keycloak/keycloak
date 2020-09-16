@@ -33,10 +33,10 @@ import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Objects.nonNull;
+import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -701,19 +701,8 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
 
     @Override
-    public List<RequiredCredentialModel> getRequiredCredentials() {
-        Collection<RequiredCredentialEntity> entities = realm.getRequiredCredentials();
-        if (entities == null) return Collections.EMPTY_LIST;
-        List<RequiredCredentialModel> requiredCredentialModels = new LinkedList<>();
-        for (RequiredCredentialEntity entity : entities) {
-            RequiredCredentialModel model = new RequiredCredentialModel();
-            model.setFormLabel(entity.getFormLabel());
-            model.setType(entity.getType());
-            model.setSecret(entity.isSecret());
-            model.setInput(entity.isInput());
-            requiredCredentialModels.add(model);
-        }
-        return Collections.unmodifiableList(requiredCredentialModels);
+    public Stream<RequiredCredentialModel> getRequiredCredentialsStream() {
+        return realm.getRequiredCredentials().stream().map(this::toRequiredCredentialModel);
     }
 
 
@@ -1179,12 +1168,8 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public Set<String> getEventsListeners() {
-        Set<String> eventsListeners = realm.getEventsListeners();
-        if (eventsListeners.isEmpty()) return Collections.EMPTY_SET;
-        Set<String> copy = new HashSet<>();
-        copy.addAll(eventsListeners);
-        return Collections.unmodifiableSet(copy);
+    public Stream<String> getEventsListenersStream() {
+        return realm.getEventsListeners().stream();
     }
 
     @Override
@@ -1194,12 +1179,8 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public Set<String> getEnabledEventTypes() {
-        Set<String> enabledEventTypes = realm.getEnabledEventTypes();
-        if (enabledEventTypes.isEmpty()) return Collections.EMPTY_SET;
-        Set<String> copy = new HashSet<>();
-        copy.addAll(enabledEventTypes);
-        return Collections.unmodifiableSet(copy);
+    public Stream<String> getEnabledEventTypesStream() {
+        return realm.getEnabledEventTypes().stream();
     }
 
     @Override
@@ -1250,18 +1231,8 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public List<IdentityProviderModel> getIdentityProviders() {
-        List<IdentityProviderEntity> entities = realm.getIdentityProviders();
-        if (entities.isEmpty()) return Collections.EMPTY_LIST;
-        List<IdentityProviderModel> identityProviders = new ArrayList<IdentityProviderModel>();
-
-        for (IdentityProviderEntity entity: entities) {
-            IdentityProviderModel identityProviderModel = entityToModel(entity);
-
-            identityProviders.add(identityProviderModel);
-        }
-
-        return Collections.unmodifiableList(identityProviders);
+    public Stream<IdentityProviderModel> getIdentityProvidersStream() {
+        return realm.getIdentityProviders().stream().map(this::entityToModel);
     }
 
     private IdentityProviderModel entityToModel(IdentityProviderEntity entity) {
@@ -1288,13 +1259,10 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public IdentityProviderModel getIdentityProviderByAlias(String alias) {
-        for (IdentityProviderModel identityProviderModel : getIdentityProviders()) {
-            if (identityProviderModel.getAlias().equals(alias)) {
-                return identityProviderModel;
-            }
-        }
-
-        return null;
+        return getIdentityProvidersStream()
+                .filter(model -> Objects.equals(model.getAlias(), alias))
+                .findFirst()
+                .orElse(null);
     }
 
     @Override
@@ -1414,12 +1382,8 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public Set<String> getSupportedLocales() {
-        Set<String> supportedLocales = realm.getSupportedLocales();
-        if (supportedLocales == null || supportedLocales.isEmpty()) return Collections.EMPTY_SET;
-        Set<String> copy = new HashSet<>();
-        copy.addAll(supportedLocales);
-        return Collections.unmodifiableSet(copy);
+    public Stream<String> getSupportedLocalesStream() {
+        return realm.getSupportedLocales().stream();
     }
 
     @Override
@@ -1440,28 +1404,15 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public Set<IdentityProviderMapperModel> getIdentityProviderMappers() {
-        Collection<IdentityProviderMapperEntity> entities = this.realm.getIdentityProviderMappers();
-        if (entities.isEmpty()) return Collections.EMPTY_SET;
-        Set<IdentityProviderMapperModel> mappings = new HashSet<IdentityProviderMapperModel>();
-        for (IdentityProviderMapperEntity entity : entities) {
-            IdentityProviderMapperModel mapping = entityToModel(entity);
-            mappings.add(mapping);
-        }
-        return Collections.unmodifiableSet(mappings);
+    public Stream<IdentityProviderMapperModel> getIdentityProviderMappersStream() {
+        return realm.getIdentityProviderMappers().stream().map(this::entityToModel);
     }
 
     @Override
-    public Set<IdentityProviderMapperModel> getIdentityProviderMappersByAlias(String brokerAlias) {
-        Set<IdentityProviderMapperModel> mappings = new HashSet<IdentityProviderMapperModel>();
-        for (IdentityProviderMapperEntity entity : this.realm.getIdentityProviderMappers()) {
-            if (!entity.getIdentityProviderAlias().equals(brokerAlias)) {
-                continue;
-            }
-            IdentityProviderMapperModel mapping = entityToModel(entity);
-            mappings.add(mapping);
-        }
-        return mappings;
+    public Stream<IdentityProviderMapperModel> getIdentityProviderMappersByAliasStream(String brokerAlias) {
+        return realm.getIdentityProviderMappers().stream()
+                .filter(e -> Objects.equals(e.getIdentityProviderAlias(), brokerAlias))
+                .map(this::entityToModel);
     }
 
     @Override
@@ -1630,31 +1581,24 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public List<AuthenticationFlowModel> getAuthenticationFlows() {
-        return realm.getAuthenticationFlows().stream()
-                .map(this::entityToModel)
-                .collect(Collectors.collectingAndThen(
-                        Collectors.toList(), Collections::unmodifiableList));
+    public Stream<AuthenticationFlowModel> getAuthenticationFlowsStream() {
+        return realm.getAuthenticationFlows().stream().map(this::entityToModel);
     }
 
     @Override
     public AuthenticationFlowModel getFlowByAlias(String alias) {
-        for (AuthenticationFlowModel flow : getAuthenticationFlows()) {
-            if (flow.getAlias().equals(alias)) {
-                return flow;
-            }
-        }
-        return null;
+        return getAuthenticationFlowsStream()
+                .filter(flow -> Objects.equals(flow.getAlias(), alias))
+                .findFirst()
+                .orElse(null);
     }
 
     @Override
     public AuthenticatorConfigModel getAuthenticatorConfigByAlias(String alias) {
-        for (AuthenticatorConfigModel config : getAuthenticatorConfigs()) {
-            if (config.getAlias().equals(alias)) {
-                return config;
-            }
-        }
-        return null;
+        return getAuthenticatorConfigsStream()
+                .filter(config -> Objects.equals(config.getAlias(), alias))
+                .findFirst()
+                .orElse(null);
     }
 
     protected AuthenticationFlowModel entityToModel(AuthenticationFlowEntity entity) {
@@ -1725,15 +1669,13 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public List<AuthenticationExecutionModel> getAuthenticationExecutions(String flowId) {
+    public Stream<AuthenticationExecutionModel> getAuthenticationExecutionsStream(String flowId) {
         AuthenticationFlowEntity flow = em.getReference(AuthenticationFlowEntity.class, flowId);
 
         return flow.getExecutions().stream()
                 .filter(e -> getId().equals(e.getRealm().getId()))
                 .map(this::entityToModel)
-                .sorted(AuthenticationExecutionModel.ExecutionComparator.SINGLETON)
-                .collect(Collectors.collectingAndThen(
-                        Collectors.toList(), Collections::unmodifiableList));
+                .sorted(AuthenticationExecutionModel.ExecutionComparator.SINGLETON);
     }
 
     public AuthenticationExecutionModel entityToModel(AuthenticationExecutionEntity entity) {
@@ -1889,14 +1831,8 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public List<AuthenticatorConfigModel> getAuthenticatorConfigs() {
-        Collection<AuthenticatorConfigEntity> entities = realm.getAuthenticatorConfigs();
-        if (entities.isEmpty()) return Collections.EMPTY_LIST;
-        List<AuthenticatorConfigModel> authenticators = new LinkedList<>();
-        for (AuthenticatorConfigEntity entity : entities) {
-            authenticators.add(entityToModel(entity));
-        }
-        return Collections.unmodifiableList(authenticators);
+    public Stream<AuthenticatorConfigModel> getAuthenticatorConfigsStream() {
+        return realm.getAuthenticatorConfigs().stream().map(this::entityToModel);
     }
 
     @Override
@@ -1973,15 +1909,10 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public List<RequiredActionProviderModel> getRequiredActionProviders() {
-        Collection<RequiredActionProviderEntity> entities = realm.getRequiredActionProviders();
-        if (entities.isEmpty()) return Collections.EMPTY_LIST;
-        List<RequiredActionProviderModel> actions = new LinkedList<>();
-        for (RequiredActionProviderEntity entity : entities) {
-            actions.add(entityToModel(entity));
-        }
-        Collections.sort(actions, RequiredActionProviderModel.RequiredActionComparator.SINGLETON);
-        return Collections.unmodifiableList(actions);
+    public Stream<RequiredActionProviderModel> getRequiredActionProvidersStream() {
+        return realm.getRequiredActionProviders().stream()
+                .map(this::entityToModel)
+                .sorted(RequiredActionProviderModel.RequiredActionComparator.SINGLETON);
     }
 
     private RequiredActionProviderEntity getRequiredProviderEntity(String id, boolean readForRemove) {
@@ -1995,10 +1926,10 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public RequiredActionProviderModel getRequiredActionProviderByAlias(String alias) {
-        for (RequiredActionProviderModel action : getRequiredActionProviders()) {
-            if (action.getAlias().equals(alias)) return action;
-        }
-        return null;
+        return getRequiredActionProvidersStream()
+                .filter(action -> Objects.equals(action.getAlias(), alias))
+                .findFirst()
+                .orElse(null);
     }
 
     @Override
@@ -2052,14 +1983,8 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public List<ClientScopeModel> getClientScopes() {
-        Collection<ClientScopeEntity> entities = realm.getClientScopes();
-        if (entities == null || entities.isEmpty()) return Collections.EMPTY_LIST;
-        List<ClientScopeModel> list = new LinkedList<>();
-        for (ClientScopeEntity entity : entities) {
-            list.add(session.realms().getClientScopeById(entity.getId(), this));
-        }
-        return Collections.unmodifiableList(list);
+    public Stream<ClientScopeModel> getClientScopesStream() {
+        return realm.getClientScopes().stream().map(ClientScopeEntity::getId).map(this::getClientScopeById);
     }
 
     @Override
@@ -2142,19 +2067,11 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public List<ClientScopeModel> getDefaultClientScopes(boolean defaultScope) {
+    public Stream<ClientScopeModel> getDefaultClientScopesStream(boolean defaultScope) {
         TypedQuery<String> query = em.createNamedQuery("defaultClientScopeRealmMappingIdsByRealm", String.class);
         query.setParameter("realm", getEntity());
         query.setParameter("defaultScope", defaultScope);
-        List<String> ids = query.getResultList();
-
-        List<ClientScopeModel>  clientScopes = new LinkedList<>();
-        for (String clientScopeId : ids) {
-            ClientScopeModel clientScope = getClientScopeById(clientScopeId);
-            if (clientScope == null) continue;
-            clientScopes.add(clientScope);
-        }
-        return clientScopes;
+        return closing(query.getResultStream().map(this::getClientScopeById).filter(Objects::nonNull));
     }
 
     @Override
@@ -2273,23 +2190,22 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public List<ComponentModel> getComponents(String parentId, final String providerType) {
+    public Stream<ComponentModel> getComponentsStream(String parentId, final String providerType) {
         if (parentId == null) parentId = getId();
         final String parent = parentId;
 
-        return realm.getComponents().stream()
-                .filter(c -> parent.equals(c.getParentId())
-                        && providerType.equals(c.getProviderType()))
-                .map(this::entityToModel)
-                .collect(Collectors.toList());
+        Stream<ComponentEntity> componentStream = realm.getComponents().stream()
+                .filter(c -> Objects.equals(parent, c.getParentId()));
+
+        if (providerType != null) {
+            componentStream = componentStream.filter(c -> Objects.equals(providerType, c.getProviderType()));
+        }
+        return componentStream.map(this::entityToModel);
     }
 
     @Override
-    public List<ComponentModel> getComponents(final String parentId) {
-        return realm.getComponents().stream()
-                .filter(c -> parentId.equals(c.getParentId()))
-                .map(this::entityToModel)
-                .collect(Collectors.toList());
+    public Stream<ComponentModel> getComponentsStream(final String parentId) {
+        return getComponentsStream(parentId, null);
     }
 
     protected ComponentModel entityToModel(ComponentEntity c) {
@@ -2308,9 +2224,18 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         return model;
     }
 
+    private RequiredCredentialModel toRequiredCredentialModel(RequiredCredentialEntity entity) {
+        RequiredCredentialModel model = new RequiredCredentialModel();
+        model.setFormLabel(entity.getFormLabel());
+        model.setType(entity.getType());
+        model.setSecret(entity.isSecret());
+        model.setInput(entity.isInput());
+        return model;
+    }
+
     @Override
-    public List<ComponentModel> getComponents() {
-        return realm.getComponents().stream().map(this::entityToModel).collect(Collectors.toList());
+    public Stream<ComponentModel> getComponentsStream() {
+        return realm.getComponents().stream().map(this::entityToModel);
     }
 
     @Override

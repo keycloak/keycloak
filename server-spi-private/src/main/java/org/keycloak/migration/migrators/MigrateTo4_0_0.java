@@ -18,10 +18,10 @@
 package org.keycloak.migration.migrators;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -48,11 +48,7 @@ public class MigrateTo4_0_0 implements Migration {
 
     @Override
     public void migrate(KeycloakSession session) {
-        session.realms().getRealms().stream().forEach(
-                r -> {
-                    migrateRealm(session, r, false);
-                }
-        );
+        session.realms().getRealmsStream().forEach(realm -> migrateRealm(session, realm, false));
     }
 
     @Override
@@ -63,13 +59,14 @@ public class MigrateTo4_0_0 implements Migration {
 
     protected void migrateRealm(KeycloakSession session, RealmModel realm, boolean json) {
         // Upgrade names of clientScopes to not contain space
-        for (ClientScopeModel clientScope : realm.getClientScopes()) {
-            if (clientScope.getName().contains(" ")) {
-                LOG.debugf("Replacing spaces with underscores in the name of client scope '%s' of realm '%s'", clientScope.getName(), realm.getName());
-                String replacedName = clientScope.getName().replaceAll(" ", "_");
-                clientScope.setName(replacedName);
-            }
-        }
+        realm.getClientScopesStream()
+                .filter(clientScope -> clientScope.getName().contains(" "))
+                .forEach(clientScope -> {
+                    LOG.debugf("Replacing spaces with underscores in the name of client scope '%s' of realm '%s'",
+                            clientScope.getName(), realm.getName());
+                    String replacedName = clientScope.getName().replaceAll(" ", "_");
+                    clientScope.setName(replacedName);
+                });
 
         if (!json) {
             // Add default client scopes. But don't add them to existing clients. For JSON, they were already added
@@ -78,17 +75,17 @@ public class MigrateTo4_0_0 implements Migration {
         }
 
         // Upgrade configuration of "allowed-client-templates" client registration policy
-        for (ComponentModel component : realm.getComponents(realm.getId(), "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy")) {
-            if ("allowed-client-templates".equals(component.getProviderId())) {
-                List<String> configVal = component.getConfig().remove("allowed-client-templates");
-                if (configVal != null) {
-                    component.getConfig().put("allowed-client-scopes", configVal);
-                }
-                component.put("allow-default-scopes", true);
+        realm.getComponentsStream(realm.getId(), "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy")
+                .filter(component -> Objects.equals(component.getProviderId(), "allowed-client-templates"))
+                .forEach(component -> {
+                    List<String> configVal = component.getConfig().remove("allowed-client-templates");
+                    if (configVal != null) {
+                        component.getConfig().put("allowed-client-scopes", configVal);
+                    }
+                    component.put("allow-default-scopes", true);
 
-                realm.updateComponent(component);
-            }
-        }
+                    realm.updateComponent(component);
+                });
 
 
         // If client has scope for offline_access role (either directly or through fullScopeAllowed), then add offline_access client

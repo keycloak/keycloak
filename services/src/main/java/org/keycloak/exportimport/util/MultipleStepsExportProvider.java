@@ -31,6 +31,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -47,7 +48,7 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
 
             @Override
             public void run(KeycloakSession session) {
-                List<RealmModel> realms = session.realms().getRealms();
+                List<RealmModel> realms = session.realms().getRealmsStream().collect(Collectors.toList());
                 holder.realms = realms;
             }
 

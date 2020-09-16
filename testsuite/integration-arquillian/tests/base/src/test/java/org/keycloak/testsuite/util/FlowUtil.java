@@ -11,12 +11,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.services.resources.admin.AuthenticationManagementResource;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class FlowUtil {
     private RealmModel realm;
@@ -115,13 +115,7 @@ public class FlowUtil {
     }
 
     public FlowUtil clear() {
-        // Get executions from current flow
-        List<AuthenticationExecutionModel> executions = realm.getAuthenticationExecutions(currentFlow.getId());
-        // Remove all executions
-        for (AuthenticationExecutionModel authExecution : executions) {
-            realm.removeAuthenticatorExecution(authExecution);
-        }
-
+        realm.getAuthenticationExecutionsStream(currentFlow.getId()).forEachOrdered(realm::removeAuthenticatorExecution);
         return this;
     }
 
@@ -244,11 +238,7 @@ public class FlowUtil {
 
     private List<AuthenticationExecutionModel> getExecutions() {
         if (executions == null) {
-            List<AuthenticationExecutionModel> execs = realm.getAuthenticationExecutions(currentFlow.getId());
-            if (execs == null) {
-                throw new FlowUtilException("Can't get executions of unknown flow " + currentFlow.getId());
-            }
-            executions = new ArrayList<>(execs);
+            executions = realm.getAuthenticationExecutionsStream(currentFlow.getId()).collect(Collectors.toList());
         }
         return executions;
     }

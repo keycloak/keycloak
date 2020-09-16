@@ -373,13 +373,12 @@ public class UserResource {
     private List<FederatedIdentityRepresentation> getFederatedIdentities(UserModel user) {
         Set<FederatedIdentityModel> identities = session.users().getFederatedIdentities(user, realm);
         List<FederatedIdentityRepresentation> result = new ArrayList<FederatedIdentityRepresentation>();
+        Set<String> idps = realm.getIdentityProvidersStream().map(IdentityProviderModel::getAlias).collect(Collectors.toSet());
 
         for (FederatedIdentityModel identity : identities) {
-            for (IdentityProviderModel identityProviderModel : realm.getIdentityProviders()) {
-                if (identityProviderModel.getAlias().equals(identity.getIdentityProvider())) {
-                    FederatedIdentityRepresentation rep = ModelToRepresentation.toRepresentation(identity);
-                    result.add(rep);
-                }
+            if (idps.contains(identity.getIdentityProvider())) {
+                FederatedIdentityRepresentation rep = ModelToRepresentation.toRepresentation(identity);
+                result.add(rep);
             }
         }
         return result;

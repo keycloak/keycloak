@@ -44,12 +44,7 @@ import org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleMapperConfig;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -137,14 +132,11 @@ public class LDAPTestUtils {
         }
     }
 
-    public static ComponentModel getLdapProviderModel(KeycloakSession session, RealmModel realm) {
-        List<ComponentModel> components = realm.getComponents(realm.getId(), UserStorageProvider.class.getName());
-        for (ComponentModel component : components) {
-            if (LDAPStorageProviderFactory.PROVIDER_NAME.equals(component.getProviderId())) {
-                return component;
-            }
-        }
-        return null;
+    public static ComponentModel getLdapProviderModel(RealmModel realm) {
+        return realm.getComponentsStream(realm.getId(), UserStorageProvider.class.getName())
+                .filter(component -> Objects.equals(component.getProviderId(), LDAPStorageProviderFactory.PROVIDER_NAME))
+                .findFirst()
+                .orElse(null);
     }
 
     public static LDAPStorageProvider getLdapProvider(KeycloakSession keycloakSession, ComponentModel ldapFedModel) {
@@ -198,13 +190,10 @@ public class LDAPTestUtils {
     }
 
     public static ComponentModel getSubcomponentByName(RealmModel realm, ComponentModel providerModel, String name) {
-        List<ComponentModel> components = realm.getComponents(providerModel.getId(), LDAPStorageMapper.class.getName());
-        for (ComponentModel component : components) {
-            if (component.getName().equals(name)) {
-               return component;
-            }
-        }
-        return null;
+        return realm.getComponentsStream(providerModel.getId(), LDAPStorageMapper.class.getName())
+                .filter(component -> Objects.equals(name, component.getName()))
+                .findFirst()
+                .orElse(null);
     }
 
     public static void addOrUpdateGroupMapper(RealmModel realm, ComponentModel providerModel, LDAPGroupMapperMode mode, String descriptionAttrName, String... otherConfigOptions) {

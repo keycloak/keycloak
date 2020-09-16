@@ -43,7 +43,6 @@ import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
@@ -109,8 +108,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -298,17 +299,20 @@ public class AccountFormService extends AbstractSecuredLocalService {
         }
 
         if (auth != null) {
-            List<Event> events = eventStore.createQuery().type(Constants.EXPOSED_LOG_EVENTS).realm(auth.getRealm().getId()).user(auth.getUser().getId()).maxResults(30).getResultList();
-            for (Event e : events) {
-                if (e.getDetails() != null) {
-                    Iterator<Map.Entry<String, String>> itr = e.getDetails().entrySet().iterator();
-                    while (itr.hasNext()) {
-                        if (!Constants.EXPOSED_LOG_DETAILS.contains(itr.next().getKey())) {
-                            itr.remove();
+            List<Event> events = eventStore.createQuery().type(Constants.EXPOSED_LOG_EVENTS)
+                    .realm(auth.getRealm().getId()).user(auth.getUser().getId()).maxResults(30)
+                    .getResultStream()
+                    .peek(e -> {
+                        if (e.getDetails() != null) {
+                            Iterator<Map.Entry<String, String>> itr = e.getDetails().entrySet().iterator();
+                            while (itr.hasNext()) {
+                                if (!Constants.EXPOSED_LOG_DETAILS.contains(itr.next().getKey())) {
+                                    itr.remove();
+                                }
+                            }
                         }
-                    }
-                }
-            }
+                    })
+                    .collect(Collectors.toList());
             account.setEvents(events);
         }
         return forwardToPage("log", AccountPages.LOG);
@@ -665,15 +669,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
             return account.setError(Status.OK, Messages.INVALID_FEDERATED_IDENTITY_ACTION).createResponse(AccountPages.FEDERATED_IDENTITY);
         }
 
-        boolean hasProvider = false;
-
-        for (IdentityProviderModel model : realm.getIdentityProviders()) {
-            if (model.getAlias().equals(providerId)) {
-                hasProvider = true;
-            }
-        }
-
-        if (!hasProvider) {
+        if (!realm.getIdentityProvidersStream().anyMatch(model -> Objects.equals(model.getAlias(), providerId))) {
             setReferrerOnPage();
             return account.setError(Status.OK, Messages.IDENTITY_PROVIDER_NOT_FOUND).createResponse(AccountPages.FEDERATED_IDENTITY);
         }

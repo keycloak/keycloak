@@ -23,7 +23,6 @@ import org.keycloak.authentication.authenticators.conditional.ConditionalAuthent
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -35,7 +34,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -52,7 +53,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
     public DefaultAuthenticationFlow(AuthenticationProcessor processor, AuthenticationFlowModel flow) {
         this.processor = processor;
         this.flow = flow;
-        this.executions = processor.getRealm().getAuthenticationExecutions(flow.getId());
+        this.executions = processor.getRealm().getAuthenticationExecutionsStream(flow.getId()).collect(Collectors.toList());
     }
 
     protected boolean isProcessed(AuthenticationExecutionModel model) {
@@ -204,13 +205,13 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
      */
     private String checkAndValidateParentFlow(AuthenticationExecutionModel model) {
         while (true) {
-            List<AuthenticationExecutionModel> localExecutions = processor.getRealm().getAuthenticationExecutions(model.getParentFlow());
             AuthenticationExecutionModel parentFlowExecutionModel = processor.getRealm().getAuthenticationExecutionByFlowId(model.getParentFlow());
 
             if (parentFlowExecutionModel != null) {
                 List<AuthenticationExecutionModel> requiredExecutions = new LinkedList<>();
                 List<AuthenticationExecutionModel> alternativeExecutions = new LinkedList<>();
-                fillListsOfExecutions(localExecutions, requiredExecutions, alternativeExecutions);
+                fillListsOfExecutions(processor.getRealm().getAuthenticationExecutionsStream(model.getParentFlow()),
+                        requiredExecutions, alternativeExecutions);
 
                 // Note: If we evaluate alternative execution, we will also doublecheck that there are not required elements in same subflow
                 if ((model.isRequired() && requiredExecutions.stream().allMatch(processor::isSuccessful)) ||
@@ -237,7 +238,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         List<AuthenticationExecutionModel> requiredList = new ArrayList<>();
         List<AuthenticationExecutionModel> alternativeList = new ArrayList<>();
 
-        fillListsOfExecutions(executions, requiredList, alternativeList);
+        fillListsOfExecutions(executions.stream(), requiredList, alternativeList);
 
         //handle required elements : all required elements need to be executed
         boolean requiredElementsSuccessful = true;
@@ -296,16 +297,16 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
     /**
      * Just iterates over executionsToProcess and fill "requiredList" and "alternativeList" according to it
      */
-    void fillListsOfExecutions(List<AuthenticationExecutionModel> executionsToProcess, List<AuthenticationExecutionModel> requiredList, List<AuthenticationExecutionModel> alternativeList) {
-        for (AuthenticationExecutionModel execution : executionsToProcess) {
-            if (isConditionalAuthenticator(execution)) {
-                continue;
-            } else if (execution.isRequired() || execution.isConditional()) {
-                requiredList.add(execution);
-            } else if (execution.isAlternative()) {
-                alternativeList.add(execution);
-            }
-        }
+    void fillListsOfExecutions(Stream<AuthenticationExecutionModel> executionsToProcess, List<AuthenticationExecutionModel> requiredList, List<AuthenticationExecutionModel> alternativeList) {
+        executionsToProcess
+                .filter(((Predicate<AuthenticationExecutionModel>) this::isConditionalAuthenticator).negate())
+                .forEachOrdered(execution -> {
+                    if (execution.isRequired() || execution.isConditional()) {
+                        requiredList.add(execution);
+                    } else if (execution.isAlternative()) {
+                        alternativeList.add(execution);
+                    }
+                });
 
         if (!requiredList.isEmpty() && !alternativeList.isEmpty()) {
             List<String> alternativeIds = alternativeList.stream()
@@ -327,12 +328,14 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         if (model == null || !model.isAuthenticatorFlow() || !model.isConditional()) {
             return false;
         };
-        List<AuthenticationExecutionModel> modelList = processor.getRealm().getAuthenticationExecutions(model.getFlowId());
+        List<AuthenticationExecutionModel> modelList = processor.getRealm()
+                .getAuthenticationExecutionsStream(model.getFlowId()).collect(Collectors.toList());
         List<AuthenticationExecutionModel> conditionalAuthenticatorList = modelList.stream()
                 .filter(this::isConditionalAuthenticator)
                 .filter(s -> s.isEnabled())
                 .collect(Collectors.toList());
-        return conditionalAuthenticatorList.isEmpty() || conditionalAuthenticatorList.stream().anyMatch(m-> conditionalNotMatched(m, modelList));
+        return conditionalAuthenticatorList.isEmpty() || conditionalAuthenticatorList.stream()
+                .anyMatch(m -> conditionalNotMatched(m, modelList));
     }
 
     private boolean isConditionalAuthenticator(AuthenticationExecutionModel model) {

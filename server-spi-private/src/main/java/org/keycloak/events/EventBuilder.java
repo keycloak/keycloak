@@ -27,9 +27,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -57,17 +58,19 @@ public class EventBuilder {
             }
         }
 
-        if (realm.getEventsListeners() != null && !realm.getEventsListeners().isEmpty()) {
-            this.listeners = new LinkedList<>();
-            for (String id : realm.getEventsListeners()) {
-                EventListenerProvider listener = session.getProvider(EventListenerProvider.class, id);
-                if (listener != null) {
-                    listeners.add(listener);
-                } else {
-                    log.error("Event listener '" + id + "' registered, but provider not found");
-                }
-            }
-        }
+
+        this.listeners = realm.getEventsListenersStream()
+                .map(id -> {
+                    EventListenerProvider listener = session.getProvider(EventListenerProvider.class, id);
+                    if (listener != null) {
+                        return listener;
+                    } else {
+                        log.error("Event listener '" + id + "' registered, but provider not found");
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
 
         realm(realm);
         ipAddress(clientConnection.getRemoteAddr());
@@ -177,7 +180,8 @@ public class EventBuilder {
         event.setTime(Time.currentTimeMillis());
 
         if (store != null) {
-            if (realm.getEnabledEventTypes() != null && !realm.getEnabledEventTypes().isEmpty() ? realm.getEnabledEventTypes().contains(event.getType().name()) : event.getType().isSaveByDefault()) {
+            Set<String> eventTypes = realm.getEnabledEventTypesStream().collect(Collectors.toSet());
+            if (!eventTypes.isEmpty() ? eventTypes.contains(event.getType().name()) : event.getType().isSaveByDefault()) {
                 try {
                     store.onEvent(event);
                 } catch (Throwable t) {

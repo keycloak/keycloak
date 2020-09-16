@@ -80,6 +80,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -388,7 +389,8 @@ public class AccountRestService {
      */
     private UserConsentModel createConsent(ClientModel client, ConsentRepresentation requested) throws IllegalArgumentException {
         UserConsentModel consent = new UserConsentModel(client);
-        Map<String, ClientScopeModel> availableGrants = realm.getClientScopes().stream().collect(Collectors.toMap(ClientScopeModel::getId, s -> s));
+        Map<String, ClientScopeModel> availableGrants = realm.getClientScopesStream()
+                .collect(Collectors.toMap(ClientScopeModel::getId, Function.identity()));
 
         if (client.isConsentRequired()) {
             availableGrants.put(client.getId(), client);

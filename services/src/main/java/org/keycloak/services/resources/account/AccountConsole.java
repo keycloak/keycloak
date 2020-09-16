@@ -40,6 +40,7 @@ import java.util.Scanner;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.ws.rs.core.UriInfo;
 import org.keycloak.services.resources.RealmsResource;
 
@@ -135,13 +136,9 @@ public class AccountConsole {
         }
     }
     
-    private Map<String, String> supportedLocales(Properties messages) throws IOException {
-        Map<String, String> supportedLocales = new HashMap<>();
-        for (String l : realm.getSupportedLocales()) {
-            String label = messages.getProperty("locale_" + l, l);
-            supportedLocales.put(l, label);
-        }
-        return supportedLocales;
+    private Map<String, String> supportedLocales(Properties messages) {
+        return realm.getSupportedLocalesStream()
+                .collect(Collectors.toMap(Function.identity(), l -> messages.getProperty("locale_" + l, l)));
     }
     
     private String messagesToJsonString(Properties props) {

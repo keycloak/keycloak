@@ -110,26 +110,20 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
     }
 
     @Override
-    public List<RealmModel> getRealmsWithProviderType(Class<?> providerType) {
+    public Stream<RealmModel> getRealmsWithProviderTypeStream(Class<?> providerType) {
         TypedQuery<String> query = em.createNamedQuery("getRealmIdsWithProviderType", String.class);
         query.setParameter("providerType", providerType.getName());
         return getRealms(query);
     }
 
     @Override
-    public List<RealmModel> getRealms() {
+    public Stream<RealmModel> getRealmsStream() {
         TypedQuery<String> query = em.createNamedQuery("getAllRealmIds", String.class);
         return getRealms(query);
     }
 
-    private List<RealmModel> getRealms(TypedQuery<String> query) {
-        List<String> entities = query.getResultList();
-        List<RealmModel> realms = new ArrayList<RealmModel>();
-        for (String id : entities) {
-            RealmModel realm = session.realms().getRealm(id);
-            if (realm != null) realms.add(realm);
-        }
-        return realms;
+    private Stream<RealmModel> getRealms(TypedQuery<String> query) {
+        return closing(query.getResultStream().map(session.realms()::getRealm).filter(Objects::nonNull));
     }
 
     @Override
@@ -843,16 +837,12 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
     }
 
     @Override
-    public List<ClientInitialAccessModel> listClientInitialAccess(RealmModel realm) {
+    public Stream<ClientInitialAccessModel> listClientInitialAccessStream(RealmModel realm) {
         RealmEntity realmEntity = em.find(RealmEntity.class, realm.getId());
 
         TypedQuery<ClientInitialAccessEntity> query = em.createNamedQuery("findClientInitialAccessByRealm", ClientInitialAccessEntity.class);
         query.setParameter("realm", realmEntity);
-        List<ClientInitialAccessEntity> entities = query.getResultList();
-
-        return entities.stream()
-                .map(this::entityToModel)
-                .collect(Collectors.toList());
+        return closing(query.getResultStream().map(this::entityToModel));
     }
 
     @Override

@@ -42,7 +42,7 @@ public interface GroupLookupProvider {
      * @param firstResult First result to return. Ignored if {@code null}.
      * @param maxResults Maximum number of results to return. Ignored if {@code null}.
      * @return List of groups with the given string in name.
-     * @deprecated Use {@link #searchForGroupByNameStream(RealmModel, String, Integer, Integer)}  searchForGroupByNameStream} instead.
+     * @deprecated Use {@link #searchForGroupByNameStream(RealmModel, String, Integer, Integer) searchForGroupByNameStream} instead.
      */
     @Deprecated
     default List<GroupModel> searchForGroupByName(RealmModel realm, String search, Integer firstResult, Integer maxResults) {

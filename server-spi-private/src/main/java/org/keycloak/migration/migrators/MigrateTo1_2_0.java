@@ -26,8 +26,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 
-import java.util.List;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -68,12 +66,10 @@ public class MigrateTo1_2_0 implements Migration {
     }
 
     public void migrate(KeycloakSession session) {
-        List<RealmModel> realms = session.realms().getRealms();
-        for (RealmModel realm : realms) {
+        session.realms().getRealmsStream().forEach(realm -> {
             setupBrokerService(realm);
             setupClientNames(realm);
-        }
-
+        });
     }
 
     @Override

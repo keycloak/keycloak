@@ -115,7 +115,7 @@ public class TestLDAPResource {
         LDAPTestUtils.addLocalUser(session, realm, "mary", "mary@test.com", "password-app");
         LDAPTestUtils.addLocalUser(session, realm, "john", "john@test.com", "password-app");
 
-        ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(session, realm);
+        ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
         LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
         String descriptionAttrName = getGroupDescriptionLDAPAttrName(ldapFedProvider);
 
@@ -187,7 +187,7 @@ public class TestLDAPResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public void prepareRolesLDAPTest() {
-        ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(session, realm);
+        ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
         LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
 
         // Add role mapper
@@ -232,7 +232,7 @@ public class TestLDAPResource {
     @Path("/remove-ldap-user")
     @Consumes(MediaType.APPLICATION_JSON)
     public void removeLDAPUser(@QueryParam("username") String ldapUsername) {
-        ComponentModel ldapCompModel = LDAPTestUtils.getLdapProviderModel(session, realm);
+        ComponentModel ldapCompModel = LDAPTestUtils.getLdapProviderModel(realm);
         UserStorageProviderModel ldapModel = new UserStorageProviderModel(ldapCompModel);
         LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
 

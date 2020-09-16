@@ -43,9 +43,7 @@ public class MigrateTo6_0_0 implements Migration {
 
     @Override
     public void migrate(KeycloakSession session) {
-        session.realms().getRealms().stream().forEach(r -> {
-            migrateRealm(session, r, false);
-        });
+        session.realms().getRealmsStream().forEach(realm -> migrateRealm(session, realm, false));
     }
 
     @Override

@@ -49,7 +49,7 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      *
      * @param realm Realm.
      * @return List of groups in the Realm.
-     * @deprecated Use {@link #getGroupsStream(RealmModel)}  getGroupsStream} instead.
+     * @deprecated Use {@link #getGroupsStream(RealmModel) getGroupsStream} instead.
      */
     @Deprecated
     default List<GroupModel> getGroups(RealmModel realm) {
@@ -140,7 +140,7 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @param firstResult First result to return. Ignored if negative.
      * @param maxResults Maximum number of results to return. Ignored if negative.
      * @return List of groups with the given role.
-     * @deprecated Use {@link #getGroupsByRoleStream(RealmModel, RoleModel, Integer, Integer)}  getGroupsByRoleStream} instead.
+     * @deprecated Use {@link #getGroupsByRoleStream(RealmModel, RoleModel, int, int) getGroupsByRoleStream} instead.
      */
     @Deprecated
     default List<GroupModel> getGroupsByRole(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
@@ -163,7 +163,7 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      *
      * @param realm Realm.
      * @return List of all top level groups in the realm.
-     * @deprecated Use {@link #getTopLevelGroupsStream(RealmModel)}  getTopLevelGroupsStream} instead.
+     * @deprecated Use {@link #getTopLevelGroupsStream(RealmModel) getTopLevelGroupsStream} instead.
      */
     @Deprecated
     default List<GroupModel> getTopLevelGroups(RealmModel realm) {
@@ -185,7 +185,7 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @param firstResult First result to return. Ignored if negative or {@code null}.
      * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
      * @return List of top level groups in the realm.
-     * @deprecated Use {@link #getTopLevelGroupsStream(RealmModel, Integer, Integer)}  getTopLevelGroupsStream} instead.
+     * @deprecated Use {@link #getTopLevelGroupsStream(RealmModel, Integer, Integer) getTopLevelGroupsStream} instead.
      */
     @Deprecated
     default List<GroupModel> getTopLevelGroups(RealmModel realm, Integer firstResult, Integer maxResults) {

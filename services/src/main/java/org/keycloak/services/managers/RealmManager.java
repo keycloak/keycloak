@@ -52,7 +52,6 @@ import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.sessions.AuthenticationSessionProvider;
-import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.services.clientregistration.policy.DefaultClientRegistrationPolicies;
 
 import java.util.Collections;
@@ -126,11 +125,11 @@ public class RealmManager {
     }
 
     protected void setupAuthenticationFlows(RealmModel realm) {
-        if (realm.getAuthenticationFlows().size() == 0) DefaultAuthenticationFlows.addFlows(realm);
+        if (realm.getAuthenticationFlowsStream().count() == 0) DefaultAuthenticationFlows.addFlows(realm);
     }
 
     protected void setupRequiredActions(RealmModel realm) {
-        if (realm.getRequiredActionProviders().size() == 0) DefaultRequiredActions.addActions(realm);
+        if (realm.getRequiredActionProvidersStream().count() == 0) DefaultRequiredActions.addActions(realm);
     }
 
     private void setupOfflineTokens(RealmModel realm, RealmRepresentation realmRep) {
@@ -270,11 +269,9 @@ public class RealmManager {
             }
 
           // Refresh periodic sync tasks for configured storageProviders
-            List<UserStorageProviderModel> storageProviders = realm.getUserStorageProviders();
             UserStorageSyncManager storageSync = new UserStorageSyncManager();
-            for (UserStorageProviderModel provider : storageProviders) {
-                storageSync.notifyToRefreshPeriodicSync(session, realm, provider, true);
-            }
+            realm.getUserStorageProvidersStream()
+                    .forEachOrdered(provider -> storageSync.notifyToRefreshPeriodicSync(session, realm, provider, true));
 
         }
         return removed;
@@ -576,11 +573,9 @@ public class RealmManager {
         setupRequiredActions(realm);
 
         // Refresh periodic sync tasks for configured storageProviders
-        List<UserStorageProviderModel> storageProviders = realm.getUserStorageProviders();
         UserStorageSyncManager storageSync = new UserStorageSyncManager();
-        for (UserStorageProviderModel provider : storageProviders) {
-            storageSync.notifyToRefreshPeriodicSync(session, realm, provider, false);
-        }
+        realm.getUserStorageProvidersStream()
+                .forEachOrdered(provider -> storageSync.notifyToRefreshPeriodicSync(session, realm, provider, false));
 
         setupAuthorizationServices(realm);
         setupClientRegistrations(realm);

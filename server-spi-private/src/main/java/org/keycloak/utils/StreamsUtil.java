@@ -17,11 +17,29 @@
 
 package org.keycloak.utils;
 
+import java.util.Iterator;
+import java.util.Spliterators;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class StreamsUtil {
     public static <T> Stream<T> closing(Stream<T> stream) {
         return Stream.of(stream).flatMap(Function.identity());
+    }
+
+    /**
+     * Returns the original stream if the stream is not empty. Otherwise throws the provided exception.
+     * @param stream Stream to be examined.
+     * @param ex Exception to be thrown if the stream is empty.
+     * @return Stream
+     */
+    public static <T> Stream<T> throwIfEmpty(Stream<T> stream, RuntimeException ex) {
+        Iterator<T> iterator = stream.iterator();
+        if (iterator.hasNext()) {
+            return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false);
+        } else {
+            throw ex;
+        }
     }
 }

@@ -446,7 +446,7 @@ public class RepresentationToModel {
             }
         }
 
-        if (newRealm.getComponents(newRealm.getId(), KeyProvider.class.getName()).isEmpty()) {
+        if (newRealm.getComponentsStream(newRealm.getId(), KeyProvider.class.getName()).count() == 0) {
             if (rep.getPrivateKey() != null) {
                 DefaultKeyProviders.createProviders(newRealm, rep.getPrivateKey(), rep.getCertificate());
             } else {

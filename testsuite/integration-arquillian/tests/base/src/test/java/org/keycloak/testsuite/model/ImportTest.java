@@ -24,7 +24,6 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.policy.evaluation.Realm;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -39,10 +38,8 @@ import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 
@@ -68,8 +65,8 @@ public class ImportTest extends AbstractTestRealmKeycloakTest {
             Assert.assertEquals(600, realm.getAccessCodeLifespanUserAction());
             Assert.assertEquals(Constants.DEFAULT_ACCESS_TOKEN_LIFESPAN_FOR_IMPLICIT_FLOW_TIMEOUT, realm.getAccessTokenLifespanForImplicitFlow());
             Assert.assertEquals(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT, realm.getOfflineSessionIdleTimeout());
-            Assert.assertEquals(1, realm.getRequiredCredentials().size());
-            Assert.assertEquals("password", realm.getRequiredCredentials().get(0).getType());
+            Assert.assertEquals(1, realm.getRequiredCredentialsStream().count());
+            Assert.assertEquals("password", realm.getRequiredCredentialsStream().findFirst().get().getType());
         });
     }
 

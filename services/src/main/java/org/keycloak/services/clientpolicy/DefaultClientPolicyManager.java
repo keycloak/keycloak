@@ -17,20 +17,13 @@
 
 package org.keycloak.services.clientpolicy;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.clientpolicy.ClientPolicyContext;
-import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.ClientPolicyManager;
-import org.keycloak.services.clientpolicy.ClientPolicyProvider;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 
@@ -67,18 +60,20 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
     private List<ClientPolicyProvider> getProviders(RealmModel realm) {
         List<ClientPolicyProvider> providers = providersMap.get(realm.getId());
         if (providers == null) {
-            providers = new LinkedList<>();
-            List<ComponentModel> policyModels = realm.getComponents(realm.getId(), ClientPolicyProvider.class.getName());
-            for (ComponentModel policyModel : policyModels) {
-                try {
-                    ClientPolicyProvider policy = session.getProvider(ClientPolicyProvider.class, policyModel);
-                    ClientPolicyLogger.logv(logger, "Loaded Policy Name = {0}", policyModel.getName());
-                    session.enlistForClose(policy);
-                    providers.add(policy);
-                } catch (Throwable t) {
-                    logger.errorv(t, "Failed to load provider {0}", policyModel.getId());
-                }
-            }
+            providers = realm.getComponentsStream(realm.getId(), ClientPolicyProvider.class.getName())
+                    .map(policyModel -> {
+                        try {
+                            ClientPolicyProvider policy = session.getProvider(ClientPolicyProvider.class, policyModel);
+                            ClientPolicyLogger.logv(logger, "Loaded Policy Name = {0}", policyModel.getName());
+                            session.enlistForClose(policy);
+                            return policy;
+                        } catch (Throwable t) {
+                            logger.errorv(t, "Failed to load provider {0}", policyModel.getId());
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
             providersMap.put(realm.getId(), providers);
         } else {
             ClientPolicyLogger.log(logger, "Use cached policies.");
