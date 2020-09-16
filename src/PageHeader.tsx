@@ -38,7 +38,7 @@ const ManageAccountDropdownItem = () => {
   const { t } = useTranslation();
   return (
     <DropdownItem key="manage account" onClick={() => keycloak?.account()}>
-      {t("Manage account")}
+      {t("manageAccount")}
     </DropdownItem>
   );
 };
@@ -48,20 +48,19 @@ const SignOutDropdownItem = () => {
   const { t } = useTranslation();
   return (
     <DropdownItem key="sign out" onClick={() => keycloak?.logout()}>
-      {t("Sign out")}
+      {t("signOut")}
     </DropdownItem>
   );
 };
 
 const ServerInfoDropdownItem = () => {
   const { t } = useTranslation();
-  return <DropdownItem key="server info">{t("Server info")}</DropdownItem>;
+  return <DropdownItem key="server info">{t("serverInfo")}</DropdownItem>;
 };
 
 const HelpDropdownItem = () => {
   const { t } = useTranslation();
-  const help = t("Help");
-  return <DropdownItem icon={<HelpIcon />}>{`${help}`}</DropdownItem>;
+  return <DropdownItem icon={<HelpIcon />}>{t("help")}</DropdownItem>;
 };
 
 const kebabDropdownItems = [

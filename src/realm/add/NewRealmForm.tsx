@@ -62,7 +62,7 @@ export const NewRealmForm = () => {
       <PageSection variant="light">
         <Form isHorizontal>
           <JsonFileUpload id="kc-realm-filename" onChange={handleFileChange} />
-          <FormGroup label={t("Realm name")} isRequired fieldId="kc-realm-name">
+          <FormGroup label={t("realmName")} isRequired fieldId="kc-realm-name">
             <TextInput
               isRequired
               type="text"
@@ -72,21 +72,21 @@ export const NewRealmForm = () => {
               onChange={handleChange}
             />
           </FormGroup>
-          <FormGroup label={t("Enabled")} fieldId="kc-realm-enabled-switch">
+          <FormGroup label={t("enabled")} fieldId="kc-realm-enabled-switch">
             <Switch
               id="kc-realm-enabled-switch"
               name="enabled"
-              label={t("On")}
-              labelOff={t("Off")}
+              label={t("on")}
+              labelOff={t("off")}
               isChecked={realm.enabled}
               onChange={handleChange}
             />
           </FormGroup>
           <ActionGroup>
             <Button variant="primary" onClick={() => save()}>
-              {t("Create")}
+              {t("create")}
             </Button>
-            <Button variant="link">{t("Cancel")}</Button>
+            <Button variant="link">{t("common:cancel")}</Button>
           </ActionGroup>
         </Form>
       </PageSection>

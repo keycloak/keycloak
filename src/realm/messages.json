@@ -1,11 +1,10 @@
 {
   "realm": {
-    "Upload JSON file":"Upload JSON file",
-    "Realm name":"Realm name",
-    "Enabled":"Enabled",
-    "On": "On",
-    "Off":"Off",
-    "Create":"Create",
-    "Cancel":"Cancel"
+    "uploadFile":"Upload JSON file",
+    "realmName":"Realm name",
+    "enabled":"Enabled",
+    "on": "On",
+    "off":"Off",
+    "create":"Create"
   }
 }

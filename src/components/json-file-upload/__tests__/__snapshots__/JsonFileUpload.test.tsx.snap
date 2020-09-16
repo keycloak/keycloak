@@ -8,7 +8,7 @@ exports[`<JsonFileUpload /> render 1`] = `
   <FormGroup
     fieldId="test"
     helperText="Upload a JSON file"
-    label="Resource file"
+    label="resourceFile"
   >
     <div
       className="pf-c-form__group"
@@ -23,7 +23,7 @@ exports[`<JsonFileUpload /> render 1`] = `
           <span
             className="pf-c-form__label-text"
           >
-            Resource file
+            resourceFile
           </span>
         </label>
          
@@ -259,7 +259,7 @@ exports[`<JsonFileUpload /> upload file 1`] = `
   <FormGroup
     fieldId="upload"
     helperText="Upload a JSON file"
-    label="Resource file"
+    label="resourceFile"
   >
     <div
       className="pf-c-form__group"
@@ -274,7 +274,7 @@ exports[`<JsonFileUpload /> upload file 1`] = `
           <span
             className="pf-c-form__label-text"
           >
-            Resource file
+            resourceFile
           </span>
         </label>
          

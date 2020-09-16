@@ -3,17 +3,18 @@
     "fullName": "{{givenName}} {{familyName}}",
     "unknownUser": "Anonymous",
 
-    "Save": "Save",
-    "Cancel": "Cancel",
-    "Delete": "Delete",
-    "Export": "Export",
-    "Resource file": "Resource file",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "export": "Export",
+    "resourceFile": "Resource file",
+    "clearFile": "Clear this file",
 
-    "Sign out": "Sign out",
-    "Manage account": "Manage account",
-    "Server info": "Server info",
-    "Help": "Help",
-    "Documentation": "Documentation",
-    "Enable help mode": "Enable help mode"
+    "signOut": "Sign out",
+    "manageAccount": "Manage account",
+    "serverInfo": "Server info",
+    "help": "Help",
+    "documentation": "Documentation",
+    "enableHelpMode": "Enable help mode"
   }
 }

@@ -16,7 +16,7 @@ export const ClientDescription = ({
   const { t } = useTranslation("clients");
   return (
     <>
-      <FormGroup label={t("Client ID")} fieldId="kc-client-id">
+      <FormGroup label={t("clientID")} fieldId="kc-client-id">
         <TextInput
           type="text"
           id="kc-client-id"
@@ -25,7 +25,7 @@ export const ClientDescription = ({
           onChange={onChange}
         />
       </FormGroup>
-      <FormGroup label={t("Name")} fieldId="kc-name">
+      <FormGroup label={t("name")} fieldId="kc-name">
         <TextInput
           type="text"
           id="kc-name"
@@ -34,7 +34,7 @@ export const ClientDescription = ({
           onChange={onChange}
         />
       </FormGroup>
-      <FormGroup label={t("Description")} fieldId="kc-description">
+      <FormGroup label={t("description")} fieldId="kc-description">
         <TextInput
           type="text"
           id="kc-description"

@@ -53,7 +53,7 @@ exports[`<HelpHeader /> enable help 1`] = `
             <div
               class="pf-l-split__item pf-m-fill"
             >
-              Documentation
+              documentation
             </div>
             <div
               class="pf-l-split__item"
@@ -94,7 +94,7 @@ exports[`<HelpHeader /> enable help 1`] = `
               <div
                 class="pf-l-split__item pf-m-fill"
               >
-                Enable help mode
+                enableHelpMode
               </div>
               <div
                 class="pf-l-split__item"
@@ -209,7 +209,7 @@ exports[`<HelpHeader /> open dropdown 1`] = `
             <div
               class="pf-l-split__item pf-m-fill"
             >
-              Documentation
+              documentation
             </div>
             <div
               class="pf-l-split__item"
@@ -250,7 +250,7 @@ exports[`<HelpHeader /> open dropdown 1`] = `
               <div
                 class="pf-l-split__item pf-m-fill"
               >
-                Enable help mode
+                enableHelpMode
               </div>
               <div
                 class="pf-l-split__item"

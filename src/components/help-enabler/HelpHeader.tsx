@@ -45,7 +45,7 @@ export const HelpHeader = () => {
   const dropdownItems = [
     <DropdownItem key="link" id="link">
       <Split>
-        <SplitItem isFilled>{t("Documentation")}</SplitItem>
+        <SplitItem isFilled>{t("documentation")}</SplitItem>
         <SplitItem>
           <ExternalLinkAltIcon />
         </SplitItem>
@@ -62,7 +62,7 @@ export const HelpHeader = () => {
       }
     >
       <Split>
-        <SplitItem isFilled>{t("Enable help mode")}</SplitItem>
+        <SplitItem isFilled>{t("enableHelpMode")}</SplitItem>
         <SplitItem>
           <Switch
             id="enableHelp"

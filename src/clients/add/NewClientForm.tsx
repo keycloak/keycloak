@@ -49,7 +49,7 @@ export const NewClientForm = () => {
     });
   };
 
-  const title = t("Create client");
+  const title = t("createClient");
   return (
     <>
       <Alerts />
@@ -65,13 +65,13 @@ export const NewClientForm = () => {
           mainAriaLabel={`${title} content`}
           steps={[
             {
-              name: t("General Settings"),
+              name: t("generalSettings"),
               component: <Step1 onChange={handleInputChange} client={client} />,
             },
             {
-              name: t("Capability config"),
+              name: t("capabilityConfig"),
               component: <Step2 onChange={handleInputChange} client={client} />,
-              nextButtonText: t("common:Save"),
+              nextButtonText: t("common:save"),
             },
           ]}
           onSave={() => save()}

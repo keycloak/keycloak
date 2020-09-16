@@ -40,13 +40,13 @@ export const ClientsSection = () => {
           toolbarItem={
             <>
               <Button onClick={() => history.push("/add-client")}>
-                {t("Create client")}
+                {t("createClient")}
               </Button>
               <Button
                 onClick={() => history.push("/import-client")}
                 variant="link"
               >
-                {t("Import client")}
+                {t("importClient")}
               </Button>
             </>
           }
