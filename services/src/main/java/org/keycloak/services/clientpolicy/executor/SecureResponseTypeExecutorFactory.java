@@ -54,7 +54,7 @@ public class SecureResponseTypeExecutorFactory implements ClientPolicyExecutorPr
 
     @Override
     public String getHelpText() {
-        return null;
+        return "The executor checks whether the client sent its authorization request with code id_token or code id_token token in its response type by following Financial-grade API Security Profile : Read and Write API Security Profile.";
     }
 
     @Override
