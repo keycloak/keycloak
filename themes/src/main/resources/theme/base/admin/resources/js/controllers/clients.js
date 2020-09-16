@@ -1650,6 +1650,10 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         $scope.clientEdit.attributes['saml.signature.algorithm'] = $scope.signatureAlgorithm;
         $scope.clientEdit.attributes['saml_name_id_format'] = $scope.nameIdFormat;
 
+        $scope.clientEdit.redirectUris = $scope.clientEdit.redirectUris.filter(function(uri){
+        	return uri != "";
+        });
+
         if ($scope.clientEdit.protocol != 'saml' && !$scope.clientEdit.bearerOnly && ($scope.clientEdit.standardFlowEnabled || $scope.clientEdit.implicitFlowEnabled) && (!$scope.clientEdit.redirectUris || $scope.clientEdit.redirectUris.length == 0)) {
             Notifications.error("You must specify at least one redirect uri");
         } else {
