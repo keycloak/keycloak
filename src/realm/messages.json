@@ -3,8 +3,6 @@
     "uploadFile":"Upload JSON file",
     "realmName":"Realm name",
     "enabled":"Enabled",
-    "on": "On",
-    "off":"Off",
     "create":"Create"
   }
 }

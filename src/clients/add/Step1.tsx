@@ -1,4 +1,4 @@
-import React, { useState, FormEvent, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   FormGroup,
   Form,
@@ -6,20 +6,22 @@ import {
   SelectVariant,
   SelectOption,
 } from "@patternfly/react-core";
+import { useTranslation } from "react-i18next";
+import { Controller, UseFormMethods } from "react-hook-form";
 
 import { HttpClientContext } from "../../http-service/HttpClientContext";
 import { sortProvider } from "../../util";
 import { ServerInfoRepresentation } from "../models/server-info";
-import { ClientRepresentation } from "../models/client-model";
 import { ClientDescription } from "../ClientDescription";
 
 type Step1Props = {
-  onChange: (value: string, event: FormEvent<HTMLInputElement>) => void;
-  client: ClientRepresentation;
+  form: UseFormMethods;
 };
 
-export const Step1 = ({ client, onChange }: Step1Props) => {
+export const Step1 = ({ form }: Step1Props) => {
   const httpClient = useContext(HttpClientContext)!;
+  const { t } = useTranslation();
+  const { errors, control, register } = form;
 
   const [providers, setProviders] = useState<string[]>([]);
   const [open, isOpen] = useState(false);
@@ -38,37 +40,45 @@ export const Step1 = ({ client, onChange }: Step1Props) => {
 
   return (
     <Form isHorizontal>
-      <FormGroup label="Client Type" fieldId="kc-type" isRequired>
-        <Select
-          id="kc-type"
-          required
-          onToggle={() => isOpen(!open)}
-          onSelect={(_, value) => {
-            onChange(
-              value as string,
-              ({
-                target: {
-                  name: "protocol",
-                },
-              } as unknown) as FormEvent<HTMLInputElement>
-            );
-            isOpen(false);
-          }}
-          selections={client.protocol}
-          variant={SelectVariant.single}
-          aria-label="Select Encryption type"
-          isOpen={open}
-        >
-          {providers.map((option) => (
-            <SelectOption
-              key={option}
-              value={option || "Select an option"}
-              isPlaceholder={option === ""}
-            />
-          ))}
-        </Select>
+      <FormGroup
+        label="Client Type"
+        fieldId="kc-type"
+        isRequired
+        helperTextInvalid={t("common:required")}
+        validated={errors.protocol ? "error" : "default"}
+      >
+        <Controller
+          name="protocol"
+          defaultValue=""
+          control={control}
+          rules={{ required: true }}
+          render={({ onChange, value }) => (
+            <Select
+              id="kc-type"
+              required
+              onToggle={() => isOpen(!open)}
+              onSelect={(_, value, isPlaceholder) => {
+                onChange(isPlaceholder ? "" : (value as string));
+                isOpen(false);
+              }}
+              selections={value}
+              variant={SelectVariant.single}
+              aria-label="Select Encryption type"
+              isOpen={open}
+            >
+              {providers.map((option) => (
+                <SelectOption
+                  selected={option === value}
+                  key={option}
+                  value={option === "" ? "Select an option" : option}
+                  isPlaceholder={option === ""}
+                />
+              ))}
+            </Select>
+          )}
+        />
       </FormGroup>
-      <ClientDescription onChange={onChange} client={client} />
+      <ClientDescription register={register} />
     </Form>
   );
 };

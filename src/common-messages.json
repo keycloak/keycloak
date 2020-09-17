@@ -6,15 +6,21 @@
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
+    "next": "Next",
+    "back": "Back",
     "export": "Export",
     "resourceFile": "Resource file",
     "clearFile": "Clear this file",
+    "on": "On",
+    "off":"Off",
 
     "signOut": "Sign out",
     "manageAccount": "Manage account",
     "serverInfo": "Server info",
     "help": "Help",
     "documentation": "Documentation",
-    "enableHelpMode": "Enable help mode"
+    "enableHelpMode": "Enable help mode",
+
+    "required": "Required field"
   }
 }

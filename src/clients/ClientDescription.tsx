@@ -1,46 +1,35 @@
-import React, { FormEvent } from "react";
+import React from "react";
 import { FormGroup, TextInput } from "@patternfly/react-core";
-
-import { ClientRepresentation } from "./models/client-model";
+import { FieldElement, ValidationRules, Ref } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 type ClientDescriptionProps = {
-  onChange: (value: string, event: FormEvent<HTMLInputElement>) => void;
-  client: ClientRepresentation;
+  register<TFieldElement extends FieldElement>(
+    rules?: ValidationRules
+  ): (ref: (TFieldElement & Ref) | null) => void;
 };
 
-export const ClientDescription = ({
-  client,
-  onChange,
-}: ClientDescriptionProps) => {
+export const ClientDescription = ({ register }: ClientDescriptionProps) => {
   const { t } = useTranslation("clients");
   return (
     <>
       <FormGroup label={t("clientID")} fieldId="kc-client-id">
         <TextInput
+          ref={register()}
           type="text"
           id="kc-client-id"
           name="clientId"
-          value={client.clientId}
-          onChange={onChange}
         />
       </FormGroup>
       <FormGroup label={t("name")} fieldId="kc-name">
-        <TextInput
-          type="text"
-          id="kc-name"
-          name="name"
-          value={client.name}
-          onChange={onChange}
-        />
+        <TextInput ref={register()} type="text" id="kc-name" name="name" />
       </FormGroup>
       <FormGroup label={t("description")} fieldId="kc-description">
         <TextInput
+          ref={register()}
           type="text"
           id="kc-description"
           name="description"
-          value={client.description}
-          onChange={onChange}
         />
       </FormGroup>
     </>

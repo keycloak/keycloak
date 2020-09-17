@@ -18,30 +18,27 @@ import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload
 import { RealmRepresentation } from "../models/Realm";
 import { HttpClientContext } from "../../http-service/HttpClientContext";
 import { useAlerts } from "../../components/alert/Alerts";
+import { useForm, Controller } from "react-hook-form";
 
 export const NewRealmForm = () => {
   const { t } = useTranslation("realm");
   const httpClient = useContext(HttpClientContext)!;
   const [add, Alerts] = useAlerts();
 
-  const defaultRealm = { id: "", realm: "", enabled: true };
-  const [realm, setRealm] = useState<RealmRepresentation>(defaultRealm);
+  const { register, handleSubmit, setValue, control } = useForm<
+    RealmRepresentation
+  >();
 
   const handleFileChange = (value: string | File) => {
-    setRealm({
-      ...realm,
-      ...(value ? JSON.parse(value as string) : defaultRealm),
+    const defaultRealm = { id: "", realm: "", enabled: true };
+
+    const obj = value ? JSON.parse(value as string) : defaultRealm;
+    Object.keys(obj).forEach((k) => {
+      setValue(k, obj[k]);
     });
   };
-  const handleChange = (
-    value: string | boolean,
-    event: FormEvent<HTMLInputElement>
-  ) => {
-    const name = (event.target as HTMLInputElement).name;
-    setRealm({ ...realm, [name]: value });
-  };
 
-  const save = async () => {
+  const save = async (realm: RealmRepresentation) => {
     try {
       await httpClient.doPost("/admin/realms", realm);
       add(t("Realm created"), AlertVariant.success);
@@ -60,7 +57,7 @@ export const NewRealmForm = () => {
       </PageSection>
       <Divider />
       <PageSection variant="light">
-        <Form isHorizontal>
+        <Form isHorizontal onSubmit={handleSubmit(save)}>
           <JsonFileUpload id="kc-realm-filename" onChange={handleFileChange} />
           <FormGroup label={t("realmName")} isRequired fieldId="kc-realm-name">
             <TextInput
@@ -68,22 +65,28 @@ export const NewRealmForm = () => {
               type="text"
               id="kc-realm-name"
               name="realm"
-              value={realm.realm}
-              onChange={handleChange}
+              ref={register()}
             />
           </FormGroup>
           <FormGroup label={t("enabled")} fieldId="kc-realm-enabled-switch">
-            <Switch
-              id="kc-realm-enabled-switch"
+            <Controller
               name="enabled"
-              label={t("on")}
-              labelOff={t("off")}
-              isChecked={realm.enabled}
-              onChange={handleChange}
+              defaultValue={true}
+              control={control}
+              render={({ onChange, value }) => (
+                <Switch
+                  id="kc-realm-enabled-switch"
+                  name="enabled"
+                  label={t("common:on")}
+                  labelOff={t("common:off")}
+                  isChecked={value}
+                  onChange={onChange}
+                />
+              )}
             />
           </FormGroup>
           <ActionGroup>
-            <Button variant="primary" onClick={() => save()}>
+            <Button variant="primary" type="submit">
               {t("create")}
             </Button>
             <Button variant="link">{t("common:cancel")}</Button>

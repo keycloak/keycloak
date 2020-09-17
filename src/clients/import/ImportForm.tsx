@@ -1,4 +1,4 @@
-import React, { useState, FormEvent, useContext } from "react";
+import React, { useContext } from "react";
 import {
   PageSection,
   Text,
@@ -11,6 +11,7 @@ import {
   Button,
   AlertVariant,
 } from "@patternfly/react-core";
+import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { ClientRepresentation } from "../models/client-model";
@@ -25,31 +26,27 @@ export const ImportForm = () => {
   const { t } = useTranslation("clients");
   const httpClient = useContext(HttpClientContext)!;
   const { realm } = useContext(RealmContext);
+  const { register, handleSubmit, errors, setValue } = useForm<
+    ClientRepresentation
+  >();
 
   const [add, Alerts] = useAlerts();
-  const defaultClient = {
-    protocol: "",
-    clientId: "",
-    name: "",
-    description: "",
-  };
-  const [client, setClient] = useState<ClientRepresentation>(defaultClient);
 
   const handleFileChange = (value: string | File) => {
-    setClient({
-      ...client,
-      ...(value ? JSON.parse(value as string) : defaultClient),
+    const defaultClient = {
+      protocol: "",
+      clientId: "",
+      name: "",
+      description: "",
+    };
+
+    const obj = value ? JSON.parse(value as string) : defaultClient;
+    Object.keys(obj).forEach((k) => {
+      setValue(k, obj[k]);
     });
   };
-  const handleDescriptionChange = (
-    value: string,
-    event: FormEvent<HTMLInputElement>
-  ) => {
-    const name = (event.target as HTMLInputElement).name;
-    setClient({ ...client, [name]: value });
-  };
 
-  const save = async () => {
+  const save = async (client: ClientRepresentation) => {
     try {
       await httpClient.doPost(`/admin/realms/${realm}/clients`, client);
       add(t("clientImportSuccess"), AlertVariant.success);
@@ -68,23 +65,20 @@ export const ImportForm = () => {
       </PageSection>
       <Divider />
       <PageSection variant="light">
-        <Form isHorizontal>
+        <Form isHorizontal onSubmit={handleSubmit(save)}>
           <JsonFileUpload id="realm-file" onChange={handleFileChange} />
-          <ClientDescription
-            onChange={handleDescriptionChange}
-            client={client}
-          />
+          <ClientDescription register={register} />
           <FormGroup label={t("type")} fieldId="kc-type">
             <TextInput
               type="text"
               id="kc-type"
               name="protocol"
-              value={client.protocol}
               isReadOnly
+              ref={register()}
             />
           </FormGroup>
           <ActionGroup>
-            <Button variant="primary" onClick={() => save()}>
+            <Button variant="primary" type="submit">
               {t("common:save")}
             </Button>
             <Button variant="link">{t("common:cancel")}</Button>

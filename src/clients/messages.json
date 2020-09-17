@@ -14,6 +14,17 @@
     "clientImportError": "Could not import client",
     "clientImportSuccess": "Client imported succeful",
     "clientDeletedSucess": "The client has been deleted",
-    "clientDeleteError": "Could not delete client:"
+    "clientDeleteError": "Could not delete client:",
+    "clientAuthentication": "Client authentication",
+    "authentication": "Authentication",
+    "authenticationFlow": "Authentication flow",
+    "standardFlow": "Standard flow",
+    "enableStandardFlow": "Enable standard flow",
+    "directAccess": "Direct access",
+    "enableDirectAccess": "Enable direct access",
+    "implicidFlow": "Implicid flow",
+    "enableImplicidFlow": "Enable implicid flow",
+    "serviceAccount": "Service account",
+    "enableServiceAccount": "Enable service account"
   }
 }
