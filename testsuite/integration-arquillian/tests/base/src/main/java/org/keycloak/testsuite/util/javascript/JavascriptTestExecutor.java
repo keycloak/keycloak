@@ -322,4 +322,9 @@ public class JavascriptTestExecutor {
 
         return this;
     }
+
+    public JavascriptTestExecutor validateOutputField(JavascriptStateValidator validator) {
+        validator.validate(jsDriver, output, events);
+        return this;
+    }
 }
