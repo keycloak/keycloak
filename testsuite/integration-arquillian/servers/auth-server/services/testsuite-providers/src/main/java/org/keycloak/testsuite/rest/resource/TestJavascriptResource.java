@@ -42,6 +42,14 @@ public class TestJavascriptResource {
     }
 
     @GET
+    @Path("/init-in-head.html")
+    @Produces(MediaType.TEXT_HTML)
+    public String getJavascriptTestingEnvironmentWithInitInHead() throws IOException {
+        session.getProvider(SecurityHeadersProvider.class).options().skipHeaders();
+        return resourceToString("/javascript/init-in-head.html");
+    }
+
+    @GET
     @Path("/silent-check-sso.html")
     @Produces(MediaType.TEXT_HTML)
     public String getJavascriptTestingEnvironmentSilentCheckSso() throws IOException {

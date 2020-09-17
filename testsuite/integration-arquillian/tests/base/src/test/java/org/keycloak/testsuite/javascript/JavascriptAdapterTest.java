@@ -18,6 +18,8 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
@@ -47,16 +49,11 @@ import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-
-import static org.junit.Assume.assumeFalse;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 
 /**
  * @author mhajas
@@ -65,6 +62,7 @@ import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     private String testAppUrl;
+    private String testAppWithInitInHeadUrl;
     protected JavascriptTestExecutor testExecutor;
     private static int TIME_SKEW_TOLERANCE = 3;
 
@@ -90,7 +88,9 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     @Before
     public void setDefaultEnvironment() {
-        testAppUrl = authServerContextRootPage.toString().replace(AUTH_SERVER_HOST, JS_APP_HOST) + JAVASCRIPT_URL + "/index.html";
+        String testAppRootUrl = authServerContextRootPage.toString().replace(AUTH_SERVER_HOST, JS_APP_HOST) + JAVASCRIPT_URL;
+        testAppUrl = testAppRootUrl + "/index.html";
+        testAppWithInitInHeadUrl = testAppRootUrl + "/init-in-head.html";
 
         jsDriverTestRealmLoginPage.setAuthRealm(REALM_NAME);
         oAuthGrantPage.setAuthRealm(REALM_NAME);
@@ -101,10 +101,8 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         events.poll();
         jsDriver.manage().deleteAllCookies();
 
-        jsDriver.navigate().to(testAppUrl);
+        navigateToTestApp(testAppUrl);
 
-        waitUntilElement(outputArea).is().present();
-        assertCurrentUrlStartsWith(testAppUrl, jsDriver);
         testExecutor = JavascriptTestExecutor.create(jsDriver, jsDriverTestRealmLoginPage);
 
         jsDriver.manage().deleteAllCookies();
@@ -121,6 +119,14 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     }
 
     private void assertOnTestAppUrl(WebDriver jsDriver, Object output, WebElement events) {
+        assertOnTestAppUrl(jsDriver, output, events, testAppUrl);
+    }
+
+    private void assertOnTestAppWithInitInHeadUrl(WebDriver jsDriver, Object output, WebElement events) {
+        assertOnTestAppUrl(jsDriver, output, events, testAppWithInitInHeadUrl);
+    }
+
+    private void assertOnTestAppUrl(WebDriver jsDriver, Object output, WebElement events, String testAppUrl) {
         waitForPageToLoad();
         assertCurrentUrlStartsWith(testAppUrl, jsDriver);
     }
@@ -748,7 +754,24 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         });
     }
 
+    @Test
+    // KEYCLOAK-15158
+    public void testInitInHead() {
+        navigateToTestApp(testAppWithInitInHeadUrl);
+
+        testExecutor.validateOutputField(this::assertInitNotAuth)
+                .login(this::assertOnLoginPage)
+                .loginForm(testUser, this::assertOnTestAppWithInitInHeadUrl)
+                .validateOutputField(this::assertInitAuth);
+    }
+
     protected void assertAdapterIsLoggedIn(WebDriver driver1, Object output, WebElement events) {
         assertTrue(testExecutor.isLoggedIn());
+    }
+
+    protected void navigateToTestApp(final String testAppUrl) {
+        jsDriver.navigate().to(testAppUrl);
+        waitUntilElement(outputArea).is().present();
+        assertCurrentUrlStartsWith(testAppUrl, jsDriver);
     }
 }
