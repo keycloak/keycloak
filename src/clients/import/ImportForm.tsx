@@ -18,10 +18,13 @@ import { ClientDescription } from "../ClientDescription";
 import { HttpClientContext } from "../../http-service/HttpClientContext";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
 import { useAlerts } from "../../components/alert/Alerts";
+import { AlertPanel } from "../../components/alert/AlertPanel";
+import { RealmContext } from "../../components/realm-context/RealmContext";
 
 export const ImportForm = () => {
   const { t } = useTranslation("clients");
   const httpClient = useContext(HttpClientContext)!;
+  const { realm } = useContext(RealmContext);
 
   const [add, Alerts] = useAlerts();
   const defaultClient = {
@@ -48,7 +51,7 @@ export const ImportForm = () => {
 
   const save = async () => {
     try {
-      await httpClient.doPost("/admin/realms/master/clients", client);
+      await httpClient.doPost(`/admin/realms/${realm}/clients`, client);
       add(t("clientImportSuccess"), AlertVariant.success);
     } catch (error) {
       add(`${t("clientImportError")} '${error}'`, AlertVariant.danger);

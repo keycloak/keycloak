@@ -1,3 +1,353 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`renders realm selector 1`] = `"<div id=\\"realm-select\\" class=\\"pf-c-dropdown pf-m-expanded keycloak__realm_selector__dropdown\\" data-ouia-component-type=\\"PF4/Dropdown\\" data-ouia-safe=\\"true\\" data-ouia-component-id=\\"1\\"><button id=\\"realm-select-toggle\\" class=\\"pf-c-dropdown__toggle keycloak__realm_selector_dropdown__toggle\\" type=\\"button\\" aria-expanded=\\"true\\" aria-haspopup=\\"true\\"><span class=\\"pf-c-dropdown__toggle-text\\">test</span><span class=\\"pf-c-dropdown__toggle-icon\\"><svg style=\\"vertical-align: -0.125em;\\" fill=\\"currentColor\\" height=\\"1em\\" width=\\"1em\\" viewBox=\\"0 0 320 512\\" aria-hidden=\\"true\\" role=\\"img\\"><path d=\\"M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z\\" transform=\\"\\"></path></svg></span></button><ul aria-labelledby=\\"realm-select-toggle\\" class=\\"pf-c-dropdown__menu\\" role=\\"menu\\"><li role=\\"menuitem\\"><a tabindex=\\"-1\\" aria-disabled=\\"false\\" class=\\"pf-c-dropdown__menu-item\\">Another</a></li><hr class=\\"pf-c-divider\\" index=\\"1\\"><li role=\\"menuitem\\"><div tabindex=\\"-1\\" class=\\"pf-c-dropdown__menu-item\\"><button aria-disabled=\\"false\\" class=\\"pf-c-button pf-m-primary pf-m-block\\" type=\\"button\\" data-ouia-component-type=\\"PF4/Button\\" data-ouia-safe=\\"true\\" data-ouia-component-id=\\"2\\">Create Realm</button></div></li></ul></div>"`;
+exports[`renders realm selector 1`] = `
+<RealmContextProvider>
+  <RealmSelector
+    realmList={
+      Array [
+        Object {
+          "id": "321",
+          "realm": "another",
+        },
+      ]
+    }
+  >
+    <Dropdown
+      className="keycloak__realm_selector__dropdown"
+      dropdownItems={
+        Array [
+          <DropdownItem
+            onClick={[Function]}
+          >
+            <RealmText
+              value="another"
+            />
+          </DropdownItem>,
+          <Divider />,
+          <DropdownItem>
+            <AddRealm />
+          </DropdownItem>,
+        ]
+      }
+      id="realm-select"
+      isOpen={false}
+      toggle={
+        <DropdownToggle
+          className="keycloak__realm_selector_dropdown__toggle"
+          id="realm-select-toggle"
+          onToggle={[Function]}
+        >
+          Master
+        </DropdownToggle>
+      }
+    >
+      <DropdownWithContext
+        autoFocus={true}
+        className="keycloak__realm_selector__dropdown"
+        direction="down"
+        dropdownItems={
+          Array [
+            <DropdownItem
+              onClick={[Function]}
+            >
+              <RealmText
+                value="another"
+              />
+            </DropdownItem>,
+            <Divider />,
+            <DropdownItem>
+              <AddRealm />
+            </DropdownItem>,
+          ]
+        }
+        id="realm-select"
+        isGrouped={false}
+        isOpen={false}
+        isPlain={false}
+        menuAppendTo="inline"
+        onSelect={[Function]}
+        position="left"
+        toggle={
+          <DropdownToggle
+            className="keycloak__realm_selector_dropdown__toggle"
+            id="realm-select-toggle"
+            onToggle={[Function]}
+          >
+            Master
+          </DropdownToggle>
+        }
+      >
+        <div
+          className="pf-c-dropdown keycloak__realm_selector__dropdown"
+          data-ouia-component-id={0}
+          data-ouia-component-type="PF4/Dropdown"
+          data-ouia-safe={true}
+          id="realm-select"
+        >
+          <DropdownToggle
+            aria-haspopup={true}
+            className="keycloak__realm_selector_dropdown__toggle"
+            getMenuRef={[Function]}
+            id="realm-select-toggle"
+            isOpen={false}
+            isPlain={false}
+            key=".0"
+            onEnter={[Function]}
+            onToggle={[Function]}
+            parentRef={
+              Object {
+                "current": <div
+                  class="pf-c-dropdown pf-m-expanded keycloak__realm_selector__dropdown"
+                  data-ouia-component-id="1"
+                  data-ouia-component-type="PF4/Dropdown"
+                  data-ouia-safe="true"
+                  id="realm-select"
+                >
+                  <button
+                    aria-expanded="true"
+                    aria-haspopup="true"
+                    class="pf-c-dropdown__toggle keycloak__realm_selector_dropdown__toggle"
+                    id="realm-select-toggle"
+                    type="button"
+                  >
+                    <span
+                      class="pf-c-dropdown__toggle-text"
+                    >
+                      Master
+                    </span>
+                    <span
+                      class="pf-c-dropdown__toggle-icon"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        fill="currentColor"
+                        height="1em"
+                        role="img"
+                        style="vertical-align: -0.125em;"
+                        viewBox="0 0 320 512"
+                        width="1em"
+                      >
+                        <path
+                          d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                          transform=""
+                        />
+                      </svg>
+                    </span>
+                  </button>
+                  <ul
+                    aria-labelledby="realm-select-toggle"
+                    class="pf-c-dropdown__menu"
+                    role="menu"
+                  >
+                    <li
+                      role="menuitem"
+                    >
+                      <a
+                        aria-disabled="false"
+                        class="pf-c-dropdown__menu-item"
+                        tabindex="-1"
+                      >
+                        <div
+                          class="pf-l-split"
+                        >
+                          <div
+                            class="pf-l-split__item pf-m-fill"
+                          >
+                            Another
+                          </div>
+                          <div
+                            class="pf-l-split__item"
+                          />
+                        </div>
+                      </a>
+                    </li>
+                    <hr
+                      class="pf-c-divider"
+                      index="1"
+                    />
+                    <li
+                      role="menuitem"
+                    >
+                      <a
+                        aria-disabled="false"
+                        class="pf-c-dropdown__menu-item"
+                        tabindex="-1"
+                      >
+                        <div
+                          aria-disabled="false"
+                          class="pf-c-button pf-m-primary pf-m-block"
+                          data-ouia-component-id="2"
+                          data-ouia-component-type="PF4/Button"
+                          data-ouia-safe="true"
+                        >
+                          Create Realm
+                        </div>
+                      </a>
+                    </li>
+                  </ul>
+                </div>,
+              }
+            }
+          >
+            <Toggle
+              aria-haspopup={true}
+              bubbleEvent={false}
+              className="keycloak__realm_selector_dropdown__toggle"
+              getMenuRef={[Function]}
+              id="realm-select-toggle"
+              isActive={false}
+              isDisabled={false}
+              isOpen={false}
+              isPlain={false}
+              isPrimary={false}
+              isSplitButton={false}
+              onEnter={[Function]}
+              onToggle={[Function]}
+              parentRef={
+                Object {
+                  "current": <div
+                    class="pf-c-dropdown pf-m-expanded keycloak__realm_selector__dropdown"
+                    data-ouia-component-id="1"
+                    data-ouia-component-type="PF4/Dropdown"
+                    data-ouia-safe="true"
+                    id="realm-select"
+                  >
+                    <button
+                      aria-expanded="true"
+                      aria-haspopup="true"
+                      class="pf-c-dropdown__toggle keycloak__realm_selector_dropdown__toggle"
+                      id="realm-select-toggle"
+                      type="button"
+                    >
+                      <span
+                        class="pf-c-dropdown__toggle-text"
+                      >
+                        Master
+                      </span>
+                      <span
+                        class="pf-c-dropdown__toggle-icon"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          fill="currentColor"
+                          height="1em"
+                          role="img"
+                          style="vertical-align: -0.125em;"
+                          viewBox="0 0 320 512"
+                          width="1em"
+                        >
+                          <path
+                            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                            transform=""
+                          />
+                        </svg>
+                      </span>
+                    </button>
+                    <ul
+                      aria-labelledby="realm-select-toggle"
+                      class="pf-c-dropdown__menu"
+                      role="menu"
+                    >
+                      <li
+                        role="menuitem"
+                      >
+                        <a
+                          aria-disabled="false"
+                          class="pf-c-dropdown__menu-item"
+                          tabindex="-1"
+                        >
+                          <div
+                            class="pf-l-split"
+                          >
+                            <div
+                              class="pf-l-split__item pf-m-fill"
+                            >
+                              Another
+                            </div>
+                            <div
+                              class="pf-l-split__item"
+                            />
+                          </div>
+                        </a>
+                      </li>
+                      <hr
+                        class="pf-c-divider"
+                        index="1"
+                      />
+                      <li
+                        role="menuitem"
+                      >
+                        <a
+                          aria-disabled="false"
+                          class="pf-c-dropdown__menu-item"
+                          tabindex="-1"
+                        >
+                          <div
+                            aria-disabled="false"
+                            class="pf-c-button pf-m-primary pf-m-block"
+                            data-ouia-component-id="2"
+                            data-ouia-component-type="PF4/Button"
+                            data-ouia-safe="true"
+                          >
+                            Create Realm
+                          </div>
+                        </a>
+                      </li>
+                    </ul>
+                  </div>,
+                }
+              }
+            >
+              <button
+                aria-expanded={false}
+                aria-haspopup={true}
+                className="pf-c-dropdown__toggle keycloak__realm_selector_dropdown__toggle"
+                disabled={false}
+                id="realm-select-toggle"
+                onClick={[Function]}
+                onKeyDown={[Function]}
+                type="button"
+              >
+                <span
+                  className="pf-c-dropdown__toggle-text"
+                >
+                  Master
+                </span>
+                <span
+                  className="pf-c-dropdown__toggle-icon"
+                >
+                  <CaretDownIcon
+                    color="currentColor"
+                    noVerticalAlign={false}
+                    size="sm"
+                  >
+                    <svg
+                      aria-hidden={true}
+                      aria-labelledby={null}
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style={
+                        Object {
+                          "verticalAlign": "-0.125em",
+                        }
+                      }
+                      viewBox="0 0 320 512"
+                      width="1em"
+                    >
+                      <path
+                        d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                        transform=""
+                      />
+                    </svg>
+                  </CaretDownIcon>
+                </span>
+              </button>
+            </Toggle>
+          </DropdownToggle>
+        </div>
+      </DropdownWithContext>
+    </Dropdown>
+  </RealmSelector>
+</RealmContextProvider>
+`;

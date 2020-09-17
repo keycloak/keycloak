@@ -3,18 +3,21 @@ import { mount } from "enzyme";
 import { act } from "@testing-library/react";
 
 import { RealmSelector } from "../RealmSelector";
+import { RealmContextProvider } from "../../realm-context/RealmContext";
 
 it("renders realm selector", async () => {
   const wrapper = mount(
-    <RealmSelector realm="test" realmList={[{ id: "321", realm: "another" }]} />
+    <RealmContextProvider>
+      <RealmSelector realmList={[{ id: "321", realm: "another" }]} />
+    </RealmContextProvider>
   );
 
-  expect(wrapper.text()).toBe("test");
+  expect(wrapper.text()).toBe("Master");
 
   const expandButton = wrapper.find("button");
   act(() => {
     expandButton!.simulate("click");
   });
 
-  expect(wrapper.html()).toMatchSnapshot();
+  expect(wrapper).toMatchSnapshot();
 });

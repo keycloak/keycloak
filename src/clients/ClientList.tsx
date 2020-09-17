@@ -15,6 +15,7 @@ import { ExternalLink } from "../components/external-link/ExternalLink";
 import { HttpClientContext } from "../http-service/HttpClientContext";
 import { useAlerts } from "../components/alert/Alerts";
 import { ClientRepresentation } from "./models/client-model";
+import { RealmContext } from "../components/realm-context/RealmContext";
 
 type ClientListProps = {
   clients?: ClientRepresentation[];
@@ -31,6 +32,7 @@ const columns: (keyof ClientRepresentation)[] = [
 export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
   const { t } = useTranslation("clients");
   const httpClient = useContext(HttpClientContext)!;
+  const { realm } = useContext(RealmContext);
   const [add, Alerts] = useAlerts();
 
   const convertClientId = (clientId: string) =>
@@ -116,7 +118,7 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
             onClick: (_, rowId) => {
               try {
                 httpClient.doDelete(
-                  `/admin/realms/master/clients/${data[rowId].client.id}`
+                  `/admin/realms/${realm}/clients/${data[rowId].client.id}`
                 );
                 add(t("clientDeletedSucess"), AlertVariant.success);
               } catch (error) {

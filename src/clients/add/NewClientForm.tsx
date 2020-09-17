@@ -13,10 +13,13 @@ import { Step2 } from "./Step2";
 import { ClientRepresentation } from "../models/client-model";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useTranslation } from "react-i18next";
+import { RealmContext } from "../../components/realm-context/RealmContext";
 
 export const NewClientForm = () => {
   const { t } = useTranslation("clients");
   const httpClient = useContext(HttpClientContext)!;
+  const { realm } = useContext(RealmContext);
+
   const [client, setClient] = useState<ClientRepresentation>({
     protocol: "",
     clientId: "",
@@ -29,7 +32,7 @@ export const NewClientForm = () => {
 
   const save = async () => {
     try {
-      await httpClient.doPost("/admin/realms/master/clients", client);
+      await httpClient.doPost(`/admin/realms/${realm}/clients`, client);
       add("Client created", AlertVariant.success);
     } catch (error) {
       add(`Could not create client: '${error}'`, AlertVariant.danger);

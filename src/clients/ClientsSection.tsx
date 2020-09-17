@@ -9,18 +9,21 @@ import { ClientList } from "./ClientList";
 import { HttpClientContext } from "../http-service/HttpClientContext";
 import { KeycloakContext } from "../auth/KeycloakContext";
 import { ClientRepresentation } from "./models/client-model";
+import { RealmContext } from "../components/realm-context/RealmContext";
 
 export const ClientsSection = () => {
   const { t } = useTranslation("clients");
   const history = useHistory();
+
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
   const httpClient = useContext(HttpClientContext)!;
   const keycloak = useContext(KeycloakContext);
+  const { realm } = useContext(RealmContext);
 
   const loader = async () => {
     return await httpClient
-      .doGet("/admin/realms/master/clients", { params: { first, max } })
+      .doGet(`/admin/realms/${realm}/clients`, { params: { first, max } })
       .then((r) => r.data as ClientRepresentation[]);
   };
 

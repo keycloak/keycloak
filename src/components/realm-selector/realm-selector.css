@@ -18,6 +18,10 @@
   width: 100%;
 }
 
+.keycloak__realm_selector__context_selector {
+  --pf-c-context-selector__toggle--Color: var(--pf-c-nav__link--m-current--Color);
+}
+
 .keycloak__realm_selector__dropdown {
   width: 100%;
 }
