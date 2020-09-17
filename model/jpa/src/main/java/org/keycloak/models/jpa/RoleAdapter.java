@@ -158,13 +158,7 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public String getFirstAttribute(String name) {
-        for (RoleAttributeEntity attribute : role.getAttributes()) {
-            if (attribute.getName().equals(name)) {
-                return attribute.getValue();
-            }
-        }
-
-        return null;
+        return getAttributeStream(name).findFirst().orElse(null);
     }
 
     @Override
