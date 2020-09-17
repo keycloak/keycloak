@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.federation;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.List;
 import java.util.stream.Stream;

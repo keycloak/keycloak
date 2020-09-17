@@ -28,13 +28,14 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -54,6 +55,7 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
         this.session = session;
     }
 
+    @Override
     public RoleEntity getEntity() {
         return role;
     }
@@ -143,10 +145,7 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public void removeAttribute(String name) {
-        Collection<RoleAttributeEntity> attributes = role.getAttributes();
-        if (attributes == null) {
-            return;
-        }
+        List<RoleAttributeEntity> attributes = role.getAttributes();
 
         Query query = em.createNamedQuery("deleteRoleAttributesByNameAndUser");
         query.setParameter("name", name);
@@ -185,8 +184,7 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public String getContainerId() {
-        if (isClientRole()) return role.getClientId();
-        else return realm.getId();
+        return getContainer().getId();
     }
 
 
@@ -194,7 +192,6 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
     public RoleContainerModel getContainer() {
         if (role.isClientRole()) {
             return realm.getClientById(role.getClientId());
-
         } else {
             return realm;
         }

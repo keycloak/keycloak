@@ -20,9 +20,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RealmModel;
@@ -66,8 +65,8 @@ public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements 
     }
 
     @Override
-    public Set<RoleModel> getComposites() {
-        return entity.getCompositeRoles().stream().map(uuid -> session.roles().getRoleById(realm, uuid.toString())).collect(Collectors.toSet());
+    public Stream<RoleModel> getCompositesStream() {
+        return entity.getCompositeRoles().stream().map(uuid -> session.roles().getRoleById(realm, uuid.toString()));
     }
 
     @Override
@@ -130,6 +129,11 @@ public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements 
     @Override
     public boolean hasRole(RoleModel role) {
         return this.equals(role) || KeycloakModelUtils.searchFor(role, this, new HashSet<>());
+    }
+
+    @Override
+    public Stream<String> getAttributeStream(String name) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
 }
