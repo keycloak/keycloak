@@ -64,6 +64,7 @@ public class HardcodedRoleStorageProvider implements RoleStorageProvider {
             Thread.sleep(5000l);
         } catch (InterruptedException ex) {
             Logger.getLogger(HardcodedClientStorageProvider.class).warn(ex.getCause());
+            return Stream.empty();
         }
         if (search != null && this.roleName.toLowerCase().contains(search.toLowerCase())) {
             return Stream.of(new HardcodedRoleAdapter(realm));

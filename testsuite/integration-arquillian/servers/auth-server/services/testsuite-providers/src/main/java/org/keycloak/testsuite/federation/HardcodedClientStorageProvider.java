@@ -84,6 +84,7 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
             Thread.sleep(5000l);
         } catch (InterruptedException ex) {
             Logger.getLogger(HardcodedClientStorageProvider.class).warn(ex.getCause());
+            return Stream.empty();
         }
         if (clientId != null && this.clientId.toLowerCase().contains(clientId.toLowerCase())) {
             return Stream.of(new ClientAdapter(realm));
