@@ -1,0 +1,22 @@
+{
+    "roles": {
+      "createRole": "Create role",
+      "importRole": "Import role",
+      "roleID": "Role ID",
+      "type": "Type",
+      "homeURL": "Home URL",
+      "roleExplain": "Realm-level roles are a global namespace to define your roles.",
+      "roleName": "Role name",
+      "composite": "Composite",
+      "description": "Description",
+      "roleList": "Role list",
+      "generalSettings": "General Settings",
+      "capabilityConfig": "Capability config",
+      "roleImportError": "Could not import role",
+      "roleImportSuccess": "Role imported succeful",
+      "roleDeletedSucess": "The role has been deleted",
+      "roleDeleteError": "Could not delete role:",
+      "roleAuthentication": "Role authentication"
+    }
+  }
+  

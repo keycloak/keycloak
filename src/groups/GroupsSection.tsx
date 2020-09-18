@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useHistory } from "react-router-dom";
-import { Button } from "@patternfly/react-core";
+import { Button, PageSection } from "@patternfly/react-core";
 
 import { HttpClientContext } from "../http-service/HttpClientContext";
 import { GroupsList } from "./GroupsList";
@@ -24,30 +24,32 @@ export const GroupsSection = () => {
 
   return (
     <>
-      <DataLoader loader={loader}>
-        {(groups) => (
-          <TableToolbar
-            count={groups!.length}
-            first={first}
-            max={max}
-            onNextClick={setFirst}
-            onPreviousClick={setFirst}
-            onPerPageSelect={(f, m) => {
-              setFirst(f);
-              setMax(m);
-            }}
-            toolbarItem={
-              <>
-                <Button onClick={() => history.push("/add-group")}>
-                  {t("Create group")}
-                </Button>
-              </>
-            }
-          >
-            <GroupsList list={groups} />
-          </TableToolbar>
-        )}
-      </DataLoader>
+      <PageSection variant="light">
+        <DataLoader loader={loader}>
+          {(groups) => (
+            <TableToolbar
+              count={groups!.length}
+              first={first}
+              max={max}
+              onNextClick={setFirst}
+              onPreviousClick={setFirst}
+              onPerPageSelect={(f, m) => {
+                setFirst(f);
+                setMax(m);
+              }}
+              toolbarItem={
+                <>
+                  <Button onClick={() => history.push("/add-group")}>
+                    {t("Create group")}
+                  </Button>
+                </>
+              }
+            >
+              <GroupsList list={groups} />
+            </TableToolbar>
+          )}
+        </DataLoader>
+      </PageSection>
     </>
   );
 };

@@ -5,13 +5,14 @@ import { initReactI18next } from "react-i18next";
 import common from "./common-messages.json";
 import clients from "./clients/messages.json";
 import realm from "./realm/messages.json";
+import roles from "./realm-roles/messages.json";
 import help from "./help.json";
 
 const initOptions = {
-  ns: ["common", "help", "clients", "realm"],
+  ns: ["common", "help", "clients", "realm", "roles"],
   defaultNS: "common",
   resources: {
-    en: { ...common, ...help, ...clients, ...realm },
+    en: { ...common, ...help, ...clients, ...realm, ...roles },
   },
   lng: "en",
   fallbackLng: "en",

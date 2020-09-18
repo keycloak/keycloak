@@ -1,7 +1,7 @@
 import React, { useState, useContext } from "react";
 import { useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Button } from "@patternfly/react-core";
+import { Button, PageSection } from "@patternfly/react-core";
 
 import { DataLoader } from "../components/data-loader/DataLoader";
 import { TableToolbar } from "../components/table-toolbar/TableToolbar";
@@ -28,35 +28,40 @@ export const ClientsSection = () => {
   };
 
   return (
-    <DataLoader loader={loader}>
-      {(clients) => (
-        <TableToolbar
-          count={clients!.length}
-          first={first}
-          max={max}
-          onNextClick={setFirst}
-          onPreviousClick={setFirst}
-          onPerPageSelect={(f, m) => {
-            setFirst(f);
-            setMax(m);
-          }}
-          toolbarItem={
-            <>
-              <Button onClick={() => history.push("/add-client")}>
-                {t("createClient")}
-              </Button>
-              <Button
-                onClick={() => history.push("/import-client")}
-                variant="link"
-              >
-                {t("importClient")}
-              </Button>
-            </>
-          }
-        >
-          <ClientList clients={clients} baseUrl={keycloak!.authServerUrl()!} />
-        </TableToolbar>
-      )}
-    </DataLoader>
+    <PageSection variant="light">
+      <DataLoader loader={loader}>
+        {(clients) => (
+          <TableToolbar
+            count={clients!.length}
+            first={first}
+            max={max}
+            onNextClick={setFirst}
+            onPreviousClick={setFirst}
+            onPerPageSelect={(f, m) => {
+              setFirst(f);
+              setMax(m);
+            }}
+            toolbarItem={
+              <>
+                <Button onClick={() => history.push("/add-client")}>
+                  {t("createClient")}
+                </Button>
+                <Button
+                  onClick={() => history.push("/import-client")}
+                  variant="link"
+                >
+                  {t("importClient")}
+                </Button>
+              </>
+            }
+          >
+            <ClientList
+              clients={clients}
+              baseUrl={keycloak!.authServerUrl()!}
+            />
+          </TableToolbar>
+        )}
+      </DataLoader>
+    </PageSection>
   );
 };

@@ -3,6 +3,9 @@
     "uploadFile":"Upload JSON file",
     "realmName":"Realm name",
     "enabled":"Enabled",
-    "create":"Create"
+    "create":"Create",
+    "createRealm": "Create realm",
+    "noRealmRoles": "No realm roles",
+    "emptyStateText": "There aren't any realm roles in this realm. Create a realm role to get started."
   }
 }

@@ -1,5 +1,10 @@
+import { PageSection } from "@patternfly/react-core";
 import React from "react";
 
 export const ClientScopesSection = () => {
-  return <>The Client Scopes Page</>;
+  return (
+    <>
+      <PageSection variant="light">The Client Scopes Page</PageSection>
+    </>
+  );
 };
