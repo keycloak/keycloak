@@ -482,8 +482,14 @@ public class JpaUserFederatedStorageProvider implements
         TypedQuery<String> query = em.createNamedQuery("fedgroupMembership", String.class)
                 .setParameter("realmId", realm.getId())
                 .setParameter("groupId", group.getId());
-        query.setFirstResult(firstResult);
-        query.setMaxResults(max);
+        if (firstResult != -1) {
+            query.setFirstResult(firstResult);
+        }
+        
+        if (max != -1) {
+            query.setMaxResults(max);
+        }
+
         return query.getResultList();
     }
 
