@@ -14,4 +14,25 @@ describe("<ExternalLink />", () => {
     );
     expect(comp.asFragment()).toMatchSnapshot();
   });
+
+  it("render with internal url", () => {
+    const comp = render(
+      <ExternalLink href="/application/home/" title="Application page" />
+    );
+    expect(comp.asFragment()).toMatchSnapshot();
+  });
+
+  it("render as application", () => {
+    const comp = render(
+      <ExternalLink href="/application/main" title="Application link" />
+    );
+    expect(comp.asFragment()).toMatchSnapshot();
+  });
+
+  it("render as disabled", () => {
+    const comp = render(
+      <ExternalLink href="http://hello.nl/" title="Disabled link" isDisabled />
+    );
+    expect(comp.asFragment()).toMatchSnapshot();
+  });
 });

@@ -1,5 +1,6 @@
 import React from "react";
 import { ExternalLinkAltIcon } from "@patternfly/react-icons";
+import { Button } from "@patternfly/react-core";
 
 export const ExternalLink = ({
   title,
@@ -7,9 +8,15 @@ export const ExternalLink = ({
   ...rest
 }: React.HTMLProps<HTMLAnchorElement>) => {
   return (
-    <a href={href} {...rest}>
-      {title ? title : href}{" "}
-      {href?.startsWith("http") && <ExternalLinkAltIcon />}
-    </a>
+    <Button
+      variant="link"
+      icon={href?.startsWith("http") && <ExternalLinkAltIcon />}
+      iconPosition="right"
+      component="a"
+      href={href}
+      {...rest}
+    >
+      {title ? title : href}
+    </Button>
   );
 };
