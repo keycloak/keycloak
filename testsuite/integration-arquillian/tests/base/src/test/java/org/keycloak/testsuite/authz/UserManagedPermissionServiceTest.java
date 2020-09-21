@@ -660,6 +660,58 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
     }
 
     @Test
+    public void testOwnerAccess() {
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName(UUID.randomUUID().toString());
+        resource.setOwner("marta");
+        resource.addScope("Scope A", "Scope B", "Scope C");
+        resource.setOwnerManagedAccess(true);
+
+        ProtectionResource protection = getAuthzClient().protection();
+
+        resource = protection.resource().create(resource);
+
+        UmaPermissionRepresentation rep = null;
+        
+        try {
+            rep = new UmaPermissionRepresentation();
+            
+            rep.setName("test");
+            rep.addRole("role_b");
+            
+            rep = getAuthzClient().protection("marta", "password").policy(resource.getId()).create(rep);
+        } catch (Exception e) {
+            assertTrue(HttpResponseException.class.cast(e.getCause()).toString().contains("Only resources with owner managed accessed can have policies"));
+        }
+
+        AuthorizationResource authorization = getAuthzClient().authorization("marta", "password");
+
+        AuthorizationRequest request = new AuthorizationRequest();
+        
+        request.addPermission(resource.getId(), "Scope A");
+
+        AuthorizationResponse authorize = authorization.authorize(request);
+        
+        assertNotNull(authorize);
+
+        try {
+            getAuthzClient().authorization("kolo", "password").authorize(request);
+            fail("User should not have permission");
+        } catch (Exception e) {
+            assertTrue(AuthorizationDeniedException.class.isInstance(e));
+        }
+
+        rep.addRole("role_a");
+        
+        getAuthzClient().protection("marta", "password").policy(resource.getId()).update(rep);
+
+        authorization = getAuthzClient().authorization("kolo", "password");
+
+        assertNotNull(authorization.authorize(request));
+    }
+
+    @Test
     public void testFindPermission() {
         ResourceRepresentation resource = new ResourceRepresentation();
 
