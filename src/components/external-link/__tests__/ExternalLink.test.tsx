@@ -28,11 +28,4 @@ describe("<ExternalLink />", () => {
     );
     expect(comp.asFragment()).toMatchSnapshot();
   });
-
-  it("render as disabled", () => {
-    const comp = render(
-      <ExternalLink href="http://hello.nl/" title="Disabled link" isDisabled />
-    );
-    expect(comp.asFragment()).toMatchSnapshot();
-  });
 });
