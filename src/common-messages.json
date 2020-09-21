@@ -21,6 +21,21 @@
     "documentation": "Documentation",
     "enableHelpMode": "Enable help mode",
 
+    "manage": "Manage",
+    "clients": "Clients",
+    "clientScopes": "Client scopes",
+    "realmRoles": "Realm roles",
+    "users": "Users",
+    "groups": "Groups",
+    "sessions": "Sessions",
+    "events": "Events",
+
+    "configure": "Configure",
+    "realmSettings": "Realm settings",
+    "authentication": "Authentication",
+    "identityProviders": "Identity providers",
+    "userFederation": "User federation",
+
     "required": "Required field"
   }
 }
