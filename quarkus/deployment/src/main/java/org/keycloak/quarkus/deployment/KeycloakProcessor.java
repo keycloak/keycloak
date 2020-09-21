@@ -29,10 +29,12 @@ import java.util.ServiceLoader;
 
 import io.quarkus.deployment.IsDevelopment;
 import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
+import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.config.ConfigProviderFactory;
@@ -157,6 +159,19 @@ class KeycloakProcessor {
     private boolean isRuntimeProperty(String name) {
         // these properties are ignored from the build time properties as they are runtime-specific
         return "kc.home.dir".equals(name) || "kc.config.args".equals(name);
+    }
+
+    /**
+     * This will cause quarkus tu include specified modules in the jandex index. For example keycloak-services is needed as it includes
+     * most of the JAX-RS resources, which are required to register Resteasy builtin providers. See {@link ResteasyDeployment#isRegisterBuiltin()}.
+     * Similar reason is liquibase
+     *
+     * @param indexDependencyBuildItemBuildProducer
+     */
+    @BuildStep
+    void index(BuildProducer<IndexDependencyBuildItem> indexDependencyBuildItemBuildProducer) {
+        indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("org.liquibase", "liquibase-core"));
+        indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("org.keycloak", "keycloak-services"));
     }
 
     @BuildStep

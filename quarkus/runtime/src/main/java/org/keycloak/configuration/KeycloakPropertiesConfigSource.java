@@ -29,7 +29,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -128,7 +127,7 @@ public abstract class KeycloakPropertiesConfigSource extends PropertiesConfigSou
 
     /**
      * We need a better namespace resolution so that we don't need to add Quarkus extensions manually. Maybe the easiest 
-     * path is to just have the "keycloak" namespace for Keycloak-specific properties.
+     * path is to just have the "kc" namespace for Keycloak-specific properties.
      * 
      * @param key the key to transform
      * @return the same key but prefixed with the namespace
