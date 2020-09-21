@@ -115,6 +115,12 @@ To query resources given a `name`, send an HTTP GET request as follows:
 http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set?name=Alice Resource
 ```
 
+By default, the `name` filter will match any resource with the given pattern. To restrict the query to only return resources with an exact match, use:
+
+```bash
+http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set?name=Alice Resource&exactName=true
+```
+
 To query resources given an `uri`, send an HTTP GET request as follows:
 
 ```bash
