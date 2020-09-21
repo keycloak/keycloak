@@ -67,7 +67,7 @@ public class RegistrationPassword implements FormAction, FormActionFactory {
         context.getEvent().detail(Details.REGISTER_METHOD, "form");
         if (Validation.isBlank(formData.getFirst(RegistrationPage.FIELD_PASSWORD))) {
             errors.add(new FormMessage(RegistrationPage.FIELD_PASSWORD, Messages.MISSING_PASSWORD));
-        } else if (!formData.getFirst(RegistrationPage.FIELD_PASSWORD).equals(formData.getFirst(RegistrationPage.FIELD_PASSWORD_CONFIRM))) {
+        } else if (formData.containsKey(RegistrationPage.FIELD_PASSWORD_CONFIRM) && !formData.getFirst(RegistrationPage.FIELD_PASSWORD).equals(formData.getFirst(RegistrationPage.FIELD_PASSWORD_CONFIRM))) {
             errors.add(new FormMessage(RegistrationPage.FIELD_PASSWORD_CONFIRM, Messages.INVALID_PASSWORD_CONFIRM));
         }
         if (formData.getFirst(RegistrationPage.FIELD_PASSWORD) != null) {
