@@ -138,9 +138,6 @@ public abstract class AbstractRoleEntity<K> implements AbstractEntity<K> {
     }
 
     public void addCompositeRole(K roleId) {
-        if (roleId == null) {
-            System.out.println("");
-        }
         this.updated |= this.compositeRoles.add(roleId);
     }
 
