@@ -25,6 +25,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 
+import java.util.stream.Collectors;
+
 /**
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>
  */
@@ -57,7 +59,7 @@ public class MigrateTo3_4_2 implements Migration {
 
     private void clearScope(ClientModel cli) {
         if (cli.isFullScopeAllowed()) cli.setFullScopeAllowed(false);
-        cli.getScopeMappingsStream().forEach(cli::deleteScopeMapping);
+        cli.getScopeMappingsStream().collect(Collectors.toList()).forEach(cli::deleteScopeMapping);
     }
 
     @Override
