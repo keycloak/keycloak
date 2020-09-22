@@ -216,21 +216,19 @@ public class ClientScopeAdapter implements ClientScopeModel, JpaModel<ClientScop
 
     @Override
     public Stream<RoleModel> getScopeMappingsStream() {
-        return getEntity().getScopeMapping().stream()
-                .map(RoleEntity::getId)
+        return entity.getScopeMappingIds().stream()
                 .map(realm::getRoleById)
                 .filter(Objects::nonNull);
     }
 
     @Override
     public void addScopeMapping(RoleModel role) {
-        RoleEntity roleEntity = RoleAdapter.toRoleEntity(role, em);
-        getEntity().getScopeMapping().add(roleEntity);
+        entity.getScopeMappingIds().add(role.getId());
     }
 
     @Override
     public void deleteScopeMapping(RoleModel role) {
-        getEntity().getScopeMapping().remove(RoleAdapter.toRoleEntity(role, em));
+        entity.getScopeMappingIds().remove(role.getId());
     }
 
     @Override

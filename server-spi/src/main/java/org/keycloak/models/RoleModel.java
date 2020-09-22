@@ -65,7 +65,9 @@ public interface RoleModel {
 
     void removeAttribute(String name);
 
-    String getFirstAttribute(String name);
+    default String getFirstAttribute(String name) {
+        return getAttributeStream(name).findFirst().orElse(null);
+    }
 
     @Deprecated
     default List<String> getAttribute(String name) {

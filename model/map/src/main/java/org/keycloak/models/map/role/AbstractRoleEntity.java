@@ -27,11 +27,12 @@ import org.keycloak.models.map.common.AbstractEntity;
 public abstract class AbstractRoleEntity<K> implements AbstractEntity<K> {
 
     private K id;
-    private String containerId;
+    private String realmId;
 
     private String name;
     private String description;
     private boolean clientRole;
+    private String clientId;
     private Set<K> compositeRoles = new HashSet<>();
     private Map<String, List<String>> attributes = new HashMap<>();
 
@@ -42,15 +43,15 @@ public abstract class AbstractRoleEntity<K> implements AbstractEntity<K> {
 
     protected AbstractRoleEntity() {
         this.id = null;
-        this.containerId = null;
+        this.realmId = null;
     }
 
-    public AbstractRoleEntity(K id, String containerId) {
+    public AbstractRoleEntity(K id, String realmId) {
         Objects.requireNonNull(id, "id");
-        Objects.requireNonNull(containerId, "containerId");
+        Objects.requireNonNull(realmId, "realmId");
 
         this.id = id;
-        this.containerId = containerId;
+        this.realmId = realmId;
     }
 
     @Override
@@ -99,13 +100,13 @@ public abstract class AbstractRoleEntity<K> implements AbstractEntity<K> {
         this.updated |= this.attributes.remove(name) != null;
     }
 
-    public String getContainerId() {
-        return containerId;
+    public String getRealmId() {
+        return realmId;
     }
 
-    public void setContainerId(String containerId) {
-        this.updated |= ! Objects.equals(this.containerId, containerId);
-        this.containerId = containerId;
+    public void setRealmId(String realmId) {
+        this.updated |= ! Objects.equals(this.realmId, realmId);
+        this.realmId = realmId;
     }
 
     public boolean isClientRole() {
@@ -121,6 +122,15 @@ public abstract class AbstractRoleEntity<K> implements AbstractEntity<K> {
         return compositeRoles;
     }
 
+    public String getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(String clientId) {
+        this.updated |= ! Objects.equals(this.clientId, clientId);
+        this.clientId = clientId;
+    }
+
     public void setCompositeRoles(Set<K> compositeRoles) {
         this.updated |= ! Objects.equals(this.compositeRoles, compositeRoles);
         this.compositeRoles.clear();
@@ -128,11 +138,13 @@ public abstract class AbstractRoleEntity<K> implements AbstractEntity<K> {
     }
 
     public void addCompositeRole(K roleId) {
-        this.updated |= ! this.compositeRoles.contains(roleId);
-        this.compositeRoles.add(roleId);
+        if (roleId == null) {
+            System.out.println("");
+        }
+        this.updated |= this.compositeRoles.add(roleId);
     }
 
     public void removeCompositeRole(K roleId) {
-        
+        this.updated |= this.compositeRoles.remove(roleId);
     }
 }

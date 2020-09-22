@@ -34,8 +34,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -156,11 +154,6 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
     }
 
     @Override
-    public String getFirstAttribute(String name) {
-        return getAttributeStream(name).findFirst().orElse(null);
-    }
-
-    @Override
     public Stream<String> getAttributeStream(String name) {
         return role.getAttributes().stream()
                 .filter(a -> Objects.equals(a.getName(), name))
@@ -211,7 +204,7 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
         return getId().hashCode();
     }
 
-    public static RoleEntity toRoleEntity(RoleModel model, EntityManager em) {
+    private static RoleEntity toRoleEntity(RoleModel model, EntityManager em) {
         if (model instanceof RoleAdapter) {
             return ((RoleAdapter) model).getEntity();
         }

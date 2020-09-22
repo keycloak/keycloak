@@ -86,12 +86,12 @@ public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements 
 
     @Override
     public String getContainerId() {
-        return entity.getContainerId();
+        return isClientRole() ? entity.getClientId() : entity.getRealmId();
     }
 
     @Override
     public RoleContainerModel getContainer() {
-        return isClientRole() ? session.clients().getClientById(realm, entity.getContainerId()) : realm;
+        return isClientRole() ? session.clients().getClientById(realm, entity.getClientId()) : realm;
     }
 
     @Override
@@ -115,25 +115,13 @@ public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements 
     }
 
     @Override
-    public List<String> getAttribute(String name) {
-        return entity.getAttributes().get(name);
-    }
-
-    @Override
-    public String getFirstAttribute(String name) {
-        List<String> attributeValue = getAttribute(name);
-        if (attributeValue == null || attributeValue.isEmpty()) return null;
-        return attributeValue.get(0);
-    }
-
-    @Override
     public boolean hasRole(RoleModel role) {
         return this.equals(role) || KeycloakModelUtils.searchFor(role, this, new HashSet<>());
     }
 
     @Override
     public Stream<String> getAttributeStream(String name) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return getAttributes().getOrDefault(name, Collections.EMPTY_LIST).stream();
     }
 
 }

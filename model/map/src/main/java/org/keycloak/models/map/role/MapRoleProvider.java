@@ -17,45 +17,31 @@
 
 package org.keycloak.models.map.role;
 
-import java.util.Collection;
 import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 
-import org.keycloak.models.RealmModel.ClientUpdatedEvent;
-import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.common.Serialization;
 import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.models.map.storage.MapStorage;
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleProvider;
-import org.keycloak.models.map.client.MapClientEntity;
-import org.keycloak.models.map.client.MapClientProvider;
 import org.keycloak.models.map.common.StreamUtils;
-import org.keycloak.models.map.common.StreamUtils.Pair;
 
 public class MapRoleProvider implements RoleProvider {
 
     private static final Logger LOG = Logger.getLogger(MapRoleProvider.class);
-    private static final Predicate<MapRoleEntity> ALWAYS_FALSE = c -> { return false; };
+    private static final Predicate<MapRoleEntity> ALWAYS_FALSE = role -> { return false; };
     private final KeycloakSession session;
     final MapKeycloakTransaction<UUID, MapRoleEntity> tx;
     private final MapStorage<UUID, MapRoleEntity> roleStore;
@@ -77,7 +63,7 @@ public class MapRoleProvider implements RoleProvider {
         this.session = session;
         this.roleStore = roleStore;
         this.tx = new MapKeycloakTransaction<>(roleStore);
-        session.getTransactionManager().enlistAfterCompletion(tx);
+        session.getTransactionManager().enlist(tx);
     }
 
     private Function<MapRoleEntity, RoleModel> entityToAdapterFunc(RealmModel realm) {
@@ -97,8 +83,7 @@ public class MapRoleProvider implements RoleProvider {
             return MapRoleProvider.ALWAYS_FALSE;
         }
         String realmId = realm.getId();
-        return entity -> ! entity.isClientRole() && 
-                Objects.equals(realmId, entity.getContainerId());
+        return entity -> Objects.equals(realmId, entity.getRealmId());
     }
 
     private Predicate<MapRoleEntity> entityClientFilter(ClientModel client) {
@@ -107,7 +92,7 @@ public class MapRoleProvider implements RoleProvider {
         }
         String clientId = client.getId();
         return entity -> entity.isClientRole() && 
-                Objects.equals(clientId, entity.getContainerId());
+                Objects.equals(clientId, entity.getClientId());
     }
 
     private Stream<MapRoleEntity> getNotRemovedUpdatedRolesStream() {
@@ -121,8 +106,11 @@ public class MapRoleProvider implements RoleProvider {
     public RoleModel addRealmRole(RealmModel realm, String id, String name) {
         final UUID entityId = id == null ? UUID.randomUUID() : UUID.fromString(id);
 
+        LOG.tracef("addRealmRole(%s, %s, %s)%s", realm.getName(), id, name, getShortStackTrace());
+
         MapRoleEntity entity = new MapRoleEntity(entityId, realm.getId());
         entity.setName(name);
+        entity.setRealmId(realm.getId());
         if (tx.get(entity.getId(), roleStore::get) != null) {
             throw new ModelDuplicateException("Role exists: " + id);
         }
@@ -154,9 +142,13 @@ public class MapRoleProvider implements RoleProvider {
     public RoleModel addClientRole(ClientModel client, String id, String name) {
         final UUID entityId = id == null ? UUID.randomUUID() : UUID.fromString(id);
 
+        LOG.tracef("addClientRole(%s, %s, %s)%s", client.getClientId(), id, name, getShortStackTrace());
+
         MapRoleEntity entity = new MapRoleEntity(entityId, client.getId());
         entity.setName(name);
         entity.setClientRole(true);
+        entity.setClientId(client.getId());
+        entity.setRealmId(client.getRealm().getId());
         if (tx.get(entity.getId(), roleStore::get) != null) {
             throw new ModelDuplicateException("Role exists: " + id);
         }
@@ -179,12 +171,15 @@ public class MapRoleProvider implements RoleProvider {
     @Override
     public Stream<RoleModel> getClientRolesStream(ClientModel client) {
         return getNotRemovedUpdatedRolesStream()
+                .filter(entityRealmFilter(client.getRealm()))
                 .filter(entityClientFilter(client))
                 .sorted(COMPARE_BY_NAME)
                 .map(entityToAdapterFunc(client.getRealm()));
     }
     @Override
     public boolean removeRole(RoleModel role) {
+        LOG.tracef("removeRole(%s(%s))%s", role.getName(), role.getId(), getShortStackTrace());
+
         RealmModel realm = role.isClientRole() ? ((ClientModel)role.getContainer()).getRealm() : (RealmModel)role.getContainer();
 
         session.users().preRemove(realm, role);
@@ -193,7 +188,7 @@ public class MapRoleProvider implements RoleProvider {
         
         //remove role from realm-roles composites
         try (Stream<RoleModel> baseStream = getRealmRolesStream(realm).filter(RoleModel::isComposite)) {
-            StreamUtils.leftInnerJoinIterable(baseStream, RoleModel::getComposites)
+            StreamUtils.leftInnerJoinStream(baseStream, RoleModel::getCompositesStream)
               .filter(pair -> role.equals(pair.getK()))
               .forEach(pair -> pair.getK().removeCompositeRole(role));
         }
@@ -202,7 +197,7 @@ public class MapRoleProvider implements RoleProvider {
         session.clients().getClientsStream(realm).forEach(client -> {
             client.deleteScopeMapping(role);
             try (Stream<RoleModel> baseStream = getClientRolesStream(client).filter(RoleModel::isComposite)) {
-                StreamUtils.leftInnerJoinIterable(baseStream, RoleModel::getComposites)
+                StreamUtils.leftInnerJoinStream(baseStream, RoleModel::getCompositesStream)
                     .filter(pair -> role.equals(pair.getK()))
                     .forEach(pair -> pair.getK().removeCompositeRole(role));
             }
@@ -264,6 +259,7 @@ public class MapRoleProvider implements RoleProvider {
         String roleNameLower = name.toLowerCase();
 
         return getNotRemovedUpdatedRolesStream()
+                .filter(entityRealmFilter(client.getRealm()))
                 .filter(entityClientFilter(client))
                 .filter(entity -> entity.getName()!= null && Objects.equals(entity.getName().toLowerCase(), roleNameLower))
                 .map(entityToAdapterFunc(client.getRealm()))
@@ -316,6 +312,7 @@ public class MapRoleProvider implements RoleProvider {
         }
         String searchLower = search.toLowerCase();
         Stream<MapRoleEntity> s = getNotRemovedUpdatedRolesStream()
+            .filter(entityRealmFilter(client.getRealm()))
             .filter(entityClientFilter(client))
             .filter(entity -> 
                 (entity.getName() != null && entity.getName().toLowerCase().contains(searchLower)) || 
