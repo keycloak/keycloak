@@ -96,6 +96,8 @@ public class RequiredActionMultipleActionsTest extends AbstractTestRealmKeycloak
     public String updateProfile(String codeId) {
         updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
 
+        events.expectRequiredAction(EventType.UPDATE_FIRST_NAME).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_LAST_NAME).detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "New last").assertEvent();
         AssertEvents.ExpectedEvent expectedEvent = events.expectRequiredAction(EventType.UPDATE_EMAIL)
                 .detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
                 .detail(Details.UPDATED_EMAIL, "new@email.com");

@@ -29,7 +29,7 @@ public class Constants {
 
     public static final EventType[] EXPOSED_LOG_EVENTS = {
             EventType.LOGIN, EventType.LOGOUT, EventType.REGISTER, EventType.REMOVE_FEDERATED_IDENTITY, EventType.REMOVE_TOTP, EventType.SEND_RESET_PASSWORD,
-            EventType.SEND_VERIFY_EMAIL, EventType.FEDERATED_IDENTITY_LINK, EventType.UPDATE_EMAIL, EventType.UPDATE_PASSWORD, EventType.UPDATE_PROFILE, EventType.UPDATE_TOTP, EventType.VERIFY_EMAIL
+            EventType.SEND_VERIFY_EMAIL, EventType.FEDERATED_IDENTITY_LINK, EventType.UPDATE_EMAIL, EventType.UPDATE_PASSWORD, EventType.UPDATE_PROFILE, EventType.UPDATE_TOTP, EventType.VERIFY_EMAIL, EventType.UPDATE_FIRST_NAME, EventType.UPDATE_LAST_NAME
     };
 
     public static final Set<String> EXPOSED_LOG_DETAILS = new HashSet<>();
@@ -38,6 +38,10 @@ public class Constants {
         EXPOSED_LOG_DETAILS.add(Details.UPDATED_EMAIL);
         EXPOSED_LOG_DETAILS.add(Details.EMAIL);
         EXPOSED_LOG_DETAILS.add(Details.PREVIOUS_EMAIL);
+        EXPOSED_LOG_DETAILS.add(Details.UPDATED_FIRST_NAME);
+        EXPOSED_LOG_DETAILS.add(Details.PREVIOUS_FIRST_NAME);
+        EXPOSED_LOG_DETAILS.add(Details.UPDATED_LAST_NAME);
+        EXPOSED_LOG_DETAILS.add(Details.PREVIOUS_LAST_NAME);
         EXPOSED_LOG_DETAILS.add(Details.USERNAME);
         EXPOSED_LOG_DETAILS.add(Details.REMEMBER_ME);
         EXPOSED_LOG_DETAILS.add(Details.REGISTER_METHOD);

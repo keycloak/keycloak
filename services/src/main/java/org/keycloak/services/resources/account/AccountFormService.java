@@ -371,8 +371,19 @@ public class AccountFormService extends AbstractSecuredLocalService {
             updateUsername(formData.getFirst("username"), user, session);
             updateEmail(formData.getFirst("email"), user, session, event);
 
-            user.setFirstName(formData.getFirst("firstName"));
-            user.setLastName(formData.getFirst("lastName"));
+            String firstName = formData.getFirst("firstName");
+            String oldFirstName = user.getFirstName();
+            if (detailChanged(oldFirstName, firstName)) {
+                user.setFirstName(formData.getFirst("firstName"));
+                event.clone().event(EventType.UPDATE_FIRST_NAME).detail(Details.PREVIOUS_FIRST_NAME, oldFirstName).detail(Details.UPDATED_FIRST_NAME, firstName).success();
+            }
+
+            String lastName = formData.getFirst("lastName");
+            String oldLastName = user.getLastName();
+            if (detailChanged(oldLastName, lastName)) {
+                user.setLastName(formData.getFirst("lastName"));
+                event.clone().event(EventType.UPDATE_LAST_NAME).detail(Details.PREVIOUS_LAST_NAME, oldLastName).detail(Details.UPDATED_LAST_NAME, lastName).success();
+            }
 
             AttributeFormDataProcessor.process(formData, realm, user);
 
@@ -1078,8 +1089,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
     private void updateEmail(String email, UserModel user, KeycloakSession session, EventBuilder event) {
         RealmModel realm = session.getContext().getRealm();
         String oldEmail = user.getEmail();
-        boolean emailChanged = oldEmail != null ? !oldEmail.equals(email) : email != null;
-        if (emailChanged && !realm.isDuplicateEmailsAllowed()) {
+        if (detailChanged(oldEmail, email) && !realm.isDuplicateEmailsAllowed()) {
             UserModel existing = session.users().getUserByEmail(email, realm);
             if (existing != null && !existing.getId().equals(user.getId())) {
                 throw new ModelDuplicateException(Messages.EMAIL_EXISTS);
@@ -1088,7 +1098,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         user.setEmail(email);
 
-        if (emailChanged) {
+        if (detailChanged(oldEmail, email)) {
             user.setEmailVerified(false);
             event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
         }
@@ -1102,6 +1112,10 @@ public class AccountFormService extends AbstractSecuredLocalService {
             }
             user.setUsername(email);
         }
+    }
+
+    private boolean detailChanged(String oldDetail, String newDetail) {
+        return oldDetail != null ? !oldDetail.equals(newDetail) : newDetail != null;
     }
 
     private void csrfCheck(final MultivaluedMap<String, String> formData) {

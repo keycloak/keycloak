@@ -37,6 +37,10 @@ public interface Details {
     String IDENTITY_PROVIDER_USERNAME = "identity_provider_identity";
     String REGISTER_METHOD = "register_method";
     String USERNAME = "username";
+    String PREVIOUS_FIRST_NAME = "previous_first_name";
+    String UPDATED_FIRST_NAME = "updated_first_name";
+    String PREVIOUS_LAST_NAME = "previous_last_name";
+    String UPDATED_LAST_NAME = "updated_last_name";
     String REMEMBER_ME = "remember_me";
     String TOKEN_ID = "token_id";
     String REFRESH_TOKEN_ID = "refresh_token_id";

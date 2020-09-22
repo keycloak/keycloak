@@ -81,9 +81,7 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
             String username = formData.getFirst("username");
             String oldUsername = user.getUsername();
 
-            boolean usernameChanged = oldUsername != null ? !oldUsername.equals(username) : username != null;
-
-            if (usernameChanged) {
+            if (detailChanged(oldUsername, username)) {
 
                 if (session.users().getUserByUsername(username, realm) != null) {
                     Response challenge = context.form()
@@ -99,15 +97,23 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
 
         }
 
-        user.setFirstName(formData.getFirst("firstName"));
-        user.setLastName(formData.getFirst("lastName"));
+        String firstName = formData.getFirst("firstName");
+        String oldFirstName = user.getFirstName();
+        if (detailChanged(oldFirstName, firstName)) {
+            user.setFirstName(formData.getFirst("firstName"));
+            event.clone().event(EventType.UPDATE_FIRST_NAME).detail(Details.PREVIOUS_FIRST_NAME, oldFirstName).detail(Details.UPDATED_FIRST_NAME, firstName).success();
+        }
+
+        String lastName = formData.getFirst("lastName");
+        String oldLastName = user.getLastName();
+        if (detailChanged(oldLastName, lastName)) {
+            user.setLastName(formData.getFirst("lastName"));
+            event.clone().event(EventType.UPDATE_LAST_NAME).detail(Details.PREVIOUS_LAST_NAME, oldLastName).detail(Details.UPDATED_LAST_NAME, lastName).success();
+        }
 
         String email = formData.getFirst("email");
-
         String oldEmail = user.getEmail();
-        boolean emailChanged = oldEmail != null ? !oldEmail.equals(email) : email != null;
-
-        if (emailChanged) {
+        if (detailChanged(oldEmail, email)) {
             if (!realm.isDuplicateEmailsAllowed()) {
                 UserModel userByEmail = session.users().getUserByEmail(email, realm);
 
@@ -127,14 +133,16 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
         }
 
         AttributeFormDataProcessor.process(formData, realm, user);
-
-        if (emailChanged) {
+        if (detailChanged(oldEmail, email)) {
             event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
         }
         context.success();
 
     }
 
+    private boolean detailChanged(String oldDetail, String newDetail) {
+        return oldDetail != null ? !oldDetail.equals(newDetail) : newDetail != null;
+    }
 
     @Override
     public void close() {

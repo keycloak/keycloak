@@ -55,6 +55,8 @@ public enum EventType {
 
     UPDATE_EMAIL(true),
     UPDATE_EMAIL_ERROR(true),
+    UPDATE_FIRST_NAME(true),
+    UPDATE_LAST_NAME(true),
     UPDATE_PROFILE(true),
     UPDATE_PROFILE_ERROR(true),
     UPDATE_PASSWORD(true),

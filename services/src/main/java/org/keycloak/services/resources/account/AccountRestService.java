@@ -185,7 +185,7 @@ public class AccountRestService {
                 return ErrorResponse.error(Messages.READ_ONLY_USERNAME, Response.Status.BAD_REQUEST);
             }
 
-            boolean emailChanged = userRep.getEmail() != null && !userRep.getEmail().equals(user.getEmail());
+            boolean emailChanged = detailChanged(userRep.getEmail(), user.getEmail());
             if (emailChanged && !realm.isDuplicateEmailsAllowed()) {
                 UserModel existing = session.users().getUserByEmail(userRep.getEmail(), realm);
                 if (existing != null) {
@@ -201,18 +201,24 @@ public class AccountRestService {
             }
 
             if (emailChanged) {
-                String oldEmail = user.getEmail();
                 user.setEmail(userRep.getEmail());
                 user.setEmailVerified(false);
-                event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, userRep.getEmail()).success();
+                event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, user.getEmail()).detail(Details.UPDATED_EMAIL, userRep.getEmail()).success();
 
                 if (realm.isRegistrationEmailAsUsername()) {
                     user.setUsername(userRep.getEmail());
                 }
             }
 
-            user.setFirstName(userRep.getFirstName());
-            user.setLastName(userRep.getLastName());
+            if (detailChanged(userRep.getFirstName(), user.getFirstName())) {
+                user.setFirstName(userRep.getFirstName());
+                event.clone().event(EventType.UPDATE_FIRST_NAME).detail(Details.PREVIOUS_FIRST_NAME, user.getFirstName()).detail(Details.UPDATED_FIRST_NAME, userRep.getFirstName()).success();
+            }
+
+            if (detailChanged(userRep.getLastName(), user.getLastName())) {
+                user.setLastName(userRep.getLastName());
+                event.clone().event(EventType.UPDATE_LAST_NAME).detail(Details.PREVIOUS_LAST_NAME, user.getLastName()).detail(Details.UPDATED_LAST_NAME, userRep.getLastName()).success();
+            }
 
             if (userRep.getAttributes() != null) {
                 Set<String> attributeKeys = new HashSet<>(user.getAttributes().keySet());
@@ -532,5 +538,9 @@ public class AccountRestService {
         if (!Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_API)) {
             throw new NotFoundException();
         }
+    }
+
+    private boolean detailChanged(String oldDetail, String newDetail) {
+        return oldDetail != null ? !oldDetail.equals(newDetail) : newDetail != null;
     }
 }
