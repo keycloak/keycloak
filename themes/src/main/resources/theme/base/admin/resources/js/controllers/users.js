@@ -527,6 +527,27 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
         }
     }
 
+    function bfs(tree, key, collection) {
+    	if (!tree[key] || tree[key].length === 0) return;
+    	for (var i=0; i < tree[key].length; i++) {
+    		var child = tree[key][i]
+    		collection.push(child);
+    		bfs(child, key, collection);
+    	}
+    	return;
+    }
+
+    function flattenGroups(groups) {
+        var flattenedGroups = [];
+        if (!groups || groups.length === 0) return groups;
+        for (var i=0; i < groups.length; i++) {
+            flattenedGroups.push(groups[i]);
+            bfs(groups[i], "subGroups", flattenedGroups);
+        }
+
+        return flattenedGroups;
+    }
+
     $scope.reset = function() {
         $scope.user = angular.copy(user);
         $scope.changed = false;
@@ -562,7 +583,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
                 first : 0
             };
             Groups.query($scope.query, function(response) {
-                data.results = response;
+                data.results = flattenGroups(response);
                 query.callback(data);
             });
         },
