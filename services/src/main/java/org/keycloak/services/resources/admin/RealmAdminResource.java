@@ -409,6 +409,7 @@ public class RealmAdminResource {
         }
         
         ReservedCharValidator.validate(rep.getRealm());
+        ReservedCharValidator.validateLocales(rep.getSupportedLocales());
 
         try {
             if (!Constants.GENERATE.equals(rep.getPublicKey()) && (rep.getPrivateKey() != null && rep.getPublicKey() != null)) {
