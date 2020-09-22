@@ -20,10 +20,11 @@ package org.keycloak.quarkus;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import io.smallrye.config.ConfigValue;
+import org.jboss.logging.Logger;
 import org.keycloak.QuarkusKeycloakSessionFactory;
-import org.keycloak.authentication.authenticators.directgrant.ValidateOTP;
 import org.keycloak.cli.ShowConfigCommand;
 import org.keycloak.common.Profile;
 import org.keycloak.configuration.MicroProfileConfigProvider;
@@ -39,23 +40,37 @@ import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
 import liquibase.logging.LogFactory;
 import liquibase.servicelocator.ServiceLocator;
+import org.keycloak.util.Environment;
 
 @Recorder
 public class KeycloakRecorder {
 
-    private static final SmallRyeConfig CONFIG;
+    private static final Logger LOGGER = Logger.getLogger(KeycloakRecorder.class);
     
-    static {
-        CONFIG = (SmallRyeConfig) SmallRyeConfigProviderResolver.instance().getConfig();
-    }
-
+    private static SmallRyeConfig CONFIG = null;
+    
     private static Map<String, String> BUILD_TIME_PROPERTIES = Collections.emptyMap();
     
     public static String getBuiltTimeProperty(String name) {
-        return BUILD_TIME_PROPERTIES.get(name);
+        String value = BUILD_TIME_PROPERTIES.get(name);
+
+        if (value == null) {
+            String profile = Environment.getProfile();
+
+            if (profile == null) {
+                profile = BUILD_TIME_PROPERTIES.get("kc.profile");
+            }
+
+            value = BUILD_TIME_PROPERTIES.get("%" + profile + "." + name);
+        }
+        
+        return value;
     }
 
     public static SmallRyeConfig getConfig() {
+        if (CONFIG == null) {
+            CONFIG = (SmallRyeConfig) SmallRyeConfigProviderResolver.instance().getConfig();
+        }
         return CONFIG;
     }
 
@@ -91,37 +106,57 @@ public class KeycloakRecorder {
         QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, reaugmented));
     }
 
-    public void setBuildTimeProperties(Map<String, String> buildTimeProperties, Boolean rebuild) {
+    public void setBuildTimeProperties(Map<String, String> buildTimeProperties, Boolean rebuild, String configArgs) {
         BUILD_TIME_PROPERTIES = buildTimeProperties;
+        String configHelpText = configArgs;
 
         for (String propertyName : getConfig().getPropertyNames()) {
             if (!propertyName.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
                 continue;
             }
 
-            String buildValue = BUILD_TIME_PROPERTIES.get(propertyName);
+            String buildValue = Environment.getBuiltTimeProperty(propertyName).orElseGet(new Supplier<String>() {
+                @Override 
+                public String get() {
+                    return Environment.getBuiltTimeProperty(PropertyMappers.toCLIFormat(propertyName)).orElse(null);
+                }
+            });
+
             ConfigValue value = getConfig().getConfigValue(propertyName);
 
-            if (PropertyMappers.isBuildTimeProperty(propertyName)) {
-                if (!rebuild && buildValue != null && value.getValue() != null && !buildValue.equalsIgnoreCase(value.getValue())) {
-                    System.err.println("The value [" + value.getValue() + "] for property [" + propertyName + "] differs from the value [" + buildValue + "] set into the server image. Please, run the 'config' command to configure the server with the new value.");
-                    System.exit(1);
-                }
-                if (!value.getConfigSourceName().contains("keycloak.properties")) {
-                    System.err.println("The property [" + propertyName + "] can only be set when configuring the server. Please, run the 'config' command.");
-                    System.exit(1);
-                }
-            }
-            
             if (buildValue != null && isRuntimeValue(value) && !buildValue.equalsIgnoreCase(value.getValue())) {
-                System.err.println("The value [" + value.getValue()  + "] of property [" + propertyName + "] differs from the value [" + buildValue + "] set into the server image");
-                System.exit(1);
+                if (configHelpText != null) {
+                    String currentProp = "--" + PropertyMappers.toCLIFormat(propertyName).substring(3) + "=" + buildValue;
+                    String newProp = "--" + PropertyMappers.toCLIFormat(propertyName).substring(3) + "=" + value.getValue();
+                    
+                    if (configHelpText.contains(currentProp)) {
+                        LOGGER.warnf("The new value [%s] of the property [%s] in [%s] differs from the value [%s] set into the server image. The new value will override the value set into the server image.", value.getValue(), propertyName, value.getConfigSourceName(), buildValue);
+                        configHelpText = configHelpText.replaceAll(currentProp, newProp);
+                    } else if (!configHelpText.contains("--" + PropertyMappers.toCLIFormat(propertyName).substring(3))) {
+                        configHelpText += newProp;
+                    }
+                }
+            } else if (configHelpText != null && rebuild && isRuntimeValue(value)) {
+                String prop = "--" + PropertyMappers.toCLIFormat(propertyName).substring(3) + "=" + value.getValue();
+
+                if (!configHelpText.contains(prop)) {
+                    LOGGER.infof("New property [%s] set with value [%s] in [%s]. This property is not persisted into the server image.",
+                            propertyName, value.getValue(), value.getConfigSourceName(), buildValue);
+                    configHelpText += " " + prop;
+                }
             }
+        }
+
+        if (configArgs != null && !configArgs.equals(configHelpText)) {
+            LOGGER.infof("Please, run the 'config' command if you want to configure the server image with the new property values:\n\t%s config %s", Environment.getCommand(), String.join(" ", configHelpText.split(",")));
         }
     }
 
     private boolean isRuntimeValue(ConfigValue value) {
-        return value.getValue() != null && !PropertyMappers.isBuildTimeProperty(value.getName());
+        String name = value.getName();
+        return value.getValue() != null && !PropertyMappers.isBuildTimeProperty(name)
+                && !"kc.version".equals(name) && !"kc.config.args".equals(
+                name) && !"kc.home.dir".equals(name);
     }
 
     /**

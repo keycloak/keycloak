@@ -41,6 +41,7 @@ import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import io.quarkus.runtime.Quarkus;
 import org.hibernate.internal.SessionFactoryImpl;
 import org.hibernate.internal.SessionImpl;
 import org.jboss.logging.Logger;
@@ -254,6 +255,7 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
 
         if (exportImportManager.isRunExport()) {
             exportImportManager.runExport();
+            Quarkus.asyncExit();
         }
     }
 
@@ -395,6 +397,7 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
 
         if (exportImportManager.isRunImport()) {
             exportImportManager.runImport();
+            Quarkus.asyncExit();
         } else {
             importRealms();
         }
