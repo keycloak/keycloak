@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.broker;
 
 import org.junit.Ignore;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -12,7 +13,7 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
-public class KcOidcBrokerSubMatchIntrospectionest extends AbstractBrokerTest {
+public class KcOidcBrokerSubMatchIntrospectionTest extends AbstractBrokerTest {
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
@@ -33,8 +34,13 @@ public class KcOidcBrokerSubMatchIntrospectionest extends AbstractBrokerTest {
             public List<ClientRepresentation> createProviderClients() {
                 List<ClientRepresentation> clients = super.createProviderClients();
                 List<ProtocolMapperRepresentation> mappers = new ArrayList<>();
+
+                ProtocolMapperRepresentation hardcodedClaim = createHardcodedClaim("sub-override", "sub", "overriden",
+                        "String", false, false);
                 
-                mappers.add(createHardcodedClaim("sub-override", "sub", "overriden", "String", true, true));
+                hardcodedClaim.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, Boolean.TRUE.toString());
+                
+                mappers.add(hardcodedClaim);
                 
                 clients.get(0).setProtocolMappers(mappers);
                 
