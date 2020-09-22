@@ -1,6 +1,6 @@
 import React from "react";
 import { ExternalLinkAltIcon } from "@patternfly/react-icons";
-import { Button } from "@patternfly/react-core";
+import { Button, ButtonProps } from "@patternfly/react-core";
 
 export const ExternalLink = ({ title, href, ...rest }: ButtonProps) => {
   return (
