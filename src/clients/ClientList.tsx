@@ -1,5 +1,6 @@
 import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -41,11 +42,11 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
     const field = data!.toString();
     const value = convertClientId(field);
     return field.indexOf("true") !== -1 ? (
-      <>{value}</>
+      <Link to="client-settings">{value}</Link>
     ) : (
-      <>
+      <Link to="client-settings">
         {value} <Badge isRead>Disabled</Badge>
-      </>
+      </Link>
     );
   };
 
@@ -60,12 +61,18 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
   };
 
   /* eslint-disable no-template-curly-in-string */
-  const replaceBaseUrl = (r: ClientRepresentation) =>
-    r.rootUrl &&
-    r.rootUrl
-      .replace("${authBaseUrl}", baseUrl)
-      .replace("${authAdminUrl}", baseUrl) +
-      (r.baseUrl ? r.baseUrl.substr(1) : "");
+  const replaceBaseUrl = (r: ClientRepresentation) => {
+    if (r.rootUrl) {
+      if (!r.rootUrl.startsWith("http") || r.rootUrl.indexOf("$") !== -1) {
+        r.rootUrl =
+          r.rootUrl
+            .replace("${authBaseUrl}", baseUrl)
+            .replace("${authAdminUrl}", baseUrl) +
+          (r.baseUrl ? r.baseUrl.substr(1) : "");
+      }
+    }
+    return r.rootUrl;
+  };
 
   const data = clients!
     .map((r) => {
@@ -120,7 +127,7 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
                 httpClient.doDelete(
                   `/admin/realms/${realm}/clients/${data[rowId].client.id}`
                 );
-                add(t("clientDeletedSucess"), AlertVariant.success);
+                add(t("clientDeletedSuccess"), AlertVariant.success);
               } catch (error) {
                 add(`${t("clientDeleteError")} ${error}`, AlertVariant.danger);
               }

@@ -15,8 +15,8 @@ import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 
 import { HttpClientContext } from "../../http-service/HttpClientContext";
-import { Step1 } from "./Step1";
-import { Step2 } from "./Step2";
+import { GeneralSettings } from "./GeneralSettings";
+import { CapabilityConfig } from "./CapabilityConfig";
 import { ClientRepresentation } from "../models/client-model";
 import { useAlerts } from "../../components/alert/Alerts";
 import { RealmContext } from "../../components/realm-context/RealmContext";
@@ -110,11 +110,11 @@ export const NewClientForm = () => {
           steps={[
             {
               name: t("generalSettings"),
-              component: <Step1 form={methods} />,
+              component: <GeneralSettings form={methods} />,
             },
             {
               name: t("capabilityConfig"),
-              component: <Step2 form={methods} />,
+              component: <CapabilityConfig form={methods} />,
             },
           ]}
           footer={<Footer />}

@@ -1,11 +1,9 @@
 
 .panel {
-  padding: 24px;
-  border-style: solid;
-  border-color: var(--pf-global--BorderColor--100);
-  border-width: var(--pf-global--BorderWidth--sm);
+  padding-top: 24px;
+  padding-bottom: 48px;
 }
 
 .title {
-  padding-bottom: 8px;
+  padding-bottom: 24px;
 }

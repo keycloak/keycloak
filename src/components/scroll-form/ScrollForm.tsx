@@ -1,5 +1,5 @@
 import React, { Children, useEffect, useState } from "react";
-import { Form, Grid, GridItem, Title } from "@patternfly/react-core";
+import { Grid, GridItem, Title } from "@patternfly/react-core";
 
 import { FormPanel } from "./FormPanel";
 import style from "./scroll-form.module.css";
@@ -70,13 +70,11 @@ export const ScrollForm = ({ sections, children }: ScrollFormProps) => {
     <>
       <Grid hasGutter>
         <GridItem span={8}>
-          <Form>
-            {sections.map((cat, index) => (
-              <FormPanel id={cat} key={cat} title={cat}>
-                {nodes[index]}
-              </FormPanel>
-            ))}
-          </Form>
+          {sections.map((cat, index) => (
+            <FormPanel id={cat} key={cat} title={cat}>
+              {nodes[index]}
+            </FormPanel>
+          ))}
         </GridItem>
         <GridItem span={4}>
           <Nav />

@@ -22,6 +22,7 @@ import { UserFederationSection } from "./user-federation/UserFederationSection";
 
 import { PageNotFoundSection } from "./PageNotFoundSection";
 import { RealmContextProvider } from "./components/realm-context/RealmContext";
+import { ClientSettings } from "./clients/ClientSettings";
 
 export const App = () => {
   return (
@@ -33,6 +34,11 @@ export const App = () => {
               <Route exact path="/add-realm" component={NewRealmForm}></Route>
 
               <Route exact path="/clients" component={ClientsSection}></Route>
+              <Route
+                exact
+                path="/client-settings"
+                component={ClientSettings}
+              ></Route>
               <Route exact path="/add-client" component={NewClientForm}></Route>
               <Route exact path="/import-client" component={ImportForm}></Route>
 

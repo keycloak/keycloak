@@ -14,11 +14,11 @@ import { sortProvider } from "../../util";
 import { ServerInfoRepresentation } from "../models/server-info";
 import { ClientDescription } from "../ClientDescription";
 
-type Step1Props = {
+type GeneralSettingsProps = {
   form: UseFormMethods;
 };
 
-export const Step1 = ({ form }: Step1Props) => {
+export const GeneralSettings = ({ form }: GeneralSettingsProps) => {
   const httpClient = useContext(HttpClientContext)!;
   const { t } = useTranslation();
   const { errors, control, register } = form;

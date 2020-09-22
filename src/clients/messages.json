@@ -1,5 +1,7 @@
 {
   "clients": {
+    "clientAuthorization": "Client authorization",
+    "implicitFlow": "Implicit flow",
     "createClient": "Create client",
     "importClient": "Import client",
     "clientID": "Client ID",
@@ -12,19 +14,23 @@
     "capabilityConfig": "Capability config",
     "clientsExplain": "Clients are applications and services that can request authentication of a user",
     "clientImportError": "Could not import client",
-    "clientImportSuccess": "Client imported succeful",
-    "clientDeletedSucess": "The client has been deleted",
+    "clientImportSuccess": "Client imported successful",
+    "clientDeletedSuccess": "The client has been deleted",
     "clientDeleteError": "Could not delete client:",
     "clientAuthentication": "Client authentication",
     "authentication": "Authentication",
     "authenticationFlow": "Authentication flow",
     "standardFlow": "Standard flow",
-    "enableStandardFlow": "Enable standard flow",
     "directAccess": "Direct access",
-    "enableDirectAccess": "Enable direct access",
-    "implicidFlow": "Implicid flow",
-    "enableImplicidFlow": "Enable implicid flow",
     "serviceAccount": "Service account",
-    "enableServiceAccount": "Enable service account"
+    "enableServiceAccount": "Enable service account",
+    "displayOnClient": "Display client on screen",
+    "consentScreenText": "Client consent screen text",
+    "loginSettings": "Login settings",
+    "accessSettings": "Access settings",
+    "rootUrl": "Root URL",
+    "validRedirectUri": "Valid redirect URIs",
+    "loginTheme": "Login theme",
+    "consentRequired": "Consent required"
   }
 }

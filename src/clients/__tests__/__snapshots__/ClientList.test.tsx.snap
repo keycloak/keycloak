@@ -1,0 +1,1509 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`renders ClientList 1`] = `
+Object {
+  "asFragment": [Function],
+  "baseElement": <body>
+    <div>
+      <table
+        aria-label="clientList"
+        class="pf-c-table pf-m-grid-md pf-m-compact"
+        data-ouia-component-id="0"
+        data-ouia-component-type="PF4/Table"
+        data-ouia-safe="true"
+        role="grid"
+      >
+        <thead
+          class=""
+        >
+          <tr>
+            <th
+              class=""
+              data-key="0"
+              data-label="clientID"
+              scope="col"
+            >
+              clientID
+            </th>
+            <th
+              class=""
+              data-key="1"
+              data-label="type"
+              scope="col"
+            >
+              type
+            </th>
+            <th
+              class=""
+              data-key="2"
+              data-label="description"
+              scope="col"
+            >
+              description
+            </th>
+            <th
+              class=""
+              data-key="3"
+              data-label="homeURL"
+              scope="col"
+            >
+              homeURL
+            </th>
+            <td
+              class=""
+              data-key="4"
+              data-label=""
+            />
+          </tr>
+        </thead>
+        <tbody
+          class=""
+        >
+          <tr
+            class=""
+            data-ouia-component-id="1"
+            data-ouia-component-type="PF4/TableRow"
+            data-ouia-safe="true"
+          >
+            <td
+              class=""
+              data-key="0"
+              data-label="clientID"
+            >
+              <a
+                href="/client-settings"
+              >
+                account
+              </a>
+            </td>
+            <td
+              class=""
+              data-key="1"
+              data-label="type"
+            >
+              openid-connect
+            </td>
+            <td
+              class=""
+              data-key="2"
+              data-label="description"
+            >
+              —
+            </td>
+            <td
+              class=""
+              data-key="3"
+              data-label="homeURL"
+            >
+              <a
+                href="http://blog.nerdin.chrealms/master/account/"
+              >
+                http://blog.nerdin.chrealms/master/account/
+                 
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 512 512"
+                  width="1em"
+                >
+                  <path
+                    d="M432,320H400a16,16,0,0,0-16,16V448H64V128H208a16,16,0,0,0,16-16V80a16,16,0,0,0-16-16H48A48,48,0,0,0,0,112V464a48,48,0,0,0,48,48H400a48,48,0,0,0,48-48V336A16,16,0,0,0,432,320ZM488,0h-128c-21.37,0-32.05,25.91-17,41l35.73,35.73L135,320.37a24,24,0,0,0,0,34L157.67,377a24,24,0,0,0,34,0L435.28,133.32,471,169c15,15,41,4.5,41-17V24A24,24,0,0,0,488,0Z"
+                    transform=""
+                  />
+                </svg>
+              </a>
+            </td>
+            <td
+              class="pf-c-table__action"
+              data-key="4"
+            >
+              <div
+                class="pf-c-dropdown pf-m-align-right"
+                data-ouia-component-id="2"
+                data-ouia-component-type="PF4/Dropdown"
+                data-ouia-safe="true"
+              >
+                <button
+                  aria-expanded="false"
+                  aria-haspopup="true"
+                  aria-label="Actions"
+                  class="pf-c-dropdown__toggle pf-m-plain"
+                  id="pf-dropdown-toggle-id-0"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style="vertical-align: -0.125em;"
+                    viewBox="0 0 192 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z"
+                      transform=""
+                    />
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr
+            class=""
+            data-ouia-component-id="3"
+            data-ouia-component-type="PF4/TableRow"
+            data-ouia-safe="true"
+          >
+            <td
+              class=""
+              data-key="0"
+              data-label="clientID"
+            >
+              <a
+                href="/client-settings"
+              >
+                account-console
+              </a>
+            </td>
+            <td
+              class=""
+              data-key="1"
+              data-label="type"
+            >
+              openid-connect
+            </td>
+            <td
+              class=""
+              data-key="2"
+              data-label="description"
+            >
+              —
+            </td>
+            <td
+              class=""
+              data-key="3"
+              data-label="homeURL"
+            >
+              <a
+                href="http://blog.nerdin.chrealms/master/account/"
+              >
+                http://blog.nerdin.chrealms/master/account/
+                 
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 512 512"
+                  width="1em"
+                >
+                  <path
+                    d="M432,320H400a16,16,0,0,0-16,16V448H64V128H208a16,16,0,0,0,16-16V80a16,16,0,0,0-16-16H48A48,48,0,0,0,0,112V464a48,48,0,0,0,48,48H400a48,48,0,0,0,48-48V336A16,16,0,0,0,432,320ZM488,0h-128c-21.37,0-32.05,25.91-17,41l35.73,35.73L135,320.37a24,24,0,0,0,0,34L157.67,377a24,24,0,0,0,34,0L435.28,133.32,471,169c15,15,41,4.5,41-17V24A24,24,0,0,0,488,0Z"
+                    transform=""
+                  />
+                </svg>
+              </a>
+            </td>
+            <td
+              class="pf-c-table__action"
+              data-key="4"
+            >
+              <div
+                class="pf-c-dropdown pf-m-align-right"
+                data-ouia-component-id="4"
+                data-ouia-component-type="PF4/Dropdown"
+                data-ouia-safe="true"
+              >
+                <button
+                  aria-expanded="false"
+                  aria-haspopup="true"
+                  aria-label="Actions"
+                  class="pf-c-dropdown__toggle pf-m-plain"
+                  id="pf-dropdown-toggle-id-1"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style="vertical-align: -0.125em;"
+                    viewBox="0 0 192 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z"
+                      transform=""
+                    />
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr
+            class=""
+            data-ouia-component-id="5"
+            data-ouia-component-type="PF4/TableRow"
+            data-ouia-safe="true"
+          >
+            <td
+              class=""
+              data-key="0"
+              data-label="clientID"
+            >
+              <a
+                href="/client-settings"
+              >
+                admin-cli
+              </a>
+            </td>
+            <td
+              class=""
+              data-key="1"
+              data-label="type"
+            >
+              openid-connect
+            </td>
+            <td
+              class=""
+              data-key="2"
+              data-label="description"
+            >
+              —
+            </td>
+            <td
+              class=""
+              data-key="3"
+              data-label="homeURL"
+            >
+              —
+            </td>
+            <td
+              class="pf-c-table__action"
+              data-key="4"
+            >
+              <div
+                class="pf-c-dropdown pf-m-align-right"
+                data-ouia-component-id="6"
+                data-ouia-component-type="PF4/Dropdown"
+                data-ouia-safe="true"
+              >
+                <button
+                  aria-expanded="false"
+                  aria-haspopup="true"
+                  aria-label="Actions"
+                  class="pf-c-dropdown__toggle pf-m-plain"
+                  id="pf-dropdown-toggle-id-2"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style="vertical-align: -0.125em;"
+                    viewBox="0 0 192 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z"
+                      transform=""
+                    />
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr
+            class=""
+            data-ouia-component-id="7"
+            data-ouia-component-type="PF4/TableRow"
+            data-ouia-safe="true"
+          >
+            <td
+              class=""
+              data-key="0"
+              data-label="clientID"
+            >
+              <a
+                href="/client-settings"
+              >
+                broker
+              </a>
+            </td>
+            <td
+              class=""
+              data-key="1"
+              data-label="type"
+            >
+              openid-connect
+            </td>
+            <td
+              class=""
+              data-key="2"
+              data-label="description"
+            >
+              —
+            </td>
+            <td
+              class=""
+              data-key="3"
+              data-label="homeURL"
+            >
+              —
+            </td>
+            <td
+              class="pf-c-table__action"
+              data-key="4"
+            >
+              <div
+                class="pf-c-dropdown pf-m-align-right"
+                data-ouia-component-id="8"
+                data-ouia-component-type="PF4/Dropdown"
+                data-ouia-safe="true"
+              >
+                <button
+                  aria-expanded="false"
+                  aria-haspopup="true"
+                  aria-label="Actions"
+                  class="pf-c-dropdown__toggle pf-m-plain"
+                  id="pf-dropdown-toggle-id-3"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style="vertical-align: -0.125em;"
+                    viewBox="0 0 192 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z"
+                      transform=""
+                    />
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr
+            class=""
+            data-ouia-component-id="9"
+            data-ouia-component-type="PF4/TableRow"
+            data-ouia-safe="true"
+          >
+            <td
+              class=""
+              data-key="0"
+              data-label="clientID"
+            >
+              <a
+                href="/client-settings"
+              >
+                master-realm
+              </a>
+            </td>
+            <td
+              class=""
+              data-key="1"
+              data-label="type"
+            />
+            <td
+              class=""
+              data-key="2"
+              data-label="description"
+            >
+              —
+            </td>
+            <td
+              class=""
+              data-key="3"
+              data-label="homeURL"
+            >
+              —
+            </td>
+            <td
+              class="pf-c-table__action"
+              data-key="4"
+            >
+              <div
+                class="pf-c-dropdown pf-m-align-right"
+                data-ouia-component-id="10"
+                data-ouia-component-type="PF4/Dropdown"
+                data-ouia-safe="true"
+              >
+                <button
+                  aria-expanded="false"
+                  aria-haspopup="true"
+                  aria-label="Actions"
+                  class="pf-c-dropdown__toggle pf-m-plain"
+                  id="pf-dropdown-toggle-id-4"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style="vertical-align: -0.125em;"
+                    viewBox="0 0 192 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z"
+                      transform=""
+                    />
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr
+            class=""
+            data-ouia-component-id="11"
+            data-ouia-component-type="PF4/TableRow"
+            data-ouia-safe="true"
+          >
+            <td
+              class=""
+              data-key="0"
+              data-label="clientID"
+            >
+              <a
+                href="/client-settings"
+              >
+                new
+              </a>
+            </td>
+            <td
+              class=""
+              data-key="1"
+              data-label="type"
+            >
+              openid-connect
+            </td>
+            <td
+              class=""
+              data-key="2"
+              data-label="description"
+            >
+              —
+            </td>
+            <td
+              class=""
+              data-key="3"
+              data-label="homeURL"
+            >
+              <a
+                href="http://localhost:8080/"
+              >
+                http://localhost:8080/
+                 
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 512 512"
+                  width="1em"
+                >
+                  <path
+                    d="M432,320H400a16,16,0,0,0-16,16V448H64V128H208a16,16,0,0,0,16-16V80a16,16,0,0,0-16-16H48A48,48,0,0,0,0,112V464a48,48,0,0,0,48,48H400a48,48,0,0,0,48-48V336A16,16,0,0,0,432,320ZM488,0h-128c-21.37,0-32.05,25.91-17,41l35.73,35.73L135,320.37a24,24,0,0,0,0,34L157.67,377a24,24,0,0,0,34,0L435.28,133.32,471,169c15,15,41,4.5,41-17V24A24,24,0,0,0,488,0Z"
+                    transform=""
+                  />
+                </svg>
+              </a>
+            </td>
+            <td
+              class="pf-c-table__action"
+              data-key="4"
+            >
+              <div
+                class="pf-c-dropdown pf-m-align-right"
+                data-ouia-component-id="12"
+                data-ouia-component-type="PF4/Dropdown"
+                data-ouia-safe="true"
+              >
+                <button
+                  aria-expanded="false"
+                  aria-haspopup="true"
+                  aria-label="Actions"
+                  class="pf-c-dropdown__toggle pf-m-plain"
+                  id="pf-dropdown-toggle-id-5"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style="vertical-align: -0.125em;"
+                    viewBox="0 0 192 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z"
+                      transform=""
+                    />
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr
+            class=""
+            data-ouia-component-id="13"
+            data-ouia-component-type="PF4/TableRow"
+            data-ouia-safe="true"
+          >
+            <td
+              class=""
+              data-key="0"
+              data-label="clientID"
+            >
+              <a
+                href="/client-settings"
+              >
+                photoz-realm
+              </a>
+            </td>
+            <td
+              class=""
+              data-key="1"
+              data-label="type"
+            />
+            <td
+              class=""
+              data-key="2"
+              data-label="description"
+            >
+              —
+            </td>
+            <td
+              class=""
+              data-key="3"
+              data-label="homeURL"
+            >
+              —
+            </td>
+            <td
+              class="pf-c-table__action"
+              data-key="4"
+            >
+              <div
+                class="pf-c-dropdown pf-m-align-right"
+                data-ouia-component-id="14"
+                data-ouia-component-type="PF4/Dropdown"
+                data-ouia-safe="true"
+              >
+                <button
+                  aria-expanded="false"
+                  aria-haspopup="true"
+                  aria-label="Actions"
+                  class="pf-c-dropdown__toggle pf-m-plain"
+                  id="pf-dropdown-toggle-id-6"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style="vertical-align: -0.125em;"
+                    viewBox="0 0 192 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z"
+                      transform=""
+                    />
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr
+            class=""
+            data-ouia-component-id="15"
+            data-ouia-component-type="PF4/TableRow"
+            data-ouia-safe="true"
+          >
+            <td
+              class=""
+              data-key="0"
+              data-label="clientID"
+            >
+              <a
+                href="/client-settings"
+              >
+                security-admin-console
+              </a>
+            </td>
+            <td
+              class=""
+              data-key="1"
+              data-label="type"
+            >
+              openid-connect
+            </td>
+            <td
+              class=""
+              data-key="2"
+              data-label="description"
+            >
+              —
+            </td>
+            <td
+              class=""
+              data-key="3"
+              data-label="homeURL"
+            >
+              <a
+                href="http://blog.nerdin.chadmin/master/console/"
+              >
+                http://blog.nerdin.chadmin/master/console/
+                 
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 512 512"
+                  width="1em"
+                >
+                  <path
+                    d="M432,320H400a16,16,0,0,0-16,16V448H64V128H208a16,16,0,0,0,16-16V80a16,16,0,0,0-16-16H48A48,48,0,0,0,0,112V464a48,48,0,0,0,48,48H400a48,48,0,0,0,48-48V336A16,16,0,0,0,432,320ZM488,0h-128c-21.37,0-32.05,25.91-17,41l35.73,35.73L135,320.37a24,24,0,0,0,0,34L157.67,377a24,24,0,0,0,34,0L435.28,133.32,471,169c15,15,41,4.5,41-17V24A24,24,0,0,0,488,0Z"
+                    transform=""
+                  />
+                </svg>
+              </a>
+            </td>
+            <td
+              class="pf-c-table__action"
+              data-key="4"
+            >
+              <div
+                class="pf-c-dropdown pf-m-align-right"
+                data-ouia-component-id="16"
+                data-ouia-component-type="PF4/Dropdown"
+                data-ouia-safe="true"
+              >
+                <button
+                  aria-expanded="false"
+                  aria-haspopup="true"
+                  aria-label="Actions"
+                  class="pf-c-dropdown__toggle pf-m-plain"
+                  id="pf-dropdown-toggle-id-7"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style="vertical-align: -0.125em;"
+                    viewBox="0 0 192 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z"
+                      transform=""
+                    />
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <ul
+        class="pf-c-alert-group pf-m-toast"
+      />
+    </div>
+  </body>,
+  "container": <div>
+    <table
+      aria-label="clientList"
+      class="pf-c-table pf-m-grid-md pf-m-compact"
+      data-ouia-component-id="0"
+      data-ouia-component-type="PF4/Table"
+      data-ouia-safe="true"
+      role="grid"
+    >
+      <thead
+        class=""
+      >
+        <tr>
+          <th
+            class=""
+            data-key="0"
+            data-label="clientID"
+            scope="col"
+          >
+            clientID
+          </th>
+          <th
+            class=""
+            data-key="1"
+            data-label="type"
+            scope="col"
+          >
+            type
+          </th>
+          <th
+            class=""
+            data-key="2"
+            data-label="description"
+            scope="col"
+          >
+            description
+          </th>
+          <th
+            class=""
+            data-key="3"
+            data-label="homeURL"
+            scope="col"
+          >
+            homeURL
+          </th>
+          <td
+            class=""
+            data-key="4"
+            data-label=""
+          />
+        </tr>
+      </thead>
+      <tbody
+        class=""
+      >
+        <tr
+          class=""
+          data-ouia-component-id="1"
+          data-ouia-component-type="PF4/TableRow"
+          data-ouia-safe="true"
+        >
+          <td
+            class=""
+            data-key="0"
+            data-label="clientID"
+          >
+            <a
+              href="/client-settings"
+            >
+              account
+            </a>
+          </td>
+          <td
+            class=""
+            data-key="1"
+            data-label="type"
+          >
+            openid-connect
+          </td>
+          <td
+            class=""
+            data-key="2"
+            data-label="description"
+          >
+            —
+          </td>
+          <td
+            class=""
+            data-key="3"
+            data-label="homeURL"
+          >
+            <a
+              href="http://blog.nerdin.chrealms/master/account/"
+            >
+              http://blog.nerdin.chrealms/master/account/
+               
+              <svg
+                aria-hidden="true"
+                fill="currentColor"
+                height="1em"
+                role="img"
+                style="vertical-align: -0.125em;"
+                viewBox="0 0 512 512"
+                width="1em"
+              >
+                <path
+                  d="M432,320H400a16,16,0,0,0-16,16V448H64V128H208a16,16,0,0,0,16-16V80a16,16,0,0,0-16-16H48A48,48,0,0,0,0,112V464a48,48,0,0,0,48,48H400a48,48,0,0,0,48-48V336A16,16,0,0,0,432,320ZM488,0h-128c-21.37,0-32.05,25.91-17,41l35.73,35.73L135,320.37a24,24,0,0,0,0,34L157.67,377a24,24,0,0,0,34,0L435.28,133.32,471,169c15,15,41,4.5,41-17V24A24,24,0,0,0,488,0Z"
+                  transform=""
+                />
+              </svg>
+            </a>
+          </td>
+          <td
+            class="pf-c-table__action"
+            data-key="4"
+          >
+            <div
+              class="pf-c-dropdown pf-m-align-right"
+              data-ouia-component-id="2"
+              data-ouia-component-type="PF4/Dropdown"
+              data-ouia-safe="true"
+            >
+              <button
+                aria-expanded="false"
+                aria-haspopup="true"
+                aria-label="Actions"
+                class="pf-c-dropdown__toggle pf-m-plain"
+                id="pf-dropdown-toggle-id-0"
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 192 512"
+                  width="1em"
+                >
+                  <path
+                    d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z"
+                    transform=""
+                  />
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr
+          class=""
+          data-ouia-component-id="3"
+          data-ouia-component-type="PF4/TableRow"
+          data-ouia-safe="true"
+        >
+          <td
+            class=""
+            data-key="0"
+            data-label="clientID"
+          >
+            <a
+              href="/client-settings"
+            >
+              account-console
+            </a>
+          </td>
+          <td
+            class=""
+            data-key="1"
+            data-label="type"
+          >
+            openid-connect
+          </td>
+          <td
+            class=""
+            data-key="2"
+            data-label="description"
+          >
+            —
+          </td>
+          <td
+            class=""
+            data-key="3"
+            data-label="homeURL"
+          >
+            <a
+              href="http://blog.nerdin.chrealms/master/account/"
+            >
+              http://blog.nerdin.chrealms/master/account/
+               
+              <svg
+                aria-hidden="true"
+                fill="currentColor"
+                height="1em"
+                role="img"
+                style="vertical-align: -0.125em;"
+                viewBox="0 0 512 512"
+                width="1em"
+              >
+                <path
+                  d="M432,320H400a16,16,0,0,0-16,16V448H64V128H208a16,16,0,0,0,16-16V80a16,16,0,0,0-16-16H48A48,48,0,0,0,0,112V464a48,48,0,0,0,48,48H400a48,48,0,0,0,48-48V336A16,16,0,0,0,432,320ZM488,0h-128c-21.37,0-32.05,25.91-17,41l35.73,35.73L135,320.37a24,24,0,0,0,0,34L157.67,377a24,24,0,0,0,34,0L435.28,133.32,471,169c15,15,41,4.5,41-17V24A24,24,0,0,0,488,0Z"
+                  transform=""
+                />
+              </svg>
+            </a>
+          </td>
+          <td
+            class="pf-c-table__action"
+            data-key="4"
+          >
+            <div
+              class="pf-c-dropdown pf-m-align-right"
+              data-ouia-component-id="4"
+              data-ouia-component-type="PF4/Dropdown"
+              data-ouia-safe="true"
+            >
+              <button
+                aria-expanded="false"
+                aria-haspopup="true"
+                aria-label="Actions"
+                class="pf-c-dropdown__toggle pf-m-plain"
+                id="pf-dropdown-toggle-id-1"
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 192 512"
+                  width="1em"
+                >
+                  <path
+                    d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z"
+                    transform=""
+                  />
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr
+          class=""
+          data-ouia-component-id="5"
+          data-ouia-component-type="PF4/TableRow"
+          data-ouia-safe="true"
+        >
+          <td
+            class=""
+            data-key="0"
+            data-label="clientID"
+          >
+            <a
+              href="/client-settings"
+            >
+              admin-cli
+            </a>
+          </td>
+          <td
+            class=""
+            data-key="1"
+            data-label="type"
+          >
+            openid-connect
+          </td>
+          <td
+            class=""
+            data-key="2"
+            data-label="description"
+          >
+            —
+          </td>
+          <td
+            class=""
+            data-key="3"
+            data-label="homeURL"
+          >
+            —
+          </td>
+          <td
+            class="pf-c-table__action"
+            data-key="4"
+          >
+            <div
+              class="pf-c-dropdown pf-m-align-right"
+              data-ouia-component-id="6"
+              data-ouia-component-type="PF4/Dropdown"
+              data-ouia-safe="true"
+            >
+              <button
+                aria-expanded="false"
+                aria-haspopup="true"
+                aria-label="Actions"
+                class="pf-c-dropdown__toggle pf-m-plain"
+                id="pf-dropdown-toggle-id-2"
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 192 512"
+                  width="1em"
+                >
+                  <path
+                    d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z"
+                    transform=""
+                  />
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr
+          class=""
+          data-ouia-component-id="7"
+          data-ouia-component-type="PF4/TableRow"
+          data-ouia-safe="true"
+        >
+          <td
+            class=""
+            data-key="0"
+            data-label="clientID"
+          >
+            <a
+              href="/client-settings"
+            >
+              broker
+            </a>
+          </td>
+          <td
+            class=""
+            data-key="1"
+            data-label="type"
+          >
+            openid-connect
+          </td>
+          <td
+            class=""
+            data-key="2"
+            data-label="description"
+          >
+            —
+          </td>
+          <td
+            class=""
+            data-key="3"
+            data-label="homeURL"
+          >
+            —
+          </td>
+          <td
+            class="pf-c-table__action"
+            data-key="4"
+          >
+            <div
+              class="pf-c-dropdown pf-m-align-right"
+              data-ouia-component-id="8"
+              data-ouia-component-type="PF4/Dropdown"
+              data-ouia-safe="true"
+            >
+              <button
+                aria-expanded="false"
+                aria-haspopup="true"
+                aria-label="Actions"
+                class="pf-c-dropdown__toggle pf-m-plain"
+                id="pf-dropdown-toggle-id-3"
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 192 512"
+                  width="1em"
+                >
+                  <path
+                    d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z"
+                    transform=""
+                  />
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr
+          class=""
+          data-ouia-component-id="9"
+          data-ouia-component-type="PF4/TableRow"
+          data-ouia-safe="true"
+        >
+          <td
+            class=""
+            data-key="0"
+            data-label="clientID"
+          >
+            <a
+              href="/client-settings"
+            >
+              master-realm
+            </a>
+          </td>
+          <td
+            class=""
+            data-key="1"
+            data-label="type"
+          />
+          <td
+            class=""
+            data-key="2"
+            data-label="description"
+          >
+            —
+          </td>
+          <td
+            class=""
+            data-key="3"
+            data-label="homeURL"
+          >
+            —
+          </td>
+          <td
+            class="pf-c-table__action"
+            data-key="4"
+          >
+            <div
+              class="pf-c-dropdown pf-m-align-right"
+              data-ouia-component-id="10"
+              data-ouia-component-type="PF4/Dropdown"
+              data-ouia-safe="true"
+            >
+              <button
+                aria-expanded="false"
+                aria-haspopup="true"
+                aria-label="Actions"
+                class="pf-c-dropdown__toggle pf-m-plain"
+                id="pf-dropdown-toggle-id-4"
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 192 512"
+                  width="1em"
+                >
+                  <path
+                    d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z"
+                    transform=""
+                  />
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr
+          class=""
+          data-ouia-component-id="11"
+          data-ouia-component-type="PF4/TableRow"
+          data-ouia-safe="true"
+        >
+          <td
+            class=""
+            data-key="0"
+            data-label="clientID"
+          >
+            <a
+              href="/client-settings"
+            >
+              new
+            </a>
+          </td>
+          <td
+            class=""
+            data-key="1"
+            data-label="type"
+          >
+            openid-connect
+          </td>
+          <td
+            class=""
+            data-key="2"
+            data-label="description"
+          >
+            —
+          </td>
+          <td
+            class=""
+            data-key="3"
+            data-label="homeURL"
+          >
+            <a
+              href="http://localhost:8080/"
+            >
+              http://localhost:8080/
+               
+              <svg
+                aria-hidden="true"
+                fill="currentColor"
+                height="1em"
+                role="img"
+                style="vertical-align: -0.125em;"
+                viewBox="0 0 512 512"
+                width="1em"
+              >
+                <path
+                  d="M432,320H400a16,16,0,0,0-16,16V448H64V128H208a16,16,0,0,0,16-16V80a16,16,0,0,0-16-16H48A48,48,0,0,0,0,112V464a48,48,0,0,0,48,48H400a48,48,0,0,0,48-48V336A16,16,0,0,0,432,320ZM488,0h-128c-21.37,0-32.05,25.91-17,41l35.73,35.73L135,320.37a24,24,0,0,0,0,34L157.67,377a24,24,0,0,0,34,0L435.28,133.32,471,169c15,15,41,4.5,41-17V24A24,24,0,0,0,488,0Z"
+                  transform=""
+                />
+              </svg>
+            </a>
+          </td>
+          <td
+            class="pf-c-table__action"
+            data-key="4"
+          >
+            <div
+              class="pf-c-dropdown pf-m-align-right"
+              data-ouia-component-id="12"
+              data-ouia-component-type="PF4/Dropdown"
+              data-ouia-safe="true"
+            >
+              <button
+                aria-expanded="false"
+                aria-haspopup="true"
+                aria-label="Actions"
+                class="pf-c-dropdown__toggle pf-m-plain"
+                id="pf-dropdown-toggle-id-5"
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 192 512"
+                  width="1em"
+                >
+                  <path
+                    d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z"
+                    transform=""
+                  />
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr
+          class=""
+          data-ouia-component-id="13"
+          data-ouia-component-type="PF4/TableRow"
+          data-ouia-safe="true"
+        >
+          <td
+            class=""
+            data-key="0"
+            data-label="clientID"
+          >
+            <a
+              href="/client-settings"
+            >
+              photoz-realm
+            </a>
+          </td>
+          <td
+            class=""
+            data-key="1"
+            data-label="type"
+          />
+          <td
+            class=""
+            data-key="2"
+            data-label="description"
+          >
+            —
+          </td>
+          <td
+            class=""
+            data-key="3"
+            data-label="homeURL"
+          >
+            —
+          </td>
+          <td
+            class="pf-c-table__action"
+            data-key="4"
+          >
+            <div
+              class="pf-c-dropdown pf-m-align-right"
+              data-ouia-component-id="14"
+              data-ouia-component-type="PF4/Dropdown"
+              data-ouia-safe="true"
+            >
+              <button
+                aria-expanded="false"
+                aria-haspopup="true"
+                aria-label="Actions"
+                class="pf-c-dropdown__toggle pf-m-plain"
+                id="pf-dropdown-toggle-id-6"
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 192 512"
+                  width="1em"
+                >
+                  <path
+                    d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z"
+                    transform=""
+                  />
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr
+          class=""
+          data-ouia-component-id="15"
+          data-ouia-component-type="PF4/TableRow"
+          data-ouia-safe="true"
+        >
+          <td
+            class=""
+            data-key="0"
+            data-label="clientID"
+          >
+            <a
+              href="/client-settings"
+            >
+              security-admin-console
+            </a>
+          </td>
+          <td
+            class=""
+            data-key="1"
+            data-label="type"
+          >
+            openid-connect
+          </td>
+          <td
+            class=""
+            data-key="2"
+            data-label="description"
+          >
+            —
+          </td>
+          <td
+            class=""
+            data-key="3"
+            data-label="homeURL"
+          >
+            <a
+              href="http://blog.nerdin.chadmin/master/console/"
+            >
+              http://blog.nerdin.chadmin/master/console/
+               
+              <svg
+                aria-hidden="true"
+                fill="currentColor"
+                height="1em"
+                role="img"
+                style="vertical-align: -0.125em;"
+                viewBox="0 0 512 512"
+                width="1em"
+              >
+                <path
+                  d="M432,320H400a16,16,0,0,0-16,16V448H64V128H208a16,16,0,0,0,16-16V80a16,16,0,0,0-16-16H48A48,48,0,0,0,0,112V464a48,48,0,0,0,48,48H400a48,48,0,0,0,48-48V336A16,16,0,0,0,432,320ZM488,0h-128c-21.37,0-32.05,25.91-17,41l35.73,35.73L135,320.37a24,24,0,0,0,0,34L157.67,377a24,24,0,0,0,34,0L435.28,133.32,471,169c15,15,41,4.5,41-17V24A24,24,0,0,0,488,0Z"
+                  transform=""
+                />
+              </svg>
+            </a>
+          </td>
+          <td
+            class="pf-c-table__action"
+            data-key="4"
+          >
+            <div
+              class="pf-c-dropdown pf-m-align-right"
+              data-ouia-component-id="16"
+              data-ouia-component-type="PF4/Dropdown"
+              data-ouia-safe="true"
+            >
+              <button
+                aria-expanded="false"
+                aria-haspopup="true"
+                aria-label="Actions"
+                class="pf-c-dropdown__toggle pf-m-plain"
+                id="pf-dropdown-toggle-id-7"
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 192 512"
+                  width="1em"
+                >
+                  <path
+                    d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z"
+                    transform=""
+                  />
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>,
+  "debug": [Function],
+  "findAllByAltText": [Function],
+  "findAllByDisplayValue": [Function],
+  "findAllByLabelText": [Function],
+  "findAllByPlaceholderText": [Function],
+  "findAllByRole": [Function],
+  "findAllByTestId": [Function],
+  "findAllByText": [Function],
+  "findAllByTitle": [Function],
+  "findByAltText": [Function],
+  "findByDisplayValue": [Function],
+  "findByLabelText": [Function],
+  "findByPlaceholderText": [Function],
+  "findByRole": [Function],
+  "findByTestId": [Function],
+  "findByText": [Function],
+  "findByTitle": [Function],
+  "getAllByAltText": [Function],
+  "getAllByDisplayValue": [Function],
+  "getAllByLabelText": [Function],
+  "getAllByPlaceholderText": [Function],
+  "getAllByRole": [Function],
+  "getAllByTestId": [Function],
+  "getAllByText": [Function],
+  "getAllByTitle": [Function],
+  "getByAltText": [Function],
+  "getByDisplayValue": [Function],
+  "getByLabelText": [Function],
+  "getByPlaceholderText": [Function],
+  "getByRole": [Function],
+  "getByTestId": [Function],
+  "getByText": [Function],
+  "getByTitle": [Function],
+  "queryAllByAltText": [Function],
+  "queryAllByDisplayValue": [Function],
+  "queryAllByLabelText": [Function],
+  "queryAllByPlaceholderText": [Function],
+  "queryAllByRole": [Function],
+  "queryAllByTestId": [Function],
+  "queryAllByText": [Function],
+  "queryAllByTitle": [Function],
+  "queryByAltText": [Function],
+  "queryByDisplayValue": [Function],
+  "queryByLabelText": [Function],
+  "queryByPlaceholderText": [Function],
+  "queryByRole": [Function],
+  "queryByTestId": [Function],
+  "queryByText": [Function],
+  "queryByTitle": [Function],
+  "rerender": [Function],
+  "unmount": [Function],
+}
+`;

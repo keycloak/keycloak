@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   FormGroup,
   Switch,
@@ -8,13 +9,12 @@ import {
   Form,
 } from "@patternfly/react-core";
 import { UseFormMethods, Controller } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 
-type Step2Props = {
+type CapabilityConfigProps = {
   form: UseFormMethods;
 };
 
-export const Step2 = ({ form }: Step2Props) => {
+export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
   const { t } = useTranslation("clients");
   return (
     <Form isHorizontal>
@@ -34,13 +34,13 @@ export const Step2 = ({ form }: Step2Props) => {
           )}
         />
       </FormGroup>
-      <FormGroup label={t("authentication")} fieldId="kc-authorisation">
+      <FormGroup label={t("clientAuthorization")} fieldId="kc-authorization">
         <Controller
           name="authorizationServicesEnabled"
           control={form.control}
           render={({ onChange, value }) => (
             <Switch
-              id="kc-authorisation"
+              id="kc-authorization"
               name="authorizationServicesEnabled"
               label={t("common:on")}
               labelOff={t("common:off")}
@@ -59,7 +59,6 @@ export const Step2 = ({ form }: Step2Props) => {
               render={({ onChange, value }) => (
                 <Checkbox
                   label={t("standardFlow")}
-                  aria-label={t("enableStandardFlow")}
                   id="kc-flow-standard"
                   name="standardFlowEnabled"
                   isChecked={value}
@@ -75,7 +74,6 @@ export const Step2 = ({ form }: Step2Props) => {
               render={({ onChange, value }) => (
                 <Checkbox
                   label={t("directAccess")}
-                  aria-label={t("enableDirectAccess")}
                   id="kc-flow-direct"
                   name="directAccessGrantsEnabled"
                   isChecked={value}
@@ -90,9 +88,8 @@ export const Step2 = ({ form }: Step2Props) => {
               control={form.control}
               render={({ onChange, value }) => (
                 <Checkbox
-                  label={t("implicidFlow")}
-                  aria-label={t("enableImplicidFlow")}
-                  id="kc-flow-implicid"
+                  label={t("implicitFlow")}
+                  id="kc-flow-implicit"
                   name="implicitFlowEnabled"
                   isChecked={value}
                   onChange={onChange}
@@ -107,7 +104,6 @@ export const Step2 = ({ form }: Step2Props) => {
               render={({ onChange, value }) => (
                 <Checkbox
                   label={t("serviceAccount")}
-                  aria-label={t("enableServiceAccount")}
                   id="kc-flow-service-account"
                   name="serviceAccountsEnabled"
                   isChecked={value}
