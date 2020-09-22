@@ -20,6 +20,7 @@ import static org.keycloak.testsuite.util.URLAssert.*;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
+ * @author Lukas Hanusovsky lhanusov@redhat.com
  */
 @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class InternationalizationTest extends AbstractRealmTest {
@@ -95,6 +96,34 @@ public class InternationalizationTest extends AbstractRealmTest {
         assertConsoleLocale(LABEL_CS_REALM_SETTINGS);
     }
 
+    @Test
+    public void testSupportedLocalesOnReservedChars() {
+        realmSettingsPage.setAdminRealm(AuthRealm.MASTER);
+        realmSettingsPage.navigateTo();
+        loginPage.form().login(adminUser);
+        tabs().themes();
+
+        if (!themeSettingsPage.isInternatEnabled()) {
+            themeSettingsPage.setInternatEnabled(true);
+            themeSettingsPage.saveTheme();
+        }
+
+        // This Locales should pass, because they do not contain special chars.
+        assertSupportedLocale("test", "succeed");
+        assertSupportedLocale("sausage", "succeed");
+
+        // This Locales should raise exception, because the reserved chars are validated.
+        assertSupportedLocale("%00f%00", "fail");
+        assertSupportedLocale("test; Path=/", "fail");
+        assertSupportedLocale("{test}", "fail");
+        assertSupportedLocale("\\xc0", "fail");
+        assertSupportedLocale("\\xbc", "fail");
+
+        // Clean up session: back to realm Test
+        realmSettingsPage.setAdminRealm(AuthRealm.TEST);
+        deleteAllCookiesForMasterRealm();
+    }
+
     private void assertConsoleLocale(String expected) {
         assertCurrentUrlEquals(realmSettingsPage);
         assertLocale(".//div[@class='nav-category'][1]/ul/li[1]//a", expected); // Realm Settings
@@ -112,5 +141,19 @@ public class InternationalizationTest extends AbstractRealmTest {
 
     private void assertLocale(WebElement element, String expected) {
         assertEquals(expected, getTextFromElement(element));
+    }
+
+    private void assertSupportedLocale(String supportedLocale, String updateStatus) {
+        themeSettingsPage.addSupportedLocale(supportedLocale);
+        themeSettingsPage.setDefaultLocale();
+        themeSettingsPage.saveTheme();
+        if (updateStatus.equals("succeed")) {
+            assertAlertSuccess();
+        } else if (updateStatus.equals("fail")) {
+            assertAlertDanger();
+            themeSettingsPage.deleteSupportedLocale(supportedLocale);
+        } else {
+            assertTrue(false);
+        }
     }
 }
