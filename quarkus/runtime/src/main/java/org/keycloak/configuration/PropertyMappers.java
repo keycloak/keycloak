@@ -148,8 +148,12 @@ public final class PropertyMappers {
     }
 
     public static String toCLIFormat(String name) {
+        if (name.indexOf('.') == -1) {
+            return name;
+        }
         return MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX
-                .concat(name.substring(3).replaceAll("\\.", "-"));
+                .concat(name.substring(3, name.lastIndexOf('.') + 1)
+                        .replaceAll("\\.", "-") + name.substring(name.lastIndexOf('.') + 1));
     }
 
     public static List<PropertyMapper> getRuntimeMappers() {

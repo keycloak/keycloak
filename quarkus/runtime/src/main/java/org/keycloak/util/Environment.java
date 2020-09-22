@@ -52,13 +52,13 @@ public final class Environment {
         if (profile == null) {
             profile = System.getenv("KC_PROFILE");
         }
-        
+
         return profile;
     }
 
     public static Optional<String> getBuiltTimeProperty(String name) {
         String value = KeycloakRecorder.getBuiltTimeProperty(name);
-        
+
         if (value == null) {
             return Optional.empty();
         }

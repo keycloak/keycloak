@@ -149,7 +149,7 @@ class KeycloakProcessor {
             }
         }
 
-        recorder.setBuildTimeProperties(properties, Environment.isRebuild());
+        recorder.setBuildTimeProperties(properties, Environment.isRebuild(), KeycloakRecorder.getConfig().getRawValue("kc.config.args"));
 
         recorder.showConfig();
     }
