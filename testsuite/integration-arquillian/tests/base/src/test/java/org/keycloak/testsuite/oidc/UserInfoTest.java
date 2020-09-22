@@ -623,8 +623,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
                 .detail(Details.SIGNATURE_REQUIRED, "false")
                 .client(expectedClientId)
                 .assertEvent();
-        UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost").get(0);
-        return UserInfoClientUtil.testSuccessfulUserInfoResponse(response, user.getId(), "test-user@localhost", "test-user@localhost");
+        return UserInfoClientUtil.testSuccessfulUserInfoResponse(response, "test-user@localhost", "test-user@localhost");
     }
 
     private void testSuccessSignedResponse(Algorithm sigAlg) throws Exception {

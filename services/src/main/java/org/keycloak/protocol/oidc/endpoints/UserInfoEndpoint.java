@@ -215,16 +215,11 @@ public class UserInfoEndpoint {
 
         AccessToken userInfo = new AccessToken();
         
-        userInfo.subject(userModel.getId());
-        
         tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
 
         Map<String, Object> claims = new HashMap<>();
+        claims.put("sub", userModel.getId());
         claims.putAll(userInfo.getOtherClaims());
-        // we always set the subject to the correct value and ignore any mapper (not directly related to subject mapping such as 
-        // pseudo-subjects). the endpoint should always return a valid subject identifier.
-        // any attempt to customize the value of this field should be done through a different claim
-        claims.put("sub", userInfo.getSubject());
 
         if (userInfo.getRealmAccess() != null) {
             Map<String, Set<String>> realmAccess = new HashMap<>();
