@@ -16,6 +16,9 @@ You must define the SAML configuration options as well.  They basically describe
 |===
 |Configuration|Description
 
+|Service Provider Entity ID
+|This is a required field and specifies the SAML Entity ID that the remote Identity Provider will use to identify requests coming from this Service Provider. By default it is set to the realm base URL `<root>/auth/realms/{realm-name}`.
+
 |Single Sign-On Service URL
 |This is a required field and specifies the SAML endpoint to start the authentication process.  If your SAML IDP publishes an IDP entity descriptor, the value of
  this field will be specified there.
@@ -82,9 +85,9 @@ You can also import all this configuration data by providing a URL or XML file t
 
 [[_identity_broker_saml_requested_authncontext]]
 ==== Requesting specific AuthnContexts
-Some Identity Providers let the clients specify particular constraints on the authentication method used to verify the user identity (e.g. asking for MFA, Kerberos authentication, security requirements, etc.). These are specified using particular AuthnContext criteria. A client can ask for one or more criteria and also specify how the Identity Provider should match the requested AuthnContext - exactly, or by satisfying same-or-better equivalents.
+Some Identity Providers let the clients specify particular constraints on the authentication method used to verify the user identity (such as asking for MFA, Kerberos authentication, security requirements, and so on). These constraints are specified using particular AuthnContext criteria. A client can ask for one or more criteria and also specify how the Identity Provider should match the requested AuthnContext - exactly, or by satisfying same-or-better equivalents.
 
-You can list the criteria your Service Provider requires by adding one or more ClassRef or DeclRef in the Requested AuthnContext Constraints section. Usually you will need to provide either ClassRefs or DeclRefs - you should check with your Identity Provider docs which values are supported. If no ClassRefs or DeclRefs are present, the Identity Provider will not enforce additional constraints.
+You can list the criteria your Service Provider requires by adding one or more ClassRef or DeclRef in the Requested AuthnContext Constraints section. Usually you need to provide either ClassRefs or DeclRefs; you should check with your Identity Provider documentation which values are supported. If no ClassRefs or DeclRefs are present, the Identity Provider will not enforce additional constraints.
 
 .Requested AuthnContext Constraints
 |===
