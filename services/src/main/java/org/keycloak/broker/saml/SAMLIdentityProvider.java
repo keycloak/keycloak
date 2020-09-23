@@ -165,7 +165,12 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
     }
 
     private String getEntityId(UriInfo uriInfo, RealmModel realm) {
-        return UriBuilder.fromUri(uriInfo.getBaseUri()).path("realms").path(realm.getName()).build().toString();
+        String configEntityId = getConfig().getEntityId();
+
+        if (configEntityId == null || configEntityId.isEmpty())
+            return UriBuilder.fromUri(uriInfo.getBaseUri()).path("realms").path(realm.getName()).build().toString();
+        else
+            return configEntityId;
     }
 
     private List<String> getAuthnContextClassRefUris() {

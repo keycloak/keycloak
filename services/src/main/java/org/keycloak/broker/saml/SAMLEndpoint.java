@@ -370,7 +370,12 @@ public class SAMLEndpoint {
         }
 
         private String getEntityId(UriInfo uriInfo, RealmModel realm) {
-            return UriBuilder.fromUri(uriInfo.getBaseUri()).path("realms").path(realm.getName()).build().toString();
+            String configEntityId = config.getEntityId();
+
+            if (configEntityId == null || configEntityId.isEmpty())
+                return UriBuilder.fromUri(uriInfo.getBaseUri()).path("realms").path(realm.getName()).build().toString();
+            else
+                return configEntityId;
         }
 
         protected Response handleLoginResponse(String samlResponse, SAMLDocumentHolder holder, ResponseType responseType, String relayState, String clientId) {
