@@ -1,15 +1,14 @@
 import React from "react";
 import { Meta, Story } from "@storybook/react";
 import { ExternalLink } from "../components/external-link/ExternalLink";
+import { ButtonProps } from "@patternfly/react-core";
 
 export default {
   title: "External link",
   component: ExternalLink,
 } as Meta;
 
-const Template: Story<React.HTMLProps<HTMLAnchorElement>> = (args) => (
-  <ExternalLink {...args} />
-);
+const Template: Story<ButtonProps> = (args) => <ExternalLink {...args} />;
 
 export const WithTitle = Template.bind({});
 WithTitle.args = {
@@ -20,4 +19,17 @@ WithTitle.args = {
 export const WithoutTitle = Template.bind({});
 WithoutTitle.args = {
   href: "http://some-other-link.nl/super",
+};
+
+export const ApplicationLink = Template.bind({});
+ApplicationLink.args = {
+  title: "Application link",
+  href: "/application/main",
+};
+
+export const DisabledLink = Template.bind({});
+DisabledLink.args = {
+  title: "Disabled link",
+  href: "http://some-other-link.nl/super",
+  isAriaDisabled: true,
 };
