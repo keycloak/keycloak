@@ -1,21 +1,26 @@
 import React from "react";
 import { FormGroup, TextInput } from "@patternfly/react-core";
-import { FieldElement, ValidationRules, Ref } from "react-hook-form";
+import { UseFormMethods } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 type ClientDescriptionProps = {
-  register<TFieldElement extends FieldElement>(
-    rules?: ValidationRules
-  ): (ref: (TFieldElement & Ref) | null) => void;
+  form: UseFormMethods;
 };
 
-export const ClientDescription = ({ register }: ClientDescriptionProps) => {
+export const ClientDescription = ({ form }: ClientDescriptionProps) => {
   const { t } = useTranslation("clients");
+  const { register, errors } = form;
   return (
     <>
-      <FormGroup label={t("clientID")} fieldId="kc-client-id">
+      <FormGroup
+        label={t("clientID")}
+        fieldId="kc-client-id"
+        helperTextInvalid={t("common:required")}
+        validated={errors.clientId ? "error" : "default"}
+        isRequired
+      >
         <TextInput
-          ref={register()}
+          ref={register({ required: true })}
           type="text"
           id="kc-client-id"
           name="clientId"

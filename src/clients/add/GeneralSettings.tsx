@@ -78,7 +78,7 @@ export const GeneralSettings = ({ form }: GeneralSettingsProps) => {
           )}
         />
       </FormGroup>
-      <ClientDescription register={register} />
+      <ClientDescription form={form} />
     </Form>
   );
 };

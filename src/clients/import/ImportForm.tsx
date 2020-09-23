@@ -19,16 +19,14 @@ import { ClientDescription } from "../ClientDescription";
 import { HttpClientContext } from "../../http-service/HttpClientContext";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
 import { useAlerts } from "../../components/alert/Alerts";
-import { AlertPanel } from "../../components/alert/AlertPanel";
 import { RealmContext } from "../../components/realm-context/RealmContext";
 
 export const ImportForm = () => {
   const { t } = useTranslation("clients");
   const httpClient = useContext(HttpClientContext)!;
   const { realm } = useContext(RealmContext);
-  const { register, handleSubmit, errors, setValue } = useForm<
-    ClientRepresentation
-  >();
+  const form = useForm<ClientRepresentation>();
+  const { register, handleSubmit, setValue } = form;
 
   const [add, Alerts] = useAlerts();
 
@@ -67,7 +65,7 @@ export const ImportForm = () => {
       <PageSection variant="light">
         <Form isHorizontal onSubmit={handleSubmit(save)}>
           <JsonFileUpload id="realm-file" onChange={handleFileChange} />
-          <ClientDescription register={register} />
+          <ClientDescription form={form} />
           <FormGroup label={t("type")} fieldId="kc-type">
             <TextInput
               type="text"

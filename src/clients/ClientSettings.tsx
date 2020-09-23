@@ -52,7 +52,7 @@ export const ClientSettings = ({ client: clientInit }: ClientSettingsProps) => {
           <CapabilityConfig form={form} />
         </Form>
         <Form isHorizontal>
-          <ClientDescription register={form.register} />
+          <ClientDescription form={form} />
         </Form>
         <Form isHorizontal>
           <FormGroup label={t("rootUrl")} fieldId="kc-root-url">

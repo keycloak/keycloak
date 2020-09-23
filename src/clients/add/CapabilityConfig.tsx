@@ -52,7 +52,7 @@ export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
       </FormGroup>
       <FormGroup label={t("authenticationFlow")} fieldId="kc-flow">
         <Grid>
-          <GridItem span={6}>
+          <GridItem lg={4} sm={6}>
             <Controller
               name="standardFlowEnabled"
               control={form.control}
@@ -67,7 +67,7 @@ export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
               )}
             />
           </GridItem>
-          <GridItem span={6}>
+          <GridItem lg={8} sm={6}>
             <Controller
               name="directAccessGrantsEnabled"
               control={form.control}
@@ -82,7 +82,7 @@ export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
               )}
             />
           </GridItem>
-          <GridItem span={6}>
+          <GridItem lg={4} sm={6}>
             <Controller
               name="implicitFlowEnabled"
               control={form.control}
@@ -97,7 +97,7 @@ export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
               )}
             />
           </GridItem>
-          <GridItem span={6}>
+          <GridItem lg={8} sm={6}>
             <Controller
               name="serviceAccountsEnabled"
               control={form.control}
