@@ -16,10 +16,10 @@
     "build-storybook": "build-storybook -s public"
   },
   "dependencies": {
-    "@patternfly/patternfly": "^4.31.6",
-    "@patternfly/react-core": "^4.40.4",
-    "@patternfly/react-icons": "^4.7.2",
-    "@patternfly/react-table": "^4.15.5",
+    "@patternfly/patternfly": "^4.42.2",
+    "@patternfly/react-core": "4.50.2",
+    "@patternfly/react-icons": "4.7.6",
+    "@patternfly/react-table": "4.16.20",
     "file-saver": "^2.0.2",
     "i18next": "^19.6.2",
     "keycloak-js": "^11.0.0",
@@ -33,8 +33,8 @@
     "@babel/core": "^7.10.5",
     "@babel/preset-typescript": "^7.10.4",
     "@snowpack/app-scripts-react": "^1.10.0",
-    "@snowpack/plugin-postcss": "^1.0.2",
-    "@snowpack/plugin-webpack": "^2.0.6",
+    "@snowpack/plugin-postcss": "1.0.4",
+    "@snowpack/plugin-webpack": "2.0.12",
     "@storybook/addon-actions": "^6.0.21",
     "@storybook/addon-essentials": "^6.0.21",
     "@storybook/addon-info": "^5.3.21",
@@ -73,7 +73,7 @@
     "prettier": "^2.0.5",
     "react-is": "^16.13.1",
     "react-scripts": "^3.4.1",
-    "snowpack": "^2.10.0",
+    "snowpack": "2.11.1",
     "typescript": "^3.8.3"
   }
 }
