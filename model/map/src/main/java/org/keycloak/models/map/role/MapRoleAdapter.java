@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
+import org.jboss.logging.Logger;
+import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RealmModel;
@@ -29,6 +31,8 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements RoleModel {
+
+    private static final Logger LOG = Logger.getLogger(MapRoleAdapter.class);
 
     public MapRoleAdapter(KeycloakSession session, RealmModel realm, MapRoleEntity entity) {
         super(session, realm, entity);
@@ -66,16 +70,19 @@ public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements 
 
     @Override
     public Stream<RoleModel> getCompositesStream() {
+        LOG.tracef("%s(%s).getCompositesStream():%s%s", entity.getName(), entity.getId().toString(), entity.getCompositeRoles(), getShortStackTrace());
         return entity.getCompositeRoles().stream().map(uuid -> session.roles().getRoleById(realm, uuid.toString()));
     }
 
     @Override
     public void addCompositeRole(RoleModel role) {
+        LOG.tracef("%s(%s).addCompositeRole(%s(%s))%s", entity.getName(), entity.getId().toString(), role.getName(), role.getId(), getShortStackTrace());
         entity.addCompositeRole(UUID.fromString(role.getId()));
     }
 
     @Override
     public void removeCompositeRole(RoleModel role) {
+        LOG.tracef("%s(%s).removeCompositeRole(%s(%s))%s", entity.getName(), entity.getId().toString(), role.getName(), role.getId(), getShortStackTrace());
         entity.removeCompositeRole(UUID.fromString(role.getId()));
     }
 

@@ -189,7 +189,7 @@ public class MapRoleProvider implements RoleProvider {
         //remove role from realm-roles composites
         try (Stream<RoleModel> baseStream = getRealmRolesStream(realm).filter(RoleModel::isComposite)) {
             StreamUtils.leftInnerJoinStream(baseStream, RoleModel::getCompositesStream)
-              .filter(pair -> role.equals(pair.getK()))
+              .filter(pair -> role.equals(pair.getV()))
               .forEach(pair -> pair.getK().removeCompositeRole(role));
         }
         
@@ -198,7 +198,7 @@ public class MapRoleProvider implements RoleProvider {
             client.deleteScopeMapping(role);
             try (Stream<RoleModel> baseStream = getClientRolesStream(client).filter(RoleModel::isComposite)) {
                 StreamUtils.leftInnerJoinStream(baseStream, RoleModel::getCompositesStream)
-                    .filter(pair -> role.equals(pair.getK()))
+                    .filter(pair -> role.equals(pair.getV()))
                     .forEach(pair -> pair.getK().removeCompositeRole(role));
             }
         });
