@@ -873,6 +873,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             $scope.identityProvider.config.signatureAlgorithm = $scope.signatureAlgorithms[1];
             $scope.identityProvider.config.xmlSigKeyInfoKeyNameTransformer = $scope.xmlKeyNameTranformers[1];
         }
+        $scope.identityProvider.config.entityId = $scope.identityProvider.config.entityId || (authUrl + '/realms/' + realm.realm);
     }
 
     $scope.hidePassword = true;

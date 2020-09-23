@@ -134,6 +134,13 @@
             <legend uncollapsed><span class="text">{{:: 'saml-config' | translate}}</span> <kc-tooltip>{{:: 'identity-provider.saml-config.tooltip' | translate}}</kc-tooltip></legend>
 
             <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="entityId"><span class="required">*</span> {{:: 'identity-provider.saml.entity-id' | translate}}</label>
+                <div class="col-md-6">
+                    <input kc-no-reserved-chars class="form-control" id="entityId" type="text" ng-model="identityProvider.config.entityId" required>
+                </div>
+                <kc-tooltip>{{:: 'identityProvider.config.entity-id.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="singleSignOnServiceUrl"><span class="required">*</span> {{:: 'single-signon-service-url' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="singleSignOnServiceUrl" type="text" ng-model="identityProvider.config.singleSignOnServiceUrl" required>
