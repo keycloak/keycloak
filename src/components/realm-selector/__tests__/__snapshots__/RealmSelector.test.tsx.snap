@@ -147,7 +147,7 @@ exports[`renders realm selector 1`] = `
                         tabindex="-1"
                       >
                         <div
-                          class="pf-l-split"
+                          class="pf-l-split keycloak__realm_selector__list-item-split"
                         >
                           <div
                             class="pf-l-split__item pf-m-fill"
@@ -255,7 +255,7 @@ exports[`renders realm selector 1`] = `
                           tabindex="-1"
                         >
                           <div
-                            class="pf-l-split"
+                            class="pf-l-split keycloak__realm_selector__list-item-split"
                           >
                             <div
                               class="pf-l-split__item pf-m-fill"

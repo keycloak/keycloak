@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { useHistory } from "react-router-dom";
 
 import {
@@ -34,14 +34,19 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
     realmName.charAt(0).toUpperCase() + realmName.slice(1);
 
   const RealmText = ({ value }: { value: string }) => (
-    <Split>
+    <Split className="keycloak__realm_selector__list-item-split">
       <SplitItem isFilled>{toUpperCase(value)}</SplitItem>
       <SplitItem>{value === realm && <CheckIcon />}</SplitItem>
     </Split>
   );
 
-  const AddRealm = () => (
-    <Button component="div" isBlock onClick={() => history.push("/add-realm")}>
+  const AddRealm = ({ className }: { className?: string }) => (
+    <Button
+      component="div"
+      isBlock
+      onClick={() => history.push("/add-realm")}
+      className={className}
+    >
       Create Realm
     </Button>
   );
@@ -55,6 +60,10 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
           );
     setFilteredItems(filtered || []);
   };
+
+  useEffect(() => {
+    onFilter();
+  }, [search]);
 
   const dropdownItems = realmList.map((r) => (
     <DropdownItem
