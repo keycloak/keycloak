@@ -278,14 +278,18 @@ public class AuthenticationManagementResource {
         }
 
         //if the name changed
-        if (!checkFlow.getAlias().equals(flow.getAlias())) {
+        if (checkFlow.getAlias() != null && !checkFlow.getAlias().equals(flow.getAlias())) {
             checkFlow.setAlias(flow.getAlias());
-        }
+        } else if (checkFlow.getAlias() == null && flow.getAlias() != null) {
+            checkFlow.setAlias(flow.getAlias());
+	}
 
         //check if the description changed
-        if (!checkFlow.getDescription().equals(flow.getDescription())) {
+        if (checkFlow.getDescription() != null && !checkFlow.getDescription().equals(flow.getDescription())) {
             checkFlow.setDescription(flow.getDescription());
-        }
+        } else if (checkFlow.getDescription() == null && flow.getDescription() != null) {
+            checkFlow.setDescription(flow.getDescription());
+	}
 
         //update the flow
         flow.setId(existingFlow.getId());
