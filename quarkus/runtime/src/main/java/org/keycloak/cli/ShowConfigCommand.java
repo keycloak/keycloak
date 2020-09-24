@@ -50,19 +50,23 @@ public final class ShowConfigCommand {
                     .forEachOrdered(ShowConfigCommand::printProperty);
 
             if (configArgs.equalsIgnoreCase("all")) {
-                properties.get("%").stream()
-                        .sorted()
-                        .collect(Collectors.groupingBy(s -> s.substring(1, s.indexOf('.'))))
-                        .forEach((p, properties1) -> {
-                            if (p.equals(profile)) {
-                                System.out.printf("Profile \"%s\" Configuration (%s):%n", p,
-                                        p.equals(profile) ? "current" : "");
-                            } else {
-                                System.out.printf("Profile \"%s\" Configuration:%n", p);
-                            }
+                Set<String> profiles = properties.get("%");
+                
+                if (profiles != null) {
+                    profiles.stream()
+                            .sorted()
+                            .collect(Collectors.groupingBy(s -> s.substring(1, s.indexOf('.'))))
+                            .forEach((p, properties1) -> {
+                                if (p.equals(profile)) {
+                                    System.out.printf("Profile \"%s\" Configuration (%s):%n", p,
+                                            p.equals(profile) ? "current" : "");
+                                } else {
+                                    System.out.printf("Profile \"%s\" Configuration:%n", p);
+                                }
 
-                            properties1.stream().sorted().forEachOrdered(ShowConfigCommand::printProperty);
-                        });
+                                properties1.stream().sorted().forEachOrdered(ShowConfigCommand::printProperty);
+                            });
+                }
 
                 System.out.println("Quarkus Configuration:");
                 properties.get(MicroProfileConfigProvider.NS_QUARKUS).stream().sorted()

@@ -20,7 +20,9 @@ package org.keycloak.quarkus;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.StreamSupport;
 
 import io.smallrye.config.ConfigValue;
 import org.jboss.logging.Logger;
@@ -28,6 +30,7 @@ import org.keycloak.QuarkusKeycloakSessionFactory;
 import org.keycloak.cli.ShowConfigCommand;
 import org.keycloak.common.Profile;
 import org.keycloak.configuration.MicroProfileConfigProvider;
+import org.keycloak.configuration.PropertyMapper;
 import org.keycloak.configuration.PropertyMappers;
 import org.keycloak.connections.liquibase.FastServiceLocator;
 import org.keycloak.connections.liquibase.KeycloakLogger;
@@ -106,57 +109,102 @@ public class KeycloakRecorder {
         QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, reaugmented));
     }
 
-    public void setBuildTimeProperties(Map<String, String> buildTimeProperties, Boolean rebuild, String configArgs) {
+    /**
+     * <p>Validate the build time properties with any property passed during runtime in order to advertise any difference with the
+     * server image state.
+     * 
+     * <p>This method also keep the build time properties available at runtime.
+     * 
+     * 
+     * @param buildTimeProperties the build time properties set when running the last re-augmentation
+     * @param rebuild indicates whether or not the server was re-augmented
+     * @param configArgs the configuration args if provided when the server was re-augmented
+     */
+    public void validateAndSetBuildTimeProperties(Map<String, String> buildTimeProperties, Boolean rebuild, String configArgs) {
         BUILD_TIME_PROPERTIES = buildTimeProperties;
         String configHelpText = configArgs;
 
         for (String propertyName : getConfig().getPropertyNames()) {
-            if (!propertyName.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
+            // we should only validate if there is a server image and if the property is a runtime property
+            if (!shouldValidate(propertyName, rebuild)) {
                 continue;
             }
 
-            String buildValue = Environment.getBuiltTimeProperty(propertyName).orElseGet(new Supplier<String>() {
-                @Override 
-                public String get() {
-                    return Environment.getBuiltTimeProperty(PropertyMappers.toCLIFormat(propertyName)).orElse(null);
-                }
+            // try to resolve any property set using profiles
+            if (propertyName.startsWith("%")) {
+                propertyName = propertyName.substring(propertyName.indexOf('.') + 1);
+            }
+
+            String finalPropertyName = propertyName;
+            String buildValue = Environment.getBuiltTimeProperty(PropertyMappers.toCLIFormat(finalPropertyName))
+                    .orElseGet(new Supplier<String>() {
+                        @Override 
+                        public String get() {
+                            return Environment.getBuiltTimeProperty(finalPropertyName).orElse(null);
+                        }
             });
 
             ConfigValue value = getConfig().getConfigValue(propertyName);
+            
+            // if no value found we try to resolve using the CLI format
+            if (value == null || value.getValue() == null) {
+                value = getConfig().getConfigValue(PropertyMappers.toCLIFormat(propertyName));
+            }
 
-            if (buildValue != null && isRuntimeValue(value) && !buildValue.equalsIgnoreCase(value.getValue())) {
+            if (value.getValue() != null && !value.getValue().equalsIgnoreCase(buildValue)) {
                 if (configHelpText != null) {
-                    String currentProp = "--" + PropertyMappers.toCLIFormat(propertyName).substring(3) + "=" + buildValue;
-                    String newProp = "--" + PropertyMappers.toCLIFormat(propertyName).substring(3) + "=" + value.getValue();
-                    
-                    if (configHelpText.contains(currentProp)) {
-                        LOGGER.warnf("The new value [%s] of the property [%s] in [%s] differs from the value [%s] set into the server image. The new value will override the value set into the server image.", value.getValue(), propertyName, value.getConfigSourceName(), buildValue);
-                        configHelpText = configHelpText.replaceAll(currentProp, newProp);
-                    } else if (!configHelpText.contains("--" + PropertyMappers.toCLIFormat(propertyName).substring(3))) {
-                        configHelpText += newProp;
-                    }
-                }
-            } else if (configHelpText != null && rebuild && isRuntimeValue(value)) {
-                String prop = "--" + PropertyMappers.toCLIFormat(propertyName).substring(3) + "=" + value.getValue();
+                    if (buildValue != null) {
+                        String currentProp =
+                                "--" + PropertyMappers.toCLIFormat(propertyName).substring(3) + "=" + buildValue;
+                        String newProp =
+                                "--" + PropertyMappers.toCLIFormat(propertyName).substring(3) + "=" + value.getValue();
 
-                if (!configHelpText.contains(prop)) {
-                    LOGGER.infof("New property [%s] set with value [%s] in [%s]. This property is not persisted into the server image.",
-                            propertyName, value.getValue(), value.getConfigSourceName(), buildValue);
-                    configHelpText += " " + prop;
+                        if (configHelpText.contains(currentProp)) {
+                            LOGGER.warnf("The new value [%s] of the property [%s] in [%s] differs from the value [%s] set into the server image. The new value will override the value set into the server image.",
+                                    value.getValue(), propertyName, value.getConfigSourceName(), buildValue);
+                            configHelpText = configHelpText.replaceAll(currentProp, newProp);
+                        } else if (!configHelpText
+                                .contains("--" + PropertyMappers.toCLIFormat(propertyName).substring(3))) {
+                            LOGGER.warnf("The new value [%s] of the property [%s] in [%s] differs from the value [%s] set into the server image. The new value will override the value set into the server image.",
+                                    value.getValue(), propertyName, value.getConfigSourceName(), buildValue);
+                            configHelpText += " " + newProp;
+                        }
+                    } else if (!BUILD_TIME_PROPERTIES.keySet().stream()
+                            .anyMatch(new Predicate<String>() {
+                                @Override
+                                public boolean test(String s) {
+                                    return PropertyMappers.canonicalFormat(finalPropertyName)
+                                            .equalsIgnoreCase(PropertyMappers.canonicalFormat(s));
+                                }
+                            })) {
+                        String prop = "--" + PropertyMappers.toCLIFormat(propertyName).substring(3) + "=" + value.getValue();
+
+                        if (!configHelpText.contains(prop)) {
+                            LOGGER.warnf("New property [%s] set with value [%s] in [%s]. This property is not persisted into the server image.",
+                                    propertyName, value.getValue(), value.getConfigSourceName(), buildValue);
+                            configHelpText += " " + prop;
+                        }
+                    }
                 }
             }
         }
 
         if (configArgs != null && !configArgs.equals(configHelpText)) {
-            LOGGER.infof("Please, run the 'config' command if you want to configure the server image with the new property values:\n\t%s config %s", Environment.getCommand(), String.join(" ", configHelpText.split(",")));
+            LOGGER.warnf("Please, run the 'config' command if you want to persist the new configuration into the server image:\n\n\t%s config %s\n", Environment.getCommand(), String.join(" ", configHelpText.split(",")));
         }
     }
 
-    private boolean isRuntimeValue(ConfigValue value) {
-        String name = value.getName();
-        return value.getValue() != null && !PropertyMappers.isBuildTimeProperty(name)
-                && !"kc.version".equals(name) && !"kc.config.args".equals(
-                name) && !"kc.home.dir".equals(name);
+    private boolean shouldValidate(String name, boolean rebuild) {
+        return rebuild && name.contains(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX) 
+                && (!PropertyMappers.isBuildTimeProperty(name)
+                && !"kc.version".equals(name) 
+                && !"kc.config.args".equals(name) 
+                && !"kc.home.dir".equals(name)
+                && !"kc.config.file".equals(name)
+                && !"kc.profile".equals(name)
+                && !"kc.show.config".equals(name)
+                && !"kc.show.config.runtime".equals(name)
+                && !PropertyMappers.toCLIFormat("kc.config.file").equals(name));
     }
 
     /**
