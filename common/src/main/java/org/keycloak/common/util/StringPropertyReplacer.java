@@ -117,6 +117,7 @@ public final class StringPropertyReplacer
         boolean properties = false;
         int state = NORMAL;
         int start = 0;
+        int openBracketsCount = 0;
         for (int i = 0; i < chars.length; ++i)
         {
             char c = chars[i];
@@ -125,17 +126,27 @@ public final class StringPropertyReplacer
             if (c == '$' && state != IN_BRACKET)
                 state = SEEN_DOLLAR;
 
-                // Open bracket immediatley after dollar
+            // Open bracket immediately after dollar
             else if (c == '{' && state == SEEN_DOLLAR)
             {
                 buffer.append(string.substring(start, i - 1));
                 state = IN_BRACKET;
                 start = i - 1;
+                openBracketsCount = 1;
             }
+
+            // Seeing open bracket after we already saw some open bracket without corresponding closed bracket. This causes "nested" expressions. For example ${foo:${bar}}
+            else if (c == '{' && state == IN_BRACKET)
+                openBracketsCount++;
 
             // No open bracket after dollar
             else if (state == SEEN_DOLLAR)
                 state = NORMAL;
+
+            // Seeing closed bracket, but we already saw more than one open bracket before. Hence "nested" expression is still not fully closed.
+            // For example expression ${foo:${bar}} is closed after the second closed bracket, not after the first closed bracket.
+            else if (c == '}' && state == IN_BRACKET && openBracketsCount > 1)
+                openBracketsCount--;
 
                 // Closed bracket after open bracket
             else if (c == '}' && state == IN_BRACKET)
