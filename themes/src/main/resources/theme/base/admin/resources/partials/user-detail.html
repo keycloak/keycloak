@@ -104,10 +104,10 @@
                         <thead>
                         <tr>
                             <th class="kc-table-actions" colspan="2">
-                                <div class="form-inline col-md-12" style="width: 107%">
-                                    <div class="form-group" style="width: 100%">
-                                        <div class="input-group" style="width: 100%">
-                                            <input type="hidden" ui-select2="groupsUiSelect" id="groups" data-ng-change="selectGroup(selectedGroup);" data-ng-model="selectedGroup" data-placeholder="{{:: 'groups-joining-select.placeholder' | translate}}..."/>
+                                <div class="form-inline col-md-12 select2-container-single">
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <input type="hidden" ui-select2="groupsUiSelect" id="groups" data-ng-change="selectGroup(groupSearch.selectedGroup);" data-ng-model="groupSearch.selectedGroup" data-placeholder="{{:: 'groups-joining-select.placeholder' | translate}}..."/>
                                         </div>
                                     </div>
                                 </div>

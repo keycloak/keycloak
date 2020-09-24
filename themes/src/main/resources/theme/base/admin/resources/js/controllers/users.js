@@ -385,11 +385,12 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
                                              Components,
                                              UserImpersonation, RequiredActions,
                                              UserStorageOperations,
-                                             $location, $http, Dialog, Notifications, $translate, Groups) {
+                                             $location, $http, Dialog, Notifications, $translate, Groups, $timeout) {
     $scope.realm = realm;
     $scope.create = !user.id;
     $scope.editUsername = $scope.create || $scope.realm.editUsernameAllowed;
     $scope.emailAsUsername = $scope.realm.registrationEmailAsUsername;
+    $scope.groupSearch = { selectedGroup : null };
 
     if ($scope.create) {
         $scope.user = { enabled: true, attributes: {}, groups: [] }
@@ -527,12 +528,12 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
         }
     }
 
-    function bfs(tree, key, collection) {
-    	if (!tree[key] || tree[key].length === 0) return;
-    	for (var i=0; i < tree[key].length; i++) {
-    		var child = tree[key][i]
+    function bfs(tree, collection) {
+    	if (!tree["subGroups"] || tree["subGroups"].length === 0) return;
+    	for (var i=0; i < tree["subGroups"].length; i++) {
+    		var child = tree["subGroups"][i]
     		collection.push(child);
-    		bfs(child, key, collection);
+    		bfs(child, collection);
     	}
     	return;
     }
@@ -542,10 +543,22 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
         if (!groups || groups.length === 0) return groups;
         for (var i=0; i < groups.length; i++) {
             flattenedGroups.push(groups[i]);
-            bfs(groups[i], "subGroups", flattenedGroups);
+            bfs(groups[i], flattenedGroups);
         }
 
         return flattenedGroups;
+    }
+
+    /**
+     * Only keep groups that :
+     *   - include the search term in their path
+     *   - are not already selected
+     */
+    function filterSearchedGroups(groups, term, selectedGroups) {
+        if (!groups || groups.length === 0) return groups;
+        if (!selectedGroups) selectedGroups = [];
+
+        return groups.filter(group => group.path?.includes(term) && !selectedGroups.some(selGroup => selGroup.id === group.id));
     }
 
     $scope.reset = function() {
@@ -583,7 +596,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
                 first : 0
             };
             Groups.query($scope.query, function(response) {
-                data.results = flattenGroups(response);
+                data.results = filterSearchedGroups(flattenGroups(response), query.term.trim(), $scope.selectedGroups);
                 query.callback(data);
             });
         },
@@ -606,11 +619,11 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
             return;
         }
 
+        $scope.groupSearch.selectedGroup = group;
+
         if (!$scope.selectedGroups) {
             $scope.selectedGroups = [];
         }
-
-        $scope.selectedGroup = null;
 
         for (i = 0; i < $scope.selectedGroups.length; i++) {
             if ($scope.selectedGroups[i].id == group.id) {
@@ -619,6 +632,12 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
         }
 
         $scope.selectedGroups.push(group);
+        $scope.groupSearch.selectedGroup = null;
+    }
+
+    $scope.clearGroupSelection = function() {
+        $scope.groupSearch.selectedGroup = null;
+        $('#groups').val(null).trigger('change.select2');
     }
 });
 
