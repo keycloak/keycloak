@@ -152,6 +152,17 @@
             "directAccessGrantsEnabled": true
         },
         {
+            "clientId": "serialization-servlet",
+            "enabled": true,
+            "adminUrl": "/serialization-servlet",
+            "baseUrl": "/serialization-servlet",
+            "redirectUris": [
+                "/serialization-servlet/*"
+            ],
+            "secret": "password",
+            "directAccessGrantsEnabled": true
+        },
+        {
             "clientId": "customer-portal-subsystem",
             "enabled": true,
             "adminUrl": "/customer-portal-subsystem",

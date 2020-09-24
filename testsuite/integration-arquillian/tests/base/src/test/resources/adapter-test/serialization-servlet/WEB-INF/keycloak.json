@@ -1,0 +1,10 @@
+{
+    "realm": "demo",
+    "resource": "serialization-servlet",
+    "auth-server-url": "http://localhost:8180/auth",
+    "ssl-required" : "external",
+    "expose-token": true,
+    "credentials": {
+        "secret": "password"
+    }
+}
