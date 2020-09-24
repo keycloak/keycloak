@@ -385,7 +385,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
                                              Components,
                                              UserImpersonation, RequiredActions,
                                              UserStorageOperations,
-                                             $location, $http, Dialog, Notifications, $translate, Groups, $timeout) {
+                                             $location, $http, Dialog, Notifications, $translate, Groups) {
     $scope.realm = realm;
     $scope.create = !user.id;
     $scope.editUsername = $scope.create || $scope.realm.editUsernameAllowed;
