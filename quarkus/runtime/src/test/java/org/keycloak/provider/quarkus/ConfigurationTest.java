@@ -31,8 +31,10 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.hibernate.dialect.MariaDBDialect;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.Config;
+import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.configuration.MicroProfileConfigProvider;
 
@@ -208,6 +210,28 @@ public class ConfigurationTest {
         System.setProperty("kc.config.args", "--db=mariadb,--db-url-path=test,--db-url-properties=?test=test&test1=test1");
         config = createConfig();
         assertEquals("jdbc:mariadb://localhost/keycloak?test=test&test1=test1", config.getConfigValue("quarkus.datasource.url").getValue());
+    }
+
+    // KEYCLOAK-15632
+    @Test
+    public void testNestedDatabaseProperties() {
+        System.setProperty("kc.home.dir", "/tmp/kc/bin/../");
+        SmallRyeConfig config = createConfig();
+        assertEquals("jdbc:h2:file:/tmp/kc/bin/..//data/keycloakdb", config.getConfigValue("quarkus.datasource.foo").getValue());
+
+        Assert.assertEquals("foo-def-suffix", config.getConfigValue("quarkus.datasource.bar").getValue());
+
+        System.setProperty("kc.prop5", "val5");
+        config = createConfig();
+        Assert.assertEquals("foo-val5-suffix", config.getConfigValue("quarkus.datasource.bar").getValue());
+
+        System.setProperty("kc.prop4", "val4");
+        config = createConfig();
+        Assert.assertEquals("foo-val4", config.getConfigValue("quarkus.datasource.bar").getValue());
+
+        System.setProperty("kc.prop3", "val3");
+        config = createConfig();
+        Assert.assertEquals("foo-val3", config.getConfigValue("quarkus.datasource.bar").getValue());
     }
 
     private Config.Scope initConfig(String... scope) {
