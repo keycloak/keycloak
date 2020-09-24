@@ -26,6 +26,7 @@ import java.util.function.BiFunction;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
+import org.keycloak.quarkus.KeycloakRecorder;
 
 public class PropertyMapper {
 
@@ -60,10 +61,9 @@ public class PropertyMapper {
         public ConfigValue getOrDefault(String name, ConfigSourceInterceptorContext context, ConfigValue current) {
             if (current == null) {
                 ConfigValue.builder().withName(name)
-                        .withValue(getBuiltTimeProperty(
-                                NS_KEYCLOAK_PREFIX + name.substring(NS_KEYCLOAK_PREFIX.length()).replaceAll("\\.", "-"))
-                                        .orElseGet(() -> getBuiltTimeProperty(name).orElse(null)))
-                        .build();
+                        .withValue(getBuiltTimeProperty(PropertyMappers.toCLIFormat(name))
+                                .orElseGet(() -> getBuiltTimeProperty(name)
+                                        .orElse(null))).build();
             }
 
             return current;
@@ -161,8 +161,8 @@ public class PropertyMapper {
     }
 
     public Optional<ConfigValue> getBuiltTimeConfig(String name, ConfigSourceInterceptorContext context) {
-        ConfigValue value = transformValue(getBuiltTimeProperty(name).orElseGet(() -> getBuiltTimeProperty(
-                NS_KEYCLOAK_PREFIX + name.substring(NS_KEYCLOAK_PREFIX.length()).replaceAll("\\.", "-")).orElse(null)), context);
+        ConfigValue value = transformValue(getBuiltTimeProperty(name)
+                .orElseGet(() -> getBuiltTimeProperty(PropertyMappers.toCLIFormat(name)).orElse(null)), context);
 
         if (value == null) {
             return Optional.empty();

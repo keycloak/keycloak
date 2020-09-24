@@ -44,15 +44,16 @@ public class MainCommand {
     @Spec
     CommandSpec spec;
 
-    @Option(names = { "--help" }, usageHelp = true, hidden = true)
+    @Option(names = { "--help" }, description = "This help message.", usageHelp = true)
     boolean help;
 
-    @Option(names = { "--version" }, versionHelp = true, hidden = true)
+    @Option(names = { "--version" }, description = "Show version information", versionHelp = true)
     boolean version;
 
     @Option(names = "--profile", arity = "1", description = "Set the profile. Use 'dev' profile to enable development mode.", scope = CommandLine.ScopeType.INHERIT)
     public void setProfile(String profile) {
-        System.setProperty("kc.profile", profile);
+        System.setProperty("kc.profile", "dev");
+        System.setProperty("quarkus.profile", "dev");
     }
 
     @Option(names = "--config-file", arity = "1", description = "Set the path to a configuration file.", paramLabel = "<path>", scope = CommandLine.ScopeType.INHERIT)
@@ -85,6 +86,7 @@ public class MainCommand {
             parameterListHeading = "Available Commands%n")
     public void startDev() {
         System.setProperty("kc.profile", "dev");
+        System.setProperty("quarkus.profile", "dev");
         start();
     }
 
@@ -162,9 +164,11 @@ public class MainCommand {
     public void start(
             @CommandLine.Parameters(paramLabel = "show-config", arity = "0..1", 
                     description = "Print out the configuration options when starting the server.") String showConfig) {
-        if (showConfig != null) {
+        if ("show-config".equals(showConfig)) {
             System.setProperty("kc.show.config.runtime", Boolean.TRUE.toString());
             System.setProperty("kc.show.config", "all");
+        } else if (showConfig != null) {
+            throw new CommandLine.UnmatchedArgumentException(spec.commandLine(), "Invalid argument: " + showConfig);
         }
         start();
     }

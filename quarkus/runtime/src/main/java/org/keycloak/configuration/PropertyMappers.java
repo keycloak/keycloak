@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import com.google.common.base.Ascii;
 import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
@@ -164,5 +165,9 @@ public final class PropertyMappers {
     public static List<PropertyMapper> getBuiltTimeMappers() {
         return PropertyMapper.MAPPERS.values().stream()
                 .filter(entry -> entry.isBuildTime()).collect(Collectors.toList());
+    }
+
+    public static String canonicalFormat(String name) {
+        return name.replaceAll("-", "\\.");
     }
 }

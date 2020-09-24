@@ -38,6 +38,17 @@ public class KeycloakMain {
 
         if (args.length != 0) {
             CommandLine cmd = new CommandLine(createCommandSpec());
+            
+            cmd.setExecutionExceptionHandler(new CommandLine.IExecutionExceptionHandler() {
+                @Override 
+                public int handleExecutionException(Exception ex, CommandLine commandLine,
+                        CommandLine.ParseResult parseResult) {
+                    commandLine.getErr().println(ex.getMessage());
+                    commandLine.usage(commandLine.getErr());
+                    return commandLine.getCommandSpec().exitCodeOnExecutionException();
+                }
+            });
+            
             List<String> argsList = new LinkedList<>(Arrays.asList(args));
 
             try {
@@ -48,12 +59,15 @@ public class KeycloakMain {
                     argsList.add(0, "start");
                 }
             } catch (CommandLine.UnmatchedArgumentException e) {
-                if (!cmd.getParseResult().hasSubcommand()) {
+                if (!cmd.getParseResult().hasSubcommand() && argsList.get(0).startsWith("--")) {
                     argsList.add(0, "start");
                 } else {
                     cmd.getErr().println(e.getMessage());
                     System.exit(CommandLine.ExitCode.SOFTWARE);
                 }
+            } catch (Exception e) {
+                cmd.getErr().println(e.getMessage());
+                System.exit(CommandLine.ExitCode.SOFTWARE);
             }
 
             System.exit(cmd.execute(argsList.toArray(new String[argsList.size()])));

@@ -98,15 +98,11 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
             
             String value;
             
-            if (keyValue.length == 1) {
-                // the argument does not have a value because the key by itself already has a meaning
-                value = Boolean.TRUE.toString();
-            } else if (keyValue.length == 2) {
+            if (keyValue.length == 2) {
                 // the argument has a simple value. Eg.: key=pair
                 value = keyValue[1];
             } else {
-                // the argument is multivalued. eg.: key=kv1=kv2
-                value = arg.substring(key.length() + 1);
+                continue;
             }
             
             key = NS_KEYCLOAK_PREFIX + key.substring(2);
