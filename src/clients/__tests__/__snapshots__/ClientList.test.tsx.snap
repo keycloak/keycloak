@@ -71,7 +71,7 @@ Object {
               data-label="clientID"
             >
               <a
-                href="/client-settings"
+                href="/client-settings/767756c2-21f8-431c-9f4b-edf30654d653"
               >
                 account
               </a>
@@ -170,7 +170,7 @@ Object {
               data-label="clientID"
             >
               <a
-                href="/client-settings"
+                href="/client-settings/337dc87b-e08d-409e-aaac-6ab7df4b925b"
               >
                 account-console
               </a>
@@ -269,7 +269,7 @@ Object {
               data-label="clientID"
             >
               <a
-                href="/client-settings"
+                href="/client-settings/60d59afe-7926-4c22-b829-798125793ef5"
               >
                 admin-cli
               </a>
@@ -342,7 +342,7 @@ Object {
               data-label="clientID"
             >
               <a
-                href="/client-settings"
+                href="/client-settings/c2d74093-2b8c-4ecb-870f-c7358ff48237"
               >
                 broker
               </a>
@@ -415,7 +415,7 @@ Object {
               data-label="clientID"
             >
               <a
-                href="/client-settings"
+                href="/client-settings/66135023-e667-4864-b1f3-f87e805fabc2"
               >
                 master-realm
               </a>
@@ -486,7 +486,7 @@ Object {
               data-label="clientID"
             >
               <a
-                href="/client-settings"
+                href="/client-settings/324f4182-d302-44f8-ac8a-149eaa29dc90"
               >
                 new
               </a>
@@ -585,7 +585,7 @@ Object {
               data-label="clientID"
             >
               <a
-                href="/client-settings"
+                href="/client-settings/fb45882b-4d85-4f40-920e-6a68298d36d0"
               >
                 photoz-realm
               </a>
@@ -656,7 +656,7 @@ Object {
               data-label="clientID"
             >
               <a
-                href="/client-settings"
+                href="/client-settings/9ed60e41-d794-4046-842f-3247bf32f5ce"
               >
                 security-admin-console
               </a>
@@ -819,7 +819,7 @@ Object {
             data-label="clientID"
           >
             <a
-              href="/client-settings"
+              href="/client-settings/767756c2-21f8-431c-9f4b-edf30654d653"
             >
               account
             </a>
@@ -918,7 +918,7 @@ Object {
             data-label="clientID"
           >
             <a
-              href="/client-settings"
+              href="/client-settings/337dc87b-e08d-409e-aaac-6ab7df4b925b"
             >
               account-console
             </a>
@@ -1017,7 +1017,7 @@ Object {
             data-label="clientID"
           >
             <a
-              href="/client-settings"
+              href="/client-settings/60d59afe-7926-4c22-b829-798125793ef5"
             >
               admin-cli
             </a>
@@ -1090,7 +1090,7 @@ Object {
             data-label="clientID"
           >
             <a
-              href="/client-settings"
+              href="/client-settings/c2d74093-2b8c-4ecb-870f-c7358ff48237"
             >
               broker
             </a>
@@ -1163,7 +1163,7 @@ Object {
             data-label="clientID"
           >
             <a
-              href="/client-settings"
+              href="/client-settings/66135023-e667-4864-b1f3-f87e805fabc2"
             >
               master-realm
             </a>
@@ -1234,7 +1234,7 @@ Object {
             data-label="clientID"
           >
             <a
-              href="/client-settings"
+              href="/client-settings/324f4182-d302-44f8-ac8a-149eaa29dc90"
             >
               new
             </a>
@@ -1333,7 +1333,7 @@ Object {
             data-label="clientID"
           >
             <a
-              href="/client-settings"
+              href="/client-settings/fb45882b-4d85-4f40-920e-6a68298d36d0"
             >
               photoz-realm
             </a>
@@ -1404,7 +1404,7 @@ Object {
             data-label="clientID"
           >
             <a
-              href="/client-settings"
+              href="/client-settings/9ed60e41-d794-4046-842f-3247bf32f5ce"
             >
               security-admin-console
             </a>

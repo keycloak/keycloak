@@ -38,7 +38,7 @@ export const App = () => {
               <Route exact path="/clients" component={ClientsSection}></Route>
               <Route
                 exact
-                path="/client-settings"
+                path="/client-settings/:id"
                 component={ClientSettings}
               ></Route>
               <Route exact path="/add-client" component={NewClientForm}></Route>

@@ -7,6 +7,7 @@ import { Button } from "@patternfly/react-core";
 import {
   MultiLineInput,
   MultiLineInputProps,
+  toValue,
 } from "../components/multi-line-input/MultiLineInput";
 
 export default {
@@ -15,15 +16,11 @@ export default {
 } as Meta;
 
 const Template: Story<MultiLineInputProps> = (args) => {
-  const form = useForm({
-    defaultValues: {
-      items: [{ value: "" }],
-    },
-  });
+  const form = useForm();
   return (
     <form
       onSubmit={form.handleSubmit((data) => {
-        action("submit")(data);
+        action("submit")(toValue(data.items));
       })}
     >
       <MultiLineInput {...args} form={form} />
