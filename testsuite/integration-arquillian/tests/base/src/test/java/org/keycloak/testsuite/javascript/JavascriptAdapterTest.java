@@ -708,9 +708,9 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     @Test
     public void testRefreshTokenWithDeprecatedPromiseHandles() {
         String refreshWithDeprecatedHandles = "var callback = arguments[arguments.length - 1];" +
-                "   window.keycloak.updateToken(9999).then(function (refreshed) {" +
+                "   window.keycloak.updateToken(9999).success(function (refreshed) {" +
             "            callback('Success handle');" +
-                "   }).catch(function () {" +
+                "   }).error(function () {" +
                 "       callback('Error handle');" +
                 "   });";
 
