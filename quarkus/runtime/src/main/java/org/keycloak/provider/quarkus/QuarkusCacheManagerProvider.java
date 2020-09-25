@@ -41,8 +41,10 @@ import org.keycloak.util.Environment;
 public final class QuarkusCacheManagerProvider implements ManagedCacheManagerProvider {
 
     private static final Logger log = Logger.getLogger(QuarkusCacheManagerProvider.class); 
-    
-    private static final String DEFAULT_CONFIGURATION_FILE_NAME = "cluster.xml";
+
+    // Configuration files from the distribution
+    private static final String DEFAULT_CLUSTER_CONFIGURATION_FILE = "clustered-cache.xml";
+    private static final String DEFAULT_LOCAL_CONFIGURATION_FILE = "local-cache.xml";
 
     @Override
     public <C> C getCacheManager(Config.Scope config) {
@@ -70,38 +72,39 @@ public final class QuarkusCacheManagerProvider implements ManagedCacheManagerPro
         
         if (homeDir == null) {
             log.warn("Keycloak home directory not set.");
-            return loadDefaultConfiguration(config);
+            return loadDefaultConfiguration(config, "default-clustered-cache.xml", "default-local-cache.xml");
         }
 
-        Path configPath = Paths.get(homeDir + "/conf/" + getConfigFileName(config));
-        
-        if (configPath.toFile().exists()) {
-            log.debugf("Loading cluster configuration from %s", configPath);
-            return FileLookupFactory.newInstance()
-                    .lookupFileStrict(configPath.toUri(), Thread.currentThread().getContextClassLoader());
+        String pathPrefix = homeDir + "/conf/";
+
+        // Always try to use "configFile" if explicitly specified
+        String configFile = config.get("configFile");
+        if (configFile != null) {
+            Path configPath = Paths.get(pathPrefix + configFile);
+
+            if (configPath.toFile().exists()) {
+                log.infof("Loading cache configuration from %s", configPath);
+                return FileLookupFactory.newInstance()
+                        .lookupFileStrict(configPath.toUri(), Thread.currentThread().getContextClassLoader());
+            } else {
+                log.warnf("Cache configuration file does not exists at %s . Fallback to the default configuration file", configPath);
+            }
         }
 
-        log.infof("Clustering configuration file not found at %s.", configPath);
-
-        return loadDefaultConfiguration(config);
+        return loadDefaultConfiguration(config, pathPrefix + DEFAULT_CLUSTER_CONFIGURATION_FILE, pathPrefix + DEFAULT_LOCAL_CONFIGURATION_FILE);
     }
 
-    private InputStream loadDefaultConfiguration(Config.Scope config) throws FileNotFoundException {
+    private InputStream loadDefaultConfiguration(Config.Scope config, String defaultClusterConfigFile, String defaultLocalConfigFile) throws FileNotFoundException {
         if (config.getBoolean("clustered", false)) {
-            log.debugf("Using default clustered cache configuration.");
+            log.infof("Using default clustered cache configuration from file %s", defaultClusterConfigFile);
             return FileLookupFactory.newInstance()
-                    .lookupFileStrict("default-clustered-cache.xml", Thread.currentThread().getContextClassLoader());    
+                    .lookupFileStrict(defaultClusterConfigFile, Thread.currentThread().getContextClassLoader());
         }
 
-        log.debug("Using default local cache configuration.");
+        log.infof("Using default local cache configuration from file %s", defaultLocalConfigFile);
 
         return FileLookupFactory.newInstance()
-                .lookupFileStrict("default-local-cache.xml", Thread.currentThread().getContextClassLoader());
-    }
-
-    private String getConfigFileName(Config.Scope config) {
-        String configFile = config.get("configFile");
-        return configFile == null ? DEFAULT_CONFIGURATION_FILE_NAME : configFile;
+                .lookupFileStrict(defaultLocalConfigFile, Thread.currentThread().getContextClassLoader());
     }
 
     private void configureTransportStack(Config.Scope config, ConfigurationBuilderHolder builder) {

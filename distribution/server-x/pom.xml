@@ -64,6 +64,12 @@
                                     <type>zip</type>
                                     <outputDirectory>target/</outputDirectory>
                                 </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-quarkus-server</artifactId>
+                                    <type>jar</type>
+                                    <outputDirectory>target/keycloak-quarkus-server</outputDirectory>
+                                </artifactItem>
                             </artifactItems>
                         </configuration>
                     </execution>
