@@ -5,6 +5,7 @@ import { Button, PageSection } from "@patternfly/react-core";
 
 import { HttpClientContext } from "../http-service/HttpClientContext";
 import { GroupsList } from "./GroupsList";
+import { GroupsCreateModal } from "./GroupsCreateModal";
 import { DataLoader } from "../components/data-loader/DataLoader";
 import { GroupRepresentation } from "./models/groups";
 import { TableToolbar } from "../components/table-toolbar/TableToolbar";
@@ -15,6 +16,12 @@ export const GroupsSection = () => {
   const httpClient = useContext(HttpClientContext)!;
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const handleModalToggle = () => {
+    setIsCreateModalOpen(!isCreateModalOpen)
+  };
 
   const loader = async () => {
     return await httpClient
@@ -39,7 +46,7 @@ export const GroupsSection = () => {
               }}
               toolbarItem={
                 <>
-                  <Button onClick={() => history.push("/add-group")}>
+                  <Button onClick={() => handleModalToggle()}>
                     {t("Create group")}
                   </Button>
                 </>
@@ -47,8 +54,10 @@ export const GroupsSection = () => {
             >
               <GroupsList list={groups} />
             </TableToolbar>
+            
           )}
         </DataLoader>
+        <GroupsCreateModal isCreateModalOpen={isCreateModalOpen} handleModalToggle={handleModalToggle}/>
       </PageSection>
     </>
   );
