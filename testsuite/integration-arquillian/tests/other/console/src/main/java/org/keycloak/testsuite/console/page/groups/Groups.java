@@ -18,20 +18,10 @@
 package org.keycloak.testsuite.console.page.groups;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.console.page.AdminConsoleRealm;
 import org.keycloak.testsuite.console.page.fragment.DataTable;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.keycloak.testsuite.util.UIUtils.clickLink;
-import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
-import static org.openqa.selenium.By.tagName;
 
 /**
  *
@@ -59,7 +49,7 @@ public class Groups extends AdminConsoleRealm {
         private WebDriver driver;
 
         public void addGroup() {
-            clickHeaderLink(NEW_GROUP);
+            clickHeaderButton(NEW_GROUP);
         }
     }
     

@@ -28,6 +28,7 @@ import org.keycloak.testsuite.console.page.groups.CreateGroup;
 import org.keycloak.testsuite.console.page.groups.Groups;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import static org.junit.Assert.*;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
