@@ -1,16 +1,13 @@
-import React, { useState, FormEvent, useContext } from "react";
+import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Text,
   PageSection,
-  TextContent,
   FormGroup,
   Form,
   TextInput,
   Switch,
   ActionGroup,
   Button,
-  Divider,
   AlertVariant,
 } from "@patternfly/react-core";
 
@@ -19,6 +16,7 @@ import { RealmRepresentation } from "../models/Realm";
 import { HttpClientContext } from "../../http-service/HttpClientContext";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useForm, Controller } from "react-hook-form";
+import { ViewHeader } from "../../components/view-header/ViewHeader";
 
 export const NewRealmForm = () => {
   const { t } = useTranslation("realm");
@@ -50,12 +48,7 @@ export const NewRealmForm = () => {
   return (
     <>
       <Alerts />
-      <PageSection variant="light">
-        <TextContent>
-          <Text component="h1">Create Realm</Text>
-        </TextContent>
-      </PageSection>
-      <Divider />
+      <ViewHeader titleKey="realm:createRealm" subKey="realm:realmExplain" />
       <PageSection variant="light">
         <Form isHorizontal onSubmit={handleSubmit(save)}>
           <JsonFileUpload id="kc-realm-filename" onChange={handleFileChange} />

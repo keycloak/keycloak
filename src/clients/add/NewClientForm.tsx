@@ -1,10 +1,7 @@
 import React, { useState, useContext } from "react";
 import { useHistory } from "react-router-dom";
 import {
-  Text,
   PageSection,
-  TextContent,
-  Divider,
   Wizard,
   AlertVariant,
   WizardFooter,
@@ -20,6 +17,7 @@ import { CapabilityConfig } from "./CapabilityConfig";
 import { ClientRepresentation } from "../models/client-model";
 import { useAlerts } from "../../components/alert/Alerts";
 import { RealmContext } from "../../components/realm-context/RealmContext";
+import { ViewHeader } from "../../components/view-header/ViewHeader";
 
 export const NewClientForm = () => {
   const { t } = useTranslation("clients");
@@ -96,12 +94,10 @@ export const NewClientForm = () => {
   return (
     <>
       <Alerts />
-      <PageSection variant="light">
-        <TextContent>
-          <Text component="h1">{title}</Text>
-        </TextContent>
-      </PageSection>
-      <Divider />
+      <ViewHeader
+        titleKey="clients:createClient"
+        subKey="clients:clientsExplain"
+      />
       <PageSection variant="light">
         <Wizard
           onClose={() => history.push("/clients")}
