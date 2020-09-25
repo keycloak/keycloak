@@ -1,4 +1,4 @@
-// UserStory: As an RH SSO customer, I need to know hoq to create a realm that protects applications
+// UserStory: As an RH SSO customer, I need to know how to create a realm that protects applications
 
 [id="create-realm_{context}"]
 = Creating a realm

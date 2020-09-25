@@ -26,5 +26,5 @@ $ tar -xvzf keycloak-{project_version}.tar.gz
 .Windows
 [source,bash,subs=+attributes]
 ----
-> Expand-Archive -Path 'C:Downloads\keycloak-{project_version}.zip` -DestinationPath 'C:\Downloads'
+> Expand-Archive -Path 'C:Downloads\keycloak-{project_version}.zip' -DestinationPath 'C:\Downloads'
 ----

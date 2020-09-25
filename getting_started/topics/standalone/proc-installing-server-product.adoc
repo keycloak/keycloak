@@ -29,5 +29,5 @@ $ tar -xvzf rh-sso-{project_version_base}.tar.gz
 .Windows
 [source,bash,subs=+attributes]
 ----
-> Expand-Archive -Path 'C:Downloads\rhsso-{project_version_base}.zip` -DestinationPath 'C:\Downloads'
+> Expand-Archive -Path 'C:Downloads\rhsso-{project_version_base}.zip' -DestinationPath 'C:\Downloads'
 ----
