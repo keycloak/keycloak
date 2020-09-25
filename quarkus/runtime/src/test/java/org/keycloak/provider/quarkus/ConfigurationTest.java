@@ -234,6 +234,23 @@ public class ConfigurationTest {
         Assert.assertEquals("foo-val3", config.getConfigValue("quarkus.datasource.bar").getValue());
     }
 
+    @Test
+    public void testClusterConfig() {
+        // Cluster enabled by default, but disabled for the "dev" profile
+        Assert.assertTrue(initConfig("connectionsInfinispan", "default").getBoolean("clustered"));
+        System.setProperty("kc.profile", "dev");
+        Assert.assertFalse(initConfig("connectionsInfinispan", "default").getBoolean("clustered"));
+
+        // If explicitly set, then it is always used regardless of the profile
+        System.clearProperty("kc.profile");
+        System.setProperty("kc.config.args", "--cluster-enabled=true");
+
+        Assert.assertTrue(initConfig("connectionsInfinispan", "default").getBoolean("clustered"));
+        System.setProperty("kc.profile", "dev");
+        Assert.assertTrue(initConfig("connectionsInfinispan", "default").getBoolean("clustered"));
+
+    }
+
     private Config.Scope initConfig(String... scope) {
         Config.init(new MicroProfileConfigProvider(createConfig()));
         return Config.scope(scope);

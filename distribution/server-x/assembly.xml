@@ -96,6 +96,16 @@
             <outputDirectory/>
             <filtered>true</filtered>
         </file>
+        <file>
+            <source>target/keycloak-quarkus-server/default-clustered-cache.xml</source>
+            <outputDirectory>conf</outputDirectory>
+            <destName>clustered-cache.xml</destName>
+        </file>
+        <file>
+            <source>target/keycloak-quarkus-server/default-local-cache.xml</source>
+            <outputDirectory>conf</outputDirectory>
+            <destName>local-cache.xml</destName>
+        </file>
     </files>
 
 </assembly>

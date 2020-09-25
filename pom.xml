@@ -1227,6 +1227,23 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <!-- Quarkus -->
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-quarkus-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-quarkus-server-deployment</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-quarkus-server-app</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- Openshift -->
             <dependency>
                 <groupId>com.openshift</groupId>
@@ -1798,15 +1815,6 @@
             <modules>
                 <module>quarkus</module>
             </modules>
-            <dependencyManagement>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.keycloak</groupId>
-                        <artifactId>keycloak-quarkus-server</artifactId>
-                        <version>${project.version}</version>
-                    </dependency>
-                </dependencies>
-            </dependencyManagement>
         </profile>
 
     </profiles>

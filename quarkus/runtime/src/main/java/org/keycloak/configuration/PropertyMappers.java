@@ -21,11 +21,8 @@ import static org.keycloak.configuration.PropertyMapper.createWithDefault;
 import static org.keycloak.configuration.PropertyMapper.forBuildTimeProperty;
 
 import java.util.List;
-import java.util.Map;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import com.google.common.base.Ascii;
 import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
@@ -40,6 +37,7 @@ public final class PropertyMappers {
         configureDatabasePropertyMappers();
         configureHttpPropertyMappers();
         configureProxyMappers();
+        configureClustering();
     }
 
     private static void configureHttpPropertyMappers() {
@@ -131,6 +129,19 @@ public final class PropertyMappers {
         create("db.pool.initial-size", "quarkus.datasource.jdbc.initial-size", "The initial size of the connection pool.");
         create("db.pool.min-size", "quarkus.datasource.jdbc.min-size", "The minimal size of the connection pool.");
         createWithDefault("db.pool.max-size", "quarkus.datasource.jdbc.max-size", String.valueOf(100), "The maximum size of the connection pool.");
+    }
+
+    private static void configureClustering() {
+        createWithDefault("cluster.enabled", "kc.spi.connections-infinispan.default.clustered", "placeholder", (value, context) -> {
+            if ("true".equals(value) || "false".equals(value)) {
+                return value;
+            }
+
+            // Clustering is disabled by default for the "dev" profile. Otherwise enabled
+            value = ("dev".equalsIgnoreCase(ProfileManager.getActiveProfile())) ? "false" : "true";
+            return value;
+
+        }, "Enables Clustering. Possible values are 'true' or 'false'.");
     }
 
     static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
