@@ -1,3 +1,5 @@
+import { ClientScopeRepresentation } from "../../client-scopes/models/client-scope";
+
 export interface RealmRepresentation {
   id: string;
   realm: string;
@@ -229,15 +231,6 @@ export interface ClientRepresentation {
   authorizationSettings: ResourceServerRepresentation;
   access: { [index: string]: boolean };
   origin: string;
-}
-
-export interface ClientScopeRepresentation {
-  id: string;
-  name: string;
-  description: string;
-  protocol: string;
-  attributes: { [index: string]: string };
-  protocolMappers: ProtocolMapperRepresentation[];
 }
 
 export interface UserFederationProviderRepresentation {

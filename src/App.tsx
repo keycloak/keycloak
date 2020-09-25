@@ -1,12 +1,14 @@
 import React from "react";
-import { Page, PageSection } from "@patternfly/react-core";
+import { Page } from "@patternfly/react-core";
+import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
+
 import { Header } from "./PageHeader";
 import { PageNav } from "./PageNav";
-
 import { Help } from "./components/help-enabler/HelpHeader";
-import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 import { NewRealmForm } from "./realm/add/NewRealmForm";
 import { NewClientForm } from "./clients/add/NewClientForm";
+import { NewClientScopeForm } from "./client-scopes/add/NewClientScopeForm";
+
 import { ImportForm } from "./clients/import/ImportForm";
 import { ClientsSection } from "./clients/ClientsSection";
 import { ClientScopesSection } from "./client-scopes/ClientScopesSection";
@@ -46,6 +48,11 @@ export const App = () => {
                 exact
                 path="/client-scopes"
                 component={ClientScopesSection}
+              ></Route>
+              <Route
+                exact
+                path="/add-client-scopes"
+                component={NewClientScopeForm}
               ></Route>
               <Route
                 exact

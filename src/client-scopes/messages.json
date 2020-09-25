@@ -1,0 +1,14 @@
+{
+  "client-scopes": {
+    "createClientScope": "Create client scope",
+    "clientScopeList": "List of client scopes",
+    "name": "Name",
+    "description": "Description",
+    "protocol": "Protocol",
+    "createClientScopeSuccess": "Client scope created",
+    "createClientScopeError": "Could not create client scope:",
+    "displayOnConsentScreen": "Display on consent screen",
+    "consentScreenText": "Consent screen text",
+    "guiOrder": "GUI Order"
+  }
+}
