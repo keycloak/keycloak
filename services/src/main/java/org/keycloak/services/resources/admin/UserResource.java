@@ -50,6 +50,7 @@ import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -176,6 +177,7 @@ public class UserResource {
             }
 
             updateUserFromRep(user, rep, attrsToRemove, realm, session, true);
+            updateUserRolesFromRep(user, rep, realm);
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
 
@@ -195,6 +197,38 @@ public class UserResource {
         } catch (Exception me) { // JPA
             logger.warn("Could not update user!", me);// may be committed by JTA which can't
             return ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
+        }
+    }
+
+    public void updateUserRolesFromRep(UserModel user, UserRepresentation rep, RealmModel realm) {
+        List<String> realmRoles = rep.getRealmRoles();
+        if (realmRoles != null) {
+            for (String roleString : realmRoles) {
+                RoleModel role = realm.getRole(roleString.trim());
+                if (role != null) {
+                    if (auth.roles().canManage(role)) {
+                        user.grantRole(role);
+                    }
+                }
+            }
+        }
+
+        Map<String, List<String>> clientRoles = rep.getClientRoles();
+        if (clientRoles != null) {
+            for (Map.Entry<String, List<String>> entry : clientRoles.entrySet()) {
+                ClientModel client = realm.getClientByClientId(entry.getKey());
+                if (client == null) {
+                    break;
+                }
+                for (String roleName : entry.getValue()) {
+                    RoleModel role = client.getRole(roleName);
+                    if (role != null) {
+                        if (auth.roles().canManage(role)) {
+                            user.grantRole(role);
+                        }
+                    }
+                }
+            }
         }
     }
 
