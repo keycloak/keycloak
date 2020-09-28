@@ -26,7 +26,7 @@
                 </div>
                 <kc-tooltip>{{:: 'identity-provider.alias.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group clearfix">
+             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="displayName"> {{:: 'display-name' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="displayName" type="text" ng-model="identityProvider.displayName">
@@ -129,6 +129,33 @@
                 </div>
                 <kc-tooltip>{{:: 'identity-provider.saml.protocol-endpoints.saml.tooltip' | translate}}</kc-tooltip>
             </div>
+        </fieldset>
+        <fieldset>
+            <legend collapsed><span class="text">{{:: 'identity-provider.display-names.fieldset' | translate}}</span>  <kc-tooltip>{{:: 'identity-provider.display-names.fieldset.tooltip' | translate}}</kc-tooltip></legend>
+            <table class="table table-striped table-bordered">
+                 <thead>
+                 <tr>
+                     <th>{{:: 'locale' | translate}}</th>
+                     <th>{{:: 'display-name' | translate}}</th>
+                     <th>{{:: 'actions' | translate}}</th>
+                 </tr>
+                 </thead>
+                 <tbody>
+                 <tr ng-repeat="(localizedName,value) in identityProvider.config" ng-if="localizedName.indexOf('displayName#') > -1" >
+                     <td>{{localizedName.replace('displayName#','')}}</td>
+                     <td><input ng-model="identityProvider.config[localizedName]" class="form-control" type="text"  id="{{localizedName}}" /></td>
+                     <td class="kc-action-cell" data-ng-click="removeLocalized(localizedName)">{{:: 'delete' | translate}}</td>
+                 </tr>
+                 <tr>
+                     <td><select id="newNameLocal" ng-model="newName.local" >
+                          <option value="">-- select locale --</option>
+                          <option ng-repeat="loc in supportedLocales" value="{{loc}}" >{{loc}}</option>
+                     </select></td>
+                     <td><input ng-model="newName.value" class="form-control" type="text" id="newNameValue" /></td>
+                     <td class="kc-action-cell" data-ng-click="addLocalized()" data-ng-disabled="!newName.local.length">{{:: 'add' | translate}}</td>
+                 </tr>
+                </tbody>
+            </table>
         </fieldset>
         <fieldset>
             <legend uncollapsed><span class="text">{{:: 'saml-config' | translate}}</span> <kc-tooltip>{{:: 'identity-provider.saml-config.tooltip' | translate}}</kc-tooltip></legend>

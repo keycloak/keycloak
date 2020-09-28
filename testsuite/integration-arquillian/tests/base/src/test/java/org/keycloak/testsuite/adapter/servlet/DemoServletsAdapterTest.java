@@ -37,6 +37,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.OIDCAuthenticationError;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
@@ -49,6 +50,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
@@ -107,6 +109,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -874,6 +877,75 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     }
 
     @Test
+    public void testLocalisedIdP() {
+        ProfileAssume.assumeCommunity();
+
+        RealmRepresentation demoRealmRep = testRealmResource().toRepresentation();
+        boolean enabled = demoRealmRep.isInternationalizationEnabled();
+        String defaultLocale = demoRealmRep.getDefaultLocale();
+        Set<String> locales = demoRealmRep.getSupportedLocales();
+        demoRealmRep.setInternationalizationEnabled(true);
+        demoRealmRep.setDefaultLocale("en");
+        demoRealmRep.setSupportedLocales(Stream.of("en", "de").collect(Collectors.toSet()));
+        testRealmResource().update(demoRealmRep);
+        //add OIDC and SAML IdP with localized names
+        testRealmResource().identityProviders().create(createRep("saml","saml"));
+        testRealmResource().identityProviders().create(createRep("oidc","oidc"));
+
+        try {
+            // test login with ui_locales to de+en
+            String portalUri = securePortal.getUriBuilder().build().toString();
+            UriBuilder uriBuilder = securePortal.getUriBuilder();
+            String appUri = uriBuilder.clone().queryParam(OAuth2Constants.UI_LOCALES_PARAM, "de en").build().toString();
+            URLUtils.navigateToUri(appUri);
+            assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+            // check the ui_locales param is there
+            Map<String, String> parameters = getQueryFromUrl(driver.getCurrentUrl());
+            assertThat(parameters.get(OAuth2Constants.UI_LOCALES_PARAM), allOf(containsString("de"), containsString("en")));
+
+            String appUriDe = uriBuilder.clone().queryParam(OAuth2Constants.UI_LOCALES_PARAM, "de").build().toString();
+            URLUtils.navigateToUri(appUriDe);
+            assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
+
+            // check german translations and german Idps names
+            assertPageContains("Passwort");
+            assertPageContains("oidc de");
+            assertPageContains("saml de");
+            //change locale to en and find suitable names
+            String appUriEn = uriBuilder.clone().queryParam(OAuth2Constants.UI_LOCALES_PARAM, "en").build().toString();
+            URLUtils.navigateToUri(appUriEn);
+            assertPageContains("oidc");
+            assertPageContains("saml");
+        } finally {
+            demoRealmRep.setInternationalizationEnabled(enabled);
+            demoRealmRep.setDefaultLocale(defaultLocale);
+            demoRealmRep.setSupportedLocales(locales);
+            testRealmResource().update(demoRealmRep);
+            IdentityProviderResource samlResource = testRealmResource().identityProviders().get("saml");
+            samlResource.remove();
+            IdentityProviderResource oidcResource = testRealmResource().identityProviders().get("oidc");
+            oidcResource.remove();
+        }
+    }
+    
+    private IdentityProviderRepresentation createRep(String id, String providerId) {
+        IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
+
+        idp.setAlias(id);
+        idp.setDisplayName(id);
+        idp.setProviderId(providerId);
+        idp.setEnabled(true);
+        Map<String,String> config = new HashMap<String,String>();
+        //add localized display name for de
+        config.put("displayName#de",id+" de");
+        idp.setConfig(config);
+        
+        return idp;
+    }
+    
+    //KEYCLOAK-15472 localised Idp name
+
+    @Test
     public void testOIDCUiLocalesParamForwarding() {
         ProfileAssume.assumeCommunity();
 
@@ -921,8 +993,8 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
             testRealmResource().update(demoRealmRep);
         }
     }
-
-
+   
+    
     @Test
     public void testVerifyTokenAudience() throws Exception {
         // Generate audience client scope

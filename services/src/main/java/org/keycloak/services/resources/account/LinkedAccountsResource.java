@@ -123,8 +123,8 @@ public class LinkedAccountsResource {
 
         FederatedIdentityModel identity = getIdentity(identities, providerId);
 
-        String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, provider);
-        String guiOrder = provider.getConfig() != null ? provider.getConfig().get("guiOrder") : null;
+            String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, provider,user.getFirstAttribute(UserModel.LOCALE) );
+            String guiOrder = provider.getConfig() != null ? provider.getConfig().get("guiOrder") : null;
 
         LinkedAccountRepresentation rep = new LinkedAccountRepresentation();
         rep.setConnected(identity != null);

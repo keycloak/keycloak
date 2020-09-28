@@ -1350,6 +1350,43 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     $scope.samlIdpInitiatedUrl = function(ssoName) {
         return encodeURI($location.absUrl().replace(/\/admin.*/, "/realms/") + realm.realm + "/protocol/saml/clients/") + encodeURIComponent(ssoName)
     }
+    
+    $scope.supportedLocales =  [];
+
+    updateLocales();
+    
+    $scope.addLocalized = function(fieldName,obj) {
+        $scope.clientEdit.attributes[fieldName+obj.local] = obj.value;
+        obj.local = '';
+        obj.value = '';
+    }
+
+    $scope.removeLocalized = function(localizedName) {
+        $scope.clientEdit.attributes[localizedName] = null;
+    }
+
+    function localeForTheme(type, name) {
+        name = name || 'base';
+        for (var i = 0; i < serverInfo.themes[type].length; i++) {
+            if (serverInfo.themes[type][i].name == name) {
+                return serverInfo.themes[type][i].locales || [];
+            }
+        }
+        return [];
+    }
+
+    function updateLocales() {
+        var accountLocales = localeForTheme('account', $scope.realm.accountTheme);
+        var loginLocales = localeForTheme('login', $scope.realm.loginTheme);
+        var emailLocales = localeForTheme('email', $scope.realm.emailTheme);
+
+        for (var i = 0; i < accountLocales.length; i++) {
+            var l = accountLocales[i];
+            if (loginLocales.indexOf(l) >= 0 && emailLocales.indexOf(l) >= 0) {
+                 $scope.supportedLocales.push(l);
+            }
+        }       
+    }
 
     $scope.importFile = function(fileContent){
         console.debug(fileContent);

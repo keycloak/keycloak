@@ -45,7 +45,7 @@ public class IdentityProviderBean {
     private RealmModel realm;
     private final KeycloakSession session;
 
-    public IdentityProviderBean(RealmModel realm, KeycloakSession session, List<IdentityProviderModel> identityProviders, URI baseURI) {
+    public IdentityProviderBean(RealmModel realm, KeycloakSession session, List<IdentityProviderModel> identityProviders, URI baseURI, String localTag) {
         this.realm = realm;
         this.session = session;
 
@@ -53,7 +53,7 @@ public class IdentityProviderBean {
             List<IdentityProvider> orderedList = new ArrayList<>();
             for (IdentityProviderModel identityProvider : identityProviders) {
                 if (identityProvider.isEnabled() && !identityProvider.isLinkOnly()) {
-                    addIdentityProvider(orderedList, realm, baseURI, identityProvider);
+                    addIdentityProvider(orderedList, realm, baseURI, identityProvider, localTag);
                 }
             }
 
@@ -65,9 +65,9 @@ public class IdentityProviderBean {
         }
     }
 
-    private void addIdentityProvider(List<IdentityProvider> orderedSet, RealmModel realm, URI baseURI, IdentityProviderModel identityProvider) {
+    private void addIdentityProvider(List<IdentityProvider> orderedSet, RealmModel realm, URI baseURI, IdentityProviderModel identityProvider, String localTag) {
         String loginUrl = Urls.identityProviderAuthnRequest(baseURI, identityProvider.getAlias(), realm.getName()).toString();
-        String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, identityProvider);
+        String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, identityProvider, localTag);
         Map<String, String> config = identityProvider.getConfig();
         boolean hideOnLoginPage = config != null && Boolean.parseBoolean(config.get("hideOnLoginPage"));
         if (!hideOnLoginPage) {

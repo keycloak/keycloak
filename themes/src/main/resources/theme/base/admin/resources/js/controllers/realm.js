@@ -1011,7 +1011,43 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             $scope.identityProvider.config.xmlSigKeyInfoKeyNameTransformer = $scope.xmlKeyNameTranformers[1];
         }
         $scope.identityProvider.config.entityId = $scope.identityProvider.config.entityId || (authUrl + '/realms/' + realm.realm);
+        
+        $scope.supportedLocales =  [];
+        updateLocales();
+        
+        $scope.addLocalized = function() {
+            $scope.identityProvider.config['displayName#'+$scope.newName.local] = $scope.newName.value;
+            delete $scope.newName;
+        }
+
+        $scope.removeLocalized = function(localizedName) {
+            delete $scope.identityProvider.config[localizedName];
+        }
+
     }
+    
+    function localeForTheme(type, name) {
+        name = name || 'base';
+        for (var i = 0; i < serverInfo.themes[type].length; i++) {
+            if (serverInfo.themes[type][i].name == name) {
+                return serverInfo.themes[type][i].locales || [];
+            }
+        }
+        return [];
+    };
+
+    function updateLocales() {
+        var accountLocales = localeForTheme('account', $scope.realm.accountTheme);
+        var loginLocales = localeForTheme('login', $scope.realm.loginTheme);
+        var emailLocales = localeForTheme('email', $scope.realm.emailTheme);
+
+        for (var i = 0; i < accountLocales.length; i++) {
+            var l = accountLocales[i];
+            if (loginLocales.indexOf(l) >= 0 && emailLocales.indexOf(l) >= 0) {
+                 $scope.supportedLocales.push(l);
+            }
+        }       
+    };
 
     $scope.hidePassword = true;
     $scope.fromUrl = {

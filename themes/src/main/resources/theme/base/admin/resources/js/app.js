@@ -2288,9 +2288,11 @@ module.directive('collapsed', function() {
     return function(scope, element, attrs) {
         element.prepend('<i class="toggle-class fa fa-angle-right"></i> ');
         element.parent().find('.form-group').toggleClass('hidden');
+        element.parent().find('.table-bordered').toggleClass('hidden');
         element.click(function() {
             $(this).find('.toggle-class').toggleClass('fa-angle-down').toggleClass('fa-angle-right');
             $(this).parent().find('.form-group').toggleClass('hidden');
+            element.parent().find('.table-bordered').toggleClass('hidden');
         });
     }
 });

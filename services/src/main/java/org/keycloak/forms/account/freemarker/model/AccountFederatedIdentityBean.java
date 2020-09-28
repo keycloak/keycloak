@@ -60,7 +60,7 @@ public class AccountFederatedIdentityBean {
                         availableIdentities.getAndIncrement();
                     }
 
-                    String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, provider);
+                    String displayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, provider, user.getFirstAttribute(UserModel.LOCALE) );
                     return new FederatedIdentityEntry(identity, displayName, provider.getAlias(), provider.getAlias(),
                             provider.getConfig() != null ? provider.getConfig().get("guiOrder") : null);
                 })
