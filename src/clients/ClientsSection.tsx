@@ -47,6 +47,8 @@ export const ClientsSection = () => {
                 setFirst(first);
                 setMax(max);
               }}
+              inputGroupName="clientsToolbarTextInput"
+              inputGroupPlaceholder={t("Search for client")}
               toolbarItem={
                 <>
                   <Button onClick={() => history.push("/add-client")}>

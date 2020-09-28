@@ -33,6 +33,7 @@
     "rootUrl": "Root URL",
     "validRedirectUri": "Valid redirect URIs",
     "loginTheme": "Login theme",
-    "consentRequired": "Consent required"
+    "consentRequired": "Consent required",
+    "searchForClient": "Search for client"
   }
 }
