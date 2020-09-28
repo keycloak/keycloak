@@ -1,0 +1,356 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Confirmation dialog renders simple confirm dialog 1`] = `
+<Test>
+  <button
+    id="show"
+    onClick={[Function]}
+  >
+    Show
+  </button>
+  <Dialog>
+    <ConfirmDialogModal
+      continueButtonLabel="Delete"
+      key="confirmDialog"
+      messageKey="If you delete this client, all associated data will be removed."
+      onConfirm={[MockFunction]}
+      open={true}
+      titleKey="Delete app02?"
+      toggleDialog={[Function]}
+    >
+      <Modal
+        actions={
+          Array [
+            <Button
+              id="modal-confirm"
+              onClick={[Function]}
+              variant="primary"
+            >
+              Delete
+            </Button>,
+            <Button
+              id="modal-cancel"
+              onClick={[Function]}
+              variant="secondary"
+            >
+              cancel
+            </Button>,
+          ]
+        }
+        appendTo={[Function]}
+        aria-describedby=""
+        aria-label=""
+        aria-labelledby=""
+        className=""
+        hasNoBodyWrapper={false}
+        isOpen={true}
+        onClose={[Function]}
+        ouiaSafe={true}
+        showClose={true}
+        title="Delete app02?"
+        variant="small"
+      >
+        <Portal
+          containerInfo={
+            <div>
+              <div
+                class="pf-c-backdrop"
+              >
+                <div
+                  class="pf-l-bullseye"
+                >
+                  <div
+                    aria-describedby="pf-modal-part-3"
+                    aria-labelledby="pf-modal-part-2"
+                    aria-modal="true"
+                    class="pf-c-modal-box pf-m-sm"
+                    data-ouia-component-id="OUIA-Generated-Modal-small-2"
+                    data-ouia-component-type="PF4/ModalContent"
+                    data-ouia-safe="true"
+                    id="pf-modal-part-1"
+                    role="dialog"
+                  >
+                    <button
+                      aria-disabled="false"
+                      aria-label="Close"
+                      class="pf-c-button pf-m-plain"
+                      data-ouia-component-id="OUIA-Generated-Button-plain-1"
+                      data-ouia-component-type="PF4/Button"
+                      data-ouia-safe="true"
+                      type="button"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        fill="currentColor"
+                        height="1em"
+                        role="img"
+                        style="vertical-align: -0.125em;"
+                        viewBox="0 0 352 512"
+                        width="1em"
+                      >
+                        <path
+                          d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                        />
+                      </svg>
+                    </button>
+                    <header
+                      class="pf-c-modal-box__header"
+                    >
+                      <h1
+                        class="pf-c-modal-box__title pf-c-modal-box__title"
+                        id="pf-modal-part-2"
+                      >
+                        Delete app02?
+                      </h1>
+                    </header>
+                    <div
+                      class="pf-c-modal-box__body"
+                      id="pf-modal-part-3"
+                    >
+                      If you delete this client, all associated data will be removed.
+                    </div>
+                    <footer
+                      class="pf-c-modal-box__footer"
+                    >
+                      <button
+                        aria-disabled="false"
+                        class="pf-c-button pf-m-primary"
+                        data-ouia-component-id="OUIA-Generated-Button-primary-1"
+                        data-ouia-component-type="PF4/Button"
+                        data-ouia-safe="true"
+                        id="modal-confirm"
+                        type="button"
+                      >
+                        Delete
+                      </button>
+                      <button
+                        aria-disabled="false"
+                        class="pf-c-button pf-m-secondary"
+                        data-ouia-component-id="OUIA-Generated-Button-secondary-1"
+                        data-ouia-component-type="PF4/Button"
+                        data-ouia-safe="true"
+                        id="modal-cancel"
+                        type="button"
+                      >
+                        cancel
+                      </button>
+                    </footer>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        >
+          <ModalContent
+            actions={
+              Array [
+                <Button
+                  id="modal-confirm"
+                  onClick={[Function]}
+                  variant="primary"
+                >
+                  Delete
+                </Button>,
+                <Button
+                  id="modal-cancel"
+                  onClick={[Function]}
+                  variant="secondary"
+                >
+                  cancel
+                </Button>,
+              ]
+            }
+            aria-describedby=""
+            aria-label=""
+            aria-labelledby=""
+            boxId="pf-modal-part-1"
+            className=""
+            descriptorId="pf-modal-part-3"
+            hasNoBodyWrapper={false}
+            isOpen={true}
+            labelId="pf-modal-part-2"
+            onClose={[Function]}
+            ouiaId="OUIA-Generated-Modal-small-2"
+            ouiaSafe={true}
+            showClose={true}
+            title="Delete app02?"
+            variant="small"
+          >
+            <Backdrop>
+              <div
+                className="pf-c-backdrop"
+              >
+                <FocusTrap
+                  active={true}
+                  className="pf-l-bullseye"
+                  focusTrapOptions={
+                    Object {
+                      "clickOutsideDeactivates": true,
+                    }
+                  }
+                  paused={false}
+                >
+                  <div
+                    className="pf-l-bullseye"
+                  >
+                    <ModalBox
+                      aria-describedby="pf-modal-part-3"
+                      aria-label=""
+                      aria-labelledby="pf-modal-part-2"
+                      className=""
+                      data-ouia-component-id="OUIA-Generated-Modal-small-2"
+                      data-ouia-component-type="PF4/ModalContent"
+                      data-ouia-safe={true}
+                      id="pf-modal-part-1"
+                      style={Object {}}
+                      variant="small"
+                    >
+                      <div
+                        aria-describedby="pf-modal-part-3"
+                        aria-label={null}
+                        aria-labelledby="pf-modal-part-2"
+                        aria-modal="true"
+                        className="pf-c-modal-box pf-m-sm"
+                        data-ouia-component-id="OUIA-Generated-Modal-small-2"
+                        data-ouia-component-type="PF4/ModalContent"
+                        data-ouia-safe={true}
+                        id="pf-modal-part-1"
+                        role="dialog"
+                        style={Object {}}
+                      >
+                        <ModalBoxCloseButton
+                          onClose={[Function]}
+                        >
+                          <Button
+                            aria-label="Close"
+                            className=""
+                            onClick={[Function]}
+                            variant="plain"
+                          >
+                            <button
+                              aria-disabled={false}
+                              aria-label="Close"
+                              className="pf-c-button pf-m-plain"
+                              data-ouia-component-id="OUIA-Generated-Button-plain-1"
+                              data-ouia-component-type="PF4/Button"
+                              data-ouia-safe={true}
+                              disabled={false}
+                              onClick={[Function]}
+                              type="button"
+                            >
+                              <TimesIcon
+                                color="currentColor"
+                                noVerticalAlign={false}
+                                size="sm"
+                              >
+                                <svg
+                                  aria-hidden={true}
+                                  aria-labelledby={null}
+                                  fill="currentColor"
+                                  height="1em"
+                                  role="img"
+                                  style={
+                                    Object {
+                                      "verticalAlign": "-0.125em",
+                                    }
+                                  }
+                                  viewBox="0 0 352 512"
+                                  width="1em"
+                                >
+                                  <path
+                                    d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                                  />
+                                </svg>
+                              </TimesIcon>
+                            </button>
+                          </Button>
+                        </ModalBoxCloseButton>
+                        <ModalBoxHeader>
+                          <header
+                            className="pf-c-modal-box__header"
+                          >
+                            <ModalBoxTitle
+                              className="pf-c-modal-box__title"
+                              id="pf-modal-part-2"
+                              title="Delete app02?"
+                            >
+                              <h1
+                                className="pf-c-modal-box__title pf-c-modal-box__title"
+                                id="pf-modal-part-2"
+                              >
+                                Delete app02?
+                              </h1>
+                            </ModalBoxTitle>
+                          </header>
+                        </ModalBoxHeader>
+                        <ModalBoxBody
+                          id="pf-modal-part-3"
+                        >
+                          <div
+                            className="pf-c-modal-box__body"
+                            id="pf-modal-part-3"
+                          >
+                            If you delete this client, all associated data will be removed.
+                          </div>
+                        </ModalBoxBody>
+                        <ModalBoxFooter>
+                          <footer
+                            className="pf-c-modal-box__footer"
+                          >
+                            <Button
+                              id="modal-confirm"
+                              key="confirm"
+                              onClick={[Function]}
+                              variant="primary"
+                            >
+                              <button
+                                aria-disabled={false}
+                                aria-label={null}
+                                className="pf-c-button pf-m-primary"
+                                data-ouia-component-id="OUIA-Generated-Button-primary-1"
+                                data-ouia-component-type="PF4/Button"
+                                data-ouia-safe={true}
+                                disabled={false}
+                                id="modal-confirm"
+                                onClick={[Function]}
+                                type="button"
+                              >
+                                Delete
+                              </button>
+                            </Button>
+                            <Button
+                              id="modal-cancel"
+                              key="cancel"
+                              onClick={[Function]}
+                              variant="secondary"
+                            >
+                              <button
+                                aria-disabled={false}
+                                aria-label={null}
+                                className="pf-c-button pf-m-secondary"
+                                data-ouia-component-id="OUIA-Generated-Button-secondary-1"
+                                data-ouia-component-type="PF4/Button"
+                                data-ouia-safe={true}
+                                disabled={false}
+                                id="modal-cancel"
+                                onClick={[Function]}
+                                type="button"
+                              >
+                                cancel
+                              </button>
+                            </Button>
+                          </footer>
+                        </ModalBoxFooter>
+                      </div>
+                    </ModalBox>
+                  </div>
+                </FocusTrap>
+              </div>
+            </Backdrop>
+          </ModalContent>
+        </Portal>
+      </Modal>
+    </ConfirmDialogModal>
+  </Dialog>
+</Test>
+`;

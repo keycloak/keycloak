@@ -79,7 +79,7 @@ exports[`renders realm selector 1`] = `
       >
         <div
           className="pf-c-dropdown keycloak__realm_selector__dropdown"
-          data-ouia-component-id={0}
+          data-ouia-component-id="OUIA-Generated-Dropdown-1"
           data-ouia-component-type="PF4/Dropdown"
           data-ouia-safe={true}
           id="realm-select"
@@ -98,7 +98,7 @@ exports[`renders realm selector 1`] = `
               Object {
                 "current": <div
                   class="pf-c-dropdown pf-m-expanded keycloak__realm_selector__dropdown"
-                  data-ouia-component-id="1"
+                  data-ouia-component-id="OUIA-Generated-Dropdown-1"
                   data-ouia-component-type="PF4/Dropdown"
                   data-ouia-safe="true"
                   id="realm-select"
@@ -129,7 +129,6 @@ exports[`renders realm selector 1`] = `
                       >
                         <path
                           d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
-                          transform=""
                         />
                       </svg>
                     </span>
@@ -148,7 +147,7 @@ exports[`renders realm selector 1`] = `
                         tabindex="-1"
                       >
                         <div
-                          class="pf-l-split"
+                          class="pf-l-split keycloak__realm_selector__list-item-split"
                         >
                           <div
                             class="pf-l-split__item pf-m-fill"
@@ -176,7 +175,7 @@ exports[`renders realm selector 1`] = `
                         <div
                           aria-disabled="false"
                           class="pf-c-button pf-m-primary pf-m-block"
-                          data-ouia-component-id="2"
+                          data-ouia-component-id="OUIA-Generated-Button-primary-1"
                           data-ouia-component-type="PF4/Button"
                           data-ouia-safe="true"
                         >
@@ -207,7 +206,7 @@ exports[`renders realm selector 1`] = `
                 Object {
                   "current": <div
                     class="pf-c-dropdown pf-m-expanded keycloak__realm_selector__dropdown"
-                    data-ouia-component-id="1"
+                    data-ouia-component-id="OUIA-Generated-Dropdown-1"
                     data-ouia-component-type="PF4/Dropdown"
                     data-ouia-safe="true"
                     id="realm-select"
@@ -238,7 +237,6 @@ exports[`renders realm selector 1`] = `
                         >
                           <path
                             d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
-                            transform=""
                           />
                         </svg>
                       </span>
@@ -257,7 +255,7 @@ exports[`renders realm selector 1`] = `
                           tabindex="-1"
                         >
                           <div
-                            class="pf-l-split"
+                            class="pf-l-split keycloak__realm_selector__list-item-split"
                           >
                             <div
                               class="pf-l-split__item pf-m-fill"
@@ -285,7 +283,7 @@ exports[`renders realm selector 1`] = `
                           <div
                             aria-disabled="false"
                             class="pf-c-button pf-m-primary pf-m-block"
-                            data-ouia-component-id="2"
+                            data-ouia-component-id="OUIA-Generated-Button-primary-1"
                             data-ouia-component-type="PF4/Button"
                             data-ouia-safe="true"
                           >
@@ -337,7 +335,6 @@ exports[`renders realm selector 1`] = `
                     >
                       <path
                         d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
-                        transform=""
                       />
                     </svg>
                   </CaretDownIcon>

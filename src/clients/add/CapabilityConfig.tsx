@@ -21,6 +21,7 @@ export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
       <FormGroup label={t("clientAuthentication")} fieldId="kc-authentication">
         <Controller
           name="publicClient"
+          defaultValue={false}
           control={form.control}
           render={({ onChange, value }) => (
             <Switch
@@ -37,6 +38,7 @@ export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
       <FormGroup label={t("clientAuthorization")} fieldId="kc-authorization">
         <Controller
           name="authorizationServicesEnabled"
+          defaultValue={false}
           control={form.control}
           render={({ onChange, value }) => (
             <Switch
@@ -52,9 +54,10 @@ export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
       </FormGroup>
       <FormGroup label={t("authenticationFlow")} fieldId="kc-flow">
         <Grid>
-          <GridItem span={6}>
+          <GridItem lg={4} sm={6}>
             <Controller
               name="standardFlowEnabled"
+              defaultValue={false}
               control={form.control}
               render={({ onChange, value }) => (
                 <Checkbox
@@ -67,9 +70,10 @@ export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
               )}
             />
           </GridItem>
-          <GridItem span={6}>
+          <GridItem lg={8} sm={6}>
             <Controller
               name="directAccessGrantsEnabled"
+              defaultValue={false}
               control={form.control}
               render={({ onChange, value }) => (
                 <Checkbox
@@ -82,9 +86,10 @@ export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
               )}
             />
           </GridItem>
-          <GridItem span={6}>
+          <GridItem lg={4} sm={6}>
             <Controller
               name="implicitFlowEnabled"
+              defaultValue={false}
               control={form.control}
               render={({ onChange, value }) => (
                 <Checkbox
@@ -97,9 +102,10 @@ export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
               )}
             />
           </GridItem>
-          <GridItem span={6}>
+          <GridItem lg={8} sm={6}>
             <Controller
               name="serviceAccountsEnabled"
+              defaultValue={false}
               control={form.control}
               render={({ onChange, value }) => (
                 <Checkbox

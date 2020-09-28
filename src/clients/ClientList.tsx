@@ -36,16 +36,13 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
   const { realm } = useContext(RealmContext);
   const [add, Alerts] = useAlerts();
 
-  const convertClientId = (clientId: string) =>
-    clientId.substring(0, clientId.indexOf("#"));
   const enabled = (): IFormatter => (data?: IFormatterValueType) => {
     const field = data!.toString();
-    const value = convertClientId(field);
-    return field.indexOf("true") !== -1 ? (
-      <Link to="client-settings">{value}</Link>
-    ) : (
-      <Link to="client-settings">
-        {value} <Badge isRead>Disabled</Badge>
+    const [id, clientId, disabled] = field.split("#");
+    return (
+      <Link to={`client-settings/${id}`}>
+        {clientId}
+        {disabled !== "true" && <Badge isRead>Disabled</Badge>}
       </Link>
     );
   };
@@ -75,13 +72,13 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
   };
 
   const data = clients!
-    .map((r) => {
-      r.clientId = r.clientId + "#" + r.enabled;
-      r.baseUrl = replaceBaseUrl(r);
-      return r;
+    .map((client) => {
+      client.clientId = `${client.id}#${client.clientId}#${client.enabled}`;
+      client.baseUrl = replaceBaseUrl(client);
+      return client;
     })
-    .map((c) => {
-      return { cells: columns.map((col) => c[col]), client: c };
+    .map((column) => {
+      return { cells: columns.map((col) => column[col]), client: column };
     });
   return (
     <>
@@ -103,7 +100,8 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
             title: t("common:export"),
             onClick: (_, rowId) => {
               const clientCopy = JSON.parse(JSON.stringify(data[rowId].client));
-              clientCopy.clientId = convertClientId(clientCopy.clientId);
+              const [, orgClientId] = clientCopy.clientId.split("#");
+              clientCopy.clientId = orgClientId;
               delete clientCopy.id;
 
               if (clientCopy.protocolMappers) {

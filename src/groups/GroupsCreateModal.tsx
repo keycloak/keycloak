@@ -11,10 +11,11 @@ import {
 import { useTranslation } from "react-i18next";
 import { HttpClientContext } from "../http-service/HttpClientContext";
 import { RealmContext } from "../components/realm-context/RealmContext";
+import { useAlerts } from "../components/alert/Alerts";
 
 export const GroupsCreateModal = ({isCreateModalOpen, handleModalToggle}) => {
   
-  const { t } = useTranslation("group");
+  const { t } = useTranslation("groups");
   const httpClient = useContext(HttpClientContext)!;
   const { realm } = useContext(RealmContext);
   const [ nameValue, setNameValue ] = useState("");
@@ -46,7 +47,7 @@ export const GroupsCreateModal = ({isCreateModalOpen, handleModalToggle}) => {
       ]}
     >
       <Form isHorizontal>
-        <FormGroup label={t("rootUrl")} fieldId="kc-root-url">
+        <FormGroup label={t("name")} fieldId="kc-root-url">
           <TextInput
             type="text"
             id="create-group-name"

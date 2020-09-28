@@ -5,6 +5,7 @@
 
     "save": "Save",
     "cancel": "Cancel",
+    "continue": "Continue",
     "delete": "Delete",
     "next": "Next",
     "back": "Back",
@@ -13,6 +14,8 @@
     "clearFile": "Clear this file",
     "on": "On",
     "off":"Off",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
 
     "signOut": "Sign out",
     "manageAccount": "Manage account",

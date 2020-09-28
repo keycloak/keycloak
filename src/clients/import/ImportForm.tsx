@@ -1,9 +1,6 @@
 import React, { useContext } from "react";
 import {
   PageSection,
-  Text,
-  TextContent,
-  Divider,
   Form,
   FormGroup,
   TextInput,
@@ -19,16 +16,15 @@ import { ClientDescription } from "../ClientDescription";
 import { HttpClientContext } from "../../http-service/HttpClientContext";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
 import { useAlerts } from "../../components/alert/Alerts";
-import { AlertPanel } from "../../components/alert/AlertPanel";
 import { RealmContext } from "../../components/realm-context/RealmContext";
+import { ViewHeader } from "../../components/view-header/ViewHeader";
 
 export const ImportForm = () => {
   const { t } = useTranslation("clients");
   const httpClient = useContext(HttpClientContext)!;
   const { realm } = useContext(RealmContext);
-  const { register, handleSubmit, errors, setValue } = useForm<
-    ClientRepresentation
-  >();
+  const form = useForm<ClientRepresentation>();
+  const { register, handleSubmit, setValue } = form;
 
   const [add, Alerts] = useAlerts();
 
@@ -57,17 +53,14 @@ export const ImportForm = () => {
   return (
     <>
       <Alerts />
-      <PageSection variant="light">
-        <TextContent>
-          <Text component="h1">{t("importClient")}</Text>
-          {t("clientsExplain")}
-        </TextContent>
-      </PageSection>
-      <Divider />
+      <ViewHeader
+        titleKey="clients:importClient"
+        subKey="clients:clientsExplain"
+      />
       <PageSection variant="light">
         <Form isHorizontal onSubmit={handleSubmit(save)}>
           <JsonFileUpload id="realm-file" onChange={handleFileChange} />
-          <ClientDescription register={register} />
+          <ClientDescription form={form} />
           <FormGroup label={t("type")} fieldId="kc-type">
             <TextInput
               type="text"

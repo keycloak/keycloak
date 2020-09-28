@@ -8,7 +8,7 @@ module.exports = function (grunt) {
     copy: {
       main: {
         cwd: "./node_modules/@patternfly/patternfly/assets/",
-        src: "**/*",
+        src: ["**/*", '!**/fontawesome/**'],
         dest: "public/assets/",
         expand: true,
       },

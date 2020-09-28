@@ -7,4 +7,7 @@ export interface GroupRepresentation {
   clientRoles?: { [index: string]: string[] };
   subGroups?: GroupRepresentation[];
   access?: { [index: string]: boolean };
+  groupNumber?: number;
+  membersLength?: number;
+  list?: [];
 }
