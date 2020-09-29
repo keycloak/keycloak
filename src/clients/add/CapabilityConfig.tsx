@@ -18,7 +18,11 @@ export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
   const { t } = useTranslation("clients");
   return (
     <Form isHorizontal>
-      <FormGroup label={t("clientAuthentication")} fieldId="kc-authentication">
+      <FormGroup
+        hasNoPaddingTop
+        label={t("clientAuthentication")}
+        fieldId="kc-authentication"
+      >
         <Controller
           name="publicClient"
           defaultValue={false}
@@ -35,7 +39,11 @@ export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
           )}
         />
       </FormGroup>
-      <FormGroup label={t("clientAuthorization")} fieldId="kc-authorization">
+      <FormGroup
+        hasNoPaddingTop
+        label={t("clientAuthorization")}
+        fieldId="kc-authorization"
+      >
         <Controller
           name="authorizationServicesEnabled"
           defaultValue={false}
@@ -52,7 +60,11 @@ export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
           )}
         />
       </FormGroup>
-      <FormGroup label={t("authenticationFlow")} fieldId="kc-flow">
+      <FormGroup
+        hasNoPaddingTop
+        label={t("authenticationFlow")}
+        fieldId="kc-flow"
+      >
         <Grid>
           <GridItem lg={4} sm={6}>
             <Controller

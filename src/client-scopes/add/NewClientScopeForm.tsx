@@ -115,6 +115,7 @@ export const NewClientScopeForm = () => {
           />
         </FormGroup>
         <FormGroup
+          hasNoPaddingTop
           label={
             <>
               {t("displayOnConsentScreen")}{" "}
