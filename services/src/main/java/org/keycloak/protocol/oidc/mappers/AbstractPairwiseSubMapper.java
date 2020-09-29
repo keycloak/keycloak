@@ -22,7 +22,7 @@ import java.util.List;
  *
  * @author <a href="mailto:martin.hardselius@gmail.com">Martin Hardselius</a>
  */
-public abstract class AbstractPairwiseSubMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper {
+public abstract class AbstractPairwiseSubMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper, OIDCRefreshTokenMapper {
     public static final String PROVIDER_ID_SUFFIX = "-pairwise-sub-mapper";
 
     public abstract String getIdPrefix();
@@ -80,6 +80,13 @@ public abstract class AbstractPairwiseSubMapper extends AbstractOIDCProtocolMapp
         setUserInfoTokenSubject(token, generateSub(mappingModel, getSectorIdentifier(clientSessionCtx.getClientSession().getClient(), mappingModel), userSession.getUser().getId()));
         return token;
     }
+    
+    @Override
+    public AccessToken transformRefreshToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        setAccessTokenSubject(token, generateSub(mappingModel, getSectorIdentifier(clientSessionCtx.getClientSession().getClient(), mappingModel), userSession.getUser().getId()));
+        return token;
+    }
+    
 
     protected void setIDTokenSubject(IDToken token, String pairwiseSub) {
         token.setSubject(pairwiseSub);

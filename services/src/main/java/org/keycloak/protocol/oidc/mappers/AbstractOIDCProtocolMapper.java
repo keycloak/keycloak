@@ -92,6 +92,18 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
         setClaim(token, mappingModel, userSession, session, clientSessionCtx);
         return token;
     }
+    
+	public AccessToken transformRefreshToken(AccessToken token, ProtocolMapperModel mappingModel,
+			KeycloakSession session, UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+
+		if (!OIDCAttributeMapperHelper.includeInRefreshToken(mappingModel)) {
+			return token;
+		}
+
+		setClaim(token, mappingModel, userSession, session, clientSessionCtx);
+		return token;
+	}
+    
 
     /**
      * Intended to be overridden in {@link ProtocolMapper} implementations to add claims to an token.

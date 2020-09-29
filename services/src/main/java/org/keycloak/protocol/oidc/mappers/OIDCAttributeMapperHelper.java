@@ -55,6 +55,11 @@ public class OIDCAttributeMapperHelper {
     public static final String INCLUDE_IN_USERINFO_LABEL = "includeInUserInfo.label";
     public static final String INCLUDE_IN_USERINFO_HELP_TEXT = "includeInUserInfo.tooltip";
 
+    public static final String INCLUDE_IN_REFRESH_TOKEN = "refresh.token.claim";
+    public static final String INCLUDE_IN_REFRESH_TOKEN_LABEL = "includeInRefreshToken.label";
+    public static final String INCLUDE_IN_REFRESH_TOKEN_HELP_TEXT = "includeInRefreshToken.tooltip";
+    
+    
     public static Object mapAttributeValue(ProtocolMapperModel mappingModel, Object attributeValue) {
         if (attributeValue == null) return null;
 
@@ -252,6 +257,10 @@ public class OIDCAttributeMapperHelper {
         return "true".equals(mappingModel.getConfig().get(INCLUDE_IN_ACCESS_TOKEN));
     }
 
+    public static boolean includeInRefreshToken(ProtocolMapperModel mappingModel) {
+        return "true".equals(mappingModel.getConfig().get(INCLUDE_IN_REFRESH_TOKEN));
+    }
+    
     public static boolean isMultivalued(ProtocolMapperModel mappingModel) {
         return "true".equals(mappingModel.getConfig().get(ProtocolMapperUtils.MULTIVALUED));
     }
@@ -327,6 +336,16 @@ public class OIDCAttributeMapperHelper {
             property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
             property.setDefaultValue("true");
             property.setHelpText(INCLUDE_IN_USERINFO_HELP_TEXT);
+            configProperties.add(property);
+        }
+        
+        if (OIDCRefreshTokenMapper.class.isAssignableFrom(protocolMapperClass)) {
+            ProviderConfigProperty property = new ProviderConfigProperty();
+            property.setName(INCLUDE_IN_REFRESH_TOKEN);
+            property.setLabel(INCLUDE_IN_REFRESH_TOKEN_LABEL);
+            property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+            property.setDefaultValue("true");
+            property.setHelpText(INCLUDE_IN_REFRESH_TOKEN_HELP_TEXT);
             configProperties.add(property);
         }
     }

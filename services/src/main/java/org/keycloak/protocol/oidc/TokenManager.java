@@ -59,6 +59,7 @@ import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCRefreshTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
@@ -636,6 +637,20 @@ public class TokenManager {
         }
     }
 
+	public void transformRefreshToken(KeycloakSession session, AccessToken token, UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+
+		for (Map.Entry<ProtocolMapperModel, ProtocolMapper> entry : ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)) {
+			ProtocolMapperModel mapping = entry.getKey();
+			ProtocolMapper mapper = entry.getValue();
+
+			if (mapper instanceof OIDCRefreshTokenMapper) {
+				token = ((OIDCRefreshTokenMapper) mapper).transformRefreshToken(token, mapping, session, userSession,
+						clientSessionCtx);
+			}
+		}
+	}
+    
+    
     protected AccessToken initToken(RealmModel realm, ClientModel client, UserModel user, UserSessionModel session,
                                     ClientSessionContext clientSessionCtx, UriInfo uriInfo) {
         AccessToken token = new AccessToken();
@@ -828,6 +843,7 @@ public class TokenManager {
             }
             refreshToken.id(KeycloakModelUtils.generateId());
             refreshToken.issuedNow();
+            transformRefreshToken(session, refreshToken, userSession, clientSessionCtx);
             return this;
         }
 
