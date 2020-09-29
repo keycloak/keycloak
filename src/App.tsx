@@ -6,6 +6,7 @@ import { Header } from "./PageHeader";
 import { PageNav } from "./PageNav";
 import { Help } from "./components/help-enabler/HelpHeader";
 import { NewRealmForm } from "./realm/add/NewRealmForm";
+import { NewRoleForm } from "./realm-roles/add/NewRoleForm";
 import { NewClientForm } from "./clients/add/NewClientForm";
 import { NewClientScopeForm } from "./client-scopes/add/NewClientScopeForm";
 
@@ -34,7 +35,7 @@ export const App = () => {
           <Page header={<Header />} isManagedSidebar sidebar={<PageNav />}>
             <Switch>
               <Route exact path="/add-realm" component={NewRealmForm}></Route>
-
+              <Route exact path="/add-role" component={NewRoleForm}></Route>
               <Route exact path="/clients" component={ClientsSection}></Route>
               <Route
                 exact
