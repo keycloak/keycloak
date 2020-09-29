@@ -10,6 +10,7 @@
     "moveTo": "Move to",
     "delete": "Delete",
     "tableOfGroups": "Table of groups",
-    "name": "Name"
+    "name": "Name",
+    "groupsDescription": "Description goes here"
   }
 }

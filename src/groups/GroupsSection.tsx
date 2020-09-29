@@ -10,6 +10,7 @@ import {
   ServerGroupMembersRepresentation,
 } from "./models/server-info";
 import { TableToolbar } from "../components/table-toolbar/TableToolbar";
+import { ViewHeader } from "../components/view-header/ViewHeader";
 import {
   Button,
   Divider,
@@ -101,12 +102,10 @@ export const GroupsSection = () => {
 
   return (
     <React.Fragment>
-      <PageSection variant={PageSectionVariants.light}>
-        <Title headingLevel="h3" size={TitleSizes["2xl"]}>
-          {t("groups")}
-        </Title>
-      </PageSection>
-      <Divider />
+      <ViewHeader
+        titleKey="groups:groups"
+        subKey="groups:groupsDescription"
+      />
       <PageSection variant={PageSectionVariants.light}>
         <TableToolbar
           count={10}
