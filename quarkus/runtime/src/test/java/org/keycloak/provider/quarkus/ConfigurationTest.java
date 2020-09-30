@@ -154,7 +154,6 @@ public class ConfigurationTest {
     public void testCommandLineArguments() {
         System.setProperty("kc.config.args", "--spi-hostname-default-frontend-url=http://fromargs.com,--no-ssl");
         assertEquals("http://fromargs.com", initConfig("hostname", "default").get("frontendUrl"));
-        assertEquals("true", ConfigProvider.getConfig().getValue("kc.no-ssl", String.class));
     }
     
     @Test
@@ -202,12 +201,15 @@ public class ConfigurationTest {
 
     @Test
     public void testDatabaseProperties() {
-        System.setProperty("kc.config.args", "--db=h2-file,--db-url-path=test,--db-url-properties=;;test=test;test1=test1");
+        System.setProperty("kc.db.url.properties", ";;test=test;test1=test1");
+        System.setProperty("kc.db.url.path", "test-dir");
+        System.setProperty("kc.config.args", "--db=h2-file");
         SmallRyeConfig config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
-        assertEquals("jdbc:h2:file:test/data/keycloakdb;;test=test;test1=test1", config.getConfigValue("quarkus.datasource.url").getValue());
+        assertEquals("jdbc:h2:file:test-dir/data/keycloakdb;;test=test;test1=test1", config.getConfigValue("quarkus.datasource.url").getValue());
 
-        System.setProperty("kc.config.args", "--db=mariadb,--db-url-path=test,--db-url-properties=?test=test&test1=test1");
+        System.setProperty("kc.db.url.properties", "?test=test&test1=test1");
+        System.setProperty("kc.config.args", "--db=mariadb");
         config = createConfig();
         assertEquals("jdbc:mariadb://localhost/keycloak?test=test&test1=test1", config.getConfigValue("quarkus.datasource.url").getValue());
     }

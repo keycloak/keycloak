@@ -21,6 +21,7 @@ import org.keycloak.configuration.KeycloakConfigSourceProvider;
 
 import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
 import io.quarkus.runtime.Quarkus;
+import org.keycloak.util.Environment;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
@@ -67,15 +68,30 @@ public class MainCommand {
             usageHelpAutoWidth = true,
             optionListHeading = "%nOptions%n",
             parameterListHeading = "Available Commands%n")
-    public void reAugment() {
+    public void reAugment(@Option(names = "--verbose", description = "Print out more details when running this command.", required = false) Boolean debug) {
         System.setProperty("quarkus.launch.rebuild", "true");
         println("Updating the configuration and installing your custom providers, if any. Please wait.");
         try {
             QuarkusEntryPoint.main();
+            println("Server configuration updated and persisted. Run the following command to review the configuration:\n");
+            println("\t" + Environment.getCommand() + " show-config\n");
         } catch (Throwable throwable) {
-            error("Failed to update server configuration.");
-        } finally {
-            System.exit(CommandLine.ExitCode.OK);
+            String message = throwable.getMessage();
+            Throwable cause = throwable.getCause();
+
+            if (cause != null) {
+                message = cause.getMessage();                
+            }
+            
+            error("Failed to update server configuration: " + message);
+            
+            if (debug == null) {
+                errorAndExit("For more details run the same command passing the '--verbose' option.");
+            } else {
+                error("Details:");
+                throwable.printStackTrace();
+                System.exit(spec.exitCodeOnExecutionException());
+            }
         }
     }
 
@@ -110,7 +126,7 @@ public class MainCommand {
             System.setProperty("keycloak.migration.provider", "singleFile");
             System.setProperty("keycloak.migration.file", toFile);
         } else {
-            error("Must specify either --dir or --file options.");
+            errorAndExit("Must specify either --dir or --file options.");
         }
 
         System.setProperty("keycloak.migration.usersExportStrategy", users.toUpperCase());
@@ -143,7 +159,7 @@ public class MainCommand {
             System.setProperty("keycloak.migration.provider", "singleFile");
             System.setProperty("keycloak.migration.file", toFile);
         } else {
-            error("Must specify either --dir or --file options.");
+            errorAndExit("Must specify either --dir or --file options.");
         }
 
         if (realm != null) {
@@ -193,8 +209,12 @@ public class MainCommand {
         spec.commandLine().getOut().println(message);
     }
 
+    private void errorAndExit(String message) {
+        error(message);
+        System.exit(CommandLine.ExitCode.SOFTWARE);
+    }
+
     private void error(String message) {
         spec.commandLine().getErr().println(message);
-        System.exit(CommandLine.ExitCode.SOFTWARE);
     }
 }
