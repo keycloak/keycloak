@@ -114,6 +114,12 @@ public class AuthenticationManager {
     public static final String INVALIDATE_ACTION_TOKEN = "INVALIDATE_ACTION_TOKEN";
 
     /**
+     * Auth session note, which indicates if user session will be persistent (Saved to real persistent store) or
+     * transient (transient session will be scoped to single request and hence there is no need to save it in the underlying store)
+     */
+    public static final String USER_SESSION_PERSISTENT_STATE = "USER_SESSION_PERSISTENT_STATE";
+
+    /**
      * Auth session note on client logout state (when logging out)
      */
     public static final String CLIENT_LOGOUT_STATE = "logout.state.";

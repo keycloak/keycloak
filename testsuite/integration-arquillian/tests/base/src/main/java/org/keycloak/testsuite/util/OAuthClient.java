@@ -558,6 +558,11 @@ public class OAuthClient {
                 post.addHeader("User-Agent", userAgent);
             }
 
+            if (customParameters != null) {
+                customParameters.keySet().stream()
+                        .forEach(paramName -> parameters.add(new BasicNameValuePair(paramName, customParameters.get(paramName))));
+            }
+
             UrlEncodedFormEntity formEntity;
             try {
                 formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
@@ -1220,7 +1225,7 @@ public class OAuthClient {
         return this;
     }
 
-    public OAuthClient addCustomerParameter(String key, String value) {
+    public OAuthClient addCustomParameter(String key, String value) {
         if (customParameters == null) {
             customParameters = new HashMap<>();
         }
