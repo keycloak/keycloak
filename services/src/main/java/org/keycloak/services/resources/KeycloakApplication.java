@@ -19,8 +19,8 @@ package org.keycloak.services.resources;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.config.ConfigProviderFactory;
@@ -101,7 +101,9 @@ public class KeycloakApplication extends Application {
 
             singletons.add(new RobotsResource());
             singletons.add(new RealmsResource());
-            singletons.add(new AdminRoot());
+            if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_API)) {
+                singletons.add(new AdminRoot());
+            }
             classes.add(ThemeResource.class);
             classes.add(JsResource.class);
 
