@@ -64,6 +64,8 @@ public class UserSessionAdapter implements UserSessionModel {
 
     private final boolean offline;
 
+    private SessionPersistenceState persistenceState;
+
     public UserSessionAdapter(KeycloakSession session, InfinispanUserSessionProvider provider, 
                               InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx,
                               InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx,
@@ -307,6 +309,14 @@ public class UserSessionAdapter implements UserSessionModel {
         };
 
         update(task);
+    }
+
+    public SessionPersistenceState getPersistenceState() {
+        return persistenceState;
+    }
+
+    public void setPersistenceState(SessionPersistenceState persistenceState) {
+        this.persistenceState = persistenceState;
     }
 
     @Override

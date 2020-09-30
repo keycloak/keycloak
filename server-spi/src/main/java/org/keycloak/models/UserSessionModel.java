@@ -91,4 +91,27 @@ public interface UserSessionModel {
         LOGGED_OUT
     }
 
+    /**
+     * Flag used when creating user session
+     */
+    enum SessionPersistenceState {
+
+        /**
+         * Session will be marked as persistent when created and it will be saved into the persistent storage (EG. infinispan cache).
+         * This is the default behaviour
+         */
+        PERSISTENT,
+
+        /**
+         *  This userSession will be valid just for the single request. Hence there won't be real
+         *  userSession created in the persistent store. Flag can be used for the protocols, which need just "dummy"
+         *  userSession to be able to run protocolMappers SPI. Example is DockerProtocol or OAuth2 client credentials grant.
+         */
+        TRANSIENT;
+
+        public static SessionPersistenceState fromString(String sessionPersistenceString) {
+            return (sessionPersistenceString == null) ? PERSISTENT : Enum.valueOf(SessionPersistenceState.class, sessionPersistenceString);
+        }
+    }
+
 }
