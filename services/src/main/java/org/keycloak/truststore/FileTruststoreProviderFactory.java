@@ -95,7 +95,7 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
         TruststoreCertificatesLoader certsLoader = new TruststoreCertificatesLoader(truststore);
         provider = new FileTruststoreProvider(truststore, verificationPolicy, certsLoader.trustedRootCerts, certsLoader.intermediateCerts);
         TruststoreProviderSingleton.set(provider);
-        log.debug("File trustore provider initialized: " + new File(storepath).getAbsolutePath());
+        log.debug("File truststore provider initialized: " + new File(storepath).getAbsolutePath());
     }
 
     private KeyStore loadStore(String path, char[] password) throws Exception {
