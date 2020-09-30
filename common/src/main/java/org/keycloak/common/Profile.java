@@ -43,9 +43,24 @@ public class Profile {
         EXPERIMENTAL,
         DEPRECATED;
     }
+
     public enum Feature {
+
         ACCOUNT2(Type.DEFAULT),
         ACCOUNT_API(Type.DEFAULT),
+
+        /**
+         * Controls the availability of the `/admin` endpoint with the Admin REST-API and Console
+         */
+        ADMIN(Type.DEFAULT),
+
+        /**
+         * Controls the availability of the Keycloak Admin-Console
+         * Note that, the Admin-Console requires the {@link #ADMIN} feature.
+         */
+        ADMIN_CONSOLE(Type.DEFAULT),
+
+
         ADMIN_FINE_GRAINED_AUTHZ(Type.PREVIEW),
         DOCKER(Type.DISABLED_BY_DEFAULT),
         IMPERSONATION(Type.DEFAULT),
