@@ -16,11 +16,14 @@
  */
 package org.keycloak.configuration;
 
+import static org.keycloak.configuration.Messages.invalidDatabaseVendor;
+import static org.keycloak.configuration.PropertyMapper.MAPPERS;
 import static org.keycloak.configuration.PropertyMapper.create;
 import static org.keycloak.configuration.PropertyMapper.createWithDefault;
 import static org.keycloak.configuration.PropertyMapper.forBuildTimeProperty;
 
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import io.quarkus.runtime.configuration.ProfileManager;
@@ -50,6 +53,18 @@ public final class PropertyMappers {
                 enabled = true;
             }
             
+            if (!enabled) {
+                ConfigValue proceed = context.proceed("kc.https.certificate.file");
+                
+                if (proceed == null || proceed.getValue() == null) {
+                    proceed = context.proceed("kc.https.certificate.key-store-file");
+                }
+                
+                if (proceed == null || proceed.getValue() == null) {
+                    throw Messages.httpsConfigurationNotSet();
+                }
+            }
+            
             return enabled ? "enabled" : "disabled";
         }, "Enables the HTTP listener.");
         createWithDefault("http.port", "quarkus.http.port", String.valueOf(8080), "The HTTP port.");
@@ -59,10 +74,10 @@ public final class PropertyMappers {
         create("https.protocols", "quarkus.http.ssl.protocols", "The list of protocols to explicitly enable.");
         create("https.certificate.file", "quarkus.http.ssl.certificate.file", "The file path to a server certificate or certificate chain in PEM format.");
         create("https.certificate.key-store-file", "quarkus.http.ssl.certificate.key-store-file", "An optional key store which holds the certificate information instead of specifying separate files.");
-        create("https.certificate.key-store-password", "quarkus.http.ssl.certificate.key-store-password", "A parameter to specify the password of the key store file. If not given, the default (\"password\") is used.");
+        create("https.certificate.key-store-password", "quarkus.http.ssl.certificate.key-store-password", "A parameter to specify the password of the key store file. If not given, the default (\"password\") is used.", true);
         create("https.certificate.key-store-file-type", "quarkus.http.ssl.certificate.key-store-file-type", "An optional parameter to specify type of the key store file. If not given, the type is automatically detected based on the file name.");
         create("https.certificate.trust-store-file", "quarkus.http.ssl.certificate.trust-store-file", "An optional trust store which holds the certificate information of the certificates to trust.");
-        create("https.certificate.trust-store-password", "quarkus.http.ssl.certificate.trust-store-password", "A parameter to specify the password of the trust store file.");
+        create("https.certificate.trust-store-password", "quarkus.http.ssl.certificate.trust-store-password", "A parameter to specify the password of the trust store file.", true);
         create("https.certificate.trust-store-file-type", "quarkus.http.ssl.certificate.trust-store-file-type", "An optional parameter to specify type of the trust store file. If not given, the type is automatically detected based on the file name.");
     }
 
@@ -76,7 +91,7 @@ public final class PropertyMappers {
                 case "passthrough":
                     return "true";
             }
-            throw new RuntimeException("Invalid value [" + mode + "] for configuration property [proxy]");
+            throw Messages.invalidProxyMode(mode);
         }, "The proxy mode if the server is behind a reverse proxy. Possible values are: none, edge, reencrypt, and passthrough.");
     }
 
@@ -90,10 +105,11 @@ public final class PropertyMappers {
                     return "org.hibernate.dialect.MariaDBDialect";
                 case "postgres-95":
                     return "io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL95Dialect";
+                case "postgres": // shorthand for the recommended postgres version
                 case "postgres-10":
                     return "io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect";
             }
-            return null;
+            throw invalidDatabaseVendor(db, "h2-file", "h2-mem", "mariadb", "postgres", "postgres-95", "postgres-10");
         }, "The database vendor. Possible values are: h2-mem, h2-file, mariadb, postgres95, postgres10.");
         create("db", "quarkus.datasource.driver", (db, context) -> {
             switch (db.toLowerCase()) {
@@ -112,19 +128,19 @@ public final class PropertyMappers {
         create("db.url", "db", "quarkus.datasource.url", (db, context) -> {
             switch (db.toLowerCase()) {
                 case "h2-file":
-                    return "jdbc:h2:file:${kc.home.dir:${kc.db.url.path:~}}/data/keycloakdb${kc.db.url.properties:;;AUTO_SERVER=TRUE}";
+                    return "jdbc:h2:file:${kc.home.dir:${kc.db.url.path:~}}/${kc.data.dir:data}/keycloakdb${kc.db.url.properties:;;AUTO_SERVER=TRUE}";
                 case "h2-mem":
                     return "jdbc:h2:mem:keycloakdb${kc.db.url.properties:}";
                 case "mariadb":
                     return "jdbc:mariadb://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}";
                 case "postgres-95":
                 case "postgres-10":
-                    return "jdbc:postgresql://${kc.db.url.host:localhost}/${kc.db.url.database}${kc.db.url.properties:}";
+                    return "jdbc:postgresql://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}";
             }
             return null;
-        }, "The database JDBC URL. If not provided a default URL is set based on the selected database vendor.");
+        }, "The database JDBC URL. If not provided a default URL is set based on the selected database vendor. For instance, if using 'postgres-10', the JDBC URL would be 'jdbc:postgresql://localhost/keycloak'. The host, database and properties can be overridden by setting the following system properties, respectively: -Dkc.db.url.host, -Dkc.db.url.database, -Dkc.db.url.properties.");
         create("db.username", "quarkus.datasource.username", "The database username.");
-        create("db.password", "quarkus.datasource.password", "The database password");
+        create("db.password", "quarkus.datasource.password", "The database password", true);
         create("db.schema", "quarkus.datasource.schema", "The database schema.");
         create("db.pool.initial-size", "quarkus.datasource.jdbc.initial-size", "The initial size of the connection pool.");
         create("db.pool.min-size", "quarkus.datasource.jdbc.min-size", "The minimal size of the connection pool.");
@@ -148,7 +164,7 @@ public final class PropertyMappers {
         return PropertyMapper.MAPPERS.getOrDefault(name, PropertyMapper.IDENTITY)
                 .getOrDefault(name, context, context.proceed(name));
     }
-    
+
     public static boolean isBuildTimeProperty(String name) {
         return PropertyMapper.MAPPERS.entrySet().stream()
                 .anyMatch(entry -> entry.getValue().getFrom().equals(name) && entry.getValue().isBuildTime());
@@ -180,5 +196,24 @@ public final class PropertyMappers {
 
     public static String canonicalFormat(String name) {
         return name.replaceAll("-", "\\.");
+    }
+
+    public static String formatValue(String property, String value) {
+        PropertyMapper mapper = PropertyMappers.getMapper(property);
+
+        if (mapper != null && mapper.isMask()) {
+            return "*******";
+        }
+
+        return value;
+    }
+    
+    public static PropertyMapper getMapper(String property) {
+        return MAPPERS.values().stream().filter(new Predicate<PropertyMapper>() {
+            @Override
+            public boolean test(PropertyMapper propertyMapper) {
+                return property.equals(propertyMapper.getFrom()) || property.equals(propertyMapper.getTo());
+            }
+        }).findFirst().orElse(null);
     }
 }

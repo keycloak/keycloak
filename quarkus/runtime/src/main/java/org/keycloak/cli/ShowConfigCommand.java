@@ -18,6 +18,7 @@
 package org.keycloak.cli;
 
 import static java.lang.Boolean.parseBoolean;
+import static org.keycloak.configuration.PropertyMappers.formatValue;
 import static org.keycloak.util.Environment.getBuiltTimeProperty;
 import static org.keycloak.util.Environment.getConfig;
 
@@ -29,7 +30,6 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.keycloak.configuration.MicroProfileConfigProvider;
-import org.keycloak.quarkus.KeycloakRecorder;
 import org.keycloak.util.Environment;
 
 import io.smallrye.config.ConfigValue;
@@ -112,7 +112,7 @@ public final class ShowConfigCommand {
         String value = getBuiltTimeProperty(property).orElse(null);
 
         if (value != null && !"".equals(value.trim())) {
-            System.out.printf("\t%s =  %s (build-time)%n", property, value);
+            System.out.printf("\t%s =  %s (persisted)%n", property, formatValue(property, value));
             return;
         }
 
@@ -122,7 +122,7 @@ public final class ShowConfigCommand {
             return;
         }
 
-        System.out.printf("\t%s =  %s (%s)%n", property, configValue.getValue(), configValue.getConfigSourceName());
+        System.out.printf("\t%s =  %s (%s)%n", property, formatValue(property, configValue.getValue()), configValue.getConfigSourceName());
     }
 
     private static String groupProperties(String property) {
