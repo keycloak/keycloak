@@ -33,6 +33,7 @@ export const GroupsSection = () => {
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
   const [isKebabOpen, setIsKebabOpen] = useState(false);
+  const [createGroupName, setCreateGroupName] = useState("");
   const columnID: keyof GroupRepresentation = "id";
   const membersLength: keyof GroupRepresentation = "membersLength";
   const columnGroupName: keyof GroupRepresentation = "name";
@@ -77,7 +78,7 @@ export const GroupsSection = () => {
       data && setRawData(data);
       setFilteredData(data);
     });
-  }, []);
+  }, [createGroupName]);
 
   // Filter groups
   const filterGroups = (newInput: string) => {
@@ -147,7 +148,13 @@ export const GroupsSection = () => {
             <GroupsList list={filteredData ? filteredData : rawData} />
           )}
         </TableToolbar>
-        <GroupsCreateModal isCreateModalOpen={isCreateModalOpen} handleModalToggle={handleModalToggle}/>
+        <GroupsCreateModal
+          isCreateModalOpen={isCreateModalOpen}
+          handleModalToggle={handleModalToggle}
+          setIsCreateModalOpen={setIsCreateModalOpen}
+          createGroupName={createGroupName}
+          setCreateGroupName={setCreateGroupName}
+        />
       </PageSection>
     </React.Fragment>
   );
