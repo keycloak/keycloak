@@ -5,11 +5,17 @@ import {
   TableBody,
   TableVariant,
 } from "@patternfly/react-table";
-import { Button } from "@patternfly/react-core";
+import { 
+  Button,
+  Alert,
+  AlertVariant
+} from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { GroupRepresentation } from "./models/groups";
 import { UsersIcon } from "@patternfly/react-icons";
 import { HttpClientContext } from "../http-service/HttpClientContext";
+import { RealmContext } from "../components/realm-context/RealmContext";
+import { useAlerts } from "../components/alert/Alerts";
 
 type GroupsListProps = {
   list?: GroupRepresentation[];
@@ -20,6 +26,8 @@ export const GroupsList = ({ list }: GroupsListProps) => {
   const httpClient = useContext(HttpClientContext)!;
   const columnGroupName: keyof GroupRepresentation = "name";
   const columnGroupNumber: keyof GroupRepresentation = "membersLength";
+  const { realm } = useContext(RealmContext);
+  const [add, Alerts] = useAlerts();
   const [formattedData, setFormattedData] = useState([
     { cells: [<Button key="0">Test</Button>], selected: false },
   ]);
@@ -66,9 +74,10 @@ export const GroupsList = ({ list }: GroupsListProps) => {
 
   // Delete individual rows using the action in the table
   function onDelete(rowIndex: number) {
+    console.log('does it make it here' + rowIndex);
     const localFilteredData = [...list!];
     httpClient.doDelete(
-      `/admin/realms/master/groups/${localFilteredData[rowIndex].id}`
+      `/admin/realms/${realm}/groups/${localFilteredData[rowIndex].id}`
     );
     // TO DO update the state
   }
@@ -81,12 +90,22 @@ export const GroupsList = ({ list }: GroupsListProps) => {
     },
     {
       title: t("common:Delete"),
-      onClick: () => onDelete,
+      onClick: (_, rowId) => {
+        try {
+          httpClient.doDelete(
+            `/admin/realms/${realm}/groups/${list![rowId].id}`
+          );
+          add(t("Group deleted"), AlertVariant.success);
+        } catch (error) {
+          add(`${t("clientDeleteError")} ${error}`, AlertVariant.danger);
+        }
+      }
     },
   ];
 
   return (
     <React.Fragment>
+      <Alerts/>
       {formattedData && (
         <Table
           actions={actions}
