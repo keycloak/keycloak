@@ -5,10 +5,7 @@ import {
   TableBody,
   TableVariant,
 } from "@patternfly/react-table";
-import { 
-  Button,
-  AlertVariant
-} from "@patternfly/react-core";
+import { Button, AlertVariant } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { GroupRepresentation } from "./models/groups";
 import { UsersIcon } from "@patternfly/react-icons";
@@ -30,7 +27,6 @@ export const GroupsList = ({ list }: GroupsListProps) => {
   const [formattedData, setFormattedData] = useState([
     { cells: [<Button key="0">Test</Button>], selected: false },
   ]);
-
 
   const formatData = (data: GroupRepresentation[]) =>
     data.map((group: { [key: string]: any }, index) => {
@@ -81,21 +77,21 @@ export const GroupsList = ({ list }: GroupsListProps) => {
     {
       title: t("common:Delete"),
       onClick: (_: React.MouseEvent<Element, MouseEvent>, rowId: number) => {
-        try { httpClient.doDelete(
+        try {
+          httpClient.doDelete(
             `/admin/realms/${realm}/groups/${list![rowId].id}`
           );
           add(t("Group deleted"), AlertVariant.success);
         } catch (error) {
           add(`${t("clientDeleteError")} ${error}`, AlertVariant.danger);
         }
- 
-      }
+      },
     },
   ];
 
   return (
     <React.Fragment>
-      <Alerts/>
+      <Alerts />
       {formattedData && (
         <Table
           actions={actions}

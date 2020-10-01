@@ -1,4 +1,4 @@
-import React, {useContext} from "react";
+import React, { useContext } from "react";
 import {
   AlertVariant,
   Button,
@@ -6,7 +6,7 @@ import {
   FormGroup,
   Modal,
   ModalVariant,
-  TextInput
+  TextInput,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { HttpClientContext } from "../http-service/HttpClientContext";
@@ -22,8 +22,13 @@ type GroupsCreateModalProps = {
   setCreateGroupName: (createGroupName: string) => void;
 };
 
-export const GroupsCreateModal = ({handleModalToggle, isCreateModalOpen, setIsCreateModalOpen, createGroupName, setCreateGroupName}: GroupsCreateModalProps) => {
-  
+export const GroupsCreateModal = ({
+  handleModalToggle,
+  isCreateModalOpen,
+  setIsCreateModalOpen,
+  createGroupName,
+  setCreateGroupName,
+}: GroupsCreateModalProps) => {
   const { t } = useTranslation("groups");
   const httpClient = useContext(HttpClientContext)!;
   const { realm } = useContext(RealmContext);
@@ -32,19 +37,21 @@ export const GroupsCreateModal = ({handleModalToggle, isCreateModalOpen, setIsCr
   const { register, errors } = form;
 
   const valueChange = (createGroupName: string) => {
-    setCreateGroupName(createGroupName)
-  }
+    setCreateGroupName(createGroupName);
+  };
 
   const submitForm = async () => {
     try {
-      await httpClient.doPost(`/admin/realms/${realm}/groups`, {name: createGroupName});
+      await httpClient.doPost(`/admin/realms/${realm}/groups`, {
+        name: createGroupName,
+      });
       setIsCreateModalOpen(false);
       setCreateGroupName("");
       add(t("groupCreated"), AlertVariant.success);
     } catch (error) {
       add(`${t("couldNotCreateGroup")} ': '${error}'`, AlertVariant.danger);
     }
-  }
+  };
 
   return (
     <React.Fragment>
@@ -57,7 +64,7 @@ export const GroupsCreateModal = ({handleModalToggle, isCreateModalOpen, setIsCr
         actions={[
           <Button key="confirm" variant="primary" onClick={() => submitForm()}>
             {t("create")}
-          </Button>
+          </Button>,
         ]}
       >
         <Form isHorizontal>

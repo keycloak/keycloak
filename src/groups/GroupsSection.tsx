@@ -21,7 +21,6 @@ import {
 } from "@patternfly/react-core";
 import "./GroupsSection.css";
 
-
 export const GroupsSection = () => {
   const { t } = useTranslation("groups");
   const httpClient = useContext(HttpClientContext)!;
@@ -36,8 +35,6 @@ export const GroupsSection = () => {
   const columnGroupName: keyof GroupRepresentation = "name";
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-
 
   const loader = async () => {
     const groups = await httpClient.doGet<ServerGroupsArrayRepresentation[]>(
@@ -97,15 +94,12 @@ export const GroupsSection = () => {
   };
 
   const handleModalToggle = () => {
-    setIsCreateModalOpen(!isCreateModalOpen)
+    setIsCreateModalOpen(!isCreateModalOpen);
   };
 
   return (
     <React.Fragment>
-      <ViewHeader
-        titleKey="groups:groups"
-        subKey="groups:groupsDescription"
-      />
+      <ViewHeader titleKey="groups:groups" subKey="groups:groupsDescription" />
       <PageSection variant={PageSectionVariants.light}>
         <TableToolbar
           count={10}
@@ -144,9 +138,7 @@ export const GroupsSection = () => {
           }
         >
           {rawData && filteredData && (
-            <GroupsList
-              list={filteredData ? filteredData : rawData}
-            />
+            <GroupsList list={filteredData ? filteredData : rawData} />
           )}
         </TableToolbar>
         <GroupsCreateModal
