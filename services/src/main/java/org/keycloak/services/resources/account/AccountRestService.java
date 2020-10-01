@@ -20,8 +20,9 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.enums.AccountRestApiVersion;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.StringPropertyReplacer;
-import org.keycloak.events.Details;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
@@ -46,6 +47,17 @@ import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.account.resources.ResourcesService;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.storage.ReadOnlyException;
+import org.keycloak.theme.Theme;
+import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
+import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.utils.UserProfileUpdateHelper;
+import org.keycloak.userprofile.profile.represenations.AccountUserRepresentationUserProfile;
+import org.keycloak.userprofile.profile.DefaultUserProfileContext;
+import org.keycloak.userprofile.profile.represenations.UserModelUserProfile;
+import org.keycloak.userprofile.validation.UserProfileValidationResult;
+import org.keycloak.userprofile.validation.UserUpdateEvent;
+import org.keycloak.common.Profile;
+import org.keycloak.theme.Theme;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -63,6 +75,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -72,9 +85,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import org.keycloak.common.Profile;
-import org.keycloak.theme.Theme;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -163,83 +173,26 @@ public class AccountRestService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Response updateAccount(UserRepresentation userRep) {
+    public Response updateAccount(UserRepresentation rep) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
 
-        event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(user);
+        event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser());
+
+        UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class, LegacyUserProfileProviderFactory.PROVIDER_ID);
+        AccountUserRepresentationUserProfile updatedUser = new AccountUserRepresentationUserProfile(rep);
+        DefaultUserProfileContext updateContext =
+                new DefaultUserProfileContext(UserUpdateEvent.Account, new UserModelUserProfile(user), updatedUser);
+        UserProfileValidationResult result = profileProvider.validate(updateContext);
+
+        if (result.hasFailureOfErrorType(Messages.READ_ONLY_USERNAME))
+            return ErrorResponse.error(Messages.READ_ONLY_USERNAME, Response.Status.BAD_REQUEST);
+        if (result.hasFailureOfErrorType(Messages.USERNAME_EXISTS))
+            return ErrorResponse.exists(Messages.USERNAME_EXISTS);
+        if (result.hasFailureOfErrorType(Messages.EMAIL_EXISTS))
+            return ErrorResponse.exists(Messages.EMAIL_EXISTS);
 
         try {
-            RealmModel realm = session.getContext().getRealm();
-
-            boolean usernameChanged = userRep.getUsername() != null && !userRep.getUsername().equals(user.getUsername());
-            if (realm.isEditUsernameAllowed()) {
-                if (usernameChanged) {
-                    UserModel existing = session.users().getUserByUsername(userRep.getUsername(), realm);
-                    if (existing != null) {
-                        return ErrorResponse.exists(Messages.USERNAME_EXISTS);
-                    }
-
-                    user.setUsername(userRep.getUsername());
-                }
-            } else if (usernameChanged) {
-                return ErrorResponse.error(Messages.READ_ONLY_USERNAME, Response.Status.BAD_REQUEST);
-            }
-
-            boolean emailChanged = userRep.getEmail() != null && !userRep.getEmail().equals(user.getEmail());
-            if (emailChanged && !realm.isDuplicateEmailsAllowed()) {
-                UserModel existing = session.users().getUserByEmail(userRep.getEmail(), realm);
-                if (existing != null) {
-                    return ErrorResponse.exists(Messages.EMAIL_EXISTS);
-                }
-            }
-
-            if (emailChanged && realm.isRegistrationEmailAsUsername() && !realm.isDuplicateEmailsAllowed()) {
-                UserModel existing = session.users().getUserByUsername(userRep.getEmail(), realm);
-                if (existing != null) {
-                    return ErrorResponse.exists(Messages.USERNAME_EXISTS);
-                }
-            }
-
-            if (emailChanged) {
-                String oldEmail = user.getEmail();
-                user.setEmail(userRep.getEmail());
-                user.setEmailVerified(false);
-                event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, userRep.getEmail()).success();
-
-                if (realm.isRegistrationEmailAsUsername()) {
-                    user.setUsername(userRep.getEmail());
-                }
-            }
-
-            user.setFirstName(userRep.getFirstName());
-            user.setLastName(userRep.getLastName());
-
-            if (userRep.getAttributes() != null) {
-                Set<String> attributeKeys = new HashSet<>(user.getAttributes().keySet());
-                // We store username and other attributes as attributes (for future UserProfile)
-                // but don't propagate them to the UserRepresentation, so userRep will never contain them
-                // if the user did not explicitly add them
-                attributeKeys.remove(UserModel.FIRST_NAME);
-                attributeKeys.remove(UserModel.LAST_NAME);
-                attributeKeys.remove(UserModel.EMAIL);
-                attributeKeys.remove(UserModel.USERNAME);
-                for (String k : attributeKeys) {
-                    if (!userRep.getAttributes().containsKey(k)) {
-                        user.removeAttribute(k);
-                    }
-                }
-
-                Map<String, List<String>> attributes = userRep.getAttributes();
-                // Make sure we don't accidentally update any of the fields through attributes
-                attributes.remove(UserModel.FIRST_NAME);
-                attributes.remove(UserModel.LAST_NAME);
-                attributes.remove(UserModel.EMAIL);
-                attributes.remove(UserModel.USERNAME);
-                for (Map.Entry<String, List<String>> e : userRep.getAttributes().entrySet()) {
-                    user.setAttribute(e.getKey(), e.getValue());
-                }
-            }
-
+            UserProfileUpdateHelper.update(UserUpdateEvent.Account, session, user, updatedUser);
             event.success();
 
             return Cors.add(request, Response.noContent()).auth().allowedOrigins(auth.getToken()).build();
@@ -274,6 +227,39 @@ public class AccountRestService {
     }
 
     // TODO Federated identities
+
+    /**
+     * Returns the applications with the given id in the specified realm.
+     *
+     * @param clientId client id to search for
+     * @return application with the provided id
+     */
+    @Path("/applications/{clientId}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getApplication(final @PathParam("clientId") String clientId) {
+        checkAccountApiEnabled();
+        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_APPLICATIONS);
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null || client.isBearerOnly() || client.getBaseUrl() == null) {
+            return Cors.add(request, Response.status(Response.Status.NOT_FOUND).entity("No client with clientId: " + clientId + " found.")).build();
+        }
+
+        List<String> inUseClients = new LinkedList<>();
+        if (!session.sessions().getUserSessions(realm, client).isEmpty()) {
+            inUseClients.add(clientId);
+        }
+
+        List<String> offlineClients = new LinkedList<>();
+        if (session.sessions().getOfflineSessionsCount(realm, client) > 0) {
+            offlineClients.add(clientId);
+        }
+
+        UserConsentModel consentModel = session.users().getConsentByClient(realm, user.getId(), client.getId());
+        Map<String, UserConsentModel> consentModels = Collections.singletonMap(client.getClientId(), consentModel);
+
+        return Cors.add(request, Response.ok(modelToRepresentation(client, inUseClients, offlineClients, consentModels))).build();
+    }
 
     private ClientRepresentation modelToRepresentation(ClientModel model, List<String> inUseClients, List<String> offlineClients, Map<String, UserConsentModel> consents) {
         ClientRepresentation representation = new ClientRepresentation();

@@ -18,8 +18,6 @@ package org.keycloak.services.resources.admin;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionToken;
@@ -73,12 +71,17 @@ import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.storage.ReadOnlyException;
+import org.keycloak.userprofile.utils.UserProfileUpdateHelper;
+import org.keycloak.userprofile.profile.represenations.UserRepresentationUserProfile;
+import org.keycloak.userprofile.validation.UserUpdateEvent;
 import org.keycloak.utils.ProfileHelper;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -156,17 +159,6 @@ public class UserResource {
 
         auth.users().requireManage(user);
         try {
-            Set<String> attrsToRemove;
-            if (rep.getAttributes() != null) {
-                attrsToRemove = new HashSet<>(user.getAttributes().keySet());
-                attrsToRemove.removeAll(rep.getAttributes().keySet());
-                attrsToRemove.remove(UserModel.FIRST_NAME);
-                attrsToRemove.remove(UserModel.LAST_NAME);
-                attrsToRemove.remove(UserModel.EMAIL);
-                attrsToRemove.remove(UserModel.USERNAME);
-            } else {
-                attrsToRemove = Collections.emptySet();
-            }
 
             if (rep.isEnabled() != null && rep.isEnabled()) {
                 UserLoginFailureModel failureModel = session.sessions().getUserLoginFailure(realm, user.getId());
@@ -175,7 +167,7 @@ public class UserResource {
                 }
             }
 
-            updateUserFromRep(user, rep, attrsToRemove, realm, session, true);
+            updateUserFromRep(user, rep, session, true);
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
 
@@ -198,20 +190,9 @@ public class UserResource {
         }
     }
 
-    public static void updateUserFromRep(UserModel user, UserRepresentation rep, Set<String> attrsToRemove, RealmModel realm, KeycloakSession session, boolean removeMissingRequiredActions) {
-        if (rep.getUsername() != null && realm.isEditUsernameAllowed() && !realm.isRegistrationEmailAsUsername()) {
-            user.setUsername(rep.getUsername());
-        }
-        if (rep.getEmail() != null) {
-            String email = rep.getEmail();
-            user.setEmail(email);
-            if(realm.isRegistrationEmailAsUsername()) {
-                user.setUsername(email);
-            }
-        }
-        if (rep.getEmail() == "") user.setEmail(null);
-        if (rep.getFirstName() != null) user.setFirstName(rep.getFirstName());
-        if (rep.getLastName() != null) user.setLastName(rep.getLastName());
+    public static void updateUserFromRep(UserModel user, UserRepresentation rep, KeycloakSession session, boolean removeMissingRequiredActions) {
+
+        UserProfileUpdateHelper.update(UserUpdateEvent.UserResource, session, user, new UserRepresentationUserProfile(rep));
 
         if (rep.isEnabled() != null) user.setEnabled(rep.isEnabled());
         if (rep.isEmailVerified() != null) user.setEmailVerified(rep.isEmailVerified());
@@ -243,20 +224,8 @@ public class UserResource {
                 }
             }
         }
-
-        if (rep.getAttributes() != null) {
-            for (Map.Entry<String, List<String>> attr : rep.getAttributes().entrySet()) {
-                List<String> currentValue = user.getAttribute(attr.getKey());
-                if (currentValue == null || currentValue.size() != attr.getValue().size() || !currentValue.containsAll(attr.getValue())) {
-                    user.setAttribute(attr.getKey(), attr.getValue());
-                }
-            }
-
-            for (String attr : attrsToRemove) {
-                user.removeAttribute(attr);
-            }
-        }
     }
+
 
     /**
      * Get representation of the user
@@ -323,10 +292,10 @@ public class UserResource {
         result.put("sameRealm", sameRealm);
         result.put("redirect", redirect.toString());
         event.event(EventType.IMPERSONATE)
-             .session(userSession)
-             .user(user)
-             .detail(Details.IMPERSONATOR_REALM, authenticatedRealm.getName())
-             .detail(Details.IMPERSONATOR, impersonator).success();
+                .session(userSession)
+                .user(user)
+                .detail(Details.IMPERSONATOR_REALM, authenticatedRealm.getName())
+                .detail(Details.IMPERSONATOR, impersonator).success();
 
         return result;
     }

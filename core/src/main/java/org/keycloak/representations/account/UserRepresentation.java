@@ -20,6 +20,9 @@ package org.keycloak.representations.account;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.keycloak.json.StringListMapDeserializer;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -92,6 +95,15 @@ public class UserRepresentation {
 
     public void setAttributes(Map<String, List<String>> attributes) {
         this.attributes = attributes;
+    }
+
+    public void singleAttribute(String name, String value) {
+        if (this.attributes == null) this.attributes=new HashMap<>();
+        attributes.put(name, (value == null ? new ArrayList<String>() : Arrays.asList(value)));
+    }
+
+    public String firstAttribute(String key) {
+        return this.attributes == null ? null : this.attributes.containsKey(key) ? this.attributes.get(key).get(0) : null;
     }
 
 }

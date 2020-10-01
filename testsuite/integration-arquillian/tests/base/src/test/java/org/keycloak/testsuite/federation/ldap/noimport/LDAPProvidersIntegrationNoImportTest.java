@@ -275,6 +275,7 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
         UserRepresentation johnRep = john.toRepresentation();
         String firstNameOrig = johnRep.getFirstName();
         String lastNameOrig = johnRep.getLastName();
+        String emailOrig = johnRep.getEmail();
         String postalCodeOrig = johnRep.getAttributes().get("postal_code").get(0);
 
         try {
@@ -327,6 +328,10 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             johnRep.setLastName(lastNameOrig);
             johnRep.singleAttribute("postal_code", postalCodeOrig);
             john.update(johnRep);
+            Assert.assertEquals(firstNameOrig, johnRep.getFirstName());
+            Assert.assertEquals(lastNameOrig, johnRep.getLastName());
+            Assert.assertEquals(emailOrig, johnRep.getEmail());
+            Assert.assertEquals(postalCodeOrig, johnRep.getAttributes().get("postal_code").get(0));
         }
     }
 
