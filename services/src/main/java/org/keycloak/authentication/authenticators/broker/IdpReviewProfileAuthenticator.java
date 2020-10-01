@@ -37,9 +37,8 @@ import org.keycloak.services.resources.AttributeFormDataProcessor;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
 import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
 import org.keycloak.userprofile.profile.DefaultUserProfileContext;
-import org.keycloak.userprofile.profile.representations.IdpUserProfile;
+import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
 import org.keycloak.userprofile.utils.UserProfileUpdateHelper;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
 import org.keycloak.userprofile.validation.UserUpdateEvent;
@@ -112,9 +111,7 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
         String oldEmail = userCtx.getEmail();
         String newEmail = updatedProfile.getFirstAttribute(UserModel.EMAIL);
 
-        DefaultUserProfileContext updateContext =
-                new DefaultUserProfileContext(UserUpdateEvent.IdpReview, new IdpUserProfile(userCtx), updatedProfile);
-        UserProfileValidationResult result = profileProvider.validate(updateContext);
+        UserProfileValidationResult result = profileProvider.validate(DefaultUserProfileContext.forIdpReview(userCtx), updatedProfile);
         List<FormMessage> errors = Validation.getFormErrorsFromValidation(result);
 
         if (errors != null && !errors.isEmpty()) {

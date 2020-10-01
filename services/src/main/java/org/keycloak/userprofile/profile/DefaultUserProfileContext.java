@@ -17,8 +17,14 @@
 
 package org.keycloak.userprofile.profile;
 
+import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.profile.representations.IdpUserProfile;
+import org.keycloak.userprofile.profile.representations.UserModelUserProfile;
+import org.keycloak.userprofile.profile.representations.UserRepresentationUserProfile;
 import org.keycloak.userprofile.validation.UserUpdateEvent;
 
 /**
@@ -27,23 +33,37 @@ import org.keycloak.userprofile.validation.UserUpdateEvent;
 public class DefaultUserProfileContext implements UserProfileContext {
     private boolean isCreated;
     private UserProfile currentUserProfile;
-    private UserProfile updatedUserProfile;
     private UserUpdateEvent userUpdateEvent;
 
-    public DefaultUserProfileContext(UserUpdateEvent userUpdateEvent, UserProfile updatedUserProfile) {
+    private DefaultUserProfileContext(UserUpdateEvent userUpdateEvent, UserProfile currentUserProfile) {
         this.userUpdateEvent = userUpdateEvent;
         this.isCreated = false;
-        this.currentUserProfile = null;
-        this.updatedUserProfile = updatedUserProfile;
-    }
-
-    public DefaultUserProfileContext(UserUpdateEvent userUpdateEvent, UserProfile currentUserProfile, UserProfile updatedUserProfile) {
-        this.userUpdateEvent = userUpdateEvent;
-        this.isCreated = true;
         this.currentUserProfile = currentUserProfile;
-        this.updatedUserProfile = updatedUserProfile;
     }
 
+    public static DefaultUserProfileContext forIdpReview(SerializedBrokeredIdentityContext currentUser) {
+        return new DefaultUserProfileContext(UserUpdateEvent.IdpReview, new IdpUserProfile(currentUser));
+    }
+
+    public static DefaultUserProfileContext forUpdateProfile(UserModel currentUser) {
+        return new DefaultUserProfileContext(UserUpdateEvent.UpdateProfile, new UserModelUserProfile(currentUser));
+    }
+
+    public static DefaultUserProfileContext forAccountService(UserModel currentUser) {
+        return new DefaultUserProfileContext(UserUpdateEvent.Account, new UserModelUserProfile(currentUser));
+    }
+
+    public static DefaultUserProfileContext forRegistrationUserCreation() {
+        return new DefaultUserProfileContext(UserUpdateEvent.RegistrationUserCreation, null);
+    }
+
+    public static DefaultUserProfileContext forRegistrationProfile() {
+        return new DefaultUserProfileContext(UserUpdateEvent.RegistrationProfile, null);
+    }
+
+    public static DefaultUserProfileContext forUserResource(UserRepresentation rep) {
+        return new DefaultUserProfileContext(UserUpdateEvent.UserResource, new UserRepresentationUserProfile(rep));
+    }
 
     @Override
     public boolean isCreate() {
@@ -51,13 +71,8 @@ public class DefaultUserProfileContext implements UserProfileContext {
     }
 
     @Override
-    public UserProfile getCurrent() {
+    public UserProfile getCurrentProfile() {
         return currentUserProfile;
-    }
-
-    @Override
-    public UserProfile getUpdated() {
-        return updatedUserProfile;
     }
 
     @Override

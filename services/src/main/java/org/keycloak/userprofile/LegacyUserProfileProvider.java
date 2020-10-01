@@ -44,7 +44,7 @@ public class LegacyUserProfileProvider implements UserProfileProvider {
     }
 
     @Override
-    public UserProfileValidationResult validate(UserProfileContext updateContext) {
+    public UserProfileValidationResult validate(UserProfileContext updateContext, UserProfile updatedProfile) {
         RealmModel realm = this.session.getContext().getRealm();
 
         ValidationChainBuilder builder = ValidationChainBuilder.builder();
@@ -64,7 +64,7 @@ public class LegacyUserProfileProvider implements UserProfileProvider {
                 addUserCreationValidators(builder);
                 break;
         }
-        return new UserProfileValidationResult(builder.build().validate(updateContext));
+        return new UserProfileValidationResult(builder.build().validate(updateContext,updatedProfile));
     }
 
     private void addUserCreationValidators(ValidationChainBuilder builder) {

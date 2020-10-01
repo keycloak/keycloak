@@ -41,16 +41,16 @@ public class StaticValidators {
 
     public static BiFunction<String, UserProfileContext, Boolean> userNameExists(KeycloakSession session) {
         return (value, context) ->
-                !(context.getCurrent() != null
-                        && !value.equals(context.getCurrent().getFirstAttribute(UserModel.USERNAME))
+                !(context.getCurrentProfile() != null
+                        && !value.equals(context.getCurrentProfile().getFirstAttribute(UserModel.USERNAME))
                         && session.users().getUserByUsername(value, session.getContext().getRealm()) != null);
     }
 
     public static BiFunction<String, UserProfileContext, Boolean> isUserMutable(RealmModel realm) {
         return (value, context) ->
                 !(!realm.isEditUsernameAllowed()
-                        && context.getCurrent() != null
-                        && !value.equals(context.getCurrent().getFirstAttribute(UserModel.USERNAME))
+                        && context.getCurrentProfile() != null
+                        && !value.equals(context.getCurrentProfile().getFirstAttribute(UserModel.USERNAME))
                 );
     }
 
@@ -65,7 +65,7 @@ public class StaticValidators {
             RealmModel realm = session.getContext().getRealm();
             if (!realm.isDuplicateEmailsAllowed()) {
                 UserModel userByEmail = session.users().getUserByEmail(value, realm);
-                return !(realm.isRegistrationEmailAsUsername() && userByEmail != null && context.getCurrent() != null && !userByEmail.getId().equals(context.getCurrent().getId()));
+                return !(realm.isRegistrationEmailAsUsername() && userByEmail != null && context.getCurrentProfile() != null && !userByEmail.getId().equals(context.getCurrentProfile().getId()));
             }
             return true;
         };
@@ -77,7 +77,7 @@ public class StaticValidators {
             if (!realm.isDuplicateEmailsAllowed()) {
                 UserModel userByEmail = session.users().getUserByEmail(value, realm);
                 // check for duplicated email
-                return !(userByEmail != null && (context.getCurrent() == null || !userByEmail.getId().equals(context.getCurrent().getId())));
+                return !(userByEmail != null && (context.getCurrentProfile() == null || !userByEmail.getId().equals(context.getCurrentProfile().getId())));
             }
             return true;
         };

@@ -80,9 +80,7 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
         String newEmail = updatedProfile.getFirstAttribute(UserModel.EMAIL);
 
         UserProfileProvider userProfile = context.getSession().getProvider(UserProfileProvider.class, LegacyUserProfileProviderFactory.PROVIDER_ID);
-        DefaultUserProfileContext updateContext =
-                new DefaultUserProfileContext(UserUpdateEvent.UpdateProfile, new UserModelUserProfile(user), updatedProfile);
-        UserProfileValidationResult result = userProfile.validate(updateContext);
+        UserProfileValidationResult result = userProfile.validate(DefaultUserProfileContext.forUpdateProfile(user),updatedProfile);
         List<FormMessage> errors = Validation.getFormErrorsFromValidation(result);
 
         if (errors != null && !errors.isEmpty()) {
