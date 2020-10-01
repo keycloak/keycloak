@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.userprofile.profile.represenations;
+package org.keycloak.userprofile.profile.representations;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;

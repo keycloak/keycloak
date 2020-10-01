@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-package org.keycloak.userprofile.profile.represenations;
+package org.keycloak.userprofile.profile.representations;
 
-import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.models.UserModel;
 import org.keycloak.userprofile.profile.AbstractUserProfile;
 
 import java.util.List;
@@ -26,11 +26,11 @@ import java.util.Map;
 /**
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
  */
-public class IdpUserProfile extends AbstractUserProfile {
+public class UserModelUserProfile extends AbstractUserProfile {
 
-    private final SerializedBrokeredIdentityContext user;
+    private final UserModel user;
 
-    public IdpUserProfile(SerializedBrokeredIdentityContext user) {
+    public UserModelUserProfile(UserModel user) {
         this.user = user;
     }
 
@@ -38,7 +38,6 @@ public class IdpUserProfile extends AbstractUserProfile {
     public String getId() {
         return user.getId();
     }
-
 
     @Override
     public Map<String, List<String>> getAttributes() {
@@ -50,4 +49,9 @@ public class IdpUserProfile extends AbstractUserProfile {
         user.setAttribute(key, value);
     }
 
+    @Override
+    public void removeAttribute(String attr) {
+        // Due to the fact that the user attribute list is a copy and not a reference in the user adapter we have to access the remove function directly
+        user.removeAttribute(attr);
+    }
 }

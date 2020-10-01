@@ -32,8 +32,14 @@ public interface UserProfile {
 
     Map<String, List<String>> getAttributes();
 
-    String getFirstAttribute(String name);
+    String getFirstAttribute(String key);
 
     List<String> getAttribute(String key);
+
+    void setSingleAttribute(String key, String value);
+
+    void setAttribute(String key, List<String> value);
+
+    void removeAttribute(String attr);
 
 }

@@ -7,7 +7,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.userprofile.profile.DefaultUserProfileContext;
 import org.keycloak.userprofile.UserProfile;
-import org.keycloak.userprofile.profile.represenations.UserRepresentationUserProfile;
+import org.keycloak.userprofile.profile.representations.UserRepresentationUserProfile;
 
 import java.util.Collections;
 import java.util.stream.Collectors;
