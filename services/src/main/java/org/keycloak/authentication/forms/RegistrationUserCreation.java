@@ -40,10 +40,10 @@ import org.keycloak.services.validation.Validation;
 import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.userprofile.profile.represenations.AttributeUserProfile;
+import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
 import org.keycloak.userprofile.utils.UserProfileUpdateHelper;
 import org.keycloak.userprofile.profile.DefaultUserProfileContext;
-import org.keycloak.userprofile.profile.represenations.UserModelUserProfile;
+import org.keycloak.userprofile.profile.representations.UserModelUserProfile;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
 import org.keycloak.userprofile.validation.UserUpdateEvent;
 

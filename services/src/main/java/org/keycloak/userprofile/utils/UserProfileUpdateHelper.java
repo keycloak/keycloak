@@ -21,6 +21,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.validation.UserUpdateEvent;
 
 import java.util.Collections;
@@ -34,12 +35,12 @@ import java.util.Set;
  */
 public class UserProfileUpdateHelper {
 
-    public static void update(UserUpdateEvent userUpdateEvent, KeycloakSession session, UserModel currentUser, StoredUserProfile updatedUser) {
+    public static void update(UserUpdateEvent userUpdateEvent, KeycloakSession session, UserModel currentUser, UserProfile updatedUser) {
         update(userUpdateEvent, session, currentUser, updatedUser, true);
     }
 
 
-    public static void update(UserUpdateEvent userUpdateEvent, KeycloakSession session, UserModel currentUser, StoredUserProfile updatedUser, boolean removeMissingAttributes) {
+    public static void update(UserUpdateEvent userUpdateEvent, KeycloakSession session, UserModel currentUser, UserProfile updatedUser, boolean removeMissingAttributes) {
         RealmModel realm = session.getContext().getRealm();
 
         if (updatedUser.getAttributes() == null || updatedUser.getAttributes().size() == 0)
@@ -56,7 +57,7 @@ public class UserProfileUpdateHelper {
 
         if (updatedUser.getFirstAttribute(UserModel.EMAIL) != null && updatedUser.getFirstAttribute(UserModel.EMAIL).isEmpty()) {
             updatedUser.removeAttribute(UserModel.EMAIL);
-//            updatedUser.setAttribute(UserModel.EMAIL, Collections.singletonList(null));
+            updatedUser.setAttribute(UserModel.EMAIL, Collections.singletonList(null));
         }
 
         if (updatedUser.getFirstAttribute(UserModel.EMAIL) != null && realm.isRegistrationEmailAsUsername()) {

@@ -18,7 +18,6 @@
 package org.keycloak.userprofile.profile;
 
 import org.keycloak.userprofile.UserProfile;
-import org.keycloak.userprofile.utils.StoredUserProfile;
 
 import java.util.Collections;
 import java.util.List;
@@ -27,7 +26,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
  */
-public abstract class AbstractUserProfile implements UserProfile , StoredUserProfile {
+public abstract class AbstractUserProfile implements UserProfile  {
 
 
     /*
@@ -53,7 +52,7 @@ public abstract class AbstractUserProfile implements UserProfile , StoredUserPro
 
     @Override
     public String getFirstAttribute(String key) {
-        return this.getAttributes() == null ? null : this.getAttributes().get(key) == null ? null : this.getAttributes().get(key).size() == 0 ? null : this.getAttributes().get(key).get(0);
+        return this.getAttributes() == null ? null : this.getAttributes().get(key) == null ? null : this.getAttributes().get(key).isEmpty()? null : this.getAttributes().get(key).get(0);
     }
 
     @Override

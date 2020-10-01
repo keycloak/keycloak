@@ -19,7 +19,7 @@ package org.keycloak.services.resources;
 
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
-import org.keycloak.userprofile.profile.represenations.AttributeUserProfile;
+import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.ArrayList;

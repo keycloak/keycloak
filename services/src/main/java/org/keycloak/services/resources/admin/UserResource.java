@@ -72,7 +72,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import org.keycloak.services.validation.Validation;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.userprofile.utils.UserProfileUpdateHelper;
-import org.keycloak.userprofile.profile.represenations.UserRepresentationUserProfile;
+import org.keycloak.userprofile.profile.representations.UserRepresentationUserProfile;
 import org.keycloak.userprofile.validation.UserUpdateEvent;
 import org.keycloak.utils.ProfileHelper;
 

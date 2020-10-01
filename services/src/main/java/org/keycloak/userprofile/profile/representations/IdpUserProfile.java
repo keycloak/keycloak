@@ -15,37 +15,39 @@
  * limitations under the License.
  */
 
-package org.keycloak.userprofile.profile.represenations;
+package org.keycloak.userprofile.profile.representations;
 
+import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.userprofile.profile.AbstractUserProfile;
 
-import javax.ws.rs.NotSupportedException;
 import java.util.List;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
  */
-public class AttributeUserProfile extends AbstractUserProfile {
-    private final Map<String, List<String>> attributes;
+public class IdpUserProfile extends AbstractUserProfile {
 
+    private final SerializedBrokeredIdentityContext user;
 
-    public AttributeUserProfile(Map<String, List<String>> attributes) {
-        this.attributes = attributes;
-    }
-
-    @Override
-    public Map<String, List<String>> getAttributes() {
-        return this.attributes;
-    }
-
-    @Override
-    public void setAttribute(String key, List<String> value) {
-        this.getAttributes().put(key, value);
+    public IdpUserProfile(SerializedBrokeredIdentityContext user) {
+        this.user = user;
     }
 
     @Override
     public String getId() {
-        throw new NotSupportedException("No ID support");
+        return user.getId();
     }
+
+
+    @Override
+    public Map<String, List<String>> getAttributes() {
+        return user.getAttributes();
+    }
+
+    @Override
+    public void setAttribute(String key, List<String> value) {
+        user.setAttribute(key, value);
+    }
+
 }

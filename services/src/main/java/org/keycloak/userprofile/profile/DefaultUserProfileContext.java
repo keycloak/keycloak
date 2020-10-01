@@ -17,7 +17,6 @@
 
 package org.keycloak.userprofile.profile;
 
-import org.keycloak.userprofile.utils.StoredUserProfile;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.validation.UserUpdateEvent;
@@ -27,7 +26,7 @@ import org.keycloak.userprofile.validation.UserUpdateEvent;
  */
 public class DefaultUserProfileContext implements UserProfileContext {
     private boolean isCreated;
-    private StoredUserProfile currentUserProfile;
+    private UserProfile currentUserProfile;
     private UserProfile updatedUserProfile;
     private UserUpdateEvent userUpdateEvent;
 
@@ -38,7 +37,7 @@ public class DefaultUserProfileContext implements UserProfileContext {
         this.updatedUserProfile = updatedUserProfile;
     }
 
-    public DefaultUserProfileContext(UserUpdateEvent userUpdateEvent, StoredUserProfile currentUserProfile, UserProfile updatedUserProfile) {
+    public DefaultUserProfileContext(UserUpdateEvent userUpdateEvent, UserProfile currentUserProfile, UserProfile updatedUserProfile) {
         this.userUpdateEvent = userUpdateEvent;
         this.isCreated = true;
         this.currentUserProfile = currentUserProfile;
