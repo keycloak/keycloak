@@ -26,11 +26,14 @@ import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.userprofile.validation.AttributeValidationResult;
+import org.keycloak.userprofile.validation.UserProfileValidationResult;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Validation {
 
@@ -150,4 +153,12 @@ public class Validation {
     }
 
 
+    public static List<FormMessage> getFormErrorsFromValidation(UserProfileValidationResult results) {
+        List<FormMessage> errors = new ArrayList<>();
+        for (AttributeValidationResult result : results.getErrors()) {
+            result.getFailedValidations().forEach(o -> addError(errors, result.getField(), o.getErrorType()));
+        }
+        return errors;
+
+    }
 }

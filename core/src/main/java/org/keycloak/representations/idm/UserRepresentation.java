@@ -157,9 +157,13 @@ public class UserRepresentation {
     }
 
     public UserRepresentation singleAttribute(String name, String value) {
-        if (this.attributes == null) attributes = new HashMap<>();
+        if (this.attributes == null) this.attributes=new HashMap<>();
         attributes.put(name, (value == null ? new ArrayList<String>() : Arrays.asList(value)));
         return this;
+    }
+
+    public String firstAttribute(String key) {
+        return this.attributes == null ? null : this.attributes.get(key) == null ? null : this.attributes.get(key).isEmpty()? null : this.attributes.get(key).get(0);
     }
 
     public List<CredentialRepresentation> getCredentials() {

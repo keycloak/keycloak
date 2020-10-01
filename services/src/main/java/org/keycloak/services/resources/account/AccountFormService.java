@@ -28,9 +28,6 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.UriUtils;
-import org.keycloak.credential.CredentialModel;
-import org.keycloak.credential.CredentialProvider;
-import org.keycloak.credential.OTPCredentialProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.Event;
@@ -48,7 +45,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.RealmModel;
@@ -77,6 +73,14 @@ import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.ReadOnlyException;
+import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
+import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.profile.represenations.AttributeUserProfile;
+import org.keycloak.userprofile.utils.UserProfileUpdateHelper;
+import org.keycloak.userprofile.profile.DefaultUserProfileContext;
+import org.keycloak.userprofile.profile.represenations.UserModelUserProfile;
+import org.keycloak.userprofile.validation.UserProfileValidationResult;
+import org.keycloak.userprofile.validation.UserUpdateEvent;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.CredentialHelper;
 
@@ -358,36 +362,50 @@ public class AccountFormService extends AbstractSecuredLocalService {
         csrfCheck(formData);
 
         UserModel user = auth.getUser();
+        AttributeUserProfile updatedProfile = AttributeFormDataProcessor.toUserProfile(formData);
+        String oldEmail = user.getEmail();
+        String newEmail = updatedProfile.getFirstAttribute(UserModel.EMAIL);
 
         event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser());
 
-        List<FormMessage> errors = Validation.validateUpdateProfileForm(realm, formData);
-        if (errors != null && !errors.isEmpty()) {
+        UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class, LegacyUserProfileProviderFactory.PROVIDER_ID);
+        DefaultUserProfileContext updateContext =
+                new DefaultUserProfileContext(UserUpdateEvent.Account, new UserModelUserProfile(user), updatedProfile);
+
+        UserProfileValidationResult result = profileProvider.validate(updateContext);
+        List<FormMessage> errors = Validation.getFormErrorsFromValidation(result);
+
+        if (!errors.isEmpty()) {
             setReferrerOnPage();
-            return account.setErrors(Status.OK, errors).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
+            Response.Status status = Status.OK;
+
+            if (result.hasFailureOfErrorType(Messages.READ_ONLY_USERNAME)) {
+                status = Response.Status.BAD_REQUEST;
+            } else if (result.hasFailureOfErrorType(Messages.EMAIL_EXISTS, Messages.USERNAME_EXISTS)) {
+                status = Response.Status.CONFLICT;
+            }
+
+            return account.setErrors(status, errors).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
         }
 
         try {
-            updateUsername(formData.getFirst("username"), user, session);
-            updateEmail(formData.getFirst("email"), user, session, event);
-
-            user.setFirstName(formData.getFirst("firstName"));
-            user.setLastName(formData.getFirst("lastName"));
-
-            AttributeFormDataProcessor.process(formData, realm, user);
-
-            event.success();
-
-            setReferrerOnPage();
-            return account.setSuccess(Messages.ACCOUNT_UPDATED).createResponse(AccountPages.ACCOUNT);
-        } catch (ReadOnlyException roe) {
+            UserProfileUpdateHelper.update(UserUpdateEvent.Account, session, user, updatedProfile);
+        } catch (ReadOnlyException e) {
             setReferrerOnPage();
             return account.setError(Response.Status.BAD_REQUEST, Messages.READ_ONLY_USER).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
-        } catch (ModelDuplicateException mde) {
-            setReferrerOnPage();
-            return account.setError(Response.Status.CONFLICT, mde.getMessage()).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);
         }
+
+        if (result.hasAttributeChanged(UserModel.EMAIL)) {
+            user.setEmailVerified(false);
+            event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, newEmail).success();
+        }
+
+        event.success();
+        setReferrerOnPage();
+        return account.setSuccess(Messages.ACCOUNT_UPDATED).createResponse(AccountPages.ACCOUNT);
+
     }
+
 
     @Path("sessions")
     @POST
@@ -1054,53 +1072,6 @@ public class AccountFormService extends AbstractSecuredLocalService {
             } else {
                 return null;
             }
-        }
-    }
-
-
-    private void updateUsername(String username, UserModel user, KeycloakSession session) {
-        RealmModel realm = session.getContext().getRealm();
-        boolean usernameChanged = username == null || !user.getUsername().equals(username);
-        if (realm.isEditUsernameAllowed() && !realm.isRegistrationEmailAsUsername()) {
-            if (usernameChanged) {
-                UserModel existing = session.users().getUserByUsername(username, realm);
-                if (existing != null && !existing.getId().equals(user.getId())) {
-                    throw new ModelDuplicateException(Messages.USERNAME_EXISTS);
-                }
-
-                user.setUsername(username);
-            }
-        } else if (usernameChanged) {
-
-        }
-    }
-
-    private void updateEmail(String email, UserModel user, KeycloakSession session, EventBuilder event) {
-        RealmModel realm = session.getContext().getRealm();
-        String oldEmail = user.getEmail();
-        boolean emailChanged = oldEmail != null ? !oldEmail.equals(email) : email != null;
-        if (emailChanged && !realm.isDuplicateEmailsAllowed()) {
-            UserModel existing = session.users().getUserByEmail(email, realm);
-            if (existing != null && !existing.getId().equals(user.getId())) {
-                throw new ModelDuplicateException(Messages.EMAIL_EXISTS);
-            }
-        }
-
-        user.setEmail(email);
-
-        if (emailChanged) {
-            user.setEmailVerified(false);
-            event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, email).success();
-        }
-
-        if (realm.isRegistrationEmailAsUsername()) {
-            if (!realm.isDuplicateEmailsAllowed()) {
-                UserModel existing = session.users().getUserByEmail(email, realm);
-                if (existing != null && !existing.getId().equals(user.getId())) {
-                    throw new ModelDuplicateException(Messages.USERNAME_EXISTS);
-                }
-            }
-            user.setUsername(email);
         }
     }
 

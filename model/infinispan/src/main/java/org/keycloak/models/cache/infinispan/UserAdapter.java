@@ -178,7 +178,7 @@ public class UserAdapter implements CachedUserModel {
         getDelegateForUpdate();
         if (UserModel.USERNAME.equals(name) || UserModel.EMAIL.equals(name)) {
             String lowerCasedFirstValue = KeycloakModelUtils.toLowerCaseSafe((values != null && values.size() > 0) ? values.get(0) : null);
-            if (lowerCasedFirstValue != null) values.set(0, lowerCasedFirstValue);
+            if (lowerCasedFirstValue != null) values=Collections.singletonList(lowerCasedFirstValue);
         }
         updated.setAttribute(name, values);
     }
