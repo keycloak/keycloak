@@ -19,12 +19,14 @@ package org.keycloak.services.util;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpResponse;
+import org.jboss.resteasy.util.CookieParser;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.common.util.ServerCookie;
 
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -106,20 +108,15 @@ public class CookieHelper {
 
     private static Set<String> getInternalCookieValue(String name) {
         HttpHeaders headers = Resteasy.getContextData(HttpHeaders.class);
-
         Set<String> cookiesVal = new HashSet<>();
 
         // check for cookies in the request headers
-        List<String> cookieHeader = headers.getRequestHeaders().get(HttpHeaders.COOKIE);
-        if (cookieHeader != null) {
-            logger.debugv("{1} cookie found in the request's header", name);
-            cookieHeader.stream().map(s -> parseCookie(s, name)).forEach(cookiesVal::addAll);
-        }
+        cookiesVal.addAll(parseCookie(headers.getRequestHeaders().getFirst(HttpHeaders.COOKIE), name));
 
         // get cookies from the cookie field
         Cookie cookie = headers.getCookies().get(name);
         if (cookie != null) {
-            logger.debugv("{1} cookie found in the cookie's field", name);
+            logger.debugv("{0} cookie found in the cookie's field", name);
             cookiesVal.add(cookie.getValue());
         }
 
@@ -128,13 +125,21 @@ public class CookieHelper {
     }
 
 
-    public static Set<String> parseCookie(String cookieHeader, String name) {
-        String parts[] = cookieHeader.split("[;,]");
+    public static Set<String> parseCookie(String header, String name) {
+        if (header == null || name == null) {
+            return Collections.emptySet();
+        }
 
-        Set<String> cookies = Arrays.stream(parts).filter(part -> part.startsWith(name + "=")).map(part ->
-                part.substring(part.indexOf('=') + 1)).collect(Collectors.toSet());
+        Set<String> values = new HashSet<>();
 
-        return cookies;
+        for (Cookie cookie : CookieParser.parseCookies(header)) {
+            if (name.equals(cookie.getName())) {
+                logger.debugv("{0} cookie found in the request's header", name);
+                values.add(cookie.getValue());
+            }
+        }
+
+        return values;
     }
 
     public static Cookie getCookie(Map<String, Cookie> cookies, String name) {
