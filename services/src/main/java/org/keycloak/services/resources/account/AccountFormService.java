@@ -369,10 +369,8 @@ public class AccountFormService extends AbstractSecuredLocalService {
         event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser());
 
         UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class, LegacyUserProfileProviderFactory.PROVIDER_ID);
-        DefaultUserProfileContext updateContext =
-                new DefaultUserProfileContext(UserUpdateEvent.Account, new UserModelUserProfile(user), updatedProfile);
 
-        UserProfileValidationResult result = profileProvider.validate(updateContext);
+        UserProfileValidationResult result = profileProvider.validate(DefaultUserProfileContext.forAccountService(user), updatedProfile);
         List<FormMessage> errors = Validation.getFormErrorsFromValidation(result);
 
         if (!errors.isEmpty()) {

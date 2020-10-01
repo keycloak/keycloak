@@ -72,9 +72,8 @@ public class RegistrationProfile implements FormAction, FormActionFactory {
         UserProfileProvider userProfile = context.getSession().getProvider(UserProfileProvider.class, LegacyUserProfileProviderFactory.PROVIDER_ID);
 
         context.getEvent().detail(Details.REGISTER_METHOD, "form");
-        DefaultUserProfileContext updateContext = new DefaultUserProfileContext(UserUpdateEvent.RegistrationProfile, updatedProfile);
 
-        UserProfileValidationResult result = userProfile.validate(updateContext);
+        UserProfileValidationResult result = userProfile.validate(DefaultUserProfileContext.forRegistrationProfile(), updatedProfile);
         List<FormMessage> errors = Validation.getFormErrorsFromValidation(result);
 
         if (errors.size() > 0) {
@@ -98,10 +97,7 @@ public class RegistrationProfile implements FormAction, FormActionFactory {
     public void success(FormContext context) {
         UserModel user = context.getUser();
         AttributeUserProfile updatedProfile = AttributeFormDataProcessor.toUserProfile(context.getHttpRequest().getDecodedFormParameters());
-
-        DefaultUserProfileContext updateContext =
-                new DefaultUserProfileContext(UserUpdateEvent.RegistrationProfile, new UserModelUserProfile(user), updatedProfile);
-        UserProfileUpdateHelper.update(updateContext.getUpdateEvent(), context.getSession(), user, updatedProfile, false);
+        UserProfileUpdateHelper.update(UserUpdateEvent.RegistrationProfile, context.getSession(), user, updatedProfile, false);
     }
 
     @Override

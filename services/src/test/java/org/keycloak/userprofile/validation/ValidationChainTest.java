@@ -18,6 +18,7 @@ public class ValidationChainTest {
     ValidationChain testchain;
     UserProfile user;
     DefaultUserProfileContext updateContext;
+    UserRepresentation rep = new UserRepresentation();
 
     @Before
     public void setUp() throws Exception {
@@ -27,7 +28,6 @@ public class ValidationChainTest {
                 .addAttributeValidator().forAttribute("firstName")
                 .addValidationFunction("FIRST_NAME_FIELD_ERRORKEY", (value, updateUserProfileContext) -> true).build();
 
-        UserRepresentation rep = new UserRepresentation();
         //default user content
         rep.singleAttribute(UserModel.FIRST_NAME, "firstName");
         rep.singleAttribute(UserModel.LAST_NAME, "lastName");
@@ -35,15 +35,14 @@ public class ValidationChainTest {
         rep.singleAttribute("FAKE_FIELD", "content");
         rep.singleAttribute("NULLABLE_FIELD", null);
 
-        user = new UserRepresentationUserProfile(rep);
-        updateContext = new DefaultUserProfileContext(UserUpdateEvent.Account,null, user);
+        updateContext = DefaultUserProfileContext.forRegistrationProfile();
 
     }
 
     @Test
     public void validate() {
         testchain = builder.build();
-        UserProfileValidationResult results = new UserProfileValidationResult(testchain.validate(updateContext));
+        UserProfileValidationResult results = new UserProfileValidationResult(testchain.validate(updateContext, new UserRepresentationUserProfile(rep)));
         Assert.assertEquals(true, results.hasFailureOfErrorType("FAKE_FIELD_ERRORKEY"));
         Assert.assertEquals(false, results.hasFailureOfErrorType("FIRST_NAME_FIELD_ERRORKEY"));
         Assert.assertEquals(true, results.getValidationResults().stream().filter(o -> o.getField().equals("firstName")).collect(Collectors.toList()).get(0).isValid());
@@ -58,7 +57,7 @@ public class ValidationChainTest {
                 .addAttributeValidator().forAttribute("FAKE_FIELD")
                 .addValidationFunction("FAKE_FIELD_ERRORKEY_2", (value, updateUserProfileContext) -> false).build().build();
 
-        UserProfileValidationResult results = new UserProfileValidationResult(testchain.validate(updateContext));
+        UserProfileValidationResult results = new UserProfileValidationResult(testchain.validate(updateContext, new UserRepresentationUserProfile(rep)));
         Assert.assertEquals(true, results.hasFailureOfErrorType("FAKE_FIELD_ERRORKEY_1"));
         Assert.assertEquals(true, results.hasFailureOfErrorType("FAKE_FIELD_ERRORKEY_2"));
         Assert.assertEquals(true, results.getValidationResults().stream().filter(o -> o.getField().equals("firstName")).collect(Collectors.toList()).get(0).isValid());
@@ -68,7 +67,7 @@ public class ValidationChainTest {
 
     @Test
     public void emptyChain() {
-        UserProfileValidationResult results = new UserProfileValidationResult(ValidationChainBuilder.builder().build().validate(updateContext));
+        UserProfileValidationResult results = new UserProfileValidationResult(ValidationChainBuilder.builder().build().validate(updateContext,new UserRepresentationUserProfile(rep) ));
         Assert.assertEquals(Collections.emptyList(), results.getValidationResults());
     }
 }

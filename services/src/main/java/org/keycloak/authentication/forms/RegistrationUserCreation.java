@@ -82,8 +82,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         UserProfileProvider profileProvider = context.getSession().getProvider(UserProfileProvider.class, LegacyUserProfileProviderFactory.PROVIDER_ID);
 
         context.getEvent().detail(Details.REGISTER_METHOD, "form");
-        DefaultUserProfileContext updateContext = new DefaultUserProfileContext(UserUpdateEvent.RegistrationUserCreation, newProfile);
-        UserProfileValidationResult result = profileProvider.validate(updateContext);
+        UserProfileValidationResult result = profileProvider.validate(DefaultUserProfileContext.forRegistrationUserCreation(), newProfile);
 
         List<FormMessage> errors = Validation.getFormErrorsFromValidation(result);
         if (context.getRealm().isRegistrationEmailAsUsername()) {
@@ -128,10 +127,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
         UserModel user = context.getSession().users().addUser(context.getRealm(), username);
         user.setEnabled(true);
-
-        DefaultUserProfileContext updateContext =
-                new DefaultUserProfileContext(UserUpdateEvent.RegistrationUserCreation, new UserModelUserProfile(user), updatedProfile);
-        UserProfileUpdateHelper.update(updateContext.getUpdateEvent(), context.getSession(), user, updatedProfile, false);
+        UserProfileUpdateHelper.update(UserUpdateEvent.RegistrationUserCreation, context.getSession(), user, updatedProfile, false);
 
         context.getAuthenticationSession().setClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, username);
 

@@ -48,11 +48,11 @@ import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.theme.Theme;
 import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
+import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.utils.UserProfileUpdateHelper;
 import org.keycloak.userprofile.profile.representations.AccountUserRepresentationUserProfile;
 import org.keycloak.userprofile.profile.DefaultUserProfileContext;
-import org.keycloak.userprofile.profile.representations.UserModelUserProfile;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
 import org.keycloak.userprofile.validation.UserUpdateEvent;
 
@@ -175,11 +175,9 @@ public class AccountRestService {
 
         event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser());
 
+        UserProfile updatedUser = new AccountUserRepresentationUserProfile(rep);
         UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class, LegacyUserProfileProviderFactory.PROVIDER_ID);
-        AccountUserRepresentationUserProfile updatedUser = new AccountUserRepresentationUserProfile(rep);
-        DefaultUserProfileContext updateContext =
-                new DefaultUserProfileContext(UserUpdateEvent.Account, new UserModelUserProfile(user), updatedUser);
-        UserProfileValidationResult result = profileProvider.validate(updateContext);
+        UserProfileValidationResult result = profileProvider.validate(DefaultUserProfileContext.forAccountService(user), updatedUser);
 
         if (result.hasFailureOfErrorType(Messages.READ_ONLY_USERNAME))
             return ErrorResponse.error(Messages.READ_ONLY_USERNAME, Response.Status.BAD_REQUEST);
