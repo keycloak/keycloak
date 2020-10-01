@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { HttpClientContext } from "../http-service/HttpClientContext";
 import { GroupsList } from "./GroupsList";
 import { GroupsCreateModal } from "./GroupsCreateModal";
-import { DataLoader } from "../components/data-loader/DataLoader";
 import { GroupRepresentation } from "./models/groups";
 import {
   ServerGroupsArrayRepresentation,
@@ -13,17 +12,15 @@ import { TableToolbar } from "../components/table-toolbar/TableToolbar";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import {
   Button,
-  Divider,
   Dropdown,
   DropdownItem,
   KebabToggle,
   PageSection,
   PageSectionVariants,
-  Title,
-  TitleSizes,
   ToolbarItem,
 } from "@patternfly/react-core";
 import "./GroupsSection.css";
+
 
 export const GroupsSection = () => {
   const { t } = useTranslation("groups");
@@ -40,9 +37,7 @@ export const GroupsSection = () => {
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const handleModalToggle = () => {
-    setIsCreateModalOpen(!isCreateModalOpen)
-  };
+
 
   const loader = async () => {
     const groups = await httpClient.doGet<ServerGroupsArrayRepresentation[]>(
@@ -101,6 +96,10 @@ export const GroupsSection = () => {
     setIsKebabOpen(!isKebabOpen);
   };
 
+  const handleModalToggle = () => {
+    setIsCreateModalOpen(!isCreateModalOpen)
+  };
+
   return (
     <React.Fragment>
       <ViewHeader
@@ -145,7 +144,9 @@ export const GroupsSection = () => {
           }
         >
           {rawData && filteredData && (
-            <GroupsList list={filteredData ? filteredData : rawData} />
+            <GroupsList
+              list={filteredData ? filteredData : rawData}
+            />
           )}
         </TableToolbar>
         <GroupsCreateModal

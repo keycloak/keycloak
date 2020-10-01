@@ -7,7 +7,6 @@ import {
 } from "@patternfly/react-table";
 import { 
   Button,
-  Alert,
   AlertVariant
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
@@ -31,6 +30,7 @@ export const GroupsList = ({ list }: GroupsListProps) => {
   const [formattedData, setFormattedData] = useState([
     { cells: [<Button key="0">Test</Button>], selected: false },
   ]);
+
 
   const formatData = (data: GroupRepresentation[]) =>
     data.map((group: { [key: string]: any }, index) => {
@@ -72,16 +72,6 @@ export const GroupsList = ({ list }: GroupsListProps) => {
     }
   }
 
-  // Delete individual rows using the action in the table
-  function onDelete(rowIndex: number) {
-    console.log('does it make it here' + rowIndex);
-    const localFilteredData = [...list!];
-    httpClient.doDelete(
-      `/admin/realms/${realm}/groups/${localFilteredData[rowIndex].id}`
-    );
-    // TO DO update the state
-  }
-
   const tableHeader = [{ title: t("groupName") }, { title: t("members") }];
   const actions = [
     {
@@ -90,15 +80,15 @@ export const GroupsList = ({ list }: GroupsListProps) => {
     },
     {
       title: t("common:Delete"),
-      onClick: (_, rowId) => {
-        try {
-          httpClient.doDelete(
+      onClick: (_: React.MouseEvent<Element, MouseEvent>, rowId: number) => {
+        try { httpClient.doDelete(
             `/admin/realms/${realm}/groups/${list![rowId].id}`
           );
           add(t("Group deleted"), AlertVariant.success);
         } catch (error) {
           add(`${t("clientDeleteError")} ${error}`, AlertVariant.danger);
         }
+ 
       }
     },
   ];
