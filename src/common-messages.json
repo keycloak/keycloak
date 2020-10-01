@@ -25,6 +25,7 @@
     "documentation": "Documentation",
     "enableHelpMode": "Enable help mode",
 
+    "home": "Home",
     "manage": "Manage",
     "clients": "Clients",
     "clientScopes": "Client scopes",

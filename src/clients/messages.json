@@ -10,6 +10,7 @@
     "description": "Description",
     "name": "Name",
     "clientList": "Client list",
+    "clientSettings": "Client details",
     "generalSettings": "General Settings",
     "capabilityConfig": "Capability config",
     "clientsExplain": "Clients are applications and services that can request authentication of a user",

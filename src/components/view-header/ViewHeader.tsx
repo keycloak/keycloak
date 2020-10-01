@@ -15,6 +15,7 @@ import {
 } from "@patternfly/react-core";
 import { HelpContext } from "../help-enabler/HelpHeader";
 import { useTranslation } from "react-i18next";
+import { PageBreadCrumbs } from "../bread-crumb/PageBreadCrumbs";
 
 export type ViewHeaderProps = {
   titleKey: string;

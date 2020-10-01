@@ -40,7 +40,7 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
     const field = data!.toString();
     const [id, clientId, disabled] = field.split("#");
     return (
-      <Link to={`client-settings/${id}`}>
+      <Link to={`/clients/${id}`}>
         {clientId}
         {disabled !== "true" && <Badge isRead>Disabled</Badge>}
       </Link>

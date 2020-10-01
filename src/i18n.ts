@@ -8,6 +8,9 @@ import clientScopes from "./client-scopes/messages.json";
 import groups from "./groups/messages.json";
 import realm from "./realm/messages.json";
 import roles from "./realm-roles/messages.json";
+import users from "./user/messages.json";
+import sessions from "./sessions/messages.json";
+import events from "./events/messages.json";
 import help from "./help.json";
 
 const initOptions = {
@@ -21,6 +24,10 @@ const initOptions = {
       ...groups,
       ...realm,
       ...roles,
+      ...groups,
+      ...users,
+      ...sessions,
+      ...events,
     },
   },
   lng: "en",
