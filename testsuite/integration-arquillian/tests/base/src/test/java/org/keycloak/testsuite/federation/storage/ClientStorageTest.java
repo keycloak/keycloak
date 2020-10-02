@@ -132,6 +132,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test(timeout = 4000)
+    @AuthServerContainerExclude(AuthServer.REMOTE) // testingClient doesn't work with remote
     public void testSearchTimeout() {
         String hardcodedClient = HardcodedClientStorageProviderFactory.PROVIDER_ID;
         String delayedSearch = HardcodedClientStorageProviderFactory.DELAYED_SEARCH;
