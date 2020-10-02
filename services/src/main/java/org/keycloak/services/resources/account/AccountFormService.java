@@ -76,11 +76,9 @@ import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
-import org.keycloak.userprofile.utils.UserProfileUpdateHelper;
+import org.keycloak.userprofile.utils.UserUpdateHelper;
 import org.keycloak.userprofile.profile.DefaultUserProfileContext;
-import org.keycloak.userprofile.profile.representations.UserModelUserProfile;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
-import org.keycloak.userprofile.validation.UserUpdateEvent;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.CredentialHelper;
 
@@ -387,7 +385,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
         }
 
         try {
-            UserProfileUpdateHelper.update(UserUpdateEvent.Account, session, user, updatedProfile);
+            UserUpdateHelper.updateAccount(realm, user, updatedProfile);
         } catch (ReadOnlyException e) {
             setReferrerOnPage();
             return account.setError(Response.Status.BAD_REQUEST, Messages.READ_ONLY_USER).setProfileFormData(formData).createResponse(AccountPages.ACCOUNT);

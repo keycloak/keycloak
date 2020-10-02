@@ -71,9 +71,8 @@ import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.storage.ReadOnlyException;
-import org.keycloak.userprofile.utils.UserProfileUpdateHelper;
+import org.keycloak.userprofile.utils.UserUpdateHelper;
 import org.keycloak.userprofile.profile.representations.UserRepresentationUserProfile;
-import org.keycloak.userprofile.validation.UserUpdateEvent;
 import org.keycloak.utils.ProfileHelper;
 
 import javax.ws.rs.BadRequestException;
@@ -192,7 +191,7 @@ public class UserResource {
 
     public static void updateUserFromRep(UserModel user, UserRepresentation rep, KeycloakSession session, boolean removeMissingRequiredActions) {
 
-        UserProfileUpdateHelper.update(UserUpdateEvent.UserResource, session, user, new UserRepresentationUserProfile(rep));
+        UserUpdateHelper.updateUserResource(session.getContext().getRealm(), user, new UserRepresentationUserProfile(rep));
 
         if (rep.isEnabled() != null) user.setEnabled(rep.isEnabled());
         if (rep.isEmailVerified() != null) user.setEmailVerified(rep.isEmailVerified());

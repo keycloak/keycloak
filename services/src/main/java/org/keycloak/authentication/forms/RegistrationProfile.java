@@ -38,11 +38,9 @@ import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
-import org.keycloak.userprofile.utils.UserProfileUpdateHelper;
+import org.keycloak.userprofile.utils.UserUpdateHelper;
 import org.keycloak.userprofile.profile.DefaultUserProfileContext;
-import org.keycloak.userprofile.profile.representations.UserModelUserProfile;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
-import org.keycloak.userprofile.validation.UserUpdateEvent;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.List;
@@ -97,7 +95,7 @@ public class RegistrationProfile implements FormAction, FormActionFactory {
     public void success(FormContext context) {
         UserModel user = context.getUser();
         AttributeUserProfile updatedProfile = AttributeFormDataProcessor.toUserProfile(context.getHttpRequest().getDecodedFormParameters());
-        UserProfileUpdateHelper.update(UserUpdateEvent.RegistrationProfile, context.getSession(), user, updatedProfile, false);
+        UserUpdateHelper.updateRegistrationProfile(context.getRealm(), user, updatedProfile);
     }
 
     @Override

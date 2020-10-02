@@ -41,11 +41,9 @@ import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
-import org.keycloak.userprofile.utils.UserProfileUpdateHelper;
+import org.keycloak.userprofile.utils.UserUpdateHelper;
 import org.keycloak.userprofile.profile.DefaultUserProfileContext;
-import org.keycloak.userprofile.profile.representations.UserModelUserProfile;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
-import org.keycloak.userprofile.validation.UserUpdateEvent;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.List;
@@ -127,7 +125,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
         UserModel user = context.getSession().users().addUser(context.getRealm(), username);
         user.setEnabled(true);
-        UserProfileUpdateHelper.update(UserUpdateEvent.RegistrationUserCreation, context.getSession(), user, updatedProfile, false);
+        UserUpdateHelper.updateRegistrationUserCreation(context.getRealm(), user, updatedProfile);
 
         context.getAuthenticationSession().setClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM, username);
 

@@ -36,11 +36,9 @@ import org.keycloak.services.validation.Validation;
 import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
-import org.keycloak.userprofile.utils.UserProfileUpdateHelper;
+import org.keycloak.userprofile.utils.UserUpdateHelper;
 import org.keycloak.userprofile.profile.DefaultUserProfileContext;
-import org.keycloak.userprofile.profile.representations.UserModelUserProfile;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
-import org.keycloak.userprofile.validation.UserUpdateEvent;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -92,7 +90,7 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
             return;
         }
 
-        UserProfileUpdateHelper.update(UserUpdateEvent.UpdateProfile, context.getSession(), user, updatedProfile);
+        UserUpdateHelper.updateUserProfile(context.getRealm(), user, updatedProfile);
         if (result.hasAttributeChanged(UserModel.EMAIL)) {
             user.setEmailVerified(false);
             event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, newEmail).success();
