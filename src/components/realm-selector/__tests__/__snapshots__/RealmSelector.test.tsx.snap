@@ -23,10 +23,7 @@ exports[`renders realm selector 1`] = `
               value="another"
             />
           </DropdownItem>,
-          <Divider />,
-          <DropdownItem>
-            <AddRealm />
-          </DropdownItem>,
+          <React.Fragment />,
         ]
       }
       id="realm-select"
@@ -54,10 +51,7 @@ exports[`renders realm selector 1`] = `
                 value="another"
               />
             </DropdownItem>,
-            <Divider />,
-            <DropdownItem>
-              <AddRealm />
-            </DropdownItem>,
+            <React.Fragment />,
           ]
         }
         id="realm-select"
@@ -160,29 +154,6 @@ exports[`renders realm selector 1`] = `
                         </div>
                       </a>
                     </li>
-                    <hr
-                      class="pf-c-divider"
-                      index="1"
-                    />
-                    <li
-                      role="menuitem"
-                    >
-                      <a
-                        aria-disabled="false"
-                        class="pf-c-dropdown__menu-item"
-                        tabindex="-1"
-                      >
-                        <div
-                          aria-disabled="false"
-                          class="pf-c-button pf-m-primary pf-m-block"
-                          data-ouia-component-id="OUIA-Generated-Button-primary-1"
-                          data-ouia-component-type="PF4/Button"
-                          data-ouia-safe="true"
-                        >
-                          Create Realm
-                        </div>
-                      </a>
-                    </li>
                   </ul>
                 </div>,
               }
@@ -265,29 +236,6 @@ exports[`renders realm selector 1`] = `
                             <div
                               class="pf-l-split__item"
                             />
-                          </div>
-                        </a>
-                      </li>
-                      <hr
-                        class="pf-c-divider"
-                        index="1"
-                      />
-                      <li
-                        role="menuitem"
-                      >
-                        <a
-                          aria-disabled="false"
-                          class="pf-c-dropdown__menu-item"
-                          tabindex="-1"
-                        >
-                          <div
-                            aria-disabled="false"
-                            class="pf-c-button pf-m-primary pf-m-block"
-                            data-ouia-component-id="OUIA-Generated-Button-primary-1"
-                            data-ouia-component-type="PF4/Button"
-                            data-ouia-safe="true"
-                          >
-                            Create Realm
                           </div>
                         </a>
                       </li>

@@ -35,7 +35,7 @@ exports[`BreadCrumbs tests couple of crumbs 1`] = `
                   <span
                     key="/"
                   >
-                    home
+                    Home
                   </span>
                 </a>
               </LinkAnchor>
@@ -81,7 +81,7 @@ exports[`BreadCrumbs tests couple of crumbs 1`] = `
             <span
               key="/add-client"
             >
-              createClient
+              Create client
             </span>
           </li>
         </BreadcrumbItem>

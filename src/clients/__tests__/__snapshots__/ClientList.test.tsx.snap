@@ -6,7 +6,7 @@ Object {
   "baseElement": <body>
     <div>
       <table
-        aria-label="clientList"
+        aria-label="Client list"
         class="pf-c-table pf-m-grid-md pf-m-compact"
         data-ouia-component-id="OUIA-Generated-Table-1"
         data-ouia-component-type="PF4/Table"
@@ -20,34 +20,34 @@ Object {
             <th
               class=""
               data-key="0"
-              data-label="clientID"
+              data-label="Client ID"
               scope="col"
             >
-              clientID
+              Client ID
             </th>
             <th
               class=""
               data-key="1"
-              data-label="type"
+              data-label="Type"
               scope="col"
             >
-              type
+              Type
             </th>
             <th
               class=""
               data-key="2"
-              data-label="description"
+              data-label="Description"
               scope="col"
             >
-              description
+              Description
             </th>
             <th
               class=""
               data-key="3"
-              data-label="homeURL"
+              data-label="Home URL"
               scope="col"
             >
-              homeURL
+              Home URL
             </th>
             <td
               class=""
@@ -68,7 +68,7 @@ Object {
             <td
               class=""
               data-key="0"
-              data-label="clientID"
+              data-label="Client ID"
             >
               <a
                 href="/clients/767756c2-21f8-431c-9f4b-edf30654d653"
@@ -79,21 +79,21 @@ Object {
             <td
               class=""
               data-key="1"
-              data-label="type"
+              data-label="Type"
             >
               openid-connect
             </td>
             <td
               class=""
               data-key="2"
-              data-label="description"
+              data-label="Description"
             >
               —
             </td>
             <td
               class=""
               data-key="3"
-              data-label="homeURL"
+              data-label="Home URL"
             >
               <a
                 aria-disabled="false"
@@ -167,7 +167,7 @@ Object {
             <td
               class=""
               data-key="0"
-              data-label="clientID"
+              data-label="Client ID"
             >
               <a
                 href="/clients/337dc87b-e08d-409e-aaac-6ab7df4b925b"
@@ -178,21 +178,21 @@ Object {
             <td
               class=""
               data-key="1"
-              data-label="type"
+              data-label="Type"
             >
               openid-connect
             </td>
             <td
               class=""
               data-key="2"
-              data-label="description"
+              data-label="Description"
             >
               —
             </td>
             <td
               class=""
               data-key="3"
-              data-label="homeURL"
+              data-label="Home URL"
             >
               <a
                 aria-disabled="false"
@@ -266,7 +266,7 @@ Object {
             <td
               class=""
               data-key="0"
-              data-label="clientID"
+              data-label="Client ID"
             >
               <a
                 href="/clients/60d59afe-7926-4c22-b829-798125793ef5"
@@ -277,21 +277,21 @@ Object {
             <td
               class=""
               data-key="1"
-              data-label="type"
+              data-label="Type"
             >
               openid-connect
             </td>
             <td
               class=""
               data-key="2"
-              data-label="description"
+              data-label="Description"
             >
               —
             </td>
             <td
               class=""
               data-key="3"
-              data-label="homeURL"
+              data-label="Home URL"
             >
               —
             </td>
@@ -339,7 +339,7 @@ Object {
             <td
               class=""
               data-key="0"
-              data-label="clientID"
+              data-label="Client ID"
             >
               <a
                 href="/clients/c2d74093-2b8c-4ecb-870f-c7358ff48237"
@@ -350,21 +350,21 @@ Object {
             <td
               class=""
               data-key="1"
-              data-label="type"
+              data-label="Type"
             >
               openid-connect
             </td>
             <td
               class=""
               data-key="2"
-              data-label="description"
+              data-label="Description"
             >
               —
             </td>
             <td
               class=""
               data-key="3"
-              data-label="homeURL"
+              data-label="Home URL"
             >
               —
             </td>
@@ -412,7 +412,7 @@ Object {
             <td
               class=""
               data-key="0"
-              data-label="clientID"
+              data-label="Client ID"
             >
               <a
                 href="/clients/66135023-e667-4864-b1f3-f87e805fabc2"
@@ -423,19 +423,19 @@ Object {
             <td
               class=""
               data-key="1"
-              data-label="type"
+              data-label="Type"
             />
             <td
               class=""
               data-key="2"
-              data-label="description"
+              data-label="Description"
             >
               —
             </td>
             <td
               class=""
               data-key="3"
-              data-label="homeURL"
+              data-label="Home URL"
             >
               —
             </td>
@@ -483,7 +483,7 @@ Object {
             <td
               class=""
               data-key="0"
-              data-label="clientID"
+              data-label="Client ID"
             >
               <a
                 href="/clients/324f4182-d302-44f8-ac8a-149eaa29dc90"
@@ -494,21 +494,21 @@ Object {
             <td
               class=""
               data-key="1"
-              data-label="type"
+              data-label="Type"
             >
               openid-connect
             </td>
             <td
               class=""
               data-key="2"
-              data-label="description"
+              data-label="Description"
             >
               —
             </td>
             <td
               class=""
               data-key="3"
-              data-label="homeURL"
+              data-label="Home URL"
             >
               <a
                 aria-disabled="false"
@@ -582,7 +582,7 @@ Object {
             <td
               class=""
               data-key="0"
-              data-label="clientID"
+              data-label="Client ID"
             >
               <a
                 href="/clients/fb45882b-4d85-4f40-920e-6a68298d36d0"
@@ -593,19 +593,19 @@ Object {
             <td
               class=""
               data-key="1"
-              data-label="type"
+              data-label="Type"
             />
             <td
               class=""
               data-key="2"
-              data-label="description"
+              data-label="Description"
             >
               —
             </td>
             <td
               class=""
               data-key="3"
-              data-label="homeURL"
+              data-label="Home URL"
             >
               —
             </td>
@@ -653,7 +653,7 @@ Object {
             <td
               class=""
               data-key="0"
-              data-label="clientID"
+              data-label="Client ID"
             >
               <a
                 href="/clients/9ed60e41-d794-4046-842f-3247bf32f5ce"
@@ -664,21 +664,21 @@ Object {
             <td
               class=""
               data-key="1"
-              data-label="type"
+              data-label="Type"
             >
               openid-connect
             </td>
             <td
               class=""
               data-key="2"
-              data-label="description"
+              data-label="Description"
             >
               —
             </td>
             <td
               class=""
               data-key="3"
-              data-label="homeURL"
+              data-label="Home URL"
             >
               <a
                 aria-disabled="false"
@@ -754,7 +754,7 @@ Object {
   </body>,
   "container": <div>
     <table
-      aria-label="clientList"
+      aria-label="Client list"
       class="pf-c-table pf-m-grid-md pf-m-compact"
       data-ouia-component-id="OUIA-Generated-Table-1"
       data-ouia-component-type="PF4/Table"
@@ -768,34 +768,34 @@ Object {
           <th
             class=""
             data-key="0"
-            data-label="clientID"
+            data-label="Client ID"
             scope="col"
           >
-            clientID
+            Client ID
           </th>
           <th
             class=""
             data-key="1"
-            data-label="type"
+            data-label="Type"
             scope="col"
           >
-            type
+            Type
           </th>
           <th
             class=""
             data-key="2"
-            data-label="description"
+            data-label="Description"
             scope="col"
           >
-            description
+            Description
           </th>
           <th
             class=""
             data-key="3"
-            data-label="homeURL"
+            data-label="Home URL"
             scope="col"
           >
-            homeURL
+            Home URL
           </th>
           <td
             class=""
@@ -816,7 +816,7 @@ Object {
           <td
             class=""
             data-key="0"
-            data-label="clientID"
+            data-label="Client ID"
           >
             <a
               href="/clients/767756c2-21f8-431c-9f4b-edf30654d653"
@@ -827,21 +827,21 @@ Object {
           <td
             class=""
             data-key="1"
-            data-label="type"
+            data-label="Type"
           >
             openid-connect
           </td>
           <td
             class=""
             data-key="2"
-            data-label="description"
+            data-label="Description"
           >
             —
           </td>
           <td
             class=""
             data-key="3"
-            data-label="homeURL"
+            data-label="Home URL"
           >
             <a
               aria-disabled="false"
@@ -915,7 +915,7 @@ Object {
           <td
             class=""
             data-key="0"
-            data-label="clientID"
+            data-label="Client ID"
           >
             <a
               href="/clients/337dc87b-e08d-409e-aaac-6ab7df4b925b"
@@ -926,21 +926,21 @@ Object {
           <td
             class=""
             data-key="1"
-            data-label="type"
+            data-label="Type"
           >
             openid-connect
           </td>
           <td
             class=""
             data-key="2"
-            data-label="description"
+            data-label="Description"
           >
             —
           </td>
           <td
             class=""
             data-key="3"
-            data-label="homeURL"
+            data-label="Home URL"
           >
             <a
               aria-disabled="false"
@@ -1014,7 +1014,7 @@ Object {
           <td
             class=""
             data-key="0"
-            data-label="clientID"
+            data-label="Client ID"
           >
             <a
               href="/clients/60d59afe-7926-4c22-b829-798125793ef5"
@@ -1025,21 +1025,21 @@ Object {
           <td
             class=""
             data-key="1"
-            data-label="type"
+            data-label="Type"
           >
             openid-connect
           </td>
           <td
             class=""
             data-key="2"
-            data-label="description"
+            data-label="Description"
           >
             —
           </td>
           <td
             class=""
             data-key="3"
-            data-label="homeURL"
+            data-label="Home URL"
           >
             —
           </td>
@@ -1087,7 +1087,7 @@ Object {
           <td
             class=""
             data-key="0"
-            data-label="clientID"
+            data-label="Client ID"
           >
             <a
               href="/clients/c2d74093-2b8c-4ecb-870f-c7358ff48237"
@@ -1098,21 +1098,21 @@ Object {
           <td
             class=""
             data-key="1"
-            data-label="type"
+            data-label="Type"
           >
             openid-connect
           </td>
           <td
             class=""
             data-key="2"
-            data-label="description"
+            data-label="Description"
           >
             —
           </td>
           <td
             class=""
             data-key="3"
-            data-label="homeURL"
+            data-label="Home URL"
           >
             —
           </td>
@@ -1160,7 +1160,7 @@ Object {
           <td
             class=""
             data-key="0"
-            data-label="clientID"
+            data-label="Client ID"
           >
             <a
               href="/clients/66135023-e667-4864-b1f3-f87e805fabc2"
@@ -1171,19 +1171,19 @@ Object {
           <td
             class=""
             data-key="1"
-            data-label="type"
+            data-label="Type"
           />
           <td
             class=""
             data-key="2"
-            data-label="description"
+            data-label="Description"
           >
             —
           </td>
           <td
             class=""
             data-key="3"
-            data-label="homeURL"
+            data-label="Home URL"
           >
             —
           </td>
@@ -1231,7 +1231,7 @@ Object {
           <td
             class=""
             data-key="0"
-            data-label="clientID"
+            data-label="Client ID"
           >
             <a
               href="/clients/324f4182-d302-44f8-ac8a-149eaa29dc90"
@@ -1242,21 +1242,21 @@ Object {
           <td
             class=""
             data-key="1"
-            data-label="type"
+            data-label="Type"
           >
             openid-connect
           </td>
           <td
             class=""
             data-key="2"
-            data-label="description"
+            data-label="Description"
           >
             —
           </td>
           <td
             class=""
             data-key="3"
-            data-label="homeURL"
+            data-label="Home URL"
           >
             <a
               aria-disabled="false"
@@ -1330,7 +1330,7 @@ Object {
           <td
             class=""
             data-key="0"
-            data-label="clientID"
+            data-label="Client ID"
           >
             <a
               href="/clients/fb45882b-4d85-4f40-920e-6a68298d36d0"
@@ -1341,19 +1341,19 @@ Object {
           <td
             class=""
             data-key="1"
-            data-label="type"
+            data-label="Type"
           />
           <td
             class=""
             data-key="2"
-            data-label="description"
+            data-label="Description"
           >
             —
           </td>
           <td
             class=""
             data-key="3"
-            data-label="homeURL"
+            data-label="Home URL"
           >
             —
           </td>
@@ -1401,7 +1401,7 @@ Object {
           <td
             class=""
             data-key="0"
-            data-label="clientID"
+            data-label="Client ID"
           >
             <a
               href="/clients/9ed60e41-d794-4046-842f-3247bf32f5ce"
@@ -1412,21 +1412,21 @@ Object {
           <td
             class=""
             data-key="1"
-            data-label="type"
+            data-label="Type"
           >
             openid-connect
           </td>
           <td
             class=""
             data-key="2"
-            data-label="description"
+            data-label="Description"
           >
             —
           </td>
           <td
             class=""
             data-key="3"
-            data-label="homeURL"
+            data-label="Home URL"
           >
             <a
               aria-disabled="false"
