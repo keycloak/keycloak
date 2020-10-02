@@ -31,13 +31,11 @@ import org.keycloak.userprofile.validation.UserUpdateEvent;
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
  */
 public class DefaultUserProfileContext implements UserProfileContext {
-    private boolean isCreated;
     private UserProfile currentUserProfile;
     private UserUpdateEvent userUpdateEvent;
 
     private DefaultUserProfileContext(UserUpdateEvent userUpdateEvent, UserProfile currentUserProfile) {
         this.userUpdateEvent = userUpdateEvent;
-        this.isCreated = false;
         this.currentUserProfile = currentUserProfile;
     }
 
@@ -63,11 +61,6 @@ public class DefaultUserProfileContext implements UserProfileContext {
 
     public static DefaultUserProfileContext forUserResource(UserRepresentation rep) {
         return new DefaultUserProfileContext(UserUpdateEvent.UserResource, new UserRepresentationUserProfile(rep));
-    }
-
-    @Override
-    public boolean isCreate() {
-        return isCreated;
     }
 
     @Override

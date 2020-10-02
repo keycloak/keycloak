@@ -24,7 +24,6 @@ import org.keycloak.userprofile.validation.UserUpdateEvent;
  */
 public interface UserProfileContext {
 
-    boolean isCreate();
     UserUpdateEvent getUpdateEvent();
     UserProfile getCurrentProfile();
 }
