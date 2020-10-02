@@ -17,9 +17,6 @@
 
 package org.keycloak.userprofile;
 
-import java.util.List;
-import java.util.Map;
-
 /**
  * Abstraction, which allows to update the user in various contexts (Required action of already existing user, or first identity provider
  * login when user doesn't yet exists in Keycloak DB)
@@ -30,16 +27,6 @@ public interface UserProfile {
 
     String getId();
 
-    Map<String, List<String>> getAttributes();
-
-    String getFirstAttribute(String key);
-
-    List<String> getAttribute(String key);
-
-    void setSingleAttribute(String key, String value);
-
-    void setAttribute(String key, List<String> value);
-
-    void removeAttribute(String attr);
+    UserProfileAttributes getAttributes();
 
 }

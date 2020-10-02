@@ -18,36 +18,24 @@
 package org.keycloak.userprofile.profile.representations;
 
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
-import org.keycloak.userprofile.profile.AbstractUserProfile;
+import org.keycloak.userprofile.profile.AttributeUserProfile;
 
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
  */
-public class IdpUserProfile extends AbstractUserProfile {
+public class IdpUserProfile extends AttributeUserProfile {
 
     private final SerializedBrokeredIdentityContext user;
 
     public IdpUserProfile(SerializedBrokeredIdentityContext user) {
+        super(user.getAttributes());
         this.user = user;
     }
 
     @Override
     public String getId() {
         return user.getId();
-    }
-
-
-    @Override
-    public Map<String, List<String>> getAttributes() {
-        return user.getAttributes();
-    }
-
-    @Override
-    public void setAttribute(String key, List<String> value) {
-        user.setAttribute(key, value);
     }
 
 }

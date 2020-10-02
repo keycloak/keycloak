@@ -19,7 +19,7 @@ package org.keycloak.services.resources;
 
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
-import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
+import org.keycloak.userprofile.profile.AttributeUserProfile;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.ArrayList;
@@ -68,7 +68,7 @@ public class AttributeFormDataProcessor {
 
     private static void copyAttribute(String key, MultivaluedMap<String, String> formData, AttributeUserProfile rep) {
         if (formData.getFirst(key) != null)
-            rep.setSingleAttribute(key, formData.getFirst(key));
+            rep.getAttributes().setSingleAttribute(key, formData.getFirst(key));
     }
 
 

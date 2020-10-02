@@ -40,7 +40,7 @@ import org.keycloak.services.validation.Validation;
 import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
+import org.keycloak.userprofile.profile.AttributeUserProfile;
 import org.keycloak.userprofile.utils.UserUpdateHelper;
 import org.keycloak.userprofile.profile.DefaultUserProfileContext;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
@@ -72,8 +72,8 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         context.getEvent().detail(Details.REGISTER_METHOD, "form");
 
         UserProfile newProfile = AttributeFormDataProcessor.toUserProfile(context.getHttpRequest().getDecodedFormParameters());
-        String email = newProfile.getFirstAttribute(UserModel.EMAIL);
-        String username = newProfile.getFirstAttribute(UserModel.USERNAME);
+        String email = newProfile.getAttributes().getFirstAttribute(UserModel.EMAIL);
+        String username = newProfile.getAttributes().getFirstAttribute(UserModel.USERNAME);
         context.getEvent().detail(Details.EMAIL, email);
         context.getEvent().detail(Details.USERNAME, username);
 
@@ -114,8 +114,8 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
     public void success(FormContext context) {
         AttributeUserProfile updatedProfile = AttributeFormDataProcessor.toUserProfile(context.getHttpRequest().getDecodedFormParameters());
 
-        String email = updatedProfile.getFirstAttribute(UserModel.EMAIL);
-        String username = updatedProfile.getFirstAttribute(UserModel.USERNAME);
+        String email = updatedProfile.getAttributes().getFirstAttribute(UserModel.EMAIL);
+        String username = updatedProfile.getAttributes().getFirstAttribute(UserModel.USERNAME);
         if (context.getRealm().isRegistrationEmailAsUsername()) {
             username = email;
         }

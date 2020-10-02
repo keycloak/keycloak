@@ -20,6 +20,8 @@ package org.keycloak.userprofile.profile.representations;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.account.UserRepresentation;
+import org.keycloak.userprofile.UserProfileAttributes;
+import org.keycloak.userprofile.profile.AttributeUserProfile;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,7 +37,7 @@ public class AccountUserRepresentationUserProfile extends AttributeUserProfile {
         super(flattenUserRepresentation(user));
     }
 
-    private static Map<String, List<String>> flattenUserRepresentation(UserRepresentation user) {
+    private static UserProfileAttributes flattenUserRepresentation(UserRepresentation user) {
         Map<String, List<String>> attrs = new HashMap<>();
 
         if (user.getAttributes() != null) attrs.putAll(user.getAttributes());
@@ -57,7 +59,7 @@ public class AccountUserRepresentationUserProfile extends AttributeUserProfile {
             attrs.put(UserModel.FIRST_NAME, Collections.singletonList(user.getFirstName()));
 
 
-        return attrs;
+        return (UserProfileAttributes)attrs;
     }
 
 }

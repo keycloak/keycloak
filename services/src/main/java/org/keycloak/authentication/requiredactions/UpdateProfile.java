@@ -35,7 +35,7 @@ import org.keycloak.services.resources.AttributeFormDataProcessor;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
 import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
+import org.keycloak.userprofile.profile.AttributeUserProfile;
 import org.keycloak.userprofile.utils.UserUpdateHelper;
 import org.keycloak.userprofile.profile.DefaultUserProfileContext;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
@@ -75,7 +75,7 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
         AttributeUserProfile updatedProfile = AttributeFormDataProcessor.toUserProfile(formData);
 
         String oldEmail = user.getEmail();
-        String newEmail = updatedProfile.getFirstAttribute(UserModel.EMAIL);
+        String newEmail = updatedProfile.getAttributes().getFirstAttribute(UserModel.EMAIL);
 
         UserProfileProvider userProfile = context.getSession().getProvider(UserProfileProvider.class, LegacyUserProfileProviderFactory.PROVIDER_ID);
         UserProfileValidationResult result = userProfile.validate(DefaultUserProfileContext.forUpdateProfile(user),updatedProfile);

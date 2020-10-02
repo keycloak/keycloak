@@ -19,6 +19,8 @@ package org.keycloak.userprofile.profile.representations;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.userprofile.UserProfileAttributes;
+import org.keycloak.userprofile.profile.AttributeUserProfile;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,7 +37,7 @@ public class UserRepresentationUserProfile extends AttributeUserProfile {
         super(flattenUserRepresentation(user));
     }
 
-    private static Map<String, List<String>> flattenUserRepresentation(UserRepresentation user) {
+    private static UserProfileAttributes flattenUserRepresentation(UserRepresentation user) {
         Map<String, List<String>> attrs = new HashMap<>();
 
         if (user.getAttributes() != null) attrs.putAll(user.getAttributes());
@@ -62,7 +64,7 @@ public class UserRepresentationUserProfile extends AttributeUserProfile {
         if (user.getEmail() != null)
             attrs.put(UserModel.EMAIL, Collections.singletonList(user.getEmail()));
 
-        return attrs;
+        return new UserProfileAttributes(attrs);
     }
 
 }

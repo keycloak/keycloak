@@ -21,6 +21,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileAttributes;
 import org.keycloak.userprofile.validation.UserUpdateEvent;
 
 import java.util.Collections;
@@ -67,7 +68,7 @@ public class UserUpdateHelper {
      * @param updatedUser
      */
     private static void update(UserUpdateEvent userUpdateEvent, RealmModel realm, UserModel currentUser, UserProfile updatedUser) {
-        update(userUpdateEvent, realm, currentUser, updatedUser, true);
+        update(userUpdateEvent, realm, currentUser, updatedUser.getAttributes(), true);
     }
 
     /**
@@ -78,14 +79,20 @@ public class UserUpdateHelper {
      * @param updatedUser
      */
     private static void register(UserUpdateEvent userUpdateEvent, RealmModel realm, UserModel currentUser, UserProfile updatedUser) {
-        update(userUpdateEvent, realm, currentUser, updatedUser, false);
+        update(userUpdateEvent, realm, currentUser, updatedUser.getAttributes(), false);
     }
 
-    private static void update(UserUpdateEvent userUpdateEvent, RealmModel realm, UserModel currentUser, UserProfile updatedUser, boolean removeMissingAttributes) {
+    private static void update(UserUpdateEvent userUpdateEvent, RealmModel realm, UserModel currentUser, UserProfileAttributes updatedUser, boolean removeMissingAttributes) {
 
-        if (updatedUser.getAttributes() == null || updatedUser.getAttributes().size() == 0)
+        if (updatedUser == null || updatedUser.size() == 0)
             return;
 
+        filterAttributes(userUpdateEvent, realm, updatedUser);
+
+        updateAttributes(currentUser, updatedUser, removeMissingAttributes);
+    }
+
+    private static void filterAttributes(UserUpdateEvent userUpdateEvent, RealmModel realm, UserProfileAttributes updatedUser) {
         //The Idp review does not respect "isEditUserNameAllowed" therefore we have to miss the check here
         if (!userUpdateEvent.equals(UserUpdateEvent.IdpReview)) {
             //This step has to be done before email is assigned to the username if isRegistrationEmailAsUsername is set
@@ -104,8 +111,6 @@ public class UserUpdateHelper {
             updatedUser.removeAttribute(UserModel.USERNAME);
             updatedUser.setAttribute(UserModel.USERNAME, Collections.singletonList(updatedUser.getFirstAttribute(UserModel.EMAIL)));
         }
-
-        updateAttributes(currentUser, updatedUser.getAttributes(), removeMissingAttributes);
     }
 
     private static void updateAttributes(UserModel currentUser, Map<String, List<String>> updatedUser, boolean removeMissingAttributes) {
