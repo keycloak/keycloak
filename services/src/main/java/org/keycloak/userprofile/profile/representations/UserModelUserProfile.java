@@ -18,12 +18,12 @@
 package org.keycloak.userprofile.profile.representations;
 
 import org.keycloak.models.UserModel;
-import org.keycloak.userprofile.profile.AttributeUserProfile;
+import org.keycloak.userprofile.profile.AbstractUserProfile;
 
 /**
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
  */
-public class UserModelUserProfile extends AttributeUserProfile {
+public class UserModelUserProfile extends AbstractUserProfile {
 
 
     public UserModelUserProfile(UserModel user) {

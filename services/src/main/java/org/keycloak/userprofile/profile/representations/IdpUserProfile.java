@@ -18,13 +18,13 @@
 package org.keycloak.userprofile.profile.representations;
 
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
-import org.keycloak.userprofile.profile.AttributeUserProfile;
+import org.keycloak.userprofile.profile.AbstractUserProfile;
 
 
 /**
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
  */
-public class IdpUserProfile extends AttributeUserProfile {
+public class IdpUserProfile extends AbstractUserProfile {
 
     private final SerializedBrokeredIdentityContext user;
 

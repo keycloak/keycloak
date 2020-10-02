@@ -20,7 +20,6 @@ package org.keycloak.userprofile.profile.representations;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.userprofile.UserProfileAttributes;
-import org.keycloak.userprofile.profile.AttributeUserProfile;
 
 import java.util.Collections;
 import java.util.HashMap;

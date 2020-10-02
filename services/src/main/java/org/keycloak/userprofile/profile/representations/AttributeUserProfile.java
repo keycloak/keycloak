@@ -15,37 +15,22 @@
  * limitations under the License.
  */
 
-package org.keycloak.userprofile.profile;
+package org.keycloak.userprofile.profile.representations;
 
-import org.keycloak.userprofile.UserProfile;
-import org.keycloak.userprofile.UserProfileAttributes;
+import org.keycloak.userprofile.profile.AbstractUserProfile;
 
 import javax.ws.rs.NotSupportedException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
  */
-public class AttributeUserProfile implements UserProfile  {
-
-    private final UserProfileAttributes attributes;
-
+public class AttributeUserProfile extends AbstractUserProfile  {
 
     public AttributeUserProfile(Map<String, List<String>> attributes) {
-        this.attributes = new UserProfileAttributes(attributes);
+        super(attributes);
     }
-
-    @Override
-    public UserProfileAttributes getAttributes() {
-        return this.attributes;
-    }
-
-
-    /*
-    The user id is different in each user representation
-     */
 
     @Override
     public String getId() {
