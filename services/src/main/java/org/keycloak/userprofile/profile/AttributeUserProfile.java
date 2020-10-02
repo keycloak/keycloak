@@ -15,37 +15,41 @@
  * limitations under the License.
  */
 
-package org.keycloak.userprofile.profile.representations;
+package org.keycloak.userprofile.profile;
 
-import org.keycloak.userprofile.profile.AbstractUserProfile;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileAttributes;
 
 import javax.ws.rs.NotSupportedException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
  */
-public class AttributeUserProfile extends AbstractUserProfile {
-    private final Map<String, List<String>> attributes;
+public class AttributeUserProfile implements UserProfile  {
+
+    private final UserProfileAttributes attributes;
 
 
     public AttributeUserProfile(Map<String, List<String>> attributes) {
-        this.attributes = attributes;
+        this.attributes = new UserProfileAttributes(attributes);
     }
 
     @Override
-    public Map<String, List<String>> getAttributes() {
+    public UserProfileAttributes getAttributes() {
         return this.attributes;
     }
 
-    @Override
-    public void setAttribute(String key, List<String> value) {
-        this.getAttributes().put(key, value);
-    }
+
+    /*
+    The user id is different in each user representation
+     */
 
     @Override
     public String getId() {
         throw new NotSupportedException("No ID support");
     }
+
 }

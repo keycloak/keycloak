@@ -15,53 +15,38 @@
  * limitations under the License.
  */
 
-package org.keycloak.userprofile.profile;
-
-import org.keycloak.userprofile.UserProfile;
+package org.keycloak.userprofile;
 
 import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
-/**
- * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
- */
-public abstract class AbstractUserProfile implements UserProfile  {
+//TODO: extend immutable map and list
+//TODO: create a immutable copy of all items on create
+public class UserProfileAttributes extends HashMap<String, List<String>> {
 
+    public UserProfileAttributes(Map<String, List<String>> attribtues){
+        this.putAll(attribtues);
+    }
 
-    /*
-    The user attributes handling is different in each user representation so we have to use the setAttributes and getAttributes from the original object
-     */
+    public void setAttribute(String key, List<String> value){
+        this.put(key,value);
+    }
 
-    @Override
-    public abstract Map<String, List<String>> getAttributes();
-
-    @Override
-    public abstract void setAttribute(String key, List<String> value);
-
-    /*
-    The user id is different in each user representation
-     */
-    @Override
-    public abstract String getId();
-
-    @Override
     public void setSingleAttribute(String key, String value) {
         this.setAttribute(key, Collections.singletonList(value));
     }
 
-    @Override
     public String getFirstAttribute(String key) {
-        return this.getAttributes() == null ? null : this.getAttributes().get(key) == null ? null : this.getAttributes().get(key).isEmpty()? null : this.getAttributes().get(key).get(0);
+        return this.get(key) == null ? null : this.get(key).isEmpty()? null : this.get(key).get(0);
     }
 
-    @Override
     public List<String> getAttribute(String key) {
-        return getAttributes().get(key);
+        return this.get(key);
     }
 
-    @Override
     public void removeAttribute(String attr) {
-        getAttributes().remove(attr);
+        this.remove(attr);
     }
 }

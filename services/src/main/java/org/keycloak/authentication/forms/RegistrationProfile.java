@@ -37,7 +37,7 @@ import org.keycloak.services.validation.Validation;
 import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
+import org.keycloak.userprofile.profile.AttributeUserProfile;
 import org.keycloak.userprofile.utils.UserUpdateHelper;
 import org.keycloak.userprofile.profile.DefaultUserProfileContext;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
@@ -76,7 +76,7 @@ public class RegistrationProfile implements FormAction, FormActionFactory {
 
         if (errors.size() > 0) {
             if (result.hasFailureOfErrorType(Messages.EMAIL_EXISTS, Messages.INVALID_EMAIL))
-                context.getEvent().detail(Details.EMAIL, updatedProfile.getFirstAttribute(UserModel.EMAIL));
+                context.getEvent().detail(Details.EMAIL, updatedProfile.getAttributes().getFirstAttribute(UserModel.EMAIL));
 
             if (result.hasFailureOfErrorType(Messages.EMAIL_EXISTS)) {
                 context.error(Errors.EMAIL_IN_USE);

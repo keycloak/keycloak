@@ -18,6 +18,7 @@
 package org.keycloak.userprofile.validation;
 
 import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileAttributes;
 import org.keycloak.userprofile.UserProfileContext;
 
 import java.util.ArrayList;
@@ -39,11 +40,12 @@ public class ValidationChain {
             List<ValidationResult> validationResults = new ArrayList<>();
 
             String attributeKey = attribute.attributeKey;
-            String attributeValue = updatedProfile.getFirstAttribute(attributeKey);
+            String attributeValue = updatedProfile.getAttributes().getFirstAttribute(attributeKey);
             boolean attributeChanged = false;
 
             if (attributeValue != null) {
-                attributeChanged = updateContext.getCurrentProfile() != null && !attributeValue.equals(updateContext.getCurrentProfile().getFirstAttribute(attributeKey));
+                attributeChanged = updateContext.getCurrentProfile() != null
+                        && !attributeValue.equals(updateContext.getCurrentProfile().getAttributes().getFirstAttribute(attributeKey));
                 for (Validator validator : attribute.validators) {
                     validationResults.add(new ValidationResult(validator.function.apply(attributeValue, updateContext), validator.errorType));
                 }

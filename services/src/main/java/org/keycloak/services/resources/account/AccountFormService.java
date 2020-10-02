@@ -75,7 +75,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
 import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
+import org.keycloak.userprofile.profile.AttributeUserProfile;
 import org.keycloak.userprofile.utils.UserUpdateHelper;
 import org.keycloak.userprofile.profile.DefaultUserProfileContext;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
@@ -362,7 +362,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
         UserModel user = auth.getUser();
         AttributeUserProfile updatedProfile = AttributeFormDataProcessor.toUserProfile(formData);
         String oldEmail = user.getEmail();
-        String newEmail = updatedProfile.getFirstAttribute(UserModel.EMAIL);
+        String newEmail = updatedProfile.getAttributes().getFirstAttribute(UserModel.EMAIL);
 
         event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser());
 

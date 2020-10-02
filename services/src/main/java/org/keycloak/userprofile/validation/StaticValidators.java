@@ -42,7 +42,7 @@ public class StaticValidators {
     public static BiFunction<String, UserProfileContext, Boolean> userNameExists(KeycloakSession session) {
         return (value, context) ->
                 !(context.getCurrentProfile() != null
-                        && !value.equals(context.getCurrentProfile().getFirstAttribute(UserModel.USERNAME))
+                        && !value.equals(context.getCurrentProfile().getAttributes().getFirstAttribute(UserModel.USERNAME))
                         && session.users().getUserByUsername(value, session.getContext().getRealm()) != null);
     }
 
@@ -50,7 +50,7 @@ public class StaticValidators {
         return (value, context) ->
                 !(!realm.isEditUsernameAllowed()
                         && context.getCurrentProfile() != null
-                        && !value.equals(context.getCurrentProfile().getFirstAttribute(UserModel.USERNAME))
+                        && !value.equals(context.getCurrentProfile().getAttributes().getFirstAttribute(UserModel.USERNAME))
                 );
     }
 

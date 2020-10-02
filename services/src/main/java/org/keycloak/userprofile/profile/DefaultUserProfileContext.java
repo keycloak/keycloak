@@ -21,6 +21,7 @@ import org.keycloak.authentication.authenticators.broker.util.SerializedBrokered
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileAttributes;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.profile.representations.IdpUserProfile;
 import org.keycloak.userprofile.profile.representations.UserModelUserProfile;

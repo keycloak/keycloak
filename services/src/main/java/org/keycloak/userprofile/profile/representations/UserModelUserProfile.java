@@ -18,40 +18,24 @@
 package org.keycloak.userprofile.profile.representations;
 
 import org.keycloak.models.UserModel;
-import org.keycloak.userprofile.profile.AbstractUserProfile;
-
-import java.util.List;
-import java.util.Map;
+import org.keycloak.userprofile.profile.AttributeUserProfile;
 
 /**
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
  */
-public class UserModelUserProfile extends AbstractUserProfile {
+public class UserModelUserProfile extends AttributeUserProfile {
 
-    private final UserModel user;
 
     public UserModelUserProfile(UserModel user) {
+        super(user.getAttributes());
         this.user = user;
     }
+
+    private final UserModel user;
 
     @Override
     public String getId() {
         return user.getId();
     }
 
-    @Override
-    public Map<String, List<String>> getAttributes() {
-        return user.getAttributes();
-    }
-
-    @Override
-    public void setAttribute(String key, List<String> value) {
-        user.setAttribute(key, value);
-    }
-
-    @Override
-    public void removeAttribute(String attr) {
-        // Due to the fact that the user attribute list is a copy and not a reference in the user adapter we have to access the remove function directly
-        user.removeAttribute(attr);
-    }
 }
