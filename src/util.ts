@@ -1,3 +1,6 @@
+import FileSaver from "file-saver";
+
+import { ClientRepresentation } from "./clients/models/client-model";
 import { ProviderRepresentation } from "./clients/models/server-info";
 
 export const sortProvider = (
@@ -19,4 +22,22 @@ export const sortProvider = (
   } else {
     return 0;
   }
+};
+
+export const exportClient = (client: ClientRepresentation): void => {
+  const clientCopy = JSON.parse(JSON.stringify(client));
+  delete clientCopy.id;
+
+  if (clientCopy.protocolMappers) {
+    for (let i = 0; i < clientCopy.protocolMappers.length; i++) {
+      delete clientCopy.protocolMappers[i].id;
+    }
+  }
+
+  FileSaver.saveAs(
+    new Blob([JSON.stringify(clientCopy, null, 2)], {
+      type: "application/json",
+    }),
+    clientCopy.clientId + ".json"
+  );
 };

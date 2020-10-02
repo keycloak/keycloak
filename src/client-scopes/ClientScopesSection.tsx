@@ -9,6 +9,7 @@ import { ClientRepresentation } from "../realm/models/Realm";
 import { DataLoader } from "../components/data-loader/DataLoader";
 import { TableToolbar } from "../components/table-toolbar/TableToolbar";
 import { ClientScopeList } from "./ClientScopesList";
+import { ViewHeader } from "../components/view-header/ViewHeader";
 
 export const ClientScopesSection = () => {
   const { t } = useTranslation("client-scopes");
@@ -25,29 +26,35 @@ export const ClientScopesSection = () => {
       .then((r) => r.data as ClientRepresentation[]);
   };
   return (
-    <PageSection variant="light">
-      <DataLoader loader={loader}>
-        {(scopes) => (
-          <TableToolbar
-            count={scopes!.length}
-            first={first}
-            max={max}
-            onNextClick={setFirst}
-            onPreviousClick={setFirst}
-            onPerPageSelect={(first, max) => {
-              setFirst(first);
-              setMax(max);
-            }}
-            toolbarItem={
-              <Button onClick={() => history.push("/add-client-scopes")}>
-                {t("createClientScope")}
-              </Button>
-            }
-          >
-            <ClientScopeList clientScopes={scopes} />
-          </TableToolbar>
-        )}
-      </DataLoader>
-    </PageSection>
+    <>
+      <ViewHeader
+        titleKey="clientScopes"
+        subKey="client-scopes:clientScopeExplain"
+      />
+      <PageSection variant="light">
+        <DataLoader loader={loader}>
+          {(scopes) => (
+            <TableToolbar
+              count={scopes!.length}
+              first={first}
+              max={max}
+              onNextClick={setFirst}
+              onPreviousClick={setFirst}
+              onPerPageSelect={(first, max) => {
+                setFirst(first);
+                setMax(max);
+              }}
+              toolbarItem={
+                <Button onClick={() => history.push("/add-client-scopes")}>
+                  {t("createClientScope")}
+                </Button>
+              }
+            >
+              <ClientScopeList clientScopes={scopes} />
+            </TableToolbar>
+          )}
+        </DataLoader>
+      </PageSection>
+    </>
   );
 };

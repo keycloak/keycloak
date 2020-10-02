@@ -10,13 +10,13 @@ import {
   IFormatterValueType,
 } from "@patternfly/react-table";
 import { Badge, AlertVariant } from "@patternfly/react-core";
-import FileSaver from "file-saver";
 
 import { ExternalLink } from "../components/external-link/ExternalLink";
 import { HttpClientContext } from "../http-service/HttpClientContext";
 import { useAlerts } from "../components/alert/Alerts";
 import { ClientRepresentation } from "./models/client-model";
 import { RealmContext } from "../components/realm-context/RealmContext";
+import { exportClient } from "../util";
 
 type ClientListProps = {
   clients?: ClientRepresentation[];
@@ -35,17 +35,6 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
   const httpClient = useContext(HttpClientContext)!;
   const { realm } = useContext(RealmContext);
   const [add, Alerts] = useAlerts();
-
-  const enabled = (): IFormatter => (data?: IFormatterValueType) => {
-    const field = data!.toString();
-    const [id, clientId, disabled] = field.split("#");
-    return (
-      <Link to={`/clients/${id}`}>
-        {clientId}
-        {disabled !== "true" && <Badge isRead>Disabled</Badge>}
-      </Link>
-    );
-  };
 
   const emptyFormatter = (): IFormatter => (data?: IFormatterValueType) => {
     return data ? data : "—";
@@ -73,12 +62,25 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
 
   const data = clients!
     .map((client) => {
-      client.clientId = `${client.id}#${client.clientId}#${client.enabled}`;
       client.baseUrl = replaceBaseUrl(client);
       return client;
     })
-    .map((column) => {
-      return { cells: columns.map((col) => column[col]), client: column };
+    .map((client) => {
+      return {
+        cells: columns.map((col) =>
+          col === "clientId" ? (
+            <>
+              <Link key={client.id} to={`/clients/${client.id}`}>
+                {client.clientId}
+                {!client.enabled && <Badge isRead>Disabled</Badge>}
+              </Link>
+            </>
+          ) : (
+            client[col]
+          )
+        ),
+        client,
+      };
     });
   return (
     <>
@@ -86,7 +88,7 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
       <Table
         variant={TableVariant.compact}
         cells={[
-          { title: t("clientID"), cellFormatters: [enabled()] },
+          t("clientID"),
           t("type"),
           { title: t("description"), cellFormatters: [emptyFormatter()] },
           {
@@ -99,23 +101,7 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
           {
             title: t("common:export"),
             onClick: (_, rowId) => {
-              const clientCopy = JSON.parse(JSON.stringify(data[rowId].client));
-              const [, orgClientId] = clientCopy.clientId.split("#");
-              clientCopy.clientId = orgClientId;
-              delete clientCopy.id;
-
-              if (clientCopy.protocolMappers) {
-                for (let i = 0; i < clientCopy.protocolMappers.length; i++) {
-                  delete clientCopy.protocolMappers[i].id;
-                }
-              }
-
-              FileSaver.saveAs(
-                new Blob([JSON.stringify(clientCopy, null, 2)], {
-                  type: "application/json",
-                }),
-                clientCopy.clientId + ".json"
-              );
+              exportClient(data[rowId].client);
             },
           },
           {
