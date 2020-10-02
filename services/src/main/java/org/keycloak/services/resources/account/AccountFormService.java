@@ -75,7 +75,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
 import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.userprofile.profile.AttributeUserProfile;
+import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
 import org.keycloak.userprofile.utils.UserUpdateHelper;
 import org.keycloak.userprofile.profile.DefaultUserProfileContext;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
