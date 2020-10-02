@@ -94,6 +94,7 @@ public class RoleStorageTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test(timeout = 4000)
+    @AuthServerContainerExclude(AuthServer.REMOTE) // testingClient doesn't work with remote
     public void testSearchTimeout() {
         String hardcodedRole = HardcodedRoleStorageProviderFactory.PROVIDER_ID;
         String delayedSearch = HardcodedRoleStorageProviderFactory.DELAYED_SEARCH;

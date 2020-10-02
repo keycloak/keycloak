@@ -87,6 +87,7 @@ public class GroupStorageTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test(timeout = 4000)
+    @AuthServerContainerExclude(AuthServer.REMOTE) // testingClient doesn't work with remote
     public void testSearchTimeout() {
         String hardcodedGroup = HardcodedGroupStorageProviderFactory.PROVIDER_ID;
         String delayedSearch = HardcodedGroupStorageProviderFactory.DELAYED_SEARCH;
