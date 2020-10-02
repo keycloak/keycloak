@@ -50,11 +50,10 @@ import org.keycloak.theme.Theme;
 import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
-import org.keycloak.userprofile.utils.UserProfileUpdateHelper;
+import org.keycloak.userprofile.utils.UserUpdateHelper;
 import org.keycloak.userprofile.profile.representations.AccountUserRepresentationUserProfile;
 import org.keycloak.userprofile.profile.DefaultUserProfileContext;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
-import org.keycloak.userprofile.validation.UserUpdateEvent;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -187,7 +186,7 @@ public class AccountRestService {
             return ErrorResponse.exists(Messages.EMAIL_EXISTS);
 
         try {
-            UserProfileUpdateHelper.update(UserUpdateEvent.Account, session, user, updatedUser);
+            UserUpdateHelper.updateAccount(realm, user, updatedUser);
             event.success();
 
             return Cors.add(request, Response.noContent()).auth().allowedOrigins(auth.getToken()).build();

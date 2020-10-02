@@ -39,9 +39,8 @@ import org.keycloak.userprofile.LegacyUserProfileProviderFactory;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.profile.DefaultUserProfileContext;
 import org.keycloak.userprofile.profile.representations.AttributeUserProfile;
-import org.keycloak.userprofile.utils.UserProfileUpdateHelper;
+import org.keycloak.userprofile.utils.UserUpdateHelper;
 import org.keycloak.userprofile.validation.UserProfileValidationResult;
-import org.keycloak.userprofile.validation.UserUpdateEvent;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -124,7 +123,7 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
             return;
         }
 
-        UserProfileUpdateHelper.update(UserUpdateEvent.IdpReview, context.getSession(), new UserModelDelegate(null) {
+        UserUpdateHelper.updateIdpReview(context.getRealm(), new UserModelDelegate(null) {
             @Override
             public Map<String, List<String>> getAttributes() {
                 return userCtx.getAttributes();

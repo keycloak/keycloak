@@ -17,7 +17,6 @@
 
 package org.keycloak.userprofile.utils;
 
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -33,15 +32,56 @@ import java.util.Set;
 /**
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
  */
-public class UserProfileUpdateHelper {
+public class UserUpdateHelper {
 
-    public static void update(UserUpdateEvent userUpdateEvent, KeycloakSession session, UserModel currentUser, UserProfile updatedUser) {
-        update(userUpdateEvent, session, currentUser, updatedUser, true);
+
+    public static void updateRegistrationProfile(RealmModel realm, UserModel currentUser, UserProfile updatedUser) {
+        register(UserUpdateEvent.RegistrationProfile, realm, currentUser, updatedUser);
     }
 
+    public static void updateRegistrationUserCreation(RealmModel realm, UserModel currentUser, UserProfile updatedUser) {
+        register(UserUpdateEvent.RegistrationUserCreation, realm, currentUser, updatedUser);
+    }
 
-    public static void update(UserUpdateEvent userUpdateEvent, KeycloakSession session, UserModel currentUser, UserProfile updatedUser, boolean removeMissingAttributes) {
-        RealmModel realm = session.getContext().getRealm();
+    public static void updateIdpReview(RealmModel realm, UserModel userModelDelegate, UserProfile updatedProfile) {
+        update(UserUpdateEvent.IdpReview, realm, userModelDelegate, updatedProfile);
+    }
+
+    public static void updateUserProfile(RealmModel realm, UserModel user, UserProfile updatedProfile) {
+        update(UserUpdateEvent.UpdateProfile, realm, user, updatedProfile);
+    }
+
+    public static void updateAccount(RealmModel realm, UserModel user, UserProfile updatedProfile) {
+        update(UserUpdateEvent.Account, realm, user, updatedProfile);
+    }
+
+    public static void updateUserResource(RealmModel realm, UserModel user, UserProfile userRepresentationUserProfile) {
+        update(UserUpdateEvent.UserResource, realm, user, userRepresentationUserProfile);
+    }
+
+    /**
+     * will update the user model with the profile values, all missing attributes in the new profile will be removed on the user model
+     * @param userUpdateEvent
+     * @param realm
+     * @param currentUser
+     * @param updatedUser
+     */
+    private static void update(UserUpdateEvent userUpdateEvent, RealmModel realm, UserModel currentUser, UserProfile updatedUser) {
+        update(userUpdateEvent, realm, currentUser, updatedUser, true);
+    }
+
+    /**
+     * will update the user model with the profile values, attributes which are missing will be ignored
+     * @param userUpdateEvent
+     * @param realm
+     * @param currentUser
+     * @param updatedUser
+     */
+    private static void register(UserUpdateEvent userUpdateEvent, RealmModel realm, UserModel currentUser, UserProfile updatedUser) {
+        update(userUpdateEvent, realm, currentUser, updatedUser, false);
+    }
+
+    private static void update(UserUpdateEvent userUpdateEvent, RealmModel realm, UserModel currentUser, UserProfile updatedUser, boolean removeMissingAttributes) {
 
         if (updatedUser.getAttributes() == null || updatedUser.getAttributes().size() == 0)
             return;
@@ -93,6 +133,5 @@ public class UserProfileUpdateHelper {
             return Collections.singletonList(KeycloakModelUtils.toLowerCaseSafe(attr.get(0)));
         return attr;
     }
-
 
 }
