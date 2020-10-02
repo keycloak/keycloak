@@ -360,7 +360,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
                 .detail(ERR_DETAIL_LABEL, errorMessage)
                 .error(Errors.INVALID_USER_CREDENTIALS);
             errorResponse = context.form()
-                .setError(errorCase)
+                .setError(errorCase, errorMessage)
                 .setAttribute(WEB_AUTHN_TITLE_ATTR, WEBAUTHN_REGISTER_TITLE)
                 .createWebAuthnErrorPage();
             context.challenge(errorResponse);
@@ -372,7 +372,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
                 .detail(ERR_DETAIL_LABEL, errorMessage)
                 .error(Errors.INVALID_REGISTRATION);
             errorResponse = context.form()
-                .setError(errorCase)
+                .setError(errorCase, errorMessage)
                 .setAttribute(WEB_AUTHN_TITLE_ATTR, WEBAUTHN_REGISTER_TITLE)
                 .createWebAuthnErrorPage();
             context.challenge(errorResponse);
