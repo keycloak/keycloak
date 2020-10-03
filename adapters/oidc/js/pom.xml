@@ -32,16 +32,6 @@
 	<build>
 		<plugins>
 			<plugin>
-				<artifactId>maven-clean-plugin</artifactId>
-				<configuration>
-					<filesets>
-						<fileset>
-							<directory>node_modules</directory>
-						</fileset>
-					</filesets>
-				</configuration>
-			</plugin>
-			<plugin>
 				<groupId>com.github.eirslett</groupId>
 				<artifactId>frontend-maven-plugin</artifactId>
 				<executions>
@@ -58,12 +48,21 @@
 						</goals>
 					</execution>
 					<execution>
-						<id>yarn build</id>
+						<id>build packages</id>
 						<goals>
 							<goal>yarn</goal>
 						</goals>
 						<configuration>
 							<arguments>workspaces run build</arguments>
+						</configuration>
+					</execution>
+					<execution>
+						<id>bundle packages</id>
+						<goals>
+							<goal>yarn</goal>
+						</goals>
+						<configuration>
+							<arguments>bundle</arguments>
 						</configuration>
 					</execution>
 				</executions>
