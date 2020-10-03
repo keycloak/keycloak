@@ -30,15 +30,11 @@ echo "--------------------------------------------------------------------------
 echo "NPM release:"
 echo ""
 
-TMP=`mktemp -d`
-cd $TMP
-unzip $DIR/distribution/adapters/js-adapter-npm-zip/target/keycloak-js-adapter-npm-dist-$VERSION.zip
-cd keycloak-js-adapter-npm-dist-$VERSION
-
-npm publish
-
+cd $DIR/adapters/oidc/js
+mvn clean install -DskipTests
+npm publish packages/keycloak-js
+npm publish packages/keycloak-authz
 cd $DIR
-rm -rf $TMP
 
 
 echo "------------------------------------------------------------------------------------------------------------"
