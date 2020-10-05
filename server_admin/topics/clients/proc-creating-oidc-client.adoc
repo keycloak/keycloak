@@ -1,0 +1,76 @@
+[id="proc-creating-oidc-client_{context}"]
+==== Creating an Open ID Connect Client
+To use xref:_oidc[OpenID Connect], an existing application must be secured as an Open ID connect client.
+
+.Procedure
+. Click `Clients` in the left navigation pane.  
++
+
+. Click *Create* to go to the `Add Client` page.
++
+.Add Client
+image:{project_images}/add-client-oidc.png[Add Client]
+
+. Enter the `Client ID` of the client.
+
+. Select `openid-connect` in the `Client Protocol` drop down box.
+
+. Enter the base URL of your application in the `Root URL` field.
+
+. Click *Save*.  This action creates the client and bring you to the `Settings`
+tab.
++
+.Client Settings
+image:{project_images}/client-settings-oidc.png[Client Settings]
++
+The following list describes each setting:
++
+`Client ID`:: The alpha-numeric ID string that is used in OIDC requests and in the {project_name} database to identify the client.
+
+`Name`:: The name for the client in {project_name} UI screen. To localize
+the name, set up a replacement string value. For example, a string value such as $\{myapp}.  See the link:{developerguide_link}[{developerguide_name}] for more information.
+
+`Description`:: The description of the client.  This setting can also be localized.
+
+`Enabled`:: When turned off, the client cannot request authentication.
+
+`Consent Required`:: When turned on, users see a consent page that they can use to grant access to that application.  It will also display metadata so the user knows the exact information that the client can access.
+
+`Access Type`:: The type of OIDC client.
++
+* _Confidential_
+
+  For server-side clients that perform browser logins and require client secrets when making an Access Token Request. This setting should be used for server-side applications.
++
+* _Public_
+
+  For client-side clients that perform browser logins. As it is not possible to ensure that secrets can be kept safe with client-side clients, it is important to restrict access by configuring correct redirect URIs.
++
+* _Bearer-only_
+
+  The application allows only bearer token requests. When turned on, this application cannot participate in browser logins.
+
+`Standard Flow Enabled`:: When enabled, clients can use the OIDC xref:_oidc-auth-flows-authorization[Authorization Code Flow].
+
+`Implicit Flow Enabled`:: When enabled, clients can use the OIDC xref:_oidc-auth-flows-implicit[Implicit Flow].
+
+`Direct Access Grants Enabled`:: When enabled, clients can use the OIDC xref:_oidc-auth-flows-direct[Direct Access Grants].
+
+`Root URL`:: This value adds a prefix to any configured URLS that {project_name} uses.
+
+`Valid Redirect URIs`:: Required field.  Enter a URL pattern and click *+* to add and *-* to remove existing URLs and click *Save*. You can use wildcards at the end of the URL pattern. For example $$http://host.com/*$$
++
+Exclusive redirect URL patterns are typically more secure.  See xref:_unspecific-redirect-uris [Threat Model Mitigation] chapter for more information.
+
+`Base URL`:: This URL is used when {project_name} needs to link to the client.
+
+`Admin URL`:: Callback endpoint for a client.  The server uses this URL to make callbacks like pushing revocation policies, performing backchannel logout, and other administrative operations.  For {project_name} servlet adapters, this URL can be the root URL of the servlet application.
+For more information, see link:{adapterguide_link}[{adapterguide_name}].
+
+`Web Origins`:: Enter a URL pattern and click *+* to add and *-* to remove existing URLs. Click *Save*.
++
+This option handles link:https://fetch.spec.whatwg.org/[Cross-Origin Resource Sharing (CORS)].
+If browser JavaScript attempts an AJAX HTTP request to a server whose domain is different from the one that the
+JavaScript code came from, the request must use CORS. The server must handle CORS requests, otherwise the browser will not display or allow the request to be processed. This protocol protects against XSS, CSRF, and other JavaScript-based attacks.
++
+Domain URLs listed here are embedded within the access token sent to the client application. The client application uses this information to decide whether to allow a CORS request to be invoked on it.  Only {project_name} client adapters support this feature. See link:{adapterguide_link}[{adapterguide_name}] for more information.

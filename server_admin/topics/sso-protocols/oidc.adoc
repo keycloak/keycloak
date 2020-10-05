@@ -28,6 +28,8 @@ OIDC has different ways for a client or application to authenticate a user and r
 path you use depends greatly on the type of application or client requesting access.  All of these flows are described in the
 OIDC and OAuth 2.0 specifications so only a brief overview will be provided here.
 
+[[_oidc-auth-flows-authorization]]
+
 ===== Authorization Code Flow
 
 This is a browser-based protocol and it is what we recommend you use to authenticate and authorize browser-based applications.  It makes
@@ -59,6 +61,8 @@ into this in the <<_clients, Managing Clients>> chapter.
 
 {project_name} also supports the optional https://datatracker.ietf.org/doc/html/rfc7636[Proof Key for Code Exchange] specification.
 
+[[_oidc-auth-flows-implicit]]
+
 ===== Implicit Flow
 
 This is a browser-based protocol that is similar to Authorization Code Flow except there are fewer requests and no refresh tokens involved.
@@ -74,6 +78,8 @@ Here's a brief summary of the protocol:
   redirects back to the application using the callback URL provided earlier and additionally adding the _identity_ and
   _access_ tokens as query parameters in the callback URL.
 . The application extracts the _identity_ and _access_ tokens from the callback URL.
+
+[[_oidc-auth-flows-direct]]
 
 ===== Resource Owner Password Credentials Grant (Direct Access Grants)
 
