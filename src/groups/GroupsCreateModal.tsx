@@ -41,8 +41,9 @@ export const GroupsCreateModal = ({
   };
 
   const submitForm = async () => {
+    if (await form.trigger()) {
     try {
-      await httpClient.doPost(`/admin/realms/${realm}/groups`, {
+      httpClient.doPost(`/admin/realms/${realm}/groups`, {
         name: createGroupName,
       });
       setIsCreateModalOpen(false);
@@ -51,7 +52,8 @@ export const GroupsCreateModal = ({
     } catch (error) {
       add(`${t("couldNotCreateGroup")} ': '${error}'`, AlertVariant.danger);
     }
-  };
+  }
+};
 
   return (
     <React.Fragment>
