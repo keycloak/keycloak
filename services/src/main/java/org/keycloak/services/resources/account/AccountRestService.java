@@ -222,39 +222,6 @@ public class AccountRestService {
 
     // TODO Federated identities
 
-    /**
-     * Returns the applications with the given id in the specified realm.
-     *
-     * @param clientId client id to search for
-     * @return application with the provided id
-     */
-    @Path("/applications/{clientId}")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getApplication(final @PathParam("clientId") String clientId) {
-        checkAccountApiEnabled();
-        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_APPLICATIONS);
-        ClientModel client = realm.getClientByClientId(clientId);
-        if (client == null || client.isBearerOnly() || client.getBaseUrl() == null) {
-            return Cors.add(request, Response.status(Response.Status.NOT_FOUND).entity("No client with clientId: " + clientId + " found.")).build();
-        }
-
-        List<String> inUseClients = new LinkedList<>();
-        if (!session.sessions().getUserSessions(realm, client).isEmpty()) {
-            inUseClients.add(clientId);
-        }
-
-        List<String> offlineClients = new LinkedList<>();
-        if (session.sessions().getOfflineSessionsCount(realm, client) > 0) {
-            offlineClients.add(clientId);
-        }
-
-        UserConsentModel consentModel = session.users().getConsentByClient(realm, user.getId(), client.getId());
-        Map<String, UserConsentModel> consentModels = Collections.singletonMap(client.getClientId(), consentModel);
-
-        return Cors.add(request, Response.ok(modelToRepresentation(client, inUseClients, offlineClients, consentModels))).build();
-    }
-
     private ClientRepresentation modelToRepresentation(ClientModel model, List<String> inUseClients, List<String> offlineClients, Map<String, UserConsentModel> consents) {
         ClientRepresentation representation = new ClientRepresentation();
         representation.setClientId(model.getClientId());

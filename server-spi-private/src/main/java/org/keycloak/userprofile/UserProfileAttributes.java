@@ -22,8 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 
-//TODO: extend immutable map and list
-//TODO: create a immutable copy of all items on create
 public class UserProfileAttributes extends HashMap<String, List<String>> {
 
     public UserProfileAttributes(Map<String, List<String>> attribtues){
