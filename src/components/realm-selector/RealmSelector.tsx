@@ -15,8 +15,8 @@ import {
 import { CheckIcon } from "@patternfly/react-icons";
 
 import { RealmRepresentation } from "../../realm/models/Realm";
-import { RealmContext } from "../realm-context/RealmContext";
-import { WhoAmIContext } from "../../whoami/WhoAmI";
+import { RealmContext } from "../../context/realm-context/RealmContext";
+import { WhoAmIContext } from "../../context/whoami/WhoAmI";
 
 import "./realm-selector.css";
 

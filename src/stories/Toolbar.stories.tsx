@@ -9,7 +9,7 @@ import {
 import { Meta } from "@storybook/react";
 
 import { RealmSelector } from "../components/realm-selector/RealmSelector";
-import { RealmContextProvider } from "../components/realm-context/RealmContext";
+import { RealmContextProvider } from "../context/realm-context/RealmContext";
 
 export default {
   title: "Header",

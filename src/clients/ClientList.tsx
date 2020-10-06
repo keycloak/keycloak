@@ -12,10 +12,10 @@ import {
 import { Badge, AlertVariant } from "@patternfly/react-core";
 
 import { ExternalLink } from "../components/external-link/ExternalLink";
-import { HttpClientContext } from "../http-service/HttpClientContext";
+import { HttpClientContext } from "../context/http-service/HttpClientContext";
 import { useAlerts } from "../components/alert/Alerts";
 import { ClientRepresentation } from "./models/client-model";
-import { RealmContext } from "../components/realm-context/RealmContext";
+import { RealmContext } from "../context/realm-context/RealmContext";
 import { exportClient } from "../util";
 
 type ClientListProps = {

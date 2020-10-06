@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { HttpClientContext } from "../http-service/HttpClientContext";
+import { HttpClientContext } from "../context/http-service/HttpClientContext";
 import { GroupsList } from "./GroupsList";
 import { GroupRepresentation } from "./models/groups";
 import {

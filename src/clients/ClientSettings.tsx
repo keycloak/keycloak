@@ -19,8 +19,8 @@ import { Controller, useForm } from "react-hook-form";
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
 import { ClientDescription } from "./ClientDescription";
 import { CapabilityConfig } from "./add/CapabilityConfig";
-import { RealmContext } from "../components/realm-context/RealmContext";
-import { HttpClientContext } from "../http-service/HttpClientContext";
+import { RealmContext } from "../context/realm-context/RealmContext";
+import { HttpClientContext } from "../context/http-service/HttpClientContext";
 import { ClientRepresentation } from "../realm/models/Realm";
 import {
   convertToMultiline,

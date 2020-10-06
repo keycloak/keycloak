@@ -3,8 +3,8 @@ import { Button, PageSection } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { useHistory } from "react-router-dom";
 
-import { RealmContext } from "../components/realm-context/RealmContext";
-import { HttpClientContext } from "../http-service/HttpClientContext";
+import { RealmContext } from "../context/realm-context/RealmContext";
+import { HttpClientContext } from "../context/http-service/HttpClientContext";
 import { ClientRepresentation } from "../realm/models/Realm";
 import { DataLoader } from "../components/data-loader/DataLoader";
 import { TableToolbar } from "../components/table-toolbar/TableToolbar";

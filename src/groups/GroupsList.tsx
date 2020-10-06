@@ -9,7 +9,7 @@ import { Button } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { GroupRepresentation } from "./models/groups";
 import { UsersIcon } from "@patternfly/react-icons";
-import { HttpClientContext } from "../http-service/HttpClientContext";
+import { HttpClientContext } from "../context/http-service/HttpClientContext";
 
 type GroupsListProps = {
   list?: GroupRepresentation[];

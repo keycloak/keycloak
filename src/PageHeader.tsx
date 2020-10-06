@@ -14,8 +14,8 @@ import {
   PageHeaderToolsGroup,
 } from "@patternfly/react-core";
 import { HelpIcon } from "@patternfly/react-icons";
-import { KeycloakContext } from "./auth/KeycloakContext";
-import { WhoAmIContext } from "./whoami/WhoAmI";
+import { KeycloakContext } from "./context/auth/KeycloakContext";
+import { WhoAmIContext } from "./context/whoami/WhoAmI";
 import { HelpHeader } from "./components/help-enabler/HelpHeader";
 import { Link } from "react-router-dom";
 

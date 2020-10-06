@@ -13,10 +13,10 @@ import { useTranslation } from "react-i18next";
 
 import { ClientRepresentation } from "../models/client-model";
 import { ClientDescription } from "../ClientDescription";
-import { HttpClientContext } from "../../http-service/HttpClientContext";
+import { HttpClientContext } from "../../context/http-service/HttpClientContext";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
 import { useAlerts } from "../../components/alert/Alerts";
-import { RealmContext } from "../../components/realm-context/RealmContext";
+import { RealmContext } from "../../context/realm-context/RealmContext";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 
 export const ImportForm = () => {

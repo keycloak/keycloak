@@ -9,7 +9,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { Controller, UseFormMethods } from "react-hook-form";
 
-import { HttpClientContext } from "../../http-service/HttpClientContext";
+import { HttpClientContext } from "../../context/http-service/HttpClientContext";
 import { sortProvider } from "../../util";
 import { ServerInfoRepresentation } from "../models/server-info";
 import { ClientDescription } from "../ClientDescription";

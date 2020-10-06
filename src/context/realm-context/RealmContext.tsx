@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react";
-import { WhoAmIContext } from "../../whoami/WhoAmI";
+import { WhoAmIContext } from "../../context/whoami/WhoAmI";
 
 export const RealmContext = React.createContext({
   realm: "",

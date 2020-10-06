@@ -6,8 +6,8 @@ import { Header } from "./PageHeader";
 import { PageNav } from "./PageNav";
 import { Help } from "./components/help-enabler/HelpHeader";
 
-import { RealmContextProvider } from "./components/realm-context/RealmContext";
-import { WhoAmIContextProvider } from "./whoami/WhoAmI";
+import { RealmContextProvider } from "./context/realm-context/RealmContext";
+import { WhoAmIContextProvider } from "./context/whoami/WhoAmI";
 
 import { routes } from "./route-config";
 import { PageBreadCrumbs } from "./components/bread-crumb/PageBreadCrumbs";

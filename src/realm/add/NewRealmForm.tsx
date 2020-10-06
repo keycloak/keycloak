@@ -13,7 +13,7 @@ import {
 
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
 import { RealmRepresentation } from "../models/Realm";
-import { HttpClientContext } from "../../http-service/HttpClientContext";
+import { HttpClientContext } from "../../context/http-service/HttpClientContext";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useForm, Controller } from "react-hook-form";
 import { ViewHeader } from "../../components/view-header/ViewHeader";

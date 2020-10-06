@@ -1,11 +1,11 @@
 import React, { useContext } from "react";
-import i18n from "../i18n";
+import i18n from "../../i18n";
 
 import WhoAmIRepresentation from "./who-am-i-model";
 
 import { HttpClientContext } from "../http-service/HttpClientContext";
 import { KeycloakContext } from "../auth/KeycloakContext";
-import { DataLoader } from "../components/data-loader/DataLoader";
+import { DataLoader } from "../../components/data-loader/DataLoader";
 
 export class WhoAmI {
   constructor(

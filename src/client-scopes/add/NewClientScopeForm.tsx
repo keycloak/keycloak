@@ -16,8 +16,8 @@ import { Controller, useForm } from "react-hook-form";
 
 import { ClientScopeRepresentation } from "../models/client-scope";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { HttpClientContext } from "../../http-service/HttpClientContext";
-import { RealmContext } from "../../components/realm-context/RealmContext";
+import { HttpClientContext } from "../../context/http-service/HttpClientContext";
+import { RealmContext } from "../../context/realm-context/RealmContext";
 import { useAlerts } from "../../components/alert/Alerts";
 
 export const NewClientScopeForm = () => {
