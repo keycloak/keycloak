@@ -24,7 +24,7 @@ import { RealmContext } from "../../context/realm-context/RealmContext";
 export const NewRoleForm = () => {
   const { t } = useTranslation("roles");
   const httpClient = useContext(HttpClientContext)!;
-  const [addAlert, Alerts] = useAlerts();
+  const { addAlert } = useAlerts();
   const { realm } = useContext(RealmContext);
 
   const { register, control, errors, handleSubmit } = useForm<
@@ -42,7 +42,6 @@ export const NewRoleForm = () => {
 
   return (
     <>
-      <Alerts />
       <PageSection variant="light">
         <TextContent>
           <Text component="h1">{t("createRole")}</Text>

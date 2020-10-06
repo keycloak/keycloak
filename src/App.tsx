@@ -8,7 +8,7 @@ import { Help } from "./components/help-enabler/HelpHeader";
 
 import { RealmContextProvider } from "./context/realm-context/RealmContext";
 import { WhoAmIContextProvider } from "./context/whoami/WhoAmI";
-
+import { AlertProvider } from "./components/alert/Alerts";
 import { routes } from "./route-config";
 import { PageBreadCrumbs } from "./components/bread-crumb/PageBreadCrumbs";
 
@@ -18,18 +18,20 @@ export const App = () => {
       <WhoAmIContextProvider>
         <RealmContextProvider>
           <Help>
-            <Page
-              header={<Header />}
-              isManagedSidebar
-              sidebar={<PageNav />}
-              breadcrumb={<PageBreadCrumbs />}
-            >
-              <Switch>
-                {routes(() => {}).map((route, i) => (
-                  <Route key={i} {...route} exact />
-                ))}
-              </Switch>
-            </Page>
+            <AlertProvider>
+              <Page
+                header={<Header />}
+                isManagedSidebar
+                sidebar={<PageNav />}
+                breadcrumb={<PageBreadCrumbs />}
+              >
+                <Switch>
+                  {routes(() => {}).map((route, i) => (
+                    <Route key={i} {...route} exact />
+                  ))}
+                </Switch>
+              </Page>
+            </AlertProvider>
           </Help>
         </RealmContextProvider>
       </WhoAmIContextProvider>

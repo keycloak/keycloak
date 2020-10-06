@@ -30,7 +30,7 @@ export const NewClientScopeForm = () => {
   const { realm } = useContext(RealmContext);
 
   const [open, isOpen] = useState(false);
-  const [add, Alerts] = useAlerts();
+  const { addAlert } = useAlerts();
 
   const save = async (clientScopes: ClientScopeRepresentation) => {
     try {
@@ -44,15 +44,17 @@ export const NewClientScopeForm = () => {
         `/admin/realms/${realm}/client-scopes`,
         clientScopes
       );
-      add(t("createClientScopeSuccess"), AlertVariant.success);
+      addAlert(t("createClientScopeSuccess"), AlertVariant.success);
     } catch (error) {
-      add(`${t("createClientScopeError")} '${error}'`, AlertVariant.danger);
+      addAlert(
+        `${t("createClientScopeError")} '${error}'`,
+        AlertVariant.danger
+      );
     }
   };
 
   return (
     <PageSection variant="light">
-      <Alerts />
       <Form isHorizontal onSubmit={handleSubmit(save)}>
         <FormGroup
           label={

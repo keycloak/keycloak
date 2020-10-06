@@ -36,7 +36,7 @@ export const ClientSettings = () => {
   const { t } = useTranslation("clients");
   const httpClient = useContext(HttpClientContext)!;
   const { realm } = useContext(RealmContext);
-  const [addAlert, Alerts] = useAlerts();
+  const { addAlert } = useAlerts();
 
   const { id } = useParams<{ id: string }>();
   const [name, setName] = useState("");
@@ -139,7 +139,6 @@ export const ClientSettings = () => {
         }}
       />
       <PageSection variant="light">
-        <Alerts />
         <ScrollForm
           sections={[
             t("capabilityConfig"),
