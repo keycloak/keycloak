@@ -15,6 +15,7 @@ import {
 } from "@patternfly/react-core";
 import { HelpContext } from "../help-enabler/HelpHeader";
 import { useTranslation } from "react-i18next";
+import { PageBreadCrumbs } from "../bread-crumb/PageBreadCrumbs";
 
 export type ViewHeaderProps = {
   titleKey: string;
@@ -31,14 +32,13 @@ export const ViewHeader = ({
   badge,
   subKey,
   selectItems,
-  isEnabled,
+  isEnabled = true,
   onSelect,
   onToggle,
 }: ViewHeaderProps) => {
   const { t } = useTranslation();
   const { enabled } = useContext(HelpContext);
   const [open, setOpen] = useState(false);
-  const [checked, setChecked] = useState(isEnabled);
   return (
     <>
       <PageSection variant="light">
@@ -68,17 +68,17 @@ export const ViewHeader = ({
                       label={t("common:enabled")}
                       labelOff={t("common:disabled")}
                       className="pf-u-mr-lg"
-                      isChecked={checked}
+                      isChecked={isEnabled}
                       onChange={(value) => {
                         if (onToggle) {
                           onToggle(value);
                         }
-                        setChecked(value);
                       }}
                     />
                   </ToolbarItem>
                   <ToolbarItem>
                     <Select
+                      placeholderText={t("common:action")}
                       isOpen={open}
                       onToggle={() => setOpen(!open)}
                       onSelect={(_, value) => {

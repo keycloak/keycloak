@@ -18484,6 +18484,11 @@ use-latest@^1.0.0:
   dependencies:
     use-isomorphic-layout-effect "^1.0.0"
 
+use-react-router-breadcrumbs@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/use-react-router-breadcrumbs/-/use-react-router-breadcrumbs-1.0.4.tgz#12b67ba27ac7e6a00e6ae10896ea91e178e87ee2"
+  integrity sha512-SskKm+wFYPD7eiYrg89y1Wn8vMlY+DiZXNFuP4Wt5gMP2aolcahHGR6pRTWsfMW93CEQxdVkXv/ceHL7nfz2Fw==
+
 use-sidecar@^1.0.1:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/use-sidecar/-/use-sidecar-1.0.3.tgz#17a4e567d4830c0c0ee100040e85a7fe68611e0f"

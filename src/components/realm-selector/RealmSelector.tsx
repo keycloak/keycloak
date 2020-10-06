@@ -15,7 +15,8 @@ import {
 import { CheckIcon } from "@patternfly/react-icons";
 
 import { RealmRepresentation } from "../../realm/models/Realm";
-import { RealmContext } from "../realm-context/RealmContext";
+import { RealmContext } from "../../context/realm-context/RealmContext";
+import { WhoAmIContext } from "../../context/whoami/WhoAmI";
 
 import "./realm-selector.css";
 
@@ -25,6 +26,7 @@ type RealmSelectorProps = {
 
 export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
   const { realm, setRealm } = useContext(RealmContext);
+  const whoami = useContext(WhoAmIContext);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [filteredItems, setFilteredItems] = useState(realmList);
@@ -77,6 +79,19 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
     </DropdownItem>
   ));
 
+  const addRealmComponent = (
+    <React.Fragment key="Add Realm">
+      {whoami.canCreateRealm() && (
+        <>
+          <Divider key="divider" />
+          <DropdownItem key="add">
+            <AddRealm />
+          </DropdownItem>
+        </>
+      )}
+    </React.Fragment>
+  );
+
   return (
     <>
       {realmList.length > 5 && (
@@ -119,13 +134,7 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
               {toUpperCase(realm)}
             </DropdownToggle>
           }
-          dropdownItems={[
-            ...dropdownItems,
-            <Divider key="divider" />,
-            <DropdownItem key="add">
-              <AddRealm />
-            </DropdownItem>,
-          ]}
+          dropdownItems={[...dropdownItems, addRealmComponent]}
         />
       )}
     </>

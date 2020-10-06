@@ -3,6 +3,7 @@
     "fullName": "{{givenName}} {{familyName}}",
     "unknownUser": "Anonymous",
 
+    "create": "Create",
     "save": "Save",
     "cancel": "Cancel",
     "continue": "Continue",
@@ -10,12 +11,14 @@
     "next": "Next",
     "back": "Back",
     "export": "Export",
+    "action": "Action",
     "resourceFile": "Resource file",
     "clearFile": "Clear this file",
     "on": "On",
     "off":"Off",
     "enabled": "Enabled",
     "disabled": "Disabled",
+    "disable": "Disable",
 
     "signOut": "Sign out",
     "manageAccount": "Manage account",
@@ -24,6 +27,7 @@
     "documentation": "Documentation",
     "enableHelpMode": "Enable help mode",
 
+    "home": "Home",
     "manage": "Manage",
     "clients": "Clients",
     "clientScopes": "Client scopes",

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { MouseEventHandler } from "react";
 import {
   ToggleTemplateProps,
   Toolbar,
@@ -28,6 +28,7 @@ type TableToolbarProps = {
     newInput: string,
     event: React.FormEvent<HTMLInputElement>
   ) => void;
+  inputGroupOnClick?: MouseEventHandler;
 };
 
 export const TableToolbar = ({
@@ -42,6 +43,7 @@ export const TableToolbar = ({
   inputGroupName,
   inputGroupPlaceholder,
   inputGroupOnChange,
+  inputGroupOnClick,
 }: TableToolbarProps) => {
   const { t } = useTranslation("groups");
   const page = first / max;
@@ -82,6 +84,7 @@ export const TableToolbar = ({
                   <Button
                     variant={ButtonVariant.control}
                     aria-label={t("Search")}
+                    onClick={inputGroupOnClick}
                   >
                     <SearchIcon />
                   </Button>

@@ -9,8 +9,8 @@ import { Button, AlertVariant } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { GroupRepresentation } from "./models/groups";
 import { UsersIcon } from "@patternfly/react-icons";
-import { HttpClientContext } from "../http-service/HttpClientContext";
-import { RealmContext } from "../components/realm-context/RealmContext";
+import { HttpClientContext } from "../context/http-service/HttpClientContext";
+import { RealmContext } from "../context/realm-context/RealmContext";
 import { useAlerts } from "../components/alert/Alerts";
 
 type GroupsListProps = {

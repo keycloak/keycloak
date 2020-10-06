@@ -14,10 +14,10 @@ import {
 
 import { DataLoader } from "../components/data-loader/DataLoader";
 import { TableToolbar } from "../components/table-toolbar/TableToolbar";
-import { HttpClientContext } from "../http-service/HttpClientContext";
+import { HttpClientContext } from "../context/http-service/HttpClientContext";
 import { RoleRepresentation } from "../model/role-model";
 import { RolesList } from "./RoleList";
-import { RealmContext } from "../components/realm-context/RealmContext";
+import { RealmContext } from "../context/realm-context/RealmContext";
 
 export const RealmRolesSection = () => {
   const { t } = useTranslation("roles");
@@ -51,7 +51,7 @@ export const RealmRolesSection = () => {
           <Divider component="li" key={1} />
           <PageSection padding={{ default: "noPadding" }}>
             <TableToolbar
-              count={roles!.length}
+              count={roles.data.length}
               first={first}
               max={max}
               onNextClick={setFirst}
@@ -68,7 +68,7 @@ export const RealmRolesSection = () => {
                 </>
               }
             >
-              <RolesList roles={roles} />
+              <RolesList roles={roles.data} />
             </TableToolbar>
           </PageSection>
         </>

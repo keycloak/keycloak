@@ -3,7 +3,7 @@ import { mount } from "enzyme";
 import { act } from "@testing-library/react";
 
 import { RealmSelector } from "../RealmSelector";
-import { RealmContextProvider } from "../../realm-context/RealmContext";
+import { RealmContextProvider } from "../../../context/realm-context/RealmContext";
 
 it("renders realm selector", async () => {
   const wrapper = mount(

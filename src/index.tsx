@@ -3,11 +3,11 @@ import ReactDom from "react-dom";
 import i18n from "./i18n";
 
 import { App } from "./App";
-import init from "./auth/keycloak";
-import { KeycloakContext } from "./auth/KeycloakContext";
-import { KeycloakService } from "./auth/keycloak.service";
-import { HttpClientContext } from "./http-service/HttpClientContext";
-import { HttpClient } from "./http-service/http-client";
+import init from "./context/auth/keycloak";
+import { KeycloakContext } from "./context/auth/KeycloakContext";
+import { KeycloakService } from "./context/auth/keycloak.service";
+import { HttpClientContext } from "./context/http-service/HttpClientContext";
+import { HttpClient } from "./context/http-service/http-client";
 
 console.info("supported languages", ...i18n.languages);
 init().then((keycloak) => {

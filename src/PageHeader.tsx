@@ -14,7 +14,8 @@ import {
   PageHeaderToolsGroup,
 } from "@patternfly/react-core";
 import { HelpIcon } from "@patternfly/react-icons";
-import { KeycloakContext } from "./auth/KeycloakContext";
+import { KeycloakContext } from "./context/auth/KeycloakContext";
+import { WhoAmIContext } from "./context/whoami/WhoAmI";
 import { HelpHeader } from "./components/help-enabler/HelpHeader";
 import { Link } from "react-router-dom";
 
@@ -134,6 +135,7 @@ const KebabDropdown = () => {
 
 const UserDropdown = () => {
   const keycloak = useContext(KeycloakContext);
+  const whoami = useContext(WhoAmIContext);
   const [isDropdownOpen, setDropdownOpen] = useState(false);
 
   const onDropdownToggle = () => {
@@ -147,7 +149,7 @@ const UserDropdown = () => {
       isOpen={isDropdownOpen}
       toggle={
         <DropdownToggle onToggle={onDropdownToggle}>
-          {keycloak?.loggedInUser}
+          {whoami.getDisplayName()}
         </DropdownToggle>
       }
       dropdownItems={userDropdownItems}

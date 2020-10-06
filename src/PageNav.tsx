@@ -10,7 +10,7 @@ import {
 } from "@patternfly/react-core";
 import { RealmSelector } from "./components/realm-selector/RealmSelector";
 import { DataLoader } from "./components/data-loader/DataLoader";
-import { HttpClientContext } from "./http-service/HttpClientContext";
+import { HttpClientContext } from "./context/http-service/HttpClientContext";
 import { RealmRepresentation } from "./realm/models/Realm";
 
 export const PageNav: React.FunctionComponent = () => {
@@ -63,7 +63,7 @@ export const PageNav: React.FunctionComponent = () => {
             <Nav onSelect={onSelect}>
               <NavList>
                 <NavItem className="keycloak__page_nav__nav_item__realm-selector">
-                  <RealmSelector realmList={realmList || []} />
+                  <RealmSelector realmList={realmList.data || []} />
                 </NavItem>
               </NavList>
               <NavGroup title={t("manage")}>

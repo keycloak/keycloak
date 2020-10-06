@@ -1,0 +1,92 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`BreadCrumbs tests couple of crumbs 1`] = `
+<PageBreadCrumbs>
+  <Breadcrumb>
+    <nav
+      aria-label="Breadcrumb"
+      className="pf-c-breadcrumb"
+      data-ouia-component-id="OUIA-Generated-Breadcrumb-1"
+      data-ouia-component-type="PF4/Breadcrumb"
+      data-ouia-safe={true}
+    >
+      <ol
+        className="pf-c-breadcrumb__list"
+      >
+        <BreadcrumbItem
+          isActive={false}
+          key=".$0"
+          showDivider={false}
+        >
+          <li
+            className="pf-c-breadcrumb__item"
+          >
+            <Link
+              to="/"
+            >
+              <LinkAnchor
+                href="/"
+                navigate={[Function]}
+              >
+                <a
+                  href="/"
+                  onClick={[Function]}
+                >
+                  <span
+                    key="/"
+                  >
+                    Home
+                  </span>
+                </a>
+              </LinkAnchor>
+            </Link>
+          </li>
+        </BreadcrumbItem>
+        <BreadcrumbItem
+          isActive={true}
+          key=".$1"
+          showDivider={true}
+        >
+          <li
+            className="pf-c-breadcrumb__item"
+          >
+            <span
+              className="pf-c-breadcrumb__item-divider"
+            >
+              <AngleRightIcon
+                color="currentColor"
+                noVerticalAlign={false}
+                size="sm"
+              >
+                <svg
+                  aria-hidden={true}
+                  aria-labelledby={null}
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style={
+                    Object {
+                      "verticalAlign": "-0.125em",
+                    }
+                  }
+                  viewBox="0 0 256 512"
+                  width="1em"
+                >
+                  <path
+                    d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                  />
+                </svg>
+              </AngleRightIcon>
+            </span>
+            <span
+              key="/add-client"
+            >
+              Create client
+            </span>
+          </li>
+        </BreadcrumbItem>
+      </ol>
+    </nav>
+  </Breadcrumb>
+</PageBreadCrumbs>
+`;
