@@ -4,7 +4,6 @@ To use xref:_oidc[OpenID Connect], an existing application must be secured as an
 
 .Procedure
 . Click `Clients` in the left navigation pane.  
-+
 
 . Click *Create* to go to the `Add Client` page.
 +
@@ -36,18 +35,15 @@ the name, set up a replacement string value. For example, a string value such as
 
 `Consent Required`:: When turned on, users see a consent page that they can use to grant access to that application.  It will also display metadata so the user knows the exact information that the client can access.
 
-`Access Type`:: The type of OIDC client.
-+
-* _Confidential_
+[[_access-type]]`Access Type`:: The type of OIDC client.
 
+_Confidential_::
   For server-side clients that perform browser logins and require client secrets when making an Access Token Request. This setting should be used for server-side applications.
-+
-* _Public_
 
+_Public_::
   For client-side clients that perform browser logins. As it is not possible to ensure that secrets can be kept safe with client-side clients, it is important to restrict access by configuring correct redirect URIs.
-+
-* _Bearer-only_
 
+_Bearer-only_::
   The application allows only bearer token requests. When turned on, this application cannot participate in browser logins.
 
 `Standard Flow Enabled`:: When enabled, clients can use the OIDC xref:_oidc-auth-flows-authorization[Authorization Code Flow].
@@ -60,7 +56,7 @@ the name, set up a replacement string value. For example, a string value such as
 
 `Valid Redirect URIs`:: Required field.  Enter a URL pattern and click *+* to add and *-* to remove existing URLs and click *Save*. You can use wildcards at the end of the URL pattern. For example $$http://host.com/*$$
 +
-Exclusive redirect URL patterns are typically more secure.  See xref:_unspecific-redirect-uris [Threat Model Mitigation] chapter for more information.
+Exclusive redirect URL patterns are typically more secure.  See xref:unspecific-redirect-uris_{context}[Unspecific Redirect URIs] for more information.
 
 `Base URL`:: This URL is used when {project_name} needs to link to the client.
 

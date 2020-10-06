@@ -1,5 +1,5 @@
 
-[[_unspecific-redirect-uris]]
+[id="unspecific-redirect-uris_{context}"]
 === Unspecific Redirect URIs
 
 For the <<_oidc-auth-flows,Authorization Code Flow>>, if you register redirect URIs that
