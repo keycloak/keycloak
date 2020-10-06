@@ -60,8 +60,8 @@ public class DefaultUserProfileContext implements UserProfileContext {
         return new DefaultUserProfileContext(UserUpdateEvent.RegistrationProfile, null);
     }
 
-    public static DefaultUserProfileContext forUserResource(UserRepresentation rep) {
-        return new DefaultUserProfileContext(UserUpdateEvent.UserResource, new UserRepresentationUserProfile(rep));
+    public static DefaultUserProfileContext forUserResource(UserModel user) {
+        return new DefaultUserProfileContext(UserUpdateEvent.UserResource, new UserModelUserProfile(user));
     }
 
     @Override
