@@ -637,12 +637,16 @@ public class TokenEndpoint {
                 .setRequest(request);
         Response challenge = processor.authenticateOnly();
         if (challenge != null) {
+            // Remove authentication session as "Resource Owner Password Credentials Grant" is single-request scoped authentication
+            new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, false);
             cors.build(httpResponse);
             return challenge;
         }
         processor.evaluateRequiredActionTriggers();
         UserModel user = authSession.getAuthenticatedUser();
         if (user.getRequiredActions() != null && user.getRequiredActions().size() > 0) {
+            // Remove authentication session as "Resource Owner Password Credentials Grant" is single-request scoped authentication
+            new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, false);
             event.error(Errors.RESOLVE_REQUIRED_ACTIONS);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Account is not fully set up", Response.Status.BAD_REQUEST);
 
