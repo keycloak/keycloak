@@ -12,8 +12,8 @@ import {
   TextArea,
 } from "@patternfly/react-core";
 import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
-import { HttpClientContext } from "../../http-service/HttpClientContext";
-import { RealmContext } from "../realm-context/RealmContext";
+import { HttpClientContext } from "../../context/http-service/HttpClientContext";
+import { RealmContext } from "../../context/realm-context/RealmContext";
 import { HelpItem } from "../help-enabler/HelpItem";
 import { useTranslation } from "react-i18next";
 
