@@ -10,5 +10,9 @@ export default {
 } as Meta;
 
 export const ClientListExample = () => (
-  <ClientList clients={clientMock} baseUrl="http://test.nl/" />
+  <ClientList
+    clients={clientMock}
+    baseUrl="http://test.nl/"
+    refresh={() => {}}
+  />
 );

@@ -8,7 +8,11 @@ import { ClientList } from "../ClientList";
 test("renders ClientList", () => {
   const container = render(
     <MemoryRouter>
-      <ClientList clients={clientMock} baseUrl="http://blog.nerdin.ch" />
+      <ClientList
+        clients={clientMock}
+        baseUrl="http://blog.nerdin.ch"
+        refresh={() => {}}
+      />
     </MemoryRouter>
   );
   expect(container).toMatchSnapshot();

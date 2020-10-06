@@ -35,7 +35,7 @@ export const ClientScopesSection = () => {
         <DataLoader loader={loader}>
           {(scopes) => (
             <TableToolbar
-              count={scopes!.length}
+              count={scopes.data.length}
               first={first}
               max={max}
               onNextClick={setFirst}
@@ -50,7 +50,7 @@ export const ClientScopesSection = () => {
                 </Button>
               }
             >
-              <ClientScopeList clientScopes={scopes} />
+              <ClientScopeList clientScopes={scopes.data} />
             </TableToolbar>
           )}
         </DataLoader>

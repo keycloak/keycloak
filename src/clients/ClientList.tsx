@@ -20,6 +20,7 @@ import { exportClient } from "../util";
 
 type ClientListProps = {
   clients?: ClientRepresentation[];
+  refresh: () => void;
   baseUrl: string;
 };
 
@@ -30,7 +31,7 @@ const columns: (keyof ClientRepresentation)[] = [
   "baseUrl",
 ];
 
-export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
+export const ClientList = ({ baseUrl, clients, refresh }: ClientListProps) => {
   const { t } = useTranslation("clients");
   const httpClient = useContext(HttpClientContext)!;
   const { realm } = useContext(RealmContext);
@@ -106,11 +107,12 @@ export const ClientList = ({ baseUrl, clients }: ClientListProps) => {
           },
           {
             title: t("common:delete"),
-            onClick: (_, rowId) => {
+            onClick: async (_, rowId) => {
               try {
-                httpClient.doDelete(
+                await httpClient.doDelete(
                   `/admin/realms/${realm}/clients/${data[rowId].client.id}`
                 );
+                refresh();
                 add(t("clientDeletedSuccess"), AlertVariant.success);
               } catch (error) {
                 add(`${t("clientDeleteError")} ${error}`, AlertVariant.danger);

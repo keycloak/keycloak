@@ -51,7 +51,7 @@ export const RealmRolesSection = () => {
           <Divider component="li" key={1} />
           <PageSection padding={{ default: "noPadding" }}>
             <TableToolbar
-              count={roles!.length}
+              count={roles.data.length}
               first={first}
               max={max}
               onNextClick={setFirst}
@@ -68,7 +68,7 @@ export const RealmRolesSection = () => {
                 </>
               }
             >
-              <RolesList roles={roles} />
+              <RolesList roles={roles.data} />
             </TableToolbar>
           </PageSection>
         </>

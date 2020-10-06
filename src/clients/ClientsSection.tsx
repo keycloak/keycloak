@@ -83,6 +83,7 @@ export const ClientsSection = () => {
           >
             <ClientList
               clients={clients}
+              refresh={loader}
               baseUrl={keycloak!.authServerUrl()!}
             />
           </TableToolbar>

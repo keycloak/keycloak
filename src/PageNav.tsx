@@ -63,7 +63,7 @@ export const PageNav: React.FunctionComponent = () => {
             <Nav onSelect={onSelect}>
               <NavList>
                 <NavItem className="keycloak__page_nav__nav_item__realm-selector">
-                  <RealmSelector realmList={realmList || []} />
+                  <RealmSelector realmList={realmList.data || []} />
                 </NavItem>
               </NavList>
               <NavGroup title={t("manage")}>

@@ -68,7 +68,7 @@ export const WhoAmIContextProvider = ({ children }: WhoAmIProviderProps) => {
     <DataLoader loader={whoAmILoader}>
       {(whoamirep) => (
         <WhoAmIContext.Provider
-          value={new WhoAmI(keycloak?.realm(), whoamirep)}
+          value={new WhoAmI(keycloak?.realm(), whoamirep.data)}
         >
           {children}
         </WhoAmIContext.Provider>
