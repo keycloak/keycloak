@@ -1,6 +1,5 @@
-import React, { MouseEventHandler } from "react";
+import React, { MouseEventHandler, ReactNode } from "react";
 import {
-  ToggleTemplateProps,
   Toolbar,
   ToolbarContent,
   ToolbarItem,
@@ -8,19 +7,13 @@ import {
   TextInput,
   Button,
   ButtonVariant,
-  Pagination,
 } from "@patternfly/react-core";
 import { SearchIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
 
 type TableToolbarProps = {
-  count: number;
-  first: number;
-  max: number;
-  onNextClick: (page: number) => void;
-  onPreviousClick: (page: number) => void;
-  onPerPageSelect: (max: number, first: number) => void;
-  toolbarItem?: React.ReactNode;
+  toolbarItem?: ReactNode;
+  toolbarItemFooter?: ReactNode;
   children: React.ReactNode;
   inputGroupName?: string;
   inputGroupPlaceholder?: string;
@@ -32,39 +25,15 @@ type TableToolbarProps = {
 };
 
 export const TableToolbar = ({
-  count,
-  first,
-  max,
-  onNextClick,
-  onPreviousClick,
-  onPerPageSelect,
   toolbarItem,
+  toolbarItemFooter,
   children,
   inputGroupName,
   inputGroupPlaceholder,
   inputGroupOnChange,
   inputGroupOnClick,
 }: TableToolbarProps) => {
-  const { t } = useTranslation("groups");
-  const page = first / max;
-  const pagination = (variant: "top" | "bottom" = "top") => (
-    <Pagination
-      isCompact
-      toggleTemplate={({ firstIndex, lastIndex }: ToggleTemplateProps) => (
-        <b>
-          {firstIndex} - {lastIndex}
-        </b>
-      )}
-      itemCount={count + page * max + (count <= max ? 1 : 0)}
-      page={page + 1}
-      perPage={max}
-      onNextClick={(_, p) => onNextClick((p - 1) * max)}
-      onPreviousClick={(_, p) => onPreviousClick((p - 1) * max)}
-      onPerPageSelect={(_, m, f) => onPerPageSelect(f, m)}
-      variant={variant}
-    />
-  );
-
+  const { t } = useTranslation();
   return (
     <>
       <Toolbar>
@@ -77,13 +46,13 @@ export const TableToolbar = ({
                     name={inputGroupName}
                     id={inputGroupName}
                     type="search"
-                    aria-label={t("Search")}
+                    aria-label={t("search")}
                     placeholder={inputGroupPlaceholder}
                     onChange={inputGroupOnChange}
                   />
                   <Button
                     variant={ButtonVariant.control}
-                    aria-label={t("Search")}
+                    aria-label={t("search")}
                     onClick={inputGroupOnClick}
                   >
                     <SearchIcon />
@@ -93,13 +62,10 @@ export const TableToolbar = ({
             )}
           </React.Fragment>
           {toolbarItem}
-          <ToolbarItem variant="pagination">{pagination()}</ToolbarItem>
         </ToolbarContent>
       </Toolbar>
       {children}
-      <Toolbar>
-        <ToolbarItem>{pagination("bottom")}</ToolbarItem>
-      </Toolbar>
+      <Toolbar>{toolbarItemFooter}</Toolbar>
     </>
   );
 };

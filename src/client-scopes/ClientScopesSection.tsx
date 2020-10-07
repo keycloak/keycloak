@@ -1,12 +1,11 @@
-import React, { useContext, useState } from "react";
-import { Button, PageSection } from "@patternfly/react-core";
+import React, { useContext, useEffect, useState } from "react";
+import { Button, PageSection, Spinner } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { useHistory } from "react-router-dom";
 
 import { RealmContext } from "../context/realm-context/RealmContext";
 import { HttpClientContext } from "../context/http-service/HttpClientContext";
 import { ClientRepresentation } from "../realm/models/Realm";
-import { DataLoader } from "../components/data-loader/DataLoader";
 import { TableToolbar } from "../components/table-toolbar/TableToolbar";
 import { ClientScopeList } from "./ClientScopesList";
 import { ViewHeader } from "../components/view-header/ViewHeader";
@@ -14,16 +13,30 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 export const ClientScopesSection = () => {
   const { t } = useTranslation("client-scopes");
   const history = useHistory();
+  const [rawData, setRawData] = useState<ClientRepresentation[]>();
+  const [filteredData, setFilteredData] = useState<ClientRepresentation[]>();
 
-  const [max, setMax] = useState(10);
-  const [first, setFirst] = useState(0);
   const httpClient = useContext(HttpClientContext)!;
   const { realm } = useContext(RealmContext);
 
-  const loader = async () => {
-    return await httpClient
-      .doGet(`/admin/realms/${realm}/client-scopes`, { params: { first, max } })
-      .then((r) => r.data as ClientRepresentation[]);
+  useEffect(() => {
+    (async () => {
+      if (filteredData) {
+        return filteredData;
+      }
+      const result = await httpClient.doGet<ClientRepresentation[]>(
+        `/admin/realms/${realm}/client-scopes`
+      );
+      setRawData(result.data!);
+    })();
+  }, []);
+
+  const filterData = (search: string) => {
+    setFilteredData(
+      rawData!.filter((group) =>
+        group.name.toLowerCase().includes(search.toLowerCase())
+      )
+    );
   };
   return (
     <>
@@ -32,28 +45,25 @@ export const ClientScopesSection = () => {
         subKey="client-scopes:clientScopeExplain"
       />
       <PageSection variant="light">
-        <DataLoader loader={loader}>
-          {(scopes) => (
-            <TableToolbar
-              count={scopes.data.length}
-              first={first}
-              max={max}
-              onNextClick={setFirst}
-              onPreviousClick={setFirst}
-              onPerPageSelect={(first, max) => {
-                setFirst(first);
-                setMax(max);
-              }}
-              toolbarItem={
-                <Button onClick={() => history.push("/add-client-scopes")}>
-                  {t("createClientScope")}
-                </Button>
-              }
-            >
-              <ClientScopeList clientScopes={scopes.data} />
-            </TableToolbar>
-          )}
-        </DataLoader>
+        {!rawData && (
+          <div className="pf-u-text-align-center">
+            <Spinner />
+          </div>
+        )}
+        {rawData && (
+          <TableToolbar
+            inputGroupName="clientsScopeToolbarTextInput"
+            inputGroupPlaceholder={t("searchFor")}
+            inputGroupOnChange={filterData}
+            toolbarItem={
+              <Button onClick={() => history.push("/add-client-scopes")}>
+                {t("createClientScope")}
+              </Button>
+            }
+          >
+            <ClientScopeList clientScopes={filteredData || rawData} />
+          </TableToolbar>
+        )}
       </PageSection>
     </>
   );

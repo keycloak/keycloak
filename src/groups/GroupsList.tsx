@@ -15,14 +15,17 @@ type GroupsListProps = {
   list?: GroupRepresentation[];
 };
 
+type FormattedData = {
+  cells: JSX.Element[];
+  selected: boolean;
+};
+
 export const GroupsList = ({ list }: GroupsListProps) => {
   const { t } = useTranslation("groups");
   const httpClient = useContext(HttpClientContext)!;
   const columnGroupName: keyof GroupRepresentation = "name";
   const columnGroupNumber: keyof GroupRepresentation = "membersLength";
-  const [formattedData, setFormattedData] = useState([
-    { cells: [<Button key="0">Test</Button>], selected: false },
-  ]);
+  const [formattedData, setFormattedData] = useState<FormattedData[]>([]);
 
   const formatData = (data: GroupRepresentation[]) =>
     data.map((group: { [key: string]: any }, index) => {
@@ -34,7 +37,7 @@ export const GroupsList = ({ list }: GroupsListProps) => {
             {groupName}
           </Button>,
           <div className="keycloak-admin--groups__member-count" key={index}>
-            <UsersIcon />
+            <UsersIcon key={`user-icon-${index}`} />
             {groupNumber}
           </div>,
         ],
@@ -47,7 +50,7 @@ export const GroupsList = ({ list }: GroupsListProps) => {
   }, [list]);
 
   function onSelect(
-    event: React.FormEvent<HTMLInputElement>,
+    _: React.FormEvent<HTMLInputElement>,
     isSelected: boolean,
     rowId: number
   ) {
@@ -86,7 +89,7 @@ export const GroupsList = ({ list }: GroupsListProps) => {
   ];
 
   return (
-    <React.Fragment>
+    <>
       {formattedData && (
         <Table
           actions={actions}
@@ -101,6 +104,6 @@ export const GroupsList = ({ list }: GroupsListProps) => {
           <TableBody />
         </Table>
       )}
-    </React.Fragment>
+    </>
   );
 };

@@ -33,7 +33,7 @@ export function DataLoader<T>(props: DataLoaderProps<T>) {
     return props.children;
   }
   return (
-    <div style={{ textAlign: "center" }}>
+    <div className="pf-u-text-align-center">
       <Spinner />
     </div>
   );
