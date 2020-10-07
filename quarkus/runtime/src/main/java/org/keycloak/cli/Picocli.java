@@ -18,10 +18,12 @@
 package org.keycloak.cli;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.IntFunction;
 
+import io.quarkus.runtime.Quarkus;
 import org.keycloak.common.Profile;
 import org.keycloak.configuration.PropertyMapper;
 import org.keycloak.configuration.PropertyMappers;
@@ -30,11 +32,12 @@ import picocli.CommandLine;
 
 final class Picocli {
 
-    static CommandLine.Model.CommandSpec createCommandSpec() {
+    static CommandLine createCommandLine() {
         CommandLine.Model.CommandSpec spec = CommandLine.Model.CommandSpec.forAnnotatedObject(new MainCommand())
                 .name(Environment.getCommand());
 
         addOption(spec, "start", PropertyMappers.getRuntimeMappers());
+        addOption(spec, "start-dev", PropertyMappers.getRuntimeMappers());
         addOption(spec, "config", PropertyMappers.getRuntimeMappers());
         addOption(spec, "config", PropertyMappers.getBuiltTimeMappers());
         addOption(spec.subcommands().get("config").getCommandSpec(), "--features", "Enables a group of features. Possible values are: "
@@ -45,7 +48,20 @@ final class Picocli {
             addOption(spec.subcommands().get("config").getCommandSpec(), "--features-" + feature.name().toLowerCase(),
                     "Enables the " + feature.name() + " feature. Set enabled to enable the feature or disabled otherwise.");
         }
-        return spec;
+        
+        CommandLine cmd = new CommandLine(spec);
+
+        cmd.setExecutionExceptionHandler(new CommandLine.IExecutionExceptionHandler() {
+            @Override
+            public int handleExecutionException(Exception ex, CommandLine commandLine,
+                    CommandLine.ParseResult parseResult) {
+                commandLine.getErr().println(ex.getMessage());
+                commandLine.usage(commandLine.getErr());
+                return commandLine.getCommandSpec().exitCodeOnExecutionException();
+            }
+        });
+        
+        return cmd;
     }
 
     static String parseConfigArgs(List<String> argsList) {
@@ -91,5 +107,48 @@ final class Picocli {
                 .description(description)
                 .paramLabel("<value>")
                 .type(String.class).build());
+    }
+
+    static List<String> getCliArgs(CommandLine cmd) {
+        CommandLine.ParseResult parseResult = cmd.getParseResult();
+
+        if (parseResult == null) {
+            return Collections.emptyList();
+        }
+
+        return parseResult.expandedArgs();
+    }
+
+    static void errorAndExit(CommandLine cmd, String message) {
+        error(cmd, message, null);
+    }
+
+    static void error(CommandLine cmd, String message, Throwable throwable) {
+        List<String> cliArgs = getCliArgs(cmd);
+
+        cmd.getErr().println("ERROR: " + message);
+
+        if (throwable != null) {
+            Throwable cause = throwable;
+
+            do {
+                if (cause.getMessage() != null) {
+                    cmd.getErr().println(String.format("ERROR: %s", cause.getMessage()));
+                }
+            } while ((cause = cause.getCause())!= null);
+
+            if (cliArgs.stream().anyMatch((arg) -> "--verbose".equals(arg))) {
+                cmd.getErr().println("ERROR: Details:");
+                throwable.printStackTrace();
+            } else {
+                cmd.getErr().println("For more details run the same command passing the '--verbose' option.");
+            }
+        }
+
+        System.exit(cmd.getCommandSpec().exitCodeOnExecutionException());
+    }
+
+    static void println(CommandLine cmd, String message) {
+        cmd.getOut().println(message);
     }
 }

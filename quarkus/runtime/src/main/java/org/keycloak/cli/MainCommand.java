@@ -17,10 +17,13 @@
 
 package org.keycloak.cli;
 
+import static org.keycloak.cli.Picocli.error;
+import static org.keycloak.cli.Picocli.errorAndExit;
+import static org.keycloak.cli.Picocli.println;
+
 import org.keycloak.configuration.KeycloakConfigSourceProvider;
 
 import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
-import io.quarkus.runtime.Quarkus;
 import org.keycloak.util.Environment;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -68,30 +71,15 @@ public class MainCommand {
             usageHelpAutoWidth = true,
             optionListHeading = "%nOptions%n",
             parameterListHeading = "Available Commands%n")
-    public void reAugment(@Option(names = "--verbose", description = "Print out more details when running this command.", required = false) Boolean debug) {
+    public void reAugment(@Option(names = "--verbose", description = "Print out more details when running this command.", required = false) Boolean verbose) {
         System.setProperty("quarkus.launch.rebuild", "true");
-        println("Updating the configuration and installing your custom providers, if any. Please wait.");
+        println(spec.commandLine(), "Updating the configuration and installing your custom providers, if any. Please wait.");
         try {
             QuarkusEntryPoint.main();
-            println("Server configuration updated and persisted. Run the following command to review the configuration:\n");
-            println("\t" + Environment.getCommand() + " show-config\n");
+            println(spec.commandLine(), "Server configuration updated and persisted. Run the following command to review the configuration:\n");
+            println(spec.commandLine(), "\t" + Environment.getCommand() + " show-config\n");
         } catch (Throwable throwable) {
-            String message = throwable.getMessage();
-            Throwable cause = throwable.getCause();
-
-            if (cause != null) {
-                message = cause.getMessage();                
-            }
-            
-            error("Failed to update server configuration: " + message);
-            
-            if (debug == null) {
-                errorAndExit("For more details run the same command passing the '--verbose' option.");
-            } else {
-                error("Details:");
-                throwable.printStackTrace();
-                System.exit(spec.exitCodeOnExecutionException());
-            }
+            error(spec.commandLine(), "Failed to update server configuration.", throwable);
         }
     }
 
@@ -100,10 +88,10 @@ public class MainCommand {
             mixinStandardHelpOptions = true,
             optionListHeading = "%nOptions%n",
             parameterListHeading = "Available Commands%n")
-    public void startDev() {
+    public void startDev(@Option(names = "--verbose", description = "Print out more details when running this command.", required = false) Boolean verbose) {
         System.setProperty("kc.profile", "dev");
         System.setProperty("quarkus.profile", "dev");
-        start();
+        KeycloakMain.start(spec.commandLine());
     }
 
     @Command(name = "export", 
@@ -116,7 +104,8 @@ public class MainCommand {
             @Option(names = "--file", arity = "1", description = "Set the path to a file that will be created with the exported data.", paramLabel = "<path>") String toFile,
             @Option(names = "--realm", arity = "1", description = "Set the name of the realm to export", paramLabel = "<realm>") String realm,
             @Option(names = "--users", arity = "1", description = "Set how users should be exported. Possible values are: skip, realm_file, same_file, different_files.", paramLabel = "<strategy>", defaultValue = "different_files") String users,
-            @Option(names = "--users-per-file", arity = "1", description = "Set the number of users per file. It’s used only if --users=different_files.", paramLabel = "<number>", defaultValue = "50") Integer usersPerFile) {
+            @Option(names = "--users-per-file", arity = "1", description = "Set the number of users per file. It’s used only if --users=different_files.", paramLabel = "<number>", defaultValue = "50") Integer usersPerFile,
+            @Option(names = "--verbose", description = "Print out more details when running this command.", required = false) Boolean verbose) {
         System.setProperty("keycloak.migration.action", "export");
 
         if (toDir != null) {
@@ -126,7 +115,7 @@ public class MainCommand {
             System.setProperty("keycloak.migration.provider", "singleFile");
             System.setProperty("keycloak.migration.file", toFile);
         } else {
-            errorAndExit("Must specify either --dir or --file options.");
+            errorAndExit(spec.commandLine(), "Must specify either --dir or --file options.");
         }
 
         System.setProperty("keycloak.migration.usersExportStrategy", users.toUpperCase());
@@ -138,7 +127,7 @@ public class MainCommand {
         if (realm != null) {
             System.setProperty("keycloak.migration.realmName", realm);
         }
-        start();
+        KeycloakMain.start(spec.commandLine());
     }
 
     @Command(name = "import", 
@@ -150,7 +139,8 @@ public class MainCommand {
     public void runImport(@Option(names = "--dir", arity = "1", description = "Set the path to a directory containing the files with the data to import", paramLabel = "<path>") String toDir,
             @Option(names = "--file", arity = "1", description = "Set the path to a file with the data to import.", paramLabel = "<path>") String toFile,
             @Option(names = "--realm", arity = "1", description = "Set the name of the realm to import", paramLabel = "<realm>") String realm,
-            @Option(names = "--override", arity = "1", description = "Set if existing data should be skipped or overridden.", paramLabel = "false", defaultValue = "true") boolean override) {
+            @Option(names = "--override", arity = "1", description = "Set if existing data should be skipped or overridden.", paramLabel = "false", defaultValue = "true") boolean override,
+            @Option(names = "--verbose", description = "Print out more details when running this command.", required = false) Boolean verbose) {
         System.setProperty("keycloak.migration.action", "import");
         if (toDir != null) {
             System.setProperty("keycloak.migration.provider", "dir");
@@ -159,7 +149,7 @@ public class MainCommand {
             System.setProperty("keycloak.migration.provider", "singleFile");
             System.setProperty("keycloak.migration.file", toFile);
         } else {
-            errorAndExit("Must specify either --dir or --file options.");
+            errorAndExit(spec.commandLine(), "Must specify either --dir or --file options.");
         }
 
         if (realm != null) {
@@ -168,7 +158,7 @@ public class MainCommand {
 
         System.setProperty("keycloak.migration.strategy", override ? "OVERWRITE_EXISTING" : "IGNORE_EXISTING");
         
-        start();
+        KeycloakMain.start(spec.commandLine());
     }
     
     @Command(name = "start", 
@@ -179,14 +169,15 @@ public class MainCommand {
             parameterListHeading = "Available Commands%n")
     public void start(
             @CommandLine.Parameters(paramLabel = "show-config", arity = "0..1", 
-                    description = "Print out the configuration options when starting the server.") String showConfig) {
+                    description = "Print out the configuration options when starting the server.") String showConfig,
+            @Option(names = "--verbose", description = "Print out more details when running this command.", required = false) Boolean verbose) {
         if ("show-config".equals(showConfig)) {
             System.setProperty("kc.show.config.runtime", Boolean.TRUE.toString());
             System.setProperty("kc.show.config", "all");
         } else if (showConfig != null) {
             throw new CommandLine.UnmatchedArgumentException(spec.commandLine(), "Invalid argument: " + showConfig);
         }
-        start();
+        KeycloakMain.start(spec.commandLine());
     }
 
     @Command(name = "show-config", 
@@ -195,26 +186,9 @@ public class MainCommand {
             optionListHeading = "%nOptions%n",
             parameterListHeading = "Available Commands%n")
     public void showConfiguration(
-            @CommandLine.Parameters(paramLabel = "filter", defaultValue = "none", description = "Show all configuration options. Use 'all' to show all options.") String filter) {
+            @CommandLine.Parameters(paramLabel = "filter", defaultValue = "none", description = "Show all configuration options. Use 'all' to show all options.") String filter,
+            @Option(names = "--verbose", description = "Print out more details when running this command.", required = false) Boolean verbose) {
         System.setProperty("kc.show.config", filter);
-        start();
-    }
-
-    private void start() {
-        Quarkus.run();
-        Quarkus.waitForExit();
-    }
-
-    private void println(String message) {
-        spec.commandLine().getOut().println(message);
-    }
-
-    private void errorAndExit(String message) {
-        error(message);
-        System.exit(CommandLine.ExitCode.SOFTWARE);
-    }
-
-    private void error(String message) {
-        spec.commandLine().getErr().println(message);
+        KeycloakMain.start(spec.commandLine());
     }
 }
