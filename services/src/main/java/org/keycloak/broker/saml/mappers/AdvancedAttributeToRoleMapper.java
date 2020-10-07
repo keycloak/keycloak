@@ -89,7 +89,7 @@ public class AdvancedAttributeToRoleMapper extends AbstractIdentityProviderMappe
         roleProperty.setLabel("Role");
         roleProperty.setHelpText("Role to grant to user if all attributes are present."
                 + " Click 'Select Role' button to browse roles, or just type it in the textbox."
-                + " To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
+                + " To reference a client role the syntax is clientname.clientrole, i.e. myclient.myrole");
         roleProperty.setType(ProviderConfigProperty.ROLE_TYPE);
         configProperties.add(roleProperty);
     }
@@ -147,7 +147,7 @@ public class AdvancedAttributeToRoleMapper extends AbstractIdentityProviderMappe
 
     @Override
     public String getHelpText() {
-        return "If the set of attributes exists and can be matched, grant the user the specified realm or application role.";
+        return "If the set of attributes exists and can be matched, grant the user the specified realm or client role.";
     }
 
     static RoleModel getRoleModel(RealmModel realm, String roleName) {
