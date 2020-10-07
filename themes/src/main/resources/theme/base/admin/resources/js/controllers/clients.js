@@ -1056,7 +1056,9 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     $scope.signatureAlgorithms = [
         "RSA_SHA1",
         "RSA_SHA256",
+        "RSA_SHA256_MGF1",
         "RSA_SHA512",
+        "RSA_SHA512_MGF1",
         "DSA_SHA1"
     ];
     $scope.nameIdFormats = [
@@ -1155,10 +1157,14 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.signatureAlgorithm = $scope.signatureAlgorithms[0];
         } else if ($scope.client.attributes['saml.signature.algorithm'] == 'RSA_SHA256') {
             $scope.signatureAlgorithm = $scope.signatureAlgorithms[1];
-        } else if ($scope.client.attributes['saml.signature.algorithm'] == 'RSA_SHA512') {
+        } else if ($scope.client.attributes['saml.signature.algorithm'] == 'RSA_SHA256_MGF1') {
             $scope.signatureAlgorithm = $scope.signatureAlgorithms[2];
-        } else if ($scope.client.attributes['saml.signature.algorithm'] == 'DSA_SHA1') {
+        } else if ($scope.client.attributes['saml.signature.algorithm'] == 'RSA_SHA512') {
             $scope.signatureAlgorithm = $scope.signatureAlgorithms[3];
+        } else if ($scope.client.attributes['saml.signature.algorithm'] == 'RSA_SHA512_MGF1') {
+            $scope.signatureAlgorithm = $scope.signatureAlgorithms[4];
+        } else if ($scope.client.attributes['saml.signature.algorithm'] == 'DSA_SHA1') {
+            $scope.signatureAlgorithm = $scope.signatureAlgorithms[5];
         }
         if ($scope.client.attributes['saml_name_id_format'] == 'username') {
             $scope.nameIdFormat = $scope.nameIdFormats[0];
