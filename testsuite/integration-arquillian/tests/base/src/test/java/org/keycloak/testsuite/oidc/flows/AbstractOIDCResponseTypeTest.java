@@ -17,15 +17,18 @@
 
 package org.keycloak.testsuite.oidc.flows;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -42,6 +45,7 @@ import org.keycloak.testsuite.util.TokenSignatureUtil;
 
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
+import java.security.Security;
 import java.util.List;
 
 import static org.junit.Assert.assertFalse;
@@ -56,8 +60,10 @@ import static org.junit.Assert.assertNull;
  */
 public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeycloakTest {
 
-    // Harcoded for now
-    Algorithm jwsAlgorithm = Algorithm.RS256;
+    @BeforeClass
+    public static void addBouncyCastleProvider() {
+        if (Security.getProvider("BC") == null) Security.addProvider(new BouncyCastleProvider());
+    }
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -151,7 +157,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
         OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
         Assert.assertTrue(errorResponse.isRedirected());
-        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
+        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNAUTHORIZED_CLIENT);
         Assert.assertEquals(errorResponse.getErrorDescription(), "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.");
 
         events.expectLogin().error(Errors.NOT_ALLOWED).user((String) null).session((String) null).clearDetails().assertEvent();
@@ -170,7 +176,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
         OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
         Assert.assertTrue(errorResponse.isRedirected());
-        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
+        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNAUTHORIZED_CLIENT);
         Assert.assertEquals(errorResponse.getErrorDescription(), "Client is not allowed to initiate browser login with given response_type. Standard flow is disabled for the client.");
 
         events.expectLogin().error(Errors.NOT_ALLOWED).user((String) null).session((String) null).clearDetails().assertEvent();
@@ -252,22 +258,69 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
     }
 
     @Test
-    public void oidcFlow_RealmRS256_ClientRS384_EffectiveRS384() throws Exception {
+    public void oidcFlow_RealmRS256_ClientRS384() throws Exception {
+        oidcFlowRequest(Algorithm.RS256, Algorithm.RS384);
+    }
+
+    @Test
+    public void oidcFlow_RealmES256_ClientES384() throws Exception {
+        oidcFlowRequest(Algorithm.ES256, Algorithm.ES384);
+    }
+
+    @Test
+    public void oidcFlow_RealmRS256_ClientPS256() throws Exception {
+        oidcFlowRequest(Algorithm.RS256, Algorithm.PS256);
+    }
+
+    @Test
+    public void oidcFlow_RealmPS256_ClientES256() throws Exception {
+        oidcFlowRequest(Algorithm.PS256, Algorithm.ES256);
+    }
+
+    private void oidcFlowRequest(String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
         try {
-            setSignatureAlgorithm("RS384");
-            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS256");
-            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS384");
-            oidcFlow("RS256", "RS384");
+            setIdTokenSignatureAlgorithm(expectedIdTokenAlg);
+            // Realm setting is used for access token signature algorithm
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, expectedAccessAlg);
+            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), expectedIdTokenAlg);
+            oidcFlow(expectedAccessAlg, expectedIdTokenAlg);
         } finally {
-            setSignatureAlgorithm("RS256");
-            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS256");
+            setIdTokenSignatureAlgorithm(Algorithm.RS256);
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
+            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
         }
     }
-    private String sigAlgName = "RS256";
-    private void setSignatureAlgorithm(String sigAlgName) {
-        this.sigAlgName = sigAlgName;
+
+    private String idTokenSigAlgName = Algorithm.RS256;
+    private void setIdTokenSignatureAlgorithm(String idTokenSigAlgName) {
+        this.idTokenSigAlgName = idTokenSigAlgName;
     }
-    protected String getSignatureAlgorithm() {
-        return this.sigAlgName;
+    protected String getIdTokenSignatureAlgorithm() {
+        return this.idTokenSigAlgName;
+    }
+
+    /**
+     *  Validate "at_hash" claim in IDToken.
+     *  see KEYCLOAK-9635
+     * @param accessTokenHash
+     * @param accessToken
+     */
+    protected void assertValidAccessTokenHash(String accessTokenHash, String accessToken) {
+
+        Assert.assertNotNull(accessTokenHash);
+        Assert.assertNotNull(accessToken);
+        assertEquals(accessTokenHash, HashUtils.oidcHash(getIdTokenSignatureAlgorithm(), accessToken));
+    }
+
+    /**
+     * Validate  "c_hash" claim in IDToken.
+     * @param codeHash
+     * @param code
+     */
+    protected void assertValidCodeHash(String codeHash, String code) {
+
+        Assert.assertNotNull(codeHash);
+        Assert.assertNotNull(code);
+        Assert.assertEquals(codeHash, HashUtils.oidcHash(getIdTokenSignatureAlgorithm(), code));
     }
 }

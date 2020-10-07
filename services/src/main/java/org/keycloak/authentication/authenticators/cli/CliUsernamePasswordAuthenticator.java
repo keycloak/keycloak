@@ -24,7 +24,6 @@ import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAu
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.messages.Messages;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -66,45 +65,12 @@ public class CliUsernamePasswordAuthenticator extends AbstractUsernameFormAuthen
     }
 
     @Override
-    protected Response invalidUser(AuthenticationFlowContext context) {
+    protected Response challenge(AuthenticationFlowContext context, String error) {
         String header = getHeader(context);
         Response response  = Response.status(401)
                 .type(MediaType.TEXT_PLAIN_TYPE)
                 .header(HttpHeaders.WWW_AUTHENTICATE, header)
-                .entity("\n" + context.form().getMessage(Messages.INVALID_USER) + "\n")
-                .build();
-        return response;
-    }
-
-    @Override
-    protected Response disabledUser(AuthenticationFlowContext context) {
-        String header = getHeader(context);
-        Response response  = Response.status(401)
-                .type(MediaType.TEXT_PLAIN_TYPE)
-                .header(HttpHeaders.WWW_AUTHENTICATE, header)
-                .entity("\n" + context.form().getMessage(Messages.ACCOUNT_DISABLED) + "\n")
-                .build();
-        return response;
-    }
-
-    @Override
-    protected Response temporarilyDisabledUser(AuthenticationFlowContext context) {
-        String header = getHeader(context);
-        Response response  = Response.status(401)
-                .type(MediaType.TEXT_PLAIN_TYPE)
-                .header(HttpHeaders.WWW_AUTHENTICATE, header)
-                .entity("\n" + context.form().getMessage(Messages.INVALID_USER) + "\n")
-                .build();
-        return response;
-    }
-
-    @Override
-    protected Response invalidCredentials(AuthenticationFlowContext context) {
-        String header = getHeader(context);
-        Response response  = Response.status(401)
-                .type(MediaType.TEXT_PLAIN_TYPE)
-                .header(HttpHeaders.WWW_AUTHENTICATE, header)
-                .entity("\n" + context.form().getMessage(Messages.INVALID_USER) + "\n")
+                .entity("\n" + context.form().getMessage(error) + "\n")
                 .build();
         return response;
     }

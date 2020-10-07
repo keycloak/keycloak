@@ -32,7 +32,6 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
@@ -46,7 +45,6 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -77,7 +75,7 @@ public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
                         .directAccessGrants()
                         .serviceAccountsEnabled(true))
                 .client(ClientBuilder.create().clientId("test-app")
-                        .redirectUris("http://localhost:8180/auth/realms/master/app/auth")
+                        .redirectUris("http://localhost:8180/auth/realms/master/app/auth", "https://localhost:8543/auth/realms/master/app/auth")
                         .publicClient())
                 .build());
     }
@@ -168,7 +166,7 @@ public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
 
     protected AuthzClient getAuthzClient() {
         try {
-            return AuthzClient.create(JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/default-keycloak-uma2.json"), Configuration.class));
+            return AuthzClient.create(httpsAwareConfigurationStream(getClass().getResourceAsStream("/authorization-test/default-keycloak-uma2.json")));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to create authz client", cause);
         }
@@ -180,7 +178,7 @@ public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
         while (iterator.hasNext()) {
             Permission permission = iterator.next();
 
-            if (permission.getResourceName().equalsIgnoreCase(expectedResource)) {
+            if (permission.getResourceName().equalsIgnoreCase(expectedResource) || permission.getResourceId().equals(expectedResource)) {
                 Set<String> scopes = permission.getScopes();
 
                 assertEquals(expectedScopes.length, scopes.size());

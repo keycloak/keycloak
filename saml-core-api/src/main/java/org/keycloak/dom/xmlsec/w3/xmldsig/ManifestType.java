@@ -42,7 +42,7 @@ import java.util.List;
  */
 public class ManifestType {
 
-    protected List<ReferenceType> reference = new ArrayList<ReferenceType>();
+    protected List<ReferenceType> reference = new ArrayList<>();
     protected String id;
 
     public void addReference(ReferenceType ref) {

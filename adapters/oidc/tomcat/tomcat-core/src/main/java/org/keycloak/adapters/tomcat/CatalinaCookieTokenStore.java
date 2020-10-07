@@ -93,7 +93,7 @@ public class CatalinaCookieTokenStore implements AdapterTokenStore {
 
     @Override
     public void logout() {
-        CookieTokenStore.removeCookie(facade);
+        CookieTokenStore.removeCookie(deployment, facade);
     }
 
     @Override
@@ -132,7 +132,7 @@ public class CatalinaCookieTokenStore implements AdapterTokenStore {
         log.fine("Cleanup and expire cookie for user " + principal.getName() + " after failed refresh");
         request.setUserPrincipal(null);
         request.setAuthType(null);
-        CookieTokenStore.removeCookie(facade);
+        CookieTokenStore.removeCookie(deployment, facade);
         return null;
     }
 }

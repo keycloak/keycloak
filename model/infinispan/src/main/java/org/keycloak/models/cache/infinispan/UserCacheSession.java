@@ -20,10 +20,9 @@ package org.keycloak.models.cache.infinispan;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.cache.CachedObject;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.common.constants.ServiceAccountConstants;
-import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
@@ -50,6 +49,7 @@ import org.keycloak.models.cache.infinispan.events.UserFederationLinkRemovedEven
 import org.keycloak.models.cache.infinispan.events.UserFederationLinkUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.UserFullInvalidationEvent;
 import org.keycloak.models.cache.infinispan.events.UserUpdatedEvent;
+import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.storage.CacheableStorageProviderModel;
@@ -58,7 +58,6 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.client.ClientStorageProvider;
 
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -194,6 +193,11 @@ public class UserCacheSession implements UserCache {
         }
 
         CachedUser cached = cache.get(id, CachedUser.class);
+
+        if (cached != null && !cached.getRealm().equals(realm.getId())) {
+            cached = null;
+        }
+        
         UserModel adapter = null;
         if (cached == null) {
             logger.trace("not cached");
@@ -549,6 +553,31 @@ public class UserCacheSession implements UserCache {
     }
 
     @Override
+    public int getUsersCount(RealmModel realm, Set<String> groupIds) {
+        return getDelegate().getUsersCount(realm, groupIds);
+    }
+
+    @Override
+    public int getUsersCount(String search, RealmModel realm) {
+        return getDelegate().getUsersCount(search, realm);
+    }
+
+    @Override
+    public int getUsersCount(String search, RealmModel realm, Set<String> groupIds) {
+        return getDelegate().getUsersCount(search, realm, groupIds);
+    }
+
+    @Override
+    public int getUsersCount(Map<String, String> params, RealmModel realm) {
+        return getDelegate().getUsersCount(params, realm);
+    }
+
+    @Override
+    public int getUsersCount(Map<String, String> params, RealmModel realm, Set<String> groupIds) {
+        return getDelegate().getUsersCount(params, realm, groupIds);
+    }
+
+    @Override
     public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts) {
         return getDelegate().getUsers(realm, firstResult, maxResults, includeServiceAccounts);
     }
@@ -708,7 +737,7 @@ public class UserCacheSession implements UserCache {
     }
 
     private UserConsentModel toConsentModel(RealmModel realm, CachedUserConsent cachedConsent) {
-        ClientModel client = session.realms().getClientById(cachedConsent.getClientDbId(), realm);
+        ClientModel client = session.clients().getClientById(realm, cachedConsent.getClientDbId());
         if (client == null) {
             return null;
         }
@@ -718,7 +747,7 @@ public class UserCacheSession implements UserCache {
         consentModel.setLastUpdatedDate(cachedConsent.getLastUpdatedDate());
 
         for (String clientScopeId : cachedConsent.getClientScopeIds()) {
-            ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, clientScopeId);
+            ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, client, clientScopeId);
             if (clientScope != null) {
                 consentModel.addGrantedClientScope(clientScope);
             }
@@ -815,6 +844,12 @@ public class UserCacheSession implements UserCache {
         invalidationEvents.add(event);
 
         return getDelegate().removeFederatedIdentity(realm, user, socialProvider);
+    }
+
+    @Override
+    public void preRemove(RealmModel realm, IdentityProviderModel provider) {
+        cache.addInvalidations(InIdentityProviderPredicate.create().provider(provider.getAlias()), invalidations);
+        getDelegate().preRemove(realm, provider);
     }
 
     @Override

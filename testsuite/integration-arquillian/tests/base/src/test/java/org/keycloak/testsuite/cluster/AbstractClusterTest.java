@@ -2,15 +2,19 @@ package org.keycloak.testsuite.cluster;
 
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.ContainerAssume;
+import org.keycloak.testsuite.utils.tls.TLSUtils;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertTrue;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
@@ -27,6 +32,7 @@ import static org.keycloak.testsuite.util.WaitUtils.pause;
  *
  * @author tkyjovsk
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public abstract class AbstractClusterTest extends AbstractKeycloakTest {
 
     // Keep the following constants in sync with arquillian
@@ -36,9 +42,9 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
     @ArquillianResource
     protected ContainerController controller;
 
-    protected Map<ContainerInfo, Keycloak> backendAdminClients = new HashMap<>();
+    protected static Map<ContainerInfo, Keycloak> backendAdminClients = new HashMap<>();
 
-    protected Map<ContainerInfo, KeycloakTestingClient> backendTestingClients = new HashMap<>();
+    protected static Map<ContainerInfo, KeycloakTestingClient> backendTestingClients = new HashMap<>();
 
     private int currentFailNodeIndex = 0;
 
@@ -55,8 +61,15 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
     }
 
     // Assume that route like "node6" will have corresponding backend container like "auth-server-wildfly-backend6"
-    protected void setCurrentFailNodeForRoute(String route) {
-        String routeNumber = route.substring(route.length() - 1);
+    protected void setCurrentFailNodeForRoute(String nodeName) {
+        String route = nodeName.substring(nodeName.lastIndexOf('.') + 1);
+        String routeNumber;
+        int portSeparator = route.indexOf('-');
+        if (portSeparator == -1) {
+            routeNumber = route.substring(route.length() - 1);
+        } else {
+            routeNumber = route.substring(portSeparator - 1, portSeparator);
+        }
         currentFailNodeIndex = Integer.parseInt(routeNumber) - 1;
     }
 
@@ -107,6 +120,9 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
             assertTrue(controller.isStarted(node.getQualifier()));
         }
         log.info("Backend node " + node + " is started");
+
+        AuthServerTestEnricher.initializeTLS(node);
+
         if (!backendAdminClients.containsKey(node)) {
             backendAdminClients.put(node, createAdminClientFor(node));
         }
@@ -118,7 +134,7 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
     protected Keycloak createAdminClientFor(ContainerInfo node) {
         log.info("Initializing admin client for " + node.getContextRoot() + "/auth");
         return Keycloak.getInstance(node.getContextRoot() + "/auth",
-                MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
+                MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS());
     }
 
     protected KeycloakTestingClient createTestingClientFor(ContainerInfo node) {
@@ -158,6 +174,16 @@ public abstract class AbstractClusterTest extends AbstractKeycloakTest {
     @BeforeClass
     public static void enabled() {
         ContainerAssume.assumeClusteredContainer();
+    }
+
+    @AfterClass
+    public static void closeClients() {
+        backendAdminClients.values().forEach(Keycloak::close);
+        backendAdminClients.clear();
+
+        backendTestingClients.values().forEach(KeycloakTestingClient::close);
+        backendTestingClients.clear();
+
     }
 
     @Before

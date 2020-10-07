@@ -16,11 +16,12 @@
  */
 package org.keycloak.adapters.authorization.util;
 
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -35,17 +36,26 @@ public class JsonUtils {
         List<String> values = new ArrayList<>();
 
         if (jsonNode.isArray()) {
-            Iterator<JsonNode> iterator = jsonNode.iterator();
 
-            while (iterator.hasNext()) {
-                String value = iterator.next().textValue();
+            for (JsonNode node : jsonNode) {
+                String value;
+
+                if (node.isObject()) {
+                    try {
+                        value = JsonSerialization.writeValueAsString(node);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                } else {
+                    value = node.asText();
+                }
 
                 if (value != null) {
                     values.add(value);
                 }
             }
         } else {
-            String value = jsonNode.textValue();
+            String value = jsonNode.asText();
 
             if (value != null) {
                 values.add(value);

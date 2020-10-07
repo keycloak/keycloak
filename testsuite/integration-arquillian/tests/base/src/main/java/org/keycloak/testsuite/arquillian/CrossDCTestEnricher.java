@@ -16,25 +16,19 @@
  */
 package org.keycloak.testsuite.arquillian;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.io.FileUtils;
-import static org.hamcrest.Matchers.lessThan;
+import org.jboss.arquillian.container.spi.event.StopContainer;
+import org.jboss.arquillian.container.spi.event.StopSuiteContainers;
 import org.jboss.arquillian.container.test.api.ContainerController;
+import org.jboss.arquillian.core.api.Event;
 import org.jboss.arquillian.core.api.Instance;
-import org.jboss.arquillian.core.spi.Validate;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
+import org.jboss.arquillian.core.spi.Validate;
 import org.jboss.arquillian.test.spi.event.suite.After;
 import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
 import org.jboss.arquillian.test.spi.event.suite.Before;
 import org.jboss.logging.Logger;
-import static org.junit.Assert.assertThat;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.Constants;
 import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
@@ -42,9 +36,20 @@ import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.crossdc.DC;
 import org.keycloak.testsuite.crossdc.ServerSetup;
+import org.keycloak.testsuite.utils.tls.TLSUtils;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
-import org.jboss.arquillian.container.spi.event.StopSuiteContainers;
+import java.util.stream.Stream;
+
+import static org.hamcrest.Matchers.lessThan;
+import static org.junit.Assert.assertThat;
 
 /**
  *
@@ -58,12 +63,19 @@ public class CrossDCTestEnricher {
     @Inject
     private static Instance<ContainerController> containerController;
 
+    @Inject
+    private Event<StopContainer> stopContainer;
+
     private static final Map<ContainerInfo, Keycloak> backendAdminClients = new HashMap<>();
     private static final Map<ContainerInfo, KeycloakTestingClient> backendTestingClients = new HashMap<>();
 
     static void initializeSuiteContext(SuiteContext suiteContext) {
         Validate.notNull(suiteContext, "Suite context cannot be null.");
         CrossDCTestEnricher.suiteContext = suiteContext;
+
+        if (AuthServerTestEnricher.AUTH_SERVER_CROSS_DC && suiteContext.getCacheServersInfo().isEmpty() && !AuthServerTestEnricher.CACHE_SERVER_LIFECYCLE_SKIP) {
+            throw new IllegalStateException("Cache containers misconfiguration");
+        }
     }
 
     public void beforeTest(@Observes(precedence = -2) Before event) {
@@ -76,7 +88,7 @@ public class CrossDCTestEnricher {
         if (annotation == null) {
             Class<?> annotatedClass = getNearestSuperclassWithAnnotation(event.getTestClass().getJavaClass(), InitialDcState.class);
 
-            annotation = annotatedClass.getAnnotation(InitialDcState.class);
+            annotation = annotatedClass == null ? null : annotatedClass.getAnnotation(InitialDcState.class);
         }
 
         if (annotation == null) {
@@ -86,6 +98,28 @@ public class CrossDCTestEnricher {
 
         ServerSetup cacheServers = annotation.cacheServers();
         ServerSetup authServers = annotation.authServers();
+
+        // Stop auth servers that otherwise could be hang connecting to a cache server stopped next
+        switch (authServers) {
+            case ALL_NODES_IN_EVERY_DC:
+                break;
+            case FIRST_NODE_IN_EVERY_DC:
+                DC.validDcsStream().forEach((DC dc) -> stopAuthServerBackendNode(dc, 1));
+                break;
+
+            case FIRST_NODE_IN_FIRST_DC:
+                stopAuthServerBackendNode(DC.FIRST, 1);
+                forAllBackendNodesInDc(DC.SECOND, CrossDCTestEnricher::stopAuthServerBackendNode);
+                break;
+
+            case ALL_NODES_IN_FIRST_DC_FIRST_NODE_IN_SECOND_DC:
+                stopAuthServerBackendNode(DC.SECOND, 1);
+                break;
+
+            case ALL_NODES_IN_FIRST_DC_NO_NODES_IN_SECOND_DC:
+                forAllBackendNodesInDc(DC.SECOND, CrossDCTestEnricher::stopAuthServerBackendNode);
+                break;
+        }
 
         switch (cacheServers) {
             case ALL_NODES_IN_EVERY_DC:
@@ -107,41 +141,57 @@ public class CrossDCTestEnricher {
                 break;
             case FIRST_NODE_IN_EVERY_DC:
                 DC.validDcsStream().forEach((DC dc) -> startAuthServerBackendNode(dc, 0));
-                DC.validDcsStream().forEach((DC dc) -> stopAuthServerBackendNode(dc, 1));
                 break;
 
             case FIRST_NODE_IN_FIRST_DC:
                 startAuthServerBackendNode(DC.FIRST, 0);
-                stopAuthServerBackendNode(DC.FIRST, 1);
-                forAllBackendNodesInDc(DC.SECOND, CrossDCTestEnricher::stopAuthServerBackendNode);
                 break;
 
             case ALL_NODES_IN_FIRST_DC_FIRST_NODE_IN_SECOND_DC:
                 forAllBackendNodesInDc(DC.FIRST, CrossDCTestEnricher::startAuthServerBackendNode);
                 startAuthServerBackendNode(DC.SECOND, 0);
-                stopAuthServerBackendNode(DC.SECOND, 1);
                 break;
 
             case ALL_NODES_IN_FIRST_DC_NO_NODES_IN_SECOND_DC:
                 forAllBackendNodesInDc(DC.FIRST, CrossDCTestEnricher::startAuthServerBackendNode);
-                forAllBackendNodesInDc(DC.SECOND, CrossDCTestEnricher::stopAuthServerBackendNode);
                 break;
         }
         
         suspendPeriodicTasks();
     }
-    
+
     public void afterTest(@Observes After event) {
         if (!suiteContext.isAuthServerCrossDc()) return;
 
         restorePeriodicTasks();
     }
 
+    public void afterSuite(@Observes(precedence = 4) AfterSuite event) {
+        if (!suiteContext.isAuthServerCrossDc()) return;
+
+        // Unfortunately, in AfterSuite, containerController context is already cleaned so stopAuthServerBackendNode()
+        // and stopCacheServer cannot be used. On the other hand, Arquillian by default does not guarantee that cache
+        // servers are terminated only after auth servers were, so the termination has to be done in this enricher.
+
+        forAllBackendNodesStream()
+          .map(ContainerInfo::getArquillianContainer)
+          .map(StopContainer::new)
+          .forEach(stopContainer::fire);
+
+        if (!AuthServerTestEnricher.CACHE_SERVER_LIFECYCLE_SKIP) {
+            DC.validDcsStream()
+                    .map(CrossDCTestEnricher::getCacheServer)
+                    .map(ContainerInfo::getArquillianContainer)
+                    .map(StopContainer::new)
+                    .forEach(stopContainer::fire);
+        }
+    }
+
     public void stopSuiteContainers(@Observes(precedence = 4) StopSuiteContainers event) {
         if (!suiteContext.isAuthServerCrossDc()) return;
 
-        DC.validDcsStream().forEach(CrossDCTestEnricher::stopCacheServer);
         forAllBackendNodes(CrossDCTestEnricher::stopAuthServerBackendNode);
+        DC.validDcsStream().forEach(CrossDCTestEnricher::stopCacheServer);
     }
 
     private static void createRESTClientsForNode(ContainerInfo node) {
@@ -153,7 +203,7 @@ public class CrossDCTestEnricher {
             backendTestingClients.put(node, createTestingClientFor(node));
         }
     }
-    
+
     private static void removeRESTClientsForNode(ContainerInfo node) {
         if (backendAdminClients.containsKey(node)) {
             backendAdminClients.get(node).close();
@@ -176,15 +226,15 @@ public class CrossDCTestEnricher {
 
     private static Keycloak createAdminClientFor(ContainerInfo node) {
         log.info("--DC: Initializing admin client for " + node.getContextRoot() + "/auth");
-        return Keycloak.getInstance(node.getContextRoot() + "/auth", AuthRealm.MASTER, AuthRealm.ADMIN, AuthRealm.ADMIN, Constants.ADMIN_CLI_CLIENT_ID);
+        return Keycloak.getInstance(node.getContextRoot() + "/auth", AuthRealm.MASTER, AuthRealm.ADMIN, AuthRealm.ADMIN, Constants.ADMIN_CLI_CLIENT_ID, TLSUtils.initializeTLS());
     }
-    
+
     private static KeycloakTestingClient createTestingClientFor(ContainerInfo node) {
         log.info("--DC: Initializing testing client for " + node.getContextRoot() + "/auth");
         return KeycloakTestingClient.getInstance(node.getContextRoot() + "/auth");
     }
-
     // Disable periodic tasks in cross-dc tests. It's needed to have some scenarios more stable.
+
     private static void suspendPeriodicTasks() {
         log.debug("--DC: suspendPeriodicTasks");
         backendTestingClients.values().stream().forEach((KeycloakTestingClient testingClient) -> {
@@ -217,6 +267,8 @@ public class CrossDCTestEnricher {
     }
 
     public static void startCacheServer(DC dc) {
+        if (AuthServerTestEnricher.CACHE_SERVER_LIFECYCLE_SKIP) return;
+
         if (!containerController.get().isStarted(getCacheServer(dc).getQualifier())) {
             log.infof("--DC: Starting %s", getCacheServer(dc).getQualifier());
             containerController.get().start(getCacheServer(dc).getQualifier());
@@ -225,6 +277,8 @@ public class CrossDCTestEnricher {
     }
 
     public static void stopCacheServer(DC dc) {
+        if (AuthServerTestEnricher.CACHE_SERVER_LIFECYCLE_SKIP) return;
+
         String qualifier = getCacheServer(dc).getQualifier();
 
         if (containerController.get().isStarted(qualifier)) {
@@ -232,7 +286,7 @@ public class CrossDCTestEnricher {
 
             containerController.get().stop(qualifier);
 
-            // Workaround for possible arquillian bug. Needs to cleanup dir manually 
+            // Workaround for possible arquillian bug. Needs to cleanup dir manually
             String setupCleanServerBaseDir = getContainerProperty(getCacheServer(dc), "setupCleanServerBaseDir");
             String cleanServerBaseDir = getContainerProperty(getCacheServer(dc), "cleanServerBaseDir");
 
@@ -257,9 +311,13 @@ public class CrossDCTestEnricher {
     }
 
     public static void forAllBackendNodes(Consumer<ContainerInfo> functionOnContainerInfo) {
-        suiteContext.getDcAuthServerBackendsInfo().stream()
-          .flatMap(Collection::stream)
+        forAllBackendNodesStream()
           .forEach(functionOnContainerInfo);
+    }
+
+    public static Stream<ContainerInfo> forAllBackendNodesStream() {
+        return suiteContext.getDcAuthServerBackendsInfo().stream()
+          .flatMap(Collection::stream);
     }
 
     public static void forAllBackendNodesInDc(DC dc, Consumer<ContainerInfo> functionOnContainerInfo) {
@@ -280,6 +338,7 @@ public class CrossDCTestEnricher {
         if (! containerInfo.isStarted()) {
             log.infof("--DC: Starting backend auth-server node: %s", containerInfo.getQualifier());
             containerController.get().start(containerInfo.getQualifier());
+            AuthServerTestEnricher.initializeTLS(containerInfo);
             createRESTClientsForNode(containerInfo);
         }
     }

@@ -99,7 +99,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
         PathAddress addr = PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, KeycloakExtension.SUBSYSTEM_NAME),
                 PathElement.pathElement(SecureDeploymentDefinition.TAG_NAME, name));
         addSecureDeployment.get(ModelDescriptionConstants.OP_ADDR).set(addr.toModelNode());
-        List<ModelNode> credentialsToAdd = new ArrayList<ModelNode>();
+        List<ModelNode> credentialsToAdd = new ArrayList<>();
         while (reader.hasNext() && nextTag(reader) != END_ELEMENT) {
             String tagName = reader.getLocalName();
             if (tagName.equals(CredentialDefinition.TAG_NAME)) {

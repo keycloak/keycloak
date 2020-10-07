@@ -58,7 +58,11 @@ public class OIDCHybridResponseTypeCodeTokenTest extends AbstractOIDCResponseTyp
         Assert.assertNull(authzResponse.getIdToken());
 
         // IDToken exchanged for the code
-        IDToken idToken2 = sendTokenRequestAndGetIDToken(loginEvent);
+        OAuthClient.AccessTokenResponse authzResponse2 = sendTokenRequestAndGetResponse(loginEvent);
+        IDToken idToken2 = oauth.verifyIDToken(authzResponse2.getIdToken());
+
+        // Validate "at_hash"
+        assertValidAccessTokenHash(idToken2.getAccessTokenHash(), authzResponse2.getAccessToken());
 
         return Collections.singletonList(idToken2);
     }

@@ -85,6 +85,12 @@ public interface SamlDeployment {
          */
         HttpClient getClient();
 
+        /**
+         * Returns allowed time difference (in milliseconds) between IdP and SP
+         * @return see description
+         */
+        int getAllowedClockSkew();
+
         public interface SingleSignOnService {
             /**
              * Returns {@code true} if the requests to IdP need to be signed by SP key.
@@ -162,6 +168,13 @@ public interface SamlDeployment {
 
     Set<String> getRoleAttributeNames();
 
+    /**
+     * Obtains the {@link RoleMappingsProvider} that was configured for the SP.
+     *
+     * @return a reference to the configured {@link RoleMappingsProvider}.
+     */
+    RoleMappingsProvider getRoleMappingsProvider();
+
     enum PrincipalNamePolicy {
         FROM_NAME_ID,
         FROM_ATTRIBUTE
@@ -169,5 +182,7 @@ public interface SamlDeployment {
     PrincipalNamePolicy getPrincipalNamePolicy();
     String getPrincipalAttributeName();
     boolean isAutodetectBearerOnly();
+
+    boolean isKeepDOMAssertion();
 
 }

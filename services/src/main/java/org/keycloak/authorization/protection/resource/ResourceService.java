@@ -28,10 +28,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriInfo;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authorization.admin.ResourceSetService;
@@ -125,14 +123,15 @@ public class ResourceService {
                          @QueryParam("type") String type,
                          @QueryParam("scope") String scope,
                          @QueryParam("matchingUri") Boolean matchingUri,
+                         @QueryParam("exactName") Boolean exactName,
                          @QueryParam("deep") Boolean deep,
                          @QueryParam("first") Integer firstResult,
                          @QueryParam("max") Integer maxResult) {
 
         if(deep != null && deep) {
-            return resourceManager.find(id, name, uri, owner, type, scope, matchingUri, deep, firstResult, maxResult);
+            return resourceManager.find(id, name, uri, owner, type, scope, matchingUri, exactName, deep, firstResult, maxResult);
         } else {
-            return resourceManager.find(id, name, uri, owner, type, scope, matchingUri, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, String>) (resource, deep1) -> resource.getId());
+            return resourceManager.find(id, name, uri, owner, type, scope, matchingUri, exactName, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, String>) (resource, deep1) -> resource.getId());
         }
     }
 

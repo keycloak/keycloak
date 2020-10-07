@@ -25,13 +25,23 @@ import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
-import org.keycloak.models.*;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderSyncMode;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.saml.common.util.StringUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -50,6 +60,7 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper {
     private static final String EMAIL = "email";
     private static final String FIRST_NAME = "firstName";
     private static final String LAST_NAME = "lastName";
+    private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
 
     static {
         ProviderConfigProperty property;
@@ -74,6 +85,11 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper {
     }
 
     public static final String PROVIDER_ID = "saml-user-attribute-idp-mapper";
+
+    @Override
+    public boolean supportsSyncMode(IdentityProviderSyncMode syncMode) {
+        return IDENTITY_PROVIDER_SYNC_MODES.contains(syncMode);
+    }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
@@ -136,6 +152,12 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper {
         }
     }
 
+    private void setIfNotEmptyAndDifferent(Consumer<String> consumer, Supplier<String> currentValueSupplier, List<String> values) {
+        if (values != null && !values.isEmpty() && !values.get(0).equals(currentValueSupplier.get())) {
+            consumer.accept(values.get(0));
+        }
+    }
+
     private Predicate<AttributeStatementType.ASTChoiceType> elementWith(String attributeName) {
         return attributeType -> {
             AttributeType attribute = attributeType.getAttribute();
@@ -166,11 +188,11 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper {
         String attributeName = getAttributeNameFromMapperModel(mapperModel);
         List<String> attributeValuesInContext = findAttributeValuesInContext(attributeName, context);
         if (attribute.equalsIgnoreCase(EMAIL)) {
-            setIfNotEmpty(user::setEmail, attributeValuesInContext);
+            setIfNotEmptyAndDifferent(user::setEmail, user::getEmail, attributeValuesInContext);
         } else if (attribute.equalsIgnoreCase(FIRST_NAME)) {
-            setIfNotEmpty(user::setFirstName, attributeValuesInContext);
+            setIfNotEmptyAndDifferent(user::setFirstName, user::getFirstName, attributeValuesInContext);
         } else if (attribute.equalsIgnoreCase(LAST_NAME)) {
-            setIfNotEmpty(user::setLastName, attributeValuesInContext);
+            setIfNotEmptyAndDifferent(user::setLastName, user::getLastName, attributeValuesInContext);
         } else {
             List<String> currentAttributeValues = user.getAttributes().get(attribute);
             if (attributeValuesInContext == null) {
@@ -183,7 +205,7 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper {
                 // attribute sent by brokered idp has different values as before, update it
                 user.setAttribute(attribute, attributeValuesInContext);
             }
-            // attribute allready set
+            // attribute already set
         }
     }
 

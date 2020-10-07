@@ -18,7 +18,7 @@ package org.keycloak.testsuite.adapter.example.authorization;
 
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
@@ -27,8 +27,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
@@ -42,6 +42,7 @@ import java.net.URL;
 import java.util.List;
 
 import static org.junit.Assert.assertFalse;
+import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadJson;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
@@ -50,6 +51,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public abstract class AbstractBaseServletAuthzAdapterTest extends AbstractExampleAdapterTest {
 
     protected static final String REALM_NAME = "servlet-authz";

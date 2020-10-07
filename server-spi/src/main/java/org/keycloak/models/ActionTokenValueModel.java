@@ -17,7 +17,6 @@
 package org.keycloak.models;
 
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * This model represents contents of an action token shareable among Keycloak instances in the cluster.

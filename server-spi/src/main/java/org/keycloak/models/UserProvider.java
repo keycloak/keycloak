@@ -38,8 +38,9 @@ public interface UserProvider extends Provider,
         UserBulkUpdateProvider {
     // Note: The reason there are so many query methods here is for layering a cache on top of an persistent KeycloakSession
 
-    public void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel socialLink);
-    public boolean removeFederatedIdentity(RealmModel realm, UserModel user, String socialProvider);
+    void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel socialLink);
+    boolean removeFederatedIdentity(RealmModel realm, UserModel user, String socialProvider);
+    void preRemove(RealmModel realm, IdentityProviderModel provider);
     void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel);
     Set<FederatedIdentityModel> getFederatedIdentities(UserModel user, RealmModel realm);
     FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm);
@@ -97,5 +98,4 @@ public interface UserProvider extends Provider,
     void close();
 
     void preRemove(RealmModel realm, ComponentModel component);
-
 }

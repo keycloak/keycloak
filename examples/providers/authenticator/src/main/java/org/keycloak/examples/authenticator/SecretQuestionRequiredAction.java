@@ -17,9 +17,11 @@
 
 package org.keycloak.examples.authenticator;
 
+import org.keycloak.authentication.CredentialRegistrator;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionProvider;
-import org.keycloak.models.UserCredentialModel;
+import org.keycloak.credential.CredentialProvider;
+import org.keycloak.examples.authenticator.credential.SecretQuestionCredentialModel;
 
 import javax.ws.rs.core.Response;
 
@@ -27,7 +29,7 @@ import javax.ws.rs.core.Response;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SecretQuestionRequiredAction implements RequiredActionProvider {
+public class SecretQuestionRequiredAction implements RequiredActionProvider, CredentialRegistrator {
     public static final String PROVIDER_ID = "secret_question_config";
 
     @Override
@@ -45,10 +47,8 @@ public class SecretQuestionRequiredAction implements RequiredActionProvider {
     @Override
     public void processAction(RequiredActionContext context) {
         String answer = (context.getHttpRequest().getDecodedFormParameters().getFirst("secret_answer"));
-        UserCredentialModel input = new UserCredentialModel();
-        input.setType(SecretQuestionCredentialProvider.SECRET_QUESTION);
-        input.setValue(answer);
-        context.getSession().userCredentialManager().updateCredential(context.getRealm(), context.getUser(), input);
+        SecretQuestionCredentialProvider sqcp = (SecretQuestionCredentialProvider) context.getSession().getProvider(CredentialProvider.class, "secret-question");
+        sqcp.createCredential(context.getRealm(), context.getUser(), SecretQuestionCredentialModel.createSecretQuestion("What is your mom's first name?", answer));
         context.success();
     }
 

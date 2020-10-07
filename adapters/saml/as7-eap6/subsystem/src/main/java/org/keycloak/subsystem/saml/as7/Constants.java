@@ -29,8 +29,10 @@ public class Constants {
         static final String NAME_ID_POLICY_FORMAT = "nameIDPolicyFormat";
         static final String LOGOUT_PAGE = "logoutPage";
         static final String FORCE_AUTHENTICATION = "forceAuthentication";
+        static final String KEEP_DOM_ASSERTION = "keepDOMAssertion";
         static final String IS_PASSIVE = "isPassive";
         static final String TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN = "turnOffChangeSessionIdOnLogin";
+        static final String AUTODETECT_BEARER_ONLY = "autodetectBearerOnly";
         static final String ROLE_ATTRIBUTES = "RoleIdentifiers";
         static final String SIGNING = "signing";
         static final String ENCRYPTION = "encryption";
@@ -61,6 +63,7 @@ public class Constants {
         static final String PRINCIPAL_NAME_MAPPING_ATTRIBUTE_NAME = "PrincipalNameMapping-attribute-name";
         static final String SIGNATURE_ALGORITHM = "signatureAlgorithm";
         static final String SIGNATURE_CANONICALIZATION_METHOD = "signatureCanonicalizationMethod";
+        static final String METADATA_URL = "metadataUrl";
         static final String PRIVATE_KEY_PEM = "PrivateKeyPem";
         static final String PUBLIC_KEY_PEM = "PublicKeyPem";
         static final String CERTIFICATE_PEM = "CertificatePem";
@@ -68,6 +71,26 @@ public class Constants {
         static final String ALIAS = "alias";
         static final String FILE = "file";
         static final String SIGNATURES_REQUIRED = "signaturesRequired";
+
+        // role mappings provider model constants.
+        static final String ROLE_MAPPINGS_PROVIDER_ID = "roleMappingsProviderId";
+        static final String ROLE_MAPPINGS_PROVIDER_CONFIG = "roleMappingsProviderConfig";
+
+        // allowed clock skew model constants
+        static final String ALLOWED_CLOCK_SKEW = "AllowedClockSkew";
+        static final String ALLOWED_CLOCK_SKEW_UNIT = "unit";
+        static final String ALLOWED_CLOCK_SKEW_VALUE = "value";
+
+        // http client model constants
+        static final String HTTP_CLIENT = "HttpClient";
+        static final String ALLOW_ANY_HOSTNAME = "allowAnyHostname";
+        static final String CLIENT_KEYSTORE = "clientKeystore";
+        static final String CLIENT_KEYSTORE_PASSWORD = "clientKeystorePassword";
+        static final String CONNECTION_POOL_SIZE = "connectionPoolSize";
+        static final String DISABLE_TRUST_MANAGER = "disableTrustManager";
+        static final String PROXY_URL = "proxyUrl";
+        static final String TRUSTSTORE = "truststore";
+        static final String TRUSTSTORE_PASSWORD = "truststorePassword";
     }
 
     static class XML {
@@ -80,6 +103,7 @@ public class Constants {
         static final String NAME_ID_POLICY_FORMAT = "nameIDPolicyFormat";
         static final String LOGOUT_PAGE = "logoutPage";
         static final String FORCE_AUTHENTICATION = "forceAuthentication";
+        static final String KEEP_DOM_ASSERTION = "keepDOMAssertion";
         static final String ROLE_IDENTIFIERS = "RoleIdentifiers";
         static final String SIGNING = "signing";
         static final String ENCRYPTION = "encryption";
@@ -92,6 +116,7 @@ public class Constants {
         static final String CERTIFICATE = "Certificate";
         static final String IS_PASSIVE = "isPassive";
         static final String TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN = "turnOffChangeSessionIdOnLogin";
+        static final String AUTODETECT_BEARER_ONLY = "autodetectBearerOnly";
 
         static final String PRIVATE_KEY_ALIAS = "alias";
         static final String PRIVATE_KEY_PASSWORD = "password";
@@ -115,6 +140,7 @@ public class Constants {
         static final String ATTRIBUTE = "Attribute";
         static final String SIGNATURE_ALGORITHM = "signatureAlgorithm";
         static final String SIGNATURE_CANONICALIZATION_METHOD = "signatureCanonicalizationMethod";
+        static final String METADATA_URL = "metadataUrl";
         static final String PRIVATE_KEY_PEM = "PrivateKeyPem";
         static final String PUBLIC_KEY_PEM = "PublicKeyPem";
         static final String CERTIFICATE_PEM = "CertificatePem";
@@ -123,5 +149,26 @@ public class Constants {
         static final String FILE = "file";
         static final String SIGNATURES_REQUIRED = "signaturesRequired";
         static final String ASSERTION_CONSUMER_SERVICE_URL = "assertionConsumerServiceUrl";
+
+        // role mappings provider XML constants
+        static final String ID = "id";
+        static final String VALUE = "value";
+        static final String PROPERTY = "Property";
+        static final String ROLE_MAPPINGS_PROVIDER = "RoleMappingsProvider";
+
+        // allowed clock skew XML constants
+        static final String ALLOWED_CLOCK_SKEW = "AllowedClockSkew";
+        static final String ALLOWED_CLOCK_SKEW_UNIT = "unit";
+
+        // http client XML constants
+        static final String HTTP_CLIENT = "HttpClient";
+        static final String ALLOW_ANY_HOSTNAME = "allowAnyHostname";
+        static final String CLIENT_KEYSTORE = "clientKeystore";
+        static final String CLIENT_KEYSTORE_PASSWORD = "clientKeystorePassword";
+        static final String CONNECTION_POOL_SIZE = "connectionPoolSize";
+        static final String DISABLE_TRUST_MANAGER = "disableTrustManager";
+        static final String PROXY_URL = "proxyUrl";
+        static final String TRUSTSTORE = "truststore";
+        static final String TRUSTSTORE_PASSWORD = "truststorePassword";
     }
 }

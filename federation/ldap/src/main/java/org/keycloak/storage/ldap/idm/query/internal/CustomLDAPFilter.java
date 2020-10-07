@@ -48,4 +48,13 @@ class CustomLDAPFilter implements Condition {
     public void applyCondition(StringBuilder filter) {
         filter.append(customFilter);
     }
+
+    @Override
+    public void setBinary(boolean binary) {
+    }
+
+    @Override
+    public boolean isBinary() {
+        return false;
+    }
 }

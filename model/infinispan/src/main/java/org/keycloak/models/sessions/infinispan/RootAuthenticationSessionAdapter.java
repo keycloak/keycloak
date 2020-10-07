@@ -21,14 +21,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.infinispan.Cache;
-import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
@@ -99,6 +97,7 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
 
         AuthenticationSessionModel authSession = getAuthenticationSessions().get(tabId);
         if (authSession != null && client.equals(authSession.getClient())) {
+            session.getContext().setAuthenticationSession(authSession);
             return authSession;
         } else {
             return null;
@@ -118,7 +117,22 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
 
         update();
 
-        return new AuthenticationSessionAdapter(session, this, tabId, authSessionEntity);
+        AuthenticationSessionAdapter authSession = new AuthenticationSessionAdapter(session, this, tabId, authSessionEntity);
+        session.getContext().setAuthenticationSession(authSession);
+        return authSession;
+    }
+
+    @Override
+    public void removeAuthenticationSessionByTabId(String tabId) {
+        if (entity.getAuthenticationSessions().remove(tabId) != null) {
+            if (entity.getAuthenticationSessions().isEmpty()) {
+                provider.tx.remove(cache, entity.getId());
+            } else {
+                entity.setTimestamp(Time.currentTime());
+
+                update();
+            }
+        }
     }
 
     @Override

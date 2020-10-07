@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 
 import javax.security.cert.X509Certificate;
 import javax.ws.rs.HttpMethod;
@@ -34,13 +35,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
@@ -61,7 +62,6 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.PermissionsResource;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.Configuration;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
@@ -70,23 +70,28 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
+@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
     private static final String RESOURCE_SERVER_CLIENT_ID = "resource-server-test";
@@ -98,9 +103,10 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
                 .roles(RolesBuilder.create()
                         .realmRole(RoleBuilder.create().name("uma_authorization").build())
                         .realmRole(RoleBuilder.create().name("uma_protection").build())
+                        .realmRole(RoleBuilder.create().name("user").build())
                 )
                 .user(UserBuilder.create().username("marta").password("password")
-                        .addRoles("uma_authorization", "uma_protection")
+                        .addRoles("uma_authorization", "uma_protection", "user")
                         .role("resource-server-test", "uma_protection"))
                 .user(UserBuilder.create().username("kolo").password("password"))
                 .client(ClientBuilder.create().clientId("resource-server-uma-test")
@@ -117,7 +123,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
                         .directAccessGrants())
                 .client(ClientBuilder.create().clientId("public-client-test")
                         .publicClient()
-                        .redirectUris("http://localhost:8180/auth/realms/master/app/auth/*")
+                        .redirectUris("http://localhost:8180/auth/realms/master/app/auth/*", "https://localhost:8543/auth/realms/master/app/auth/*")
                         .directAccessGrants())
                 .build());
     }
@@ -158,6 +164,35 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testPathConfigurationPrecendenceWhenLazyLoadingPaths() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-paths.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/resourcea");
+        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+
+        assertFalse(context.isGranted());
+        assertEquals(403, TestResponse.class.cast(httpFacade.getResponse()).getStatus());
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId("public-client-test");
+        oauth.doLogin("marta", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        String token = response.getAccessToken();
+
+        httpFacade = createHttpFacade("/api/resourcea", token);
+
+        context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+
+        httpFacade = createHttpFacade("/");
+
+        context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+    }
+
+    @Test
     public void testResolvingClaimsOnce() {
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-bearer-only-with-cip.json"));
         PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
@@ -176,13 +211,40 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
             @Override
             public String apply(String s) {
                 Assert.assertTrue(resolved.compareAndSet(false, true));
-                return "claim-value";
+                return "value-" + s;
             }
         });
 
         AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        Permission permission = context.getPermissions().get(0);
+        Map<String, Set<String>> claims = permission.getClaims();
 
         assertTrue(context.isGranted());
+        assertEquals("value-claim-a", claims.get("claim-a").iterator().next());
+        assertEquals("claim-b", claims.get("claim-b").iterator().next());
+    }
+
+    @Test
+    public void testCustomClaimProvider() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-bearer-only-with-cip.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId("public-client-test");
+        oauth.doLogin("marta", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        String token = response.getAccessToken();
+
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/resourcea", token);
+
+        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        Permission permission = context.getPermissions().get(0);
+        Map<String, Set<String>> claims = permission.getClaims();
+
+        assertTrue(context.isGranted());
+        assertEquals("test", claims.get("resolved-claim").iterator().next());
     }
 
     @Test
@@ -210,6 +272,27 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         assertFalse(context.isGranted());
         TestResponse response = TestResponse.class.cast(httpFacade.getResponse());
         assertEquals(403, response.getStatus());
+    }
+
+    @Test
+    public void testPublicEndpointNoBearerAbortRequest() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-bearer-only.json"));
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/public");
+        AuthenticatedActionsHandler handler = new AuthenticatedActionsHandler(deployment, httpFacade);
+
+        assertTrue(handler.handledRequest());
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId("public-client-test");
+        oauth.doLogin("marta", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        String token = response.getAccessToken();
+        httpFacade = createHttpFacade("/api/resourcea", token);
+        handler = new AuthenticatedActionsHandler(deployment, httpFacade);
+
+        assertFalse(handler.handledRequest());
     }
 
     @Test
@@ -245,6 +328,17 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         httpFacade = createHttpFacade("/api/resource/public", token);
         context = policyEnforcer.enforce(httpFacade);
         assertTrue(context.isGranted());
+    }
+
+    @Test
+    public void testEnforcementModeDisabled() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-disabled-enforce-mode.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/resource/public");
+        policyEnforcer.enforce(httpFacade);
+        TestResponse response = TestResponse.class.cast(httpFacade.getResponse());
+        assertEquals(401, response.getStatus());
     }
 
     @Test
@@ -291,13 +385,11 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
         OIDCHttpFacade httpFacade = createHttpFacade("/api/resource-with-scope", token);
 
-        try {
-            policyEnforcer.enforce(httpFacade);
-            fail("Should fail because resource does not have any scope named GET");
-        } catch (Exception ignore) {
-            assertTrue(ignore.getCause().getMessage().contains("One of the given scopes [GET] is invalid"));
-        }
+        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
 
+        assertFalse("Should fail because resource does not have any scope named GET", context.isGranted());
+        assertEquals(403, TestResponse.class.cast(httpFacade.getResponse()).getStatus());
+        
         resource.addScope("GET", "POST");
 
         clientResource.authorization().resources().resource(resource.getId()).update(resource);
@@ -305,12 +397,19 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-match-http-verbs-scopes.json"));
         policyEnforcer = deployment.getPolicyEnforcer();
 
-        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        context = policyEnforcer.enforce(httpFacade);
         assertTrue(context.isGranted());
 
         httpFacade = createHttpFacade("/api/resource-with-scope", token, "POST");
         context = policyEnforcer.enforce(httpFacade);
         assertTrue(context.isGranted());
+
+        // create a PATCH scope without associated it with the resource so that a PATCH request is denied accordingly even though
+        // the scope exists on the server
+        clientResource.authorization().scopes().create(new ScopeRepresentation("PATCH"));
+        httpFacade = createHttpFacade("/api/resource-with-scope", token, "PATCH");
+        context = policyEnforcer.enforce(httpFacade);
+        assertFalse(context.isGranted());
 
         ScopePermissionRepresentation postPermission = new ScopePermissionRepresentation();
 
@@ -393,19 +492,157 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         assertFalse(context.isGranted());
     }
 
+    @Test
+    public void testUsingSubjectToken() {
+        ClientResource clientResource = getClientResource(RESOURCE_SERVER_CLIENT_ID);
+        ResourceRepresentation resource = createResource(clientResource, "Resource Subject Token", "/api/check-subject-token");
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName(resource.getName() + " Permission");
+        permission.addResource(resource.getName());
+        permission.addPolicy("Only User Policy");
+
+        PermissionsResource permissions = clientResource.authorization().permissions();
+        permissions.resource().create(permission).close();
+
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-bearer-only.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/check-subject-token");
+        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+
+        assertFalse(context.isGranted());
+        assertEquals(403, TestResponse.class.cast(httpFacade.getResponse()).getStatus());
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId("public-client-test");
+        oauth.doLogin("marta", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        String token = response.getAccessToken();
+
+        httpFacade = createHttpFacade("/api/check-subject-token", token);
+
+        context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+    }
+
+    @Test
+    public void testUsingInvalidToken() {
+        ClientResource clientResource = getClientResource(RESOURCE_SERVER_CLIENT_ID);
+        ResourceRepresentation resource = createResource(clientResource, "Resource Subject Invalid Token", "/api/check-subject-token");
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName(resource.getName() + " Permission");
+        permission.addResource(resource.getName());
+        permission.addPolicy("Only User Policy");
+
+        PermissionsResource permissions = clientResource.authorization().permissions();
+        permissions.resource().create(permission).close();
+
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-bearer-only.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/check-subject-token");
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId("public-client-test");
+        oauth.doLogin("marta", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        String token = response.getAccessToken();
+
+        httpFacade = createHttpFacade("/api/check-subject-token", token);
+
+        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+        
+        oauth.doLogout(response.getRefreshToken(), null);
+
+        context = policyEnforcer.enforce(httpFacade);
+        assertFalse(context.isGranted());
+    }
+
+    @Test
+    public void testLazyLoadPaths() {
+        ClientResource clientResource = getClientResource(RESOURCE_SERVER_CLIENT_ID);
+
+        for (int i = 0; i < 200; i++) {
+            ResourceRepresentation representation = new ResourceRepresentation();
+
+            representation.setType("test");
+            representation.setName("Resource " + i);
+            representation.setUri("/api/" + i);
+
+            javax.ws.rs.core.Response response = clientResource.authorization().resources().create(representation);
+
+            representation.setId(response.readEntity(ResourceRepresentation.class).getId());
+
+            response.close();
+        }
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("Test Permission");
+        permission.setResourceType("test");
+        permission.addPolicy("Only User Policy");
+
+        PermissionsResource permissions = clientResource.authorization().permissions();
+        permissions.resource().create(permission).close();
+
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-no-lazyload.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+
+        assertEquals(205, policyEnforcer.getPaths().size());
+
+        deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-lazyload.json"));
+        policyEnforcer = deployment.getPolicyEnforcer();
+        assertEquals(0, policyEnforcer.getPathMatcher().getPathCache().size());
+        assertEquals(0, policyEnforcer.getPaths().size());
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId("public-client-test");
+        oauth.doLogin("marta", "password");
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        String token = response.getAccessToken();
+
+        for (int i = 0; i < 101; i++) {
+            policyEnforcer.enforce(createHttpFacade("/api/" + i, token));
+        }
+
+        assertEquals(101, policyEnforcer.getPathMatcher().getPathCache().size());
+
+        for (int i = 101; i < 200; i++) {
+            policyEnforcer.enforce(createHttpFacade("/api/" + i, token));
+        }
+
+        assertEquals(200, policyEnforcer.getPathMatcher().getPathCache().size());
+        assertEquals(0, policyEnforcer.getPaths().size());
+    }
+
     private void initAuthorizationSettings(ClientResource clientResource) {
         if (clientResource.authorization().resources().findByName("Resource A").isEmpty()) {
-            JSPolicyRepresentation policy = new JSPolicyRepresentation();
+            JSPolicyRepresentation jsPolicy = new JSPolicyRepresentation();
 
-            policy.setName("Always Grant Policy");
+            jsPolicy.setName("Always Grant Policy");
 
             StringBuilder code = new StringBuilder();
 
             code.append("$evaluation.grant();");
 
-            policy.setCode(code.toString());
+            jsPolicy.setCode(code.toString());
 
-            clientResource.authorization().policies().js().create(policy);
+            clientResource.authorization().policies().js().create(jsPolicy).close();
+
+            RolePolicyRepresentation rolePolicy = new RolePolicyRepresentation();
+
+            rolePolicy.setName("Only User Policy");
+            rolePolicy.addRole("user");
+
+            clientResource.authorization().policies().role().create(rolePolicy).close();
 
             createResource(clientResource, "Resource A", "/api/resourcea");
 
@@ -413,9 +650,9 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
             permission.setName("Resource A Permission");
             permission.addResource("Resource A");
-            permission.addPolicy(policy.getName());
+            permission.addPolicy(jsPolicy.getName());
 
-            clientResource.authorization().permissions().resource().create(permission);
+            clientResource.authorization().permissions().resource().create(permission).close();
         }
 
         if (clientResource.authorization().resources().findByName("Resource B").isEmpty()) {
@@ -429,7 +666,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
 
             policy.setCode(code.toString());
 
-            clientResource.authorization().policies().js().create(policy);
+            clientResource.authorization().policies().js().create(policy).close();
 
             createResource(clientResource, "Resource B", "/api/resourceb");
 
@@ -439,12 +676,20 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
             permission.addResource("Resource B");
             permission.addPolicy(policy.getName());
 
-            clientResource.authorization().permissions().resource().create(permission);
+            clientResource.authorization().permissions().resource().create(permission).close();
+        }
+
+        if (clientResource.authorization().resources().findByName("Root").isEmpty()) {
+            createResource(clientResource, "Root", "/*");
         }
     }
 
     private InputStream getAdapterConfiguration(String fileName) {
-        return getClass().getResourceAsStream("/authorization-test/" + fileName);
+        try {
+            return httpsAwareConfigurationStream(getClass().getResourceAsStream("/authorization-test/" + fileName));
+        } catch (IOException e) {
+            throw new AssertionError("Unexpected I/O error while dealing with configuration", e);
+        }
     }
 
     private ResourceRepresentation createResource(ClientResource clientResource, String name, String uri, String... scopes) {
@@ -457,6 +702,8 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         javax.ws.rs.core.Response response = clientResource.authorization().resources().create(representation);
 
         representation.setId(response.readEntity(ResourceRepresentation.class).getId());
+
+        response.close();
 
         return representation;
     }
@@ -641,11 +888,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
     }
 
     protected AuthzClient getAuthzClient(String fileName) {
-        try {
-            return AuthzClient.create(JsonSerialization.readValue(getAdapterConfiguration(fileName), Configuration.class));
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to create authz client", cause);
-        }
+        return AuthzClient.create(getAdapterConfiguration(fileName));
     }
 
     private class TestResponse implements Response {

@@ -23,9 +23,7 @@ import org.bouncycastle.openssl.PEMWriter;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.security.Key;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
@@ -144,9 +142,13 @@ public final class PemUtils {
         }
     }
 
-    private static byte[] pemToDer(String pem) throws IOException {
-        pem = removeBeginEnd(pem);
-        return Base64.decode(pem);
+    public static byte[] pemToDer(String pem) {
+        try {
+            pem = removeBeginEnd(pem);
+            return Base64.decode(pem);
+        } catch (IOException ioe) {
+            throw new PemException(ioe);
+        }
     }
 
     public static String removeBeginEnd(String pem) {
@@ -155,6 +157,14 @@ public final class PemUtils {
         pem = pem.replaceAll("\r\n", "");
         pem = pem.replaceAll("\n", "");
         return pem.trim();
+    }
+
+    public static String generateThumbprint(String[] certChain, String encoding) throws NoSuchAlgorithmException {
+        return Base64Url.encode(generateThumbprintBytes(certChain, encoding));
+    }
+
+    static byte[] generateThumbprintBytes(String[] certChain, String encoding) throws NoSuchAlgorithmException {
+        return MessageDigest.getInstance(encoding).digest(pemToDer(certChain[0]));
     }
 
 }

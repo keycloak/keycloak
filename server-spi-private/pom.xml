@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.6.0.Final-SNAPSHOT</version>
+        <version>12.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -38,7 +38,7 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.transaction</groupId>
-            <artifactId>jboss-transaction-api_1.2_spec</artifactId>
+            <artifactId>jboss-transaction-api_1.3_spec</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -77,6 +77,10 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>com.github.ua-parser</groupId>
+            <artifactId>uap-java</artifactId>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
@@ -87,5 +91,21 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Include inner test classes in execution -->
+                    <excludes>
+                        <exclude/>
+                    </excludes>
+                    <!-- Surefire misses to pass on correct encoding to forked JVM, even though encoding is set correct. -->
+                    <argLine>-Dfile.encoding=UTF-8</argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

@@ -30,6 +30,7 @@ import org.keycloak.testsuite.auth.page.login.VerifyEmail;
 import org.keycloak.testsuite.console.page.realm.LoginSettings;
 import org.keycloak.testsuite.console.page.realm.LoginSettings.RequireSSLOption;
 import org.keycloak.testsuite.util.MailServer;
+import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.Cookie;
 
 import java.util.HashSet;
@@ -40,6 +41,8 @@ import static org.junit.Assert.assertTrue;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
@@ -284,7 +287,13 @@ public class LoginSettingsTest extends AbstractRealmTest {
         log.debug("set");
         
         log.info("check HTTPS required");
-        testAccountPage.navigateTo();
+        String accountPageUri = testAccountPage.toString();
+        if (AUTH_SERVER_SSL_REQUIRED) { // quick and dirty (and hopefully provisional) workaround to force HTTP
+            accountPageUri = accountPageUri
+                    .replace("https", "http")
+                    .replace(AUTH_SERVER_PORT, System.getProperty("auth.server.http.port"));
+        }
+        URLUtils.navigateToUri(accountPageUri);
         Assert.assertEquals("HTTPS required", testAccountPage.getErrorMessage());
     }
     

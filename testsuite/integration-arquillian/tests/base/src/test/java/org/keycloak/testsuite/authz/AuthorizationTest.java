@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,7 +37,6 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.ResourcesResource;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.Configuration;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessToken.Authorization;
@@ -50,16 +48,18 @@ import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class AuthorizationTest extends AbstractAuthzTest {
 
     private AuthzClient authzClient;
@@ -185,9 +185,9 @@ public class AuthorizationTest extends AbstractAuthzTest {
         permission.addResource(resource.getId());
         permission.addPolicy(policies);
 
-        Response response = getClient().authorization().permissions().resource().create(permission);
-
-        assertEquals(201, response.getStatus());
+        try (Response response = getClient().authorization().permissions().resource().create(permission)) {
+            assertEquals(201, response.getStatus());
+        }
     }
 
     @NotNull
@@ -218,11 +218,7 @@ public class AuthorizationTest extends AbstractAuthzTest {
 
     private AuthzClient getAuthzClient() {
         if (authzClient == null) {
-            try {
-                authzClient = AuthzClient.create(JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/default-keycloak.json"), Configuration.class));
-            } catch (IOException cause) {
-                throw new RuntimeException("Failed to create authz client", cause);
-            }
+            authzClient = AuthzClient.create(getClass().getResourceAsStream("/authorization-test/default-keycloak.json"));
         }
 
         return authzClient;

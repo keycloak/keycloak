@@ -21,7 +21,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
+import org.keycloak.models.Constants;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -32,10 +34,20 @@ import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.net.MalformedURLException;
+
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -148,16 +160,6 @@ public class LoginTotpTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void loginWithTotpCancel() throws Exception {
-        loginPage.open();
-        loginPage.login("test-user@localhost", "password");
-
-        Assert.assertTrue(loginTotpPage.isCurrent());
-        loginTotpPage.cancel();
-        loginPage.assertCurrent();
-    }
-
-    @Test
     public void loginWithTotpInvalidPassword() throws Exception {
         loginPage.open();
         loginPage.login("test-user@localhost", "invalid");
@@ -169,5 +171,61 @@ public class LoginTotpTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().error("invalid_user_credentials").session((String) null)
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
+    }
+
+
+    @Test
+    public void loginWithTotp_testAttemptedUsernameAndResetLogin() throws Exception {
+        loginPage.open();
+
+        // Assert attempted-username NOT available
+        loginPage.assertAttemptedUsernameAvailability(false);
+
+        loginPage.login("test-user@localhost", "password");
+
+        Assert.assertTrue(loginTotpPage.isCurrent());
+
+        // Assert attempted-username available
+        loginPage.assertAttemptedUsernameAvailability(true);
+        Assert.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
+
+        // Reset login and assert back on the login screen
+        loginTotpPage.clickResetLogin();
+
+        loginPage.assertCurrent();
+    }
+
+    //KEYCLOAK-12908
+    @Test
+    public void loginWithTotp_getToken_checkCompatibilityCLI() throws IOException {
+        Client httpClient = ClientBuilder.newClient();
+        try {
+            WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
+                    .path("/realms")
+                    .path(TEST)
+                    .path("protocol/openid-connect/token");
+
+            Form form = new Form()
+                    .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                    .param(OAuth2Constants.USERNAME, "test-user@localhost")
+                    .param(OAuth2Constants.PASSWORD, "password")
+                    .param(OAuth2Constants.CLIENT_ID, Constants.ADMIN_CLI_CLIENT_ID);
+
+            // Compatibility between "otp" and "totp"
+            Response response = exchangeUrl.request()
+                    .post(Entity.form(form.param("otp", totp.generateTOTP("totpSecret"))));
+
+            Assert.assertEquals(200, response.getStatus());
+            response.close();
+
+            response = exchangeUrl.request()
+                    .post(Entity.form(form.param("totp", totp.generateTOTP("totpSecret"))));
+
+            Assert.assertEquals(200, response.getStatus());
+            response.close();
+
+        } finally {
+            httpClient.close();
+        }
     }
 }

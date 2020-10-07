@@ -188,19 +188,24 @@ public class DistributedCacheWriteSkewTest {
 
             //distConfigBuilder.storeAsBinary().enable().storeKeysAsBinary(false).storeValuesAsBinary(true);
 
-            distConfigBuilder.versioning().enabled(true);
-            distConfigBuilder.versioning().scheme(VersioningScheme.SIMPLE);
+            // KEYCLOAK-13692 - Per ISPN-7613 Infinispan:
+            // * Automatically enables versioning when needed,
+            // * writeSkewCheck automatically enabled for OPTIMISTIC and REPEATABLE_READ transactions
+            // distConfigBuilder.versioning().enabled(true);
+            // distConfigBuilder.versioning().scheme(VersioningScheme.SIMPLE);
+            // distConfigBuilder.locking().writeSkewCheck(true);
 
-            distConfigBuilder.locking().writeSkewCheck(true);
             distConfigBuilder.locking().isolationLevel(IsolationLevel.REPEATABLE_READ);
             distConfigBuilder.locking().concurrencyLevel(32);
             distConfigBuilder.locking().lockAcquisitionTimeout(1000, TimeUnit.SECONDS);
 
-            distConfigBuilder.versioning().enabled(true);
-            distConfigBuilder.versioning().scheme(VersioningScheme.SIMPLE);
+            // KEYCLOAK-13692 - Per ISPN-7613 Infinispan:
+            // * Automatically enables versioning when needed,
+            // * writeSkewCheck automatically enabled for OPTIMISTIC and REPEATABLE_READ transactions
+            // distConfigBuilder.versioning().enabled(true);
+            // distConfigBuilder.versioning().scheme(VersioningScheme.SIMPLE);
 
-
-           // distConfigBuilder.invocationBatching().enable();
+            // distConfigBuilder.invocationBatching().enable();
             //distConfigBuilder.transaction().transactionMode(TransactionMode.TRANSACTIONAL);
             distConfigBuilder.transaction().transactionManagerLookup(new EmbeddedTransactionManagerLookup());
             distConfigBuilder.transaction().lockingMode(LockingMode.OPTIMISTIC);

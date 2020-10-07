@@ -24,6 +24,7 @@ import org.keycloak.models.utils.FormMessage;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import java.net.URI;
+import java.util.List;
 
 /**
  * This interface encapsulates information about an execution in an AuthenticationFlow.  It is also used to set
@@ -49,6 +50,10 @@ public interface AuthenticationFlowContext extends AbstractAuthenticationFlowCon
      */
     void setUser(UserModel user);
 
+    List<AuthenticationSelectionOption> getAuthenticationSelections();
+
+    void setAuthenticationSelections(List<AuthenticationSelectionOption>  credentialAuthExecMap);
+
     /**
      * Clear the user from the flow.
      */
@@ -63,6 +68,11 @@ public interface AuthenticationFlowContext extends AbstractAuthenticationFlowCon
      * @return
      */
     AuthenticationSessionModel getAuthenticationSession();
+
+    /**
+     * @return current flow path (EG. authenticate, reset-credentials)
+     */
+    String getFlowPath();
 
     /**
      * Create a Freemarker form builder that presets the user, action URI, and a generated access code

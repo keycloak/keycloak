@@ -36,7 +36,6 @@ import org.jboss.arquillian.container.test.impl.enricher.resource.URIResourcePro
 import org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider;
 import org.jboss.arquillian.container.test.impl.execution.ClientBeforeAfterLifecycleEventExecuter;
 import org.jboss.arquillian.container.test.impl.execution.ClientTestExecuter;
-import org.jboss.arquillian.container.test.impl.execution.LocalTestExecuter;
 import org.jboss.arquillian.container.test.impl.execution.RemoteTestExecuter;
 import org.jboss.arquillian.container.test.spi.client.deployment.AuxiliaryArchiveAppender;
 import org.jboss.arquillian.container.test.spi.client.protocol.Protocol;
@@ -72,6 +71,9 @@ public class KeycloakContainerTestExtension implements LoadableExtension {
         
 //      Overriden ContainerEventController
         builder.observer(KeycloakContainerEventsController.class);
+        
+        // overriden ContainerDeployController
+        builder.observer(KeycloakContainerDeployController.class);
     }
     
     private void registerOriginal(ExtensionBuilder builder) {
@@ -110,6 +112,7 @@ public class KeycloakContainerTestExtension implements LoadableExtension {
             .observer(RemoteTestExecuter.class)
             .observer(DeploymentCommandObserver.class)
             .observer(ContainerCommandObserver.class)
-            .observer(RemoteResourceCommandObserver.class);
+            .observer(RemoteResourceCommandObserver.class)
+            .observer(KeycloakContainerFeaturesController.class);
     }
 }

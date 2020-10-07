@@ -21,14 +21,17 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.Urls;
+import org.keycloak.services.util.ResolveRelative;
 
-import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -37,44 +40,61 @@ public class RedirectUtils {
 
     private static final Logger logger = Logger.getLogger(RedirectUtils.class);
 
-    public static String verifyRealmRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm) {
-        Set<String> validRedirects = getValidateRedirectUris(uriInfo, realm);
-        return verifyRedirectUri(uriInfo, null, redirectUri, realm, validRedirects, true);
+    public static String verifyRealmRedirectUri(KeycloakSession session, String redirectUri) {
+        Set<String> validRedirects = getValidateRedirectUris(session);
+        return verifyRedirectUri(session, null, redirectUri, validRedirects, true);
     }
 
-    public static String verifyRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm, ClientModel client) {
-        return verifyRedirectUri(uriInfo, redirectUri, realm, client, true);
+    public static String verifyRedirectUri(KeycloakSession session, String redirectUri, ClientModel client) {
+        return verifyRedirectUri(session, redirectUri, client, true);
     }
 
-    public static String verifyRedirectUri(UriInfo uriInfo, String redirectUri, RealmModel realm, ClientModel client, boolean requireRedirectUri) {
+    public static String verifyRedirectUri(KeycloakSession session, String redirectUri, ClientModel client, boolean requireRedirectUri) {
         if (client != null)
-            return verifyRedirectUri(uriInfo, client.getRootUrl(), redirectUri, realm, client.getRedirectUris(), requireRedirectUri);
+            return verifyRedirectUri(session, client.getRootUrl(), redirectUri, client.getRedirectUris(), requireRedirectUri);
         return null;
     }
 
-    public static Set<String> resolveValidRedirects(UriInfo uriInfo, String rootUrl, Set<String> validRedirects) {
+    public static Set<String> resolveValidRedirects(KeycloakSession session, String rootUrl, Set<String> validRedirects) {
         // If the valid redirect URI is relative (no scheme, host, port) then use the request's scheme, host, and port
-        Set<String> resolveValidRedirects = new HashSet<String>();
+        Set<String> resolveValidRedirects = new HashSet<>();
         for (String validRedirect : validRedirects) {
-            resolveValidRedirects.add(validRedirect); // add even relative urls.
             if (validRedirect.startsWith("/")) {
-                validRedirect = relativeToAbsoluteURI(uriInfo, rootUrl, validRedirect);
+                validRedirect = relativeToAbsoluteURI(session, rootUrl, validRedirect);
                 logger.debugv("replacing relative valid redirect with: {0}", validRedirect);
+                resolveValidRedirects.add(validRedirect);
+            } else {
                 resolveValidRedirects.add(validRedirect);
             }
         }
         return resolveValidRedirects;
     }
 
-    private static Set<String> getValidateRedirectUris(UriInfo uriInfo, RealmModel realm) {
-        Set<String> redirects = new HashSet<>();
-        for (ClientModel client : realm.getClients()) {
-            redirects.addAll(resolveValidRedirects(uriInfo, client.getRootUrl(), client.getRedirectUris()));
-        }
-        return redirects;
+    private static Set<String> getValidateRedirectUris(KeycloakSession session) {
+        return session.getContext().getRealm().getClientsStream()
+                .filter(ClientModel::isEnabled)
+                .map(c -> resolveValidRedirects(session, c.getRootUrl(), c.getRedirectUris()))
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
     }
 
-    private static String verifyRedirectUri(UriInfo uriInfo, String rootUrl, String redirectUri, RealmModel realm, Set<String> validRedirects, boolean requireRedirectUri) {
+    private static String verifyRedirectUri(KeycloakSession session, String rootUrl, String redirectUri, Set<String> validRedirects, boolean requireRedirectUri) {
+        KeycloakUriInfo uriInfo = session.getContext().getUri();
+        RealmModel realm = session.getContext().getRealm();
+
+        if (redirectUri != null) {
+            try {
+                URI uri = URI.create(redirectUri);
+                redirectUri = uri.normalize().toString();
+            } catch (IllegalArgumentException cause) {
+                logger.debug("Invalid redirect uri", cause);
+                return null;
+            } catch (Exception cause) {
+                logger.debug("Unexpected error when parsing redirect uri", cause);
+                return null;
+            }
+        }
+
         if (redirectUri == null) {
             if (!requireRedirectUri) {
                 redirectUri = getSingleValidRedirectUri(validRedirects);
@@ -91,7 +111,7 @@ public class RedirectUtils {
             redirectUri = lowerCaseHostname(redirectUri);
 
             String r = redirectUri;
-            Set<String> resolveValidRedirects = resolveValidRedirects(uriInfo, rootUrl, validRedirects);
+            Set<String> resolveValidRedirects = resolveValidRedirects(session, rootUrl, validRedirects);
 
             boolean valid = matchesRedirects(resolveValidRedirects, r);
 
@@ -111,7 +131,7 @@ public class RedirectUtils {
                 valid = matchesRedirects(resolveValidRedirects, r);
             }
             if (valid && redirectUri.startsWith("/")) {
-                redirectUri = relativeToAbsoluteURI(uriInfo, rootUrl, redirectUri);
+                redirectUri = relativeToAbsoluteURI(session, rootUrl, redirectUri);
             }
             redirectUri = valid ? redirectUri : null;
         }
@@ -132,9 +152,13 @@ public class RedirectUtils {
         }
     }
 
-    private static String relativeToAbsoluteURI(UriInfo uriInfo, String rootUrl, String relative) {
+    private static String relativeToAbsoluteURI(KeycloakSession session, String rootUrl, String relative) {
+        if (rootUrl != null) {
+            rootUrl = ResolveRelative.resolveRootUrl(session, rootUrl);
+        }
+
         if (rootUrl == null || rootUrl.isEmpty()) {
-            rootUrl = UriUtils.getOrigin(uriInfo.getBaseUri());
+            rootUrl = UriUtils.getOrigin(session.getContext().getUri().getBaseUri());
         }
         StringBuilder sb = new StringBuilder();
         sb.append(rootUrl);
@@ -163,11 +187,26 @@ public class RedirectUtils {
     private static String getSingleValidRedirectUri(Collection<String> validRedirects) {
         if (validRedirects.size() != 1) return null;
         String validRedirect = validRedirects.iterator().next();
-        int idx = validRedirect.indexOf("/*");
-        if (idx > -1) {
-            validRedirect = validRedirect.substring(0, idx);
-        }
-        return validRedirect;
+        return validateRedirectUriWildcard(validRedirect);
     }
 
+    public static String validateRedirectUriWildcard(String redirectUri) {
+        if (redirectUri == null)
+            return null;
+
+        int idx = redirectUri.indexOf("/*");
+        if (idx > -1) {
+            redirectUri = redirectUri.substring(0, idx);
+        }
+        return redirectUri;
+    }
+
+    private static String getFirstValidRedirectUri(Collection<String> validRedirects) {
+        final String redirectUri = validRedirects.stream().findFirst().orElse(null);
+        return (redirectUri != null) ? validateRedirectUriWildcard(redirectUri) : null;
+    }
+
+    public static String getFirstValidRedirectUri(KeycloakSession session, String rootUrl, Set<String> validRedirects) {
+        return getFirstValidRedirectUri(resolveValidRedirects(session, rootUrl, validRedirects));
+    }
 }

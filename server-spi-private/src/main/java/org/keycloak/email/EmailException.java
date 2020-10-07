@@ -26,6 +26,10 @@ public class EmailException extends Exception {
         super(cause);
     }
 
+    public EmailException(String message) {
+    	super(message);
+    }
+    
     public EmailException(String message, Throwable cause) {
         super(message, cause);
     }

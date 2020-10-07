@@ -45,15 +45,6 @@
         <bundle>mvn:org.keycloak/keycloak-osgi-adapter/${project.version}</bundle>
     </feature>
 
-    <feature name="keycloak-jetty8-adapter" version="${project.version}" resolver="(obr)">
-        <details>The keycloak Jetty8 adapter</details>
-        <feature>keycloak-adapter-core</feature>
-        <feature version="[8,9)">jetty</feature>
-        <bundle>mvn:org.keycloak/keycloak-jetty-adapter-spi/${project.version}</bundle>
-        <bundle>mvn:org.keycloak/keycloak-jetty-core/${project.version}</bundle>
-        <bundle>mvn:org.keycloak/keycloak-jetty81-adapter/${project.version}</bundle>
-    </feature>
-
     <feature name="keycloak-jetty9-adapter" version="${project.version}" resolver="(obr)">
         <details>The keycloak Jetty 9.2 adapter (Fuse 6.3)</details>
         <feature>keycloak-adapter-core</feature>

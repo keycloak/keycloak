@@ -10,6 +10,7 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -19,6 +20,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElementClassContains;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -26,11 +28,11 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 public final class UIUtils {
 
     public static final String VALUE_ATTR_NAME = "value";
-    public static final short EXPECTED_UI_LAYOUT = Short.parseShort(System.getProperty("testsuite.ui.layout")); // 0 == desktop layout, 1 == smartphone layout, 2 == tablet layout
+    public static final String ARIA_INVALID_ATTR_NAME = "aria-invalid";
 
     public static boolean selectContainsOption(Select select, String optionText) {
         for (WebElement option : select.getOptions()) {
-            if (option.getText().equals(optionText)) {
+            if (option.getText().trim().equals(optionText)) {
                 return true;
             }
         }
@@ -59,8 +61,14 @@ public final class UIUtils {
         waitForPageToLoad();
     }
 
+    public static void refreshPageAndWaitForLoad() {
+        performOperationWithPageReload(() -> getCurrentDriver().navigate().refresh());
+    }
+
     public static void clickLink(WebElement element) {
         WebDriver driver = getCurrentDriver();
+
+        waitUntilElement(element).is().clickable();
 
         if (driver instanceof SafariDriver && !element.isDisplayed()) { // Safari sometimes thinks an element is not visible
                                                                         // even though it is. In this case we just move the cursor and click.
@@ -183,5 +191,45 @@ public final class UIUtils {
      */
     public static void scrollElementIntoView(WebElement element) {
         ((JavascriptExecutor) getCurrentDriver()).executeScript("arguments[0].scrollIntoView(true);", element);
+    }
+
+    public static boolean doesElementClassContain(WebElement element, String value) {
+        try {
+            waitUntilElementClassContains(element, value);
+        }
+        catch (TimeoutException e) {
+            return false;
+        }
+        return true;
+    }
+
+    public static boolean isElementDisabled(WebElement element) {
+        return element.getAttribute("disabled") != null;
+    }
+
+    /**
+     * Relies on aria-invalid attribute.
+     *
+     * @param element an input element
+     * @return true iff the element contains "aria-invalid" attribute AND its value is not set to "false",
+     *         false otherwise
+     */
+    public static boolean isInputElementValid(WebElement element) {
+        String ariaInvalid = element.getAttribute(ARIA_INVALID_ATTR_NAME);
+        return !Boolean.parseBoolean(ariaInvalid);
+    }
+
+    public static String getRawPageSource(WebDriver driver) {
+        if (driver instanceof FirefoxDriver) {
+            // firefox has some weird "bug" – it wraps xml in html
+            return driver.findElement(By.tagName("body")).getText();
+        }
+        else {
+            return driver.getPageSource();
+        }
+    }
+
+    public static String getRawPageSource() {
+        return getRawPageSource(getCurrentDriver());
     }
 }

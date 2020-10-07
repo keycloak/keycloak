@@ -58,7 +58,7 @@ public class DockerComposeYamlInstallationProvider implements ClientInstallation
         final ZipOutputStream zipOutput = new ZipOutputStream(byteStream);
 
         try {
-            return generateInstallation(zipOutput, byteStream, session.keys().getActiveRsaKey(realm).getCertificate(), session.getContext().getAuthServerUrl().toURL(), realm.getName(), client.getClientId());
+            return generateInstallation(zipOutput, byteStream, session.keys().getActiveRsaKey(realm).getCertificate(), session.getContext().getUri().getBaseUri().toURL(), realm.getName(), client.getClientId());
         } catch (final IOException e) {
             try {
                 zipOutput.close();
@@ -106,9 +106,11 @@ public class DockerComposeYamlInstallationProvider implements ClientInstallation
 
         // Write README to .zip
         zipOutput.putNextEntry(new ZipEntry(ROOT_DIR + "README.md"));
-        final String readmeContent = new BufferedReader(new InputStreamReader(DockerComposeYamlInstallationProvider.class.getResourceAsStream("/DockerComposeYamlReadme.md"))).lines().collect(Collectors.joining("\n"));
-        zipOutput.write(readmeContent.getBytes());
-        zipOutput.closeEntry();
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(DockerComposeYamlInstallationProvider.class.getResourceAsStream("/DockerComposeYamlReadme.md")))) {
+            final String readmeContent = br.lines().collect(Collectors.joining("\n"));
+            zipOutput.write(readmeContent.getBytes());
+            zipOutput.closeEntry();
+        }
 
         zipOutput.close();
         byteStream.close();

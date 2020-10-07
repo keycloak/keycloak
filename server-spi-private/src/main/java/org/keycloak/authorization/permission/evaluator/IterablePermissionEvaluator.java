@@ -60,8 +60,10 @@ class IterablePermissionEvaluator implements PermissionEvaluator {
 
             storeFactory.setReadOnly(true);
 
-            while (this.permissions.hasNext()) {
-                this.policyEvaluator.evaluate(this.permissions.next(), authorizationProvider, executionContext, decision, decisionCache);
+            Iterator<ResourcePermission> permissions = getPermissions();
+
+            while (permissions.hasNext()) {
+                this.policyEvaluator.evaluate(permissions.next(), authorizationProvider, executionContext, decision, decisionCache);
             }
 
             decision.onComplete();
@@ -72,6 +74,10 @@ class IterablePermissionEvaluator implements PermissionEvaluator {
         }
 
         return decision;
+    }
+
+    protected Iterator<ResourcePermission> getPermissions() {
+        return this.permissions;
     }
 
     @Override

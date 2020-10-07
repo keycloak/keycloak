@@ -22,7 +22,7 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class LoginPasswordResetPage extends AbstractPage {
+public class LoginPasswordResetPage extends LanguageComboboxAwarePage {
 
     @FindBy(id = "username")
     private WebElement usernameInput;
@@ -39,7 +39,12 @@ public class LoginPasswordResetPage extends AbstractPage {
     @FindBy(partialLinkText = "Back to Login")
     private WebElement backToLogin;
 
+    public void changePassword() {
+        submitButton.click();
+    }
+
     public void changePassword(String username) {
+        usernameInput.clear();
         usernameInput.sendKeys(username);
 
         submitButton.click();
@@ -59,6 +64,10 @@ public class LoginPasswordResetPage extends AbstractPage {
 
     public String getErrorMessage() {
         return emailErrorMessage != null ? emailErrorMessage.getText() : null;
+    }
+
+    public String getUsername() {
+        return usernameInput.getAttribute("value");
     }
 
     public void backToLogin() {

@@ -21,6 +21,7 @@ import org.keycloak.authorization.model.AbstractAuthorizationModel;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.jpa.JpaModel;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
 import javax.persistence.EntityManager;
@@ -76,6 +77,17 @@ public class ResourceServerAdapter extends AbstractAuthorizationModel implements
     }
 
     @Override
+    public DecisionStrategy getDecisionStrategy() {
+        return entity.getDecisionStrategy();
+    }
+
+    @Override
+    public void setDecisionStrategy(DecisionStrategy decisionStrategy) {
+        throwExceptionIfReadonly();
+        entity.setDecisionStrategy(decisionStrategy);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof ResourceServer)) return false;
@@ -90,7 +102,7 @@ public class ResourceServerAdapter extends AbstractAuthorizationModel implements
     }
 
     public static ResourceServerEntity toEntity(EntityManager em, ResourceServer resource) {
-        if (resource instanceof ResourceAdapter) {
+        if (resource instanceof ResourceServerAdapter) {
             return ((ResourceServerAdapter)resource).getEntity();
         } else {
             return em.getReference(ResourceServerEntity.class, resource.getId());

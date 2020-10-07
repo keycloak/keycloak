@@ -57,7 +57,7 @@ public class PathCache {
             }
         };
         this.maxAge = maxAge;
-        this.enabled = maxAge > 0;
+        this.enabled = ! (maxAge < -1 || (maxAge > -1 && maxAge <= 0));
     }
 
     public void put(String uri, PathConfig newValue) {
@@ -141,6 +141,10 @@ public class PathCache {
             }
         }
         return false;
+    }
+
+    public int size() {
+        return cache.size();
     }
 
     private static final class CacheEntry {

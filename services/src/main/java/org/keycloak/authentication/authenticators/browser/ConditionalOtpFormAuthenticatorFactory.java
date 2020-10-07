@@ -23,7 +23,7 @@ import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.List;
@@ -52,11 +52,6 @@ public class ConditionalOtpFormAuthenticatorFactory implements AuthenticatorFact
 
     public static final ConditionalOtpFormAuthenticator SINGLETON = new ConditionalOtpFormAuthenticator();
 
-    public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.REQUIRED,
-            AuthenticationExecutionModel.Requirement.OPTIONAL,
-            AuthenticationExecutionModel.Requirement.DISABLED};
-
     @Override
     public Authenticator create(KeycloakSession session) {
         return SINGLETON;
@@ -84,7 +79,7 @@ public class ConditionalOtpFormAuthenticatorFactory implements AuthenticatorFact
 
     @Override
     public String getReferenceCategory() {
-        return UserCredentialModel.TOTP;
+        return OTPCredentialModel.TYPE;
     }
 
     @Override

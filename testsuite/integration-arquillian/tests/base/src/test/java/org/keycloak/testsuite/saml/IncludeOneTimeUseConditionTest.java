@@ -59,12 +59,7 @@ public class IncludeOneTimeUseConditionTest extends AbstractSamlTest
 
     private void testOneTimeUseConditionIncluded(Boolean oneTimeUseConditionShouldBeIncluded) throws IOException
     {
-        ClientsResource clients = adminClient.realm(REALM_NAME).clients();
-        List<ClientRepresentation> foundClients = clients.findByClientId(SAML_CLIENT_ID_SALES_POST);
-        assertThat(foundClients, hasSize(1));
-        ClientResource clientRes = clients.get(foundClients.get(0).getId());
-
-        try (Closeable c = new ClientAttributeUpdater(clientRes)
+        try (Closeable c = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST)
           .setAttribute(SamlConfigAttributes.SAML_ONETIMEUSE_CONDITION, oneTimeUseConditionShouldBeIncluded.toString())
           .update()) {
 

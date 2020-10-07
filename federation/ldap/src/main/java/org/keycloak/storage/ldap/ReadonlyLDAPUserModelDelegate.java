@@ -17,21 +17,23 @@
 
 package org.keycloak.storage.ldap;
 
+import java.util.List;
+
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.storage.ReadOnlyException;
 
 /**
+ * Will be good to get rid of this class and use ReadOnlyUserModelDelegate, but it can't be done now due the backwards compatibility.
+ * See KEYCLOAK-15139 as an example
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class ReadonlyLDAPUserModelDelegate extends UserModelDelegate implements UserModel {
 
-    protected LDAPStorageProvider provider;
-
-    public ReadonlyLDAPUserModelDelegate(UserModel delegate, LDAPStorageProvider provider) {
+    public ReadonlyLDAPUserModelDelegate(UserModel delegate) {
         super(delegate);
-        this.provider = provider;
     }
 
     @Override
@@ -54,4 +56,18 @@ public class ReadonlyLDAPUserModelDelegate extends UserModelDelegate implements 
         throw new ReadOnlyException("Federated storage is not writable");
     }
 
+    @Override
+    public void setSingleAttribute(String name, String value) {
+        throw new ReadOnlyException("Federated storage is not writable");
+    }
+
+    @Override
+    public void setAttribute(String name, List<String> values) {
+        throw new ReadOnlyException("Federated storage is not writable");
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+        throw new ReadOnlyException("Federated storage is not writable");
+    }
 }

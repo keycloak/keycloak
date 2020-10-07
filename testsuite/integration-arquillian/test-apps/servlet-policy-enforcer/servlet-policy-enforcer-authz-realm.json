@@ -124,6 +124,14 @@
                     {
                         "name": "Pattern 16",
                         "uris": ["/keycloak-7269/sub-resource1", "/keycloak-7269/sub-resource2/*", "/keycloak-7269/sub-resource1/{test-pattern}/specialSuffix"]
+                    },
+                    {
+                        "name": "Pattern 17",
+                        "uris": ["/keycloak-8823/resource/{version}/subresource/{id}/{other}"]
+                    },
+                    {
+                        "name": "Pattern 17 Entities",
+                        "uris": ["/keycloak-8823/resource/{version}/subresource/{id}/entities"]
                     }
                 ],
                 "policies": [
@@ -314,6 +322,26 @@
                         "decisionStrategy": "UNANIMOUS",
                         "config": {
                             "resources": "[\"Pattern 16\"]",
+                            "applyPolicies": "[\"Default Policy\"]"
+                        }
+                    },
+                    {
+                        "name": "Pattern 17 Permission",
+                        "type": "resource",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "resources": "[\"Pattern 17\"]",
+                            "applyPolicies": "[\"Default Policy\"]"
+                        }
+                    },
+                    {
+                        "name": "Pattern 17 Entities Permission",
+                        "type": "resource",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "resources": "[\"Pattern 17 Entities\"]",
                             "applyPolicies": "[\"Default Policy\"]"
                         }
                     }

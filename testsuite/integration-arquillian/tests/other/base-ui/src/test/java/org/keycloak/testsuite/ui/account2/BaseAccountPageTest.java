@@ -17,10 +17,10 @@
 
 package org.keycloak.testsuite.ui.account2;
 
-import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
-import org.keycloak.testsuite.auth.page.account2.AbstractLoggedInPage;
+import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -28,17 +28,35 @@ import org.keycloak.testsuite.auth.page.account2.AbstractLoggedInPage;
 public abstract class BaseAccountPageTest extends AbstractAccountTest {
     protected abstract AbstractLoggedInPage getAccountPage();
 
-    @Before
-    public void beforeBaseAccountPageTest() {
+    @Override
+    public void navigateBeforeTest() {
         getAccountPage().navigateTo();
         loginToAccount();
         getAccountPage().assertCurrent();
     }
 
     @Test
-    @Ignore // TODO, blocked by KEYCLOAK-8217
     public void navigationTest() {
-        getAccountPage().navigateToUsingNavBar();
+        pageNotFound.navigateTo();
+        pageNotFound.assertCurrent();
+
+        getAccountPage().navigateToUsingSidebar();
         getAccountPage().assertCurrent();
+
+        if (getAccountPage().getParentPageId() != null) {
+            assertTrue("Nav bar subsection should be expanded after clicking nav item",
+                    getAccountPage().sidebar().isNavSubsectionExpanded(getAccountPage().getParentPageId()));
+        }
+    }
+
+    protected void testModalDialog(Runnable triggerModal, Runnable onCancel) {
+        triggerModal.run();
+        getAccountPage().modal().assertIsDisplayed();
+        getAccountPage().modal().clickCancel();
+        getAccountPage().modal().assertIsNotDisplayed();
+        onCancel.run();
+        triggerModal.run();
+        getAccountPage().modal().clickConfirm();
+        getAccountPage().modal().assertIsNotDisplayed();
     }
 }

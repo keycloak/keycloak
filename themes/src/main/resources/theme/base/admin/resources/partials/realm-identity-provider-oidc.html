@@ -22,7 +22,7 @@
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="identifier"><span class="required">*</span> {{:: 'alias' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="identifier" type="text" ng-model="identityProvider.alias" data-ng-readonly="!newIdentityProvider" required>
+                    <input kc-no-reserved-chars class="form-control" id="identifier" type="text" ng-model="identityProvider.alias" data-ng-readonly="!newIdentityProvider" required>
                 </div>
                 <kc-tooltip>{{:: 'identity-provider.alias.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -107,6 +107,21 @@
                 </div>
                 <kc-tooltip>{{:: 'post-broker-login-flow.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="syncMode">{{:: 'sync-mode' | translate}}</label>
+                <div class="col-md-6">
+                    <div>
+                        <select class="form-control" id="syncMode"
+                                ng-model="identityProvider.config.syncMode"
+                                required>
+                            <option id="syncMode_import" name="syncMode" value="IMPORT">{{:: 'sync-mode.import' | translate}}</option>
+                            <option id="syncMode_legacy" name="syncMode" value="LEGACY">{{:: 'sync-mode.legacy' | translate}}</option>
+                            <option id="syncMode_force" name="syncMode" value="FORCE">{{:: 'sync-mode.force' | translate}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'sync-mode.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
         <fieldset>
             <legend uncollapsed><span class="text">{{:: 'openid-connect-config' | translate}}</span> <kc-tooltip>{{:: 'openid-connect-config.tooltip' | translate}}</kc-tooltip></legend>
@@ -167,6 +182,22 @@
                 <kc-tooltip>{{:: 'user-info-url.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="clientAuth"><span class="required">*</span> {{:: 'client-auth' | translate}}</label>
+                <div class="col-md-6">
+                    <div>
+                        <select class="form-control" id="clientAuth"
+                                ng-model="identityProvider.config.clientAuthMethod"
+                                required>
+                            <option id="clientAuth_post" name="clientAuth" value="client_secret_post" selected>{{:: 'client-auth.client_secret_post' | translate}}</option>
+                            <option id="clientAuth_basic" name="clientAuth" value="client_secret_basic">{{:: 'client-auth.client_secret_basic' | translate}}</option>
+                            <option id="clientAuth_secret_jwt" name="clientAuth" value="client_secret_jwt">{{:: 'client-auth.client_secret_jwt' | translate}}</option>
+                            <option id="clientAuth_privatekey_jwt" name="clientAuth" value="private_key_jwt">{{:: 'client-auth.private_key_jwt' | translate}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'client-auth.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="clientId"><span class="required">*</span> {{:: 'client-id' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="clientId" type="text" ng-model="identityProvider.config.clientId" required>
@@ -174,9 +205,9 @@
                 <kc-tooltip>{{:: 'identity-provider.client-id.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
-                <label class="col-md-2 control-label" for="clientSecret"><span class="required">*</span> {{:: 'client-secret' | translate}}</label>
+                <label class="col-md-2 control-label" for="clientSecret"><span data-ng-show="identityProvider.config.clientAuthMethod != 'private_key_jwt'" class="required">*</span> {{:: 'client-secret' | translate}}</label>
                 <div class="col-md-6">
-                    <input class="form-control" id="clientSecret" kc-password ng-model="identityProvider.config.clientSecret" required>
+                    <input class="form-control" id="clientSecret" kc-password ng-model="identityProvider.config.clientSecret" ng-required="identityProvider.config.clientAuthMethod != 'private_key_jwt'">
                 </div>
                 <kc-tooltip>{{:: 'client-secret.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -210,6 +241,13 @@
                 <kc-tooltip>{{:: 'prompt.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group">
+                <label class="col-md-2 control-label" for="acceptsPromptNoneForwardFromClient">{{:: 'accepts-prompt-none-forward-from-client' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="identityProvider.config.acceptsPromptNoneForwardFromClient" id="acceptsPromptNoneForwardFromClient" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                </div>
+                <kc-tooltip>{{:: 'accepts-prompt-none-forward-from-client.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
                 <label class="col-md-2 control-label" for="validateSignature">{{:: 'validate-signatures' | translate}}</label>
                 <div class="col-md-6">
                     <input ng-model="identityProvider.config.validateSignature" id="validateSignature" onoffswitchvalue on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
@@ -238,7 +276,7 @@
                 <div class="form-group clearfix" data-ng-hide="identityProvider.config.useJwksUrl == 'true'">
                     <label class="col-md-2 control-label" for="publicKeySignatureVerifierKey">{{:: 'validating-public-key' | translate}}</label>
                     <div class="col-md-6">
-                        <textarea class="form-control" id="publicKeySignatureVerifier" ng-model="identityProvider.config.publicKeySignatureVerifier"/>
+                        <textarea class="form-control" id="publicKeySignatureVerifier" ng-model="identityProvider.config.publicKeySignatureVerifier"></textarea>
                     </div>
                     <kc-tooltip>{{:: 'identity-provider.validating-public-key.tooltip' | translate}}</kc-tooltip>
                 </div>

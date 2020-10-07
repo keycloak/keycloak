@@ -1,8 +1,5 @@
-embed-server --server-config=standalone-ha.xml
 
-echo **** Begin ****
-
-echo *** Update jgoups subsystem ***
+echo *** Update jgroups subsystem ***
 /subsystem=jgroups/stack=udp/transport=UDP:write-attribute(name=site, value=${jboss.site.name})
 
 echo *** Update infinispan subsystem ***
@@ -148,6 +145,3 @@ echo *** Update undertow subsystem ***
 
 echo *** Update keycloak-server subsystem, infinispan remoteStoreSecurity ***
 /subsystem=keycloak-server/spi=connectionsInfinispan/provider=default:map-put(name=properties,key=remoteStoreSecurityEnabled,value=${keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled:true})
-
-
-echo **** End ****

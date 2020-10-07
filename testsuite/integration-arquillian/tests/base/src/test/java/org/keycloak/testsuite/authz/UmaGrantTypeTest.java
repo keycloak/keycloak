@@ -27,7 +27,10 @@ import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.client.Client;
@@ -39,6 +42,12 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
+import com.google.common.base.Charsets;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.message.BasicNameValuePair;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -51,6 +60,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Permission;
@@ -58,13 +68,17 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
     private ResourceRepresentation resourceA;
@@ -79,8 +93,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         policy.setName("Default Policy");
         policy.setCode("$evaluation.grant();");
 
-        Response response = authorization.policies().js().create(policy);
-        response.close();
+        authorization.policies().js().create(policy).close();
 
         ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
         resourceA = addResource("Resource A", "ScopeA", "ScopeB", "ScopeC");
@@ -89,16 +102,14 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         permission.addResource(resourceA.getName());
         permission.addPolicy(policy.getName());
 
-        response = authorization.permissions().resource().create(permission);
-        response.close();
+        authorization.permissions().resource().create(permission).close();
 
         policy = new JSPolicyRepresentation();
 
         policy.setName("Deny Policy");
         policy.setCode("$evaluation.deny();");
 
-        response = authorization.policies().js().create(policy);
-        response.close();
+        authorization.policies().js().create(policy).close();
     }
 
     @Test
@@ -359,6 +370,33 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         assertNotNull(permissions);
         assertPermissions(permissions, "Resource A", "ScopeA", "ScopeB");
         assertTrue(permissions.isEmpty());
+    }
+
+    @Test
+    public void testCORSHeadersInFailedRptRequest() throws Exception {
+        AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
+
+        UserRepresentation userRepresentation = getRealm().users().search("marta").get(0);
+        UserRepresentation updatedUser = UserBuilder.edit(userRepresentation).enabled(false).build();
+        getRealm().users().get(userRepresentation.getId()).update(updatedUser);
+
+        PermissionRequest permissions = new PermissionRequest("Resource A", "ScopeA", "ScopeB");
+        String ticket = getAuthzClient().protection().permission().create(Arrays.asList(permissions)).getTicket();
+
+        String tokenEndpoint = getAuthzClient().getServerConfiguration().getTokenEndpoint();
+        HttpPost post = new HttpPost(tokenEndpoint);
+        post.addHeader("Origin", "http://localhost");
+        post.addHeader("Authorization", "Bearer " + accessTokenResponse.getToken());
+        List<NameValuePair> parameters = new LinkedList<>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.UMA_GRANT_TYPE));
+        parameters.add(new BasicNameValuePair("ticket", ticket));
+
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, Charsets.UTF_8);
+        post.setEntity(formEntity);
+
+        CloseableHttpResponse response = oauth.getHttpClient().get().execute(post);
+        assertEquals(401, response.getStatusLine().getStatusCode());
+        assertEquals("http://localhost", response.getFirstHeader("Access-Control-Allow-Origin").getValue());
     }
 
     @Test

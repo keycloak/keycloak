@@ -19,12 +19,12 @@ package org.keycloak.testsuite.ui.account2;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.auth.page.account2.WelcomeScreen;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.ui.AbstractUiTest;
+import org.keycloak.testsuite.ui.account2.page.PageNotFound;
+import org.keycloak.testsuite.ui.account2.page.WelcomeScreen;
 
 import java.util.List;
 
@@ -33,31 +33,41 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLo
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+@EnableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true)
+@EnableFeature(value = Profile.Feature.ACCOUNT_API, skipRestart = true)
 public abstract class AbstractAccountTest extends AbstractUiTest {
-    public static final String ACCOUNT_THEME_NAME = "keycloak-preview";
+    public static final String ACCOUNT_THEME_NAME_KC = "keycloak-preview";
+    public static final String ACCOUNT_THEME_NAME_RHSSO = "rh-sso-preview";
 
     @Page
     protected WelcomeScreen accountWelcomeScreen;
+
+    @Page
+    protected PageNotFound pageNotFound;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         super.addTestRealms(testRealms);
         RealmRepresentation testRealmRep = testRealms.get(0);
-        testRealmRep.setAccountTheme(ACCOUNT_THEME_NAME);
-    }
-
-    @BeforeClass
-    public static void enabled() {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.ACCOUNT2);
+        testRealmRep.setAccountTheme(getAccountThemeName());
     }
 
     @Before
-    public void beforeAccountTest() {
+    public void navigateBeforeTest() {
         accountWelcomeScreen.navigateTo();
+    }
+
+    @Override
+    protected boolean isAccountPreviewTheme() {
+        return true;
     }
 
     protected void loginToAccount() {
         assertCurrentUrlStartsWithLoginUrlOf(accountWelcomeScreen);
         loginPage.form().login(testUser);
+    }
+
+    protected String getAccountThemeName() {
+        return suiteContext.getAuthServerInfo().isEAP() ? ACCOUNT_THEME_NAME_RHSSO : ACCOUNT_THEME_NAME_KC;
     }
 }

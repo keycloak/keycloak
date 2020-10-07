@@ -18,9 +18,9 @@ package org.keycloak.testsuite.arquillian;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -28,7 +28,9 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.RealmRepresentation;
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.getAppServerQualifiers;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.TestCleanup;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 /**
  *
@@ -45,8 +47,6 @@ public final class TestContext {
 
     private boolean adminLoggedIn;
     
-    private final Map<Object, Object> customContext = new HashMap<>();
-
     private Keycloak adminClient;
     private KeycloakTestingClient testingClient;
     private List<RealmRepresentation> testRealmReps = new ArrayList<>();
@@ -89,25 +89,33 @@ public final class TestContext {
         this.appServerBackendsInfo.addAll(appServerBackendsInfo);
     }
 
-    public Class getTestClass() {
+    public Class<?> getTestClass() {
         return testClass;
     }
 
+    public void reconnectAdminClient() throws Exception {
+        if (adminClient != null && !adminClient.isClosed()) {
+            adminClient.close();
+        }
+
+        String authServerContextRoot = suiteContext.getAuthServerInfo().getContextRoot().toString();
+        adminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(), authServerContextRoot);
+    }
+
     public boolean isAdapterTest() {
-        return getAppServerQualifiers(testClass) != null;
+        return !getAppServerQualifiers(testClass).isEmpty();
     }
 
     public boolean isAdapterContainerEnabled() {
         if (!isAdapterTest()) return false; //no adapter test
-        if (appServerInfo == null) return false;
-        return getAppServerQualifiers(testClass).contains(appServerInfo.getQualifier());
+        return getAppServerQualifiers(testClass).contains(ContainerConstants.APP_SERVER_PREFIX + AppServerTestEnricher.CURRENT_APP_SERVER);
     }
 
     public boolean isAdapterContainerEnabledCluster() {
         if (!isAdapterTest()) return false; //no adapter test
         if (appServerBackendsInfo.isEmpty()) return false; //no adapter clustered test
         
-        List<String> appServerQualifiers = getAppServerQualifiers(testClass);
+        Set<String> appServerQualifiers = getAppServerQualifiers(testClass);
         
         String qualifier = appServerBackendsInfo.stream()
                 .map(ContainerInfo::getQualifier)
@@ -141,6 +149,10 @@ public final class TestContext {
     }
 
     public KeycloakTestingClient getTestingClient() {
+        if (testingClient == null) {
+            String authServerContextRoot = suiteContext.getAuthServerInfo().getContextRoot().toString();
+            testingClient = KeycloakTestingClient.getInstance(authServerContextRoot + "/auth");
+        }
         return testingClient;
     }
 
@@ -160,6 +172,10 @@ public final class TestContext {
         this.testRealmReps.add(testRealmRep);
     }
 
+    public void addTestRealmsToTestRealmReps(List<RealmRepresentation> testRealmReps) {
+        this.testRealmReps.addAll(testRealmReps);
+    }
+
     public boolean isInitialized() {
         return initialized;
     }
@@ -171,7 +187,7 @@ public final class TestContext {
     public TestCleanup getOrCreateCleanup(String realmName) {
         TestCleanup cleanup = cleanups.get(realmName);
         if (cleanup == null) {
-            cleanup = new TestCleanup(adminClient, realmName);
+            cleanup = new TestCleanup(this, realmName);
             TestCleanup existing = cleanups.putIfAbsent(realmName, cleanup);
 
             if (existing != null) {
@@ -185,14 +201,6 @@ public final class TestContext {
         return cleanups;
     }
 
-
-    public Object getCustomValue(Object key) {
-        return customContext.get(key);
-    }
-    
-    public void setCustomValue(Object key, Object value) {
-        customContext.put(key, value);
-    }
 
     public String getAppServerContainerName() {
         if (isAdapterContainerEnabled()) { //standalone app server

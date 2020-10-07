@@ -87,9 +87,13 @@ public class Validation {
     }
 
     public static List<FormMessage> validateUpdateProfileForm(RealmModel realm, MultivaluedMap<String, String> formData) {
+        return validateUpdateProfileForm(realm, formData, realm.isEditUsernameAllowed());
+    }
+    
+    public static List<FormMessage> validateUpdateProfileForm(RealmModel realm, MultivaluedMap<String, String> formData, boolean userNameRequired) {
         List<FormMessage> errors = new ArrayList<>();
         
-        if (!realm.isRegistrationEmailAsUsername() && realm.isEditUsernameAllowed() && isBlank(formData.getFirst(FIELD_USERNAME))) {
+        if (!realm.isRegistrationEmailAsUsername() && userNameRequired && isBlank(formData.getFirst(FIELD_USERNAME))) {
             addError(errors, FIELD_USERNAME, Messages.MISSING_USERNAME);
         }
 

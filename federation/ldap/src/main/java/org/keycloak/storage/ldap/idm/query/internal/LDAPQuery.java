@@ -17,6 +17,7 @@
 
 package org.keycloak.storage.ldap.idm.query.internal;
 
+import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
@@ -24,9 +25,13 @@ import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.Sort;
+import org.keycloak.storage.ldap.idm.store.ldap.LDAPContextManager;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 
+import javax.naming.NamingException;
 import javax.naming.directory.SearchControls;
+import javax.naming.ldap.LdapContext;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,16 +44,21 @@ import static java.util.Collections.unmodifiableSet;
 /**
  * Default IdentityQuery implementation.
  *
+ * LDAPQuery should be closed after use in case that pagination was used (initPagination was called)
+ * Closing LDAPQuery is very important in case ldapContextManager contains VaultSecret
  *
  * @author Shane Bryzak
  */
-public class LDAPQuery {
+public class LDAPQuery implements AutoCloseable {
+
+    private static final Logger logger = Logger.getLogger(LDAPQuery.class);
 
     private final LDAPStorageProvider ldapFedProvider;
 
     private int offset;
     private int limit;
-    private byte[] paginationContext;
+    private PaginationContext paginationContext;
+    private LDAPContextManager ldapContextManager;
     private String searchDn;
     private final Set<Condition> conditions = new LinkedHashSet<Condition>();
     private final Set<Sort> ordering = new LinkedHashSet<Sort>();
@@ -144,7 +154,7 @@ public class LDAPQuery {
         return offset;
     }
 
-    public byte[] getPaginationContext() {
+    public PaginationContext getPaginationContext() {
         return paginationContext;
     }
 
@@ -197,8 +207,10 @@ public class LDAPQuery {
         return this;
     }
 
-    public LDAPQuery setPaginationContext(byte[] paginationContext) {
-        this.paginationContext = paginationContext;
+    public LDAPQuery initPagination() throws NamingException {
+        this.ldapContextManager = LDAPContextManager.create(ldapFedProvider.getSession(),
+                ldapFedProvider.getLdapIdentityStore().getConfig());
+        this.paginationContext = new PaginationContext(ldapContextManager.getLdapContext());
         return this;
     }
 
@@ -208,6 +220,45 @@ public class LDAPQuery {
 
     public LDAPStorageProvider getLdapProvider() {
         return ldapFedProvider;
+    }
+
+
+    @Override
+    public void close() {
+        if (ldapContextManager != null) {
+            ldapContextManager.close();
+        }
+    }
+
+
+    public static class PaginationContext {
+
+        private final LdapContext ldapContext;
+        private byte[] cookie;
+
+        private PaginationContext(LdapContext ldapContext) {
+            if (ldapContext == null) {
+                throw new IllegalArgumentException("Bad usage. Ldap context must be not null");
+            }
+            this.ldapContext = ldapContext;
+        }
+
+
+        public LdapContext getLdapContext() {
+            return ldapContext;
+        }
+
+        public byte[] getCookie() {
+            return cookie;
+        }
+
+        public void setCookie(byte[] cookie) {
+            this.cookie = cookie;
+        }
+
+        public boolean hasNextPage() {
+            return this.cookie != null;
+        }
     }
 
 }

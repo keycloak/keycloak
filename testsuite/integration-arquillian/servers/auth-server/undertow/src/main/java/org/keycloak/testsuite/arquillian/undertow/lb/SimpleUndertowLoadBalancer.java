@@ -19,8 +19,8 @@ package org.keycloak.testsuite.arquillian.undertow.lb;
 
 import java.lang.reflect.Field;
 import java.net.URI;
+import java.security.GeneralSecurityException;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -40,9 +40,19 @@ import io.undertow.util.AttachmentKey;
 import io.undertow.util.Headers;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.reflections.Reflections;
-import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.testsuite.utils.tls.TLSUtils;
+
+import io.undertow.server.handlers.proxy.RouteIteratorFactory;
+import io.undertow.server.handlers.proxy.RouteIteratorFactory.ParsingCompatibility;
+import io.undertow.server.handlers.proxy.RouteParsingStrategy;
+import org.xnio.OptionMap;
+
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.StringTokenizer;
+
+import static org.keycloak.services.managers.AuthenticationSessionManager.AUTH_SESSION_ID;
+import static org.keycloak.services.util.CookieHelper.LEGACY_COOKIE;
 
 /**
  * Loadbalancer on embedded undertow. Supports sticky session over "AUTH_SESSION_ID" cookie and failover to different node when sticky node not available.
@@ -56,19 +66,20 @@ public class SimpleUndertowLoadBalancer {
 
     private static final Logger log = Logger.getLogger(SimpleUndertowLoadBalancer.class);
 
-    static final String DEFAULT_NODES = "node1=http://localhost:8181,node2=http://localhost:8182";
+    static final String DEFAULT_NODES_HTTP = "node1=http://localhost:8181,node2=http://localhost:8182";
 
     private final String host;
-    private final int port;
+    private final int httpPort;
+    private final int httpsPort;
     private final Map<String, URI> backendNodes;
     private Undertow undertow;
     private LoadBalancingProxyClient lb;
 
 
     public static void main(String[] args) throws Exception {
-        String nodes = System.getProperty("keycloak.nodes", DEFAULT_NODES);
+        String nodes = System.getProperty("keycloak.nodes", DEFAULT_NODES_HTTP);
 
-        SimpleUndertowLoadBalancer lb = new SimpleUndertowLoadBalancer("localhost", 8180, nodes);
+        SimpleUndertowLoadBalancer lb = new SimpleUndertowLoadBalancer("localhost", 8180, 8543, nodes);
         lb.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -82,9 +93,10 @@ public class SimpleUndertowLoadBalancer {
     }
 
 
-    public SimpleUndertowLoadBalancer(String host, int port, String nodesString) {
+    public SimpleUndertowLoadBalancer(String host, int httpPort, int httpsPort, String nodesString) {
         this.host = host;
-        this.port = port;
+        this.httpPort = httpPort;
+        this.httpsPort = httpsPort;
         this.backendNodes = parseNodes(nodesString);
         log.infof("Keycloak nodes: %s", backendNodes);
     }
@@ -95,12 +107,18 @@ public class SimpleUndertowLoadBalancer {
             HttpHandler proxyHandler = createHandler();
 
             undertow = Undertow.builder()
-                    .addHttpListener(port, host)
+                    .addHttpListener(httpPort, host)
+                    .addHttpsListener(httpsPort, host, TLSUtils.initializeTLS())
                     .setHandler(proxyHandler)
                     .build();
             undertow.start();
 
-            log.infof("#### Loadbalancer started and ready to serve requests on http://%s:%d ####", host, port);
+            backendNodes.forEach((route, uri) -> {
+                lb.addHost(uri, route);
+                log.debugf("Added host: %s, route: %s", uri.toString(), route);
+            });
+
+            log.infof("#### Loadbalancer started and ready to serve requests on http://%s:%d, https://%s:%d ####", host, httpPort, host, httpsPort);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -159,7 +177,7 @@ public class SimpleUndertowLoadBalancer {
     private HttpHandler createHandler() throws Exception {
 
         // TODO: configurable options if needed
-        String sessionCookieNames = AuthenticationSessionManager.AUTH_SESSION_ID;
+        String[] sessionIds = {AUTH_SESSION_ID, AUTH_SESSION_ID + LEGACY_COOKIE};
         int connectionsPerThread = 20;
         int problemServerRetry = 5; // In case of unavailable node, we will try to ping him every 5 seconds to check if it's back
         int maxTime = 3600000; // 1 hour for proxy request timeout, so we can debug the backend keycloak servers
@@ -174,18 +192,11 @@ public class SimpleUndertowLoadBalancer {
                 .setSoftMaxConnectionsPerThread(cachedConnectionsPerThread)
                 .setTtl(connectionIdleTimeout)
                 .setProblemServerRetry(problemServerRetry);
-        String[] sessionIds = sessionCookieNames.split(",");
         for (String id : sessionIds) {
             lb.addSessionCookieName(id);
         }
 
-        backendNodes.forEach((route, uri) -> {
-            lb.addHost(uri, route);
-            log.debugf("Added host: %s, route: %s", uri.toString(), route);
-        });
-
-        ProxyHandler handler = new ProxyHandler(lb, maxTime, ResponseCodeHandler.HANDLE_404);
-        return handler;
+        return new ProxyHandler(lb, maxTime, ResponseCodeHandler.HANDLE_404);
     }
 
 
@@ -213,22 +224,37 @@ public class SimpleUndertowLoadBalancer {
             return host;
         }
 
+        private Host getRoute(String routeId) {
+            // There's no way to get the route from the super class, we have to use reflection
+            Field f = Reflections.findDeclaredField(LoadBalancingProxyClient.class, "routes");
+            f.setAccessible(true);
+            Map<String, Host> routes = Reflections.getFieldValue(f, this, Map.class);
+            return routes == null ? null : routes.get(routeId);
+        }
 
         @Override
-        protected Host findStickyHost(HttpServerExchange exchange) {
-            Host stickyHost = super.findStickyHost(exchange);
-
+        protected Iterator<CharSequence> parseRoutes(HttpServerExchange exchange) {
+            Iterator<CharSequence> stickyHostsIt = super.parseRoutes(exchange);
+            
+            if (stickyHostsIt == null) {
+                return null;
+            }
+            
+            List<CharSequence> stickyHosts = new LinkedList<>();
+            stickyHostsIt.forEachRemaining(stickyHosts::add);
+            CharSequence stickyHostName = stickyHosts.isEmpty() ? null : stickyHosts.iterator().next();
+            Host stickyHost = stickyHostName == null ? null: getRoute(stickyHostName.toString());
             if (stickyHost != null) {
 
                 if (!stickyHost.isAvailable()) {
                     log.debugf("Sticky host %s not available. Trying different hosts", stickyHost.getUri());
-                    return null;
+                    return new RouteIteratorFactory(RouteParsingStrategy.SINGLE, ParsingCompatibility.MOD_JK, null).iterator(null);
                 } else {
                     log.debugf("Sticky host %s found and looks available", stickyHost.getUri());
                 }
             }
 
-            return stickyHost;
+            return stickyHosts.iterator();
         }
 
 
@@ -240,7 +266,11 @@ public class SimpleUndertowLoadBalancer {
                 log.infof("Route '%s' already present. Skip adding", jvmRoute);
                 return this;
             } else {
-                return super.addHost(host, jvmRoute);
+                try {
+                    return super.addHost(host, jvmRoute, undertow.getXnio().getSslProvider(OptionMap.EMPTY));
+                } catch (GeneralSecurityException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
 

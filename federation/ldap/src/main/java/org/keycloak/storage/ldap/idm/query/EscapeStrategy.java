@@ -17,7 +17,7 @@
 
 package org.keycloak.storage.ldap.idm.query;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -30,17 +30,13 @@ public enum EscapeStrategy {
 
         @Override
         public String escape(String input) {
-            try {
-                StringBuilder output = new StringBuilder();
+            StringBuilder output = new StringBuilder();
 
-                for (byte b : input.getBytes("UTF-8")) {
-                    appendByte(b, output);
-                }
-
-                return output.toString();
-            } catch (UnsupportedEncodingException uee) {
-                throw new RuntimeException(uee);
+            for (byte b : input.getBytes(StandardCharsets.UTF_8)) {
+                appendByte(b, output);
             }
+
+            return output.toString();
         }
 
     },
@@ -52,43 +48,56 @@ public enum EscapeStrategy {
 
         @Override
         public String escape(String input) {
-            try {
-                StringBuilder output = new StringBuilder();
+            StringBuilder output = new StringBuilder();
 
-                for (byte b : input.getBytes("UTF-8")) {
-                    switch (b) {
-                        case 0x5c:
-                            output.append("\\5c"); // \
-                            break;
-                        case 0x2a:
-                            output.append("\\2a"); // *
-                            break;
-                        case 0x28:
-                            output.append("\\28"); // (
-                            break;
-                        case 0x29:
-                            output.append("\\29"); // )
-                            break;
-                        case 0x00:
-                            output.append("\\00"); // \u0000
-                            break;
-                        default: {
-                            appendByte(b, output);
-                        }
+            for (byte b : input.getBytes(StandardCharsets.UTF_8)) {
+                switch (b) {
+                    case 0x5c:
+                        output.append("\\5c"); // \
+                        break;
+                    case 0x2a:
+                        output.append("\\2a"); // *
+                        break;
+                    case 0x28:
+                        output.append("\\28"); // (
+                        break;
+                    case 0x29:
+                        output.append("\\29"); // )
+                        break;
+                    case 0x00:
+                        output.append("\\00"); // \u0000
+                        break;
+                    default: {
+                        appendByte(b, output);
                     }
                 }
-
-                return output.toString();
-            } catch (UnsupportedEncodingException uee) {
-                throw new RuntimeException(uee);
             }
+
+            return output.toString();
+        }
+
+    },
+
+    // Escaping value as Octet-String
+    OCTET_STRING {
+        @Override
+        public String escape(String input) {
+            byte[] bytes;
+            bytes = input.getBytes(StandardCharsets.UTF_8);
+            return escapeHex(bytes);
         }
 
     };
 
+    public static String escapeHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("\\%02x", b));
+        }
+        return sb.toString();
+    }
 
     public abstract String escape(String input);
-
 
     protected void appendByte(byte b, StringBuilder output) {
         if (b >= 0) {

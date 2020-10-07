@@ -16,209 +16,76 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.LaxRedirectStrategy;
-import org.jboss.arquillian.container.test.api.Deployer;
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.keycloak.admin.client.resource.AuthorizationResource;
-import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.ClientScopesResource;
-import org.keycloak.admin.client.resource.ClientsResource;
-import org.keycloak.admin.client.resource.ProtocolMappersResource;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.RealmsResource;
-import org.keycloak.admin.client.resource.ResourcesResource;
-import org.keycloak.admin.client.resource.RoleResource;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.protocol.ProtocolMapperUtils;
-import org.keycloak.protocol.oidc.mappers.UserClientRoleMappingMapper;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.representations.idm.authorization.PolicyRepresentation;
-import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
-import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
-import org.keycloak.testsuite.adapter.page.PhotozClientAuthzTestApp;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.auth.page.login.OIDCLogin;
-import org.keycloak.testsuite.util.ContainerAssume;
-import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.JavascriptBrowser;
-import org.keycloak.testsuite.utils.io.IOUtil;
-import org.keycloak.util.JsonSerialization;
-import org.openqa.selenium.By;
-import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.WebDriver;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
-import static org.keycloak.testsuite.utils.io.IOUtil.loadJson;
-import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-
-import javax.ws.rs.core.Response;
-import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
+import org.junit.Test;
+import org.keycloak.admin.client.resource.AuthorizationResource;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.PoliciesResource;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.ResourcesResource;
+import org.keycloak.admin.client.resource.RoleResource;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAdapterTest {
+public abstract class AbstractPhotozExampleAdapterTest extends AbstractBasePhotozExampleAdapterTest {
 
-    private static final String REALM_NAME = "photoz";
-    protected static final String RESOURCE_SERVER_ID = "photoz-restful-api";
-    private static final int TOKEN_LIFESPAN_LEEWAY = 3; // seconds
-
-    @ArquillianResource
-    private Deployer deployer;
-
-    // Javascript browser needed KEYCLOAK-4703
-    @Drone
-    @JavascriptBrowser
-    protected WebDriver jsDriver;
-
-    @Page
-    @JavascriptBrowser
-    protected OIDCLogin jsDriverTestRealmLoginPage;
-
-    @Page
-    @JavascriptBrowser
-    private PhotozClientAuthzTestApp clientPage;
-
-    @Override
-    public void setDefaultPageUriParameters() {
-        super.setDefaultPageUriParameters();
-        testRealmPage.setAuthRealm(REALM_NAME);
-    }
-
-    @Before
-    public void beforePhotozExampleAdapterTest() throws Exception {
-        DroneUtils.addWebDriver(jsDriver);
-        deleteAllCookiesForClientPage();
-        this.deployer.deploy(RESOURCE_SERVER_ID);
-        
-        try (CloseableHttpClient httpClient = HttpClientBuilder.create().setRedirectStrategy(new LaxRedirectStrategy()).build()) {
-            HttpGet request = new HttpGet(clientPage.toString() + "/unsecured/clean");
-            httpClient.execute(request).close();
-        } 
-    }
-    
-    @After
-    public void afterPhotozExampleAdapterTest() {
-        this.deployer.undeploy(RESOURCE_SERVER_ID);
-        DroneUtils.removeWebDriver();
-    }
-
-    @Override
-    public void addAdapterTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation realm = loadRealm(new File(TEST_APPS_HOME_DIR + "/photoz/photoz-realm.json"));
-
-        realm.setAccessTokenLifespan(30 + TOKEN_LIFESPAN_LEEWAY); // seconds
-
-        testRealms.add(realm);
-    }
-
-    @Override
-    public void beforeAbstractKeycloakTest() throws Exception {
-        super.beforeAbstractKeycloakTest();
-        importResourceServerSettings();
-    }
-
-    //revert provider in persistence.xml for EAP6 backward compatibility
-    protected static void updatePersistenceXml(WebArchive war) {
-        //double check app server is eap6
-        if (AppServerTestEnricher.isEAP6AppServer()) {
-            String persistanceXmlPath = "/WEB-INF/classes/META-INF/persistence.xml";
-            org.w3c.dom.Document persistenceXml = IOUtil.loadXML(war.get(persistanceXmlPath).getAsset().openStream());
-            IOUtil.modifyDocElementValue(persistenceXml, "provider", 
-                    "org.hibernate.jpa.HibernatePersistenceProvider", "org.hibernate.ejb.HibernatePersistence");
-            war.add(new StringAsset((IOUtil.documentToString(persistenceXml))), persistanceXmlPath);
-        }
-    }
-
-    private List<ResourceRepresentation> getResourcesOfUser(String username) throws FileNotFoundException {
-        return getAuthorizationResource().resources().resources().stream().filter(resource -> resource.getOwner().getName().equals(username)).collect(Collectors.toList());
-    }
-    
-    private void printUpdatedPolicies() throws FileNotFoundException {
-        log.debug("Check updated policies");
-        for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
-            log.debugf("Policy: {0}", policy.getName());
-            for (String key : policy.getConfig().keySet()) {
-                log.debugf("-- key: {0}, value: {1}", key, policy.getConfig().get(key));
-            }
-        }
-        log.debug("------------------------------");
-    }
-    
     @Test
     public void testUserCanCreateAndDeleteAlbum() throws Exception {
-        loginToClientPage("alice", "alice");
+        loginToClientPage(aliceUser);
 
-        clientPage.createAlbum("Alice Family Album");
+        clientPage.createAlbum(ALICE_ALBUM_NAME);
         log.debug("Check if alice has resources stored");
         assertThat(getResourcesOfUser("alice"), is(not(empty())));
 
-        clientPage.deleteAlbum("Alice Family Album", false);
+        clientPage.deleteAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
         log.debug("Check if alice has resources deleted");
         assertThat(getResourcesOfUser("alice"), is(empty()));
     }
 
     @Test
+    @UncaughtServerErrorExpected
     public void createAlbumWithInvalidUser() throws Exception {
-        loginToClientPage("alice", "alice");
+        loginToClientPage(aliceUser);
 
-        clientPage.createAlbumWithInvalidUser("Alice Family Album");
-
-        log.debug("Check if the album was not created.");
-        waitUntilElement(clientPage.getOutput()).text().not().contains("Request was successful");
-        waitUntilElement(clientPage.getOutput()).text().contains("Could not register protected resource");
+        clientPage.createAlbumWithInvalidUser(ALICE_ALBUM_NAME, response -> {
+            assertThat(response.get("status"), is(equalTo(500L)));
+            assertThat(response.get("res"), is(equalTo("Could not register protected resource.")));
+        });
     }
 
     @Test
     public void testOnlyOwnerCanDeleteAlbum() throws Exception {
-        ContainerAssume.assumeNotAuthServerUndertow();
+        loginToClientPage(aliceUser);
+        clientPage.createAlbum(ALICE_ALBUM_NAME);
 
-        loginToClientPage("alice", "alice");
-        clientPage.createAlbum("Alice-Family-Album");
-
-        loginToClientPage("admin", "admin");
-        clientPage.navigateToAdminAlbum(false);
+        loginToClientPage(adminUser);
+        clientPage.navigateToAdminAlbum(this::assertWasNotDenied);
 
         log.debug("Check if alice has resources stored");
         assertThat(getResourcesOfUser("alice"), is(not(empty())));
@@ -232,10 +99,10 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         }
         printUpdatedPolicies();
 
-        loginToClientPage("admin", "admin");
+        loginToClientPage(adminUser);
 
-        clientPage.navigateToAdminAlbum(false);
-        clientPage.deleteAlbum("Alice-Family-Album", true);
+        clientPage.navigateToAdminAlbum(this::assertWasNotDenied);
+        clientPage.deleteAlbum(ALICE_ALBUM_NAME, this::assertWasDenied);
         
         log.debug("Check if alice has resources stored");
         assertThat(getResourcesOfUser("alice"), is(not(empty())));
@@ -249,8 +116,8 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         }
         printUpdatedPolicies();
 
-        clientPage.navigateToAdminAlbum(false);
-        clientPage.deleteAlbum("Alice-Family-Album", false);
+        clientPage.navigateToAdminAlbum(this::assertWasNotDenied);
+        clientPage.deleteAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
         
         log.debug("Check if alice has resources deleted");
         assertThat(getResourcesOfUser("alice"), is(empty()));
@@ -259,46 +126,47 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
     
     @Test
     public void testRegularUserCanNotAccessAdminResources() throws Exception {
-        loginToClientPage("alice", "alice");
-        clientPage.navigateToAdminAlbum(true);
+        loginToClientPage(aliceUser);
+        clientPage.navigateToAdminAlbum(this::assertWasDenied);
     }
 
     @Test
     public void testAdminOnlyFromSpecificAddress() throws Exception {
-        ContainerAssume.assumeNotAuthServerUndertow();
-
-        loginToClientPage("admin", "admin");
-        clientPage.navigateToAdminAlbum(false);
+        loginToClientPage(adminUser);
+        clientPage.navigateToAdminAlbum(this::assertWasNotDenied);
 
         log.debug("Changing codes \"127.0.0.1\" to \"127.3.3.3\" of \"Only From a Specific Client Address\" policies.");
         for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
             if ("Only From a Specific Client Address".equals(policy.getName())) {
-                String code = policy.getConfig().get("code");
-                policy.getConfig().put("code", code.replaceAll("127.0.0.1", "127.3.3.3"));
+                String code = policy.getConfig().get("code")
+                        .replaceAll("127.0.0.1", "127.3.3.3")
+                        .replaceAll("0:0:0:0:0:0:0:1", "0:0:0:0:0:ffff:7f03:303");
+                policy.getConfig().put("code", code);
                 getAuthorizationResource().policies().policy(policy.getId()).update(policy);
             }
         }
         printUpdatedPolicies();
 
-        clientPage.navigateToAdminAlbum(true);
+        loginToClientPage(adminUser);
+        clientPage.navigateToAdminAlbum(this::assertWasDenied);
     }
 
     @Test
     public void testAdminWithoutPermissionsToTypedResource() throws Exception {
-        ContainerAssume.assumeNotAuthServerUndertow();
-
-        loginToClientPage("alice", "alice");
-        clientPage.createAlbum("Alice Family Album");
+        loginToClientPage(aliceUser);
+        clientPage.createAlbum(ALICE_ALBUM_NAME);
         
-        loginToClientPage("admin", "admin");
-        clientPage.navigateToAdminAlbum(false);
+        loginToClientPage(adminUser);
+        clientPage.navigateToAdminAlbum(this::assertWasNotDenied);
 
-        clientPage.viewAlbum("Alice Family Album", false);
+        clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
 
-        for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
+        PoliciesResource policiesResource = getAuthorizationResource().policies();
+        List<PolicyRepresentation> policies = policiesResource.policies();
+        for (PolicyRepresentation policy : policies) {
             if ("Album Resource Permission".equals(policy.getName())) {
                 policy.getConfig().put("applyPolicies", "[\"Any User Policy\"]");
-                getAuthorizationResource().policies().policy(policy.getId()).update(policy);
+                policiesResource.policy(policy.getId()).update(policy);
             }
             if ("Any User Policy".equals(policy.getName())) {
                 ClientResource resourceServerClient = getClientResource(RESOURCE_SERVER_ID);
@@ -310,85 +178,83 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
                 policy.getConfig().put("roles", JsonSerialization.writeValueAsString(roles));
 
-                getAuthorizationResource().policies().policy(policy.getId()).update(policy);
+                policiesResource.policy(policy.getId()).update(policy);
             }
         }
         printUpdatedPolicies();
 
-        clientPage.navigateToAdminAlbum(false);
+        loginToClientPage(adminUser); // Clear cache
 
-        clientPage.viewAlbum("Alice Family Album", true);
-        clientPage.navigateToAdminAlbum(false);
-        clientPage.deleteAlbum("Alice Family Album", true);
+        clientPage.navigateToAdminAlbum(this::assertWasNotDenied);
 
-        for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
+        clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasDenied);
+        clientPage.deleteAlbum(ALICE_ALBUM_NAME, this::assertWasDenied);
+
+        for (PolicyRepresentation policy : policies) {
             if ("Album Resource Permission".equals(policy.getName())) {
                 policy.getConfig().put("applyPolicies", "[\"Any User Policy\", \"Administration Policy\"]");
-                getAuthorizationResource().policies().policy(policy.getId()).update(policy);
+                policiesResource.policy(policy.getId()).update(policy);
             }
         }
         printUpdatedPolicies();
 
-        clientPage.navigateToAdminAlbum(false);
-        clientPage.viewAlbum("Alice Family Album", false);
+        loginToClientPage(adminUser); // Clear cache
 
-        clientPage.navigateToAdminAlbum(false);
-        clientPage.deleteAlbum("Alice Family Album", false);
+        clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
+        clientPage.deleteAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
         assertThat(getResourcesOfUser("alice"), is(empty()));
     }
 
     @Test
     public void testAdminWithoutPermissionsToDeleteAlbum() throws Exception {
-        ContainerAssume.assumeNotAuthServerUndertow();
+        loginToClientPage(aliceUser);
+        clientPage.createAlbum(ALICE_ALBUM_NAME);
 
-        loginToClientPage("alice", "alice");
-        clientPage.createAlbum("Alice Family Album");
+        loginToClientPage(adminUser);
+        clientPage.navigateToAdminAlbum(this::assertWasNotDenied);
+        clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
 
-        loginToClientPage("admin", "admin");
-        clientPage.navigateToAdminAlbum(false);
-
-        clientPage.deleteAlbum("Alice Family Album", false);
+        clientPage.deleteAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
         assertThat(getResourcesOfUser("alice"), is(empty()));
-        
-        for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
+
+        PoliciesResource policiesResource = getAuthorizationResource().policies();
+        List<PolicyRepresentation> policies = policiesResource.policies();
+        for (PolicyRepresentation policy : policies) {
             if ("Delete Album Permission".equals(policy.getName())) {
                 policy.getConfig().put("applyPolicies", "[\"Only Owner Policy\"]");
-                getAuthorizationResource().policies().policy(policy.getId()).update(policy);
+                policiesResource.policy(policy.getId()).update(policy);
             }
         }
         printUpdatedPolicies();
 
-        loginToClientPage("alice", "alice");
-        clientPage.createAlbum("Alice Family Album");
+        loginToClientPage(aliceUser);
+        clientPage.createAlbum(ALICE_ALBUM_NAME);
 
-        loginToClientPage("admin", "admin");
-        clientPage.navigateToAdminAlbum(false);
-        clientPage.viewAlbum("Alice Family Album", false);
+        loginToClientPage(adminUser);
+        clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
         assertThat(getResourcesOfUser("alice"), is(not(empty())));
 
-        clientPage.navigateToAdminAlbum(false);
-        clientPage.deleteAlbum("Alice Family Album", true);
+        clientPage.deleteAlbum(ALICE_ALBUM_NAME, this::assertWasDenied);
 
-        for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
+        for (PolicyRepresentation policy : policies) {
             if ("Delete Album Permission".equals(policy.getName())) {
                 policy.getConfig().put("applyPolicies", "[\"Only Owner and Administrators Policy\"]");
-                getAuthorizationResource().policies().policy(policy.getId()).update(policy);
+                policiesResource.policy(policy.getId()).update(policy);
             }
         }
         printUpdatedPolicies();
 
-        clientPage.navigateToAdminAlbum(false);
-        clientPage.deleteAlbum("Alice Family Album", false);
+        loginToClientPage(adminUser); // Clear cache
+
+        clientPage.deleteAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
         assertThat(getResourcesOfUser("alice"), is(empty()));
     }
 
     @Test
     public void testClientRoleRepresentingUserConsent() throws Exception {
-        ContainerAssume.assumeNotAuthServerUndertow();
-
-        loginToClientPage("alice", "alice");
-        clientPage.createAlbum("Alice Family Album");
-        clientPage.viewAlbum("Alice Family Album", false);
+        loginToClientPage(aliceUser);
+        clientPage.createAlbum(ALICE_ALBUM_NAME);
+        clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
 
         RealmResource realmResource = realmsResouce().realm(REALM_NAME);
         UsersResource usersResource = realmResource.users();
@@ -406,19 +272,19 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
         setManageAlbumScopeRequired();
 
-        loginToClientPage("alice", "alice");
-        clientPage.viewAlbum("Alice Family Album", true);
+        loginToClientPage(aliceUser);
+        clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasDenied);
 
-        loginToClientPage("alice", "alice", "manage-albums");
-        clientPage.viewAlbum("Alice Family Album", false);
+        loginToClientPage(aliceUser, "manage-albums");
+        clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
     }
 
     @Test
     public void testClientRoleNotRequired() throws Exception {
-        loginToClientPage("alice", "alice");
+        loginToClientPage(aliceUser);
 
-        clientPage.createAlbum("Alice Family Album");
-        clientPage.viewAlbum("Alice Family Album", false);
+        clientPage.createAlbum(ALICE_ALBUM_NAME);
+        clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
 
         UsersResource usersResource = realmsResouce().realm(REALM_NAME).users();
         List<UserRepresentation> users = usersResource.search("alice", null, null, null, null, null);
@@ -440,8 +306,8 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
 
         manageAlbumRole.update(roleRepresentation);
 
-        loginToClientPage("alice", "alice");
-        clientPage.viewAlbum("Alice Family Album", true);
+        loginToClientPage(aliceUser);
+        clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasDenied);
 
         for (PolicyRepresentation policy : getAuthorizationResource().policies().policies()) {
             if ("Any User Policy".equals(policy.getName())) {
@@ -460,37 +326,32 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         }
         printUpdatedPolicies();
 
-        loginToClientPage("alice", "alice");
-        clientPage.viewAlbum("Alice Family Album", false);
+        loginToClientPage(aliceUser);
+        clientPage.viewAlbum(ALICE_ALBUM_NAME, this::assertWasNotDenied);
     }
 
     @Test
     public void testOverridePermissionFromResourceParent() throws Exception {
-        ContainerAssume.assumeNotAuthServerUndertow();
-
-        loginToClientPage("alice", "alice");
-        String resourceName = "My Resource Instance";
+        loginToClientPage(aliceUser);
+        String resourceName = "My-Resource-Instance";
         clientPage.createAlbum(resourceName);
 
-        clientPage.viewAlbum(resourceName, false);
-
-        clientPage.navigateTo();
-        clientPage.deleteAlbum(resourceName, false);
+        clientPage.viewAlbum(resourceName, this::assertWasNotDenied);
+        clientPage.deleteAlbum(resourceName, this::assertWasNotDenied);
 
         clientPage.createAlbum(resourceName);
 
-        loginToClientPage("admin", "admin");
+        loginToClientPage(adminUser);
 
-        clientPage.navigateToAdminAlbum(false);
-        clientPage.viewAlbum(resourceName, false);
+        clientPage.navigateToAdminAlbum(this::assertWasNotDenied);
+        clientPage.viewAlbum(resourceName, this::assertWasNotDenied);
+        clientPage.deleteAlbum(resourceName, this::assertWasNotDenied);
 
-        clientPage.navigateToAdminAlbum(false);
-        clientPage.deleteAlbum(resourceName, false);
-
-        loginToClientPage("alice", "alice");
+        loginToClientPage(aliceUser);
         clientPage.createAlbum(resourceName);
 
-        getAuthorizationResource().resources().resources().forEach(resource -> {
+        AuthorizationResource authorizationResource = getAuthorizationResource();
+        authorizationResource.resources().resources().forEach(resource -> {
             if (resource.getName().equals(resourceName)) {
                 try {
                     PolicyRepresentation resourceInstancePermission = new PolicyRepresentation();
@@ -504,7 +365,7 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
                     config.put("applyPolicies", JsonSerialization.writeValueAsString(Arrays.asList("Only Owner Policy")));
 
                     resourceInstancePermission.setConfig(config);
-                    getAuthorizationResource().policies().create(resourceInstancePermission);
+                    authorizationResource.policies().create(resourceInstancePermission);
                 } catch (IOException e) {
                     throw new RuntimeException("Error creating policy.", e);
                 }
@@ -512,54 +373,43 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
         });
         printUpdatedPolicies();
 
-        loginToClientPage("admin", "admin");
+        loginToClientPage(adminUser);
 
-        clientPage.navigateToAdminAlbum(false);
-        clientPage.viewAlbum(resourceName, true);
+        clientPage.navigateToAdminAlbum(this::assertWasNotDenied);
+        clientPage.viewAlbum(resourceName, this::assertWasDenied);
+        clientPage.deleteAlbum(resourceName, this::assertWasDenied);
 
-        clientPage.navigateToAdminAlbum(false);
-        clientPage.deleteAlbum(resourceName, true);
-
-        loginToClientPage("alice", "alice");
-        clientPage.deleteAlbum(resourceName, false);
-
+        loginToClientPage(aliceUser);
+        clientPage.deleteAlbum(resourceName, this::assertWasNotDenied);
         assertThat(getResourcesOfUser("alice"), is(empty()));
     }
 
     @Test
     public void testInheritPermissionFromResourceParent() throws Exception {
-        ContainerAssume.assumeNotAuthServerUndertow();
+        loginToClientPage(aliceUser);
 
-        loginToClientPage("alice", "alice");
+        final String RESOURCE_NAME = "My-Resource-Instance";
+        clientPage.createAlbum(RESOURCE_NAME);
+        clientPage.viewAlbum(RESOURCE_NAME, this::assertWasNotDenied);
+        clientPage.deleteAlbum(RESOURCE_NAME, this::assertWasNotDenied);
 
-        String resourceName = "My Resource Instance";
-        clientPage.createAlbum(resourceName);
+        clientPage.createAlbum(RESOURCE_NAME);
 
-        clientPage.viewAlbum(resourceName, false);
+        loginToClientPage(adminUser);
+        clientPage.navigateToAdminAlbum(this::assertWasNotDenied);
+        clientPage.viewAlbum(RESOURCE_NAME, this::assertWasNotDenied);
+        clientPage.deleteAlbum(RESOURCE_NAME, this::assertWasNotDenied);
 
-        clientPage.navigateTo();
-        clientPage.deleteAlbum(resourceName, false);
-
-        clientPage.createAlbum(resourceName);
-
-        loginToClientPage("admin", "admin");
-
-        clientPage.navigateToAdminAlbum(false);
-        clientPage.viewAlbum(resourceName, false);
-
-        clientPage.navigateToAdminAlbum(false);
-        clientPage.deleteAlbum(resourceName, false);
-
-        loginToClientPage("alice", "alice");
-        clientPage.createAlbum(resourceName);
+        loginToClientPage(aliceUser);
+        clientPage.createAlbum(RESOURCE_NAME);
 
         ResourcesResource resourcesResource = getAuthorizationResource().resources();
         resourcesResource.resources().forEach(resource -> {
-            if (resource.getName().equals(resourceName)) {
+            if (resource.getName().equals(RESOURCE_NAME)) {
                 try {
                     PolicyRepresentation resourceInstancePermission = new PolicyRepresentation();
 
-                    resourceInstancePermission.setName(resourceName + "Permission");
+                    resourceInstancePermission.setName(RESOURCE_NAME + "Permission");
                     resourceInstancePermission.setType("resource");
 
                     Map<String, String> config = new HashMap<>();
@@ -575,234 +425,53 @@ public abstract class AbstractPhotozExampleAdapterTest extends AbstractExampleAd
             }
         });
 
-        loginToClientPage("admin", "admin");
+        loginToClientPage(adminUser);
 
-        clientPage.navigateToAdminAlbum(false);
-        clientPage.viewAlbum(resourceName, true);
-
-        clientPage.navigateToAdminAlbum(false);
-        clientPage.deleteAlbum(resourceName, true);
+        clientPage.viewAlbum(RESOURCE_NAME, this::assertWasDenied);
+        clientPage.deleteAlbum(RESOURCE_NAME, this::assertWasDenied);
 
         resourcesResource.resources().forEach(resource -> {
-            if (resource.getName().equals(resourceName)) {
+            if (resource.getName().equals(RESOURCE_NAME)) {
                 resource.setScopes(resource.getScopes().stream().filter(scope -> !scope.getName().equals("album:view")).collect(Collectors.toSet()));
                 resourcesResource.resource(resource.getId()).update(resource);
             }
         });
 
-        loginToClientPage("admin", "admin");
+        loginToClientPage(adminUser);
 
-        clientPage.navigateToAdminAlbum(false);
-        clientPage.viewAlbum(resourceName, false);
+        clientPage.viewAlbum(RESOURCE_NAME, this::assertWasNotDenied);
+        clientPage.deleteAlbum(RESOURCE_NAME, this::assertWasDenied);
 
-        clientPage.navigateToAdminAlbum(false);
-        clientPage.deleteAlbum(resourceName, true);
-
-        loginToClientPage("alice", "alice");
-        clientPage.deleteAlbum(resourceName, false);
+        loginToClientPage(aliceUser);
+        clientPage.deleteAlbum(RESOURCE_NAME, this::assertWasNotDenied);
         List<ResourceRepresentation> resources = resourcesResource.resources();
         assertTrue(resources.stream().filter(resource -> resource.getOwner().getName().equals("alice")).collect(Collectors.toList()).isEmpty());
-
-        resourcesResource.resources().forEach(resource -> {
-            if (resource.getName().equals(resourceName)) {
-                resource.setScopes(Collections.emptySet());
-                resourcesResource.resource(resource.getId()).update(resource);
-            }
-        });
     }
 
     //KEYCLOAK-3777
 
     @Test
     public void testEntitlementRequest() throws Exception {
-        ContainerAssume.assumeNotAuthServerUndertow();
+        loginToClientPage(adminUser);
 
-        clientPage.navigateTo();
-        loginToClientPage("admin", "admin");
+        clientPage.requestEntitlements((driver1, output, events) -> assertThat((String) output, containsString("admin:manage")));
 
-        clientPage.requestEntitlements();
-        assertTrue(jsDriver.getPageSource().contains("admin:manage"));
-
-        clientPage.requestEntitlement();
-        String pageSource = jsDriver.getPageSource();
-        assertTrue(pageSource.contains("album:view"));
-        assertTrue(pageSource.contains("album:delete"));
+        loginToClientPage(adminUser);
+        clientPage.requestEntitlement((driver1, output, events) -> {
+                assertThat((String) output, not(containsString("admin:manage")));
+                assertThat((String) output, containsString("album:view"));
+                assertThat((String) output, containsString("album:delete"));
+            }
+        );
     }
+
     @Test
     public void testResourceProtectedWithAnyScope() throws Exception {
-        loginToClientPage("alice", "alice");
-        clientPage.requestResourceProtectedAllScope(true);
-        clientPage.requestResourceProtectedAnyScope(false);
-    }
+        loginToClientPage(aliceUser);
 
-    @Test
-    public void testRequestResourceToOwner() throws Exception {
-        loginToClientPage("alice", "alice");
-        clientPage.createAlbum("Alice-Family-Album", true);
-
-        loginToClientPage("jdoe", "jdoe");
-        clientPage.viewAllAlbums();
-        clientPage.viewAlbum("Alice-Family-Album", true);
-        clientPage.navigateTo();
-        clientPage.viewAllAlbums();
-        clientPage.deleteAlbum("Alice-Family-Album", true);
-
-        loginToClientPage("alice", "alice");
-        clientPage.accountGrantResource("Alice-Family-Album", "jdoe");
-
-        loginToClientPage("jdoe", "jdoe");
-        clientPage.viewAllAlbums();
-        clientPage.viewAlbum("Alice-Family-Album", false);
-        clientPage.navigateTo();
-        clientPage.viewAllAlbums();
-        clientPage.deleteAlbum("Alice-Family-Album", false);
-
-        loginToClientPage("alice", "alice");
-        clientPage.createAlbum("Alice-Family-Album", true);
-
-        loginToClientPage("jdoe", "jdoe");
-        clientPage.viewAllAlbums();
-        clientPage.viewAlbum("Alice-Family-Album", true);
-        clientPage.navigateTo();
-        clientPage.viewAllAlbums();
-        clientPage.deleteAlbum("Alice-Family-Album", true);
-
-        loginToClientPage("alice", "alice");
-        clientPage.accountGrantRemoveScope("Alice-Family-Album", "jdoe", "album:delete");
-        clientPage.accountGrantResource("Alice-Family-Album", "jdoe");
-
-        loginToClientPage("jdoe", "jdoe");
-        clientPage.viewAllAlbums();
-        clientPage.viewAlbum("Alice-Family-Album", false);
-        clientPage.navigateTo();
-        clientPage.viewAllAlbums();
-        clientPage.deleteAlbum("Alice-Family-Album", true);
-    }
-
-    @Test
-    public void testOwnerSharingResource() throws Exception {
-        loginToClientPage("alice", "alice");
-        clientPage.createAlbum("Alice-Family-Album", true);
-        clientPage.accountShareResource("Alice-Family-Album", "jdoe");
-
-        loginToClientPage("jdoe", "jdoe");
-        clientPage.viewAllAlbums();
-        clientPage.viewAlbum("Alice-Family-Album", false);
-        clientPage.navigateTo();
-        clientPage.viewAllAlbums();
-        clientPage.deleteAlbum("Alice-Family-Album", false);
-
-        loginToClientPage("alice", "alice");
-        clientPage.createAlbum("Alice-Family-Album", true);
-        clientPage.accountShareRemoveScope("Alice-Family-Album", "jdoe", "album:delete");
-
-        loginToClientPage("jdoe", "jdoe");
-        clientPage.viewAllAlbums();
-        clientPage.viewAlbum("Alice-Family-Album", false);
-        clientPage.navigateTo();
-        clientPage.viewAllAlbums();
-        clientPage.deleteAlbum("Alice-Family-Album", true);
-
-        loginToClientPage("alice", "alice");
-        clientPage.accountRevokeResource("Alice-Family-Album", "jdoe");
-
-        loginToClientPage("jdoe", "jdoe");
-        clientPage.viewAllAlbums();
-        clientPage.viewAlbum("Alice-Family-Album", true);
-    }
-
-    private void importResourceServerSettings() throws FileNotFoundException {
-        ResourceServerRepresentation authSettings = loadJson(new FileInputStream(new File(TEST_APPS_HOME_DIR + "/photoz/photoz-restful-api-authz-service.json")), ResourceServerRepresentation.class);
-
-        authSettings.getPolicies().stream()
-                .filter(x -> "Only Owner Policy".equals(x.getName()))
-                .forEach(x -> x.getConfig().put("mavenArtifactVersion", System.getProperty("project.version")));
-
-        getAuthorizationResource().importSettings(authSettings);
-    }
-
-    private AuthorizationResource getAuthorizationResource() throws FileNotFoundException {
-        return getClientResource(RESOURCE_SERVER_ID).authorization();
-    }
-
-    private ClientResource getClientResource(String clientId) {
-        ClientsResource clients = this.realmsResouce().realm(REALM_NAME).clients();
-        ClientRepresentation resourceServer = clients.findByClientId(clientId).get(0);
-        return clients.get(resourceServer.getId());
-    }
-
-    private void deleteAllCookiesForClientPage() {
-        jsDriver.manage().deleteAllCookies();
-    }
-
-    private void loginToClientPage(String username, String password, String... scopes) throws InterruptedException {
-        log.debugf("--logging in as {0} with password: {1}; scopes: {2}", username, password, Arrays.toString(scopes));
-
-        clientPage.navigateTo();
-        if (jsDriver.getCurrentUrl().startsWith(clientPage.toString())) {
-            try {
-                clientPage.logOut();
-            } catch (NoSuchElementException ex) {
-                if ("phantomjs".equals(System.getProperty("js.browser"))) {
-                    // PhantomJS is broken, it can't logout using sign out button sometimes, we have to clean sessions and remove cookies
-                    adminClient.realm(REALM_NAME).logoutAll();
-
-                    jsDriverTestRealmLoginPage.navigateTo();
-                    driver.manage().deleteAllCookies();
-
-                    clientPage.navigateTo();
-                    driver.manage().deleteAllCookies();
-
-                    clientPage.navigateTo();
-                    // Check for correct logout
-                    assertCurrentUrlStartsWithLoginUrlOf(jsDriverTestRealmLoginPage);
-                } else {
-                    throw ex;
-                }
-            }
-        }
-
-        clientPage.navigateTo();
-        waitForPageToLoad();
-        clientPage.login(username, password, scopes);
-        waitUntilElement(By.linkText("Sign Out")).is().clickable();
-    }
-
-    private void setManageAlbumScopeRequired() {
-        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
-
-        clientScope.setName("manage-albums");
-        clientScope.setProtocol("openid-connect");
-
-        ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
-
-        mapper.setName("manage-albums");
-        mapper.setProtocol("openid-connect");
-        mapper.setProtocolMapper(UserClientRoleMappingMapper.PROVIDER_ID);
-
-        Map<String, String> config = new HashMap<>();
-        config.put("access.token.claim", "true");
-        config.put("id.token.claim", "true");
-        config.put("userinfo.token.claim", "true");
-        config.put(ProtocolMapperUtils.USER_MODEL_CLIENT_ROLE_MAPPING_CLIENT_ID, "photoz-restful-api");
-
-        mapper.setConfig(config);
-
-        clientScope.setProtocolMappers(Arrays.asList(mapper));
-
-        RealmResource realmResource = realmsResouce().realm(REALM_NAME);
-        ClientScopesResource clientScopes = realmResource.clientScopes();
-        Response resp = clientScopes.create(clientScope);
-        Assert.assertEquals(201, resp.getStatus());
-        resp.close();
-        String clientScopeId = ApiUtil.getCreatedId(resp);
-        ClientResource resourceServer = getClientResource(RESOURCE_SERVER_ID);
-        clientScopes.get(clientScopeId).getScopeMappings().clientLevel(resourceServer.toRepresentation().getId()).add(Arrays.asList(resourceServer.roles().get("manage-albums").toRepresentation()));
-        ClientResource html5ClientApp = getClientResource("photoz-html5-client");
-        html5ClientApp.addOptionalClientScope(clientScopeId);
-        html5ClientApp.getScopeMappings().realmLevel().add(Arrays.asList(realmResource.roles().get("user").toRepresentation(), realmResource.roles().get("admin").toRepresentation()));
-        ClientRepresentation clientRep = html5ClientApp.toRepresentation();
-        clientRep.setFullScopeAllowed(false);
-        html5ClientApp.update(clientRep);
+        clientPage.requestResourceProtectedAllScope(this::assertWasDenied);
+        clientPage.requestResourceProtectedAnyScope(response -> {
+            assertThat(response.get("status"), anyOf(is(equalTo(404L)), is(equalTo(0L)))); // PhantomJS returns 0 and chrome 404
+        });
     }
 }

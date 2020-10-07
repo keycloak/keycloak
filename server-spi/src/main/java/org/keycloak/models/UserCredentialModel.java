@@ -19,6 +19,8 @@ package org.keycloak.models;
 
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.PasswordUserCredentialModel;
 
 import java.util.HashMap;
@@ -30,21 +32,32 @@ import java.util.UUID;
  * @version $Revision: 1 $
  */
 public class UserCredentialModel implements CredentialInput {
-    public static final String PASSWORD = CredentialModel.PASSWORD;
-    public static final String PASSWORD_HISTORY = CredentialModel.PASSWORD_HISTORY;
+
+    @Deprecated /** Use PasswordCredentialModel.TYPE instead **/
+    public static final String PASSWORD = PasswordCredentialModel.TYPE;
+
+    @Deprecated /** Use PasswordCredentialModel.PASSWORD_HISTORY instead **/
+    public static final String PASSWORD_HISTORY = PasswordCredentialModel.PASSWORD_HISTORY;
+
+    @Deprecated /**  Use OTPCredentialModel.TOTP instead **/
+    public static final String TOTP = OTPCredentialModel.TOTP;
+
+    @Deprecated /**  Use OTPCredentialModel.TOTP instead **/
+    public static final String HOTP = OTPCredentialModel.HOTP;
+
+    @Deprecated /** Legacy stuff. Not used in Keycloak anymore **/
     public static final String PASSWORD_TOKEN = CredentialModel.PASSWORD_TOKEN;
 
-    // Secret is same as password but it is not hashed
     public static final String SECRET = CredentialModel.SECRET;
-    public static final String TOTP = CredentialModel.TOTP;
-    public static final String HOTP = CredentialModel.HOTP;
-    public static final String CLIENT_CERT = CredentialModel.CLIENT_CERT;
     public static final String KERBEROS = CredentialModel.KERBEROS;
+    public static final String CLIENT_CERT = CredentialModel.CLIENT_CERT;
 
-    protected String type;
-    protected String value;
-    protected String device;
-    protected String algorithm;
+    private String credentialId;
+    private String type;
+    private String challengeResponse;
+    private String device;
+    private String algorithm;
+    private boolean adminRequest;
 
     // Additional context informations
     protected Map<String, Object> notes = new HashMap<>();
@@ -52,71 +65,73 @@ public class UserCredentialModel implements CredentialInput {
     public UserCredentialModel() {
     }
 
+    public UserCredentialModel(String credentialId, String type, String challengeResponse) {
+        this.credentialId = credentialId;
+        this.type = type;
+        this.challengeResponse = challengeResponse;
+        this.adminRequest = false;
+    }
+
+    public UserCredentialModel(String credentialId, String type, String challengeResponse, boolean adminRequest) {
+        this.credentialId = credentialId;
+        this.type = type;
+        this.challengeResponse = challengeResponse;
+        this.adminRequest = adminRequest;
+    }
+
     public static PasswordUserCredentialModel password(String password) {
         return password(password, false);
     }
 
     public static PasswordUserCredentialModel password(String password, boolean adminRequest) {
-        PasswordUserCredentialModel model = new PasswordUserCredentialModel();
-        model.setType(PASSWORD);
-        model.setValue(password);
-        model.setAdminRequest(adminRequest);
-        return model;
+        // It uses PasswordUserCredentialModel for backwards compatibility. Some UserStorage providers can check for that type
+        return new PasswordUserCredentialModel("", PasswordCredentialModel.TYPE, password, adminRequest);
     }
 
+    @Deprecated /** passwordToken is legacy stuff. Not used in Keycloak anymore **/
     public static UserCredentialModel passwordToken(String passwordToken) {
-        UserCredentialModel model = new UserCredentialModel();
-        model.setType(PASSWORD_TOKEN);
-        model.setValue(passwordToken);
-        return model;
+        return new UserCredentialModel("", PASSWORD_TOKEN, passwordToken);
     }
 
-    public static UserCredentialModel secret(String password) {
-        UserCredentialModel model = new UserCredentialModel();
-        model.setType(SECRET);
-        model.setValue(password);
-        return model;
-    }
-
+    /**
+     * @param type must be "totp" or "hotp"
+     * @param key
+     * @return
+     */
     public static UserCredentialModel otp(String type, String key) {
         if (type.equals(HOTP)) return hotp(key);
         if (type.equals(TOTP)) return totp(key);
         throw new RuntimeException("Unknown OTP type");
     }
 
+
     public static UserCredentialModel totp(String key) {
-        UserCredentialModel model = new UserCredentialModel();
-        model.setType(TOTP);
-        model.setValue(key);
-        return model;
+        return new UserCredentialModel("", TOTP, key);
     }
 
+    
     public static UserCredentialModel hotp(String key) {
-        UserCredentialModel model = new UserCredentialModel();
-        model.setType(HOTP);
-        model.setValue(key);
-        return model;
+        return new UserCredentialModel("", HOTP, key);
+    }
+
+    public static UserCredentialModel secret(String password) {
+        return new UserCredentialModel("", SECRET, password);
     }
 
     public static UserCredentialModel kerberos(String token) {
-        UserCredentialModel model = new UserCredentialModel();
-        model.setType(KERBEROS);
-        model.setValue(token);
-        return model;
+        return new UserCredentialModel("", KERBEROS, token);
     }
 
     public static UserCredentialModel generateSecret() {
-        UserCredentialModel model = new UserCredentialModel();
-        model.setType(SECRET);
-        model.setValue(UUID.randomUUID().toString());
-        return model;
+        return new UserCredentialModel("", SECRET, UUID.randomUUID().toString());
     }
 
-    public static boolean isOtp(String type) {
-        return TOTP.equals(type) || HOTP.equals(type);
+    @Override
+    public String getCredentialId() {
+        return credentialId;
     }
 
-
+    @Override
     public String getType() {
         return type;
     }
@@ -125,12 +140,32 @@ public class UserCredentialModel implements CredentialInput {
         this.type = type;
     }
 
+    @Override
+    public String getChallengeResponse() {
+        return challengeResponse;
+    }
+
+    public boolean isAdminRequest() {
+        return adminRequest;
+    }
+
+    /**
+     * This method exists only because of the backwards compatibility
+     */
+    @Deprecated
+    public static boolean isOtp(String type) {
+        return TOTP.equals(type) || HOTP.equals(type);
+    }
+
+    /**
+     * This method exists only because of the backwards compatibility. It is recommended to use {@link #getChallengeResponse()} instead
+     */
     public String getValue() {
-        return value;
+        return getChallengeResponse();
     }
 
     public void setValue(String value) {
-        this.value = value;
+        this.challengeResponse = value;
     }
 
     public String getDevice() {
@@ -160,4 +195,7 @@ public class UserCredentialModel implements CredentialInput {
     public Object getNote(String key) {
         return this.notes.get(key);
     }
+
 }
+
+

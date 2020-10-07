@@ -1,9 +1,11 @@
 package org.keycloak.testsuite.cli;
 
 import org.junit.Assert;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.cli.exec.AbstractExec;
 
+import java.io.File;
 import java.util.List;
 
 /**
@@ -11,6 +13,23 @@ import java.util.List;
  */
 public abstract class AbstractCliTest extends AbstractKeycloakTest {
 
+    protected String serverUrl = "http://localhost:" + getAuthServerHttpPort() + "/auth";
+
+    static int getAuthServerHttpPort() {
+        try {
+            return Integer.valueOf(System.getProperty("auth.server.http.port"));
+        } catch (Exception e) {
+            throw new RuntimeException("System property 'auth.server.http.port' not set or invalid: '"
+                  + System.getProperty("auth.server.http.port") + "'");
+        }
+    }
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        for (RealmRepresentation tr : testRealms) {
+            tr.setSslRequired("external");
+        }
+    }
 
     public void assertExitCodeAndStdOutSize(AbstractExec exe, int exitCode, int stdOutLineCount) {
         assertExitCodeAndStreamSizes(exe, exitCode, stdOutLineCount, -1);

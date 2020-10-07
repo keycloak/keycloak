@@ -16,7 +16,8 @@
  */
 package org.keycloak.client.admin.cli.httpcomponents;
 
-import org.apache.http.annotation.NotThreadSafe;
+import org.apache.http.annotation.Contract;
+import org.apache.http.annotation.ThreadingBehavior;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 
 import java.net.URI;
@@ -24,7 +25,7 @@ import java.net.URI;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@NotThreadSafe
+@Contract(threading = ThreadingBehavior.UNSAFE)
 public class HttpDelete extends HttpEntityEnclosingRequestBase {
 
     public HttpDelete(final String uri) {

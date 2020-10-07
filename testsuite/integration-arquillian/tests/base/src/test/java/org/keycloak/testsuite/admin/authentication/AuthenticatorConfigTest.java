@@ -24,6 +24,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.AuthenticatorConfigInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -34,6 +35,7 @@ import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.ws.rs.BadRequestException;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -58,6 +60,12 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         executionId = exec.getId();
     }
 
+    @Test
+    public void testCreateConfigWithReservedChar() {
+        AuthenticatorConfigRepresentation cfg = newConfig("f!oo", IdpCreateUserIfUniqueAuthenticatorFactory.REQUIRE_PASSWORD_UPDATE_AFTER_REGISTRATION, "true");
+        Response resp = authMgmtResource.newExecutionConfig(executionId, cfg);
+        Assert.assertEquals(400, resp.getStatus());
+    }
 
     @Test
     public void testCreateConfig() {
@@ -80,7 +88,16 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         assertAdminEvents.assertEvent(REALM_NAME, OperationType.DELETE, AdminEventPaths.authExecutionConfigPath(cfgId), ResourceType.AUTHENTICATOR_CONFIG);
     }
 
-
+    @Test (expected = BadRequestException.class)
+    public void testUpdateConfigWithBadChar() {
+        AuthenticatorConfigRepresentation cfg = newConfig("foo", IdpCreateUserIfUniqueAuthenticatorFactory.REQUIRE_PASSWORD_UPDATE_AFTER_REGISTRATION, "true");
+        String cfgId = createConfig(executionId, cfg);
+        AuthenticatorConfigRepresentation cfgRep = authMgmtResource.getAuthenticatorConfig(cfgId);
+        
+        cfgRep.setAlias("Bad@Char");
+        authMgmtResource.updateAuthenticatorConfig(cfgRep.getId(), cfgRep);
+    }
+    
     @Test
     public void testUpdateConfig() {
         AuthenticatorConfigRepresentation cfg = newConfig("foo", IdpCreateUserIfUniqueAuthenticatorFactory.REQUIRE_PASSWORD_UPDATE_AFTER_REGISTRATION, "true");
@@ -151,6 +168,15 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         Assert.assertNull(execution.getAuthenticationConfig());
     }
 
+    @Test
+    public void testNullsafetyIterationOverProperties() {
+        String providerId = "auth-cookie";
+        String providerName = "Cookie";
+        AuthenticatorConfigInfoRepresentation description = authMgmtResource.getAuthenticatorConfigDescription(providerId);
+
+        Assert.assertEquals(providerName, description.getName());
+        Assert.assertTrue(description.getProperties().isEmpty());
+    }
 
     private String createConfig(String executionId, AuthenticatorConfigRepresentation cfg) {
         Response resp = authMgmtResource.newExecutionConfig(executionId, cfg);

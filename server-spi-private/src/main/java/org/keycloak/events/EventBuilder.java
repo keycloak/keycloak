@@ -136,7 +136,7 @@ public class EventBuilder {
         }
 
         if (event.getDetails() == null) {
-            event.setDetails(new HashMap<String, String>());
+            event.setDetails(new HashMap<>());
         }
         event.getDetails().put(key, value);
         return this;

@@ -177,7 +177,7 @@ public class PaxWebIntegrationService {
         }
         log.debug("Adding security constraint name=" + name + ", url=" + constraintMapping.getUrl() + ", dataConstraint=" + constraintMapping.getDataConstraint() + ", canAuthenticate="
                 + constraintMapping.isAuthentication() + ", roles=" + constraintMapping.getRoles());
-        service.registerConstraintMapping(name, constraintMapping.getUrl(), constraintMapping.getMapping(), constraintMapping.getDataConstraint(), constraintMapping.isAuthentication(), constraintMapping.getRoles(), httpContext);
+        service.registerConstraintMapping(name, constraintMapping.getMapping(), constraintMapping.getUrl(), constraintMapping.getDataConstraint(), constraintMapping.isAuthentication(), constraintMapping.getRoles(), httpContext);
     }
 
     protected void addConstraintMapping(WebContainer service, ConstraintMapping constraintMapping) {
@@ -202,7 +202,7 @@ public class PaxWebIntegrationService {
 
         log.debug("Adding security constraint name=" + name + ", url=" + constraintMapping.getPathSpec() + ", dataConstraint=" + dataConstraintStr + ", canAuthenticate="
         + constraint.getAuthenticate() + ", roles=" + rolesList);
-        service.registerConstraintMapping(name, constraintMapping.getPathSpec(), null, dataConstraintStr, constraint.getAuthenticate(), rolesList, httpContext);
+        service.registerConstraintMapping(name, null, constraintMapping.getPathSpec(), dataConstraintStr, constraint.getAuthenticate(), rolesList, httpContext);
     }
 
     protected void removingWebContainerCallback(ServiceReference serviceReference) {
@@ -228,7 +228,7 @@ public class PaxWebIntegrationService {
                 }
                 log.debug("Adding security constraint name=" + name + ", url=" + constraintMapping.getUrl() + ", dataConstraint=" + constraintMapping.getDataConstraint() + ", canAuthenticate="
                         + constraintMapping.isAuthentication() + ", roles=" + constraintMapping.getRoles());
-                service.registerConstraintMapping(name, constraintMapping.getUrl(), constraintMapping.getMapping(), constraintMapping.getDataConstraint(), constraintMapping.isAuthentication(), constraintMapping.getRoles(), httpContext);
+                service.registerConstraintMapping(name, constraintMapping.getMapping(), constraintMapping.getUrl(), constraintMapping.getDataConstraint(), constraintMapping.isAuthentication(), constraintMapping.getRoles(), httpContext);
                 return true;
             }
             return false;
@@ -270,7 +270,7 @@ public class PaxWebIntegrationService {
 
                 log.debug("Adding security constraint name=" + name + ", url=" + constraintMapping.getPathSpec() + ", dataConstraint=" + dataConstraintStr + ", canAuthenticate="
                         + constraint.getAuthenticate() + ", roles=" + rolesList);
-                service.registerConstraintMapping(name, constraintMapping.getPathSpec(), null, dataConstraintStr, constraint.getAuthenticate(), rolesList, httpContext);
+                service.registerConstraintMapping(name, null, constraintMapping.getPathSpec(), dataConstraintStr, constraint.getAuthenticate(), rolesList, httpContext);
                 return true;
             }
             return false;

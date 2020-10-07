@@ -20,6 +20,8 @@ package org.keycloak.testsuite.pages;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -33,11 +35,11 @@ public class LoginExpiredPage extends AbstractPage {
 
 
     public void clickLoginRestartLink() {
-        loginRestartLink.click();
+        clickLink(loginRestartLink);
     }
 
     public void clickLoginContinueLink() {
-        loginContinueLink.click();
+        clickLink(loginContinueLink);
     }
 
 

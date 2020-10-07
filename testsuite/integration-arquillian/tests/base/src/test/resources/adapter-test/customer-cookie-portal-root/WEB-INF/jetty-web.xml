@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<!--
+  ~ Copyright 2018 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!DOCTYPE Configure PUBLIC "-//Mort Bay Consulting//DTD Configure//EN" "http://www.eclipse.org/jetty/configure_9_0.dtd">
+<Configure class="org.eclipse.jetty.webapp.WebAppContext">
+    <Get name="securityHandler">
+        <Set name="authenticator">
+            <New class="org.keycloak.adapters.jetty.KeycloakJettyAuthenticator">
+                <!--
+                <Set name="adapterConfig">
+                    <New class="org.keycloak.representations.adapters.config.AdapterConfig">
+                        <Set name="realm">tomcat</Set>
+                        <Set name="resource">customer-portal</Set>
+                        <Set name="authServerUrl">http://localhost:8180/auth</Set>
+                        <Set name="sslRequired">external</Set>
+                        <Set name="credentials">
+                            <Map>
+                                <Entry>
+                                    <Item>secret</Item>
+                                    <Item>password</Item>
+                                </Entry>
+                            </Map>
+                        </Set>
+                        <Set name="realmKey">MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB</Set>
+                    </New>
+                </Set>
+                -->
+            </New>
+        </Set>
+    </Get>
+</Configure>

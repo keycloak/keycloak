@@ -124,7 +124,7 @@ public class ScopeAdapter implements Scope, CachedModel<Scope> {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof Scope)) return false;
+        if (!(o instanceof Scope)) return false;
 
         Scope that = (Scope) o;
         return that.getId().equals(getId());

@@ -33,6 +33,7 @@ import org.keycloak.services.ServicesLogger;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 /**
@@ -131,13 +132,7 @@ public class UserSessionManager {
         }
 
         // Check if offline_access is allowed here. Even through composite roles
-        for (RoleModel role : clientSessionCtx.getRoles()) {
-            if (role.hasRole(offlineAccessRole)) {
-                return true;
-            }
-        }
-
-        return false;
+        return clientSessionCtx.getRolesStream().collect(Collectors.toSet()).contains(offlineAccessRole);
     }
 
     private UserSessionModel createOfflineUserSession(UserModel user, UserSessionModel userSession) {

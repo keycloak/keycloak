@@ -19,11 +19,7 @@ package org.keycloak.services.clientregistration;
 
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.models.ClientInitialAccessModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.RealmModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -34,6 +30,7 @@ import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.validation.ValidationMessages;
+import org.keycloak.validation.ClientValidationUtil;
 
 import javax.ws.rs.core.Response;
 
@@ -69,7 +66,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
         try {
             RealmModel realm = session.getContext().getRealm();
-            ClientModel clientModel = new ClientManager(new RealmManager(session)).createClient(session, realm, client, true);
+            ClientModel clientModel = ClientManager.createClient(session, realm, client, true);
 
             if (clientModel.isServiceAccountsEnabled()) {
                 new ClientManager(new RealmManager(session)).enableServiceAccount(clientModel);
@@ -84,6 +81,11 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
             client = ModelToRepresentation.toRepresentation(clientModel, session);
 
             client.setSecret(clientModel.getSecret());
+
+            ClientValidationUtil.validate(session, clientModel, true, c -> {
+                session.getTransactionManager().setRollbackOnly();
+                throw  new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, c.getError(), Response.Status.BAD_REQUEST);
+            });
 
             String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, clientModel, registrationAuth);
             client.setRegistrationAccessToken(registrationAccessToken);
@@ -142,6 +144,13 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         }
 
         RepresentationToModel.updateClient(rep, client);
+        RepresentationToModel.updateClientProtocolMappers(rep, client);
+
+        ClientValidationUtil.validate(session, client, false, c -> {
+            session.getTransactionManager().setRollbackOnly();
+            throw  new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, c.getError(), Response.Status.BAD_REQUEST);
+        });
+
         rep = ModelToRepresentation.toRepresentation(client, session);
 
         if (auth.isRegistrationAccessToken()) {

@@ -13,6 +13,7 @@ import java.io.IOException;
 
 import static org.keycloak.client.admin.cli.util.ConfigUtil.DEFAULT_CONFIG_FILE_PATH;
 import static org.keycloak.client.admin.cli.util.OsUtil.EOL;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.cli.KcAdmExec.CMD;
 import static org.keycloak.testsuite.cli.KcAdmExec.execute;
 
@@ -33,7 +34,7 @@ public class KcAdmTruststoreTest extends AbstractAdmCliTest {
         Assert.assertEquals("try help", "Try '" + OsUtil.CMD + " help config truststore' for more information", exe.stderrLines().get(1));
 
         // only run this test if ssl protected keycloak server is available
-        if (!isAuthServerSSL()) {
+        if (!AUTH_SERVER_SSL_REQUIRED) {
             System.out.println("TEST SKIPPED - This test requires HTTPS. Run with '-Pauth-server-wildfly -Dauth.server.ssl.required=true'");
             return;
         }
@@ -51,7 +52,7 @@ public class KcAdmTruststoreTest extends AbstractAdmCliTest {
 
                 // perform authentication against server - asks for password, then for truststore password
                 exe = KcAdmExec.newBuilder()
-                        .argsLine("config credentials --server " + serverUrl + " --realm test --user user1" +
+                        .argsLine("config credentials --server " + oauth.AUTH_SERVER_ROOT + " --realm test --user user1" +
                                 " --config '" + configFile.getName() + "'")
                         .executeAsync();
 
@@ -71,7 +72,7 @@ public class KcAdmTruststoreTest extends AbstractAdmCliTest {
 
                 // perform authentication against server - asks for password, then for truststore password
                 exe = KcAdmExec.newBuilder()
-                        .argsLine("config credentials --server " + serverUrl + " --realm test --user user1" +
+                        .argsLine("config credentials --server " + oauth.AUTH_SERVER_ROOT + " --realm test --user user1" +
                                 " --config '" + configFile.getName() + "'")
                         .executeAsync();
 

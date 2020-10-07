@@ -17,26 +17,15 @@
 
 package org.keycloak.protocol.saml.profile.ecp.authenticator;
 
-import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.Config;
-import org.keycloak.authentication.AuthenticationFlowContext;
-import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
-import org.keycloak.common.util.Base64;
-import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -64,7 +53,7 @@ public class HttpBasicAuthenticatorFactory implements AuthenticatorFactory {
     private static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.REQUIRED,
             Requirement.ALTERNATIVE,
-            Requirement.OPTIONAL,
+            Requirement.CONDITIONAL,
             AuthenticationExecutionModel.Requirement.DISABLED
     };
 

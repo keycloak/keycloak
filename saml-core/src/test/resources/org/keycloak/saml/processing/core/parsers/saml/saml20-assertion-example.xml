@@ -70,7 +70,7 @@
         </saml:AudienceRestriction>
     </saml:Conditions>
 
-    <saml:AuthnStatement AuthnInstant="2009-06-17T18:45:10.738Z" NotOnOrAfter="2009-06-17T18:55:10.738Z">
+    <saml:AuthnStatement AuthnInstant="2009-06-17T18:45:10.738Z" SessionNotOnOrAfter="2009-06-17T18:55:10.738Z">
         <saml:AuthnContext>
             <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified
             </saml:AuthnContextClassRef>

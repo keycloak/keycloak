@@ -104,11 +104,15 @@ basicConstraints = CA:FALSE
 nsCertType = client, email
 nsComment = "OpenSSL Generated Client Certificate"
 subjectKeyIdentifier = hash
-authorityKeyIdentifier = keyid,issuer
+#authorityKeyIdentifier = keyid,issuer
 keyUsage = critical, nonRepudiation, digitalSignature, keyEncipherment
 extendedKeyUsage = clientAuth, emailProtection
-crlDistributionPoints = URI:http://localhost:8888/crl                                                    
+crlDistributionPoints=@crl_section
 authorityInfoAccess = OCSP;URI:http://localhost:8888/oscp
+
+[crl_section]
+URI.1 = http://localhost:8889/empty.crl
+URI.2 = http://localhost:8889/intermediate-ca.crl
 
 [ server_cert ]
 # Extensions for server certificates (`man x509v3_config`).

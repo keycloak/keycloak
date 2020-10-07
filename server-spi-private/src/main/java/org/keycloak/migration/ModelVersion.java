@@ -25,6 +25,7 @@ import org.jboss.logging.Logger;
 */
 public class ModelVersion {
     private static Logger logger = Logger.getLogger(ModelVersion.class);
+
     int major;
     int minor;
     int micro;
@@ -37,6 +38,8 @@ public class ModelVersion {
     }
 
     public ModelVersion(String version) {
+        version = version.split("-")[0];
+
         String[] split = version.split("\\.");
         try {
             if (split.length > 0) {
@@ -50,6 +53,10 @@ public class ModelVersion {
             }
             if (split.length > 3) {
                 qualifier = split[3];
+
+                if (qualifier.startsWith("redhat")) {
+                    qualifier = null;
+                }
             }
         } catch (NumberFormatException e) {
             logger.warn("failed to parse version: " + version, e);
@@ -95,7 +102,12 @@ public class ModelVersion {
         if (qualifier == null) return false;
         if (version.qualifier == null) return true;
         int comp = qualifier.compareTo(version.qualifier);
-        if (comp < 0) return true;
+        if (comp < 0) {
+            return true;
+        } else if (comp > 0){
+            return false;
+        }
+
         return false;
     }
 
@@ -106,7 +118,7 @@ public class ModelVersion {
         }
 
         ModelVersion v = (ModelVersion) obj;
-        return v.getMajor() == major && v.getMinor() == minor && v.getMicro() != micro;
+        return v.getMajor() == major && v.getMinor() == minor && v.getMicro() == micro;
     }
 
     @Override

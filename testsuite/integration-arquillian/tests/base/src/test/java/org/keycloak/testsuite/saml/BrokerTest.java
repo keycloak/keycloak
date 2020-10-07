@@ -22,34 +22,56 @@ import org.keycloak.authentication.authenticators.broker.IdpReviewProfileAuthent
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.dom.saml.v2.SAML2Object;
+import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType.ASTChoiceType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
+import org.keycloak.dom.saml.v2.assertion.ConditionsType;
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
+import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.NameIDPolicyType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
+import org.keycloak.protocol.saml.SamlPrincipalType;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SAML2LoginResponseBuilder;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.processing.core.parsers.saml.xmldsig.XmlDSigQNames;
+import org.keycloak.saml.processing.core.parsers.util.HasQName;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
 import org.keycloak.testsuite.updaters.IdentityProviderCreator;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import java.io.IOException;
 import java.net.URI;
+import java.security.KeyPair;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import javax.ws.rs.core.Response.Status;
+import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.namespace.QName;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
+import org.w3c.dom.DOMException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
+import static org.keycloak.saml.SignatureAlgorithm.RSA_SHA1;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_NAME;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.SAML_ASSERTION_CONSUMER_URL_SALES_POST;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.SAML_CLIENT_ID_SALES_POST;
@@ -84,7 +106,7 @@ public class BrokerTest extends AbstractSamlTest {
             final ResponseType res = new SAML2LoginResponseBuilder()
               .requestID(req.getID())
               .destination(req.getAssertionConsumerServiceURL().toString())
-              .issuer("http://saml.idp/saml")
+              .issuer("https://saml.idp/saml")
               .assertionExpiration(1000000)
               .subjectExpiration(1000000)
               .requestIssuer(getAuthServerRealmBase(REALM_NAME).toString())
@@ -111,7 +133,7 @@ public class BrokerTest extends AbstractSamlTest {
 
         AuthenticationExecutionInfoRepresentation reviewProfileAuthenticator = null;
         String firstBrokerLoginFlowAlias = null;
-        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, addIdentityProvider("http://saml.idp/saml"))) {
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, addIdentityProvider("https://saml.idp/saml"))) {
             IdentityProviderRepresentation idpRepresentation = idp.identityProvider().toRepresentation();
             firstBrokerLoginFlowAlias = idpRepresentation.getFirstBrokerLoginFlowAlias();
             List<AuthenticationExecutionInfoRepresentation> executions = realm.flows().getExecutions(firstBrokerLoginFlowAlias);
@@ -158,10 +180,73 @@ public class BrokerTest extends AbstractSamlTest {
     }
 
     @Test
+    public void testNoNameIDAndPrincipalFromAttribute() throws IOException {
+        final String userName = "newUser-" + UUID.randomUUID();
+        final RealmResource realm = adminClient.realm(REALM_NAME);
+        final IdentityProviderRepresentation rep = addIdentityProvider("https://saml.idp/");
+        rep.getConfig().put(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, "undefined");
+        rep.getConfig().put(SAMLIdentityProviderConfig.PRINCIPAL_TYPE, SamlPrincipalType.ATTRIBUTE.toString());
+        rep.getConfig().put(SAMLIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, "user");
+
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, rep)) {
+            new SamlClientBuilder()
+                    .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
+                    .login().idp(SAML_BROKER_ALIAS).build()
+                    // Virtually perform login at IdP (return artificial SAML response)
+                    .processSamlResponse(REDIRECT)
+                    .transformObject(this::createAuthnResponse)
+                    .transformObject(resp -> {
+                        final ResponseType rt = (ResponseType) resp;
+
+                        final AssertionType assertion = rt.getAssertions()
+                                .get(0)
+                                .getAssertion();
+
+                        // Remove NameID from subject
+                        assertion.getSubject()
+                                .setSubType(null);
+
+                        // Add attribute to get principal from
+                        AttributeStatementType attrStatement = new AttributeStatementType();
+                        AttributeType attribute = new AttributeType("user");
+                        attribute.addAttributeValue(userName);
+                        attrStatement.addAttribute(new ASTChoiceType(attribute));
+                        rt.getAssertions().get(0).getAssertion().addStatement(attrStatement);
+
+                        return rt;
+                    })
+                    .targetAttributeSamlResponse()
+                    .targetUri(getSamlBrokerUrl(REALM_NAME))
+                    .build()
+                    .followOneRedirect()  // first-broker-login
+                    .updateProfile()
+                        .username(userName)
+                        .firstName("someFirstName")
+                        .lastName("someLastName")
+                        .email("some@email.com")
+                        .build()
+                    .followOneRedirect() // redirect to client
+                    .assertResponse(org.keycloak.testsuite.util.Matchers.statusCodeIsHC(200))
+                    .execute();
+        }
+
+        final UserRepresentation userRepresentation = realm.users()
+                .search(userName)
+                .stream()
+                .findFirst()
+                .get();
+
+        final List<UserSessionRepresentation> userSessions = realm.users()
+                .get(userRepresentation.getId())
+                .getUserSessions();
+        assertThat(userSessions, hasSize(1));
+    }
+
+    @Test
     public void testRedirectQueryParametersPreserved() throws IOException {
         final RealmResource realm = adminClient.realm(REALM_NAME);
 
-        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, addIdentityProvider("http://saml.idp/?service=name&serviceType=prod"))) {
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, addIdentityProvider("https://saml.idp/?service=name&serviceType=prod"))) {
             SAMLDocumentHolder samlResponse = new SamlClientBuilder()
               .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
               .login().idp(SAML_BROKER_ALIAS).build()
@@ -171,7 +256,7 @@ public class BrokerTest extends AbstractSamlTest {
 
             assertThat(samlResponse.getSamlObject(), Matchers.instanceOf(AuthnRequestType.class));
             AuthnRequestType ar = (AuthnRequestType) samlResponse.getSamlObject();
-            assertThat(ar.getDestination(), Matchers.equalTo(URI.create("http://saml.idp/?service=name&serviceType=prod")));
+            assertThat(ar.getDestination(), Matchers.equalTo(URI.create("https://saml.idp/?service=name&serviceType=prod")));
 
             Header[] headers = new SamlClientBuilder()
               .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
@@ -180,9 +265,133 @@ public class BrokerTest extends AbstractSamlTest {
               .executeAndTransform(resp -> resp.getHeaders(HttpHeaders.LOCATION));
 
             assertThat(headers.length, Matchers.is(1));
-            assertThat(headers[0].getValue(), Matchers.containsString("http://saml.idp/?service=name&serviceType=prod"));
+            assertThat(headers[0].getValue(), Matchers.containsString("https://saml.idp/?service=name&serviceType=prod"));
             assertThat(headers[0].getValue(), Matchers.containsString("SAMLRequest"));
         }
     }
 
+    private static final String XMLNS_VETINARI = "vetinari";
+    private static final String NS_VETINARI = "urn:dw:am:havelock";
+
+    private static Element appendNewElement(Element parent, QName qName, String prefix) throws DOMException {
+        Document doc = parent.getOwnerDocument();
+        final Element res = doc.createElementNS(qName.getNamespaceURI(), prefix + ":" + qName.getLocalPart());
+        parent.appendChild(res);
+        return res;
+    }
+
+    private static void signAndAddCustomNamespaceElementToSignature(Document doc) {
+        doc.getDocumentElement().setAttribute("xmlns:" + XMLNS_VETINARI, NS_VETINARI);
+
+        BaseSAML2BindingBuilder<BaseSAML2BindingBuilder> sb = new BaseSAML2BindingBuilder();
+        try {
+            KeyPair keyPair = new KeyPair(SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY_PK, SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY_PK);
+            sb.signWith("kn", keyPair)
+              .signatureAlgorithm(RSA_SHA1)
+              .signAssertions()
+              .signAssertion(doc);
+        } catch (ProcessingException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        // KeyInfo has lax and can contain custom elements, see https://www.w3.org/TR/xmldsig-core1/#sec-KeyInfo
+        Element el = findFirstElement(doc, XmlDSigQNames.KEY_INFO);
+        appendNewElement(el, new QName(NS_VETINARI, "Patrician"), XMLNS_VETINARI);
+    }
+
+    private static Element findFirstElement(Document doc, HasQName qName) {
+        NodeList nl = doc.getElementsByTagNameNS(qName.getQName().getNamespaceURI(), qName.getQName().getLocalPart());
+        return (nl == null || nl.getLength() == 0) ? null : (Element) nl.item(0);
+    }
+
+    @Test
+    public void testAnyNamespacePreservedInContext() throws IOException {
+        final RealmResource realm = adminClient.realm(REALM_NAME);
+
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, addIdentityProvider("https://saml.idp/"))) {
+            new SamlClientBuilder()
+              .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST)
+                .build()
+              .login().idp(SAML_BROKER_ALIAS).build()
+              // Virtually perform login at IdP (return artificial SAML response)
+              .processSamlResponse(REDIRECT)
+                .transformObject(this::createAuthnResponse)
+                .transformDocument(BrokerTest::signAndAddCustomNamespaceElementToSignature)
+                .targetAttributeSamlResponse()
+                .targetUri(getSamlBrokerUrl(REALM_NAME))
+                .targetBinding(POST)
+                .build()
+              .assertResponse(org.keycloak.testsuite.util.Matchers.statusCodeIsHC(Status.OK))
+              .execute();
+        }
+    }
+
+    @Test
+    public void testExpiredAssertion() throws Exception {
+        XMLGregorianCalendar now = XMLTimeUtil.getIssueInstant();
+        XMLGregorianCalendar notBeforeInPast = XMLTimeUtil.subtract(now, 60 * 60 * 1000);
+        XMLGregorianCalendar notOnOrAfterInPast = XMLTimeUtil.subtract(now, 59 * 60 * 1000);
+        XMLGregorianCalendar notBeforeInFuture = XMLTimeUtil.add(now, 59 * 60 * 1000);
+        XMLGregorianCalendar notOnOrAfterInFuture = XMLTimeUtil.add(now, 60 * 60 * 1000);
+        // Should not pass:
+        assertExpired(notBeforeInPast, notOnOrAfterInPast, false);
+        assertExpired(notBeforeInFuture, notOnOrAfterInPast, false);
+        assertExpired(null, notOnOrAfterInPast, false);
+        assertExpired(notBeforeInFuture, notOnOrAfterInFuture, false);
+        assertExpired(notBeforeInFuture, null, false);
+        // Should pass:
+        assertExpired(notBeforeInPast, notOnOrAfterInFuture, true);
+        assertExpired(notBeforeInPast, null, true);
+        assertExpired(null, notOnOrAfterInFuture, true);
+        assertExpired(null, null, true);
+    }
+
+    @Test(expected = AssertionError.class)
+    public void testNonexpiredAssertionShouldFail() throws Exception {
+        assertExpired(null, null, false);   // Expected result (false) is it should fail but it should pass and throw
+    }
+
+    @Test(expected = AssertionError.class)
+    public void testExpiredAssertionShouldFail() throws Exception {
+        XMLGregorianCalendar now = XMLTimeUtil.getIssueInstant();
+        XMLGregorianCalendar notBeforeInPast = XMLTimeUtil.subtract(now, 60 * 60 * 1000);
+        XMLGregorianCalendar notOnOrAfterInPast = XMLTimeUtil.subtract(now, 59 * 60 * 1000);
+        assertExpired(notBeforeInPast, notOnOrAfterInPast, true);   // Expected result (true) is it should succeed but it should pass and throw
+    }
+
+    private void assertExpired(XMLGregorianCalendar notBefore, XMLGregorianCalendar notOnOrAfter, boolean shouldPass) throws Exception {
+        Status expectedStatus = shouldPass ? Status.OK : Status.BAD_REQUEST;
+        final RealmResource realm = adminClient.realm(REALM_NAME);
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, addIdentityProvider("https://saml.idp/"))) {
+            new SamlClientBuilder()
+              .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST).build()
+              .login().idp(SAML_BROKER_ALIAS).build()
+              // Virtually perform login at IdP (return artificial SAML response)
+              .processSamlResponse(REDIRECT)
+              .transformObject(this::createAuthnResponse)
+              .transformObject(resp -> {  // always invent a new user identified by a different email address
+                  ResponseType rt = (ResponseType) resp;
+                  AssertionType a = rt.getAssertions().get(0).getAssertion();
+
+                  NameIDType nameId = new NameIDType();
+                  nameId.setFormat(URI.create(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get()));
+                  nameId.setValue(UUID.randomUUID() + "@random.email.org");
+                  SubjectType subject = new SubjectType();
+                  SubjectType.STSubType subType = new SubjectType.STSubType();
+                  subType.addBaseID(nameId);
+                  subject.setSubType(subType);
+                  a.setSubject(subject);
+
+                  ConditionsType conditions = a.getConditions();
+                  conditions.setNotBefore(notBefore);
+                  conditions.setNotOnOrAfter(notOnOrAfter);
+                  return rt;
+              })
+              .targetAttributeSamlResponse()
+              .targetUri(getSamlBrokerUrl(REALM_NAME))
+              .build()
+              .assertResponse(org.keycloak.testsuite.util.Matchers.statusCodeIsHC(expectedStatus))
+              .execute();
+        }
+    }
 }

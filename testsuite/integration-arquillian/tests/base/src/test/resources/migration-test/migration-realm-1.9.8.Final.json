@@ -1744,14 +1744,24 @@
     "totp" : false,
     "emailVerified" : false,
     "credentials" : [ {
-      "type" : "password",
-      "hashedSaltedValue" : "Y71bKP3V5cvqiPGxPspDCQRraGbJD4IGxjYOez4QdubTYpoFjYb2wdC+pRoXskBvOaCYQcGzMa3SatDrFlBm9Q==",
-      "salt" : "o6D0KTKeFVejy00RhKZxvQ==",
-      "hashIterations" : 20000,
+      "type" : "totp",
+      "hashedSaltedValue" : "dSdmuHLQhkm54oIm0A0S",
+      "hashIterations" : 0,
       "counter" : 0,
-      "algorithm" : "pbkdf2",
+      "algorithm" : "HmacSHA1",
+      "digits" : 8,
+      "period" : 40,
+      "createdDate" : 1570002889420
+    }, {
+      "type" : "password",
+      "hashedSaltedValue" : "kNwotFPNeuwelpT1HWt+E4ONXFK6wjd+h0zbzNBRGwOqacAjeY7vYN9QZQ46DlEKSdn04cEU/3RvX8WPcRegxg==",
+      "salt" : "rEIJDbs+BQqpx31v8mONWA==",
+      "hashIterations" : 27500,
+      "counter" : 0,
+      "algorithm" : "pbkdf2-sha256",
       "digits" : 0,
-      "createdDate" : 1476260086000
+      "period" : 0,
+      "createdDate" : 1570002786025
     } ],
     "requiredActions" : [ ],
     "realmRoles" : [ "offline_access" ],
@@ -1759,7 +1769,32 @@
       "account" : [ "manage-account", "view-profile" ]
     },
     "groups" : [ "/migration-test-group" ]
-  } ],
+  },
+  {
+    "id" : "9aa0d4f7-399e-4520-92df-77403d5d2a33",
+    "createdTimestamp" : 1476260593350,
+    "username" : "offline-test-user",
+    "enabled" : true,
+    "totp" : false,
+    "emailVerified" : false,
+    "credentials" : [ {
+      "type" : "password",
+      "hashedSaltedValue" : "D3F6cEj0pNv1UvkPq2XhnH5TTg2BaR2qKQd+vMoT8Pj+cHEGvISbBujjD9+889LIhWUSbQS8nkZH0yEnrTKBAA==",
+      "salt" : "C2vKhAsajS53Xu816IcKIw==",
+      "hashIterations" : 20000,
+      "counter" : 0,
+      "algorithm" : "pbkdf2",
+      "digits" : 0,
+      "period" : 0,
+      "createdDate" : 1582099686822
+    } ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "offline_access" ],
+    "clientRoles" : {
+      "account" : [ "manage-account", "view-profile" ]
+    },
+    "groups" : [ ]
+  }  ],
   "clientScopeMappings" : {
     "realm-management" : [ {
       "client" : "admin-cli",
@@ -2090,7 +2125,7 @@
     "surrogateAuthRequired" : false,
     "enabled" : true,
     "clientAuthenticatorType" : "client-secret",
-    "secret" : "b2c07929-69e3-44c6-8d7f-76939000b3e4",
+    "secret" : "secret",
     "redirectUris" : [ ],
     "webOrigins" : [ ],
     "notBefore" : 0,

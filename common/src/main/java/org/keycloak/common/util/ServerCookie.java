@@ -32,6 +32,20 @@ public class ServerCookie implements Serializable {
     private static final String tspecials = ",; ";
     private static final String tspecials2 = "()<>@,;:\\\"/[]?={} \t";
 
+    public enum SameSiteAttributeValue {
+        NONE("None"); // we currently support only SameSite=None; this might change in the future
+
+        private final String specValue;
+        SameSiteAttributeValue(String specValue) {
+            this.specValue = specValue;
+        }
+
+        @Override
+        public java.lang.String toString() {
+            return specValue;
+        }
+    }
+
     /*
     * Tests a string and returns true if the string counts as a
     * reserved token in the Java language.
@@ -173,7 +187,8 @@ public class ServerCookie implements Serializable {
                                          String comment,
                                          int maxAge,
                                          boolean isSecure,
-                                         boolean httpOnly) {
+                                         boolean httpOnly,
+                                         SameSiteAttributeValue sameSite) {
         StringBuffer buf = new StringBuffer();
         // Servlet implementation checks name
         buf.append(name);
@@ -226,6 +241,12 @@ public class ServerCookie implements Serializable {
         if (path != null) {
             buf.append("; Path=");
             buf.append(path);
+        }
+
+        // SameSite
+        if (sameSite != null) {
+            buf.append("; SameSite=");
+            buf.append(sameSite.toString());
         }
 
         // Secure

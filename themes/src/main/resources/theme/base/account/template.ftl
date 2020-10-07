@@ -8,6 +8,11 @@
 
     <title>${msg("accountManagementTitle")}</title>
     <link rel="icon" href="${url.resourcesPath}/img/favicon.ico">
+    <#if properties.stylesCommon?has_content>
+        <#list properties.stylesCommon?split(' ') as style>
+            <link href="${url.resourcesCommonPath}/${style}" rel="stylesheet" />
+        </#list>
+    </#if>
     <#if properties.styles?has_content>
         <#list properties.styles?split(' ') as style>
             <link href="${url.resourcesPath}/${style}" rel="stylesheet" />
@@ -69,8 +74,8 @@
             <#if message?has_content>
                 <div class="alert alert-${message.type}">
                     <#if message.type=='success' ><span class="pficon pficon-ok"></span></#if>
-                    <#if message.type=='error' ><span class="pficon pficon-error-octagon"></span><span class="pficon pficon-error-exclamation"></span></#if>
-                    ${kcSanitize(message.summary)?no_esc}
+                    <#if message.type=='error' ><span class="pficon pficon-error-circle-o"></span></#if>
+                    <span class="kc-feedback-text">${kcSanitize(message.summary)?no_esc}</span>
                 </div>
             </#if>
 

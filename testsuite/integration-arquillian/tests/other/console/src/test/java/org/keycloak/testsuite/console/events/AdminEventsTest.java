@@ -67,6 +67,7 @@ public class AdminEventsTest extends AbstractConsoleTest {
         realm.setAdminEventsDetailsEnabled(true);
 
         testRealmResource().update(realm);
+        testRealmResource().clearAdminEvents();
     }
 
     @Test

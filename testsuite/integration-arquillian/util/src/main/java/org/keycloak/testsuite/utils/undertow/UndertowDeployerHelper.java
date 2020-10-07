@@ -25,14 +25,13 @@ import io.undertow.server.handlers.resource.ResourceManager;
 import io.undertow.server.handlers.resource.URLResource;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.ServletInfo;
-import org.apache.jasper.deploy.JspPropertyGroup;
-import org.apache.jasper.deploy.TagLibraryInfo;
 import org.arquillian.undertow.UndertowContainerConfiguration;
 import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ArchivePath;
 import org.jboss.shrinkwrap.api.Node;
 import org.jboss.shrinkwrap.api.asset.ClassAsset;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -58,20 +57,20 @@ public class UndertowDeployerHelper {
     private static final Logger log = Logger.getLogger(UndertowDeployerHelper.class);
 
     public DeploymentInfo getDeploymentInfo(UndertowContainerConfiguration config, WebArchive archive) {
+        return getDeploymentInfo(config, archive, null);
+    }
+
+    public DeploymentInfo getDeploymentInfo(UndertowContainerConfiguration config, WebArchive archive, DeploymentInfo di) {
         String archiveName = archive.getName();
-
-        String appName = archive.getName().substring(0, archive.getName().lastIndexOf('.'));
-        if (appName.contains(System.getProperty("project.version"))) {
-            appName = archive.getName().substring(0, archive.getName().lastIndexOf("-" + System.getProperty("project.version")));
-        }
-
-        String contextPath = "/" + appName;
+        String contextPath = getContextPath(archive);
         String appContextUrl = "http://" + config.getBindAddress() + ":" + config.getBindHttpPort() + contextPath;
 
         try {
-            DeploymentInfo di = new DeploymentInfo();
+            if (di == null) {
+                di = new DeploymentInfo();
+            }
 
-            UndertowWarClassLoader classLoader = new UndertowWarClassLoader(UndertowDeployerHelper.class.getClassLoader(), archive);
+            UndertowWarClassLoader classLoader = new UndertowWarClassLoader(Thread.currentThread().getContextClassLoader(), archive);
             di.setClassLoader(classLoader);
 
             di.setDeploymentName(archiveName);
@@ -89,7 +88,7 @@ public class UndertowDeployerHelper {
 
             di.addWelcomePages("index.html", "index.jsp");
 
-            JspServletBuilder.setupDeployment(di, new HashMap<String, JspPropertyGroup>(), new HashMap<String, TagLibraryInfo>(), new HackInstanceManager());
+            JspServletBuilder.setupDeployment(di, new HashMap<>(), new HashMap<>(), new HackInstanceManager());
 
             addAnnotatedServlets(di, archive);
 
@@ -204,4 +203,12 @@ public class UndertowDeployerHelper {
 
     }
 
+    private String getContextPath(WebArchive archive) {
+        if (archive.contains("/META-INF/context.xml") && (archive.get("/META-INF/context.xml").getAsset() instanceof StringAsset)) {
+            StringAsset asset = (StringAsset) archive.get("/META-INF/context.xml").getAsset();
+            return asset.getSource().split("path=\"")[1].split("\"")[0];
+        } else {
+            return "/".concat(archive.getName().replace(".war", ""));
+        }
+    }
 }

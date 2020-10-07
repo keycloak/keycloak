@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.authz;
 
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -24,6 +25,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,29 +37,43 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.ResourceResource;
+import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
 import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.events.EventType;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessToken.Authorization;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
@@ -70,8 +86,13 @@ import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -83,6 +104,7 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class EntitlementAPITest extends AbstractAuthzTest {
 
     private static final String RESOURCE_SERVER_TEST = "resource-server-test";
@@ -98,6 +120,9 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     @ArquillianResource
     protected ContainerController controller;
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -132,7 +157,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
                         .directAccessGrants())
                 .client(ClientBuilder.create().clientId(PUBLIC_TEST_CLIENT)
                         .secret("secret")
-                        .redirectUris("http://localhost:8180/auth/realms/master/app/auth/*")
+                        .redirectUris("http://localhost:8180/auth/realms/master/app/auth/*", "https://localhost:8543/auth/realms/master/app/auth/*")
                         .publicClient())
                 .build());
     }
@@ -217,13 +242,12 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         obj.put("claim-a", "claim-a");
 
         request.setClaimToken(Base64Url.encode(JsonSerialization.writeValueAsBytes(obj)));
+        this.expectedException.expect(AuthorizationDeniedException.class);
+        this.expectedException.expectCause(Matchers.allOf(Matchers.instanceOf(HttpResponseException.class), Matchers.hasProperty("statusCode", Matchers.is(403))));
+        this.expectedException.expectMessage("Public clients are not allowed to send claims");
+        this.expectedException.reportMissingExceptionWithMessage("Should fail, public clients not allowed");
 
-        try {
-            getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization(response.getAccessToken()).authorize(request);
-        } catch (AuthorizationDeniedException expected) {
-            assertEquals(403, HttpResponseException.class.cast(expected.getCause()).getStatusCode());
-            assertTrue(HttpResponseException.class.cast(expected.getCause()).toString().contains("Public clients are not allowed to send claims"));
-        }
+        getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization(response.getAccessToken()).authorize(request);
     }
 
     @Test
@@ -397,7 +421,9 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         resource.setOwner("marta");
         resource.setOwnerManagedAccess(true);
 
-        resource = authorization.resources().create(resource).readEntity(ResourceRepresentation.class);
+        try (Response response = authorization.resources().create(resource)) {
+            resource = response.readEntity(ResourceRepresentation.class);
+        }
 
         ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
 
@@ -405,7 +431,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         permission.addResource(resource.getId());
         permission.addPolicy(policy.getName());
 
-        authorization.permissions().resource().create(permission);
+        authorization.permissions().resource().create(permission).close();
 
         assertTrue(hasPermission("marta", "password", resource.getId()));
         assertFalse(hasPermission("kolo", "password", resource.getId()));
@@ -533,7 +559,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         resource.setName("Sensors");
         resource.addScope("sensors:view", "sensors:update", "sensors:delete");
 
-        resource = authorization.resources().create(resource).readEntity(ResourceRepresentation.class);
+        authorization.resources().create(resource).close();
 
         ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
 
@@ -541,7 +567,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         permission.addScope("sensors:view");
         permission.addPolicy(policy.getName());
 
-        authorization.permissions().scope().create(permission);
+        authorization.permissions().scope().create(permission).close();
 
         String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
@@ -575,7 +601,9 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         resource.setName(KeycloakModelUtils.generateId());
         resource.addScope("sensors:view", "sensors:update", "sensors:delete");
 
-        resource = authorization.resources().create(resource).readEntity(ResourceRepresentation.class);
+        try (Response response = authorization.resources().create(resource)) {
+            resource = response.readEntity(ResourceRepresentation.class);
+        }
 
         ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
 
@@ -583,7 +611,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         permission.addScope("sensors:view");
         permission.addPolicy(policy.getName());
 
-        authorization.permissions().scope().create(permission);
+        authorization.permissions().scope().create(permission).close();
 
         String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
@@ -630,14 +658,18 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         resource.setName(KeycloakModelUtils.generateId());
         resource.addScope("sensors:view", "sensors:update", "sensors:delete");
 
-        resourceIds.add(authorization.resources().create(resource).readEntity(ResourceRepresentation.class).getId());
+        try (Response response = authorization.resources().create(resource)) {
+            resourceIds.add(response.readEntity(ResourceRepresentation.class).getId());
+        }
 
         resource = new ResourceRepresentation();
 
         resource.setName(KeycloakModelUtils.generateId());
         resource.addScope("sensors:view", "sensors:update");
 
-        resourceIds.add(authorization.resources().create(resource).readEntity(ResourceRepresentation.class).getId());
+        try (Response response = authorization.resources().create(resource)) {
+            resourceIds.add(response.readEntity(ResourceRepresentation.class).getId());
+        }
 
         ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
 
@@ -645,7 +677,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         permission.addScope("sensors:view", "sensors:update");
         permission.addPolicy(policy.getName());
 
-        authorization.permissions().scope().create(permission);
+        authorization.permissions().scope().create(permission).close();
 
         String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
@@ -708,7 +740,47 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     }
 
     @Test
-    public void testObtainAllEntitlementsForResource() throws Exception {
+    public void testObtainAllEntitlementsForScopeWithDeny() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(policy).close();
+
+        authorization.scopes().create(new ScopeRepresentation("sensors:view")).close();
+
+        ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
+
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.addScope("sensors:view");
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().scope().create(permission).close();
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission(null, "sensors:view");
+
+        AuthorizationResponse response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        Collection<Permission> permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertNull(grantedPermission.getResourceId());
+            assertEquals(1, grantedPermission.getScopes().size());
+            assertTrue(grantedPermission.getScopes().containsAll(Arrays.asList("sensors:view")));
+        }
+    }
+
+    @Test
+    public void testObtainAllEntitlementsForResourceWithResourcePermission() throws Exception {
         ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
         AuthorizationResource authorization = client.authorization();
 
@@ -724,7 +796,9 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         resource.setName(KeycloakModelUtils.generateId());
         resource.addScope("scope:view", "scope:update", "scope:delete");
 
-        resource = authorization.resources().create(resource).readEntity(ResourceRepresentation.class);
+        try (Response response = authorization.resources().create(resource)) {
+            resource = response.readEntity(ResourceRepresentation.class);
+        }
 
         ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
 
@@ -732,7 +806,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         permission.addResource(resource.getId());
         permission.addPolicy(policy.getName());
 
-        authorization.permissions().resource().create(permission);
+        authorization.permissions().resource().create(permission).close();
 
         String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
@@ -775,11 +849,475 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         request.addPermission(resource.getId(), "scope:view", "scope:update", "scope:delete");
 
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
         for (Permission grantedPermission : permissions) {
             assertEquals(resource.getId(), grantedPermission.getResourceId());
             assertEquals(2, grantedPermission.getScopes().size());
             assertTrue(grantedPermission.getScopes().containsAll(Arrays.asList("scope:view", "scope:update")));
         }
+    }
+
+    @Test
+    public void testObtainAllEntitlementsForResourceWithScopePermission() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resourceWithoutType = new ResourceRepresentation();
+
+        resourceWithoutType.setName(KeycloakModelUtils.generateId());
+        resourceWithoutType.addScope("scope:view", "scope:update", "scope:delete");
+
+        try (Response response = authorization.resources().create(resourceWithoutType)) {
+            resourceWithoutType = response.readEntity(ResourceRepresentation.class);
+        }
+
+        ResourceRepresentation resourceWithType = new ResourceRepresentation();
+
+        resourceWithType.setName(KeycloakModelUtils.generateId());
+        resourceWithType.setType("type-one");
+        resourceWithType.addScope("scope:view", "scope:update", "scope:delete");
+
+        try (Response response = authorization.resources().create(resourceWithType)) {
+            resourceWithType = response.readEntity(ResourceRepresentation.class);
+        }
+
+        ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
+
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.addResource(resourceWithoutType.getId());
+        permission.addScope("scope:view");
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().scope().create(permission).close();
+
+        permission = new ScopePermissionRepresentation();
+
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.setResourceType("type-one");
+        permission.addScope("scope:update");
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().scope().create(permission).close();
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.addPermission(resourceWithoutType.getId(), "scope:view", "scope:update", "scope:delete");
+
+        AuthorizationResponse response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        Collection<Permission> permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertEquals(resourceWithoutType.getId(), grantedPermission.getResourceId());
+            assertEquals(1, grantedPermission.getScopes().size());
+            assertTrue(grantedPermission.getScopes().containsAll(Arrays.asList("scope:view")));
+        }
+
+        request = new AuthorizationRequest();
+        request.addPermission(resourceWithType.getId(), "scope:view", "scope:update", "scope:delete");
+
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertEquals(resourceWithType.getId(), grantedPermission.getResourceId());
+            assertEquals(1, grantedPermission.getScopes().size());
+            assertTrue(grantedPermission.getScopes().containsAll(Arrays.asList("scope:update")));
+        }
+    }
+
+    @Test
+    public void testServerDecisionStrategy() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName(KeycloakModelUtils.generateId());
+        resource.addScope("read", "write", "delete");
+
+        try (Response response = authorization.resources().create(resource)) {
+            resource = response.readEntity(ResourceRepresentation.class);
+        }
+
+        JSPolicyRepresentation grantPolicy = new JSPolicyRepresentation();
+
+        grantPolicy.setName(KeycloakModelUtils.generateId());
+        grantPolicy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(grantPolicy).close();
+
+        JSPolicyRepresentation denyPolicy = new JSPolicyRepresentation();
+
+        denyPolicy.setName(KeycloakModelUtils.generateId());
+        denyPolicy.setCode("$evaluation.deny();");
+
+        authorization.policies().js().create(denyPolicy).close();
+
+        ResourcePermissionRepresentation resourcePermission = new ResourcePermissionRepresentation();
+
+        resourcePermission.setName(KeycloakModelUtils.generateId());
+        resourcePermission.addResource(resource.getId());
+        resourcePermission.addPolicy(denyPolicy.getName());
+
+        authorization.permissions().resource().create(resourcePermission).close();
+
+        ScopePermissionRepresentation scopePermission1 = new ScopePermissionRepresentation();
+
+        scopePermission1.setName(KeycloakModelUtils.generateId());
+        scopePermission1.addScope("read");
+        scopePermission1.addPolicy(grantPolicy.getName());
+
+        ScopePermissionsResource scopePermissions = authorization.permissions().scope();
+        scopePermissions.create(scopePermission1).close();
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        AuthorizationRequest request = new AuthorizationRequest();
+        
+        request.addPermission(resource.getName());
+
+        try {
+            authzClient.authorization(accessToken).authorize(request);
+            fail("kolo can not access the resource");
+        } catch (RuntimeException expected) {
+            assertEquals(403, HttpResponseException.class.cast(expected.getCause()).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected.getCause()).toString().contains("access_denied"));
+        }
+
+        ResourceServerRepresentation settings = authorization.getSettings();
+        
+        settings.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
+        
+        authorization.update(settings);
+
+        assertPermissions(authzClient, accessToken, request, resource, "read");
+
+        scopePermission1 = scopePermissions.findByName(scopePermission1.getName());
+        
+        scopePermission1.addScope("read", "delete");
+        
+        scopePermissions.findById(scopePermission1.getId()).update(scopePermission1);
+
+        assertPermissions(authzClient, accessToken, request, resource, "read", "delete");
+
+        ScopePermissionRepresentation scopePermission2 = new ScopePermissionRepresentation();
+
+        scopePermission2.setName(KeycloakModelUtils.generateId());
+        scopePermission2.addScope("write");
+        scopePermission2.addPolicy(grantPolicy.getName());
+
+        scopePermissions.create(scopePermission2).close();
+
+        assertPermissions(authzClient, accessToken, request, resource, "read", "delete", "write");
+
+        ScopePermissionRepresentation scopePermission3 = new ScopePermissionRepresentation();
+
+        scopePermission3.setName(KeycloakModelUtils.generateId());
+        scopePermission3.addResource(resource.getId());
+        scopePermission3.addScope("write", "read", "delete");
+        scopePermission3.addPolicy(grantPolicy.getName());
+
+        scopePermissions.create(scopePermission3).close();
+
+        assertPermissions(authzClient, accessToken, request, resource, "read", "delete", "write");
+
+        scopePermission2 = scopePermissions.findByName(scopePermission2.getName());
+        scopePermissions.findById(scopePermission2.getId()).remove();
+
+        assertPermissions(authzClient, accessToken, request, resource, "read", "delete", "write");
+
+        scopePermission1 = scopePermissions.findByName(scopePermission1.getName());
+        scopePermissions.findById(scopePermission1.getId()).remove();
+
+        assertPermissions(authzClient, accessToken, request, resource, "read", "delete", "write");
+
+        scopePermission3 = scopePermissions.findByName(scopePermission3.getName());
+        
+        scopePermission3.addScope("write", "delete");
+        scopePermissions.findById(scopePermission3.getId()).update(scopePermission3);
+
+        assertPermissions(authzClient, accessToken, request, resource, "delete", "write");
+        
+        scopePermissions.findById(scopePermission3.getId()).remove();
+
+        try {
+            authzClient.authorization(accessToken).authorize(request);
+            fail("kolo can not access the resource");
+        } catch (RuntimeException expected) {
+            assertEquals(403, HttpResponseException.class.cast(expected.getCause()).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected.getCause()).toString().contains("access_denied"));
+        }
+
+        ResourcePermissionRepresentation grantResourcePermission = new ResourcePermissionRepresentation();
+
+        grantResourcePermission.setName(KeycloakModelUtils.generateId());
+        grantResourcePermission.addResource(resource.getId());
+        grantResourcePermission.addPolicy(grantPolicy.getName());
+
+        authorization.permissions().resource().create(grantResourcePermission).close();
+
+        assertPermissions(authzClient, accessToken, request, resource, "read", "delete", "write");
+        
+        settings.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
+        authorization.update(settings);
+
+        try {
+            authzClient.authorization(accessToken).authorize(request);
+            fail("kolo can not access the resource");
+        } catch (RuntimeException expected) {
+            assertEquals(403, HttpResponseException.class.cast(expected.getCause()).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected.getCause()).toString().contains("access_denied"));
+        }
+    }
+
+    @Test
+    public void testObtainAllEntitlementsForResourceType() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(policy).close();
+
+        for (int i = 0; i < 10; i++) {
+            ResourceRepresentation resource = new ResourceRepresentation();
+
+            resource.setType("type-one");
+            resource.setName(KeycloakModelUtils.generateId());
+
+            authorization.resources().create(resource).close();
+        }
+
+        for (int i = 0; i < 10; i++) {
+            ResourceRepresentation resource = new ResourceRepresentation();
+
+            resource.setType("type-two");
+            resource.setName(KeycloakModelUtils.generateId());
+
+            authorization.resources().create(resource).close();
+        }
+
+        for (int i = 0; i < 10; i++) {
+            ResourceRepresentation resource = new ResourceRepresentation();
+
+            resource.setType("type-three");
+            resource.setName(KeycloakModelUtils.generateId());
+
+            authorization.resources().create(resource).close();
+        }
+
+        for (int i = 0; i < 10; i++) {
+            ResourceRepresentation resource = new ResourceRepresentation();
+
+            resource.setType("type-four");
+            resource.setName(KeycloakModelUtils.generateId());
+            resource.addScope("scope:view", "scope:update");
+
+            authorization.resources().create(resource).close();
+        }
+
+        for (int i = 0; i < 10; i++) {
+            ResourceRepresentation resource = new ResourceRepresentation();
+
+            resource.setType("type-five");
+            resource.setName(KeycloakModelUtils.generateId());
+            resource.addScope("scope:view");
+
+            authorization.resources().create(resource).close();
+        }
+
+
+        ResourcePermissionRepresentation resourcePermission = new ResourcePermissionRepresentation();
+
+        resourcePermission.setName(KeycloakModelUtils.generateId());
+        resourcePermission.setResourceType("type-one");
+        resourcePermission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(resourcePermission).close();
+
+        resourcePermission = new ResourcePermissionRepresentation();
+
+        resourcePermission.setName(KeycloakModelUtils.generateId());
+        resourcePermission.setResourceType("type-two");
+        resourcePermission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(resourcePermission).close();
+
+        resourcePermission = new ResourcePermissionRepresentation();
+
+        resourcePermission.setName(KeycloakModelUtils.generateId());
+        resourcePermission.setResourceType("type-three");
+        resourcePermission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(resourcePermission).close();
+
+        ScopePermissionRepresentation scopePersmission = new ScopePermissionRepresentation();
+
+        scopePersmission.setName(KeycloakModelUtils.generateId());
+        scopePersmission.setResourceType("type-four");
+        scopePersmission.addScope("scope:view");
+        scopePersmission.addPolicy(policy.getName());
+
+        authorization.permissions().scope().create(scopePersmission).close();
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.addPermission("resource-type:type-one");
+        AuthorizationResponse response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        Collection<Permission> permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(10, permissions.size());
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type:type-three");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(10, permissions.size());
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type:type-four", "scope:view");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(10, permissions.size());
+        for (Permission grantedPermission : permissions) {
+            assertEquals(1, grantedPermission.getScopes().size());
+            assertTrue(grantedPermission.getScopes().containsAll(Arrays.asList("scope:view")));
+        }
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type:type-five", "scope:view");
+        try {
+            authzClient.authorization(accessToken).authorize(request);
+            fail("no type-five resources can be granted since scope permission for scope:view only applies to type-four");
+        } catch (RuntimeException expected) {
+            assertEquals(403, HttpResponseException.class.cast(expected.getCause()).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected.getCause()).toString().contains("access_denied"));
+        }
+
+        for (int i = 0; i < 5; i++) {
+            ResourceRepresentation resource = new ResourceRepresentation();
+
+            resource.setOwner("kolo");
+            resource.setType("type-two");
+            resource.setName(KeycloakModelUtils.generateId());
+
+            authorization.resources().create(resource).close();
+        }
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type-any:type-two");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(15, permissions.size());
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type-owner:type-two");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(5, permissions.size());
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type-instance:type-two");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(5, permissions.size());
+
+        Permission next = permissions.iterator().next();
+
+        ResourceResource resourceMgmt = client.authorization().resources().resource(next.getResourceId());
+        ResourceRepresentation representation = resourceMgmt.toRepresentation();
+
+        representation.setType("type-three");
+
+        resourceMgmt.update(representation);
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type-instance:type-two");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(4, permissions.size());
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type-instance:type-three");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type-any:type-three");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(11, permissions.size());
+
+        for (int i = 0; i < 2; i++) {
+            ResourceRepresentation resource = new ResourceRepresentation();
+
+            resource.setOwner("marta");
+            resource.setType("type-one");
+            resource.setName(KeycloakModelUtils.generateId());
+
+            authorization.resources().create(resource).close();
+        }
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type:type-one");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(10, permissions.size());
+
+        accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type-owner:type-one");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(2, permissions.size());
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type-instance:type-one");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(2, permissions.size());
+
+        request = new AuthorizationRequest();
+        request.addPermission("resource-type-any:type-one");
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(12, permissions.size());
     }
 
     @Test
@@ -796,7 +1334,9 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         typedResource.setName(KeycloakModelUtils.generateId());
         typedResource.addScope("read", "update");
 
-        typedResource = authorization.resources().create(typedResource).readEntity(ResourceRepresentation.class);
+        try (Response response = authorization.resources().create(typedResource)) {
+            typedResource = response.readEntity(ResourceRepresentation.class);
+        }
 
         ResourcePermissionRepresentation typedResourcePermission = new ResourcePermissionRepresentation();
 
@@ -804,7 +1344,9 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         typedResourcePermission.setResourceType("resource");
         typedResourcePermission.addPolicy(onlyOwnerPolicy.getName());
 
-        typedResourcePermission = authorization.permissions().resource().create(typedResourcePermission).readEntity(ResourcePermissionRepresentation.class);
+        try (Response response = authorization.permissions().resource().create(typedResourcePermission)) {
+            typedResourcePermission = response.readEntity(ResourcePermissionRepresentation.class);
+        }
 
         ResourceRepresentation martaResource = new ResourceRepresentation();
 
@@ -813,7 +1355,9 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         martaResource.addScope("read", "update");
         martaResource.setOwner("marta");
 
-        martaResource = authorization.resources().create(martaResource).readEntity(ResourceRepresentation.class);
+        try (Response response = authorization.resources().create(martaResource)) {
+            martaResource = response.readEntity(ResourceRepresentation.class);
+        }
 
         String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
@@ -854,7 +1398,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         onlyKoloPolicy.setName(KeycloakModelUtils.generateId());
         onlyKoloPolicy.addUser("kolo");
 
-        authorization.policies().user().create(onlyKoloPolicy);
+        authorization.policies().user().create(onlyKoloPolicy).close();
 
         ResourcePermissionRepresentation martaResourcePermission = new ResourcePermissionRepresentation();
 
@@ -862,7 +1406,9 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         martaResourcePermission.addResource(martaResource.getId());
         martaResourcePermission.addPolicy(onlyKoloPolicy.getName());
 
-        martaResourcePermission = authorization.permissions().resource().create(martaResourcePermission).readEntity(ResourcePermissionRepresentation.class);
+        try (Response response1 = authorization.permissions().resource().create(martaResourcePermission)) {
+            martaResourcePermission = response1.readEntity(ResourcePermissionRepresentation.class);
+        }
 
         response = authzClient.authorization(accessToken).authorize(request);
         assertNotNull(response.getToken());
@@ -901,7 +1447,191 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         martaResourceUpdatePermission.addScope("update");
         martaResourceUpdatePermission.addPolicy(onlyOwnerPolicy.getName());
 
-        martaResourceUpdatePermission = authorization.permissions().scope().create(martaResourceUpdatePermission).readEntity(ScopePermissionRepresentation.class);
+        try (Response response1 = authorization.permissions().scope().create(martaResourceUpdatePermission)) {
+            martaResourceUpdatePermission = response1.readEntity(ScopePermissionRepresentation.class);
+        }
+
+        // now kolo can only read, but not update
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertEquals(martaResource.getName(), grantedPermission.getResourceName());
+            Set<String> scopes = grantedPermission.getScopes();
+            assertEquals(1, scopes.size());
+            assertThat(scopes, Matchers.containsInAnyOrder("read"));
+        }
+
+        authorization.permissions().resource().findById(martaResourcePermission.getId()).remove();
+
+        try {
+            // after removing permission to marta resource, kolo can not access any scope in the resource
+            authzClient.authorization(accessToken).authorize(request);
+            fail("kolo can not access marta resource");
+        } catch (RuntimeException expected) {
+            assertEquals(403, HttpResponseException.class.cast(expected.getCause()).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected.getCause()).toString().contains("access_denied"));
+        }
+
+        martaResourceUpdatePermission.addPolicy(onlyKoloPolicy.getName());
+        martaResourceUpdatePermission.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
+
+        authorization.permissions().scope().findById(martaResourceUpdatePermission.getId()).update(martaResourceUpdatePermission);
+
+        // now kolo can access because update permission changed to allow him to access the resource using an affirmative strategy
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertEquals(martaResource.getName(), grantedPermission.getResourceName());
+            Set<String> scopes = grantedPermission.getScopes();
+            assertEquals(1, scopes.size());
+            assertThat(scopes, Matchers.containsInAnyOrder("update"));
+        }
+
+        accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+
+        // marta can still access her resource
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertEquals(martaResource.getName(), grantedPermission.getResourceName());
+            Set<String> scopes = grantedPermission.getScopes();
+            assertEquals(2, scopes.size());
+            assertThat(scopes, Matchers.containsInAnyOrder("update", "read"));
+        }
+
+        authorization.permissions().scope().findById(martaResourceUpdatePermission.getId()).remove();
+        accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+
+        try {
+            // back to original setup, permissions not granted by the type resource
+            authzClient.authorization(accessToken).authorize(request);
+            fail("kolo can not access marta resource");
+        } catch (RuntimeException expected) {
+            assertEquals(403, HttpResponseException.class.cast(expected.getCause()).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected.getCause()).toString().contains("access_denied"));
+        }
+    }
+
+    @Test
+    public void testOverrideParentScopePermission() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+        JSPolicyRepresentation onlyOwnerPolicy = createOnlyOwnerPolicy();
+
+        authorization.policies().js().create(onlyOwnerPolicy).close();
+
+        ResourceRepresentation typedResource = new ResourceRepresentation();
+
+        typedResource.setType("resource");
+        typedResource.setName(KeycloakModelUtils.generateId());
+        typedResource.addScope("read", "update");
+
+        try (Response response = authorization.resources().create(typedResource)) {
+            typedResource = response.readEntity(ResourceRepresentation.class);
+        }
+
+        ScopePermissionRepresentation typedResourcePermission = new ScopePermissionRepresentation();
+
+        typedResourcePermission.setName(KeycloakModelUtils.generateId());
+        typedResourcePermission.addResource(typedResource.getName());
+        typedResourcePermission.addPolicy(onlyOwnerPolicy.getName());
+        typedResourcePermission.addScope("read", "update");
+
+        authorization.permissions().scope().create(typedResourcePermission).close();
+
+        ResourceRepresentation martaResource = new ResourceRepresentation();
+
+        martaResource.setType("resource");
+        martaResource.setName(KeycloakModelUtils.generateId());
+        martaResource.addScope("read");
+        martaResource.setOwner("marta");
+
+        try (Response response = authorization.resources().create(martaResource)) {
+            martaResource = response.readEntity(ResourceRepresentation.class);
+        }
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission(martaResource.getName());
+
+        // marta can access her resource
+        AuthorizationResponse response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        Collection<Permission> permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertEquals(martaResource.getName(), grantedPermission.getResourceName());
+            Set<String> scopes = grantedPermission.getScopes();
+            assertEquals(2, scopes.size());
+            assertThat(scopes, Matchers.containsInAnyOrder("read", "update"));
+        }
+
+        accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+
+        request = new AuthorizationRequest();
+
+        request.addPermission(martaResource.getId());
+
+        try {
+            authzClient.authorization(accessToken).authorize(request);
+            fail("kolo can not access marta resource");
+        } catch (RuntimeException expected) {
+            assertEquals(403, HttpResponseException.class.cast(expected.getCause()).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected.getCause()).toString().contains("access_denied"));
+        }
+
+        UserPolicyRepresentation onlyKoloPolicy = new UserPolicyRepresentation();
+
+        onlyKoloPolicy.setName(KeycloakModelUtils.generateId());
+        onlyKoloPolicy.addUser("kolo");
+
+        authorization.policies().user().create(onlyKoloPolicy).close();
+
+        ResourcePermissionRepresentation martaResourcePermission = new ResourcePermissionRepresentation();
+
+        martaResourcePermission.setName(KeycloakModelUtils.generateId());
+        martaResourcePermission.addResource(martaResource.getId());
+        martaResourcePermission.addPolicy(onlyKoloPolicy.getName());
+
+        try (Response response1 = authorization.permissions().resource().create(martaResourcePermission)) {
+            martaResourcePermission = response1.readEntity(ResourcePermissionRepresentation.class);
+        }
+
+        response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertEquals(martaResource.getName(), grantedPermission.getResourceName());
+            Set<String> scopes = grantedPermission.getScopes();
+            assertEquals(2, scopes.size());
+            assertThat(scopes, Matchers.containsInAnyOrder("read", "update"));
+        }
+
+        ScopePermissionRepresentation martaResourceUpdatePermission = new ScopePermissionRepresentation();
+
+        martaResourceUpdatePermission.setName(KeycloakModelUtils.generateId());
+        martaResourceUpdatePermission.addResource(martaResource.getId());
+        martaResourceUpdatePermission.addScope("update");
+        martaResourceUpdatePermission.addPolicy(onlyOwnerPolicy.getName());
+
+        try (Response response1 = authorization.permissions().scope().create(martaResourceUpdatePermission)) {
+            martaResourceUpdatePermission = response1.readEntity(ScopePermissionRepresentation.class);
+        }
 
         // now kolo can only read, but not update
         response = authzClient.authorization(accessToken).authorize(request);
@@ -1024,7 +1754,9 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         typedResource.setType("resource");
         typedResource.setName(KeycloakModelUtils.generateId());
 
-        typedResource = authorization.resources().create(typedResource).readEntity(ResourceRepresentation.class);
+        try (Response response = authorization.resources().create(typedResource)) {
+            typedResource = response.readEntity(ResourceRepresentation.class);
+        }
 
         ResourceRepresentation userResource = new ResourceRepresentation();
 
@@ -1035,7 +1767,9 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         attributes.put("visibility", Arrays.asList("private"));
         userResource.setAttributes(attributes);
 
-        userResource = authorization.resources().create(userResource).readEntity(ResourceRepresentation.class);
+        try (Response response = authorization.resources().create(userResource)) {
+            userResource = response.readEntity(ResourceRepresentation.class);
+        }
 
         ResourcePermissionRepresentation typedResourcePermission = new ResourcePermissionRepresentation();
 
@@ -1043,7 +1777,9 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         typedResourcePermission.setResourceType("resource");
         typedResourcePermission.addPolicy(onlyPublicResourcesPolicy.getName());
 
-        typedResourcePermission = authorization.permissions().resource().create(typedResourcePermission).readEntity(ResourcePermissionRepresentation.class);
+        try (Response response = authorization.permissions().resource().create(typedResourcePermission)) {
+            typedResourcePermission = response.readEntity(ResourcePermissionRepresentation.class);
+        }
 
         // marta can access any public resource
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
@@ -1100,7 +1836,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         createPermission.addScope("create");
         createPermission.addPolicy(onlyPublicResourcesPolicy.getName());
 
-        authorization.permissions().scope().create(createPermission);
+        authorization.permissions().scope().create(createPermission).close();
 
         response = authzClient.authorization("marta", "password").authorize(request);
         assertNotNull(response.getToken());
@@ -1180,7 +1916,9 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         resource.setName("Sensors");
         resource.addScope("sensors:view", "sensors:update", "sensors:delete");
 
-        resource = authorization.resources().create(resource).readEntity(ResourceRepresentation.class);
+        try (Response response = authorization.resources().create(resource)) {
+            resource = response.readEntity(ResourceRepresentation.class);
+        }
 
         ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
 
@@ -1188,7 +1926,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         permission.addScope("sensors:view");
         permission.addPolicy(policy.getName());
 
-        authorization.permissions().scope().create(permission);
+        authorization.permissions().scope().create(permission).close();
 
         String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).scope("offline_access").doGrantAccessTokenRequest("secret", "offlineuser", "password").getAccessToken();
         AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
@@ -1205,6 +1943,346 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         assertFalse(introspectionResponse.getPermissions().isEmpty());
 
         response = authzClient.authorization(accessToken).authorize();
+        assertNotNull(response.getToken());
+    }
+
+    @Test
+    public void testProcessMappersForTargetAudience() throws Exception {
+        ClientResource publicClient = getClient(getRealm(), PUBLIC_TEST_CLIENT);
+
+        ProtocolMapperRepresentation customClaimMapper = new ProtocolMapperRepresentation();
+
+        customClaimMapper.setName("custom_claim");
+        customClaimMapper.setProtocolMapper(HardcodedClaim.PROVIDER_ID);
+        customClaimMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        Map<String, String> config = new HashMap<>();
+        config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "custom_claim");
+        config.put(HardcodedClaim.CLAIM_VALUE, PUBLIC_TEST_CLIENT);
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        customClaimMapper.setConfig(config);
+
+        publicClient.getProtocolMappers().createMapper(customClaimMapper);
+
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+
+        config.put(HardcodedClaim.CLAIM_VALUE, RESOURCE_SERVER_TEST);
+
+        client.getProtocolMappers().createMapper(customClaimMapper);
+
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Sensors");
+
+        try (Response response = authorization.resources().create(resource)) {
+            resource = response.readEntity(ResourceRepresentation.class);
+        }
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("View Sensor");
+        permission.addResource(resource.getName());
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(permission).close();
+
+        oauth.realm("authz-test");
+        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.doLogin("marta", "password");
+
+        // Token request
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        AccessToken token = toAccessToken(response.getAccessToken());
+
+        assertEquals(PUBLIC_TEST_CLIENT, token.getOtherClaims().get("custom_claim"));
+
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission("Sensors");
+
+        AuthorizationResponse authorizationResponse = getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization(response.getAccessToken()).authorize(request);
+        token = toAccessToken(authorizationResponse.getToken());
+        assertEquals(RESOURCE_SERVER_TEST, token.getOtherClaims().get("custom_claim"));
+        assertEquals(PUBLIC_TEST_CLIENT, token.getIssuedFor());
+
+        authorizationResponse = getAuthzClient(AUTHZ_CLIENT_CONFIG).authorization(response.getAccessToken()).authorize(request);
+        token = toAccessToken(authorizationResponse.getToken());
+        assertEquals(RESOURCE_SERVER_TEST, token.getOtherClaims().get("custom_claim"));
+        assertEquals(PUBLIC_TEST_CLIENT, token.getIssuedFor());
+    }
+
+    @Test
+    public void testUsingExpiredToken() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Sensors");
+
+        try (Response response = authorization.resources().create(resource)) {
+            resource = response.readEntity(ResourceRepresentation.class);
+        }
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("View Sensor");
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(permission).close();
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        AccessTokenResponse response = authzClient.authorization(accessToken).authorize();
+        assertNotNull(response.getToken());
+        
+        getRealm().logoutAll();
+
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission("Sensors");
+        request.setSubjectToken(accessToken);
+
+        try {
+            authzClient.authorization().authorize(request);
+            fail("should fail, session invalidated");
+        } catch (Exception e) {
+            Throwable expected = e.getCause();
+            assertEquals(400, HttpResponseException.class.cast(expected).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected).toString().contains("unauthorized_client"));
+        }
+    }
+
+    @Test
+    public void testInvalidTokenSignature() throws Exception {
+        RealmEventsConfigRepresentation eventConfig = getRealm().getRealmEventsConfig();
+        
+        eventConfig.setEventsEnabled(true);
+        eventConfig.setEnabledEventTypes(Arrays.asList(EventType.PERMISSION_TOKEN_ERROR.name()));
+        
+        getRealm().updateRealmEventsConfig(eventConfig);
+        
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Sensors");
+
+        try (Response response = authorization.resources().create(resource)) {
+            response.readEntity(ResourceRepresentation.class);
+        }
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("View Sensor");
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(permission).close();
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "marta", "password").getAccessToken();
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission("Sensors");
+        request.setSubjectToken(accessToken + "i");
+
+        try {
+            authzClient.authorization().authorize(request);
+            fail("should fail, session invalidated");
+        } catch (Exception e) {
+            Throwable expected = e.getCause();
+            assertEquals(400, HttpResponseException.class.cast(expected).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected).toString().contains("unauthorized_client"));
+        }
+
+        List<EventRepresentation> events = getRealm()
+                .getEvents(Arrays.asList(EventType.PERMISSION_TOKEN_ERROR.name()), null, null, null, null, null, null, null);
+        assertEquals(1, events.size());
+    }
+
+    @Test
+    public void testDenyScopeNotManagedByScopePolicy() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName(KeycloakModelUtils.generateId());
+        resource.addScope("sensors:view", "sensors:update", "sensors:delete");
+
+        try (Response response = authorization.resources().create(resource)) {
+            resource = response.readEntity(ResourceRepresentation.class);
+        }
+
+        ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
+
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.addResource(resource.getId());
+        permission.addScope("sensors:view");
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().scope().create(permission).close();
+
+        String accessToken = new OAuthClient().realm("authz-test").clientId(RESOURCE_SERVER_TEST).doGrantAccessTokenRequest("secret", "kolo", "password").getAccessToken();
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission(resource.getId(), "sensors:view");
+
+        AuthorizationResponse response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        Collection<Permission> permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertEquals(resource.getId(), grantedPermission.getResourceId());
+            assertEquals(1, grantedPermission.getScopes().size());
+            assertThat(grantedPermission.getScopes(), hasItem("sensors:view"));
+        }
+
+        request = new AuthorizationRequest();
+        request.addPermission(resource.getId(), "sensors:update");
+        this.expectedException.expect(AuthorizationDeniedException.class);
+        this.expectedException.expectCause(Matchers.allOf(Matchers.instanceOf(HttpResponseException.class), Matchers.hasProperty("statusCode", Matchers.is(403))));
+        this.expectedException.reportMissingExceptionWithMessage("should fail, session invalidated");
+
+        authzClient.authorization().authorize(request);
+    }
+
+    @Test
+    public void testPermissionsAcrossResourceServers() throws Exception {
+        String rsAId;
+        try (Response response = getRealm().clients().create(ClientBuilder.create().clientId("rs-a").secret("secret").serviceAccount().authorizationServicesEnabled(true).build())) {
+            rsAId = ApiUtil.getCreatedId(response);
+        }
+        String rsBId;
+        try (Response response = getRealm().clients().create(ClientBuilder.create().clientId("rs-b").secret("secret").serviceAccount().authorizationServicesEnabled(true).build())) {
+            rsBId = ApiUtil.getCreatedId(response);
+        }
+        ClientResource rsB = getRealm().clients().get(rsBId);
+
+        rsB.authorization().resources().create(new ResourceRepresentation("Resource A"));
+
+        JSPolicyRepresentation grantPolicy = new JSPolicyRepresentation();
+
+        grantPolicy.setName("Grant Policy");
+        grantPolicy.setCode("$evaluation.grant();");
+
+        rsB.authorization().policies().js().create(grantPolicy);
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("Resource A Permission");
+        permission.addResource("Resource A");
+        permission.addPolicy(grantPolicy.getName());
+
+        rsB.authorization().permissions().resource().create(permission);
+
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+        Configuration config = authzClient.getConfiguration();
+
+        config.setResource("rs-a");
+
+        authzClient = AuthzClient.create(config);
+        AccessTokenResponse accessTokenResponse = authzClient.obtainAccessToken();
+        AccessToken accessToken = toAccessToken(accessTokenResponse.getToken());
+
+        config.setResource("rs-b");
+
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission("Resource A");
+
+        AuthorizationResponse response = authzClient.authorization(accessTokenResponse.getToken()).authorize(request);
+
+        assertNotNull(response.getToken());
+        Collection<Permission> permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+        assertEquals("Resource A", permissions.iterator().next().getResourceName());
+    }
+
+    @Test
+    public void testClientToClientPermissionRequest() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Sensors");
+
+        try (Response response = authorization.resources().create(resource)) {
+            response.readEntity(ResourceRepresentation.class);
+        }
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("View Sensor");
+        permission.addPolicy(policy.getName());
+
+        authorization.permissions().resource().create(permission).close();
+
+        ClientRepresentation otherClient = new ClientRepresentation();
+
+        otherClient.setClientId("serviceB");
+        otherClient.setServiceAccountsEnabled(true);
+        otherClient.setSecret("secret");
+        otherClient.setPublicClient(false);
+
+        getRealm().clients().create(otherClient);
+
+        Map<String, Object> credentials = new HashMap<>();
+
+        credentials.put("secret", "secret");
+
+        AuthzClient authzClient = AuthzClient
+                .create(new Configuration(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth",
+                        getRealm().toRepresentation().getRealm(), otherClient.getClientId(),
+                        credentials, getAuthzClient(AUTHZ_CLIENT_CONFIG).getConfiguration().getHttpClient()));
+
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.setAudience(RESOURCE_SERVER_TEST);
+
+        AuthorizationResponse response = authzClient.authorization().authorize(request);
+
         assertNotNull(response.getToken());
     }
 
@@ -1290,11 +2368,19 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     private AuthzClient getAuthzClient(String configFile) {
         if (authzClient == null) {
+            Configuration configuration;
             try {
-                authzClient = AuthzClient.create(JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/" + configFile), Configuration.class));
-            } catch (IOException cause) {
-                throw new RuntimeException("Failed to create authz client", cause);
+                configuration = JsonSerialization.readValue(httpsAwareConfigurationStream(getClass().getResourceAsStream("/authorization-test/" + configFile)), Configuration.class);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to read configuration", e);
             }
+            PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+            connectionManager.setValidateAfterInactivity(10);
+            connectionManager.setMaxTotal(10);
+            HttpClient client = HttpClients.custom()
+                    .setConnectionManager(connectionManager)
+                    .build();
+            authzClient = AuthzClient.create(new Configuration(configuration.getAuthServerUrl(), configuration.getRealm(), configuration.getResource(), configuration.getCredentials(), client));
         }
 
         return authzClient;
@@ -1337,5 +2423,18 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         representation.setAuthorizationServicesEnabled(true);
 
         client.update(representation);
+    }
+    
+    private void assertPermissions(AuthzClient authzClient, String accessToken, AuthorizationRequest request, ResourceRepresentation resource, String... expectedScopes) {
+        AuthorizationResponse response = authzClient.authorization(accessToken).authorize(request);
+        assertNotNull(response.getToken());
+        Collection<Permission> permissions = toAccessToken(response.getToken()).getAuthorization().getPermissions();
+        assertEquals(1, permissions.size());
+
+        for (Permission grantedPermission : permissions) {
+            assertEquals(resource.getId(), grantedPermission.getResourceId());
+            assertEquals(expectedScopes.length, grantedPermission.getScopes().size());
+            assertTrue(grantedPermission.getScopes().containsAll(Arrays.asList(expectedScopes)));
+        }
     }
 }

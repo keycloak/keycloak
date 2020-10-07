@@ -37,9 +37,9 @@ public class SAML11RequestType extends SAML11RequestAbstractType {
 
     protected SAML11QueryAbstractType query;
 
-    protected List<String> assertionIDRef = new ArrayList<String>();
+    protected List<String> assertionIDRef = new ArrayList<>();
 
-    protected List<String> assertionArtifact = new ArrayList<String>();
+    protected List<String> assertionArtifact = new ArrayList<>();
 
     public SAML11RequestType(String id, XMLGregorianCalendar issueInstant) {
         super(id, issueInstant);

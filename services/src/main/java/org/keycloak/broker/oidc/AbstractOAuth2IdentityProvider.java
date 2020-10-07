@@ -21,34 +21,47 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.broker.oidc.OIDCIdentityProvider.OIDCEndpoint;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ExchangeExternalToken;
-import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
+import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Time;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.AsymmetricSignatureProvider;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.MacSignatureSignerContext;
+import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
+import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.vault.VaultStringSecret;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.GET;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
@@ -63,8 +76,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -128,20 +139,20 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     protected String extractTokenFromResponse(String response, String tokenName) {
-    	  if(response == null)
-    	  	return null;
-    	  
+        if(response == null)
+            return null;
+
         if (response.startsWith("{")) {
             try {
-            		JsonNode node = mapper.readTree(response);
-            		if(node.has(tokenName)){
-            			String s = node.get(tokenName).textValue();
-            			if(s == null || s.trim().isEmpty())
-            				return null;
-                  return s;
-            		} else {
-            			return null;
-            		}
+                JsonNode node = mapper.readTree(response);
+                if(node.has(tokenName)){
+                    String s = node.get(tokenName).textValue();
+                    if(s == null || s.trim().isEmpty())
+                        return null;
+                    return s;
+                } else {
+                    return null;
+                }
             } catch (IOException e) {
                 throw new IdentityBrokerException("Could not extract token [" + tokenName + "] from response [" + response + "] due: " + e.getMessage(), e);
             }
@@ -325,13 +336,6 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             uriBuilder.queryParam(OAuth2Constants.PROMPT, prompt);
         }
 
-        String nonce = request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.NONCE_PARAM);
-        if (nonce == null || nonce.isEmpty()) {
-            nonce = UUID.randomUUID().toString();
-            request.getAuthenticationSession().setClientNote(OIDCLoginProtocol.NONCE_PARAM, nonce);
-        }
-        uriBuilder.queryParam(OIDCLoginProtocol.NONCE_PARAM, nonce);
-
         String acr = request.getAuthenticationSession().getClientNote(OAuth2Constants.ACR_VALUES);
         if (acr != null) {
             uriBuilder.queryParam(OAuth2Constants.ACR_VALUES, acr);
@@ -357,11 +361,11 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
      */
     public String getJsonProperty(JsonNode jsonNode, String name) {
         if (jsonNode.has(name) && !jsonNode.get(name).isNull()) {
-        	  String s = jsonNode.get(name).asText();
-        	  if(s != null && !s.isEmpty())
-        	  		return s;
-        	  else
-      	  			return null;
+            String s = jsonNode.get(name).asText();
+            if(s != null && !s.isEmpty())
+                return s;
+            else
+                return null;
         }
 
         return null;
@@ -377,6 +381,51 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     public void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context) {
         String token = (String) context.getContextData().get(FEDERATED_ACCESS_TOKEN);
         if (token != null) authSession.setUserSessionNote(FEDERATED_ACCESS_TOKEN, token);
+    }
+
+    public SimpleHttp authenticateTokenRequest(final SimpleHttp tokenRequest) {
+        if (getConfig().isJWTAuthentication()) {
+            String jws = new JWSBuilder().type(OAuth2Constants.JWT).jsonContent(generateToken()).sign(getSignatureContext());
+            return tokenRequest
+                    .param(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT)
+                    .param(OAuth2Constants.CLIENT_ASSERTION, jws);
+        } else {
+            try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
+                if (getConfig().isBasicAuthentication()) {
+                    return tokenRequest.authBasic(getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
+                }
+                return tokenRequest
+                        .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
+                        .param(OAUTH2_PARAMETER_CLIENT_SECRET, vaultStringSecret.get().orElse(getConfig().getClientSecret()));
+            }
+        }
+    }
+
+    protected JsonWebToken generateToken() {
+        JsonWebToken jwt = new JsonWebToken();
+        jwt.id(KeycloakModelUtils.generateId());
+        jwt.type(OAuth2Constants.JWT);
+        jwt.issuer(getConfig().getClientId());
+        jwt.subject(getConfig().getClientId());
+        jwt.audience(getConfig().getTokenUrl());
+        int expirationDelay = session.getContext().getRealm().getAccessCodeLifespan();
+        jwt.expiration(Time.currentTime() + expirationDelay);
+        jwt.issuedNow();
+        return jwt;
+    }
+
+    protected SignatureSignerContext getSignatureContext() {
+        if (getConfig().getClientAuthMethod().equals(OIDCLoginProtocol.CLIENT_SECRET_JWT)) {
+            try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
+                KeyWrapper key = new KeyWrapper();
+                key.setAlgorithm(Algorithm.HS256);
+                byte[] decodedSecret = vaultStringSecret.get().orElse(getConfig().getClientSecret()).getBytes();
+                SecretKey secret = new SecretKeySpec(decodedSecret, 0, decodedSecret.length, Algorithm.HS256);
+                key.setSecretKey(secret);
+                return new MacSignatureSignerContext(key);
+            }
+        }
+        return new AsymmetricSignatureProvider(session, Algorithm.RS256).signer();
     }
 
     protected class Endpoint {
@@ -403,13 +452,17 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         public Response authResponse(@QueryParam(AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_STATE) String state,
                                      @QueryParam(AbstractOAuth2IdentityProvider.OAUTH2_PARAMETER_CODE) String authorizationCode,
                                      @QueryParam(OAuth2Constants.ERROR) String error) {
+            if (state == null) {
+                return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_MISSING_STATE_ERROR);
+            }
+
             if (error != null) {
-                //logger.error("Failed " + getConfig().getAlias() + " broker login: " + error);
+                logger.error(error + " for broker login " + getConfig().getProviderId());
                 if (error.equals(ACCESS_DENIED)) {
-                    logger.error(ACCESS_DENIED + " for broker login " + getConfig().getProviderId());
                     return callback.cancelled(state);
+                } else if (error.equals(OAuthErrorException.LOGIN_REQUIRED) || error.equals(OAuthErrorException.INTERACTION_REQUIRED)) {
+                    return callback.error(state, error);
                 } else {
-                    logger.error(error + " for broker login " + getConfig().getProviderId());
                     return callback.error(state, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
                 }
             }
@@ -438,19 +491,25 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             } catch (Exception e) {
                 logger.error("Failed to make identity provider oauth callback", e);
             }
+            return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+        }
+
+        private Response errorIdentityProviderLogin(String message) {
             event.event(EventType.LOGIN);
             event.error(Errors.IDENTITY_PROVIDER_LOGIN_FAILURE);
-            return ErrorPage.error(session, null, Response.Status.BAD_GATEWAY, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+            return ErrorPage.error(session, null, Response.Status.BAD_GATEWAY, message);
         }
 
         public SimpleHttp generateTokenRequest(String authorizationCode) {
-            return SimpleHttp.doPost(getConfig().getTokenUrl(), session)
+            KeycloakContext context = session.getContext();
+            SimpleHttp tokenRequest = SimpleHttp.doPost(getConfig().getTokenUrl(), session)
                     .param(OAUTH2_PARAMETER_CODE, authorizationCode)
-                    .param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
-                    .param(OAUTH2_PARAMETER_CLIENT_SECRET, getConfig().getClientSecret())
-                    .param(OAUTH2_PARAMETER_REDIRECT_URI, session.getContext().getUri().getAbsolutePath().toString())
+                    .param(OAUTH2_PARAMETER_REDIRECT_URI, Urls.identityProviderAuthnResponse(context.getUri().getBaseUri(),
+                            getConfig().getAlias(), context.getRealm().getName()).toString())
                     .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
+            return authenticateTokenRequest(tokenRequest);
         }
+        
     }
 
     protected String getProfileEndpointForValidation(EventBuilder event) {

@@ -17,16 +17,9 @@
 
 package org.keycloak.testsuite.forms;
 
-import java.io.IOException;
-
-import javax.mail.MessagingException;
-
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSBuilder;
@@ -38,13 +31,18 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.openqa.selenium.Cookie;
+
+import java.io.IOException;
+
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
 
 
@@ -54,14 +52,6 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
-
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(UserResource.class)
-                .addPackages(true, "org.keycloak.testsuite");
-    }
-
 
     // KC_RESTART cookie from Keycloak 3.1.0
     private static final String OLD_RESTART_COOKIE_JSON = "{\n" +
@@ -90,7 +80,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
 
     // KEYCLOAK-5440 -- migration from Keycloak 3.1.0
     @Test
-    public void testRestartCookieBackwardsCompatible_Keycloak25() throws IOException, MessagingException {
+    public void testRestartCookieBackwardsCompatible_Keycloak25() throws IOException {
         String oldRestartCookie = testingClient.server().fetchString((KeycloakSession session) -> {
             try {
                 String cookieVal = OLD_RESTART_COOKIE_JSON.replace("\n", "").replace(" ", "");
@@ -118,7 +108,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.login("foo", "bar");
         loginPage.assertCurrent();
-        Assert.assertEquals("You took too long to login. Login process starting from beginning.", loginPage.getError());
+        Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
 
         events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
                 .detail(Details.RESTART_AFTER_TIMEOUT, "true")
@@ -129,7 +119,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
 
     // KEYCLOAK-7158 -- migration from Keycloak 1.9.8
     @Test
-    public void testRestartCookieBackwardsCompatible_Keycloak19() throws IOException, MessagingException {
+    public void testRestartCookieBackwardsCompatible_Keycloak19() throws IOException {
         String oldRestartCookie = testingClient.server().fetchString((KeycloakSession session) -> {
             try {
                 String cookieVal = OLD_RESTART_COOKIE_JSON.replace("\n", "").replace(" ", "");
@@ -158,7 +148,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.login("foo", "bar");
         loginPage.assertCurrent();
-        Assert.assertEquals("You took too long to login. Login process starting from beginning.", loginPage.getError());
+        Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
 
         events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
                 .detail(Details.RESTART_AFTER_TIMEOUT, "true")

@@ -5,10 +5,8 @@
     "enabled" : true,
     "credentials" : [ {
       "type" : "password",
-      "hashedSaltedValue" : "dqalJHLkWhUJZO/q6+z1fvXOohTcGCXcvoU8xCEyvTxGN4wmLx7DtyhKuefggh6Bkx1I2eBTEX4tiWggwyXMDw==",
-      "salt" : "3fBAt5GAGGxFrV9fznpZHQ==",
-      "hashIterations" : 100000,
-      "algorithm" : "pbkdf2"
+      "secretData" : "{\"value\":\"Rned5xhMiQffs44bqm6B6VSCyedQn0hg2hnyuTTQNCcd1GxlDQbbKNFIPESgeQws0WYoQs+8kAWuD/wfBcBFaA==\",\"salt\":\"0K637Dy0FG+sBlXbHA7ioA==\"}",
+      "credentialData" : "{\"hashIterations\":100000,\"algorithm\":\"pbkdf2-sha256\"}"
     } ],
     "realmRoles" : [ "admin" ]
   } ]

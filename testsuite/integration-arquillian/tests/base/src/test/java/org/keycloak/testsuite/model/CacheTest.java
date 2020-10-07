@@ -18,56 +18,34 @@
 package org.keycloak.testsuite.model;
 
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.ClassRule;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.cache.infinispan.ClientAdapter;
 import org.keycloak.models.cache.infinispan.RealmAdapter;
-import org.keycloak.testsuite.federation.ldap.AbstractLDAPTest;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
 import java.util.List;
-import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
-
 
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.arquillian.TestContext;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class CacheTest extends AbstractTestRealmKeycloakTest {
-
-	@Deployment
-	@TargetsContainer(AUTH_SERVER_CURRENT)
-	public static WebArchive deploy() {
-		return RunOnServerDeployment.create(UserResource.class, CacheTest.class)
-				.addPackages(true,
-						"org.keycloak.testsuite",
-						"org.keycloak.testsuite.model");
-	}
-
 
 	private ClientModel testApp = null;
 	private int grantedRolesCount=0;
@@ -122,7 +100,7 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
 	       
 	            realm = session.realms().getRealmByName("test");
 	            Assert.assertEquals(200, realm.getAccessCodeLifespanLogin());
-	            testApp = session.realms().getClientById(appId, realm);
+	            testApp = session.clients().getClientById(realm, appId);
 	            Assert.assertFalse(testApp.isEnabled());
 	        
 	        }
@@ -151,8 +129,6 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-1842
     @Test
     public void testRoleMappingsInvalidatedWhenClientRemoved() {
- 
-    
       	testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
             
@@ -160,27 +136,20 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
             ClientModel client = realm.addClient("foo");
             RoleModel fooRole = client.addRole("foo-role");
             user.grantRole(fooRole);
-       }); 
-
-       
-      	int gRolesCount=0;
+       });
 
         testingClient.server().run(session -> {  
         	RealmModel realm = session.realms().getRealmByName("test");
             UserModel user = session.users().getUserByUsername("joel", realm);
-            int grantedRolesCount = user.getRoleMappings().size();
+            long grantedRolesCount = user.getRoleMappingsStream().count();
 
             ClientModel client = realm.getClientByClientId("foo");
             realm.removeClient(client.getId());
-        
-        
 
-
-        
             realm = session.realms().getRealmByName("test");
             user = session.users().getUserByUsername("joel", realm);
         
-            Set<RoleModel> roles = user.getRoleMappings();
+            Set<RoleModel> roles = user.getRoleMappingsStream().collect(Collectors.toSet());
             for (RoleModel role : roles) {
                 Assert.assertNotNull(role.getContainer());
             }

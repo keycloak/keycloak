@@ -21,6 +21,8 @@ import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 
+import javax.ws.rs.core.UriBuilder;
+import java.net.URI;
 import java.net.URL;
 
 /**
@@ -40,18 +42,18 @@ public class CustomerPortal extends AbstractPageWithInjectedUrl {
         return url;
     }
     
-    public String logout() {
-        return url + "/logout";
+    public URI logout() {
+        return getUriBuilder().clone().path("logout").build();
     }
 
-    public String callCustomerDbAudienceRequiredUrl(boolean attachAudienceScope) {
-        String url = this.url + "/call-customer-db-audience-required";
+    public URI callCustomerDbAudienceRequiredUrl(boolean attachAudienceScope) {
+        UriBuilder builder = getUriBuilder().clone().path("call-customer-db-audience-required");
 
         if (attachAudienceScope) {
-            url = url + "?scope=customer-db-audience-required";
+            builder.queryParam("scope", "customer-db-audience-required");
         }
 
-        return url;
+        return builder.build();
     }
 
 }

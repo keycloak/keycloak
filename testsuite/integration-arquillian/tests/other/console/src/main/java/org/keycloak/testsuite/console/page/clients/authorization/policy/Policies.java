@@ -24,7 +24,6 @@ import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
-import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
@@ -64,9 +63,6 @@ public class Policies extends Form {
     private TimePolicy timePolicy;
 
     @Page
-    private RulePolicy rulePolicy;
-
-    @Page
     private ClientPolicy clientPolicy;
 
     @Page
@@ -99,9 +95,6 @@ public class Policies extends Form {
         } else if ("time".equals(type)) {
             timePolicy.form().populate((TimePolicyRepresentation) expected, save);
             return (P) timePolicy;
-        } else if ("rules".equals(type)) {
-            rulePolicy.form().populate((RulePolicyRepresentation) expected, save);
-            return (P) rulePolicy;
         } else if ("client".equals(type)) {
             clientPolicy.form().populate((ClientPolicyRepresentation) expected, save);
             return (P) clientPolicy;
@@ -134,8 +127,6 @@ public class Policies extends Form {
                     jsPolicy.form().populate((JSPolicyRepresentation) representation, true);
                 } else if ("time".equals(type)) {
                     timePolicy.form().populate((TimePolicyRepresentation) representation, true);
-                } else if ("rules".equals(type)) {
-                    rulePolicy.form().populate((RulePolicyRepresentation) representation, true);
                 } else if ("client".equals(type)) {
                     clientPolicy.form().populate((ClientPolicyRepresentation) representation, true);
                 } else if ("group".equals(type)) {
@@ -163,8 +154,6 @@ public class Policies extends Form {
                     return (P) jsPolicy;
                 } else if ("time".equals(type)) {
                     return (P) timePolicy;
-                } else if ("rules".equals(type)) {
-                    return (P) rulePolicy;
                 } else if ("client".equals(type)) {
                     return (P) clientPolicy;
                 } else if ("group".equals(type)) {
@@ -193,8 +182,6 @@ public class Policies extends Form {
                     jsPolicy.form().delete();
                 } else if ("time".equals(type)) {
                     timePolicy.form().delete();
-                } else if ("rules".equals(type)) {
-                    rulePolicy.form().delete();
                 } else if ("client".equals(type)) {
                     clientPolicy.form().delete();
                 } else if ("group".equals(type)) {

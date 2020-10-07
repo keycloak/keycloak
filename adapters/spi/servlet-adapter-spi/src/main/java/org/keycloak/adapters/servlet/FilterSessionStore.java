@@ -396,7 +396,7 @@ public class FilterSessionStore implements AdapterSessionStore {
             InputStream is = request.getInputStream();
 
             while ( (bytesRead = is.read(buffer) ) >= 0) {
-                os.write(buffer);
+                os.write(buffer, 0, bytesRead);
                 totalRead += bytesRead;
                 if (totalRead > maxBuffer) {
                     throw new RuntimeException("max buffer reached on a saved request");

@@ -32,10 +32,16 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+
+import static org.hamcrest.Matchers.is;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
+@EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public class ProvidersTest extends AbstractAuthenticationTest {
 
     @Test
@@ -52,6 +58,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testFormActionProviders() {
         List<Map<String, Object>> result = authMgmtResource.getFormActionProviders();
 
@@ -71,6 +78,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testClientAuthenticatorProviders() {
         List<Map<String, Object>> result = authMgmtResource.getClientAuthenticatorProviders();
 
@@ -129,10 +137,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
 
     @Test
     public void testInitialAuthenticationProviders() {
-
         List<Map<String, Object>> providers = authMgmtResource.getAuthenticatorProviders();
-        providers = sortProviders(providers);
-
         compareProviders(expectedAuthProviders(), providers);
     }
 
@@ -166,7 +171,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "You will be approved if you send query string parameter 'foo' with expected value.");
         addProviderInfo(result, "http-basic-authenticator", "HTTP Basic Authentication", "Validates username and password from Authorization HTTP header");
         addProviderInfo(result, "identity-provider-redirector", "Identity Provider Redirector", "Redirects to default Identity Provider or Identity Provider specified with kc_idp_hint query parameter");
-        addProviderInfo(result, "idp-auto-link", "Automatically link brokered account", "Automatically link brokered account without any verification");
+        addProviderInfo(result, "idp-auto-link", "Automatically set existing user", "Automatically set existing user to authentication context without any verification");
         addProviderInfo(result, "idp-confirm-link", "Confirm link existing account", "Show the form where user confirms if he wants " +
                 "to link identity provider with existing account or rather edit user profile data retrieved from identity provider to avoid conflict");
         addProviderInfo(result, "idp-create-user-if-unique", "Create User If Unique", "Detect if there is existing Keycloak account " +
@@ -176,14 +181,13 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(result, "idp-review-profile", "Review Profile",
                 "User reviews and updates profile data retrieved from Identity Provider in the displayed form");
         addProviderInfo(result, "idp-username-password-form", "Username Password Form for identity provider reauthentication",
-                "Validates a password from login form. Username is already known from identity provider authentication");
+                "Validates a password from login form. Username may be already known from identity provider authentication");
         addProviderInfo(result, "no-cookie-redirect", "Browser Redirect/Refresh", "Perform a 302 redirect to get user agent's current URI on authenticate path with an auth_session_id query parameter.  This is for client's that do not support cookies.");
         addProviderInfo(result, "push-button-authenticator", "TEST: Button Login",
                 "Just press the button to login.");
         addProviderInfo(result, "reset-credential-email", "Send Reset Email", "Send email to user and wait for response.");
         addProviderInfo(result, "reset-credentials-choose-user", "Choose User", "Choose a user to reset credentials for");
-        addProviderInfo(result, "reset-otp", "Reset OTP", "Sets the Configure OTP required action if execution is REQUIRED.  " +
-                "Will also set it if execution is OPTIONAL and the OTP is currently configured for it.");
+        addProviderInfo(result, "reset-otp", "Reset OTP", "Sets the Configure OTP required action.");
         addProviderInfo(result, "reset-password", "Reset Password", "Sets the Update Password required action if execution is REQUIRED.  " +
                 "Will also set it if execution is OPTIONAL and the password is currently configured for it.");
         addProviderInfo(result, "testsuite-dummy-click-through", "Testsuite Dummy Click Thru",
@@ -194,6 +198,21 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Testsuite Dummy authenticator.  Just passes through and is hardcoded to a specific user");
         addProviderInfo(result, "testsuite-username", "Testsuite Username Only",
                 "Testsuite Username authenticator.  Username parameter sets username");
+        addProviderInfo(result, "webauthn-authenticator", "WebAuthn Authenticator", "Authenticator for WebAuthn. Usually used for WebAuthn two-factor authentication");
+        addProviderInfo(result, "webauthn-authenticator-passwordless", "WebAuthn Passwordless Authenticator", "Authenticator for Passwordless WebAuthn authentication");
+
+        addProviderInfo(result, "auth-username-form", "Username Form",
+                "Selects a user from his username.");
+        addProviderInfo(result, "auth-password-form", "Password Form",
+                "Validates a password from login form.");
+        addProviderInfo(result, "conditional-user-role", "Condition - user role",
+                "Flow is executed only if user has the given role.");
+        addProviderInfo(result, "conditional-user-configured", "Condition - user configured",
+                "Executes the current flow only if authenticators are configured");
+        addProviderInfo(result, "conditional-user-attribute", "Condition - user attribute",
+                "Flow is executed only if the user attribute exists and has the expected value");
+        addProviderInfo(result, "set-attribute", "Set user attribute",
+                "Set a user attribute");
 
         return result;
     }
@@ -207,7 +226,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
     private void compareProviders(List<Map<String, Object>> expected, List<Map<String, Object>> actual) {
         Assert.assertEquals("Providers count", expected.size(), actual.size());
         // compare ignoring list and map impl types
-        Assert.assertEquals(normalizeResults(expected), normalizeResults(actual));
+        Assert.assertThat(normalizeResults(actual), is(normalizeResults(expected)));
     }
 
     private List<Map<String, Object>> normalizeResults(List<Map<String, Object>> list) {
@@ -215,7 +234,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         for (Map<String, Object> item: list) {
             result.add(new HashMap(item));
         }
-        return result;
+        return sortProviders(result);
     }
 
     private void addProviderInfo(List<Map<String, Object>> list, String id, String displayName, String description) {
@@ -232,4 +251,6 @@ public class ProvidersTest extends AbstractAuthenticationTest {
             return String.valueOf(o1.get("id")).compareTo(String.valueOf(o2.get("id")));
         }
     }
+
+
 }

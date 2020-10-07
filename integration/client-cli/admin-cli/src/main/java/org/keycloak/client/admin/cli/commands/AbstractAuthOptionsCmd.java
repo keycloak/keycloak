@@ -89,6 +89,9 @@ public abstract class AbstractAuthOptionsCmd extends AbstractGlobalOptionsCmd {
     @Option(name = "trustpass", description = "Truststore password (prompted for if not specified and --truststore is used)")
     String trustPass;
 
+    @Option(name = "insecure", description = "Turns off TLS validation", hasValue = false)
+    boolean insecure;
+
     @Option(name = "token", description = "Token to use for invocations.  With this option set, every other authentication option is ignored")
     String externalToken;
 
@@ -177,6 +180,10 @@ public abstract class AbstractAuthOptionsCmd extends AbstractGlobalOptionsCmd {
             } catch (Exception e) {
                 throw new RuntimeException("Failed to load truststore: " + truststore, e);
             }
+        }
+
+        if (insecure) {
+            HttpUtil.setSkipCertificateValidation();
         }
     }
 

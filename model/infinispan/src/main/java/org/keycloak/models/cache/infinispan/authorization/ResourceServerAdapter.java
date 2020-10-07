@@ -19,6 +19,7 @@ package org.keycloak.models.cache.infinispan.authorization;
 import org.keycloak.authorization.model.CachedModel;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.cache.infinispan.authorization.entities.CachedResourceServer;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
 /**
@@ -104,9 +105,21 @@ public class ResourceServerAdapter implements ResourceServer, CachedModel<Resour
     }
 
     @Override
+    public DecisionStrategy getDecisionStrategy() {
+        if (isUpdated()) return updated.getDecisionStrategy();
+        return cached.getDecisionStrategy();
+    }
+
+    @Override
+    public void setDecisionStrategy(DecisionStrategy decisionStrategy) {
+        getDelegateForUpdate();
+        updated.setDecisionStrategy(decisionStrategy);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof ResourceServer)) return false;
+        if (!(o instanceof ResourceServer)) return false;
 
         ResourceServer that = (ResourceServer) o;
         return that.getId().equals(getId());

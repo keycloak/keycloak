@@ -22,9 +22,8 @@ import io.undertow.servlet.Servlets;
 import io.undertow.servlet.api.DefaultServletConfig;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
-import io.undertow.servlet.api.ServletInfo;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
+import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.common.Version;
@@ -33,15 +32,19 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.filters.KeycloakSessionServletFilter;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.testsuite.util.cli.TestsuiteCLI;
 import org.keycloak.util.JsonSerialization;
+import org.xnio.Options;
+import org.xnio.SslClientAuthMode;
 
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.servlet.DispatcherType;
 import java.io.File;
 import java.io.FileInputStream;
@@ -134,7 +137,9 @@ public class KeycloakServer {
         File f = new File(System.getProperty("user.home"), ".keycloak-server.properties");
         if (f.isFile()) {
             Properties p = new Properties();
-            p.load(new FileInputStream(f));
+            try (FileInputStream is = new FileInputStream(f)) {
+                p.load(is);
+            }
             System.getProperties().putAll(p);
         }
 
@@ -341,7 +346,6 @@ public class KeycloakServer {
                 info("Not importing realm " + rep.getRealm() + " realm already exists");
                 return;
             }
-            manager.setContextPath("/auth");
             RealmModel realm = manager.importRealm(rep);
 
             info("Imported realm " + realm.getName());
@@ -372,6 +376,7 @@ public class KeycloakServer {
         long start = System.currentTimeMillis();
 
         ResteasyDeployment deployment = new ResteasyDeployment();
+
         deployment.setApplicationClass(KeycloakApplication.class.getName());
 
         Builder builder = Undertow.builder()
@@ -380,7 +385,9 @@ public class KeycloakServer {
                 .setIoThreads(config.getWorkerThreads() / 8);
 
         if (config.getPortHttps() != -1) {
-            builder = builder.addHttpsListener(config.getPortHttps(), config.getHost(), createSSLContext());
+            builder = builder
+                    .addHttpsListener(config.getPortHttps(), config.getHost(), createSSLContext())
+                    .setSocketOption(Options.SSL_CLIENT_AUTH_MODE, SslClientAuthMode.REQUESTED);
         }
 
         server = new UndertowJaxrsServer();
@@ -393,19 +400,13 @@ public class KeycloakServer {
             di.setDeploymentName("Keycloak");
             di.setDefaultEncoding("UTF-8");
 
-            di.addInitParameter(KeycloakApplication.KEYCLOAK_EMBEDDED, "true");
-
             di.setDefaultServletConfig(new DefaultServletConfig(true));
 
-            ServletInfo restEasyDispatcher = Servlets.servlet("Keycloak REST Interface", HttpServlet30Dispatcher.class);
+            // Note that the ResteasyServlet is configured via server.undertowDeployment(...);
+            // KEYCLOAK-14178
+            deployment.setProperty(ResteasyContextParameters.RESTEASY_DISABLE_HTML_SANITIZER, true);
 
-            restEasyDispatcher.addInitParam("resteasy.servlet.mapping.prefix", "/");
-            restEasyDispatcher.setAsyncSupported(true);
-
-            di.addServlet(restEasyDispatcher);
-
-            FilterInfo filter = Servlets.filter("SessionFilter", KeycloakSessionServletFilter.class);
-
+            FilterInfo filter = Servlets.filter("SessionFilter", UndertowRequestFilter.class);
             filter.setAsyncSupported(true);
 
             di.addFilter(filter);
@@ -413,7 +414,7 @@ public class KeycloakServer {
 
             server.deploy(di);
 
-            sessionFactory = ((KeycloakApplication) deployment.getApplication()).getSessionFactory();
+            sessionFactory = KeycloakApplication.getSessionFactory();
 
             setupDevConfig();
 
@@ -476,11 +477,28 @@ public class KeycloakServer {
     }
 
     private SSLContext createSSLContext() throws Exception {
+        KeyManager[] keyManagers = getKeyManagers();
+
+        if (keyManagers == null) {
+            return SSLContext.getDefault();
+        }
+
+        TrustManager[] trustManagers = getTrustManagers();
+
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(keyManagers, trustManagers, null);
+        return sslContext;
+    }
+
+
+    private KeyManager[] getKeyManagers() throws Exception {
         String keyStorePath = System.getProperty("keycloak.tls.keystore.path");
 
         if (keyStorePath == null) {
-            return SSLContext.getDefault();
+            return null;
         }
+
+        log.infof("Loading keystore from file: %s", keyStorePath);
 
         InputStream stream = Files.newInputStream(Paths.get(keyStorePath));
 
@@ -490,20 +508,41 @@ public class KeycloakServer {
 
         try (InputStream is = stream) {
             KeyStore keyStore = KeyStore.getInstance("JKS");
-
             char[] keyStorePassword = System.getProperty("keycloak.tls.keystore.password", "password").toCharArray();
-
             keyStore.load(is, keyStorePassword);
 
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-
             keyManagerFactory.init(keyStore, keyStorePassword);
 
-            SSLContext sslContext = SSLContext.getInstance("TLS");
+            return keyManagerFactory.getKeyManagers();
+        }
+    }
 
-            sslContext.init(keyManagerFactory.getKeyManagers(), null, null);
 
-            return sslContext;
+    private TrustManager[] getTrustManagers() throws Exception {
+        String trustStorePath = System.getProperty("keycloak.tls.truststore.path");
+
+        if (trustStorePath == null) {
+            return null;
+        }
+
+        log.infof("Loading truststore from file: %s", trustStorePath);
+
+        InputStream stream = Files.newInputStream(Paths.get(trustStorePath));
+
+        if (stream == null) {
+            throw new RuntimeException("Could not load truststore");
+        }
+
+        try (InputStream is = stream) {
+            KeyStore keyStore = KeyStore.getInstance("JKS");
+            char[] keyStorePassword = System.getProperty("keycloak.tls.truststore.password", "password").toCharArray();
+            keyStore.load(is, keyStorePassword);
+
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            trustManagerFactory.init(keyStore);
+
+            return trustManagerFactory.getTrustManagers();
         }
     }
 }

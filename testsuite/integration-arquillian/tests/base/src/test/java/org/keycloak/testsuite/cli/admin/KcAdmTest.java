@@ -18,11 +18,14 @@ import java.util.UUID;
 
 import static org.keycloak.client.admin.cli.util.OsUtil.CMD;
 import static org.keycloak.client.admin.cli.util.OsUtil.EOL;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.cli.KcAdmExec.execute;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class KcAdmTest extends AbstractAdmCliTest {
 
     @Test
@@ -474,7 +477,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
         Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertEquals("error message", "Client not allowed for direct access grants [invalid_grant]", exe.stderrLines().get(1));
+        Assert.assertEquals("error message", "Client not allowed for direct access grants [unauthorized_client]", exe.stderrLines().get(1));
 
 
         // try wrong user password
@@ -516,7 +519,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
         Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertEquals("error message", "Client not allowed for direct access grants [invalid_grant]", exe.stderrLines().get(1));
+        Assert.assertEquals("error message", "Client not allowed for direct access grants [unauthorized_client]", exe.stderrLines().get(1));
 
 
         // try wrong user password
@@ -577,6 +580,8 @@ public class KcAdmTest extends AbstractAdmCliTest {
          *  Test create, get, update, and delete using on-the-fly authentication - without using any config file.
          *  Login is performed by each operation again, and again using username, password, and client secret.
          */
+        //non-TLS endpoint
+        oauth.baseUrl(serverUrl);
         oauth.realm("master");
         oauth.clientId("admin-cli");
         String token = oauth.doGrantAccessTokenRequest("", "admin", "admin").getAccessToken();

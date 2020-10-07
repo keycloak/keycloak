@@ -17,8 +17,11 @@
 
 package org.keycloak.testsuite.pages;
 
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -36,6 +39,9 @@ public class LoginUpdateProfilePage extends AbstractPage {
 
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
+    
+    @FindBy(name = "cancel-aia")
+    private WebElement cancelAIAButton;
 
     @FindBy(className = "alert-error")
     private WebElement loginErrorMessage;
@@ -53,7 +59,12 @@ public class LoginUpdateProfilePage extends AbstractPage {
             emailInput.clear();
             emailInput.sendKeys(email);
         }
-        submitButton.click();
+
+        clickLink(submitButton);
+    }
+    
+    public void cancel() {
+        cancelAIAButton.click();
     }
 
     public String getError() {
@@ -79,6 +90,14 @@ public class LoginUpdateProfilePage extends AbstractPage {
     @Override
     public void open() {
         throw new UnsupportedOperationException();
+    }
+
+    public boolean isCancelDisplayed() {
+        try {
+            return cancelAIAButton.isDisplayed();
+        } catch (NoSuchElementException e) {
+            return false;
+        }
     }
 
 }

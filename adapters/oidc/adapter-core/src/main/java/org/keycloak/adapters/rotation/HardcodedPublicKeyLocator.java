@@ -18,7 +18,6 @@
 package org.keycloak.adapters.rotation;
 
 import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.jose.jws.JWSInput;
 
 import java.security.PublicKey;
 

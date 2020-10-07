@@ -17,19 +17,10 @@
 
 package org.keycloak.testsuite.oidc;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-
-import javax.ws.rs.core.Response;
-
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
-import org.keycloak.events.Details;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.JsonWebToken;
@@ -40,26 +31,27 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import javax.ws.rs.core.Response;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Test for the 'aud' claim in tokens
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class AudienceTest extends AbstractOIDCScopeTest {
 
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(OIDCAdvancedRequestParamsTest.class, AbstractTestRealmKeycloakTest.class);
-    }
-
-    private static String userId = KeycloakModelUtils.generateId();
+    private static final String userId = KeycloakModelUtils.generateId();
 
 
     @Override
@@ -177,55 +169,6 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         clientScope.getProtocolMappers().delete(mapper1Id);
         clientScope.getProtocolMappers().delete(mapper2Id);
     }
-
-
-    @Test
-    public void testAudienceClientScopeGeneration() throws Exception {
-        // Generate the "Audience" client scope for the "service-client" as an audience
-        Response resp = testRealm().clientScopes().generateAudienceClientScope("service-client");
-        String audienceScopeId = ApiUtil.getCreatedId(resp);
-        resp.close();
-
-        // Login and check audiences in the token. It's no audience for "service-client" yet and no clientRoles of "service-client" in the token
-        oauth.scope("openid service-client");
-        oauth.doLogin("john", "password");
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
-        Tokens tokens = sendTokenRequest(loginEvent, userId,"openid profile email", "test-app");
-        assertAudiences(tokens.accessToken);
-        assertAudiences(tokens.idToken, "test-app");
-        Assert.assertFalse(tokens.accessToken.getResourceAccess().containsKey("service-client"));
-
-        // Logout
-        oauth.doLogout(tokens.refreshToken, "password");
-        events.expectLogout(tokens.idToken.getSessionState())
-                .client("test-app")
-                .user(userId)
-                .removeDetail(Details.REDIRECT_URI).assertEvent();
-
-
-        // Add clientScope to the test-app client
-        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
-        testApp.addOptionalClientScope(audienceScopeId);
-
-        // Login again and check audiences in the token. Now there is audience for "service-client" and clientRoles of "service-client" in the token
-        oauth.scope("openid service-client");
-        oauth.doLogin("john", "password");
-        loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
-        tokens = sendTokenRequest(loginEvent, userId,"openid profile email service-client", "test-app");
-        assertAudiences(tokens.accessToken, "service-client");
-        assertAudiences(tokens.idToken, "test-app");
-        Assert.assertTrue(tokens.accessToken.getResourceAccess().containsKey("service-client"));
-        Assert.assertNames(tokens.accessToken.getResourceAccess().get("service-client").getRoles(), "role1");
-
-        // Revert
-        testApp.removeOptionalClientScope(audienceScopeId);
-        testRealm().clientScopes().get(audienceScopeId).remove();
-    }
-
 
 
     private void assertAudiences(JsonWebToken token, String... expectedAudience) {

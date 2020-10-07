@@ -28,6 +28,7 @@ import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
@@ -83,11 +84,21 @@ public class RegistrationProfile implements FormAction, FormActionFactory {
             emailValid = false;
         }
 
-        if (emailValid && !context.getRealm().isDuplicateEmailsAllowed() && context.getSession().users().getUserByEmail(email, context.getRealm()) != null) {
-            eventError = Errors.EMAIL_IN_USE;
-            formData.remove(Validation.FIELD_EMAIL);
-            context.getEvent().detail(Details.EMAIL, email);
-            errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.EMAIL_EXISTS));
+        if (emailValid && !context.getRealm().isDuplicateEmailsAllowed()) {
+            boolean duplicateEmail = false;
+            try {
+               if(context.getSession().users().getUserByEmail(email, context.getRealm()) != null) {
+                   duplicateEmail = true;
+               }
+            } catch (ModelDuplicateException e) {
+                duplicateEmail = true;
+            }
+            if (duplicateEmail) {
+                eventError = Errors.EMAIL_IN_USE;
+                formData.remove(Validation.FIELD_EMAIL);
+                context.getEvent().detail(Details.EMAIL, email);
+                errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.EMAIL_EXISTS));
+            }
         }
 
         if (errors.size() > 0) {

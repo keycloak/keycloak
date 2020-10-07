@@ -22,6 +22,7 @@ import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatfor
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.ServerStartupError;
+import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.KeycloakSession;
@@ -275,6 +276,11 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         return sql2012Dialect;
                     }
                 }
+                // For Oracle19c, we may need to set dialect explicitly to workaround https://hibernate.atlassian.net/browse/HHH-13184
+                if (dbProductName.equals("Oracle") && connection.getMetaData().getDatabaseMajorVersion() > 12) {
+                    logger.debugf("Manually specify dialect for Oracle to org.hibernate.dialect.Oracle12cDialect");
+                    return "org.hibernate.dialect.Oracle12cDialect";
+                }
             } catch (SQLException e) {
                 logger.warnf("Unable to detect hibernate dialect due database exception : %s", e.getMessage());
             }
@@ -325,45 +331,35 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
     }
 
     protected void update(Connection connection, String schema, KeycloakSession session, JpaUpdaterProvider updater) {
-        DBLockProvider dbLock = new DBLockManager(session).getDBLock();
-        if (dbLock.hasLock()) {
-            updater.update(connection, schema);
-        } else {
-            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
-                @Override
-                public void run(KeycloakSession lockSession) {
-                    DBLockManager dbLockManager = new DBLockManager(lockSession);
-                    DBLockProvider dbLock2 = dbLockManager.getDBLock();
-                    dbLock2.waitForLock();
-                    try {
-                        updater.update(connection, schema);
-                    } finally {
-                        dbLock2.releaseLock();
-                    }
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
+            @Override
+            public void run(KeycloakSession lockSession) {
+                DBLockManager dbLockManager = new DBLockManager(lockSession);
+                DBLockProvider dbLock2 = dbLockManager.getDBLock();
+                dbLock2.waitForLock(DBLockProvider.Namespace.DATABASE);
+                try {
+                    updater.update(connection, schema);
+                } finally {
+                    dbLock2.releaseLock();
                 }
-            });
-        }
+            }
+        });
     }
 
     protected void export(Connection connection, String schema, File databaseUpdateFile, KeycloakSession session, JpaUpdaterProvider updater) {
-        DBLockProvider dbLock = new DBLockManager(session).getDBLock();
-        if (dbLock.hasLock()) {
-            updater.export(connection, schema, databaseUpdateFile);
-        } else {
-            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
-                @Override
-                public void run(KeycloakSession lockSession) {
-                    DBLockManager dbLockManager = new DBLockManager(lockSession);
-                    DBLockProvider dbLock2 = dbLockManager.getDBLock();
-                    dbLock2.waitForLock();
-                    try {
-                        updater.export(connection, schema, databaseUpdateFile);
-                    } finally {
-                        dbLock2.releaseLock();
-                    }
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
+            @Override
+            public void run(KeycloakSession lockSession) {
+                DBLockManager dbLockManager = new DBLockManager(lockSession);
+                DBLockProvider dbLock2 = dbLockManager.getDBLock();
+                dbLock2.waitForLock(DBLockProvider.Namespace.DATABASE);
+                try {
+                    updater.export(connection, schema, databaseUpdateFile);
+                } finally {
+                    dbLock2.releaseLock();
                 }
-            });
-        }
+            }
+        });
     }
 
     @Override
@@ -375,7 +371,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                 return dataSource.getConnection();
             } else {
                 Class.forName(config.get("driver"));
-                return DriverManager.getConnection(config.get("url"), config.get("user"), config.get("password"));
+                return DriverManager.getConnection(StringPropertyReplacer.replaceProperties(config.get("url"), System.getProperties()), config.get("user"), config.get("password"));
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to connect to database", e);

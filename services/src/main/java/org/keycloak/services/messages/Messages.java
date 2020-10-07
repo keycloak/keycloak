@@ -26,6 +26,12 @@ public class Messages {
 
     public static final String INVALID_USER = "invalidUserMessage";
 
+    public static final String INVALID_USERNAME = "invalidUsernameMessage";
+
+    public static final String INVALID_USERNAME_OR_EMAIL = "invalidUsernameOrEmailMessage";
+
+    public static final String INVALID_PASSWORD = "invalidPasswordMessage";
+
     public static final String INVALID_EMAIL = "invalidEmailMessage";
 
     public static final String ACCOUNT_DISABLED = "accountDisabledMessage";
@@ -52,6 +58,8 @@ public class Messages {
 
     public static final String MISSING_TOTP = "missingTotpMessage";
 
+    public static final String MISSING_TOTP_DEVICE_NAME = "missingTotpDeviceNameMessage";
+
     public static final String NOTMATCH_PASSWORD = "notMatchPasswordMessage";
 
     public static final String INVALID_PASSWORD_EXISTING = "invalidPasswordExistingMessage";
@@ -72,7 +80,7 @@ public class Messages {
 
     public static final String FEDERATED_IDENTITY_CONFIRM_REAUTHENTICATE_MESSAGE = "federatedIdentityConfirmReauthenticateMessage";
 
-    public static final String IDENTITY_PROVIDER_DIFFERENT_USER_MESSAGE = "identityProviderDifferentUserMessage";
+    public static final String NESTED_FIRST_BROKER_FLOW_MESSAGE = "nestedFirstBrokerFlowMessage";
 
     public static final String CONFIGURE_TOTP = "configureTotpMessage";
 
@@ -159,6 +167,8 @@ public class Messages {
 
     public static final String IDENTITY_PROVIDER_UNEXPECTED_ERROR = "identityProviderUnexpectedErrorMessage";
 
+    public static final String IDENTITY_PROVIDER_MISSING_STATE_ERROR = "identityProviderMissingStateMessage";
+
     public static final String IDENTITY_PROVIDER_NOT_FOUND = "identityProviderNotFoundMessage";
 
     public static final String IDENTITY_PROVIDER_LINK_SUCCESS = "identityProviderLinkSuccess";
@@ -176,6 +186,8 @@ public class Messages {
     public static final String IDENTITY_PROVIDER_NOT_UNIQUE = "identityProviderNotUniqueMessage";
 
     public static final String REALM_SUPPORTS_NO_CREDENTIALS = "realmSupportsNoCredentialsMessage";
+
+    public static final String CREDENTIAL_SETUP_REQUIRED ="credentialSetupRequired";
 
     public static final String READ_ONLY_USER = "readOnlyUserMessage";
 
@@ -230,4 +242,16 @@ public class Messages {
     public static final String DELEGATION_FAILED = "delegationFailedMessage";
     public static final String DELEGATION_FAILED_HEADER = "delegationFailedHeader";
 
+    // WebAuthn
+    public static final String WEBAUTHN_REGISTER_TITLE = "webauthn-registration-title";
+    public static final String WEBAUTHN_LOGIN_TITLE = "webauthn-login-title";
+    public static final String WEBAUTHN_ERROR_TITLE = "webauthn-error-title";
+
+    // WebAuthn Error
+    public static final String WEBAUTHN_ERROR_REGISTRATION = "webauthn-error-registration";
+    public static final String WEBAUTHN_ERROR_API_GET = "webauthn-error-api-get";
+    public static final String WEBAUTHN_ERROR_DIFFERENT_USER = "webauthn-error-different-user";
+    public static final String WEBAUTHN_ERROR_AUTH_VERIFICATION = "webauthn-error-auth-verification";
+    public static final String WEBAUTHN_ERROR_REGISTER_VERIFICATION = "webauthn-error-register-verification";
+    public static final String WEBAUTHN_ERROR_USER_NOT_FOUND = "webauthn-error-user-not-found";
 }

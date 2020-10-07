@@ -18,39 +18,47 @@
 package org.keycloak.testsuite.oidc;
 
 import com.google.common.collect.ImmutableMap;
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientScopeResource;
+import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.ClaimsParameterTokenMapper;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.util.CertificateInfoHelper;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
@@ -59,27 +67,38 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.ProtocolMapperUtil;
+import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.util.JsonSerialization;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.core.UriBuilder;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
+import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
+import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
+
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * Test for supporting advanced parameters of OIDC specs (max_age, prompt, ...)
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
@@ -99,11 +118,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     @Page
     protected ErrorPage errorPage;
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(OIDCAdvancedRequestParamsTest.class, AbstractTestRealmKeycloakTest.class);
-    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -796,7 +810,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         assertEquals("Invalid Request", errorPage.getError());
 
         // Generate keypair for client
-        String clientPublicKeyPem = oidcClientEndpointsResource.generateKeys().get(TestingOIDCEndpointsApplicationResource.PUBLIC_KEY);
+        String clientPublicKeyPem = oidcClientEndpointsResource.generateKeys("RS256").get(TestingOIDCEndpointsApplicationResource.PUBLIC_KEY);
 
         // Verify signed request_uri will fail due to failed signature validation
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", Algorithm.RS256.toString());
@@ -824,6 +838,135 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // Revert requiring signature for client
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectSignatureAlg(null);
         clientResource.update(clientRep);
+    }
+
+    private void requestUriParamSignedIn(Algorithm expectedAlgorithm, Algorithm actualAlgorithm) throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            oauth.stateParamHardcoded("mystate3");
+
+            String validRedirectUri = oauth.getRedirectUri();
+            TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+
+            // Set required signature for request_uri
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectSignatureAlg(expectedAlgorithm);
+            clientResource.update(clientRep);
+
+            // generate and register client keypair
+            if (Algorithm.none != actualAlgorithm) oidcClientEndpointsResource.generateKeys(actualAlgorithm.name());
+
+            // register request object
+            oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", actualAlgorithm.name());
+
+            // use and set jwks_url
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
+            String jwksUrl = TestApplicationResourceUrls.clientJwksUri();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(jwksUrl);
+            clientResource.update(clientRep);
+
+            // set time offset, so that new keys are downloaded
+            setTimeOffset(20);
+
+            oauth.requestUri(TestApplicationResourceUrls.clientRequestUri());
+            if (expectedAlgorithm == null || expectedAlgorithm == actualAlgorithm) {
+                // Check signed request_uri will pass
+                OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+                Assert.assertNotNull(response.getCode());
+                Assert.assertEquals("mystate3", response.getState());
+                assertTrue(appPage.isCurrent());
+            } else {
+                // Verify signed request_uri will fail due to failed signature validation
+                oauth.openLoginForm();
+                Assert.assertTrue(errorPage.isCurrent());
+                assertEquals("Invalid Request", errorPage.getError());
+            }
+
+        } finally {
+            // Revert requiring signature for client
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectSignatureAlg(null);
+            // Revert jwks_url settings
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(false);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(null);
+            clientResource.update(clientRep);
+        }
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedES256ActualRS256() throws Exception {
+        // will fail
+        requestUriParamSignedIn(Algorithm.ES256, Algorithm.RS256);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedNoneActualES256() throws Exception {
+        // will fail
+        requestUriParamSignedIn(Algorithm.none, Algorithm.ES256);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedNoneActualNone() throws Exception {
+        // will success
+        requestUriParamSignedIn(Algorithm.none, Algorithm.none);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedES256ActualES256() throws Exception {
+        // will success
+        requestUriParamSignedIn(Algorithm.ES256, Algorithm.ES256);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedES384ActualES384() throws Exception {
+        // will success
+        requestUriParamSignedIn(Algorithm.ES384, Algorithm.ES384);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedES512ActualES512() throws Exception {
+        // will success
+        requestUriParamSignedIn(Algorithm.ES512, Algorithm.ES512);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedRS384ActualRS384() throws Exception {
+        // will success
+        requestUriParamSignedIn(Algorithm.RS384, Algorithm.RS384);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedRS512ActualRS512() throws Exception {
+        // will success
+        requestUriParamSignedIn(Algorithm.RS512, Algorithm.RS512);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedPS256ActualPS256() throws Exception {
+        // will success
+        requestUriParamSignedIn(Algorithm.PS256, Algorithm.PS256);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedPS384ActualPS384() throws Exception {
+        // will success
+        requestUriParamSignedIn(Algorithm.PS384, Algorithm.PS384);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedPS512ActualPS512() throws Exception {
+        // will success
+        requestUriParamSignedIn(Algorithm.PS512, Algorithm.PS512);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedAnyActualES256() throws Exception {
+        // Algorithm is null if 'any'
+        // will success
+        requestUriParamSignedIn(null, Algorithm.ES256);
     }
 
     // LOGIN_HINT
@@ -914,4 +1057,116 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         });
     }
 
+    @Test
+    public void processClaimsRequestParamSupported() throws Exception {
+        String clientScopeId = null;
+        try {
+            for (ClientScopeRepresentation rep : adminClient.realm("test").clientScopes().findAll()) {
+                if (rep.getName().equals("profile")) {
+                    clientScopeId = rep.getId();
+                    break;
+                }
+            }
+            findClientResourceByClientId(adminClient.realm("test"), "test-app").removeDefaultClientScope(clientScopeId);
+
+            ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
+            ProtocolMappersResource res = app.getProtocolMappers();
+            res.createMapper(ModelToRepresentation.toRepresentation(ClaimsParameterTokenMapper.createMapper("claimsParameterTokenMapper", true, false))).close();
+
+            Map<String, Object> claims = ImmutableMap.of(
+                "id_token", ImmutableMap.of(
+                        "email", ImmutableMap.of("essential", true),
+                        "preferred_username", ImmutableMap.of("essential", true), 
+                        "family_name", ImmutableMap.of("essential", false),
+                        "given_name", ImmutableMap.of("wesentlich", true),
+                        "name", ImmutableMap.of("essential", true)),
+                "userinfo", ImmutableMap.of(
+                        "preferred_username", ImmutableMap.of("essential", "Ja"), 
+                        "family_name", ImmutableMap.of("essential", true),
+                        "given_name", ImmutableMap.of("essential", true)));
+            Map<String, Object> oidcRequest = new HashMap<>();
+
+            oidcRequest.put(OIDCLoginProtocol.CLIENT_ID_PARAM, "test-app");
+            oidcRequest.put(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, OAuth2Constants.CODE);
+            oidcRequest.put(OIDCLoginProtocol.REDIRECT_URI_PARAM, oauth.getRedirectUri());
+            oidcRequest.put(OIDCLoginProtocol.CLAIMS_PARAM, claims);
+            String request = new JWSBuilder().jsonContent(oidcRequest).none();
+
+            oauth = oauth.request(request);
+            oauth.doLogin("test-user@localhost", "password");
+            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+            OAuthClient.AccessTokenResponse accessTokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+            IDToken idToken = oauth.verifyIDToken(accessTokenResponse.getIdToken());
+            assertEquals("test-user@localhost", idToken.getEmail());
+            assertEquals("test-user@localhost", idToken.getPreferredUsername());
+            assertNull(idToken.getFamilyName());
+            assertNull(idToken.getGivenName());
+            assertEquals("Tom Brady", idToken.getName());
+
+            Client client = ClientBuilder.newClient();
+            try {
+                Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getAccessToken());
+                UserInfo userInfo = response.readEntity(UserInfo.class);
+                assertEquals("test-user@localhost", userInfo.getEmail());
+                assertNull(userInfo.getPreferredUsername());
+                assertEquals("Brady", userInfo.getFamilyName());
+                assertEquals("Tom", userInfo.getGivenName());
+                assertNull(userInfo.getName());
+            } finally {
+                events.expect(EventType.USER_INFO_REQUEST).session(accessTokenResponse.getSessionState()).client("test-app").assertEvent();
+                client.close();
+            }
+
+            oauth.doLogout(accessTokenResponse.getRefreshToken(), "password");
+            events.expectLogout(accessTokenResponse.getSessionState()).client("test-app").clearDetails().assertEvent();
+
+
+            claims = ImmutableMap.of(
+                    "id_token", ImmutableMap.of(
+                            "test_claim", ImmutableMap.of(
+                                    "essential", true)),
+                    "access_token", ImmutableMap.of(
+                            "email", ImmutableMap.of("essential", true),
+                            "preferred_username", ImmutableMap.of("essential", true), 
+                            "family_name", ImmutableMap.of("essential", true),
+                            "given_name", ImmutableMap.of("essential", true),
+                            "name", ImmutableMap.of("essential", true)));
+            oidcRequest = new HashMap<>();
+            oidcRequest.put(OIDCLoginProtocol.CLIENT_ID_PARAM, "test-app");
+            oidcRequest.put(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, OAuth2Constants.CODE);
+            oidcRequest.put(OIDCLoginProtocol.REDIRECT_URI_PARAM, oauth.getRedirectUri());
+            oidcRequest.put(OIDCLoginProtocol.CLAIMS_PARAM, claims);
+            request = new JWSBuilder().jsonContent(oidcRequest).none();
+
+            oauth = oauth.request(request);
+            oauth.doLogin("test-user@localhost", "password");
+            loginEvent = events.expectLogin().assertEvent();
+
+            accessTokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+            idToken = oauth.verifyIDToken(accessTokenResponse.getIdToken());
+            assertEquals("test-user@localhost", idToken.getEmail()); // "email" default scope still remains
+            assertNull(idToken.getPreferredUsername());
+            assertNull(idToken.getFamilyName());
+            assertNull(idToken.getGivenName());
+            assertNull(idToken.getName());
+
+            client = ClientBuilder.newClient();
+            try {
+                Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getAccessToken());
+                UserInfo userInfo = response.readEntity(UserInfo.class);
+                assertEquals("test-user@localhost", userInfo.getEmail());
+                assertNull(userInfo.getPreferredUsername());
+                assertNull(userInfo.getFamilyName());
+                assertNull(userInfo.getGivenName());
+                assertNull(userInfo.getName());
+            } finally {
+                client.close();
+            }
+
+        } finally {
+            // revert "profile" default client scope
+            findClientResourceByClientId(adminClient.realm("test"), "test-app").addDefaultClientScope(clientScopeId);
+        }
+    }
 }

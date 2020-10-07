@@ -27,8 +27,8 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 
-import javax.security.cert.X509Certificate;
 import java.util.List;
+import javax.security.cert.X509Certificate;
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -63,7 +63,7 @@ public class BearerTokenRequestAuthenticator {
 
     public AuthOutcome authenticate(HttpFacade exchange)  {
         List<String> authHeaders = exchange.getRequest().getHeaders("Authorization");
-        if (authHeaders == null || authHeaders.size() == 0) {
+        if (authHeaders == null || authHeaders.isEmpty()) {
             challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.NO_BEARER_TOKEN, null, null);
             return AuthOutcome.NOT_ATTEMPTED;
         }
@@ -71,13 +71,13 @@ public class BearerTokenRequestAuthenticator {
         tokenString = null;
         for (String authHeader : authHeaders) {
             String[] split = authHeader.trim().split("\\s+");
-            if (split == null || split.length != 2) continue;
+            if (split.length != 2) continue;
             if (split[0].equalsIgnoreCase("Bearer")) {
                 tokenString = split[1];
 
                 log.debugf("Found [%d] values in authorization header, selecting the first value for Bearer.", (Integer) authHeaders.size());
                 break;
-            };
+            }
         }
 
         if (tokenString == null) {
@@ -102,12 +102,12 @@ public class BearerTokenRequestAuthenticator {
         try {
             token = AdapterTokenVerifier.verifyToken(tokenString, deployment);
         } catch (VerificationException e) {
-            log.error("Failed to verify token", e);
+            log.debug("Failed to verify token");
             challenge = challengeResponse(exchange, OIDCAuthenticationError.Reason.INVALID_TOKEN, "invalid_token", e.getMessage());
             return AuthOutcome.FAILED;
         }
         if (token.getIssuedAt() < deployment.getNotBefore()) {
-            log.error("Stale token");
+            log.debug("Stale token");
             challenge = challengeResponse(exchange,  OIDCAuthenticationError.Reason.STALE_TOKEN, "invalid_token", "Stale token");
             return AuthOutcome.FAILED;
         }
@@ -119,7 +119,7 @@ public class BearerTokenRequestAuthenticator {
         }
         surrogate = null;
         if (verifyCaller) {
-            if (token.getTrustedCertificates() == null || token.getTrustedCertificates().size() == 0) {
+            if (token.getTrustedCertificates() == null || token.getTrustedCertificates().isEmpty()) {
                 log.warn("No trusted certificates in token");
                 challenge = clientCertChallenge();
                 return AuthOutcome.FAILED;

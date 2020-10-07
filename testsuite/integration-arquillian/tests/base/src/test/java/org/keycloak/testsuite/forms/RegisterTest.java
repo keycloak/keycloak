@@ -20,20 +20,26 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.authentication.AuthenticationFlow;
+import org.keycloak.authentication.authenticators.browser.CookieAuthenticatorFactory;
+import org.keycloak.authentication.forms.*;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.pages.*;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 
 import org.keycloak.testsuite.util.*;
 import javax.mail.internet.MimeMessage;
+
 import static org.jgroups.util.Util.assertTrue;
 import static org.junit.Assert.assertEquals;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -323,6 +329,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE) // GreenMailRule is not working atm
     public void registerUserSuccessWithEmailVerification() throws Exception {
         RealmRepresentation realm = testRealm().toRepresentation();
         boolean origVerifyEmail = realm.isVerifyEmail();
@@ -373,6 +380,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE) // GreenMailRule is not working atm
     public void registerUserSuccessWithEmailVerificationWithResend() throws Exception {
         RealmRepresentation realm = testRealm().toRepresentation();
         boolean origVerifyEmail = realm.isVerifyEmail();
@@ -487,13 +495,38 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         assertEquals("Please specify username.", registerPage.getError());
     }
 
+    // KEYCLOAK-12729
+    @Test
+    public void registerUserNotEmailPasswordPolicy() {
+
+        RealmRepresentation notEmailRealm = RealmBuilder.create().passwordPolicy("notEmail").build();
+        notEmailRealm.setRegistrationEmailAsUsername(true);
+        try {
+            adminClient.realm("test").update(notEmailRealm);
+
+            loginPage.open();
+
+            assertTrue(loginPage.isCurrent());
+
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
+
+            registerPage.registerWithEmailAsUsername("firstName", "lastName", "registerUserNotEmail@email", "registerUserNotEmail@email", "registerUserNotEmail@email");
+
+            assertTrue(registerPage.isCurrent());
+            assertEquals("Invalid password: must not be equal to the email.", registerPage.getError());
+        } finally {
+            configureRealmRegistrationEmailAsUsername(false);
+        }
+    }
+
     protected UserRepresentation getUser(String userId) {
         return testRealm().users().get(userId).toRepresentation();
     }
 
     @Test
     public void registerExistingUser_emailAsUsername() {
-        configureRelamRegistrationEmailAsUsername(true);
+        configureRealmRegistrationEmailAsUsername(true);
 
         try {
             loginPage.open();
@@ -507,13 +540,13 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
             events.expectRegister("test-user@localhost", "test-user@localhost").user((String) null).error("email_in_use").assertEvent();
         } finally {
-            configureRelamRegistrationEmailAsUsername(false);
+            configureRealmRegistrationEmailAsUsername(false);
         }
     }
 
     @Test
     public void registerUserMissingOrInvalidEmail_emailAsUsername() {
-        configureRelamRegistrationEmailAsUsername(true);
+        configureRealmRegistrationEmailAsUsername(true);
 
         try {
             loginPage.open();
@@ -530,13 +563,13 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             assertEquals("Invalid email address.", registerPage.getError());
             events.expectRegister("registerUserInvalidEmailemail", "registerUserInvalidEmailemail").error("invalid_registration").assertEvent();
         } finally {
-            configureRelamRegistrationEmailAsUsername(false);
+            configureRealmRegistrationEmailAsUsername(false);
         }
     }
 
     @Test
     public void registerUserSuccess_emailAsUsername() {
-        configureRelamRegistrationEmailAsUsername(true);
+        configureRealmRegistrationEmailAsUsername(true);
 
         try {
             loginPage.open();
@@ -557,20 +590,49 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             Assert.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
 
         } finally {
-            configureRelamRegistrationEmailAsUsername(false);
+            configureRealmRegistrationEmailAsUsername(false);
         }
     }
 
-    protected void configureRelamRegistrationEmailAsUsername(final boolean value) {
+    //KEYCLOAK-14161
+    @Test
+    public void customRegistrationPageFormTest() {
+        String newFlowAlias = "register - custom";
+        configureRegistrationFlowWithCustomRegistrationPageForm(newFlowAlias);
+
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+    }
+
+    protected void configureRealmRegistrationEmailAsUsername(final boolean value) {
         RealmRepresentation realm = testRealm().toRepresentation();
         realm.setRegistrationEmailAsUsername(value);
         testRealm().update(realm);
     }
-    
+
     private void setDuplicateEmailsAllowed(boolean allowed) {
         RealmRepresentation testRealm = testRealm().toRepresentation();
         testRealm.setDuplicateEmailsAllowed(allowed);
         testRealm().update(testRealm);
+    }
+
+    private void configureRegistrationFlowWithCustomRegistrationPageForm(String newFlowAlias) {
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyRegistrationFlow(newFlowAlias));
+        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
+                .selectFlow(newFlowAlias)
+                        .clear()
+                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.ALTERNATIVE, CookieAuthenticatorFactory.PROVIDER_ID)
+                        .addSubFlowExecution("Sub Flow", AuthenticationFlow.BASIC_FLOW, AuthenticationExecutionModel.Requirement.ALTERNATIVE, subflow -> subflow
+                                .addSubFlowExecution("Sub sub Form Flow", AuthenticationFlow.FORM_FLOW, AuthenticationExecutionModel.Requirement.REQUIRED, subsubflow -> subsubflow
+                                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, RegistrationUserCreation.PROVIDER_ID)
+                                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, RegistrationProfile.PROVIDER_ID)
+                                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, RegistrationPassword.PROVIDER_ID)
+                                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.DISABLED, RegistrationRecaptcha.PROVIDER_ID)
+                                )
+                        )
+                .defineAsRegistrationFlow() // Activate this new flow
+        );
     }
 
 }

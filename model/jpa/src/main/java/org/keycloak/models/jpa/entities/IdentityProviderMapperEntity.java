@@ -53,8 +53,8 @@ public class IdentityProviderMapperEntity {
     protected String identityProviderMapper;
 
     @ElementCollection
-    @MapKeyColumn(name="name")
-    @Column(name="value")
+    @MapKeyColumn(name="NAME")
+    @Column(name="VALUE")
     @CollectionTable(name="IDP_MAPPER_CONFIG", joinColumns={ @JoinColumn(name="IDP_MAPPER_ID") })
     private Map<String, String> config;
 

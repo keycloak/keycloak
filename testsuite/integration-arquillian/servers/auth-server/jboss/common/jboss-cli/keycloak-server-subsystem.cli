@@ -1,0 +1,26 @@
+
+echo *** Updating keycloak-server subsystem ***
+echo ** Adding truststore spi**
+/subsystem=keycloak-server/spi=truststore/:add
+/subsystem=keycloak-server/spi=truststore/provider=file/:add(enabled=true,properties={ \
+    file => "${auth.server.truststore:${jboss.home.dir}/standalone/configuration/keycloak.truststore}", \
+    password => "${auth.server.truststore.password:secret}", \
+    hostname-verification-policy => "WILDCARD", \
+    disabled => "false"})
+
+echo ** Adding login-protocol spi **
+/subsystem=keycloak-server/spi=login-protocol/:add
+/subsystem=keycloak-server/spi=login-protocol/provider=saml/:add(enabled=true,properties={knownProtocols => "[\"http=${auth.server.http.port}\",\"https=${auth.server.https.port}\"]"})
+
+echo ** Adding theme modules **
+/subsystem=keycloak-server/theme=defaults/:write-attribute(name=modules,value=[org.keycloak.testsuite.integration-arquillian-testsuite-providers])
+
+echo ** Adding provider **
+/subsystem=keycloak-server/:write-attribute(name=providers, \
+    value=[ classpath:${jboss.home.dir}/providers/*, \
+            module:org.keycloak.testsuite.integration-arquillian-testsuite-providers \
+    ] \
+)
+
+echo ** Adding max-detail-length to eventsStore spi **
+/subsystem=keycloak-server/spi=eventsStore/provider=jpa/:write-attribute(name=properties.max-detail-length,value=${keycloak.eventsStore.maxDetailLength:1000})

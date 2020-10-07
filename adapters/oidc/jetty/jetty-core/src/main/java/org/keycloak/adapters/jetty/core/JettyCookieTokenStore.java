@@ -22,6 +22,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterTokenStore;
+import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.CookieTokenStore;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
@@ -71,6 +72,10 @@ public class JettyCookieTokenStore implements AdapterTokenStore {
             securityContext.setCurrentRequestInfo(deployment, this);
 
             request.setAttribute(KeycloakSecurityContext.class.getName(), securityContext);
+
+            JettyRequestAuthenticator jettyAuthenticator = (JettyRequestAuthenticator) authenticator;
+            KeycloakPrincipal<RefreshableKeycloakSecurityContext> principal = AdapterUtils.createPrincipal(deployment, securityContext);
+            jettyAuthenticator.principal = principal;
             return true;
         } else {
             return false;
@@ -85,7 +90,7 @@ public class JettyCookieTokenStore implements AdapterTokenStore {
 
     @Override
     public void logout() {
-        CookieTokenStore.removeCookie(facade);
+        CookieTokenStore.removeCookie(deployment, facade);
 
     }
 
@@ -113,7 +118,7 @@ public class JettyCookieTokenStore implements AdapterTokenStore {
         if (success && session.isActive()) return principal;
 
         log.debugf("Cleanup and expire cookie for user %s after failed refresh", principal.getName());
-        CookieTokenStore.removeCookie(facade);
+        CookieTokenStore.removeCookie(deployment, facade);
         return null;
     }
 

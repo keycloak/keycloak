@@ -17,9 +17,11 @@
 package org.keycloak.subsystem.adapter.saml.extension;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.AttributeMarshallers;
 import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -39,33 +41,44 @@ import java.util.HashMap;
  */
 public class ServiceProviderDefinition extends SimpleResourceDefinition {
 
-    static final SimpleAttributeDefinition SSL_POLICY =
+    private static final SimpleAttributeDefinition SSL_POLICY =
             new SimpleAttributeDefinitionBuilder(Constants.Model.SSL_POLICY, ModelType.STRING, true)
                     .setXmlName(Constants.XML.SSL_POLICY)
                     .build();
 
-    static final SimpleAttributeDefinition NAME_ID_POLICY_FORMAT =
+    private static final SimpleAttributeDefinition NAME_ID_POLICY_FORMAT =
             new SimpleAttributeDefinitionBuilder(Constants.Model.NAME_ID_POLICY_FORMAT, ModelType.STRING, true)
                     .setXmlName(Constants.XML.NAME_ID_POLICY_FORMAT)
                     .build();
 
-    static final SimpleAttributeDefinition LOGOUT_PAGE =
+    private static final SimpleAttributeDefinition LOGOUT_PAGE =
             new SimpleAttributeDefinitionBuilder(Constants.Model.LOGOUT_PAGE, ModelType.STRING, true)
                     .setXmlName(Constants.XML.LOGOUT_PAGE)
                     .build();
 
-    static final SimpleAttributeDefinition FORCE_AUTHENTICATION =
+    private static final SimpleAttributeDefinition FORCE_AUTHENTICATION =
             new SimpleAttributeDefinitionBuilder(Constants.Model.FORCE_AUTHENTICATION, ModelType.BOOLEAN, true)
                     .setXmlName(Constants.XML.FORCE_AUTHENTICATION)
                     .build();
 
-    static final SimpleAttributeDefinition IS_PASSIVE =
+    private static final SimpleAttributeDefinition KEEP_DOM_ASSERTION =
+            new SimpleAttributeDefinitionBuilder(Constants.Model.KEEP_DOM_ASSERTION, ModelType.BOOLEAN, true)
+                    .setXmlName(Constants.XML.KEEP_DOM_ASSERTION)
+                    .build();
+
+    private static final SimpleAttributeDefinition IS_PASSIVE =
             new SimpleAttributeDefinitionBuilder(Constants.Model.IS_PASSIVE, ModelType.BOOLEAN, true)
                     .setXmlName(Constants.XML.IS_PASSIVE)
                     .build();
-    static final SimpleAttributeDefinition TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN =
+    private static final SimpleAttributeDefinition TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN =
             new SimpleAttributeDefinitionBuilder(Constants.Model.TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN, ModelType.BOOLEAN, true)
                     .setXmlName(Constants.XML.TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN)
+                    .build();
+
+    private static final SimpleAttributeDefinition AUTODETECT_BEARER_ONLY =
+            new SimpleAttributeDefinitionBuilder(Constants.Model.AUTODETECT_BEARER_ONLY, ModelType.BOOLEAN, true)
+                    .setXmlName(Constants.XML.AUTODETECT_BEARER_ONLY)
+                    .setAllowExpression(true)
                     .build();
 
     static final SimpleAttributeDefinition PRINCIPAL_NAME_MAPPING_POLICY =
@@ -83,12 +96,24 @@ public class ServiceProviderDefinition extends SimpleResourceDefinition {
                     .setAllowNull(true)
                     .build();
 
-    static final SimpleAttributeDefinition[] ATTRIBUTES = {SSL_POLICY, NAME_ID_POLICY_FORMAT, LOGOUT_PAGE, FORCE_AUTHENTICATION, IS_PASSIVE, TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN};
-    static final AttributeDefinition[] ELEMENTS = {PRINCIPAL_NAME_MAPPING_POLICY, PRINCIPAL_NAME_MAPPING_ATTRIBUTE_NAME, ROLE_ATTRIBUTES};
+    static final SimpleAttributeDefinition ROLE_MAPPINGS_PROVIDER_ID =
+            new SimpleAttributeDefinitionBuilder(Constants.Model.ROLE_MAPPINGS_PROVIDER_ID, ModelType.STRING, true)
+                    .setXmlName(Constants.XML.ID)
+                    .build();
+
+    static final PropertiesAttributeDefinition ROLE_MAPPINGS_PROVIDER_CONFIG =
+            new PropertiesAttributeDefinition.Builder(Constants.Model.ROLE_MAPPINGS_PROVIDER_CONFIG, true)
+                    .setAttributeMarshaller(new AttributeMarshallers.PropertiesAttributeMarshaller(null, Constants.XML.PROPERTY, false))
+                    .build();
+
+    static final SimpleAttributeDefinition[] ATTRIBUTES = {SSL_POLICY, NAME_ID_POLICY_FORMAT, LOGOUT_PAGE, FORCE_AUTHENTICATION,
+            IS_PASSIVE, TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN, KEEP_DOM_ASSERTION, AUTODETECT_BEARER_ONLY};
+    static final AttributeDefinition[] ELEMENTS = {PRINCIPAL_NAME_MAPPING_POLICY, PRINCIPAL_NAME_MAPPING_ATTRIBUTE_NAME, ROLE_ATTRIBUTES,
+            ROLE_MAPPINGS_PROVIDER_ID, ROLE_MAPPINGS_PROVIDER_CONFIG};
 
 
-    static final HashMap<String, SimpleAttributeDefinition> ATTRIBUTE_MAP = new HashMap<>();
-    static final HashMap<String, AttributeDefinition> ALL_MAP = new HashMap<>();
+    private static final HashMap<String, SimpleAttributeDefinition> ATTRIBUTE_MAP = new HashMap<>();
+    private static final HashMap<String, AttributeDefinition> ALL_MAP = new HashMap<>();
     static final Collection<AttributeDefinition> ALL_ATTRIBUTES;
 
     static {

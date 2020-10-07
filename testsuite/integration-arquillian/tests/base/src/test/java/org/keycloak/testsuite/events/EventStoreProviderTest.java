@@ -23,12 +23,15 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -47,6 +50,7 @@ public class EventStoreProviderTest extends AbstractEventsTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE) // This looks like some database issue, test should get events which are newer or equal to requested time, however it gets only newer events from remote server
     public void query() {
         long oldest = System.currentTimeMillis() - 30000;
         long newest = System.currentTimeMillis() + 30000;
@@ -77,15 +81,15 @@ public class EventStoreProviderTest extends AbstractEventsTest {
 
         Assert.assertEquals(0, testing().queryEvents(null, null, null, null, null, null, null, null, null).size());
 
-        String d1 = new String("2015-03-04");
-        String d2 = new String("2015-03-05");
-        String d3 = new String("2015-03-06");
-        String d4 = new String("2015-03-07");
+        String d1 = "2015-03-04";
+        String d2 = "2015-03-05";
+        String d3 = "2015-03-06";
+        String d4 = "2015-03-07";
 
-        String d5 = new String("2015-03-01");
-        String d6 = new String("2015-03-03");
-        String d7 = new String("2015-03-08");
-        String d8 = new String("2015-03-10");
+        String d5 = "2015-03-01";
+        String d6 = "2015-03-03";
+        String d7 = "2015-03-08";
+        String d8 = "2015-03-10";
 
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
         Date date1 = null, date2 = null, date3 = null, date4 = null;

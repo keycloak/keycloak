@@ -60,6 +60,7 @@ public class SAML2LoginResponseBuilder implements SamlProtocolExtensionsAwareBui
     protected String issuer;
     protected int subjectExpiration;
     protected int assertionExpiration;
+    protected int sessionExpiration;
     protected String nameId;
     protected String nameIdFormat;
     protected boolean multiValuedRoles;
@@ -95,6 +96,18 @@ public class SAML2LoginResponseBuilder implements SamlProtocolExtensionsAwareBui
      */
     public SAML2LoginResponseBuilder subjectExpiration(int subjectExpiration) {
         this.subjectExpiration = subjectExpiration;
+        return this;
+    }
+
+    /**
+     * Length of time in seconds the idp session will be valid
+     * See SAML core specification 2.7.2 SessionNotOnOrAfter
+     *
+     * @param sessionExpiration Number of seconds the session should be valid
+     * @return
+     */
+    public SAML2LoginResponseBuilder sessionExpiration(int sessionExpiration) {
+        this.sessionExpiration = sessionExpiration;
         return this;
     }
 
@@ -200,13 +213,13 @@ public class SAML2LoginResponseBuilder implements SamlProtocolExtensionsAwareBui
         //Update Conditions NotOnOrAfter
         if(assertionExpiration > 0) {
             ConditionsType conditions = assertion.getConditions();
-            conditions.setNotOnOrAfter(XMLTimeUtil.add(conditions.getNotBefore(), assertionExpiration * 1000));
+            conditions.setNotOnOrAfter(XMLTimeUtil.add(conditions.getNotBefore(), assertionExpiration * 1000L));
         }
 
         //Update SubjectConfirmationData NotOnOrAfter
         if(subjectExpiration > 0) {
             SubjectConfirmationDataType subjectConfirmationData = assertion.getSubject().getConfirmation().get(0).getSubjectConfirmationData();
-            subjectConfirmationData.setNotOnOrAfter(XMLTimeUtil.add(assertion.getConditions().getNotBefore(), subjectExpiration * 1000));
+            subjectConfirmationData.setNotOnOrAfter(XMLTimeUtil.add(assertion.getConditions().getNotBefore(), subjectExpiration * 1000L));
         }
 
         // Create an AuthnStatementType
@@ -217,6 +230,10 @@ public class SAML2LoginResponseBuilder implements SamlProtocolExtensionsAwareBui
 
             AuthnStatementType authnStatement = StatementUtil.createAuthnStatement(XMLTimeUtil.getIssueInstant(),
                     authContextRef);
+
+            if (sessionExpiration > 0)
+                authnStatement.setSessionNotOnOrAfter(XMLTimeUtil.add(authnStatement.getAuthnInstant(), sessionExpiration * 1000L));
+
             if (sessionIndex != null) authnStatement.setSessionIndex(sessionIndex);
             else authnStatement.setSessionIndex(assertion.getID());
 

@@ -33,6 +33,7 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
+import org.keycloak.models.WebAuthnPolicy;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,6 +43,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -79,10 +81,16 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected int refreshTokenMaxReuse;
     protected int ssoSessionIdleTimeout;
     protected int ssoSessionMaxLifespan;
+    protected int ssoSessionIdleTimeoutRememberMe;
+    protected int ssoSessionMaxLifespanRememberMe;
     protected int offlineSessionIdleTimeout;
     // KEYCLOAK-7688 Offline Session Max for Offline Token
     protected boolean offlineSessionMaxLifespanEnabled;
     protected int offlineSessionMaxLifespan;
+    protected int clientSessionIdleTimeout;
+    protected int clientSessionMaxLifespan;
+    protected int clientOfflineSessionIdleTimeout;
+    protected int clientOfflineSessionMaxLifespan;
     protected int accessTokenLifespan;
     protected int accessTokenLifespanForImplicitFlow;
     protected int accessCodeLifespan;
@@ -93,6 +101,8 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected int notBefore;
     protected PasswordPolicy passwordPolicy;
     protected OTPPolicy otpPolicy;
+    protected WebAuthnPolicy webAuthnPolicy;
+    protected WebAuthnPolicy webAuthnPasswordlessPolicy;
 
     protected String loginTheme;
     protected String accountTheme;
@@ -116,6 +126,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected Map<String, RequiredActionProviderModel> requiredActionProvidersByAlias = new HashMap<>();
     protected MultivaluedHashMap<String, AuthenticationExecutionModel> authenticationExecutions = new MultivaluedHashMap<>();
     protected Map<String, AuthenticationExecutionModel> executionsById = new HashMap<>();
+    protected Map<String, AuthenticationExecutionModel> executionsByFlowId = new HashMap<>();
 
     protected AuthenticationFlowModel browserFlow;
     protected AuthenticationFlowModel registrationFlow;
@@ -129,7 +140,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected Set<String> eventsListeners;
     protected Set<String> enabledEventTypes;
     protected boolean adminEventsEnabled;
-    protected Set<String> adminEnabledEventOperations = new HashSet<String>();
+    protected Set<String> adminEnabledEventOperations = new HashSet<>();
     protected boolean adminEventsDetailsEnabled;
     protected List<String> defaultRoles;
     private boolean allowUserManagedAccess;
@@ -138,7 +149,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return identityProviderMapperSet;
     }
 
-    protected List<String> defaultGroups = new LinkedList<String>();
+    protected List<String> defaultGroups;
     protected List<String> clientScopes = new LinkedList<>();
     protected List<String> defaultDefaultClientScopes = new LinkedList<>();
     protected List<String> optionalDefaultClientScopes = new LinkedList<>();
@@ -185,10 +196,16 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         refreshTokenMaxReuse = model.getRefreshTokenMaxReuse();
         ssoSessionIdleTimeout = model.getSsoSessionIdleTimeout();
         ssoSessionMaxLifespan = model.getSsoSessionMaxLifespan();
+        ssoSessionIdleTimeoutRememberMe = model.getSsoSessionIdleTimeoutRememberMe();
+        ssoSessionMaxLifespanRememberMe = model.getSsoSessionMaxLifespanRememberMe();
         offlineSessionIdleTimeout = model.getOfflineSessionIdleTimeout();
         // KEYCLOAK-7688 Offline Session Max for Offline Token
         offlineSessionMaxLifespanEnabled = model.isOfflineSessionMaxLifespanEnabled();
         offlineSessionMaxLifespan = model.getOfflineSessionMaxLifespan();
+        clientSessionIdleTimeout = model.getClientSessionIdleTimeout();
+        clientSessionMaxLifespan = model.getClientSessionMaxLifespan();
+        clientOfflineSessionIdleTimeout = model.getClientOfflineSessionIdleTimeout();
+        clientOfflineSessionMaxLifespan = model.getClientOfflineSessionMaxLifespan();
         accessTokenLifespan = model.getAccessTokenLifespan();
         accessTokenLifespanForImplicitFlow = model.getAccessTokenLifespanForImplicitFlow();
         accessCodeLifespan = model.getAccessCodeLifespan();
@@ -199,6 +216,8 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         notBefore = model.getNotBefore();
         passwordPolicy = model.getPasswordPolicy();
         otpPolicy = model.getOTPPolicy();
+        webAuthnPolicy = model.getWebAuthnPolicy();
+        webAuthnPasswordlessPolicy = model.getWebAuthnPolicyPasswordless();
 
         loginTheme = model.getLoginTheme();
         accountTheme = model.getAccountTheme();
@@ -233,7 +252,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         adminEventsEnabled = model.isAdminEventsEnabled();
         adminEventsDetailsEnabled = model.isAdminEventsDetailsEnabled();
 
-        defaultRoles = model.getDefaultRoles();
+        defaultRoles = model.getDefaultRolesStream().collect(Collectors.toList());
         ClientModel masterAdminClient = model.getMasterAdminClient();
         this.masterAdminClient = (masterAdminClient != null) ? masterAdminClient.getId() : null;
 
@@ -245,10 +264,13 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         authenticationFlowList = model.getAuthenticationFlows();
         for (AuthenticationFlowModel flow : authenticationFlowList) {
             this.authenticationFlows.put(flow.getId(), flow);
-            authenticationExecutions.put(flow.getId(), new LinkedList<AuthenticationExecutionModel>());
+            authenticationExecutions.put(flow.getId(), new LinkedList<>());
             for (AuthenticationExecutionModel execution : model.getAuthenticationExecutions(flow.getId())) {
                 authenticationExecutions.add(flow.getId(), execution);
                 executionsById.put(execution.getId(), execution);
+                if (execution.getFlowId() != null) {
+                    executionsByFlowId.put(execution.getFlowId(), execution);
+                }
             }
         }
 
@@ -261,9 +283,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
             requiredActionProvidersByAlias.put(action.getAlias(), action);
         }
 
-        for (GroupModel group : model.getDefaultGroups()) {
-            defaultGroups.add(group.getId());
-        }
+        defaultGroups = model.getDefaultGroupsStream().map(GroupModel::getId).collect(Collectors.toList());
 
         browserFlow = model.getBrowserFlow();
         registrationFlow = model.getRegistrationFlow();
@@ -413,6 +433,14 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return ssoSessionMaxLifespan;
     }
 
+    public int getSsoSessionIdleTimeoutRememberMe() {
+        return ssoSessionIdleTimeoutRememberMe;
+    }
+
+    public int getSsoSessionMaxLifespanRememberMe() {
+        return ssoSessionMaxLifespanRememberMe;
+    }
+
     public int getOfflineSessionIdleTimeout() {
         return offlineSessionIdleTimeout;
     }
@@ -424,6 +452,22 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public int getOfflineSessionMaxLifespan() {
         return offlineSessionMaxLifespan;
+    }
+
+    public int getClientSessionIdleTimeout() {
+        return clientSessionIdleTimeout;
+    }
+
+    public int getClientSessionMaxLifespan() {
+        return clientSessionMaxLifespan;
+    }
+
+    public int getClientOfflineSessionIdleTimeout() {
+        return clientOfflineSessionIdleTimeout;
+    }
+
+    public int getClientOfflineSessionMaxLifespan() {
+        return clientOfflineSessionMaxLifespan;
     }
 
     public int getAccessTokenLifespan() {
@@ -570,6 +614,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return authenticationExecutions;
     }
 
+    public AuthenticationExecutionModel getAuthenticationExecutionByFlowId(String flowId) {
+        return executionsByFlowId.get(flowId);
+    }
+    
     public Map<String, AuthenticationExecutionModel> getExecutionsById() {
         return executionsById;
     }
@@ -584,6 +632,14 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public OTPPolicy getOtpPolicy() {
         return otpPolicy;
+    }
+
+    public WebAuthnPolicy getWebAuthnPolicy() {
+        return webAuthnPolicy;
+    }
+
+    public WebAuthnPolicy getWebAuthnPasswordlessPolicy() {
+        return webAuthnPasswordlessPolicy;
     }
 
     public AuthenticationFlowModel getBrowserFlow() {

@@ -57,6 +57,20 @@ public interface PoliciesResource {
     @NoCache
     List<PolicyRepresentation> policies();
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    List<PolicyRepresentation> policies(@QueryParam("policyId") String id,
+            @QueryParam("name") String name,
+            @QueryParam("type") String type,
+            @QueryParam("resource") String resource,
+            @QueryParam("scope") String scope,
+            @QueryParam("permission") Boolean permission,
+            @QueryParam("owner") String owner,
+            @QueryParam("fields") String fields,
+            @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResult);
+
     @Path("providers")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -83,9 +97,6 @@ public interface PoliciesResource {
 
     @Path("aggregate")
     AggregatePoliciesResource aggregate();
-
-    @Path("rules")
-    RulePoliciesResource rule();
 
     @Path("client")
     ClientPoliciesResource client();

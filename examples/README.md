@@ -43,8 +43,6 @@ Providers
 
 Example providers for Event Listener SPI, Event Store SPI and User Federation SPI. For more information look at:
 
-* Event Listener that outputs event detalis to sysout - `providers/event-listener-sysout/README.md`
-* Event Store that stores events in memory - `providers/event-store-mem/README.md`
 * User Federation that loads users from a text file - `providers/federation-provider/README.md`
 
 

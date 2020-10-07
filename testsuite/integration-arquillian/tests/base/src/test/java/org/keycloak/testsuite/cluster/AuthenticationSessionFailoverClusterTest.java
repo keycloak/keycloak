@@ -25,10 +25,12 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.services.util.CookieHelper;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
@@ -80,9 +82,10 @@ public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverCl
                 .enabled(true)
                 .requiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
                 .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.toString())
+                .password("password")
                 .build();
 
-        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(adminClient.realm("test"), user, "password");
+        userId = ApiUtil.createUserWithAdminClient(adminClient.realm("test"), user);
         getCleanup().addUserId(userId);
 
         oauth.clientId("test-app");
@@ -161,8 +164,11 @@ public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverCl
         appPage.assertCurrent();
     }
 
-    static String getAuthSessionCookieValue(WebDriver driver) {
+    public static String getAuthSessionCookieValue(WebDriver driver) {
         Cookie authSessionCookie = driver.manage().getCookieNamed(AuthenticationSessionManager.AUTH_SESSION_ID);
+        if (authSessionCookie == null) {
+            authSessionCookie = driver.manage().getCookieNamed(AuthenticationSessionManager.AUTH_SESSION_ID + CookieHelper.LEGACY_COOKIE);
+        }
         Assert.assertNotNull(authSessionCookie);
         return authSessionCookie.getValue();
     }

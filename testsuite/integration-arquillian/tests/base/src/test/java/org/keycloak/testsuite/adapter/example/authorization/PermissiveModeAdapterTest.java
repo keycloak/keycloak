@@ -16,16 +16,22 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
-import static org.junit.Assert.assertTrue;
-
 import java.io.File;
 import java.io.IOException;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
+import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -36,6 +42,9 @@ import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
+@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT7)
+@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
+@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
 public class PermissiveModeAdapterTest extends AbstractBaseServletAuthzAdapterTest {
 
     @Deployment(name = RESOURCE_SERVER_ID, managed = false)
@@ -50,11 +59,11 @@ public class PermissiveModeAdapterTest extends AbstractBaseServletAuthzAdapterTe
             login("jdoe", "jdoe");
             driver.navigate().to(getResourceServerUrl() + "/enforcing/resource");
 
-            if (System.getProperty("app.server","").startsWith("eap6")) {
-                assertTrue(driver.getPageSource().contains("HTTP Status 404"));
+            if (AppServerTestEnricher.isEAP6AppServer() || AppServerTestEnricher.isTomcatAppServer()) {
+                assertThat(driver.getPageSource(), containsString("HTTP Status 404"));
             } else {
-                assertTrue(driver.getTitle().equals("Error"));
-                assertTrue(driver.getPageSource().contains("Not Found"));
+                assertThat(driver.getTitle(), is(equalTo("Error")));
+                assertThat(driver.getPageSource(), containsString("Not Found"));
             }
 
             driver.navigate().to(getResourceServerUrl() + "/protected/admin");

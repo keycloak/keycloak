@@ -21,18 +21,12 @@ import org.keycloak.models.UserCredentialModel;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ *
+ * @deprecated Recommended to use {@link UserCredentialModel} as it contains all the functionality required by this class
  */
 public class PasswordUserCredentialModel extends UserCredentialModel {
 
-    // True if we have password-update request triggered by admin, not by user himself
-    private static final String ADMIN_REQUEST = "adminRequest";
-
-    public boolean isAdminRequest() {
-        Boolean b = (Boolean) this.notes.get(ADMIN_REQUEST);
-        return b!=null && b;
-    }
-
-    public void setAdminRequest(boolean adminRequest) {
-        this.notes.put(ADMIN_REQUEST, adminRequest);
+    public PasswordUserCredentialModel(String credentialId, String type, String challengeResponse, boolean adminRequest) {
+        super(credentialId, type, challengeResponse, adminRequest);
     }
 }

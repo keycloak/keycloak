@@ -23,13 +23,18 @@ import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Abstract class for Social Provider mappers which allow mapping of JSON user profile field into Keycloak user
@@ -40,6 +45,7 @@ import java.util.List;
  */
 public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityProviderMapper {
 
+	private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
 
 	protected static final Logger logger = Logger.getLogger(AbstractJsonUserAttributeMapper.class);
 
@@ -97,6 +103,11 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 	}
 
 	@Override
+	public boolean supportsSyncMode(IdentityProviderSyncMode syncMode) {
+		return IDENTITY_PROVIDER_SYNC_MODES.contains(syncMode);
+	}
+
+	@Override
 	public List<ProviderConfigProperty> getConfigProperties() {
 		return configProperties;
 	}
@@ -118,12 +129,10 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 
 	@Override
 	public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-		String attribute = mapperModel.getConfig().get(CONF_USER_ATTRIBUTE);
-		if (attribute == null || attribute.trim().isEmpty()) {
-			logger.warnf("Attribute is not configured for mapper %s", mapperModel.getName());
+		String attribute = getAttribute(mapperModel);
+		if (attribute == null) {
 			return;
 		}
-		attribute = attribute.trim();
 
 		Object value = getJsonValue(mapperModel, context);
 		if (value != null) {
@@ -136,8 +145,35 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 	}
 
 	@Override
-	public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+	public void updateBrokeredUserLegacy(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
 		// we do not update user profile from social provider
+	}
+
+	@Override
+	public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+		String attribute = getAttribute(mapperModel);
+		if (attribute == null) {
+			return;
+		}
+
+		Object value = getJsonValue(mapperModel, context);
+		if (value == null) {
+			user.removeAttribute(attribute);
+		} else if (value instanceof List) {
+			user.setAttribute(attribute, (List<String>) value);
+		} else {
+			user.setSingleAttribute(attribute, value.toString());
+		}
+	}
+
+	private String getAttribute(IdentityProviderMapperModel mapperModel) {
+		String attribute = mapperModel.getConfig().get(CONF_USER_ATTRIBUTE);
+		if (attribute == null || attribute.trim().isEmpty()) {
+			logger.warnf("Attribute is not configured for mapper %s", mapperModel.getName());
+			return null;
+		}
+		attribute = attribute.trim();
+		return attribute;
 	}
 
 	protected static Object getJsonValue(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
@@ -165,51 +201,51 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 		return value;
 	}
 
+
 	public static Object getJsonValue(JsonNode baseNode, String fieldPath) {
 		logger.debug("Going to process JsonNode path " + fieldPath + " on data " + baseNode);
 		if (baseNode != null) {
 
-			int idx = fieldPath.indexOf(JSON_PATH_DELIMITER);
-
-			String currentFieldName = fieldPath;
-			if (idx > 0) {
-				currentFieldName = fieldPath.substring(0, idx).trim();
-				if (currentFieldName.isEmpty()) {
-					logger.debug("JSON path is invalid " + fieldPath);
-					return null;
-				}
-			}
-
-			String currentNodeName = currentFieldName;
-			int arrayIndex = -1;
-			if (currentFieldName.endsWith("]")) {
-				int bi = currentFieldName.indexOf("[");
-				if (bi == -1) {
-					logger.debug("Invalid array index construct in " + currentFieldName);
-					return null;
-				}
-				try {
-				String is = currentFieldName.substring(bi+1, currentFieldName.length() - 1).trim();
-					arrayIndex = Integer.parseInt(is);
-				} catch (Exception e) {
-					logger.debug("Invalid array index construct in " + currentFieldName);
-					return null;
-				}
-				currentNodeName = currentFieldName.substring(0,bi).trim();
-			}
-
-			JsonNode currentNode = baseNode.get(currentNodeName);
-			if (arrayIndex > -1 && currentNode.isArray()) {
-				logger.debug("Going to take array node at index " + arrayIndex);
-				currentNode = currentNode.get(arrayIndex);
-			}
-
-			if (currentNode == null) {
-				logger.debug("JsonNode not found for name " + currentFieldName);
+			List<String> fields = OIDCAttributeMapperHelper.splitClaimPath(fieldPath);
+			if (fields.isEmpty() || fieldPath.endsWith(".")) {
+				logger.debug("JSON path is invalid " + fieldPath);
 				return null;
 			}
 
-			if (idx < 0) {
+			JsonNode currentNode = baseNode;
+			for (String currentFieldName : fields) {
+
+				// if array path, retrieve field name and index
+				String currentNodeName = currentFieldName;
+				int arrayIndex = -1;
+				if (currentFieldName.endsWith("]")) {
+					int bi = currentFieldName.indexOf("[");
+					if (bi == -1) {
+						logger.debug("Invalid array index construct in " + currentFieldName);
+						return null;
+					}
+					try {
+						String is = currentFieldName.substring(bi + 1, currentFieldName.length() - 1).trim();
+						arrayIndex = Integer.parseInt(is);
+						if( arrayIndex < 0) throw new ArrayIndexOutOfBoundsException();
+					} catch (Exception e) {
+						logger.debug("Invalid array index construct in " + currentFieldName);
+						return null;
+					}
+					currentNodeName = currentFieldName.substring(0, bi).trim();
+				}
+
+				currentNode = currentNode.get(currentNodeName);
+				if (arrayIndex > -1 && currentNode.isArray()) {
+					logger.debug("Going to take array node at index " + arrayIndex);
+					currentNode = currentNode.get(arrayIndex);
+				}
+
+				if (currentNode == null) {
+					logger.debug("JsonNode not found for name " + currentFieldName);
+					return null;
+				}
+
 				if (currentNode.isArray()) {
 					List<String> values = new ArrayList<>();
 					for (JsonNode childNode : currentNode) {
@@ -222,18 +258,22 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 					if (values.isEmpty()) {
 						return null;
 					}
-					return arrayIndex == idx? values : null;
-				}
-				if (!currentNode.isValueNode() || currentNode.isNull()) {
-					logger.debug("JsonNode is not value node for name " + currentFieldName);
+					return values ;
+				} else if (currentNode.isNull()) {
+
+					logger.debug("JsonNode is null node for name " + currentFieldName);
 					return null;
+				} else if (currentNode.isValueNode()) {
+					String ret = currentNode.asText();
+					if (ret != null && !ret.trim().isEmpty())
+						return ret.trim();
+					else
+						return null;
+
 				}
-				String ret = currentNode.asText();
-				if (ret != null && !ret.trim().isEmpty())
-					return ret.trim();
-			} else {
-				return getJsonValue(currentNode, fieldPath.substring(idx + 1));
+
 			}
+			return currentNode;
 		}
 		return null;
 	}

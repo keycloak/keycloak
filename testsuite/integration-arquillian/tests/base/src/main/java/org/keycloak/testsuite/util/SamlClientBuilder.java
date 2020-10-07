@@ -16,7 +16,9 @@
  */
 package org.keycloak.testsuite.util;
 
+import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.testsuite.page.AbstractPage;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClient.DoNotFollowRedirectStep;
 import org.keycloak.testsuite.util.SamlClient.ResultExtractor;
@@ -34,13 +36,14 @@ import org.keycloak.testsuite.util.saml.LoginBuilder;
 import org.keycloak.testsuite.util.saml.UpdateProfileBuilder;
 import org.keycloak.testsuite.util.saml.ModifySamlResponseStepBuilder;
 import org.keycloak.testsuite.util.saml.RequiredConsentBuilder;
+import java.util.function.Function;
 import javax.ws.rs.core.Response.Status;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.hamcrest.Matcher;
 import org.junit.Assert;
 import org.w3c.dom.Document;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.keycloak.testsuite.util.saml.SamlDocumentStepBuilder.saml2Object2String;
 
 /**
  *
@@ -113,9 +116,21 @@ public class SamlClientBuilder {
         return this;
     }
 
-    public SamlClientBuilder assertResponse(Matcher<HttpResponse> matcher) {
+    public <T> T andThen(Function<SamlClientBuilder, T> next) {
+        return next.apply(this);
+    }
+
+    public SamlClientBuilder assertResponse(Matcher<? super CloseableHttpResponse> matcher) {
         steps.add((client, currentURI, currentResponse, context) -> {
             Assert.assertThat(currentResponse, matcher);
+            return null;
+        });
+        return this;
+    }
+
+    public SamlClientBuilder assertResponse(Consumer<? super CloseableHttpResponse> consumer) {
+        steps.add((client, currentURI, currentResponse, context) -> {
+            consumer.accept(currentResponse);
             return null;
         });
         return this;
@@ -155,6 +170,22 @@ public class SamlClientBuilder {
         return addStepBuilder(new CreateLogoutRequestStepBuilder(authServerSamlUrl, issuer, requestBinding, this));
     }
 
+    /** Issues the given SAML document to the SAML endpoint */
+    public ModifySamlResponseStepBuilder submitSamlDocument(URI authServerSamlUrl, String samlDocument, Binding binding) {
+        return addStepBuilder(new ModifySamlResponseStepBuilder(binding, this)
+          .targetUri(authServerSamlUrl)
+          .documentSupplier(() -> samlDocument)
+        );
+    }
+
+    /** Issues the given SAML document to the SAML endpoint */
+    public ModifySamlResponseStepBuilder submitSamlDocument(URI authServerSamlUrl, SAML2Object samlObject, Binding binding) {
+        return addStepBuilder(new ModifySamlResponseStepBuilder(binding, this)
+          .targetUri(authServerSamlUrl)
+          .documentSupplier(() -> saml2Object2String(samlObject))
+        );
+    }
+
     /** Handles login page */
     public LoginBuilder login() {
         return addStepBuilder(new LoginBuilder(this));
@@ -182,6 +213,21 @@ public class SamlClientBuilder {
           .executeAndTransform(responseBinding::extractResponse);
     }
 
+    /** Returns RelayState from Saml response. Note that the redirects are disabled for this to work. */
+    public String getSamlRelayState(Binding responseBinding) {
+        return doNotFollowRedirects()
+                .executeAndTransform(responseBinding::extractRelayState);
+    }
+
+    /** Provide possibility to consume RelayState from saml response. Note that the redirects are disabled for this to work. */
+    public SamlClientBuilder assertSamlRelayState(Binding responseBinding, Consumer<String> relayStateConsumer) {
+        if (responseBinding.equals(Binding.REDIRECT)) doNotFollowRedirects();
+        return addStep((client, currentURI, currentResponse, context) -> {
+            relayStateConsumer.accept(responseBinding.extractRelayState(currentResponse));
+            return null;
+        });
+    }
+
     /** Returns SAML request or response as replied from server. Note that the redirects are disabled for this to work. */
     public ModifySamlResponseStepBuilder processSamlResponse(Binding responseBinding) {
         return
@@ -192,6 +238,10 @@ public class SamlClientBuilder {
     public SamlClientBuilder navigateTo(String httpGetUri) {
         steps.add((client, currentURI, currentResponse, context) -> new HttpGet(httpGetUri));
         return this;
+    }
+
+    public SamlClientBuilder navigateTo(AbstractPage page) {
+        return navigateTo(page.buildUri());
     }
 
     public SamlClientBuilder navigateTo(URI httpGetUri) {

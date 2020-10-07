@@ -28,8 +28,8 @@ import java.util.Date;
  */
 public class EqualCondition extends NamedParameterCondition {
 
-    private final Object value;
     private final EscapeStrategy escapeStrategy;
+    private Object value;
 
     public EqualCondition(String name, Object value, EscapeStrategy escapeStrategy) {
         super(name);
@@ -39,6 +39,10 @@ public class EqualCondition extends NamedParameterCondition {
 
     public Object getValue() {
         return this.value;
+    }
+
+    public void setValue(Object value) {
+        this.value = value;
     }
 
     public EscapeStrategy getEscapeStrategy() {
@@ -52,7 +56,7 @@ public class EqualCondition extends NamedParameterCondition {
             parameterValue = LDAPUtil.formatDate((Date) parameterValue);
         }
 
-        String escaped = escapeStrategy.escape(parameterValue.toString());
+        String escaped = new OctetStringEncoder(escapeStrategy).encode(parameterValue, isBinary());
 
         filter.append("(").append(getParameterName()).append(LDAPConstants.EQUAL).append(escaped).append(")");
     }

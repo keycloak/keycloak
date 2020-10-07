@@ -41,7 +41,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -247,7 +247,7 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
                 ctx = parseFileOrStdin(file);
             }
         } else if (body != null) {
-            content = new ByteArrayInputStream(body.getBytes(Charset.forName("utf-8")));
+            content = new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8));
         }
 
         ConfigData config = loadConfig();
@@ -320,7 +320,7 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
         }
 
         if (content == null && ctx.getContent() != null) {
-            content = new ByteArrayInputStream(ctx.getContent().getBytes(Charset.forName("utf-8")));
+            content = new ByteArrayInputStream(ctx.getContent().getBytes(StandardCharsets.UTF_8));
         }
 
         ReturnFields returnFields = null;

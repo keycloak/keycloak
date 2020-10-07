@@ -20,13 +20,19 @@ package org.keycloak.authentication.requiredactions;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.ConsoleDisplayMode;
+import org.keycloak.credential.CredentialModel;
+import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.OTPCredentialProvider;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.freemarker.model.TotpBean;
+import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.CredentialValidation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.utils.CredentialHelper;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -41,6 +47,7 @@ public class ConsoleUpdateTotp implements RequiredActionProvider {
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
     }
+
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
         TotpBean totpBean = new TotpBean(context.getSession(), context.getRealm(), context.getUser(), context.getUriInfo().getRequestUriBuilder());
@@ -65,33 +72,24 @@ public class ConsoleUpdateTotp implements RequiredActionProvider {
         EventBuilder event = context.getEvent();
         event.event(EventType.UPDATE_TOTP);
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        String totp = formData.getFirst("totp");
+        String challengeResponse = formData.getFirst("totp");
         String totpSecret = context.getAuthenticationSession().getAuthNote("totpSecret");
+        String userLabel = formData.getFirst("userLabel");
 
-        if (Validation.isBlank(totp)) {
-            context.challenge(
-                    challenge(context).message(Messages.MISSING_TOTP)
-            );
+        OTPPolicy policy = context.getRealm().getOTPPolicy();
+        OTPCredentialModel credentialModel = OTPCredentialModel.createFromPolicy(context.getRealm(), totpSecret, userLabel);
+        if (Validation.isBlank(challengeResponse)) {
+            context.challenge(challenge(context).message(Messages.MISSING_TOTP));
             return;
-        } else if (!CredentialValidation.validOTP(context.getRealm(), totp, totpSecret)) {
-            context.challenge(
-                    challenge(context).message(Messages.INVALID_TOTP)
-            );
+        } else if (!CredentialValidation.validOTP(challengeResponse, credentialModel, policy.getLookAheadWindow())) {
+            context.challenge(challenge(context).message(Messages.INVALID_TOTP));
             return;
         }
 
-        UserCredentialModel credentials = new UserCredentialModel();
-        credentials.setType(context.getRealm().getOTPPolicy().getType());
-        credentials.setValue(totpSecret);
-        context.getSession().userCredentialManager().updateCredential(context.getRealm(), context.getUser(), credentials);
-
-
-        // if type is HOTP, to update counter we execute validation based on supplied token
-        UserCredentialModel cred = new UserCredentialModel();
-        cred.setType(context.getRealm().getOTPPolicy().getType());
-        cred.setValue(totp);
-        context.getSession().userCredentialManager().isValid(context.getRealm(), context.getUser(), cred);
-
+        if (!CredentialHelper.createOTPCredential(context.getSession(), context.getRealm(), context.getUser(), challengeResponse, credentialModel)) {
+            context.challenge(challenge(context).message(Messages.INVALID_TOTP));
+            return;
+        }
         context.getAuthenticationSession().removeAuthNote("totpSecret");
         context.success();
     }

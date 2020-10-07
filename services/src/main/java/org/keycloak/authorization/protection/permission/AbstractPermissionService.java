@@ -22,13 +22,12 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.ResourceStore;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.TokenManager;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.Urls;
 
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
@@ -129,7 +128,7 @@ public class AbstractPermissionService {
 
                 if (scope == null && resource.getType() != null) {
                     scope = resourceStore.findByType(resource.getType(), resourceServer.getId()).stream()
-                            .filter(baseResource -> baseResource.getOwner().equals(resource.getResourceServer().getId()))
+                            .filter(baseResource -> baseResource.getOwner().equals(resource.getResourceServer()))
                             .flatMap(resource1 -> resource1.getScopes().stream())
                             .filter(baseScope -> baseScope.getName().equals(scopeName)).findFirst().orElse(null);
                 }
@@ -148,8 +147,8 @@ public class AbstractPermissionService {
     private String createPermissionTicket(List<PermissionRequest> request) {
         List<Permission> permissions = verifyRequestedResource(request);
 
-        ClientModel targetClient = authorization.getRealm().getClientById(resourceServer.getId());
-        PermissionTicketToken token = new PermissionTicketToken(permissions, targetClient.getClientId(), this.identity.getAccessToken());
+        String audience = Urls.realmIssuer(this.authorization.getKeycloakSession().getContext().getUri().getBaseUri(), this.authorization.getRealm().getName());
+        PermissionTicketToken token = new PermissionTicketToken(permissions, audience, this.identity.getAccessToken());
         Map<String, List<String>> claims = new HashMap<>();
 
         for (PermissionRequest permissionRequest : request) {

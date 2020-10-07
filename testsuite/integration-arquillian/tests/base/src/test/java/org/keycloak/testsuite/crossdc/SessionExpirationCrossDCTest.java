@@ -92,8 +92,9 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
         ClientRepresentation client = ClientBuilder.create()
                 .clientId("test-app")
                 .directAccessGrants()
-                .redirectUris("http://localhost:8180/auth/realms/master/app/*")
+                .redirectUris("http://localhost:8180/auth/realms/master/app/*", "https://localhost:8543/auth/realms/master/app/*")
                 .addWebOrigin("http://localhost:8180")
+                .addWebOrigin("https://localhost:8543")
                 .secret("password")
                 .build();
 

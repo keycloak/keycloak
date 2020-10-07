@@ -1,0 +1,10 @@
+
+echo *** Updating infinispan cache owners ***
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=sessions:write-attribute(name=owners, value=@SESSION_CACHE_OWNERS@)
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=authenticationSessions:write-attribute(name=owners, value=@SESSION_CACHE_OWNERS@)
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=clientSessions:write-attribute(name=owners, value=@SESSION_CACHE_OWNERS@)
+
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineSessions:write-attribute(name=owners, value=@OFFLINE_SESSION_CACHE_OWNERS@)
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=offlineClientSessions:write-attribute(name=owners, value=@OFFLINE_SESSION_CACHE_OWNERS@)
+
+/subsystem=infinispan/cache-container=keycloak/distributed-cache=loginFailures:write-attribute(name=owners, value=@LOGIN_FAILURE_CACHE_OWNERS@)

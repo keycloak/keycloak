@@ -94,7 +94,7 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
                 .name("REALM_COMPOSITE_1_APPLICATION")
                 .fullScopeEnabled(Boolean.FALSE)
                 // addScopeMapping(realmComposite1)
-                .redirectUris("http://localhost:8180/auth/realms/master/app/*")
+                .redirectUris("http://localhost:8180/auth/realms/master/app/*", "https://localhost:8543/auth/realms/master/app/*")
                 .baseUrl("http://localhost:8180/auth/realms/master/app/auth")
                 .adminUrl("http://localhost:8180/auth/realms/master/app/logout")
                 .secret("password");
@@ -105,7 +105,7 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
                 .name("REALM_ROLE_1_APPLICATION")
                 .fullScopeEnabled(Boolean.FALSE)
                 // addScopeMapping(realmRole1)
-                .redirectUris("http://localhost:8180/auth/realms/master/app/*")
+                .redirectUris("http://localhost:8180/auth/realms/master/app/*", "https://localhost:8543/auth/realms/master/app/*")
                 .baseUrl("http://localhost:8180/auth/realms/master/app/auth")
                 .adminUrl("http://localhost:8180/auth/realms/master/app/logout")
                 .secret("password");
@@ -115,7 +115,7 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
                 .clientId("APP_ROLE_APPLICATION")
                 .name("APP_ROLE_APPLICATION")
                 .fullScopeEnabled(Boolean.FALSE)
-                .redirectUris("http://localhost:8180/auth/realms/master/app/*")
+                .redirectUris("http://localhost:8180/auth/realms/master/app/*", "https://localhost:8543/auth/realms/master/app/*")
                 .baseUrl("http://localhost:8180/auth/realms/master/app/auth")
                 .adminUrl("http://localhost:8180/auth/realms/master/app/logout")
                 .defaultRoles("APP_ROLE_1", "APP_ROLE_2")
@@ -139,7 +139,7 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
                 .fullScopeEnabled(Boolean.FALSE)
                 //.scopeMapping(appRole2)
                 .defaultRoles("APP_COMPOSITE_ROLE")
-                .redirectUris("http://localhost:8180/auth/realms/master/app/*")
+                .redirectUris("http://localhost:8180/auth/realms/master/app/*", "https://localhost:8543/auth/realms/master/app/*")
                 .baseUrl("http://localhost:8180/auth/realms/master/app/auth")
                 .adminUrl("http://localhost:8180/auth/realms/master/app/logout")
                 .secret("password");

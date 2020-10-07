@@ -10,6 +10,21 @@ xml="${1?Specify the licenses xml file. ex: rh-sso/licenses.xml}"
 xml_dirname="$(dirname "$xml")"
 output_dir="${LICENSE_OUTPUT_DIR:-$xml_dirname}"
 
+echo "==> Checking license data for errors" >&2
+
+die() {
+    { set +x; } 2>/dev/null
+    echo "$@" >&2
+    exit 1
+}
+
+set -x
+
+xmlstarlet val "$xml" || die "Specified license data is not valid XML"
+grep -hn '/blob/' "$xml" && die "Some licence URLs reference HTML (/blob/) files, replace them with raw"
+
+{ set +x; } 2>/dev/null
+
 echo "==> Deleting old license files in $output_dir" >&2
 
 find "$output_dir" -maxdepth 1 '(' -type f -or -type l ')' -name '*.txt' -print0 | xargs --no-run-if-empty -0 rm
@@ -28,6 +43,10 @@ xmlstarlet tr /dev/stdin "$xml" >> "$tempfile" <<EOF
 
     <xsl:template match="licenseSummary/dependencies/dependency/licenses/license/name/text()">
         <xsl:value-of select="translate(., '&lt;&gt;&quot;:\\|?*', '')"/>
+    </xsl:template>
+
+    <xsl:template match="licenseSummary/others/other/description/text()">
+        <xsl:value-of select="translate(., '/', '-')"/>
     </xsl:template>
 
     <xsl:template match="licenseSummary/others/other/licenses/license/name/text()">

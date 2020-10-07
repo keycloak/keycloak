@@ -36,11 +36,13 @@ public class ProviderManager {
 
     private static final Logger logger = Logger.getLogger(ProviderManager.class);
 
+    private final KeycloakDeploymentInfo info;
     private List<ProviderLoader> loaders = new LinkedList<ProviderLoader>();
     private MultivaluedHashMap<Class<? extends Provider>, ProviderFactory> cache = new MultivaluedHashMap<>();
 
 
     public ProviderManager(KeycloakDeploymentInfo info, ClassLoader baseClassLoader, String... resources) {
+        this.info = info;
         List<ProviderLoaderFactory> factories = new LinkedList<ProviderLoaderFactory>();
         for (ProviderLoaderFactory f : ServiceLoader.load(ProviderLoaderFactory.class, getClass().getClassLoader())) {
             factories.add(f);
@@ -49,6 +51,7 @@ public class ProviderManager {
         logger.debugv("Provider loaders {0}", factories);
 
         loaders.add(new DefaultProviderLoader(info, baseClassLoader));
+        loaders.add(new DeploymentProviderLoader(info));
 
         if (resources != null) {
             for (String r : resources) {
@@ -123,6 +126,10 @@ public class ProviderManager {
             }
         }
         return null;
+    }
+
+    public synchronized KeycloakDeploymentInfo getInfo() {
+        return  info;
     }
 
 }

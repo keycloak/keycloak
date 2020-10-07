@@ -38,10 +38,13 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UmaPermissionTicketPushedClaimsTest extends AbstractResourceServerTest {
 
     @Test
@@ -64,7 +67,7 @@ public class UmaPermissionTicketPushedClaimsTest extends AbstractResourceServerT
 
         AuthorizationResource authorization = getClient(getRealm()).authorization();
 
-        authorization.policies().js().create(policy);
+        authorization.policies().js().create(policy).close();
 
         ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
 
@@ -72,7 +75,7 @@ public class UmaPermissionTicketPushedClaimsTest extends AbstractResourceServerT
         representation.addScope("withdraw");
         representation.addPolicy(policy.getName());
 
-        authorization.permissions().scope().create(representation);
+        authorization.permissions().scope().create(representation).close();
 
         AuthzClient authzClient = getAuthzClient();
         PermissionRequest permissionRequest = new PermissionRequest(resource.getId());

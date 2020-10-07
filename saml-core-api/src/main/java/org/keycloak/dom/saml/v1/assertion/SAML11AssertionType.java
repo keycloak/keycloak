@@ -53,7 +53,7 @@ public class SAML11AssertionType extends CommonAssertionType {
 
     protected SAML11AdviceType advice;
 
-    protected List<SAML11StatementAbstractType> statements = new ArrayList<SAML11StatementAbstractType>();
+    protected List<SAML11StatementAbstractType> statements = new ArrayList<>();
 
     protected Element signature;
 

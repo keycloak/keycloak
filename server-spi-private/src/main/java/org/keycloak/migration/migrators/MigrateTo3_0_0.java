@@ -20,12 +20,10 @@ package org.keycloak.migration.migrators;
 
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.oidc.OIDCClientRepresentation;
 
 import java.util.Objects;
 
@@ -57,7 +55,7 @@ public class MigrateTo3_0_0 implements Migration {
     }
 
     protected void migrateRealm(RealmModel realm) {
-        realm.getClients().stream()
+        realm.getClientsStream()
                 .filter(clientModel -> defaultClients.contains(clientModel.getId()))
                 .filter(clientModel -> Objects.isNull(clientModel.getProtocol()))
                 .forEach(clientModel -> clientModel.setProtocol("openid-connect"));

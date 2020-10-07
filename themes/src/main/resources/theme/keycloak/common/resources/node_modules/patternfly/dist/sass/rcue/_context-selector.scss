@@ -1,0 +1,125 @@
+//
+// Context Selector
+// --------------------------------------------------
+
+.contextselector-pf {
+  float: left;
+  .bootstrap-select {
+    width: $contextselector-pf-bootstrap-select-width-mobile !important;
+    @media (min-width: $screen-xs-min) {
+      width: $contextselector-pf-bootstrap-select-width-desktop !important;
+    }
+    &.open {
+      > .dropdown-toggle {
+        &,
+        &:hover,
+        &:focus {
+          background: $navbar-pf-item-open-bg-color;
+          color: $navbar-pf-item-active-color;
+        }
+        &:focus {
+          outline: 0 !important; // don't show restored focus ring when open
+        }
+      }
+    }
+    > .dropdown-toggle {
+      background: none;
+      border: 0;
+      box-shadow: none !important;
+      color: $navbar-pf-vertical-color;
+      font-weight: normal;
+      padding-bottom: $contextselector-pf-dropdown-toggle-padding-bottom;
+      padding-left: $contextselector-pf-dropdown-toggle-padding-left;
+      padding-top: $contextselector-pf-dropdown-toggle-padding-top;
+      &:focus {
+        // restore the focus ring
+        // Default
+        outline: thin dotted !important;
+        // WebKit
+        outline: 5px auto -webkit-focus-ring-color !important;
+        outline-offset: -2px !important;
+      }
+      &:hover {
+        outline: 0 !important; // don't show restored focus ring when open
+      }
+      &:focus,
+      &:hover {
+        background-color: $navbar-pf-item-hover-bg-color;
+      }
+      .filter-option {
+        text-overflow: ellipsis;
+        position: relative;
+      }
+    }
+    .dropdown-menu li a span.text {
+      display: block;
+      overflow-x: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+    }
+  }
+}
+.layout-pf-fixed .navbar-pf-vertical.navbar-pf-contextselector {
+  z-index: $zindex-modal-background;
+}
+.navbar-pf-vertical .nav.contextselector-pf {
+  @media (min-width: $screen-md-min) {
+    margin-left: $contextselector-pf-margin-left;
+  }
+}
+
+// the following rules are deprecated
+.contextselector-pf {
+  float:left;
+  &-title {
+    display: inline-block;
+    line-height: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: $contextselector-title-width-mobile;
+    @media (min-width: $screen-xs-min) {
+      width: $contextselector-title-width-desktop;
+    }
+  }
+  .contextselector-pf-list {
+    @media (min-width: $screen-sm-min) {
+      max-height: $contextselector-pf-list-max-height;
+      overflow-y: auto;
+    }
+    a {
+      color: $color-pf-black-800;
+      display: block;
+    }
+    li {
+      border-color: transparent;
+      border-style: solid;
+      border-width: $contextselector-pf-list-li-border-width;
+      padding: $contextselector-pf-list-li-padding;
+      &:hover {
+        background: $color-pf-blue-50;
+        border-color: $dropdown-link-hover-border-color;
+        a {
+          text-decoration: none;
+        }
+      }
+    }
+  }
+  .dropdown {
+    &.open, &:hover {
+      background-color: $navbar-pf-navbar-primary-active-bg-color-stop;
+    }
+  }
+  .dropdown-menu {
+    margin-top: 0;
+    width: 100%;
+  }
+  .form-group {
+    margin: $contextselector-pf-form-group-margin;
+  }
+}
+.navbar-pf-vertical .nav.contextselector-pf .nav-item-iconic {
+  align-items: center;
+  display: flex;
+  padding: $contextselector-pf-nav-item-iconic-padding;
+}

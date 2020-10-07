@@ -29,6 +29,8 @@ import java.util.Set;
  */
 public interface Resource {
 
+    String EXACT_NAME = "EXACT_NAME";
+
     /**
      * Returns the unique identifier for this instance.
      *
@@ -119,7 +121,7 @@ public interface Resource {
      *
      * @return the resource server associated with this resource
      */
-     ResourceServer getResourceServer();
+     String getResourceServer();
 
     /**
      * Returns the resource's owner, which is usually an identifier that uniquely identifies the resource's owner.

@@ -49,7 +49,6 @@
     "FreeOTP",
     "Google Authenticator"
   ],
-  "clientTemplates": [],
   "browserSecurityHeaders": {
     "xContentTypeOptions": "nosniff",
     "xRobotsTag": "none",
@@ -634,6 +633,5 @@
     "_browser_header.contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
     "waitIncrementSeconds": "60"
   },
-  "keycloakVersion": "4.0.0.Beta2-SNAPSHOT",
   "userManagedAccessAllowed": false
 }

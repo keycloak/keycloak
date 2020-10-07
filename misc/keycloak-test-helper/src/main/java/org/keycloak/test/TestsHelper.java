@@ -158,20 +158,20 @@ public class TestsHelper {
     public static boolean importTestRealm(String username, String password, String realmJsonPath) throws IOException {
 
         ObjectMapper mapper = new ObjectMapper();
-        ClassLoader classLoader = TestsHelper.class.getClassLoader();
-        InputStream stream = TestsHelper.class.getResourceAsStream(realmJsonPath);
-        RealmRepresentation realmRepresentation = mapper.readValue(stream, RealmRepresentation.class);
+        try (InputStream stream = TestsHelper.class.getResourceAsStream(realmJsonPath)) {
+            RealmRepresentation realmRepresentation = mapper.readValue(stream, RealmRepresentation.class);
 
-        Keycloak keycloak = Keycloak.getInstance(
-                keycloakBaseUrl,
-                "master",
-                username,
-                password,
-                "admin-cli");
-        keycloak.realms().create(realmRepresentation);
-        testRealm = realmRepresentation.getRealm();
-        generateInitialAccessToken(keycloak);
-        return true;
+            Keycloak keycloak = Keycloak.getInstance(
+                    keycloakBaseUrl,
+                    "master",
+                    username,
+                    password,
+                    "admin-cli");
+            keycloak.realms().create(realmRepresentation);
+            testRealm = realmRepresentation.getRealm();
+            generateInitialAccessToken(keycloak);
+            return true;
+        }
 
     }
 

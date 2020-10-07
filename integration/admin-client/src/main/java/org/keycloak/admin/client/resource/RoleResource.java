@@ -17,6 +17,7 @@
 
 package org.keycloak.admin.client.resource;
 
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.ManagementPermissionRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -86,9 +87,9 @@ public interface RoleResource {
     Set<RoleRepresentation> getRealmRoleComposites();
 
     @GET
-    @Path("composites/clients/{appName}")
+    @Path("composites/clients/{clientUuid}")
     @Produces(MediaType.APPLICATION_JSON)
-    Set<RoleRepresentation> getClientRoleComposites(@PathParam("appName") String appName);
+    Set<RoleRepresentation> getClientRoleComposites(@PathParam("clientUuid") String clientUuid);
 
     @POST
     @Path("composites")
@@ -126,5 +127,31 @@ public interface RoleResource {
     @Produces(MediaType.APPLICATION_JSON)
     Set<UserRepresentation> getRoleUserMembers(@QueryParam("first") Integer firstResult,
                                                @QueryParam("max") Integer maxResults);
+    
+    /**
+     * Get role groups
+     * <p/>
+     * Returns groups that have the given role
+     *
+     * @return a list of groups with the given role
+     */
+    @GET
+    @Path("groups")
+    @Produces(MediaType.APPLICATION_JSON)
+    Set<GroupRepresentation> getRoleGroupMembers();
 
+    /**
+     * Get role groups
+     * <p/>
+     * Returns groups that have the given role, paginated according to the query parameters
+     *
+     * @param firstResult Pagination offset
+     * @param maxResults  Pagination size
+     * @return a list of groups with the given role
+     */
+    @GET
+    @Path("groups")
+    @Produces(MediaType.APPLICATION_JSON)
+    Set<GroupRepresentation> getRoleGroupMembers(@QueryParam("first") Integer firstResult,
+                                               @QueryParam("max") Integer maxResults);
 }

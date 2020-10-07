@@ -42,7 +42,7 @@ public class IdpAutoLinkAuthenticator extends AbstractIdpAuthenticator {
 
         UserModel existingUser = getExistingUser(session, realm, authSession);
 
-        logger.debugf("User '%s' will auto link with identity provider '%s' . Identity provider username is '%s' ", existingUser.getUsername(),
+        logger.debugf("User '%s' is set to authentication context when link with identity provider '%s' . Identity provider username is '%s' ", existingUser.getUsername(),
                 brokerContext.getIdpConfig().getAlias(), brokerContext.getUsername());
 
         context.setUser(existingUser);

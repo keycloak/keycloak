@@ -148,14 +148,6 @@ public class LdapManyObjectsInitializerCommand extends AbstractCommand {
     private static LDAPObject addLDAPUser(LDAPStorageProvider ldapProvider, RealmModel realm, final String username,
                                          final String firstName, final String lastName, final String email,
                                          String groupsDN, int startOffsetGroups, int countGroups) {
-//        LDAPObject ldapUser = new LDAPObject();
-//        LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
-//        ldapUser.setRdnAttributeName(ldapConfig.getRdnLdapAttribute());
-//        ldapUser.setObjectClasses(ldapConfig.getUserObjectClasses());
-//        LDAPUtils.computeAndSetDn(ldapConfig, ldapUser);
-//
-//        ldapUser.setSingleAttribute("uid", )
-//        ldapProvider.getLdapIdentityStore().add(ldapUser);
 
         UserModel helperUser = new UserModelDelegate(null) {
 
@@ -181,7 +173,15 @@ public class LdapManyObjectsInitializerCommand extends AbstractCommand {
 
             @Override
             public List<String> getAttribute(String name) {
-                if ("street".equals(name)) {
+                if (UserModel.FIRST_NAME.equals(name)) {
+                    return Collections.singletonList(firstName);
+                } else if (UserModel.LAST_NAME.equals(name)) {
+                    return Collections.singletonList(lastName);
+                } else if (UserModel.EMAIL.equals(name)) {
+                    return Collections.singletonList(email);
+                } else if (UserModel.USERNAME.equals(name)) {
+                    return Collections.singletonList(username);
+                } else if ("street".equals(name)) {
 
                     List<String> groupNamesList = new ArrayList<>();
                     for (int i=startOffsetGroups ; i<startOffsetGroups + countGroups ; i++) {

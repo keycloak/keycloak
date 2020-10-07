@@ -9,6 +9,7 @@ ENV CONFIGURATION standalone.xml
 # ensuring clean shutdown when container is stopped.
 ENV LAUNCH_JBOSS_IN_BACKGROUND 1
 ENV PROXY_ADDRESS_FORWARDING false
+ENV JSTAT false
 
 USER root
 RUN yum install -y epel-release jq iproute && yum clean all

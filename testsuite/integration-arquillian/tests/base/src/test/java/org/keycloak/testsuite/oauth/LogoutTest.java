@@ -22,19 +22,24 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.Details;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.*;
 
 import java.util.List;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriBuilder;
+
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -43,6 +48,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -108,6 +114,101 @@ public class LogoutTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void logoutIDTokenHint() {
+        oauth.doLogin("test-user@localhost", "password");
+
+        String sessionId = events.expectLogin().assertEvent().getSessionId();
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        String idToken = tokenResponse.getIdToken();
+
+        events.clear();
+
+        driver.navigate().to(oauth.getLogoutUrl().redirectUri(oauth.APP_AUTH_ROOT).idTokenHint(idToken).build());
+        events.expectLogout(sessionId).detail(Details.REDIRECT_URI, oauth.APP_AUTH_ROOT).assertEvent();
+
+        assertCurrentUrlEquals(oauth.APP_AUTH_ROOT);
+    }
+
+    @Test
+    public void browserLogoutWithAccessToken() {
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        String accessToken = tokenResponse.getAccessToken();
+
+        events.clear();
+
+        driver.navigate().to(oauth.getLogoutUrl().redirectUri(oauth.APP_AUTH_ROOT).idTokenHint(accessToken).build());
+
+        events.expectLogoutError(OAuthErrorException.INVALID_TOKEN).assertEvent();
+    }
+
+    @Test
+    public void postLogoutWithRefreshTokenAfterUserSessionLogoutAndLoginAgain() throws Exception {
+        // Login
+        OAuthClient.AccessTokenResponse accessTokenResponse = loginAndForceNewLoginPage();
+        String refreshToken1 = accessTokenResponse.getRefreshToken();
+
+        oauth.doLogout(refreshToken1, "password");
+
+        setTimeOffset(2);
+
+        oauth.fillLoginForm("test-user@localhost", "password");
+
+        Assert.assertFalse(loginPage.isCurrent());
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code, "password");
+
+        // POST logout with token should fail
+        try (CloseableHttpResponse response = oauth.doLogout(refreshToken1, "password")) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusLine().getStatusCode());
+        }
+
+        String logoutUrl = oauth.getLogoutUrl()
+                .idTokenHint(accessTokenResponse.getIdToken())
+                .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
+                .build();
+
+        // GET logout with ID token should fail as well
+        try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
+             CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusLine().getStatusCode());
+        }
+
+        // finally POST logout with VALID token should succeed
+        try (CloseableHttpResponse response = oauth.doLogout(tokenResponse2.getRefreshToken(), "password")) {
+            assertThat(response, Matchers.statusCodeIsHC(Status.NO_CONTENT));
+
+            assertNotNull(testingClient.testApp().getAdminLogoutAction());
+        }
+    }
+
+
+    @Test
+    public void postLogoutFailWithCredentialsOfDifferentClient() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        oauth.clientSessionState("client-session");
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+        String refreshTokenString = tokenResponse.getRefreshToken();
+
+        oauth.clientId("test-app-scope");
+
+        // Assert logout fails with 400 when trying to use different client credentials
+        try (CloseableHttpResponse response = oauth.doLogout(refreshTokenString, "password")) {
+            assertThat(response, Matchers.statusCodeIsHC(Status.BAD_REQUEST));
+        }
+
+        oauth.clientId("test-app");
+    }
+
+    @Test
     public void postLogoutWithValidIdToken() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
 
@@ -119,13 +220,13 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         String logoutUrl = oauth.getLogoutUrl()
           .idTokenHint(idTokenString)
-          .postLogoutRedirectUri(AppPage.baseUrl)
+          .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
           .build();
         
         try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
           CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
             assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
-            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(AppPage.baseUrl));
+            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
         }
     }
 
@@ -144,13 +245,13 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         String logoutUrl = oauth.getLogoutUrl()
           .idTokenHint(idTokenString)
-          .postLogoutRedirectUri(AppPage.baseUrl)
+          .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
           .build();
 
         try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
           CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
             assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
-            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(AppPage.baseUrl));
+            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
         }
     }
 
@@ -169,13 +270,13 @@ public class LogoutTest extends AbstractKeycloakTest {
         // Logout should succeed with user already logged out, see KEYCLOAK-3399
         String logoutUrl = oauth.getLogoutUrl()
           .idTokenHint(idTokenString)
-          .postLogoutRedirectUri(AppPage.baseUrl)
+          .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
           .build();
 
         try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
           CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
             assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
-            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(AppPage.baseUrl));
+            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
         }
     }
 
@@ -205,13 +306,13 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         String logoutUrl = oauth.getLogoutUrl()
           .idTokenHint(idTokenString)
-          .postLogoutRedirectUri(AppPage.baseUrl)
+          .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
           .build();
         
         try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
           CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
             assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
-            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(AppPage.baseUrl));
+            assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
         }
     }
 
@@ -227,4 +328,23 @@ public class LogoutTest extends AbstractKeycloakTest {
         }
     }
 
+    private OAuthClient.AccessTokenResponse loginAndForceNewLoginPage() {
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        oauth.clientSessionState("client-session");
+
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        setTimeOffset(1);
+
+        String loginFormUri = UriBuilder.fromUri(oauth.getLoginFormUrl())
+                .queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN)
+                .build().toString();
+        driver.navigate().to(loginFormUri);
+
+        loginPage.assertCurrent();
+
+        return tokenResponse;
+    }
 }

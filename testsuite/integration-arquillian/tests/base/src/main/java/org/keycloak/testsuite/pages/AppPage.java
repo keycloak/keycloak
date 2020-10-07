@@ -24,25 +24,25 @@ import org.openqa.selenium.support.FindBy;
 
 import javax.ws.rs.core.UriBuilder;
 
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class AppPage extends AbstractPage {
-
-    public static final String AUTH_SERVER_URL = "http://localhost:8180/auth";
-    public static final String baseUrl = "http://localhost:8180/auth/realms/master/app/auth";
 
     @FindBy(id = "account")
     private WebElement accountLink;
 
     @Override
     public void open() {
-        driver.navigate().to(baseUrl);
+        driver.navigate().to(oauth.APP_AUTH_ROOT);
     }
 
     @Override
     public boolean isCurrent() {
-        return driver.getCurrentUrl().startsWith(baseUrl);
+        return removeDefaultPorts(driver.getCurrentUrl()).startsWith(oauth.APP_AUTH_ROOT);
     }
 
     public RequestType getRequestType() {
@@ -50,7 +50,7 @@ public class AppPage extends AbstractPage {
     }
 
     public void openAccount() {
-        accountLink.click();
+        clickLink(accountLink);
     }
 
     public enum RequestType {
@@ -58,10 +58,9 @@ public class AppPage extends AbstractPage {
     }
 
     public void logout() {
-        String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(AUTH_SERVER_URL))
-                .queryParam(OAuth2Constants.REDIRECT_URI,baseUrl).build("test").toString();
+        String logoutUri = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(oauth.AUTH_SERVER_ROOT))
+                .queryParam(OAuth2Constants.REDIRECT_URI, oauth.APP_AUTH_ROOT).build("test").toString();
         driver.navigate().to(logoutUri);
-
     }
 
 }

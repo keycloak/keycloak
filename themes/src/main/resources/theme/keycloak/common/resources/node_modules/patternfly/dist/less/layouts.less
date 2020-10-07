@@ -1,0 +1,140 @@
+//
+// Layouts
+// --------------------------------------------------
+.layout-pf {
+  &,
+  & body {
+    min-height: 100%;
+  }
+  &.layout-pf-fixed {
+    &.transitions .container-pf-nav-pf-vertical {
+      transition: @flyout-transition-pf;
+    }
+    body {
+      padding-top: @navbar-pf-height; // make space for the navbar
+    }
+    .navbar-pf {
+      left: 0;
+      position: fixed;
+      top:0;
+      right: 0;
+      z-index: 1030;
+    }
+    .container-pf-nav-pf-vertical {
+      margin-left: @nav-pf-vertical-width;
+      &.nav-pf-vertical-with-badges {
+        margin-left: @nav-pf-vertical-badges-width;
+      }
+      &.collapsed-nav {
+        margin-left: @nav-pf-vertical-collapsed-width;
+        &.hidden-icons-pf {
+          margin-left: 0;
+        }
+      }
+      &.hidden-nav {
+        margin-left: 0; // remove space as left nav is hidden
+      }
+      &.hide-nav-pf {
+        visibility: hidden !important;
+      }
+      &.collapsed-secondary-nav-pf, &.collapsed-tertiary-nav-pf {
+        margin-left: @nav-pf-vertical-width;
+        &.nav-pf-vertical-with-badges {
+          margin-left: @nav-pf-vertical-badges-width;
+        }
+      }
+      &.nav-pf-persistent-secondary.secondary-visible-pf {
+        @media (min-width: 1200px) {
+          margin-left: (@nav-pf-vertical-width + @nav-pf-vertical-width);
+          &.nav-pf-vertical-with-badges {
+            margin-left: (@nav-pf-vertical-badges-width + @nav-pf-vertical-badges-width);
+          }
+          &.hidden-nav {
+            margin-left: 0; // remove space as left nav is hidden
+          }
+          &.collapsed-secondary-nav-pf {
+            margin-left: @nav-pf-vertical-width;
+            &.nav-pf-vertical-with-badges {
+              margin-left: @nav-pf-vertical-badges-width;
+            }
+          }
+          &.collapsed-tertiary-nav-pf {
+            margin-left: @nav-pf-vertical-width;
+            &.nav-pf-vertical-with-badges {
+              margin-left: @nav-pf-vertical-badges-width;
+            }
+          }
+          &.collapsed-nav {
+            margin-left: (@nav-pf-vertical-collapsed-width + @nav-pf-vertical-width);
+            &.nav-pf-vertical-with-badges {
+              margin-left: (@nav-pf-vertical-collapsed-width + @nav-pf-vertical-badges-width);
+            }
+            &.collapsed-secondary-nav-pf {
+              margin-left: @nav-pf-vertical-width;
+              &.nav-pf-vertical-with-badges {
+                margin-left: @nav-pf-vertical-badges-width;
+              }
+            }
+            &.collapsed-tertiary-nav-pf {
+              margin-left: @nav-pf-vertical-width;
+              &.nav-pf-vertical-with-badges {
+                margin-left: @nav-pf-vertical-badges-width;
+              }
+            }
+            &.hidden-icons-pf {
+              margin-left: 0;
+            }
+          }
+        }
+      }
+    }
+  }
+  &.layout-pf-fixed-with-footer {
+    body {
+      padding-bottom: @footer-pf-height;
+    }
+  }
+}
+.layout-pf-alt {
+  &,
+  & body {
+    min-height: 100%;
+  }
+  &.layout-pf-alt-fixed {
+    &.layout-pf-alt-fixed-inner-scroll {
+      &,
+      & body {
+        height: 100%;
+        min-height: 0;
+      }
+      .container-pf-alt-nav-pf-vertical-alt {
+        height: 100%;
+        overflow: auto;
+        &.container-cards-pf {
+          margin-top: 0;
+          padding-top: (@grid-gutter-width/2);
+        }
+      }
+    }
+    &.transitions .container-pf-alt-nav-pf-vertical-alt {
+      transition: @flyout-transition-pf;
+    }
+    body {
+      padding-top: @navbar-pf-alt-height; // make space for the navbar
+    }
+    .container-pf-alt-nav-pf-vertical-alt {
+      margin-left: (@nav-pf-vertical-alt-width);
+      &.collapsed-nav {
+        margin-left: (@nav-pf-vertical-alt-collapsed-width); // adjust space for the collapsed left nav
+      }
+      &.hidden-nav {
+        margin-left: 0; // remove space as left nav is hidden
+      }
+    }
+  }
+  &.layout-pf-alt-fixed-with-footer {
+    body {
+      padding-bottom: @footer-pf-alt-height;
+    }
+  }
+}

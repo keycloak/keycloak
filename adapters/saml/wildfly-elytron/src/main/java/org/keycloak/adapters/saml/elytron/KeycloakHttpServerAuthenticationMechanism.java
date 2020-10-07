@@ -31,7 +31,9 @@ import org.keycloak.adapters.saml.SamlDeploymentContext;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.SessionIdMapper;
+import org.keycloak.adapters.spi.SessionIdMapperUpdater;
 import org.wildfly.security.http.HttpAuthenticationException;
+import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.HttpServerRequest;
 import org.wildfly.security.http.Scope;
@@ -48,12 +50,14 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
     private final CallbackHandler callbackHandler;
     private final SamlDeploymentContext deploymentContext;
     private final SessionIdMapper idMapper;
+    private final SessionIdMapperUpdater idMapperUpdater;
 
-    public KeycloakHttpServerAuthenticationMechanism(Map<String, ?> properties, CallbackHandler callbackHandler, SamlDeploymentContext deploymentContext, SessionIdMapper idMapper) {
+    public KeycloakHttpServerAuthenticationMechanism(Map<String, ?> properties, CallbackHandler callbackHandler, SamlDeploymentContext deploymentContext, SessionIdMapper idMapper, SessionIdMapperUpdater idMapperUpdater) {
         this.properties = properties;
         this.callbackHandler = callbackHandler;
         this.deploymentContext = deploymentContext;
         this.idMapper = idMapper;
+        this.idMapperUpdater = idMapperUpdater;
     }
 
     @Override
@@ -72,7 +76,7 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
             return;
         }
 
-        ElytronHttpFacade httpFacade = new ElytronHttpFacade(request, idMapper, deploymentContext, callbackHandler);
+        ElytronHttpFacade httpFacade = new ElytronHttpFacade(request, getSessionIdMapper(request), getSessionIdMapperUpdater(request), deploymentContext, callbackHandler);
         SamlDeployment deployment = httpFacade.getDeployment();
 
         if (!deployment.isConfigured()) {
@@ -136,6 +140,18 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
         }
 
         return this.deploymentContext;
+    }
+
+    private SessionIdMapper getSessionIdMapper(HttpServerRequest request) {
+        HttpScope scope = request.getScope(Scope.APPLICATION);
+        SessionIdMapper res = scope == null ? null : (SessionIdMapper) scope.getAttachment(KeycloakConfigurationServletListener.ADAPTER_SESSION_ID_MAPPER_ATTRIBUTE_ELYTRON);
+        return res == null ? this.idMapper : res;
+    }
+
+    private SessionIdMapperUpdater getSessionIdMapperUpdater(HttpServerRequest request) {
+        HttpScope scope = request.getScope(Scope.APPLICATION);
+        SessionIdMapperUpdater res = scope == null ? null : (SessionIdMapperUpdater) scope.getAttachment(KeycloakConfigurationServletListener.ADAPTER_SESSION_ID_MAPPER_UPDATER_ATTRIBUTE_ELYTRON);
+        return res == null ? this.idMapperUpdater : res;
     }
 
     protected void redirectLogout(SamlDeployment deployment, ElytronHttpFacade exchange) {

@@ -1,0 +1,4 @@
+
+echo *** Update io subsystem ***
+/subsystem=io/worker=default:write-attribute(name=io-threads,value=@IO_WORKER_IO_THREADS@)
+/subsystem=io/worker=default:write-attribute(name=task-max-threads,value=@IO_WORKER_TASK_MAX_THREADS@)

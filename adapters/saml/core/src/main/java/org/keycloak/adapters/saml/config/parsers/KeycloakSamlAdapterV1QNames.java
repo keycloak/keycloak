@@ -25,6 +25,7 @@ import javax.xml.namespace.QName;
  */
 public enum KeycloakSamlAdapterV1QNames implements HasQName {
 
+    ALLOWED_CLOCK_SKEW("AllowedClockSkew"),
     ATTRIBUTE("Attribute"),
     CERTIFICATE("Certificate"),
     CERTIFICATE_PEM("CertificatePem"),
@@ -37,8 +38,10 @@ public enum KeycloakSamlAdapterV1QNames implements HasQName {
     PRINCIPAL_NAME_MAPPING("PrincipalNameMapping"),
     PRIVATE_KEY("PrivateKey"),
     PRIVATE_KEY_PEM("PrivateKeyPem"),
+    PROPERTY("Property"),
     PUBLIC_KEY_PEM("PublicKeyPem"),
     ROLE_IDENTIFIERS("RoleIdentifiers"),
+    ROLE_MAPPINGS_PROVIDER("RoleMappingsProvider"),
     SINGLE_LOGOUT_SERVICE("SingleLogoutService"),
     SINGLE_SIGN_ON_SERVICE("SingleSignOnService"),
     SP("SP"),
@@ -57,8 +60,10 @@ public enum KeycloakSamlAdapterV1QNames implements HasQName {
     ATTR_ENTITY_ID(null, "entityID"),
     ATTR_FILE(null, "file"),
     ATTR_FORCE_AUTHENTICATION(null, "forceAuthentication"),
+    ATTR_ID(null, "id"),
     ATTR_IS_PASSIVE(null, "isPassive"),
     ATTR_LOGOUT_PAGE(null, "logoutPage"),
+    ATTR_METADATA_URL(null, "metadataUrl"),
     ATTR_NAME(null, "name"),
     ATTR_NAME_ID_POLICY_FORMAT(null, "nameIDPolicyFormat"),
     ATTR_PASSWORD(null, "password"),
@@ -80,9 +85,12 @@ public enum KeycloakSamlAdapterV1QNames implements HasQName {
     ATTR_TRUSTSTORE_PASSWORD(null, "truststorePassword"),
     ATTR_TURN_OFF_CHANGE_SESSSION_ID_ON_LOGIN(null, "turnOffChangeSessionIdOnLogin"),
     ATTR_TYPE(null, "type"),
+    ATTR_UNIT(null, "unit"),
     ATTR_VALIDATE_ASSERTION_SIGNATURE(null, "validateAssertionSignature"),
     ATTR_VALIDATE_REQUEST_SIGNATURE(null, "validateRequestSignature"),
     ATTR_VALIDATE_RESPONSE_SIGNATURE(null, "validateResponseSignature"),
+    ATTR_VALUE(null, "value"),
+    ATTR_KEEP_DOM_ASSERTION(null, "keepDOMAssertion"),
 
     UNKNOWN_ELEMENT("")
     ;

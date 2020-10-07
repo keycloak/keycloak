@@ -45,6 +45,7 @@ services:
             MGMT_USER_PASSWORD: admin
             TCP_PING_INITIAL_HOSTS: infinispan_dc1[7600]
             JAVA_OPTS: ${INFINISPAN_JVM_MEMORY:--Xms64m -Xmx1g -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -XX:+DisableExplicitGC} -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true
+            JSTAT: "${INFINISPAN_JSTAT:-false}"
         ports:
             - "9990"
 
@@ -67,6 +68,7 @@ services:
             MGMT_USER_PASSWORD: admin
             TCP_PING_INITIAL_HOSTS: infinispan_dc1[7600],infinispan_dc2[7600]
             JAVA_OPTS: ${INFINISPAN_JVM_MEMORY:--Xms64m -Xmx1g -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -XX:+DisableExplicitGC} -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true
+            JSTAT: "${INFINISPAN_JSTAT:-false}"
         ports:
             - "9990"
     
@@ -131,6 +133,7 @@ services:
             HTTP_MAX_CONNECTIONS: ${LB_HTTP_MAX_CONNECTIONS:-50000}
             WORKER_IO_THREADS: ${LB_WORKER_IO_THREADS:-2}
             WORKER_TASK_MAX_THREADS: ${LB_WORKER_TASK_MAX_THREADS:-16}
+            JSTAT: "${LB_JSTAT:-false}"
         ports:
             - "8081:8080"
             - "9991:9990"
@@ -150,6 +153,7 @@ services:
             HTTP_MAX_CONNECTIONS: ${LB_HTTP_MAX_CONNECTIONS:-50000}
             WORKER_IO_THREADS: ${LB_WORKER_IO_THREADS:-2}
             WORKER_TASK_MAX_THREADS: ${LB_WORKER_TASK_MAX_THREADS:-16}
+            JSTAT: "${LB_JSTAT:-false}"
         ports:
             - "8082:8080"
             - "9992:9990"

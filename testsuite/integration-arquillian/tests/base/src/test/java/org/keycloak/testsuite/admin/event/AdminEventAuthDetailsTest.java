@@ -33,18 +33,20 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.utils.tls.TLSUtils;
 
 import java.util.Collections;
 import java.util.List;
+import org.junit.After;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 /**
  * Test authDetails in admin events
@@ -98,6 +100,11 @@ public class AdminEventAuthDetailsTest extends AbstractAuthTest {
         adminCliUuid = ApiUtil.findClientByClientId(testRealm, Constants.ADMIN_CLI_CLIENT_ID).toRepresentation().getId();
     }
 
+    @After
+    public void cleanUp() {
+        adminClient.realm(MASTER).users().get(masterAdminUser2Id).remove();
+    }
+
     @Test
     public void testAuth() {
         testClient(MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID, MASTER, masterAdminCliUuid, masterAdminUserId);
@@ -127,9 +134,8 @@ public class AdminEventAuthDetailsTest extends AbstractAuthTest {
     }
 
     private void testClient(String realmName, String username, String password, String clientId, String expectedRealmId, String expectedClientUuid, String expectedUserId) {
-        Keycloak keycloak = Keycloak.getInstance(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth",
-                realmName, username, password, clientId);
-        try {
+        try (Keycloak keycloak = Keycloak.getInstance(getAuthServerContextRoot() + "/auth",
+                realmName, username, password, clientId, TLSUtils.initializeTLS())) {
             UserRepresentation rep = UserBuilder.create().id(appUserId).username("app-user").email("foo@email.org").build();
             keycloak.realm("test").users().get(appUserId).update(rep);
 
@@ -141,8 +147,6 @@ public class AdminEventAuthDetailsTest extends AbstractAuthTest {
                     .representation(rep)
                     .authDetails(expectedRealmId, expectedClientUuid, expectedUserId)
                     .assertEvent();
-        } finally {
-            keycloak.close();
         }
     }
 }

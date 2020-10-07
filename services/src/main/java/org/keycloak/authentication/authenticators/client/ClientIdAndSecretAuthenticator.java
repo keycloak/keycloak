@@ -50,11 +50,6 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
 
     public static final String PROVIDER_ID = "client-secret";
 
-    public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.ALTERNATIVE,
-            AuthenticationExecutionModel.Requirement.DISABLED
-    };
-
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
         String client_id = null;
@@ -106,7 +101,7 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
 
         context.getEvent().client(client_id);
 
-        ClientModel client = context.getRealm().getClientByClientId(client_id);
+        ClientModel client = context.getSession().clients().getClientByClientId(context.getRealm(), client_id);
         if (client == null) {
             context.failure(AuthenticationFlowError.CLIENT_NOT_FOUND, null);
             return;
@@ -126,19 +121,19 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
         }
 
         if (clientSecret == null) {
-            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client secret not provided in request");
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "unauthorized_client", "Client secret not provided in request");
             context.challenge(challengeResponse);
             return;
         }
 
         if (client.getSecret() == null) {
-            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Invalid client secret");
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "unauthorized_client", "Invalid client secret");
             context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
             return;
         }
 
         if (!client.validateSecret(clientSecret)) {
-            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Invalid client secret");
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "unauthorized_client", "Invalid client secret");
             context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
             return;
         }

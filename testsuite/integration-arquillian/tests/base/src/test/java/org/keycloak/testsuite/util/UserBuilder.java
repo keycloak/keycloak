@@ -22,7 +22,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.utils.HmacOTP;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 /**
@@ -141,14 +145,10 @@ public class UserBuilder {
         return this;
     }
 
-    public UserBuilder secret(String type, String secret) {
+    public UserBuilder secret(CredentialRepresentation credential) {
         if (rep.getCredentials() == null) {
             rep.setCredentials(new LinkedList<>());
         }
-
-        CredentialRepresentation credential = new CredentialRepresentation();
-        credential.setType(type);
-        credential.setValue(secret);
 
         rep.getCredentials().add(credential);
         rep.setTotp(true);
@@ -156,11 +156,15 @@ public class UserBuilder {
     }
 
     public UserBuilder totpSecret(String totpSecret) {
-        return secret(CredentialRepresentation.TOTP, totpSecret);
+        CredentialRepresentation credential = ModelToRepresentation.toRepresentation(
+                OTPCredentialModel.createTOTP(totpSecret, 6, 30, HmacOTP.HMAC_SHA1));
+        return secret(credential);
     }
 
     public UserBuilder hotpSecret(String hotpSecret) {
-        return secret(CredentialRepresentation.HOTP, hotpSecret);
+        CredentialRepresentation credential = ModelToRepresentation.toRepresentation(
+                OTPCredentialModel.createHOTP(hotpSecret, 6, 0, HmacOTP.HMAC_SHA1));
+        return secret(credential);
     }
 
     public UserBuilder otpEnabled() {
@@ -173,6 +177,19 @@ public class UserBuilder {
             rep.setGroups(new ArrayList<>());
         }
         rep.getGroups().addAll(Arrays.asList(group));
+        return this;
+    }
+
+    public UserBuilder federatedLink(String identityProvider, String federatedUserId) {
+        if (rep.getFederatedIdentities() == null) {
+            rep.setFederatedIdentities(new LinkedList<>());
+        }
+        FederatedIdentityRepresentation federatedIdentity = new FederatedIdentityRepresentation();
+        federatedIdentity.setUserId(federatedUserId);
+        federatedIdentity.setUserName(rep.getUsername());
+        federatedIdentity.setIdentityProvider(identityProvider);
+
+        rep.getFederatedIdentities().add(federatedIdentity);
         return this;
     }
 

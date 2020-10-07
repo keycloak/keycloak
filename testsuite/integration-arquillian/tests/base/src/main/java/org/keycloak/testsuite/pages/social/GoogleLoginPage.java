@@ -24,8 +24,8 @@ import org.openqa.selenium.support.FindBy;
 import java.util.List;
 
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
-import static org.keycloak.testsuite.util.UIUtils.performOperationWithPageReload;
 import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -48,7 +48,8 @@ public class GoogleLoginPage extends AbstractSocialLoginPage {
 
         emailInput.clear();
         emailInput.sendKeys(user);
-        performOperationWithPageReload(() -> emailInput.sendKeys(Keys.RETURN));
+        emailInput.sendKeys(Keys.RETURN);
+        pause(3000); // wait for some animation or whatever
         passwordInput.sendKeys(password);
         passwordInput.sendKeys(Keys.RETURN);
     }

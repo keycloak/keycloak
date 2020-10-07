@@ -111,13 +111,18 @@ public class LoginActionsServiceChecks {
      * Verifies that the authentication session has not yet been converted to user session, in other words
      * that the user has not yet completed authentication and logged in.
      */
-    public static <T extends JsonWebToken> void checkNotLoggedInYet(ActionTokenContext<T> context, String authSessionId) throws VerificationException {
+    public static <T extends JsonWebToken> void checkNotLoggedInYet(ActionTokenContext<T> context, AuthenticationSessionModel authSessionFromCookie, String authSessionId) throws VerificationException {
         if (authSessionId == null) {
             return;
         }
 
         UserSessionModel userSession = context.getSession().sessions().getUserSession(context.getRealm(), authSessionId);
-        if (userSession != null && userSession.getUser().getRequiredActions().isEmpty()) {
+        boolean hasNoRequiredActions =
+          (userSession == null || userSession.getUser().getRequiredActions() == null || userSession.getUser().getRequiredActions().isEmpty())
+          &&
+          (authSessionFromCookie == null || authSessionFromCookie.getRequiredActions() == null || authSessionFromCookie.getRequiredActions().isEmpty());
+
+        if (userSession != null && hasNoRequiredActions) {
             LoginFormsProvider loginForm = context.getSession().getProvider(LoginFormsProvider.class).setAuthenticationSession(context.getAuthenticationSession())
               .setSuccess(Messages.ALREADY_LOGGED_IN);
 
@@ -217,7 +222,7 @@ public class LoginActionsServiceChecks {
 
             ClientModel client = context.getAuthenticationSession().getClient();
 
-            if (RedirectUtils.verifyRedirectUri(context.getUriInfo(), redirectUri, context.getRealm(), client) == null) {
+            if (RedirectUtils.verifyRedirectUri(context.getSession(), redirectUri, client) == null) {
                 throw new ExplainedTokenVerificationException(t, Errors.INVALID_REDIRECT_URI, Messages.INVALID_REDIRECT_URI);
             }
 

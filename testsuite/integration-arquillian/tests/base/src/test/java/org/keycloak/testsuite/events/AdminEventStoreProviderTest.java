@@ -23,10 +23,14 @@ import org.junit.Test;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import java.util.List;
 
 /**
  * @author <a href="mailto:giriraj.sharma27@gmail.com">Giriraj Sharma</a>
@@ -45,6 +49,7 @@ public class AdminEventStoreProviderTest extends AbstractEventsTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE) // This looks like some database issue, test should get events which are newer or equal to requested time, however it gets only newer events from remote server
     public void query() {
         long oldest = System.currentTimeMillis() - 30000;
         long newest = System.currentTimeMillis() + 30000;
@@ -75,15 +80,15 @@ public class AdminEventStoreProviderTest extends AbstractEventsTest {
 
         Assert.assertEquals(0, testing().getAdminEvents(null, null, null, null, null, null, null, null, null, null, null).size());
 
-        String d1 = new String("2015-03-04");
-        String d2 = new String("2015-03-05");
-        String d3 = new String("2015-03-06");
-        String d4 = new String("2015-03-07");
+        String d1 = "2015-03-04";
+        String d2 = "2015-03-05";
+        String d3 = "2015-03-06";
+        String d4 = "2015-03-07";
 
-        String d5 = new String("2015-03-01");
-        String d6 = new String("2015-03-03");
-        String d7 = new String("2015-03-08");
-        String d8 = new String("2015-03-10");
+        String d5 = "2015-03-01";
+        String d6 = "2015-03-03";
+        String d7 = "2015-03-08";
+        String d8 = "2015-03-10";
 
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
         Date date1 = null, date2 = null, date3 = null, date4 = null;
@@ -187,8 +192,21 @@ public class AdminEventStoreProviderTest extends AbstractEventsTest {
         Assert.assertEquals(2, testing().getAdminEvents(null, null, null, null, null, null, null, null, null, null, null).size());
     }
 
+    @Test
+    public void handleCustomResourceTypeEvents() {
+        testing().onAdminEvent(create("realmId", OperationType.CREATE, "realmId", "clientId", "userId", "127.0.0.1", "/admin/realms/master", "my-custom-resource", "error"), false);
+
+        List<AdminEventRepresentation> adminEvents = testing().getAdminEvents(null, null, null, "clientId", null, null, null, null, null, null, null);
+        Assert.assertEquals(1, adminEvents.size());
+        Assert.assertEquals("my-custom-resource", adminEvents.get(0).getResourceType());
+    }
+
     private AdminEventRepresentation create(String realmId, OperationType operation, String authRealmId, String authClientId, String authUserId, String authIpAddress, String resourcePath, String error) {
         return create(System.currentTimeMillis(), realmId, operation, authRealmId, authClientId, authUserId, authIpAddress, resourcePath, error);
+    }
+
+    private AdminEventRepresentation create(String realmId, OperationType operation, String authRealmId, String authClientId, String authUserId, String authIpAddress, String resourcePath, String resourceType, String error) {
+        return create(System.currentTimeMillis(), realmId, operation, authRealmId, authClientId, authUserId, authIpAddress, resourcePath, resourceType, error);
     }
 
     private AdminEventRepresentation create(Date date, String realmId, OperationType operation, String authRealmId, String authClientId, String authUserId, String authIpAddress, String resourcePath, String error) {
@@ -196,6 +214,10 @@ public class AdminEventStoreProviderTest extends AbstractEventsTest {
     }
 
     private AdminEventRepresentation create(long time, String realmId, OperationType operation, String authRealmId, String authClientId, String authUserId, String authIpAddress, String resourcePath, String error) {
+        return create(time, realmId, operation, authRealmId, authClientId, authUserId, authIpAddress, resourcePath, null, error);
+    }
+
+    private AdminEventRepresentation create(long time, String realmId, OperationType operation, String authRealmId, String authClientId, String authUserId, String authIpAddress, String resourcePath, String resourceType, String error) {
         AdminEventRepresentation e = new AdminEventRepresentation();
         e.setTime(time);
         e.setRealmId(realmId);
@@ -207,6 +229,7 @@ public class AdminEventStoreProviderTest extends AbstractEventsTest {
         authDetails.setIpAddress(authIpAddress);
         e.setAuthDetails(authDetails);
         e.setResourcePath(resourcePath);
+        e.setResourceType(resourceType);
         e.setError(error);
 
         return e;

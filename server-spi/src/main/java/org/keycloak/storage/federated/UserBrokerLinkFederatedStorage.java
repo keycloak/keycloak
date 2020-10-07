@@ -17,8 +17,8 @@
 package org.keycloak.storage.federated;
 
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 
 import java.util.Set;
 
@@ -28,8 +28,9 @@ import java.util.Set;
  */
 public interface UserBrokerLinkFederatedStorage {
     String getUserByFederatedIdentity(FederatedIdentityModel socialLink, RealmModel realm);
-    public void addFederatedIdentity(RealmModel realm, String userId, FederatedIdentityModel socialLink);
-    public boolean removeFederatedIdentity(RealmModel realm, String userId, String socialProvider);
+    void addFederatedIdentity(RealmModel realm, String userId, FederatedIdentityModel socialLink);
+    boolean removeFederatedIdentity(RealmModel realm, String userId, String socialProvider);
+    void preRemove(RealmModel realm, IdentityProviderModel provider);
     void updateFederatedIdentity(RealmModel realm, String userId, FederatedIdentityModel federatedIdentityModel);
     Set<FederatedIdentityModel> getFederatedIdentities(String userId, RealmModel realm);
     FederatedIdentityModel getFederatedIdentity(String userId, String socialProvider, RealmModel realm);

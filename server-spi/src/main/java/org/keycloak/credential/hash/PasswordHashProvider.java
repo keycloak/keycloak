@@ -19,20 +19,49 @@ package org.keycloak.credential.hash;
 
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.PasswordPolicy;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.provider.Provider;
 
 /**
  * @author <a href="mailto:me@tsudot.com">Kunal Kerkar</a>
  */
 public interface PasswordHashProvider extends Provider {
-    boolean policyCheck(PasswordPolicy policy, CredentialModel credentia);
+    boolean policyCheck(PasswordPolicy policy, PasswordCredentialModel credential);
 
-    void encode(String rawPassword, int iterations, CredentialModel credential);
+    PasswordCredentialModel encodedCredential(String rawPassword, int iterations);
 
     default
     String encode(String rawPassword, int iterations) {
         return rawPassword;
     }
 
-    boolean verify(String rawPassword, CredentialModel credential);
+    boolean verify(String rawPassword, PasswordCredentialModel credential);
+
+    /**
+     * @deprecated Exists due the backwards compatibility. It is recommended to use {@link #policyCheck(PasswordPolicy, PasswordCredentialModel)}
+     */
+    @Deprecated
+    default boolean policyCheck(PasswordPolicy policy, CredentialModel credential) {
+        return policyCheck(policy, PasswordCredentialModel.createFromCredentialModel(credential));
+    }
+
+    /**
+     * @deprecated Exists due the backwards compatibility. It is recommended to use {@link #encodedCredential(String, int)}}
+     */
+    @Deprecated
+    default void encode(String rawPassword, int iterations, CredentialModel credential) {
+        PasswordCredentialModel passwordCred = encodedCredential(rawPassword, iterations);
+
+        credential.setCredentialData(passwordCred.getCredentialData());
+        credential.setSecretData(passwordCred.getSecretData());
+    }
+
+    /**
+     * @deprecated Exists due the backwards compatibility. It is recommended to use {@link #verify(String, PasswordCredentialModel)}
+     */
+    @Deprecated
+    default boolean verify(String rawPassword, CredentialModel credential) {
+        PasswordCredentialModel password = PasswordCredentialModel.createFromCredentialModel(credential);
+        return verify(rawPassword, password);
+    }
 }

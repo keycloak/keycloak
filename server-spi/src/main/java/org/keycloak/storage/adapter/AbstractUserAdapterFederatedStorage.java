@@ -16,14 +16,15 @@
  */
 package org.keycloak.storage.adapter;
 
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModelDefaultMethods;
 import org.keycloak.models.utils.DefaultRoles;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.storage.StorageId;
@@ -34,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Assumes everything is managed by federated storage except for username.  getId() returns a default value
@@ -45,7 +47,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
+public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefaultMethods {
     public static String FIRST_NAME_ATTRIBUTE = "FIRST_NAME";
     public static String LAST_NAME_ATTRIBUTE = "LAST_NAME";
     public static String EMAIL_ATTRIBUTE = "EMAIL";
@@ -101,8 +103,8 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
      *
      * @return
      */
-    protected Set<GroupModel> getGroupsInternal() {
-        return Collections.EMPTY_SET;
+    protected Stream<GroupModel> getGroupsInternal() {
+        return Stream.empty();
     }
 
     /**
@@ -125,12 +127,10 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
      * @return
      */
     @Override
-    public Set<GroupModel> getGroups() {
-        Set<GroupModel> set = new HashSet<>();
-        set.addAll(getFederatedStorage().getGroups(realm, this.getId()));
-        if (appendDefaultGroups()) set.addAll(realm.getDefaultGroups());
-        set.addAll(getGroupsInternal());
-        return set;
+    public Stream<GroupModel> getGroupsStream() {
+        Stream<GroupModel> groups = getFederatedStorage().getGroupsStream(realm, this.getId());
+        if (appendDefaultGroups()) groups = Stream.concat(groups, realm.getDefaultGroupsStream());
+        return Stream.concat(groups, getGroupsInternal());
     }
 
     @Override
@@ -147,8 +147,7 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
 
     @Override
     public boolean isMemberOf(GroupModel group) {
-        Set<GroupModel> roles = getGroups();
-        return RoleUtils.isMember(roles, group);
+        return RoleUtils.isMember(getGroupsStream(), group);
     }
 
     /**
@@ -160,17 +159,8 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
      * @return
      */
     @Override
-    public Set<RoleModel> getRealmRoleMappings() {
-        Set<RoleModel> roleMappings = getRoleMappings();
-
-        Set<RoleModel> realmRoles = new HashSet<RoleModel>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof RealmModel) {
-                realmRoles.add(role);
-            }
-        }
-        return realmRoles;
+    public Stream<RoleModel> getRealmRoleMappingsStream() {
+        return getRoleMappingsStream().filter(RoleUtils::isRealmRole);
     }
 
     /**
@@ -182,27 +172,14 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
      * @return
      */
     @Override
-    public Set<RoleModel> getClientRoleMappings(ClientModel app) {
-        Set<RoleModel> roleMappings = getRoleMappings();
-
-        Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof ClientModel) {
-                ClientModel appModel = (ClientModel) container;
-                if (appModel.getId().equals(app.getId())) {
-                    roles.add(role);
-                }
-            }
-        }
-        return roles;
+    public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
+        return getRoleMappingsStream().filter(r -> RoleUtils.isClientRole(r, app));
     }
 
     @Override
     public boolean hasRole(RoleModel role) {
-        Set<RoleModel> roles = getRoleMappings();
-        return RoleUtils.hasRole(roles, role)
-          || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
+        return RoleUtils.hasRole(getRoleMappingsStream(), role)
+          || RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
     }
 
     @Override
@@ -222,8 +199,8 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
         return true;
     }
 
-    protected Set<RoleModel> getRoleMappingsInternal() {
-        return Collections.EMPTY_SET;
+    protected Stream<RoleModel> getRoleMappingsInternal() {
+        return Stream.empty();
     }
 
     /**
@@ -234,16 +211,14 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
      * @return
      */
     @Override
-    public Set<RoleModel> getRoleMappings() {
-        Set<RoleModel> set = new HashSet<>();
-        set.addAll(getFederatedRoleMappings());
-        if (appendDefaultRolesToRoleMappings()) set.addAll(DefaultRoles.getDefaultRoles(realm));
-        set.addAll(getRoleMappingsInternal());
-        return set;
+    public Stream<RoleModel> getRoleMappingsStream() {
+        Stream<RoleModel> roleMappings = getFederatedRoleMappings();
+        if (appendDefaultRolesToRoleMappings()) roleMappings = Stream.concat(roleMappings, DefaultRoles.getDefaultRoles(realm));
+        return Stream.concat(roleMappings, getRoleMappingsInternal());
     }
 
-    protected Set<RoleModel> getFederatedRoleMappings() {
-        return getFederatedStorage().getRoleMappings(realm, this.getId());
+    protected Stream<RoleModel> getFederatedRoleMappings() {
+        return getFederatedStorage().getRoleMappingsStream(realm, this.getId());
     }
 
     @Override
@@ -338,8 +313,11 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
 
     @Override
     public void setSingleAttribute(String name, String value) {
-        getFederatedStorage().setSingleAttribute(realm, this.getId(), name, value);
-
+        if (UserModel.USERNAME.equals(name)) {
+            setUsername(value);
+        } else {
+            getFederatedStorage().setSingleAttribute(realm, this.getId(), mapAttribute(name), value);
+        }
     }
 
     @Override
@@ -350,74 +328,55 @@ public abstract class AbstractUserAdapterFederatedStorage implements UserModel {
 
     @Override
     public void setAttribute(String name, List<String> values) {
-        getFederatedStorage().setAttribute(realm, this.getId(), name, values);
-
+        if (UserModel.USERNAME.equals(name)) {
+            setUsername((values != null && values.size() > 0) ? values.get(0) : null);
+        } else {
+            getFederatedStorage().setAttribute(realm, this.getId(), mapAttribute(name), values);
+        }
     }
 
     @Override
     public String getFirstAttribute(String name) {
-        return getFederatedStorage().getAttributes(realm, this.getId()).getFirst(name);
+        if (UserModel.USERNAME.equals(name)) {
+            return getUsername();
+        }
+        return getFederatedStorage().getAttributes(realm, this.getId()).getFirst(mapAttribute(name));
     }
 
     @Override
     public Map<String, List<String>> getAttributes() {
-        return getFederatedStorage().getAttributes(realm, this.getId());
+        MultivaluedHashMap<String, String> attributes = getFederatedStorage().getAttributes(realm, this.getId());
+        if (attributes == null) {
+            attributes = new MultivaluedHashMap<>();
+        }
+        List<String> firstName = attributes.remove(FIRST_NAME_ATTRIBUTE);
+        attributes.add(UserModel.FIRST_NAME, firstName != null && firstName.size() >= 1 ? firstName.get(0) : null);
+        List<String> lastName = attributes.remove(LAST_NAME_ATTRIBUTE);
+        attributes.add(UserModel.LAST_NAME, lastName != null && lastName.size() >= 1 ? lastName.get(0) : null);
+        List<String> email = attributes.remove(EMAIL_ATTRIBUTE);
+        attributes.add(UserModel.EMAIL, email != null && email.size() >= 1 ? email.get(0) : null);
+        attributes.add(UserModel.USERNAME, getUsername());
+        return attributes;
     }
 
     @Override
     public List<String> getAttribute(String name) {
-        return getFederatedStorage().getAttributes(realm, this.getId()).get(name);
+        if (UserModel.USERNAME.equals(name)) {
+            return Collections.singletonList(getUsername());
+        }
+        List<String> result = getFederatedStorage().getAttributes(realm, this.getId()).get(mapAttribute(name));
+        return (result == null) ? Collections.emptyList() : result;
     }
 
-    @Override
-    public String getFirstName() {
-        return getFirstAttribute(FIRST_NAME_ATTRIBUTE);
-    }
-
-    /**
-     * Stores as attribute in federated storage.
-     * FIRST_NAME_ATTRIBUTE
-     *
-     * @param firstName
-     */
-    @Override
-    public void setFirstName(String firstName) {
-        setSingleAttribute(FIRST_NAME_ATTRIBUTE, firstName);
-
-    }
-
-    @Override
-    public String getLastName() {
-        return getFirstAttribute(LAST_NAME_ATTRIBUTE);
-    }
-
-    /**
-     * Stores as attribute in federated storage.
-     * LAST_NAME_ATTRIBUTE
-     *
-     * @param lastName
-     */
-    @Override
-    public void setLastName(String lastName) {
-        setSingleAttribute(LAST_NAME_ATTRIBUTE, lastName);
-
-    }
-
-    @Override
-    public String getEmail() {
-        return getFirstAttribute(EMAIL_ATTRIBUTE);
-    }
-
-    /**
-     * Stores as attribute in federated storage.
-     * EMAIL_ATTRIBUTE
-     *
-     * @param email
-     */
-    @Override
-    public void setEmail(String email) {
-        setSingleAttribute(EMAIL_ATTRIBUTE, email);
-
+    private String mapAttribute(String attributeName) {
+        if (UserModel.FIRST_NAME.equals(attributeName)) {
+            return FIRST_NAME_ATTRIBUTE;
+        } else if (UserModel.LAST_NAME.equals(attributeName)) {
+            return LAST_NAME_ATTRIBUTE;
+        } else if (UserModel.EMAIL.equals(attributeName)) {
+            return EMAIL_ATTRIBUTE;
+        }
+        return attributeName;
     }
 
     @Override

@@ -17,8 +17,8 @@
 
 package org.keycloak.services;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Resteasy;
 import org.keycloak.locale.LocaleSelectorProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
@@ -26,12 +26,15 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.urls.UrlType;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -46,7 +49,9 @@ public class DefaultKeycloakContext implements KeycloakContext {
 
     private KeycloakSession session;
 
-    private KeycloakUriInfo uriInfo;
+    private Map<UrlType, KeycloakUriInfo> uriInfo;
+
+    private AuthenticationSessionModel authenticationSession;
 
     public DefaultKeycloakContext(KeycloakSession session) {
         this.session = session;
@@ -54,24 +59,30 @@ public class DefaultKeycloakContext implements KeycloakContext {
 
     @Override
     public URI getAuthServerUrl() {
-        UriInfo uri = getUri();
-        KeycloakApplication keycloakApplication = getContextObject(KeycloakApplication.class);
-        return keycloakApplication.getBaseUri(uri);
+        return getUri(UrlType.FRONTEND).getBaseUri();
     }
 
     @Override
     public String getContextPath() {
-        KeycloakApplication app = getContextObject(KeycloakApplication.class);
-        if (app == null) return null;
-        return app.getContextPath();
+        return getUri(UrlType.FRONTEND).getBaseUri().getPath();
+    }
+
+    @Override
+    public KeycloakUriInfo getUri(UrlType type) {
+        if (uriInfo == null || !uriInfo.containsKey(type)) {
+            if (uriInfo == null) {
+                uriInfo = new HashMap<>();
+            }
+
+            UriInfo originalUriInfo = getContextObject(UriInfo.class);
+            uriInfo.put(type, new KeycloakUriInfo(session, type, originalUriInfo));
+        }
+        return uriInfo.get(type);
     }
 
     @Override
     public KeycloakUriInfo getUri() {
-        if (uriInfo == null) {
-            uriInfo = new KeycloakUriInfo(session, getContextObject(UriInfo.class));
-        }
-        return uriInfo;
+        return getUri(UrlType.FRONTEND);
     }
 
     @Override
@@ -81,7 +92,7 @@ public class DefaultKeycloakContext implements KeycloakContext {
 
     @Override
     public <T> T getContextObject(Class<T> clazz) {
-        return ResteasyProviderFactory.getContextData(clazz);
+        return Resteasy.getContextData(clazz);
     }
 
     @Override
@@ -107,16 +118,22 @@ public class DefaultKeycloakContext implements KeycloakContext {
 
     @Override
     public ClientConnection getConnection() {
-        return connection;
-    }
-
-    @Override
-    public void setConnection(ClientConnection connection) {
-        this.connection = connection;
+        return getContextObject(ClientConnection.class);
     }
 
     @Override
     public Locale resolveLocale(UserModel user) {
-        return session.getProvider(LocaleSelectorProvider.class).resolveLocale(realm, user);
+        return session.getProvider(LocaleSelectorProvider.class).resolveLocale(getRealm(), user);
     }
+    
+    @Override
+    public AuthenticationSessionModel getAuthenticationSession() {
+        return authenticationSession;
+    }
+    
+    @Override
+    public void setAuthenticationSession(AuthenticationSessionModel authenticationSession) {
+        this.authenticationSession = authenticationSession;
+    }
+
 }

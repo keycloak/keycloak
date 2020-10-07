@@ -11,6 +11,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.cli.AbstractCliTest;
 import org.keycloak.testsuite.cli.KcAdmExec;
+import org.keycloak.testsuite.cli.KcRegExec;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
@@ -37,38 +38,12 @@ import static org.keycloak.testsuite.cli.KcAdmExec.execute;
  */
 public abstract class AbstractAdmCliTest extends AbstractCliTest {
 
-    protected String serverUrl = isAuthServerSSL() ?
-            "https://localhost:" + getAuthServerHttpsPort() + "/auth" :
-            "http://localhost:" + getAuthServerHttpPort() + "/auth";
-
     static boolean runIntermittentlyFailingTests() {
         return "true".equals(System.getProperty("test.intermittent"));
     }
 
-    static boolean isAuthServerSSL() {
-        return "true".equals(System.getProperty("auth.server.ssl.required"));
-    }
-
     static File getDefaultConfigFilePath() {
         return new File(System.getProperty("user.home") + "/.keycloak/kcadm.config");
-    }
-
-    static int getAuthServerHttpsPort() {
-        try {
-            return Integer.valueOf(System.getProperty("auth.server.https.port"));
-        } catch (Exception e) {
-            throw new RuntimeException("System property 'auth.server.https.port' not set or invalid: '"
-                    + System.getProperty("auth.server.https.port") + "'");
-        }
-    }
-
-    static int getAuthServerHttpPort() {
-        try {
-            return Integer.valueOf(System.getProperty("auth.server.http.port"));
-        } catch (Exception e) {
-            throw new RuntimeException("System property 'auth.server.http.port' not set or invalid: '"
-                    + System.getProperty("auth.server.http.port") + "'");
-        }
     }
 
     @Override
@@ -320,7 +295,7 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
 
         exe = execute("delete clients/" + client.getId() + " --no-config --server " + serverUrl + " --realm test " + credentials + " " + extraOptions);
 
-        int linecountOffset = loginMessage.equals("") ? 1 : 0; // if there is no login, then there is one less stdErrLinecount
+        int linecountOffset = "".equals(loginMessage) ? 1 : 0; // if there is no login, then there is one less stdErrLinecount
         assertExitCodeAndStreamSizes(exe, 0, 0, 1 - linecountOffset);
 
         lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
@@ -376,13 +351,7 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
         KcAdmExec exe = KcAdmExec.execute("config credentials --server " + server + " --realm " + realm +
                 " --user " + user + " --password " + password + " --config " + configFile.getAbsolutePath());
 
-        Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
-
-        List<String> lines = exe.stdoutLines();
-        Assert.assertTrue("stdout output empty", lines.size() == 0);
-
-        lines = exe.stderrLines();
-        Assert.assertTrue("stderr output one line", lines.size() == 1);
-        Assert.assertEquals("stderr first line", "Logging into " + server + " as user " + user + " of realm " + realm, lines.get(0));
+        assertExitCodeAndStreamSizes(exe, 0, 0, 1);
     }
+
 }

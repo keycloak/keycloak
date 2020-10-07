@@ -15,6 +15,10 @@
                 "path": "/index.jsp"
             },
             {
+                "name": "Welcome Resource",
+                "path": "/"
+            },
+            {
                 "name": "Pattern 1",
                 "path": "/resource/{pattern}/{sub-resource}"
             },
@@ -85,6 +89,14 @@
             {
                 "name": "Pattern 16",
                 "path": "/keycloak-7269/sub-resource1/{test-pattern}/specialSuffix"
+            },
+            {
+                "name": "Pattern 17",
+                "path": "/keycloak-8823/resource/{version}/subresource/{id}/{other}"
+            },
+            {
+                "name": "Pattern 17 Entities",
+                "path": "/keycloak-8823/resource/{version}/subresource/{id}/entities"
             }
         ]
     }

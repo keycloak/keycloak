@@ -16,7 +16,6 @@
  */
 package org.keycloak.authorization.authorization;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -47,6 +46,8 @@ import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.authorization.permission.Permissions;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.policy.evaluation.PermissionTicketAwareDecisionResultCollector;
@@ -54,9 +55,10 @@ import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.authorization.util.Permissions;
 import org.keycloak.authorization.util.Tokens;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -65,6 +67,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder;
 import org.keycloak.representations.AccessToken;
@@ -78,7 +81,12 @@ import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.Urls;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.services.util.DefaultClientSessionContext;
 
@@ -88,44 +96,70 @@ import org.keycloak.services.util.DefaultClientSessionContext;
 public class AuthorizationTokenService {
 
     public static final String CLAIM_TOKEN_FORMAT_ID_TOKEN = "http://openid.net/specs/openid-connect-core-1_0.html#IDToken";
+    public static final String CLAIM_TOKEN_FORMAT_JWT = "urn:ietf:params:oauth:token-type:jwt";
 
     private static final Logger logger = Logger.getLogger(AuthorizationTokenService.class);
     private static final String RESPONSE_MODE_DECISION = "decision";
     private static final String RESPONSE_MODE_PERMISSIONS = "permissions";
     private static final String RESPONSE_MODE_DECISION_RESULT = "result";
-    private static Map<String, BiFunction<AuthorizationRequest, AuthorizationProvider, EvaluationContext>> SUPPORTED_CLAIM_TOKEN_FORMATS;
+    private static Map<String, BiFunction<KeycloakAuthorizationRequest, AuthorizationProvider, EvaluationContext>> SUPPORTED_CLAIM_TOKEN_FORMATS;
 
     static {
         SUPPORTED_CLAIM_TOKEN_FORMATS = new HashMap<>();
-        SUPPORTED_CLAIM_TOKEN_FORMATS.put("urn:ietf:params:oauth:token-type:jwt", (authorizationRequest, authorization) -> {
-            String claimToken = authorizationRequest.getClaimToken();
+        SUPPORTED_CLAIM_TOKEN_FORMATS.put(CLAIM_TOKEN_FORMAT_JWT, (request, authorization) -> {
+            Map claims = request.getClaims();
+            String claimToken = request.getClaimToken();
 
             if (claimToken != null) {
                 try {
-                    Map claims = JsonSerialization.readValue(Base64Url.decode(authorizationRequest.getClaimToken()), Map.class);
-                    authorizationRequest.setClaims(claims);
-                    return new DefaultEvaluationContext(new KeycloakIdentity(authorization.getKeycloakSession(), Tokens.getAccessToken(authorizationRequest.getSubjectToken(), authorization.getKeycloakSession())), claims, authorization.getKeycloakSession());
-                } catch (IOException cause) {
-                    throw new RuntimeException("Failed to map claims from claim token [" + claimToken + "]", cause);
+                    claims = JsonSerialization.readValue(Base64Url.decode(request.getClaimToken()), Map.class);
+                    request.setClaims(claims);
+                } catch (Exception cause) {
+                    throw new CorsErrorResponseException(request.getCors(), "invalid_request", "Invalid claims",
+                            Status.BAD_REQUEST);
                 }
             }
 
-            throw new RuntimeException("Claim token can not be null");
-        });
-        SUPPORTED_CLAIM_TOKEN_FORMATS.put(CLAIM_TOKEN_FORMAT_ID_TOKEN, (authorizationRequest, authorization) -> {
+            KeycloakIdentity identity;
+
             try {
-                KeycloakSession keycloakSession = authorization.getKeycloakSession();
-                String accessToken = authorizationRequest.getSubjectToken();
-
-                if (accessToken == null) {
-                    throw new RuntimeException("Claim token can not be null and must be a valid IDToken");
-                }
-
-                IDToken idToken = new TokenManager().verifyIDTokenSignature(keycloakSession, accessToken);
-                return new DefaultEvaluationContext(new KeycloakIdentity(keycloakSession, idToken), authorizationRequest.getClaims(), keycloakSession);
-            } catch (OAuthErrorException cause) {
-                throw new RuntimeException("Failed to verify ID token", cause);
+                identity = new KeycloakIdentity(authorization.getKeycloakSession(),
+                        Tokens.getAccessToken(request.getSubjectToken(), authorization.getKeycloakSession()));
+            } catch (Exception cause) {
+                fireErrorEvent(request.getEvent(), Errors.INVALID_TOKEN, cause);
+                throw new CorsErrorResponseException(request.getCors(), "unauthorized_client", "Invalid identity", Status.BAD_REQUEST);
             }
+
+            return new DefaultEvaluationContext(identity, claims, authorization.getKeycloakSession());
+        });
+        SUPPORTED_CLAIM_TOKEN_FORMATS.put(CLAIM_TOKEN_FORMAT_ID_TOKEN, (request, authorization) -> {
+            KeycloakSession keycloakSession = authorization.getKeycloakSession();
+            String subjectToken = request.getSubjectToken();
+
+            if (subjectToken == null) {
+                throw new CorsErrorResponseException(request.getCors(), "invalid_request", "Subject token can not be null and must be a valid ID or Access Token",
+                        Status.BAD_REQUEST);
+            }
+
+            IDToken idToken;
+
+            try {
+                idToken = new TokenManager().verifyIDTokenSignature(keycloakSession, subjectToken);
+            } catch (Exception cause) {
+                fireErrorEvent(request.getEvent(), Errors.INVALID_SIGNATURE, cause);
+                throw new CorsErrorResponseException(request.getCors(), "unauthorized_client", "Invalid signature", Status.BAD_REQUEST);
+            }
+
+            KeycloakIdentity identity;
+            
+            try {
+                identity = new KeycloakIdentity(keycloakSession, idToken);
+            } catch (Exception cause) {
+                fireErrorEvent(request.getEvent(), Errors.INVALID_TOKEN, cause);
+                throw new CorsErrorResponseException(request.getCors(), "unauthorized_client", "Invalid identity", Status.BAD_REQUEST);
+            }
+
+            return new DefaultEvaluationContext(identity, request.getClaims(), keycloakSession);
         });
     }
 
@@ -135,6 +169,12 @@ public class AuthorizationTokenService {
         return INSTANCE;
     }
 
+    private static void fireErrorEvent(EventBuilder event, String error, Exception cause) {
+        event.detail(Details.REASON, cause == null || cause.getMessage() == null ? "<unknown>" : cause.getMessage())
+                .error(error);
+        logger.debug(event.getEvent().getType(), cause);
+    }
+    
     public Response authorize(KeycloakAuthorizationRequest request) {
         if (request == null) {
             throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_GRANT, "Invalid authorization request.", Status.BAD_REQUEST);
@@ -156,9 +196,9 @@ public class AuthorizationTokenService {
             Collection<Permission> permissions;
 
             if (request.getTicket() != null) {
-                permissions = evaluateUserManagedPermissions(request, ticket, resourceServer, evaluationContext, identity);
+                permissions = evaluateUserManagedPermissions(request, ticket, resourceServer, evaluationContext);
             } else if (ticket.getPermissions().isEmpty() && request.getRpt() == null) {
-                permissions = evaluateAllPermissions(request, resourceServer, evaluationContext, identity);
+                permissions = evaluateAllPermissions(request, resourceServer, evaluationContext);
             } else {
                 permissions = evaluatePermissions(request, ticket, resourceServer, evaluationContext, identity);
             }
@@ -204,7 +244,7 @@ public class AuthorizationTokenService {
 
     private Response createSuccessfulResponse(Object response, KeycloakAuthorizationRequest request) {
         return Cors.add(request.getHttpRequest(), Response.status(Status.OK).type(MediaType.APPLICATION_JSON_TYPE).entity(response))
-                .allowedOrigins(request.getKeycloakSession().getContext().getUri(), request.getKeycloakSession().getContext().getClient())
+                .allowedOrigins(request.getKeycloakSession(), request.getKeycloakSession().getContext().getClient())
                 .allowedMethods(HttpMethod.POST)
                 .exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS).build();
     }
@@ -216,21 +256,21 @@ public class AuthorizationTokenService {
     private Collection<Permission> evaluatePermissions(KeycloakAuthorizationRequest request, PermissionTicketToken ticket, ResourceServer resourceServer, EvaluationContext evaluationContext, KeycloakIdentity identity) {
         AuthorizationProvider authorization = request.getAuthorization();
         return authorization.evaluators()
-                .from(createPermissions(ticket, request, resourceServer, identity, authorization), evaluationContext)
+                .from(createPermissions(ticket, request, resourceServer, authorization, evaluationContext), evaluationContext)
                 .evaluate(resourceServer, request);
     }
 
-    private Collection<Permission> evaluateUserManagedPermissions(KeycloakAuthorizationRequest request, PermissionTicketToken ticket, ResourceServer resourceServer, EvaluationContext evaluationContext, KeycloakIdentity identity) {
+    private Collection<Permission> evaluateUserManagedPermissions(KeycloakAuthorizationRequest request, PermissionTicketToken ticket, ResourceServer resourceServer, EvaluationContext evaluationContext) {
         AuthorizationProvider authorization = request.getAuthorization();
         return authorization.evaluators()
-                .from(createPermissions(ticket, request, resourceServer, identity, authorization), evaluationContext)
-                .evaluate(new PermissionTicketAwareDecisionResultCollector(request, ticket, identity, resourceServer, authorization)).results();
+                .from(createPermissions(ticket, request, resourceServer, authorization, evaluationContext), evaluationContext)
+                .evaluate(new PermissionTicketAwareDecisionResultCollector(request, ticket, evaluationContext.getIdentity(), resourceServer, authorization)).results();
     }
 
-    private Collection<Permission> evaluateAllPermissions(KeycloakAuthorizationRequest request, ResourceServer resourceServer, EvaluationContext evaluationContext, KeycloakIdentity identity) {
+    private Collection<Permission> evaluateAllPermissions(KeycloakAuthorizationRequest request, ResourceServer resourceServer, EvaluationContext evaluationContext) {
         AuthorizationProvider authorization = request.getAuthorization();
         return authorization.evaluators()
-                .from(Permissions.all(resourceServer, identity, authorization, request), evaluationContext)
+                .from(evaluationContext, resourceServer, request)
                 .evaluate(resourceServer, request);
     }
 
@@ -246,17 +286,39 @@ public class AuthorizationTokenService {
         }
 
         ClientModel client = realm.getClientByClientId(accessToken.getIssuedFor());
-        AuthenticatedClientSessionModel clientSession = userSessionModel.getAuthenticatedClientSessionByClient(client.getId());
-        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession);
+        AuthenticatedClientSessionModel clientSession = userSessionModel.getAuthenticatedClientSessionByClient(targetClient.getId());
+        ClientSessionContext clientSessionCtx;
+
+        if (clientSession == null) {
+            RootAuthenticationSessionModel rootAuthSession = keycloakSession.authenticationSessions().getRootAuthenticationSession(realm, userSessionModel.getId());
+
+            if (rootAuthSession == null) {
+                if (userSessionModel.getUser().getServiceAccountClientLink() == null) {
+                    rootAuthSession = keycloakSession.authenticationSessions().createRootAuthenticationSession(userSessionModel.getId(), realm);
+                } else {
+                    // if the user session is associated with a service account
+                    rootAuthSession = new AuthenticationSessionManager(keycloakSession).createAuthenticationSession(realm, false);
+                }
+            }
+
+            AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(targetClient);
+
+            authSession.setAuthenticatedUser(userSessionModel.getUser());
+            authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(keycloakSession.getContext().getUri().getBaseUri(), realm.getName()));
+
+            AuthenticationManager.setClientScopesInSession(authSession);
+            clientSessionCtx = TokenManager.attachAuthenticationSession(keycloakSession, userSessionModel, authSession);
+        } else {
+            clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession, keycloakSession);
+        }
+
         TokenManager tokenManager = request.getTokenManager();
         EventBuilder event = request.getEvent();
-        AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, clientSession.getClient(), event, keycloakSession, userSessionModel, clientSessionCtx)
+        AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, keycloakSession, userSessionModel, clientSessionCtx)
                 .generateAccessToken()
                 .generateRefreshToken();
         AccessToken rpt = responseBuilder.getAccessToken();
-
-        rpt.issuedFor(client.getClientId());
-
         Authorization authorization = new Authorization();
 
         authorization.setPermissions(entitlements);
@@ -309,8 +371,8 @@ public class AuthorizationTokenService {
         // This is a Keycloak extension to UMA flow where clients are capable of obtaining a RPT without a ticket
         PermissionTicketToken permissions = request.getPermissions();
 
-        // an audience must be set by the client when doing this method of obtaining RPT, that is how we know the target resource server
-        permissions.audience(request.getAudience());
+        // an issuedFor must be set by the client when doing this method of obtaining RPT, that is how we know the target resource server
+        permissions.issuedFor(request.getAudience());
 
         return permissions;
     }
@@ -319,13 +381,13 @@ public class AuthorizationTokenService {
         AuthorizationProvider authorization = request.getAuthorization();
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
-        String[] audience = ticket.getAudience();
+        String issuedFor = ticket.getIssuedFor();
 
-        if (audience == null || audience.length == 0) {
-            throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "You must provide the audience", Status.BAD_REQUEST);
+        if (issuedFor == null) {
+            throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "You must provide the issuedFor", Status.BAD_REQUEST);
         }
 
-        ClientModel clientModel = request.getRealm().getClientByClientId(audience[0]);
+        ClientModel clientModel = request.getRealm().getClientByClientId(issuedFor);
 
         if (clientModel == null) {
             throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Unknown resource server id.", Status.BAD_REQUEST);
@@ -344,10 +406,10 @@ public class AuthorizationTokenService {
         String claimTokenFormat = request.getClaimTokenFormat();
 
         if (claimTokenFormat == null) {
-            claimTokenFormat = CLAIM_TOKEN_FORMAT_ID_TOKEN;
+            claimTokenFormat = CLAIM_TOKEN_FORMAT_JWT;
         }
 
-        BiFunction<AuthorizationRequest, AuthorizationProvider, EvaluationContext> evaluationContextProvider = SUPPORTED_CLAIM_TOKEN_FORMATS.get(claimTokenFormat);
+        BiFunction<KeycloakAuthorizationRequest, AuthorizationProvider, EvaluationContext> evaluationContextProvider = SUPPORTED_CLAIM_TOKEN_FORMATS.get(claimTokenFormat);
 
         if (evaluationContextProvider == null) {
             throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Claim token format [" + claimTokenFormat + "] not supported", Status.BAD_REQUEST);
@@ -356,7 +418,8 @@ public class AuthorizationTokenService {
         return evaluationContextProvider.apply(request, request.getAuthorization());
     }
 
-    private Collection<ResourcePermission> createPermissions(PermissionTicketToken ticket, KeycloakAuthorizationRequest request, ResourceServer resourceServer, KeycloakIdentity identity, AuthorizationProvider authorization) {
+    private Collection<ResourcePermission> createPermissions(PermissionTicketToken ticket, KeycloakAuthorizationRequest request, ResourceServer resourceServer, AuthorizationProvider authorization, EvaluationContext context) {
+        KeycloakIdentity identity = (KeycloakIdentity) context.getIdentity();
         StoreFactory storeFactory = authorization.getStoreFactory();
         Map<String, ResourcePermission> permissionsToEvaluate = new LinkedHashMap<>();
         ResourceStore resourceStore = storeFactory.getResourceStore();
@@ -369,119 +432,32 @@ public class AuthorizationTokenService {
                 break;
             }
 
-            Set<String> requestedScopes = permission.getScopes();
-
-            if (permission.getScopes() == null) {
-                requestedScopes = new HashSet<>();
-            }
-
-            List<Resource> requestedResources = new ArrayList<>();
+            Set<Scope> requestedScopesModel = resolveRequestedScopes(request, resourceServer, scopeStore, permission);
             String resourceId = permission.getResourceId();
 
             if (resourceId != null) {
-                Resource resource = null;
-
-                if (resourceId.indexOf('-') != -1) {
-                    resource = resourceStore.findById(resourceId, resourceServer.getId());
-                }
-
-                if (resource != null) {
-                    requestedResources.add(resource);
-                } else {
-                    String resourceName = resourceId;
-                    Resource ownerResource = resourceStore.findByName(resourceName, identity.getId(), resourceServer.getId());
-
-                    if (ownerResource != null) {
-                        permission.setResourceId(ownerResource.getId());
-                        requestedResources.add(ownerResource);
-                    }
-
-                    if (!identity.isResourceServer()) {
-                        Resource serverResource = resourceStore.findByName(resourceName, resourceServer.getId());
-
-                        if (serverResource != null) {
-                            permission.setResourceId(serverResource.getId());
-                            requestedResources.add(serverResource);
-                        }
-                    }
-                }
-            }
-
-            String clientAdditionalScopes = request.getScope();
-
-            if (clientAdditionalScopes != null) {
-                requestedScopes.addAll(Arrays.asList(clientAdditionalScopes.split(" ")));
-            }
-
-            Set<Scope> requestedScopesModel = requestedScopes.stream().map(s -> scopeStore.findByName(s, resourceServer.getId())).filter(Objects::nonNull).collect(Collectors.toSet());
-
-            if (resourceId != null && requestedResources.isEmpty()) {
-                throw new CorsErrorResponseException(request.getCors(), "invalid_resource", "Resource with id [" + resourceId + "] does not exist.", Status.BAD_REQUEST);
-            }
-
-            if (!requestedScopes.isEmpty() && requestedScopesModel.isEmpty()) {
-                throw new CorsErrorResponseException(request.getCors(), "invalid_scope", "One of the given scopes " + permission.getScopes() + " is invalid", Status.BAD_REQUEST);
-            }
-
-            if (!requestedResources.isEmpty()) {
-                for (Resource resource : requestedResources) {
-                    if (limit != null && limit.get() <= 0) {
-                        break;
-                    }
-                    ResourcePermission perm = permissionsToEvaluate.get(resource.getId());
-
-                    if (perm == null) {
-                        perm = Permissions.createResourcePermissions(resource, requestedScopesModel, authorization, request);
-                        permissionsToEvaluate.put(resource.getId(), perm);
-                        if (limit != null) {
-                            limit.decrementAndGet();
-                        }
-                    } else {
-                        for (Scope scope : requestedScopesModel) {
-                            perm.addScope(scope);
-                        }
-                    }
-                }
+                resolveResourcePermission(request, resourceServer, identity, authorization, storeFactory, permissionsToEvaluate,
+                        resourceStore,
+                        limit, permission, requestedScopesModel, resourceId);
             } else {
-                AtomicBoolean processed = new AtomicBoolean();
-
-                resourceStore.findByScope(requestedScopesModel.stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId(), resource -> {
-                    if (limit != null && limit.get() <= 0) {
-                        return;
-                    }
-
-                    ResourcePermission perm = permissionsToEvaluate.get(resource.getId());
-
-                    if (perm == null) {
-                        perm = Permissions.createResourcePermissions(resource, requestedScopesModel, authorization, request);
-                        permissionsToEvaluate.put(resource.getId(), perm);
-                        if (limit != null) {
-                            limit.decrementAndGet();
-                        }
-                    } else {
-                        for (Scope scope : requestedScopesModel) {
-                            perm.addScope(scope);
-                        }
-                    }
-
-                    processed.compareAndSet(false, true);
-                });
-
-                if (!processed.get()) {
-                    for (Scope scope : requestedScopesModel) {
-                        if (limit != null && limit.getAndDecrement() <= 0) {
-                            break;
-                        }
-                        permissionsToEvaluate.computeIfAbsent(scope.getId(), s -> new ResourcePermission(null, new ArrayList<>(Arrays.asList(scope)), resourceServer, request.getClaims()));
-                    }
-                }
+                resolveScopePermissions(request, resourceServer, authorization, permissionsToEvaluate, resourceStore, limit,
+                        requestedScopesModel);
             }
         }
 
+        resolvePreviousGrantedPermissions(ticket, request, resourceServer, permissionsToEvaluate, resourceStore, scopeStore, limit);
+
+        return permissionsToEvaluate.values();
+    }
+
+    private void resolvePreviousGrantedPermissions(PermissionTicketToken ticket,
+            KeycloakAuthorizationRequest request, ResourceServer resourceServer,
+            Map<String, ResourcePermission> permissionsToEvaluate, ResourceStore resourceStore, ScopeStore scopeStore,
+            AtomicInteger limit) {
         AccessToken rpt = request.getRpt();
 
         if (rpt != null && rpt.isActive()) {
-            AccessToken.Authorization authorizationData = rpt.getAuthorization();
+            Authorization authorizationData = rpt.getAuthorization();
 
             if (authorizationData != null) {
                 Collection<Permission> permissions = authorizationData.getPermissions();
@@ -492,7 +468,7 @@ public class AuthorizationTokenService {
                             break;
                         }
 
-                        Resource resource = resourceStore.findById(grantedPermission.getResourceId(), ticket.getAudience()[0]);
+                        Resource resource = resourceStore.findById(grantedPermission.getResourceId(), ticket.getIssuedFor());
 
                         if (resource != null) {
                             ResourcePermission permission = permissionsToEvaluate.get(resource.getId());
@@ -529,8 +505,166 @@ public class AuthorizationTokenService {
                 }
             }
         }
+    }
 
-        return permissionsToEvaluate.values();
+    private void resolveScopePermissions(KeycloakAuthorizationRequest request,
+            ResourceServer resourceServer, AuthorizationProvider authorization,
+            Map<String, ResourcePermission> permissionsToEvaluate, ResourceStore resourceStore, AtomicInteger limit,
+            Set<Scope> requestedScopesModel) {
+        AtomicBoolean processed = new AtomicBoolean();
+
+        resourceStore.findByScope(requestedScopesModel.stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId(), resource -> {
+            if (limit != null && limit.get() <= 0) {
+                return;
+            }
+
+            ResourcePermission perm = permissionsToEvaluate.get(resource.getId());
+
+            if (perm == null) {
+                perm = Permissions.createResourcePermissions(resource, resourceServer, requestedScopesModel, authorization, request);
+                permissionsToEvaluate.put(resource.getId(), perm);
+                if (limit != null) {
+                    limit.decrementAndGet();
+                }
+            } else {
+                for (Scope scope : requestedScopesModel) {
+                    perm.addScope(scope);
+                }
+            }
+
+            processed.compareAndSet(false, true);
+        });
+
+        if (!processed.get()) {
+            for (Scope scope : requestedScopesModel) {
+                if (limit != null && limit.getAndDecrement() <= 0) {
+                    break;
+                }
+                permissionsToEvaluate.computeIfAbsent(scope.getId(), s -> new ResourcePermission(null, new ArrayList<>(Arrays.asList(scope)), resourceServer, request.getClaims()));
+            }
+        }
+    }
+
+    private void resolveResourcePermission(KeycloakAuthorizationRequest request,
+            ResourceServer resourceServer, KeycloakIdentity identity, AuthorizationProvider authorization,
+            StoreFactory storeFactory, Map<String, ResourcePermission> permissionsToEvaluate, ResourceStore resourceStore,
+            AtomicInteger limit, Permission permission, Set<Scope> requestedScopesModel, String resourceId) {
+        Resource resource;
+
+        if (resourceId.indexOf('-') != -1) {
+            resource = resourceStore.findById(resourceId, resourceServer.getId());
+        } else {
+            resource = null;
+        }
+
+        if (resource != null) {
+            addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, resource);
+        } else if (resourceId.startsWith("resource-type:")) {
+            // only resource types, no resource instances. resource types are owned by the resource server
+            String resourceType = resourceId.substring("resource-type:".length());
+            resourceStore.findByType(resourceType, resourceServer.getId(), resourceServer.getId(),
+                    resource1 -> addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, resource1));
+        } else if (resourceId.startsWith("resource-type-any:")) {
+            // any resource with a given type
+            String resourceType = resourceId.substring("resource-type-any:".length());
+            resourceStore.findByType(resourceType, null, resourceServer.getId(),
+                    resource12 -> addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, resource12));
+        } else if (resourceId.startsWith("resource-type-instance:")) {
+            // only resource instances with a given type
+            String resourceType = resourceId.substring("resource-type-instance:".length());
+            resourceStore.findByTypeInstance(resourceType, resourceServer.getId(),
+                    resource13 -> addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, resource13));
+        } else if (resourceId.startsWith("resource-type-owner:")) {
+            // only resources where the current identity is the owner
+            String resourceType = resourceId.substring("resource-type-owner:".length());
+            resourceStore.findByType(resourceType, identity.getId(), resourceServer.getId(),
+                    resource14 -> addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, resource14));
+        } else {
+            Resource ownerResource = resourceStore.findByName(resourceId, identity.getId(), resourceServer.getId());
+
+            if (ownerResource != null) {
+                permission.setResourceId(ownerResource.getId());
+                addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, ownerResource);
+            }
+
+            if (!identity.isResourceServer() || !identity.getId().equals(resourceServer.getId())) {
+                List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().findGranted(resourceId, identity.getId(), resourceServer.getId());
+
+                if (!tickets.isEmpty()) {
+                    List<Scope> scopes = new ArrayList<>();
+                    Resource grantedResource = null;
+                    for (PermissionTicket permissionTicket : tickets) {
+                        if (grantedResource == null) {
+                            grantedResource = permissionTicket.getResource();
+                        }
+                        scopes.add(permissionTicket.getScope());
+                    }
+                    requestedScopesModel.retainAll(scopes);
+                    ResourcePermission resourcePermission = addPermission(request, resourceServer, authorization,
+                            permissionsToEvaluate, limit,
+                            requestedScopesModel, grantedResource);
+                    
+                    // the permission is explicitly granted by the owner, mark this permission as granted so that we don't run the evaluation engine on it
+                    resourcePermission.setGranted(true);
+                }
+
+                Resource serverResource = resourceStore.findByName(resourceId, resourceServer.getId());
+
+                if (serverResource != null) {
+                    permission.setResourceId(serverResource.getId());
+                    addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, serverResource);
+                }
+            }
+        }
+
+        if (permissionsToEvaluate.isEmpty()) {
+            throw new CorsErrorResponseException(request.getCors(), "invalid_resource", "Resource with id [" + resourceId + "] does not exist.", Status.BAD_REQUEST);
+        }
+    }
+
+    private Set<Scope> resolveRequestedScopes(KeycloakAuthorizationRequest request,
+            ResourceServer resourceServer, ScopeStore scopeStore, Permission permission) {
+        String clientAdditionalScopes = request.getScope();
+        Set<String> requestedScopes = permission.getScopes();
+
+        if (permission.getScopes() == null) {
+            requestedScopes = new HashSet<>();
+        }
+
+        if (clientAdditionalScopes != null) {
+            requestedScopes.addAll(Arrays.asList(clientAdditionalScopes.split(" ")));
+        }
+
+        Set<Scope> requestedScopesModel = requestedScopes.stream().map(s -> scopeStore.findByName(s, resourceServer.getId())).filter(
+                Objects::nonNull).collect(Collectors.toSet());
+
+        if (!requestedScopes.isEmpty() && requestedScopesModel.isEmpty()) {
+            throw new CorsErrorResponseException(request.getCors(), "invalid_scope", "One of the given scopes " + permission.getScopes() + " is invalid", Status.BAD_REQUEST);
+        }
+        return requestedScopesModel;
+    }
+
+    private ResourcePermission addPermission(KeycloakAuthorizationRequest request, ResourceServer resourceServer,
+            AuthorizationProvider authorization, Map<String, ResourcePermission> permissionsToEvaluate, AtomicInteger limit,
+            Set<Scope> requestedScopesModel, Resource resource) {
+        ResourcePermission permission = permissionsToEvaluate.get(resource.getId());
+
+        if (permission == null) {
+            permission = new ResourcePermission(resource,
+                    Permissions.resolveScopes(resource, resourceServer, requestedScopesModel, authorization), resourceServer,
+                    request.getClaims());
+            //if scopes were requested, check if the permission to evaluate resolves to any of the requested scopes.
+            // if it is not the case, then the requested scope is invalid and we don't need to evaluate
+            if (!requestedScopesModel.isEmpty() && permission.getScopes().isEmpty()) {
+                return null;
+            }
+            permissionsToEvaluate.put(resource.getId(), permission);
+            if (limit != null) {
+                limit.decrementAndGet();
+            }
+        }
+        
+        return permission;
     }
 
     private PermissionTicketToken verifyPermissionTicket(KeycloakAuthorizationRequest request) {

@@ -19,12 +19,12 @@
 
     <ol class="breadcrumb">
         <li><a href="#/realms/{{realm.realm}}/client-registration/client-reg-policies">{{:: 'client-reg-policies' | translate}}</a></li>
-        <li>{{instance.name}}</li>
+        <li>{{instance.name || headerTitle}}</li>
     </ol>
 
     <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageClients ">
         <fieldset>
-            <legend><span class="text">{{instance.name}}</span></legend><kc-tooltip>{{:: providerType.helpText | translate}}</kc-tooltip>
+            <legend><span class="text">{{headerTitle}}</span></legend><kc-tooltip>{{:: providerType.helpText | translate}}</kc-tooltip>
             <div class="form-group clearfix" data-ng-show="!create">
                 <label class="col-md-2 control-label" for="instanceId">{{:: 'id' | translate}} </label>
                 <div class="col-md-6">
@@ -50,7 +50,7 @@
 
         <div class="form-group" data-ng-show="create && access.manageClients">
             <div class="col-md-10 col-md-offset-2">
-                <button kc-save>{{:: 'save' | translate}}</button>
+                <button kc-save data-ng-disabled="!hasValidValues()">{{:: 'save' | translate}}</button>
                 <button kc-reset>{{:: 'cancel' | translate}}</button>
             </div>
         </div>

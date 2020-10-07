@@ -17,45 +17,51 @@
 
 package org.keycloak.testsuite.session;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.infinispan.Cache;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.changes.sessions.LastSessionRefreshStore;
-import org.keycloak.models.sessions.infinispan.changes.sessions.LastSessionRefreshStoreFactory;
+import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStore;
+import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStoreFactory;
 import org.keycloak.models.sessions.infinispan.changes.sessions.SessionData;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.common.util.Retry;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.runonserver.RunOnServer;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.timer.TimerProvider;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(UserResource.class)
-                .addPackages(true, "org.keycloak.testsuite");
-    }
-
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
 
+    }
+
+
+    @After
+    public void cleanupPeriodicTask() {
+        // Cleanup unneeded periodic task, which was added during this test
+        testingClient.server().run((session -> {
+
+            TimerProvider timer = session.getProvider(TimerProvider.class);
+            timer.cancelTask(CrossDCLastSessionRefreshStoreFactory.LSR_PERIODIC_TASK_NAME);
+
+        }));
     }
 
 
@@ -69,7 +75,7 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
 
         @Override
         public void run(KeycloakSession session) {
-            LastSessionRefreshStore customStore = createStoreInstance(session, 1000000, 1000);
+            CrossDCLastSessionRefreshStore customStore = createStoreInstance(session, 1000000, 1000);
             System.out.println("sss");
 
             int lastSessionRefresh = Time.currentTime();
@@ -113,7 +119,7 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
         @Override
         public void run(KeycloakSession session) {
             // Long timer interval. No message due the timer wasn't executed
-            LastSessionRefreshStore customStore1 = createStoreInstance(session, 100000, 10);
+            CrossDCLastSessionRefreshStore customStore1 = createStoreInstance(session, 100000, 10);
             Time.setOffset(100);
 
             try {
@@ -124,7 +130,7 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
             Assert.assertEquals(0, counter.get());
 
             // Short timer interval 10 ms. 1 message due the interval is executed and lastRun was in the past due to Time.setOffset
-            LastSessionRefreshStore customStore2 = createStoreInstance(session, 10, 10);
+            CrossDCLastSessionRefreshStore customStore2 = createStoreInstance(session, 10, 10);
             Time.setOffset(200);
 
             Retry.execute(() -> {
@@ -152,12 +158,12 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
 
         AtomicInteger counter = new AtomicInteger();
 
-        LastSessionRefreshStore createStoreInstance(KeycloakSession session, long timerIntervalMs, int maxIntervalBetweenMessagesSeconds) {
-            LastSessionRefreshStoreFactory factory = new LastSessionRefreshStoreFactory() {
+        CrossDCLastSessionRefreshStore createStoreInstance(KeycloakSession session, long timerIntervalMs, int maxIntervalBetweenMessagesSeconds) {
+            CrossDCLastSessionRefreshStoreFactory factory = new CrossDCLastSessionRefreshStoreFactory() {
 
                 @Override
-                protected LastSessionRefreshStore createStoreInstance(int maxIntervalBetweenMessagesSeconds, int maxCount, String eventKey) {
-                    return new LastSessionRefreshStore(maxIntervalBetweenMessagesSeconds, maxCount, eventKey) {
+                protected CrossDCLastSessionRefreshStore createStoreInstance(int maxIntervalBetweenMessagesSeconds, int maxCount, String eventKey) {
+                    return new CrossDCLastSessionRefreshStore(maxIntervalBetweenMessagesSeconds, maxCount, eventKey) {
 
                         @Override
                         protected void sendMessage(KeycloakSession kcSession, Map<String, SessionData> refreshesToSend) {

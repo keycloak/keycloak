@@ -16,18 +16,25 @@
  */
 package org.keycloak.testsuite.authz;
 
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -35,6 +42,7 @@ import org.keycloak.admin.client.resource.ResourceScopesResource;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
@@ -43,10 +51,13 @@ import org.keycloak.representations.idm.authorization.PermissionTicketRepresenta
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class PermissionManagementTest extends AbstractResourceServerTest {
 
     @Test
@@ -63,6 +74,30 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
 
         }
         assertPersistence(response, resource);
+    }
+
+    @Test
+    public void removeUserWithPermissionTicketTest() throws Exception {
+        String userToRemoveID = createUser(REALM_NAME, "user-to-remove", "password");
+
+        ResourceRepresentation resource = addResource("Resource A", "kolo", true);
+        AuthzClient authzClient = getAuthzClient();
+        PermissionResponse response = authzClient.protection("user-to-remove", "password").permission().create(new PermissionRequest(resource.getId()));
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.setTicket(response.getTicket());
+        request.setClaimToken(authzClient.obtainAccessToken("user-to-remove", "password").getToken());
+        try {
+            authzClient.authorization().authorize(request);
+        } catch (Exception e) {
+
+        }
+        assertPersistence(response, resource);
+
+        // Remove the user and expect the user and also hers permission tickets are successfully removed
+        adminClient.realm(REALM_NAME).users().delete(userToRemoveID);
+        assertThat(adminClient.realm(REALM_NAME).users().list().stream().map(UserRepresentation::getId).collect(Collectors.toList()),
+                not(hasItem(userToRemoveID)));
+        assertThat(getAuthzClient().protection().permission().findByResource(resource.getId()), is(empty()));
     }
 
     @Test
@@ -378,5 +413,39 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
             assertEquals(400, HttpResponseException.class.cast(cause.getCause()).getStatusCode());
             assertTrue(new String((HttpResponseException.class.cast(cause.getCause()).getBytes())).contains("invalid_scope"));
         }
+    }
+
+    @Test
+    public void testGetPermissionTicketWithPagination() throws Exception {
+      String[] scopes = {"ScopeA", "ScopeB", "ScopeC", "ScopeD"};
+      ResourceRepresentation resource = addResource("Resource A", "kolo", true, scopes);
+      AuthzClient authzClient = getAuthzClient();
+      PermissionResponse response = authzClient.protection("marta", "password").permission().create(new PermissionRequest(resource.getId(), scopes));
+      AuthorizationRequest request = new AuthorizationRequest();
+      request.setTicket(response.getTicket());
+      request.setClaimToken(authzClient.obtainAccessToken("marta", "password").getToken());
+
+      try {
+        authzClient.authorization().authorize(request);
+      } catch (Exception e) {
+
+      }
+
+      // start with fetching the second half of all permission tickets
+      Collection<String> expectedScopes = new ArrayList(Arrays.asList(scopes));
+      List<PermissionTicketRepresentation> tickets = getAuthzClient().protection().permission().find(resource.getId(), null, null, null, null, true, 2, 2);
+      assertEquals("Returned number of permissions tickets must match the specified page size (i.e., 'maxResult').", 2, tickets.size());
+      boolean foundScope = expectedScopes.remove(tickets.get(0).getScopeName());
+      assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
+      foundScope = expectedScopes.remove(tickets.get(1).getScopeName());
+      assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
+
+      // fetch the first half of all permission tickets
+      tickets = getAuthzClient().protection().permission().find(resource.getId(), null, null, null, null, true, 0, 2);
+      assertEquals("Returned number of permissions tickets must match the specified page size (i.e., 'maxResult').", 2, tickets.size());
+      foundScope = expectedScopes.remove(tickets.get(0).getScopeName());
+      assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
+      foundScope = expectedScopes.remove(tickets.get(1).getScopeName());
+      assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
     }
 }

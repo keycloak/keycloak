@@ -94,6 +94,8 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
 
         Comparable originalNumberOfEntries = cacheDc0Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES_IN_MEMORY);
 
+        log.infof("Before creating user. %s", dumpNumberOfEntriesInMemory(cacheDc0Node0Statistics, cacheDc0Node1Statistics, cacheDc1Node0Statistics));
+
         UserRepresentation userRep = new UserRepresentation();
         userRep.setEnabled(true);
         userRep.setUsername("user1");
@@ -108,6 +110,8 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
 
         Assert.assertEquals(1, greenMail.getReceivedMessages().length);
 
+        log.infof("After sending email. %s", dumpNumberOfEntriesInMemory(cacheDc0Node0Statistics, cacheDc0Node1Statistics, cacheDc1Node0Statistics));
+
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
         String link = MailUtils.getPasswordResetEmailLink(message);
@@ -117,9 +121,13 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
           Matchers::is
         );
 
+        log.infof("After click to the link from email. %s", dumpNumberOfEntriesInMemory(cacheDc0Node0Statistics, cacheDc0Node1Statistics, cacheDc1Node0Statistics));
+
         proceedPage.assertCurrent();
         proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
+
+        log.infof("After open password update page. %s", dumpNumberOfEntriesInMemory(cacheDc0Node0Statistics, cacheDc0Node1Statistics, cacheDc1Node0Statistics));
 
         // Verify that there was at least one message sent via the channel - Even if we did the change on DC0, the message may be sent either from DC0 or DC1. Seems it depends on the actionTokens key ownership.
         // In case that it was sent from DC1, we will receive it in DC0.
@@ -140,6 +148,8 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
 
         assertThat(PageUtils.getPageTitle(driver), containsString("Your account has been updated."));
 
+        log.infof("After update password. %s", dumpNumberOfEntriesInMemory(cacheDc0Node0Statistics, cacheDc0Node1Statistics, cacheDc1Node0Statistics));
+
         // Verify that there was an action token added in the node which was targetted by the link
         assertThat(cacheDc0Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES_IN_MEMORY), greaterThan(originalNumberOfEntries));
 
@@ -154,8 +164,20 @@ public class ActionTokenCrossDCTest extends AbstractAdminCrossDCTest {
           Matchers::greaterThan
         );
 
+        log.infof("After another click to the invalid link. %s", dumpNumberOfEntriesInMemory(cacheDc0Node0Statistics, cacheDc0Node1Statistics, cacheDc1Node0Statistics));
+
         errorPage.assertCurrent();
         log.debug("--DC: END sendResetPasswordEmailSuccessWorksInCrossDc");
+    }
+
+    private String dumpNumberOfEntriesInMemory(InfinispanStatistics cacheDc0Node0Statistics, InfinispanStatistics cacheDc0Node1Statistics, InfinispanStatistics cacheDc1Node0Statistics) {
+        return new StringBuilder("dc0node0 - numberOfEntriesInMemory: ")
+                .append(cacheDc0Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES_IN_MEMORY))
+                .append(", dc0node1 - numberOfEntriesInMemory: ")
+                .append(cacheDc0Node1Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES_IN_MEMORY))
+                .append(", dc1node0 - numberOfEntriesInMemory: ")
+                .append(cacheDc1Node0Statistics.getSingleStatistics(Constants.STAT_CACHE_NUMBER_OF_ENTRIES_IN_MEMORY))
+                .toString();
     }
 
     @Test

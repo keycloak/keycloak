@@ -3,7 +3,6 @@ import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import java.nio.file.attribute.PosixFilePermissions
 import javax.xml.transform.Transformer
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.stream.StreamResult
@@ -30,7 +29,7 @@ class LicenseProcessMojo extends AbstractMojo {
         def outputDirectoryRaw = project.properties['outputDirectory'] ?: "${project.build.directory}/licenses"
         def xmlFileSource = project.properties['xmlFileSource'] ?: "${project.basedir}/src/main/resources/licenses/${project.properties['product.slot']}/licenses.xml"
         def licenseName = project.properties['licenseName'] ?: "Apache Software License 2.0"
-        def licenseUrl = project.properties['licenseUrl'] ?: "https://raw.githubusercontent.com/keycloak/keycloak/${project.version}/License.html"
+        def licenseUrl = project.properties['licenseUrl'] ?: "https://raw.githubusercontent.com/keycloak/keycloak/${project.version}/LICENSE.txt"
         def groupId = project.properties['groupId'] ?: "org.keycloak"
 
         Path outputDirectory = fs.getPath(outputDirectoryRaw)
@@ -44,7 +43,6 @@ class LicenseProcessMojo extends AbstractMojo {
         // For each direct dependency, append those matching the groupId filter
         log.info("Appending first party dependency license data")
         Path licenseFileRoot = outputDirectory
-        Path licenseFile = null
         def matched = false
         project.dependencyArtifacts.toSorted().each { artifact ->
             if (artifact.groupId == groupId) {
@@ -61,26 +59,9 @@ class LicenseProcessMojo extends AbstractMojo {
 
                 def newFilename = "${artifact.groupId},${artifact.artifactId},${artifact.version},${licenseName}.txt"
                 Path newFile = licenseFileRoot.resolve(newFilename)
-                if (licenseFile == null) {
-                    log.info("==> ${newFilename}")
-                    InputStream original = this.class.getResourceAsStream("keycloak-licenses-common/License.html")
-                    Files.copy(original, newFile, StandardCopyOption.REPLACE_EXISTING)
-                    licenseFile = newFile
-                } else {
-                    log.info("  -> ${newFilename}")
-                    try {
-                        Files.createSymbolicLink(newFile, licenseFile.fileName);
-                    } catch ( IOException e ) {
-                        log.debug("Can't create symbolic link, assuming due to lack of OS support")
-                        // Assume we're on Windows and the user doesn't have
-                        // SeCreateSymbolicLinkPrivilege and/or NTFS. Fallback to
-                        // writing something similar to what git would with
-                        // core.symlinks disabled.
-                        newFile.withWriter('utf-8') { writer ->
-                            writer.writeLine licenseFile.fileName.toString()
-                        }
-                    }
-                }
+                InputStream originalLicense = this.class.getResourceAsStream("keycloak-licenses-common/LICENSE.txt")
+                log.info("==> ${newFilename}")
+                Files.copy(originalLicense, newFile, StandardCopyOption.REPLACE_EXISTING)
             }
         }
         if (!matched) {

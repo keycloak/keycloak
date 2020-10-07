@@ -351,10 +351,6 @@ public class RequiredActionsTest extends AbstractLoginTest {
         assertTrue(otpSetupPage.feedbackMessage().isError());
         assertEquals("Please specify authenticator code.", otpSetupPage.feedbackMessage().getText());
 
-        // TODO: remove this once is KEYCLOAK-7081 fixed
-        otpSetupPage.clickManualMode();
-        otpSetupPage.clickManualMode();
-
         final String replacePattern = "^.+: ";
         
         // extract data
@@ -470,7 +466,7 @@ public class RequiredActionsTest extends AbstractLoginTest {
         testRealmAccountPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
         oneTimeCodePage.assertCurrent();
-        assertEquals("One-time code", oneTimeCodePage.getTotpLabel());
+        //assertEquals("One-time code", oneTimeCodePage.getTotpLabel());
 
         // bad attempt
         oneTimeCodePage.submit();

@@ -34,4 +34,8 @@ public interface UserCredentialStore extends Provider {
     List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user);
     List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type);
     CredentialModel getStoredCredentialByNameAndType(RealmModel realm, UserModel user, String name, String type);
+
+    //list operations
+    boolean moveCredentialTo(RealmModel realm, UserModel user, String id, String newPreviousCredentialId);
+
 }

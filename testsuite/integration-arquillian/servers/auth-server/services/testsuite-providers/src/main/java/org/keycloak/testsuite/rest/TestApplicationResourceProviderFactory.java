@@ -18,6 +18,9 @@
 package org.keycloak.testsuite.rest;
 
 import org.keycloak.Config.Scope;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.representations.adapters.action.LogoutAction;
@@ -67,16 +70,19 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
 
     public static class OIDCClientData {
 
-        private KeyPair signingKeyPair;
+        private KeyPair keyPair;
         private String oidcRequest;
         private List<String> sectorIdentifierRedirectUris;
+        private String keyType = KeyType.RSA;
+        private String keyAlgorithm = Algorithm.RS256;
+        private KeyUse keyUse = KeyUse.SIG;
 
         public KeyPair getSigningKeyPair() {
-            return signingKeyPair;
+            return keyPair;
         }
 
         public void setSigningKeyPair(KeyPair signingKeyPair) {
-            this.signingKeyPair = signingKeyPair;
+            this.keyPair = signingKeyPair;
         }
 
         public String getOidcRequest() {
@@ -93,6 +99,54 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
 
         public void setSectorIdentifierRedirectUris(List<String> sectorIdentifierRedirectUris) {
             this.sectorIdentifierRedirectUris = sectorIdentifierRedirectUris;
+        }
+
+        public String getSigningKeyType() {
+            return keyType;
+        }
+
+        public void setSigningKeyType(String signingKeyType) {
+            this.keyType = signingKeyType;
+        }
+
+        public String getSigningKeyAlgorithm() {
+            return keyAlgorithm;
+        }
+
+        public void setSigningKeyAlgorithm(String signingKeyAlgorithm) {
+            this.keyAlgorithm = signingKeyAlgorithm;
+        }
+
+        public KeyPair getKeyPair() {
+            return keyPair;
+        }
+
+        public void setKeyPair(KeyPair keyPair) {
+            this.keyPair = keyPair;
+        }
+
+        public String getKeyType() {
+            return keyType;
+        }
+
+        public void setKeyType(String keyType) {
+            this.keyType = keyType;
+        }
+
+        public String getKeyAlgorithm() {
+            return keyAlgorithm;
+        }
+
+        public void setKeyAlgorithm(String keyAlgorithm) {
+            this.keyAlgorithm = keyAlgorithm;
+        }
+
+        public KeyUse getKeyUse() {
+            return keyUse;
+        }
+
+        public void setKeyUse(KeyUse keyUse) {
+            this.keyUse = keyUse;
         }
     }
 }

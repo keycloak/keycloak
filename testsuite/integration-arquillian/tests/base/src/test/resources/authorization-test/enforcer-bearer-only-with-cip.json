@@ -19,6 +19,9 @@
         "claim-information-point": {
           "claims": {
             "claim-a": "{request.parameter['claim-a']}"
+          },
+          "my-custom-cip": {
+            "claim-value": "test"
           }
         }
       }

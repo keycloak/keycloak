@@ -27,12 +27,19 @@ import io.undertow.servlet.api.ServletInfo;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import javax.servlet.ServletException;
+import javax.ws.rs.Path;
+import javax.ws.rs.core.Application;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.arquillian.undertow.UndertowContainerConfiguration;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
@@ -43,11 +50,15 @@ import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaD
 import org.jboss.arquillian.container.spi.client.protocol.metadata.Servlet;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
+import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.jboss.shrinkwrap.api.Archive;
+import org.jboss.shrinkwrap.api.Node;
+import org.jboss.shrinkwrap.api.asset.ClassAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.descriptor.api.Descriptor;
 import org.jboss.shrinkwrap.undertow.api.UndertowWebArchive;
 import org.keycloak.common.util.reflections.Reflections;
+import org.keycloak.testsuite.arquillian.undertow.saml.util.RestSamlApplicationConfig;
 import org.keycloak.testsuite.utils.undertow.UndertowDeployerHelper;
 import org.keycloak.testsuite.utils.undertow.UndertowWarClassLoader;
 
@@ -115,9 +126,30 @@ public class UndertowAppServer implements DeployableContainer<UndertowAppServerC
         if (archive instanceof UndertowWebArchive) {
             di = ((UndertowWebArchive) archive).getDeploymentInfo();
         } else if (archive instanceof WebArchive) {
-            di = new UndertowDeployerHelper().getDeploymentInfo(configuration, (WebArchive)archive);
+            WebArchive webArchive = (WebArchive)archive;
+
+            Optional<Node> applicationClassNode = archive.getContent(archivePath ->
+                    archivePath.get().startsWith("/WEB-INF/classes/") && archivePath.get().endsWith("Application.class"))
+                    .values().stream().findFirst();
+
+            if (isJaxrsApp(webArchive)) {
+                di = new UndertowDeployerHelper().getDeploymentInfo(configuration, webArchive,
+                        undertow.undertowDeployment(discoverPathAnnotatedClasses(webArchive)));
+            } else if (applicationClassNode.isPresent()) {
+                String applicationPath = applicationClassNode.get().getPath().get();
+
+                ResteasyDeployment deployment = new ResteasyDeployment();
+                deployment.setApplicationClass(extractClassName(applicationPath));
+                di = new UndertowDeployerHelper().getDeploymentInfo(configuration, (WebArchive) archive, undertow.undertowDeployment(deployment));
+            } else {
+                di = new UndertowDeployerHelper().getDeploymentInfo(configuration, webArchive);
+            }
         } else {
             throw new IllegalArgumentException("UndertowContainer only supports UndertowWebArchive or WebArchive.");
+        }
+
+        if ("ROOT.war".equals(archive.getName())) {
+            di.setContextPath("/");
         }
 
         ClassLoader parentCl = Thread.currentThread().getContextClassLoader();
@@ -134,6 +166,14 @@ public class UndertowAppServer implements DeployableContainer<UndertowAppServerC
 
         return new ProtocolMetaData().addContext(
                 createHttpContextForDeploymentInfo(di));
+    }
+
+    private String extractClassName(String applicationPath) {
+        applicationPath = applicationPath
+                .substring(0, applicationPath.lastIndexOf(".class")) // Remove .class
+                .replaceFirst("^/WEB-INF/classes/", ""); // Remove /WEB-INF/classes/ from beginning
+
+        return applicationPath.replaceAll("/", ".");
     }
 
     @Override
@@ -186,5 +226,30 @@ public class UndertowAppServer implements DeployableContainer<UndertowAppServerC
             httpContext.add(new Servlet(servletInfo.getName(), deploymentInfo.getContextPath()));
         }
         return httpContext;
+    }
+
+    private boolean isJaxrsApp(WebArchive archive) throws DeploymentException {
+        try {
+            return IOUtils.toString(archive.get("/WEB-INF/web.xml").getAsset().openStream(), Charset.forName("UTF-8"))
+                    .contains(Application.class.getName());
+        } catch (IOException e) {
+            throw new DeploymentException("Unable to read archive.", e);
+        }
+    }
+
+    private ResteasyDeployment discoverPathAnnotatedClasses(WebArchive webArchive) {
+        //take all classes from war and add those with @Path annotation to RestSamlApplicationConfig
+        Set<Class<?>> classes = webArchive.getContent(archivePath ->
+                archivePath.get().startsWith("/WEB-INF/classes/") &&
+                archivePath.get().endsWith(".class")
+        ).values().stream()
+                .filter(node -> node.getAsset() instanceof ClassAsset)
+                .map(node -> ((ClassAsset)node.getAsset()).getSource())
+                .filter(clazz -> clazz.isAnnotationPresent(Path.class))
+                .collect(Collectors.toSet());
+
+        ResteasyDeployment deployment = new ResteasyDeployment();
+        deployment.setApplication(new RestSamlApplicationConfig(classes));
+        return deployment;
     }
 }

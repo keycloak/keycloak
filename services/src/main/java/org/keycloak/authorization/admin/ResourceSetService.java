@@ -128,7 +128,7 @@ public class ResourceSetService {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Resource with name [" + resource.getName() + "] already exists.", Status.CONFLICT);
         }
 
-        return toRepresentation(toModel(resource, this.resourceServer, authorization), resourceServer, authorization);
+        return toRepresentation(toModel(resource, this.resourceServer, authorization), resourceServer.getId(), authorization);
     }
 
     @Path("{id}")
@@ -166,9 +166,7 @@ public class ResourceSetService {
 
         storeFactory.getResourceStore().delete(id);
 
-        if (authorization.getRealm().isAdminEventsEnabled()) {
-            audit(toRepresentation(resource, resourceServer, authorization), OperationType.DELETE);
-        }
+        audit(toRepresentation(resource, resourceServer.getId(), authorization), OperationType.DELETE);
 
         return Response.noContent().build();
     }
@@ -178,7 +176,7 @@ public class ResourceSetService {
     @NoCache
     @Produces("application/json")
     public Response findById(@PathParam("id") String id) {
-        return findById(id, resource -> toRepresentation(resource, resourceServer, authorization, true));
+        return findById(id, resource -> toRepresentation(resource, resourceServer.getId(), authorization, true));
     }
 
     public Response findById(String id, Function<Resource, ? extends ResourceRepresentation> toRepresentation) {
@@ -321,10 +319,10 @@ public class ResourceSetService {
         Resource model = storeFactory.getResourceStore().findByName(name, this.resourceServer.getId());
 
         if (model == null) {
-            return Response.status(Status.OK).build();
+            return Response.status(Status.NO_CONTENT).build();
         }
 
-        return Response.ok(toRepresentation(model, this.resourceServer, authorization)).build();
+        return Response.ok(toRepresentation(model, this.resourceServer.getId(), authorization)).build();
     }
 
     @GET
@@ -337,10 +335,11 @@ public class ResourceSetService {
                          @QueryParam("type") String type,
                          @QueryParam("scope") String scope,
                          @QueryParam("matchingUri") Boolean matchingUri,
+                         @QueryParam("exactName") Boolean exactName,
                          @QueryParam("deep") Boolean deep,
                          @QueryParam("first") Integer firstResult,
                          @QueryParam("max") Integer maxResult) {
-        return find(id, name, uri, owner, type, scope, matchingUri, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer, authorization, deep1));
+        return find(id, name, uri, owner, type, scope, matchingUri, exactName, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer.getId(), authorization, deep1));
     }
 
     public Response find(@QueryParam("_id") String id,
@@ -350,6 +349,7 @@ public class ResourceSetService {
                          @QueryParam("type") String type,
                          @QueryParam("scope") String scope,
                          @QueryParam("matchingUri") Boolean matchingUri,
+                         @QueryParam("exactName") Boolean exactName,
                          @QueryParam("deep") Boolean deep,
                          @QueryParam("first") Integer firstResult,
                          @QueryParam("max") Integer maxResult,
@@ -370,6 +370,10 @@ public class ResourceSetService {
 
         if (name != null && !"".equals(name.trim())) {
             search.put("name", new String[] {name});
+            
+            if (exactName != null && exactName) {
+                search.put(Resource.EXACT_NAME, new String[] {Boolean.TRUE.toString()});
+            }
         }
 
         if (uri != null && !"".equals(uri.trim())) {
@@ -419,7 +423,7 @@ public class ResourceSetService {
             attributes.put("uri_not_null", new String[] {"true"});
             attributes.put("owner", new String[] {resourceServer.getId()});
 
-            List<Resource> serverResources = storeFactory.getResourceStore().findByResourceServer(attributes, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS);
+            List<Resource> serverResources = storeFactory.getResourceStore().findByResourceServer(attributes, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : -1);
 
             PathMatcher<Map.Entry<String, Resource>> pathMatcher = new PathMatcher<Map.Entry<String, Resource>>() {
                 @Override
@@ -471,12 +475,10 @@ public class ResourceSetService {
     }
 
     public void audit(ResourceRepresentation resource, String id, OperationType operation) {
-        if (authorization.getRealm().isAdminEventsEnabled()) {
-            if (id != null) {
-                adminEvent.operation(operation).resourcePath(session.getContext().getUri(), id).representation(resource).success();
-            } else {
-                adminEvent.operation(operation).resourcePath(session.getContext().getUri()).representation(resource).success();
-            }
+        if (id != null) {
+            adminEvent.operation(operation).resourcePath(session.getContext().getUri(), id).representation(resource).success();
+        } else {
+            adminEvent.operation(operation).resourcePath(session.getContext().getUri()).representation(resource).success();
         }
     }
 }

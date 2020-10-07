@@ -19,12 +19,14 @@ package org.keycloak.testsuite.console.authentication;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.authentication.PasswordPolicy;
 import org.keycloak.testsuite.console.page.users.UserCredentials;
 
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.Type.DIGITS;
 import static org.keycloak.testsuite.console.page.authentication.PasswordPolicy.Type.REGEX_PATTERN;
 
@@ -166,24 +168,24 @@ public class PasswordPolicyTest extends AbstractConsoleTest {
     @Test
     public void testPasswordHistoryPolicy() {
         RealmRepresentation realm = testRealmResource().toRepresentation();
-        realm.setPasswordPolicy("passwordHistory(2) and ");
+        realm.setPasswordPolicy("passwordHistory(2)");
         testRealmResource().update(realm);
 
         testUserCredentialsPage.navigateTo();
         testUserCredentialsPage.resetPassword("firstPassword");
-        assertAlertSuccess();
+        assertTrue("Setting the first password should succeed.", alert.isDisplayed() && alert.isSuccess());
 
         testUserCredentialsPage.resetPassword("secondPassword");
-        assertAlertSuccess();
-
+        assertTrue("Setting the second password should succeed.", alert.isDisplayed() && alert.isSuccess());
+        
         testUserCredentialsPage.resetPassword("firstPassword");
-        assertAlertDanger();
+        assertTrue("Setting a password from recent history should fail.", alert.isDisplayed() && alert.isDanger());
 
         testUserCredentialsPage.resetPassword("thirdPassword");
-        assertAlertSuccess();
+        assertTrue("Setting the third password should succeed.", alert.isDisplayed() && alert.isSuccess());
 
         testUserCredentialsPage.resetPassword("firstPassword");
-        assertAlertSuccess();
+        assertTrue("Setting an older password should succeed.", alert.isDisplayed() && alert.isSuccess());
     }
 
 }

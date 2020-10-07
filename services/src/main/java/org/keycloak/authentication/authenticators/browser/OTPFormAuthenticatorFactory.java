@@ -26,7 +26,7 @@ import org.keycloak.authentication.authenticators.console.ConsoleOTPFormAuthenti
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.List;
@@ -74,7 +74,7 @@ public class OTPFormAuthenticatorFactory implements AuthenticatorFactory, Displa
 
     @Override
     public String getReferenceCategory() {
-        return UserCredentialModel.TOTP;
+        return OTPCredentialModel.TYPE;
     }
 
     @Override
@@ -86,11 +86,6 @@ public class OTPFormAuthenticatorFactory implements AuthenticatorFactory, Displa
     public boolean isUserSetupAllowed() {
         return true;
     }
-
-    public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.REQUIRED,
-            AuthenticationExecutionModel.Requirement.OPTIONAL,
-            AuthenticationExecutionModel.Requirement.DISABLED};
 
     @Override
     public AuthenticationExecutionModel.Requirement[] getRequirementChoices() {

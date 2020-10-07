@@ -23,7 +23,7 @@ public class CorsPreflightService {
      *
      * @return
      */
-    @Path("/")
+    @Path("{any:.*}")
     @OPTIONS
     public Response preflight() {
         Cors cors = Cors.add(request, Response.ok()).auth().allowedMethods("GET", "POST", "HEAD", "OPTIONS").preflight();

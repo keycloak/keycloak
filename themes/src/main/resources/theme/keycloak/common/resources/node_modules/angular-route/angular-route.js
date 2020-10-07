@@ -1,6 +1,6 @@
 /**
- * @license AngularJS v1.6.6
- * (c) 2010-2017 Google, Inc. http://angularjs.org
+ * @license AngularJS v1.8.0
+ * (c) 2010-2020 Google, Inc. http://angularjs.org
  * License: MIT
  */
 (function(window, angular) {'use strict';
@@ -32,6 +32,52 @@ function shallowCopy(src, dst) {
   return dst || src;
 }
 
+/* global routeToRegExp: true */
+
+/**
+ * @param {string} path - The path to parse. (It is assumed to have query and hash stripped off.)
+ * @param {Object} opts - Options.
+ * @return {Object} - An object containing an array of path parameter names (`keys`) and a regular
+ *     expression (`regexp`) that can be used to identify a matching URL and extract the path
+ *     parameter values.
+ *
+ * @description
+ * Parses the given path, extracting path parameter names and a regular expression to match URLs.
+ *
+ * Originally inspired by `pathRexp` in `visionmedia/express/lib/utils.js`.
+ */
+function routeToRegExp(path, opts) {
+  var keys = [];
+
+  var pattern = path
+    .replace(/([().])/g, '\\$1')
+    .replace(/(\/)?:(\w+)(\*\?|[?*])?/g, function(_, slash, key, option) {
+      var optional = option === '?' || option === '*?';
+      var star = option === '*' || option === '*?';
+      keys.push({name: key, optional: optional});
+      slash = slash || '';
+      return (
+        (optional ? '(?:' + slash : slash + '(?:') +
+        (star ? '(.+?)' : '([^/]+)') +
+        (optional ? '?)?' : ')')
+      );
+    })
+    .replace(/([/$*])/g, '\\$1');
+
+  if (opts.ignoreTrailingSlashes) {
+    pattern = pattern.replace(/\/+$/, '') + '/*';
+  }
+
+  return {
+    keys: keys,
+    regexp: new RegExp(
+      '^' + pattern + '(?:[?#]|$)',
+      opts.caseInsensitiveMatch ? 'i' : ''
+    )
+  };
+}
+
+/* global routeToRegExp: false */
 /* global shallowCopy: false */
 
 // `isArray` and `isObject` are necessary for `shallowCopy()` (included via `src/shallowCopy.js`).
@@ -46,20 +92,16 @@ var noop;
  * @name ngRoute
  * @description
  *
- * # ngRoute
- *
- * The `ngRoute` module provides routing and deeplinking services and directives for angular apps.
+ * The `ngRoute` module provides routing and deeplinking services and directives for AngularJS apps.
  *
  * ## Example
- * See {@link ngRoute.$route#example $route} for an example of configuring and using `ngRoute`.
+ * See {@link ngRoute.$route#examples $route} for an example of configuring and using `ngRoute`.
  *
- *
- * <div doc-module-components="ngRoute"></div>
  */
 /* global -ngRouteModule */
 var ngRouteModule = angular.
   module('ngRoute', []).
-  info({ angularVersion: '1.6.6' }).
+  info({ angularVersion: '1.8.0' }).
   provider('$route', $RouteProvider).
   // Ensure `$route` will be instantiated in time to capture the initial `$locationChangeSuccess`
   // event (unless explicitly disabled). This is necessary in case `ngView` is included in an
@@ -79,7 +121,7 @@ var isEagerInstantiationEnabled;
  * Used for configuring routes.
  *
  * ## Example
- * See {@link ngRoute.$route#example $route} for an example of configuring and using `ngRoute`.
+ * See {@link ngRoute.$route#examples $route} for an example of configuring and using `ngRoute`.
  *
  * ## Dependencies
  * Requires the {@link ngRoute `ngRoute`} module to be installed.
@@ -219,11 +261,22 @@ function $RouteProvider() {
    *      `redirectTo` takes precedence over `resolveRedirectTo`, so specifying both on the same
    *      route definition, will cause the latter to be ignored.
    *
+   *    - `[reloadOnUrl=true]` - `{boolean=}` - reload route when any part of the URL changes
+   *      (including the path) even if the new URL maps to the same route.
+   *
+   *      If the option is set to `false` and the URL in the browser changes, but the new URL maps
+   *      to the same route, then a `$routeUpdate` event is broadcasted on the root scope (without
+   *      reloading the route).
+   *
    *    - `[reloadOnSearch=true]` - `{boolean=}` - reload route when only `$location.search()`
    *      or `$location.hash()` changes.
    *
-   *      If the option is set to `false` and url in the browser changes, then
-   *      `$routeUpdate` event is broadcasted on the root scope.
+   *      If the option is set to `false` and the URL in the browser changes, then a `$routeUpdate`
+   *      event is broadcasted on the root scope (without reloading the route).
+   *
+   *      <div class="alert alert-warning">
+   *        **Note:** This option has no effect if `reloadOnUrl` is set to `false`.
+   *      </div>
    *
    *    - `[caseInsensitiveMatch=false]` - `{boolean=}` - match routes without being case sensitive
    *
@@ -238,6 +291,9 @@ function $RouteProvider() {
   this.when = function(path, route) {
     //copy original route object to preserve params inherited from proto chain
     var routeCopy = shallowCopy(route);
+    if (angular.isUndefined(routeCopy.reloadOnUrl)) {
+      routeCopy.reloadOnUrl = true;
+    }
     if (angular.isUndefined(routeCopy.reloadOnSearch)) {
       routeCopy.reloadOnSearch = true;
     }
@@ -246,7 +302,8 @@ function $RouteProvider() {
     }
     routes[path] = angular.extend(
       routeCopy,
-      path && pathRegExp(path, routeCopy)
+      {originalPath: path},
+      path && routeToRegExp(path, routeCopy)
     );
 
     // create redirection for trailing slashes
@@ -256,8 +313,8 @@ function $RouteProvider() {
             : path + '/';
 
       routes[redirectPath] = angular.extend(
-        {redirectTo: path},
-        pathRegExp(redirectPath, routeCopy)
+        {originalPath: path, redirectTo: path},
+        routeToRegExp(redirectPath, routeCopy)
       );
     }
 
@@ -274,47 +331,6 @@ function $RouteProvider() {
    * algorithm. Defaults to `false`.
    */
   this.caseInsensitiveMatch = false;
-
-   /**
-    * @param path {string} path
-    * @param opts {Object} options
-    * @return {?Object}
-    *
-    * @description
-    * Normalizes the given path, returning a regular expression
-    * and the original path.
-    *
-    * Inspired by pathRexp in visionmedia/express/lib/utils.js.
-    */
-  function pathRegExp(path, opts) {
-    var insensitive = opts.caseInsensitiveMatch,
-        ret = {
-          originalPath: path,
-          regexp: path
-        },
-        keys = ret.keys = [];
-
-    path = path
-      .replace(/([().])/g, '\\$1')
-      .replace(/(\/)?:(\w+)(\*\?|[?*])?/g, function(_, slash, key, option) {
-        var optional = (option === '?' || option === '*?') ? '?' : null;
-        var star = (option === '*' || option === '*?') ? '*' : null;
-        keys.push({ name: key, optional: !!optional });
-        slash = slash || '';
-        return ''
-          + (optional ? '' : slash)
-          + '(?:'
-          + (optional ? slash : '')
-          + (star && '(.+?)' || '([^/]+)')
-          + (optional || '')
-          + ')'
-          + (optional || '');
-      })
-      .replace(/([/$*])/g, '\\$1');
-
-    ret.regexp = new RegExp('^' + path + '$', insensitive ? 'i' : '');
-    return ret;
-  }
 
   /**
    * @ngdoc method
@@ -580,8 +596,9 @@ function $RouteProvider() {
      * @name $route#$routeUpdate
      * @eventType broadcast on root scope
      * @description
-     * The `reloadOnSearch` property has been set to false, and we are reusing the same
-     * instance of the Controller.
+     * Broadcasted if the same instance of a route (including template, controller instance,
+     * resolved dependencies, etc.) is being reused. This can happen if either `reloadOnSearch` or
+     * `reloadOnUrl` has been set to `false`.
      *
      * @param {Object} angularEvent Synthetic event object
      * @param {Route} current Current/previous route information.
@@ -641,7 +658,7 @@ function $RouteProvider() {
               // interpolate modifies newParams, only query params are left
               $location.search(newParams);
             } else {
-              throw $routeMinErr('norout', 'Tried updating route when with no current route');
+              throw $routeMinErr('norout', 'Tried updating route with no current route');
             }
           }
         };
@@ -689,9 +706,7 @@ function $RouteProvider() {
       var lastRoute = $route.current;
 
       preparedRoute = parseRoute();
-      preparedRouteIsUpdateOnly = preparedRoute && lastRoute && preparedRoute.$$route === lastRoute.$$route
-          && angular.equals(preparedRoute.pathParams, lastRoute.pathParams)
-          && !preparedRoute.reloadOnSearch && !forceReload;
+      preparedRouteIsUpdateOnly = isNavigationUpdateOnly(preparedRoute, lastRoute);
 
       if (!preparedRouteIsUpdateOnly && (lastRoute || preparedRoute)) {
         if ($rootScope.$broadcast('$routeChangeStart', preparedRoute, lastRoute).defaultPrevented) {
@@ -716,7 +731,7 @@ function $RouteProvider() {
 
         var nextRoutePromise = $q.resolve(nextRoute);
 
-        $browser.$$incOutstandingRequestCount();
+        $browser.$$incOutstandingRequestCount('$route');
 
         nextRoutePromise.
           then(getRedirectionData).
@@ -744,7 +759,7 @@ function $RouteProvider() {
             // `outstandingRequestCount` to hit zero.  This is important in case we are redirecting
             // to a new route which also requires some asynchronous work.
 
-            $browser.$$completeOutstandingRequest(noop);
+            $browser.$$completeOutstandingRequest(noop, '$route');
           });
       }
     }
@@ -872,6 +887,29 @@ function $RouteProvider() {
     }
 
     /**
+     * @param {Object} newRoute - The new route configuration (as returned by `parseRoute()`).
+     * @param {Object} oldRoute - The previous route configuration (as returned by `parseRoute()`).
+     * @returns {boolean} Whether this is an "update-only" navigation, i.e. the URL maps to the same
+     *                    route and it can be reused (based on the config and the type of change).
+     */
+    function isNavigationUpdateOnly(newRoute, oldRoute) {
+      // IF this is not a forced reload
+      return !forceReload
+          // AND both `newRoute`/`oldRoute` are defined
+          && newRoute && oldRoute
+          // AND they map to the same Route Definition Object
+          && (newRoute.$$route === oldRoute.$$route)
+          // AND `reloadOnUrl` is disabled
+          && (!newRoute.reloadOnUrl
+              // OR `reloadOnSearch` is disabled
+              || (!newRoute.reloadOnSearch
+                  // AND both routes have the same path params
+                  && angular.equals(newRoute.pathParams, oldRoute.pathParams)
+              )
+          );
+    }
+
+    /**
      * @returns {string} interpolation of the redirect path with the parameters
      */
     function interpolate(string, params) {
@@ -951,7 +989,6 @@ ngRouteModule.directive('ngView', ngViewFillContentFactory);
  * @restrict ECA
  *
  * @description
- * # Overview
  * `ngView` is a directive that complements the {@link ngRoute.$route $route} service by
  * including the rendered template of the current route into the main layout (`index.html`) file.
  * Every time the current route changes, the included view changes with it according to the

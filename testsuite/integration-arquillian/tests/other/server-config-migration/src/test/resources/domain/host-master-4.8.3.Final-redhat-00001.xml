@@ -1,0 +1,193 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<host xmlns="urn:jboss:domain:8.0" name="master">
+    <extensions>
+        <extension module="org.jboss.as.jmx"/>
+        <extension module="org.wildfly.extension.core-management"/>
+        <extension module="org.wildfly.extension.elytron"/>
+    </extensions>
+    <management>
+        <security-realms>
+            <security-realm name="ManagementRealm">
+                <authentication>
+                    <local default-user="$local" skip-group-loading="true"/>
+                    <properties path="mgmt-users.properties" relative-to="jboss.domain.config.dir"/>
+                </authentication>
+                <authorization map-groups-to-roles="false">
+                    <properties path="mgmt-groups.properties" relative-to="jboss.domain.config.dir"/>
+                </authorization>
+            </security-realm>
+            <security-realm name="ApplicationRealm">
+                <server-identities>
+                    <ssl>
+                        <keystore path="application.keystore" relative-to="jboss.domain.config.dir" keystore-password="password" alias="server" key-password="password" generate-self-signed-certificate-host="localhost"/>
+                    </ssl>
+                </server-identities>
+                <authentication>
+                    <local default-user="$local" allowed-users="*" skip-group-loading="true"/>
+                    <properties path="application-users.properties" relative-to="jboss.domain.config.dir"/>
+                </authentication>
+                <authorization>
+                    <properties path="application-roles.properties" relative-to="jboss.domain.config.dir"/>
+                </authorization>
+            </security-realm>
+        </security-realms>
+        <audit-log>
+            <formatters>
+                <json-formatter name="json-formatter"/>
+            </formatters>
+            <handlers>
+                <file-handler name="host-file" formatter="json-formatter" path="audit-log.log" relative-to="jboss.domain.data.dir"/>
+                <file-handler name="server-file" formatter="json-formatter" path="audit-log.log" relative-to="jboss.server.data.dir"/>
+            </handlers>
+            <logger log-boot="true" log-read-only="false" enabled="false">
+                <handlers>
+                    <handler name="host-file"/>
+                </handlers>
+            </logger>
+            <server-logger log-boot="true" log-read-only="false" enabled="false">
+                <handlers>
+                    <handler name="server-file"/>
+                </handlers>
+            </server-logger>
+        </audit-log>
+        <management-interfaces>
+            <native-interface security-realm="ManagementRealm">
+                <socket interface="management" port="${jboss.management.native.port:9999}"/>
+            </native-interface>
+            <http-interface security-realm="ManagementRealm">
+                <http-upgrade enabled="true"/>
+                <socket interface="management" port="${jboss.management.http.port:9990}"/>
+            </http-interface>
+        </management-interfaces>
+    </management>
+    <domain-controller>
+        <local/>
+    </domain-controller>
+    <interfaces>
+        <interface name="management">
+            <inet-address value="${jboss.bind.address.management:127.0.0.1}"/>
+        </interface>
+        <interface name="public">
+            <inet-address value="${jboss.bind.address:127.0.0.1}"/>
+        </interface>
+    </interfaces>
+    <jvms>
+        <jvm name="default">
+            <heap size="64m" max-size="256m"/>
+            <jvm-options>
+                <option value="-server"/>
+                <option value="-XX:MetaspaceSize=96m"/>
+                <option value="-XX:MaxMetaspaceSize=256m"/>
+            </jvm-options>
+        </jvm>
+    </jvms>
+    <servers>
+        <!-- load-balancer should be removed in production systems and replaced with a better software or hardware based one -->
+        <server name="load-balancer" group="load-balancer-group"/>
+        <server name="server-one" group="auth-server-group" auto-start="true">
+            <!--
+              ~  Remote JPDA debugging for a specific server
+              ~             <jvm name="default">
+              ~               <jvm-options>
+              ~                 <option value="-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=n"/>
+              ~               </jvm-options>
+              ~            </jvm>
+              ~            
+              -->
+            <!--
+              ~  server-two avoids port conflicts by incrementing the ports in
+              ~                  the default socket-group declared in the server-group 
+              -->
+            <socket-bindings port-offset="150"/>
+        </server>
+    </servers>
+    <profile>
+        <subsystem xmlns="urn:jboss:domain:core-management:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:jmx:1.3">
+            <expose-resolved-model/>
+            <expose-expression-model/>
+            <remoting-connector/>
+        </subsystem>
+        <subsystem xmlns="urn:wildfly:elytron:4.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+            <providers>
+                <aggregate-providers name="combined-providers">
+                    <providers name="elytron"/>
+                    <providers name="openssl"/>
+                </aggregate-providers>
+                <provider-loader name="elytron" module="org.wildfly.security.elytron"/>
+                <provider-loader name="openssl" module="org.wildfly.openssl"/>
+            </providers>
+            <audit-logging>
+                <file-audit-log name="local-audit" path="audit.log" relative-to="jboss.domain.log.dir" format="JSON"/>
+            </audit-logging>
+            <security-domains>
+                <security-domain name="ManagementDomain" default-realm="ManagementRealm" permission-mapper="default-permission-mapper">
+                    <realm name="ManagementRealm" role-decoder="groups-to-roles"/>
+                    <realm name="local" role-mapper="super-user-mapper"/>
+                </security-domain>
+            </security-domains>
+            <security-realms>
+                <identity-realm name="local" identity="$local"/>
+                <properties-realm name="ManagementRealm">
+                    <users-properties path="mgmt-users.properties" relative-to="jboss.domain.config.dir" digest-realm-name="ManagementRealm"/>
+                    <groups-properties path="mgmt-groups.properties" relative-to="jboss.domain.config.dir"/>
+                </properties-realm>
+            </security-realms>
+            <mappers>
+                <simple-permission-mapper name="default-permission-mapper" mapping-mode="first">
+                    <permission-mapping>
+                        <principal name="anonymous"/>
+                        <permission-set name="default-permissions"/>
+                    </permission-mapping>
+                    <permission-mapping match-all="true">
+                        <permission-set name="login-permission"/>
+                        <permission-set name="default-permissions"/>
+                    </permission-mapping>
+                </simple-permission-mapper>
+                <constant-realm-mapper name="local" realm-name="local"/>
+                <simple-role-decoder name="groups-to-roles" attribute="groups"/>
+                <constant-role-mapper name="super-user-mapper">
+                    <role name="SuperUser"/>
+                </constant-role-mapper>
+            </mappers>
+            <permission-sets>
+                <permission-set name="login-permission">
+                    <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
+                </permission-set>
+                <permission-set name="default-permissions"/>
+            </permission-sets>
+            <http>
+                <http-authentication-factory name="management-http-authentication" security-domain="ManagementDomain" http-server-mechanism-factory="global">
+                    <mechanism-configuration>
+                        <mechanism mechanism-name="BASIC">
+                            <mechanism-realm realm-name="Management Realm"/>
+                        </mechanism>
+                    </mechanism-configuration>
+                </http-authentication-factory>
+                <provider-http-server-mechanism-factory name="global"/>
+            </http>
+            <sasl>
+                <sasl-authentication-factory name="management-sasl-authentication" sasl-server-factory="configured" security-domain="ManagementDomain">
+                    <mechanism-configuration>
+                        <mechanism mechanism-name="JBOSS-LOCAL-USER" realm-mapper="local"/>
+                        <mechanism mechanism-name="DIGEST-MD5">
+                            <mechanism-realm realm-name="ManagementRealm"/>
+                        </mechanism>
+                    </mechanism-configuration>
+                </sasl-authentication-factory>
+                <configurable-sasl-server-factory name="configured" sasl-server-factory="elytron">
+                    <properties>
+                        <property name="wildfly.sasl.local-user.default-user" value="$local"/>
+                    </properties>
+                </configurable-sasl-server-factory>
+                <mechanism-provider-filtering-sasl-server-factory name="elytron" sasl-server-factory="global">
+                    <filters>
+                        <filter provider-name="WildFlyElytron"/>
+                    </filters>
+                </mechanism-provider-filtering-sasl-server-factory>
+                <provider-sasl-server-factory name="global"/>
+            </sasl>
+        </subsystem>
+    </profile>
+</host>

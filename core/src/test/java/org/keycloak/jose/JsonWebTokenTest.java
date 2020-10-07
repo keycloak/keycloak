@@ -48,7 +48,7 @@ public class JsonWebTokenTest {
     }
 
     @Test
-    public void testAddAudience() throws IOException {
+    public void testAddAudience() {
         // Token with no audience
         JsonWebToken s = new JsonWebToken();
         s.addAudience("audience-1");

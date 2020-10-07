@@ -16,20 +16,27 @@
  */
 package org.keycloak.services.managers;
 
-import org.jboss.resteasy.spi.UnauthorizedException;
+import javax.ws.rs.NotAuthorizedException;
+
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class AppAuthManager extends AuthenticationManager {
+
+    private static final String BEARER = "Bearer";
+
+    private static final Pattern WHITESPACES = Pattern.compile("\\s+");
 
     @Override
     public AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm) {
@@ -41,35 +48,124 @@ public class AppAuthManager extends AuthenticationManager {
         return authResult;
     }
 
-    public String extractAuthorizationHeaderToken(HttpHeaders headers) {
-        String tokenString = null;
+    /**
+     * Extracts the token string from the given Authorization Bearer header.
+     *
+     * @return the token string or {@literal null}
+     */
+    private static String extractTokenStringFromAuthHeader(String authHeader) {
+
+        if (authHeader == null) {
+            return null;
+        }
+
+        String[] split = WHITESPACES.split(authHeader.trim());
+        if (split.length != 2){
+            return null;
+        }
+
+        String bearerPart = split[0];
+        if (!bearerPart.equalsIgnoreCase(BEARER)){
+            return null;
+        }
+
+        String tokenString = split[1];
+        if (ObjectUtil.isBlank(tokenString)) {
+            return null;
+        }
+
+        return tokenString;
+    }
+
+    /**
+     * Extracts the token string from the Authorization Bearer Header.
+     *
+     * @param headers
+     * @return the token string or {@literal null} if the Authorization header is not of type Bearer, or the token string is missing.
+     */
+    public static String extractAuthorizationHeaderTokenOrReturnNull(HttpHeaders headers) {
         String authHeader = headers.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        if (authHeader != null) {
-            String[] split = authHeader.trim().split("\\s+");
-            if (split == null || split.length != 2) throw new UnauthorizedException("Bearer");
-            if (!split[0].equalsIgnoreCase("Bearer")) throw new UnauthorizedException("Bearer");
-            tokenString = split[1];
+        return extractTokenStringFromAuthHeader(authHeader);
+    }
+
+    /**
+     * Extracts the token string from the Authorization Bearer Header.
+     *
+     * @param headers
+     * @return the token string or {@literal null} of the Authorization header is missing
+     * @throws  NotAuthorizedException if the Authorization header is not of type Bearer, or the token string is missing.
+     */
+    public static String extractAuthorizationHeaderToken(HttpHeaders headers) {
+        String authHeader = headers.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        if (authHeader == null) {
+            return null;
+        }
+        String tokenString = extractTokenStringFromAuthHeader(authHeader);
+        if (tokenString == null ){
+            throw new NotAuthorizedException(BEARER);
         }
         return tokenString;
     }
 
-    public AuthResult authenticateBearerToken(KeycloakSession session, RealmModel realm) {
-        KeycloakContext ctx = session.getContext();
-        return authenticateBearerToken(session, realm, ctx.getUri(), ctx.getConnection(), ctx.getRequestHeaders());
-    }
+    public static class BearerTokenAuthenticator {
+        private KeycloakSession session;
+        private RealmModel realm;
+        private UriInfo uriInfo;
+        private ClientConnection connection;
+        private HttpHeaders headers;
+        private String tokenString;
+        private String audience;
 
-    public AuthResult authenticateBearerToken(KeycloakSession session) {
-        return authenticateBearerToken(session, session.getContext().getRealm(), session.getContext().getUri(), session.getContext().getConnection(), session.getContext().getRequestHeaders());
-    }
+        public BearerTokenAuthenticator(KeycloakSession session) {
+            this.session = session;
+        }
 
-    public AuthResult authenticateBearerToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
-        return authenticateBearerToken(extractAuthorizationHeaderToken(headers), session, realm, uriInfo, connection, headers);
-    }
+        public BearerTokenAuthenticator setSession(KeycloakSession session) {
+            this.session = session;
+            return this;
+        }
 
-    public AuthResult authenticateBearerToken(String tokenString, KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, HttpHeaders headers) {
-        if (tokenString == null) return null;
-        AuthResult authResult = verifyIdentityToken(session, realm, uriInfo, connection, true, true, false, tokenString, headers);
-        return authResult;
+        public BearerTokenAuthenticator setRealm(RealmModel realm) {
+            this.realm = realm;
+            return this;
+        }
+
+        public BearerTokenAuthenticator setUriInfo(UriInfo uriInfo) {
+            this.uriInfo = uriInfo;
+            return this;
+        }
+
+        public BearerTokenAuthenticator setConnection(ClientConnection connection) {
+            this.connection = connection;
+            return this;
+        }
+
+        public BearerTokenAuthenticator setHeaders(HttpHeaders headers) {
+            this.headers = headers;
+            return this;
+        }
+
+        public BearerTokenAuthenticator setTokenString(String tokenString) {
+            this.tokenString = tokenString;
+            return this;
+        }
+
+        public BearerTokenAuthenticator setAudience(String audience) {
+            this.audience = audience;
+            return this;
+        }
+
+        public AuthResult authenticate() {
+            KeycloakContext ctx = session.getContext();
+            if (realm == null) realm = ctx.getRealm();
+            if (uriInfo == null) uriInfo = ctx.getUri();
+            if (connection == null) connection = ctx.getConnection();
+            if (headers == null) headers = ctx.getRequestHeaders();
+            if (tokenString == null) tokenString = extractAuthorizationHeaderToken(headers);
+            // audience can be null
+
+            return verifyIdentityToken(session, realm, uriInfo, connection, true, true, audience, false, tokenString, headers);
+        }
     }
 
 }

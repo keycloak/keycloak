@@ -24,6 +24,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class ECPublicJWK extends JWK {
 
+    public static final String EC = "EC";
+
     public static final String CRV = "crv";
     public static final String X = "x";
     public static final String Y = "y";

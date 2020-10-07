@@ -20,7 +20,7 @@ package org.keycloak.testsuite.oidc.flows;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.events.Details;
-import org.keycloak.jose.jws.crypto.HashProvider;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -60,9 +60,9 @@ public class OIDCImplicitResponseTypeIDTokenTokenTest extends AbstractOIDCRespon
         IDToken idToken = oauth.verifyIDToken(idTokenStr);
 
         // Validate "at_hash"
-        Assert.assertNotNull(idToken.getAccessTokenHash());
+        assertValidAccessTokenHash(idToken.getAccessTokenHash(), authzResponse.getAccessToken());
 
-        Assert.assertEquals(idToken.getAccessTokenHash(), HashProvider.oidcHash(getSignatureAlgorithm(), authzResponse.getAccessToken()));
+        // Validate "c_hash"
         Assert.assertNull(idToken.getCodeHash());
 
         return Collections.singletonList(idToken);

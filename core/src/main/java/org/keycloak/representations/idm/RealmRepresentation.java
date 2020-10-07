@@ -44,10 +44,16 @@ public class RealmRepresentation {
     protected Integer accessTokenLifespanForImplicitFlow;
     protected Integer ssoSessionIdleTimeout;
     protected Integer ssoSessionMaxLifespan;
+    protected Integer ssoSessionIdleTimeoutRememberMe;
+    protected Integer ssoSessionMaxLifespanRememberMe;
     protected Integer offlineSessionIdleTimeout;
     // KEYCLOAK-7688 Offline Session Max for Offline Token
     protected Boolean offlineSessionMaxLifespanEnabled;
     protected Integer offlineSessionMaxLifespan;
+    protected Integer clientSessionIdleTimeout;
+    protected Integer clientSessionMaxLifespan;
+    protected Integer clientOfflineSessionIdleTimeout;
+    protected Integer clientOfflineSessionMaxLifespan;
     protected Integer accessCodeLifespan;
     protected Integer accessCodeLifespanUserAction;
     protected Integer accessCodeLifespanLogin;
@@ -104,6 +110,32 @@ public class RealmRepresentation {
     protected Integer otpPolicyLookAheadWindow;
     protected Integer otpPolicyPeriod;
     protected List<String> otpSupportedApplications;
+
+    // WebAuthn 2-factor properties below
+
+    protected String webAuthnPolicyRpEntityName;
+    protected List<String> webAuthnPolicySignatureAlgorithms;
+    protected String webAuthnPolicyRpId;
+    protected String webAuthnPolicyAttestationConveyancePreference;
+    protected String webAuthnPolicyAuthenticatorAttachment;
+    protected String webAuthnPolicyRequireResidentKey;
+    protected String webAuthnPolicyUserVerificationRequirement;
+    protected Integer webAuthnPolicyCreateTimeout;
+    protected Boolean webAuthnPolicyAvoidSameAuthenticatorRegister;
+    protected List<String> webAuthnPolicyAcceptableAaguids;
+
+    // WebAuthn passwordless properties below
+
+    protected String webAuthnPolicyPasswordlessRpEntityName;
+    protected List<String> webAuthnPolicyPasswordlessSignatureAlgorithms;
+    protected String webAuthnPolicyPasswordlessRpId;
+    protected String webAuthnPolicyPasswordlessAttestationConveyancePreference;
+    protected String webAuthnPolicyPasswordlessAuthenticatorAttachment;
+    protected String webAuthnPolicyPasswordlessRequireResidentKey;
+    protected String webAuthnPolicyPasswordlessUserVerificationRequirement;
+    protected Integer webAuthnPolicyPasswordlessCreateTimeout;
+    protected Boolean webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister;
+    protected List<String> webAuthnPolicyPasswordlessAcceptableAaguids;
 
     protected List<UserRepresentation> users;
     protected List<UserRepresentation> federatedUsers;
@@ -215,7 +247,7 @@ public class RealmRepresentation {
     public UserRepresentation user(String username) {
         UserRepresentation user = new UserRepresentation();
         user.setUsername(username);
-        if (users == null) users = new ArrayList<UserRepresentation>();
+        if (users == null) users = new ArrayList<>();
         users.add(user);
         return user;
     }
@@ -300,6 +332,22 @@ public class RealmRepresentation {
         this.ssoSessionMaxLifespan = ssoSessionMaxLifespan;
     }
 
+    public Integer getSsoSessionMaxLifespanRememberMe() {
+        return ssoSessionMaxLifespanRememberMe;
+    }
+
+    public void setSsoSessionMaxLifespanRememberMe(Integer ssoSessionMaxLifespanRememberMe) {
+        this.ssoSessionMaxLifespanRememberMe = ssoSessionMaxLifespanRememberMe;
+    }
+
+    public Integer getSsoSessionIdleTimeoutRememberMe() {
+        return ssoSessionIdleTimeoutRememberMe;
+    }
+
+    public void setSsoSessionIdleTimeoutRememberMe(Integer ssoSessionIdleTimeoutRememberMe) {
+        this.ssoSessionIdleTimeoutRememberMe = ssoSessionIdleTimeoutRememberMe;
+    }
+
     public Integer getOfflineSessionIdleTimeout() {
         return offlineSessionIdleTimeout;
     }
@@ -325,6 +373,38 @@ public class RealmRepresentation {
         this.offlineSessionMaxLifespan = offlineSessionMaxLifespan;
     }
 
+    public Integer getClientSessionIdleTimeout() {
+        return clientSessionIdleTimeout;
+    }
+
+    public void setClientSessionIdleTimeout(Integer clientSessionIdleTimeout) {
+        this.clientSessionIdleTimeout = clientSessionIdleTimeout;
+    }
+
+    public Integer getClientSessionMaxLifespan() {
+        return clientSessionMaxLifespan;
+    }
+
+    public void setClientSessionMaxLifespan(Integer clientSessionMaxLifespan) {
+        this.clientSessionMaxLifespan = clientSessionMaxLifespan;
+    }
+
+    public Integer getClientOfflineSessionIdleTimeout() {
+        return clientOfflineSessionIdleTimeout;
+    }
+
+    public void setClientOfflineSessionIdleTimeout(Integer clientOfflineSessionIdleTimeout) {
+        this.clientOfflineSessionIdleTimeout = clientOfflineSessionIdleTimeout;
+    }
+
+    public Integer getClientOfflineSessionMaxLifespan() {
+        return clientOfflineSessionMaxLifespan;
+    }
+
+    public void setClientOfflineSessionMaxLifespan(Integer clientOfflineSessionMaxLifespan) {
+        this.clientOfflineSessionMaxLifespan = clientOfflineSessionMaxLifespan;
+    }
+
     public List<ScopeMappingRepresentation> getScopeMappings() {
         return scopeMappings;
     }
@@ -332,7 +412,7 @@ public class RealmRepresentation {
     public ScopeMappingRepresentation clientScopeMapping(String clientName) {
         ScopeMappingRepresentation mapping = new ScopeMappingRepresentation();
         mapping.setClient(clientName);
-        if (scopeMappings == null) scopeMappings = new ArrayList<ScopeMappingRepresentation>();
+        if (scopeMappings == null) scopeMappings = new ArrayList<>();
         scopeMappings.add(mapping);
         return mapping;
     }
@@ -340,7 +420,7 @@ public class RealmRepresentation {
     public ScopeMappingRepresentation clientScopeScopeMapping(String clientScopeName) {
         ScopeMappingRepresentation mapping = new ScopeMappingRepresentation();
         mapping.setClientScope(clientScopeName);
-        if (scopeMappings == null) scopeMappings = new ArrayList<ScopeMappingRepresentation>();
+        if (scopeMappings == null) scopeMappings = new ArrayList<>();
         scopeMappings.add(mapping);
         return mapping;
     }
@@ -896,6 +976,171 @@ public class RealmRepresentation {
 
     public void setOtpSupportedApplications(List<String> otpSupportedApplications) {
         this.otpSupportedApplications = otpSupportedApplications;
+    }
+
+    // WebAuthn 2-factor properties below
+
+    public String getWebAuthnPolicyRpEntityName() {
+        return webAuthnPolicyRpEntityName;
+    }
+
+    public void setWebAuthnPolicyRpEntityName(String webAuthnPolicyRpEntityName) {
+        this.webAuthnPolicyRpEntityName = webAuthnPolicyRpEntityName;
+    }
+
+    public List<String> getWebAuthnPolicySignatureAlgorithms() {
+        return webAuthnPolicySignatureAlgorithms;
+    }
+
+    public void setWebAuthnPolicySignatureAlgorithms(List<String> webAuthnPolicySignatureAlgorithms) {
+        this.webAuthnPolicySignatureAlgorithms = webAuthnPolicySignatureAlgorithms;
+    }
+
+    public String getWebAuthnPolicyRpId() {
+        return webAuthnPolicyRpId;
+    }
+
+    public void setWebAuthnPolicyRpId(String webAuthnPolicyRpId) {
+        this.webAuthnPolicyRpId = webAuthnPolicyRpId;
+    }
+
+    public String getWebAuthnPolicyAttestationConveyancePreference() {
+        return webAuthnPolicyAttestationConveyancePreference;
+    }
+
+    public void setWebAuthnPolicyAttestationConveyancePreference(String webAuthnPolicyAttestationConveyancePreference) {
+        this.webAuthnPolicyAttestationConveyancePreference = webAuthnPolicyAttestationConveyancePreference;
+    }
+
+    public String getWebAuthnPolicyAuthenticatorAttachment() {
+        return webAuthnPolicyAuthenticatorAttachment;
+    }
+
+    public void setWebAuthnPolicyAuthenticatorAttachment(String webAuthnPolicyAuthenticatorAttachment) {
+        this.webAuthnPolicyAuthenticatorAttachment = webAuthnPolicyAuthenticatorAttachment;
+    }
+
+    public String getWebAuthnPolicyRequireResidentKey() {
+        return webAuthnPolicyRequireResidentKey;
+    }
+
+    public void setWebAuthnPolicyRequireResidentKey(String webAuthnPolicyRequireResidentKey) {
+        this.webAuthnPolicyRequireResidentKey = webAuthnPolicyRequireResidentKey;
+    }
+
+    public String getWebAuthnPolicyUserVerificationRequirement() {
+        return webAuthnPolicyUserVerificationRequirement;
+    }
+
+    public void setWebAuthnPolicyUserVerificationRequirement(String webAuthnPolicyUserVerificationRequirement) {
+        this.webAuthnPolicyUserVerificationRequirement = webAuthnPolicyUserVerificationRequirement;
+    }
+
+    public Integer getWebAuthnPolicyCreateTimeout() {
+        return webAuthnPolicyCreateTimeout;
+    }
+
+    public void setWebAuthnPolicyCreateTimeout(Integer webAuthnPolicyCreateTimeout) {
+        this.webAuthnPolicyCreateTimeout = webAuthnPolicyCreateTimeout;
+    }
+
+    public Boolean isWebAuthnPolicyAvoidSameAuthenticatorRegister() {
+        return webAuthnPolicyAvoidSameAuthenticatorRegister;
+    }
+
+    public void setWebAuthnPolicyAvoidSameAuthenticatorRegister(Boolean webAuthnPolicyAvoidSameAuthenticatorRegister) {
+        this.webAuthnPolicyAvoidSameAuthenticatorRegister = webAuthnPolicyAvoidSameAuthenticatorRegister;
+    }
+
+    public List<String> getWebAuthnPolicyAcceptableAaguids() {
+        return webAuthnPolicyAcceptableAaguids;
+    }
+
+    public void setWebAuthnPolicyAcceptableAaguids(List<String> webAuthnPolicyAcceptableAaguids) {
+        this.webAuthnPolicyAcceptableAaguids = webAuthnPolicyAcceptableAaguids;
+    }
+
+    // WebAuthn passwordless properties below
+
+
+    public String getWebAuthnPolicyPasswordlessRpEntityName() {
+        return webAuthnPolicyPasswordlessRpEntityName;
+    }
+
+    public void setWebAuthnPolicyPasswordlessRpEntityName(String webAuthnPolicyPasswordlessRpEntityName) {
+        this.webAuthnPolicyPasswordlessRpEntityName = webAuthnPolicyPasswordlessRpEntityName;
+    }
+
+    public List<String> getWebAuthnPolicyPasswordlessSignatureAlgorithms() {
+        return webAuthnPolicyPasswordlessSignatureAlgorithms;
+    }
+
+    public void setWebAuthnPolicyPasswordlessSignatureAlgorithms(List<String> webAuthnPolicyPasswordlessSignatureAlgorithms) {
+        this.webAuthnPolicyPasswordlessSignatureAlgorithms = webAuthnPolicyPasswordlessSignatureAlgorithms;
+    }
+
+    public String getWebAuthnPolicyPasswordlessRpId() {
+        return webAuthnPolicyPasswordlessRpId;
+    }
+
+    public void setWebAuthnPolicyPasswordlessRpId(String webAuthnPolicyPasswordlessRpId) {
+        this.webAuthnPolicyPasswordlessRpId = webAuthnPolicyPasswordlessRpId;
+    }
+
+    public String getWebAuthnPolicyPasswordlessAttestationConveyancePreference() {
+        return webAuthnPolicyPasswordlessAttestationConveyancePreference;
+    }
+
+    public void setWebAuthnPolicyPasswordlessAttestationConveyancePreference(String webAuthnPolicyPasswordlessAttestationConveyancePreference) {
+        this.webAuthnPolicyPasswordlessAttestationConveyancePreference = webAuthnPolicyPasswordlessAttestationConveyancePreference;
+    }
+
+    public String getWebAuthnPolicyPasswordlessAuthenticatorAttachment() {
+        return webAuthnPolicyPasswordlessAuthenticatorAttachment;
+    }
+
+    public void setWebAuthnPolicyPasswordlessAuthenticatorAttachment(String webAuthnPolicyPasswordlessAuthenticatorAttachment) {
+        this.webAuthnPolicyPasswordlessAuthenticatorAttachment = webAuthnPolicyPasswordlessAuthenticatorAttachment;
+    }
+
+    public String getWebAuthnPolicyPasswordlessRequireResidentKey() {
+        return webAuthnPolicyPasswordlessRequireResidentKey;
+    }
+
+    public void setWebAuthnPolicyPasswordlessRequireResidentKey(String webAuthnPolicyPasswordlessRequireResidentKey) {
+        this.webAuthnPolicyPasswordlessRequireResidentKey = webAuthnPolicyPasswordlessRequireResidentKey;
+    }
+
+    public String getWebAuthnPolicyPasswordlessUserVerificationRequirement() {
+        return webAuthnPolicyPasswordlessUserVerificationRequirement;
+    }
+
+    public void setWebAuthnPolicyPasswordlessUserVerificationRequirement(String webAuthnPolicyPasswordlessUserVerificationRequirement) {
+        this.webAuthnPolicyPasswordlessUserVerificationRequirement = webAuthnPolicyPasswordlessUserVerificationRequirement;
+    }
+
+    public Integer getWebAuthnPolicyPasswordlessCreateTimeout() {
+        return webAuthnPolicyPasswordlessCreateTimeout;
+    }
+
+    public void setWebAuthnPolicyPasswordlessCreateTimeout(Integer webAuthnPolicyPasswordlessCreateTimeout) {
+        this.webAuthnPolicyPasswordlessCreateTimeout = webAuthnPolicyPasswordlessCreateTimeout;
+    }
+
+    public Boolean isWebAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister() {
+        return webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister;
+    }
+
+    public void setWebAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister(Boolean webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister) {
+        this.webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister = webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister;
+    }
+
+    public List<String> getWebAuthnPolicyPasswordlessAcceptableAaguids() {
+        return webAuthnPolicyPasswordlessAcceptableAaguids;
+    }
+
+    public void setWebAuthnPolicyPasswordlessAcceptableAaguids(List<String> webAuthnPolicyPasswordlessAcceptableAaguids) {
+        this.webAuthnPolicyPasswordlessAcceptableAaguids = webAuthnPolicyPasswordlessAcceptableAaguids;
     }
 
     public String getBrowserFlow() {

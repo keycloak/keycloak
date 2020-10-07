@@ -192,10 +192,10 @@ public class StatementUtil {
     }
 
     public static Map<String, Object> asMap(Set<AttributeStatementType> attributeStatementTypes) {
-        Map<String, Object> attrMap = new HashMap<String, Object>();
+        Map<String, Object> attrMap = new HashMap<>();
 
         if (attributeStatementTypes != null && !attributeStatementTypes.isEmpty()) {
-            attrMap = new HashMap<String, Object>();
+            attrMap = new HashMap<>();
 
             for (StatementAbstractType statement : attributeStatementTypes) {
                 if (statement instanceof AttributeStatementType) {

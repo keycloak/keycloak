@@ -1,19 +1,14 @@
-# ignore typescript-generated files 
+# ignore typescript-generated files
 *.js
 *.js.map
-
-# ignore keycloak.json - we won't need this much longer
-keycloak.json
 
 # ignore log files
 *.log
 
-# ignore libraries (for now?)
-node_modules
-node
-
 # Don't ignore these
-!keycloak.js
-!systemjs-angular-loader.js
-!systemjs.config.extras.js
-!systemjs.config.js
+!WelcomePageScripts.js
+!content.json
+
+public/app.css
+public/base.css
+public/assets/

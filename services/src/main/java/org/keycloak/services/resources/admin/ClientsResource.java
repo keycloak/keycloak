@@ -16,17 +16,14 @@
  */
 package org.keycloak.services.resources.admin;
 
-import static java.lang.Boolean.TRUE;
-
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.admin.AuthorizationService;
-import org.keycloak.common.Profile;
+import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
@@ -37,12 +34,15 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.clientpolicy.AdminClientRegisterContext;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.validation.ClientValidator;
 import org.keycloak.services.validation.PairwiseClientValidator;
 import org.keycloak.services.validation.ValidationMessages;
+import org.keycloak.validation.ClientValidationUtil;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
@@ -56,10 +56,11 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
+import java.util.stream.Stream;
+
+import static java.lang.Boolean.TRUE;
 
 /**
  * Base resource class for managing a realm's clients.
@@ -91,50 +92,64 @@ public class ClientsResource {
      *
      * @param clientId filter by clientId
      * @param viewableOnly filter clients that cannot be viewed in full by admin
+     * @param search whether this is a search query or a getClientById query
+     * @param firstResult the first result
+     * @param maxResults the max results to return
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<ClientRepresentation> getClients(@QueryParam("clientId") String clientId, @QueryParam("viewableOnly") @DefaultValue("false") boolean viewableOnly) {
-        List<ClientRepresentation> rep = new ArrayList<>();
+    public Stream<ClientRepresentation> getClients(@QueryParam("clientId") String clientId,
+                                                 @QueryParam("viewableOnly") @DefaultValue("false") boolean viewableOnly,
+                                                 @QueryParam("search") @DefaultValue("false") boolean search,
+                                                 @QueryParam("first") Integer firstResult,
+                                                 @QueryParam("max") Integer maxResults) {
+        boolean canView = auth.clients().canView();
+        Stream<ClientModel> clientModels = Stream.empty();
 
         if (clientId == null || clientId.trim().equals("")) {
-            List<ClientModel> clientModels = realm.getClients();
+            clientModels = canView
+                    ? realm.getClientsStream(firstResult, maxResults)
+                    : realm.getClientsStream();
             auth.clients().requireList();
-            boolean view = auth.clients().canView();
-            for (ClientModel clientModel : clientModels) {
-                if (view || auth.clients().canView(clientModel)) {
-                    ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel, session);
-                    rep.add(representation);
-                    representation.setAccess(auth.clients().getAccess(clientModel));
-                } else if (!viewableOnly) {
-                    ClientRepresentation client = new ClientRepresentation();
-                    client.setId(clientModel.getId());
-                    client.setClientId(clientModel.getClientId());
-                    client.setDescription(clientModel.getDescription());
-                    rep.add(client);
-                }
-            }
+        } else if (search) {
+            clientModels = canView
+                    ? realm.searchClientByClientIdStream(clientId, firstResult, maxResults)
+                    : realm.searchClientByClientIdStream(clientId, -1, -1);
         } else {
-            ClientModel clientModel = realm.getClientByClientId(clientId);
-            if (clientModel != null) {
-                if (auth.clients().canView(clientModel)) {
-                    ClientRepresentation representation = ModelToRepresentation.toRepresentation(clientModel, session);
-                    representation.setAccess(auth.clients().getAccess(clientModel));
-                    rep.add(representation);
-                } else if (!viewableOnly && auth.clients().canList()){
-                    ClientRepresentation client = new ClientRepresentation();
-                    client.setId(clientModel.getId());
-                    client.setClientId(clientModel.getClientId());
-                    client.setDescription(clientModel.getDescription());
-                    rep.add(client);
-
-                } else {
-                    throw new ForbiddenException();
-                }
+            ClientModel client = realm.getClientByClientId(clientId);
+            if (client != null) {
+                clientModels = Stream.of(client);
             }
         }
-        return rep;
+
+        Stream<ClientRepresentation> s = clientModels
+                .map(c -> {
+                    ClientRepresentation representation = null;
+                    if (canView || auth.clients().canView(c)) {
+                        representation = ModelToRepresentation.toRepresentation(c, session);
+                        representation.setAccess(auth.clients().getAccess(c));
+                    } else if (!viewableOnly && auth.clients().canView(c)) {
+                        representation = new ClientRepresentation();
+                        representation.setId(c.getId());
+                        representation.setClientId(c.getClientId());
+                        representation.setDescription(c.getDescription());
+                    }
+
+                    return representation;
+                })
+                .filter(Objects::nonNull);
+
+        if (!canView) {
+            if (firstResult != null && firstResult > 0) {
+                s = s.skip(firstResult);
+            }
+            if (maxResults != null && maxResults > 0) {
+                s = s.limit(maxResults);
+            }
+        }
+
+        return s;
     }
 
     private AuthorizationService getAuthorizationService(ClientModel clientModel) {
@@ -165,6 +180,12 @@ public class ClientsResource {
         }
 
         try {
+            session.clientPolicy().triggerOnEvent(new AdminClientRegisterContext(rep, auth.adminAuth()));
+        } catch (ClientPolicyException cpe) {
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
+
+        try {
             ClientModel clientModel = ClientManager.createClient(session, realm, rep, true);
 
             if (TRUE.equals(rep.isServiceAccountsEnabled())) {
@@ -188,6 +209,11 @@ public class ClientsResource {
                     authorizationService.resourceServer().importSettings(authorizationSettings);
                 }
             }
+
+            ClientValidationUtil.validate(session, clientModel, true, c -> {
+                session.getTransactionManager().setRollbackOnly();
+                throw new ErrorResponseException(Errors.INVALID_INPUT, c.getError(), Response.Status.BAD_REQUEST);
+            });
 
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
         } catch (ModelDuplicateException e) {

@@ -76,7 +76,7 @@ services:
         networks:
             - keycloak
         environment:
-            MARIADB_HA_MODE: ${MARIADB_HA_MODE:-replication}
+            MARIADB_HA_MODE: ${MARIADB_HA_MODE:-replication:}
             MARIADB_HOSTS: ${MARIADB_HOSTS:-mariadb_1:3306,mariadb_2:3306}
             MARIADB_OPTIONS: ${MARIADB_OPTIONS}
             MARIADB_DATABASE: keycloak

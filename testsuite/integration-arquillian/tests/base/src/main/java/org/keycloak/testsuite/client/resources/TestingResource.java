@@ -98,15 +98,15 @@ public interface TestingResource {
      *
      * Returns all events, or filters them based on URL query parameters listed here
      *
-     * @param realmId The realm
-     * @param types The types of events to return
-     * @param client App or oauth client name
-     * @param user User id
-     * @param dateFrom From date
-     * @param dateTo To date
-     * @param ipAddress IP address
+     * @param realmId     The realm
+     * @param types       The types of events to return
+     * @param client      App or oauth client name
+     * @param user        User id
+     * @param dateFrom    From date
+     * @param dateTo      To date
+     * @param ipAddress   IP address
      * @param firstResult Paging offset
-     * @param maxResults Paging size
+     * @param maxResults  Paging size
      * @return
      */
     @Path("query-events")
@@ -140,7 +140,7 @@ public interface TestingResource {
 
     /**
      * Get admin events
-     *
+     * <p>
      * Returns all admin events, or filters events based on URL query parameters listed here
      *
      * @param realmId
@@ -211,7 +211,7 @@ public interface TestingResource {
     @Path("/update-pass-through-auth-state")
     @Produces(MediaType.APPLICATION_JSON)
     AuthenticatorState updateAuthenticator(AuthenticatorState state);
-    
+
     @GET
     @Path("/valid-credentials")
     @Produces(MediaType.APPLICATION_JSON)
@@ -275,6 +275,11 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     Response restorePeriodicTasks();
 
+    @Path("generate-audience-client-scope")
+    @POST
+    @NoCache
+    String generateAudienceClientScope(@QueryParam("realm") final String realmName, final @QueryParam("clientId") String clientId);
+
     @GET
     @Path("/uncaught-error")
     @Produces(MediaType.TEXT_HTML_UTF_8)
@@ -306,5 +311,27 @@ public interface TestingResource {
     @Path("/get-javascript-testing-environment")
     @Produces(MediaType.TEXT_HTML_UTF_8)
     String getJavascriptTestingEnvironment();
+
+    @POST
+    @Path("/enable-feature/{feature}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    Response enableFeature(@PathParam("feature") String feature);
+
+    @POST
+    @Path("/disable-feature/{feature}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    Response disableFeature(@PathParam("feature") String feature);
+
+
+    /**
+     * This method is here just to have all endpoints from TestingResourceProvider available here.
+     *
+     * But usually it is requested to call this endpoint through WebDriver. See URLUtils.sendPOSTWithWebDriver for more details
+     */
+    @GET
+    @Path("/simulate-post-request")
+    @Produces(MediaType.TEXT_HTML_UTF_8)
+    Response simulatePostRequest(@QueryParam("postRequestUrl") String postRequestUrl,
+                                         @QueryParam("encodedFormParameters") String encodedFormParameters);
 
 }

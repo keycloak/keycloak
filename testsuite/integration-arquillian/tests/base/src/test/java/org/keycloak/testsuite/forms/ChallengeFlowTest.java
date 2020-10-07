@@ -17,14 +17,11 @@
 
 package org.keycloak.testsuite.forms;
 
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.console.ConsoleUsernamePasswordAuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowBindings;
@@ -34,10 +31,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.OAuthClient;
 
 import javax.ws.rs.client.Client;
@@ -52,13 +49,14 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.assertEquals;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * Test that clients can override auth flows
  *
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ChallengeFlowTest extends AbstractTestRealmKeycloakTest {
 
     public static final String TEST_APP_DIRECT_OVERRIDE = "test-app-direct-override";
@@ -79,19 +77,14 @@ public class ChallengeFlowTest extends AbstractTestRealmKeycloakTest {
     public void configureTestRealm(RealmRepresentation testRealm) {
     }
 
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(UserResource.class)
-                .addPackages(true, "org.keycloak.testsuite");
-    }
-
-
     @Before
     public void setupFlows() {
+        SerializableApplicationData serializedApplicationData = new SerializableApplicationData(oauth.APP_AUTH_ROOT, oauth.APP_ROOT + "/admin", oauth.APP_AUTH_ROOT + "/*");
+
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
 
-            ClientModel client = session.realms().getClientByClientId("test-app-flow", realm);
+            ClientModel client = session.clients().getClientByClientId(realm, "test-app-flow");
             if (client != null) {
                 return;
             }
@@ -116,10 +109,10 @@ public class ChallengeFlowTest extends AbstractTestRealmKeycloakTest {
 
             client = realm.addClient(TEST_APP_FLOW);
             client.setSecret("password");
-            client.setBaseUrl("http://localhost:8180/auth/realms/master/app/auth");
-            client.setManagementUrl("http://localhost:8180/auth/realms/master/app/admin");
+            client.setBaseUrl(serializedApplicationData.applicationBaseUrl);
+            client.setManagementUrl(serializedApplicationData.applicationManagementUrl);
             client.setEnabled(true);
-            client.addRedirectUri("http://localhost:8180/auth/realms/master/app/auth/*");
+            client.addRedirectUri(serializedApplicationData.applicationRedirectUrl);
             client.addRedirectUri("urn:ietf:wg:oauth:2.0:oob");
             client.setAuthenticationFlowBindingOverride(AuthenticationFlowBindings.BROWSER_BINDING, browser.getId());
             client.setPublicClient(false);

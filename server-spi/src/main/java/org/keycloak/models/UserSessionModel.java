@@ -74,10 +74,10 @@ public interface UserSessionModel {
     void removeAuthenticatedClientSessions(Collection<String> removedClientUUIDS);
 
 
-    public String getNote(String name);
-    public void setNote(String name, String value);
-    public void removeNote(String name);
-    public Map<String, String> getNotes();
+    String getNote(String name);
+    void setNote(String name, String value);
+    void removeNote(String name);
+    Map<String, String> getNotes();
 
     State getState();
     void setState(State state);
@@ -85,7 +85,7 @@ public interface UserSessionModel {
     // Will completely restart whole state of user session. It will just keep same ID.
     void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
 
-    public static enum State {
+    enum State {
         LOGGED_IN,
         LOGGING_OUT,
         LOGGED_OUT

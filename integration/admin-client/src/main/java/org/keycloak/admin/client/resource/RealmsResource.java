@@ -36,14 +36,14 @@ import java.util.List;
 public interface RealmsResource {
 
     @Path("/{realm}")
-    public RealmResource realm(@PathParam("realm") String realm);
+    RealmResource realm(@PathParam("realm") String realm);
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public void create(RealmRepresentation realmRepresentation);
+    void create(RealmRepresentation realmRepresentation);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<RealmRepresentation> findAll();
+    List<RealmRepresentation> findAll();
 
 }

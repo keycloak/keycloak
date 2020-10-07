@@ -22,7 +22,7 @@
   is also started by this host controller file.  The other instance must be started
   via host-slave.xml
 -->
-<host name="master" xmlns="urn:jboss:domain:8.0">
+<host name="master" xmlns="urn:jboss:domain:10.0">
     <extensions>
         <?EXTENSIONS?>
     </extensions>
@@ -111,7 +111,7 @@
     </jvms>
 
     <servers>
-        <!-- load-balancer should be removed in production systems and replaced with a better softare or hardare based one -->
+        <!-- load-balancer should be removed in production systems and replaced with a better software or hardware based one -->
         <server name="load-balancer" group="load-balancer-group">
         </server>
         <server name="server-one" group="auth-server-group" auto-start="true">

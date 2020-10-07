@@ -24,8 +24,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
@@ -48,7 +46,7 @@ public class DefaultActionTokenKey extends JsonWebToken implements ActionTokenKe
     public DefaultActionTokenKey(String userId, String actionId, int absoluteExpirationInSecs, UUID actionVerificationNonce) {
         this.subject = userId;
         this.type = actionId;
-        this.expiration = absoluteExpirationInSecs;
+        this.exp = Long.valueOf(absoluteExpirationInSecs);
         this.actionVerificationNonce = actionVerificationNonce == null ? UUID.randomUUID() : actionVerificationNonce;
     }
 

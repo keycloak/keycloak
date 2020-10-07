@@ -19,6 +19,6 @@
 <!--  Template used by WildFly build when directed to include Keycloak SAML subsystem in a configuration. -->
 <config>
    <extension-module>org.keycloak.keycloak-saml-adapter-subsystem</extension-module>
-   <subsystem xmlns="urn:jboss:domain:keycloak-saml:1.1">
+   <subsystem xmlns="urn:jboss:domain:keycloak-saml:1.3">
    </subsystem>
 </config>

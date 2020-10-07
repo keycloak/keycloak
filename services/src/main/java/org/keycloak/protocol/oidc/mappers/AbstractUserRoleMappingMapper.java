@@ -82,6 +82,9 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
 
     private static final Pattern CLIENT_ID_PATTERN = Pattern.compile("\\$\\{client_id\\}");
 
+    private static final Pattern DOT_PATTERN = Pattern.compile("\\.");
+    private static final String DOT_REPLACEMENT = "\\\\\\\\.";
+
     private static void mapClaim(IDToken token, ProtocolMapperModel mappingModel, Object attributeValue, String clientId) {
         attributeValue = OIDCAttributeMapperHelper.mapAttributeValue(mappingModel, attributeValue);
         if (attributeValue == null) return;
@@ -92,6 +95,8 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
         }
 
         if (clientId != null) {
+            // case when clientId contains dots
+            clientId = DOT_PATTERN.matcher(clientId).replaceAll(DOT_REPLACEMENT);
             protocolClaim = CLIENT_ID_PATTERN.matcher(protocolClaim).replaceAll(clientId);
         }
 
@@ -110,7 +115,7 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
             if (i == length) {
                 // Case when we want to add to existing set of roles
                 Object last = jsonObject.get(component);
-                if (last != null && last instanceof Collection && attributeValue instanceof Collection) {
+                if (last instanceof Collection && attributeValue instanceof Collection) {
                     ((Collection) last).addAll((Collection) attributeValue);
                 } else {
                     jsonObject.put(component, attributeValue);

@@ -18,9 +18,13 @@
 package org.keycloak.common.util;
 
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.util.regex.Pattern;
+
+import org.keycloak.common.enums.SslRequired;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -83,5 +87,29 @@ public class UriUtils {
 
     public static String stripQueryParam(String url, String name){
         return url.replaceFirst("[\\?&]"+name+"=[^&]*$|"+name+"=[^&]*&", "");
+    }
+
+    public static void checkUrl(SslRequired sslRequired, String url, String name) throws IllegalArgumentException{
+        if (url == null) {
+            return;
+        }
+
+        URL parsed;
+
+        try {
+            parsed = new URL(url);
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("The url [" + name + "] is malformed", e);
+        }
+
+        String protocol = parsed.getProtocol().toLowerCase();
+
+        if (!("http".equals(protocol) || "https".equals(protocol))) {
+            throw new IllegalArgumentException("Invalid protocol/scheme for url [" + name + "]");
+        }
+
+        if (!"https".equals(protocol) && sslRequired.isRequired(parsed.getHost())) {
+            throw new IllegalArgumentException("The url [" + name + "] requires secure connections");
+        }
     }
 }

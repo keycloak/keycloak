@@ -1,44 +1,54 @@
 package org.keycloak.testsuite;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
+ * A simple utility class for trimming test output (if successful).
+ *
+ * Created to shrink down the output for Travis.
+ *
  * Created by st on 03/07/17.
  */
 public class LogTrimmer {
 
-    public static void main(String[] args) throws IOException {
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        String testRunning = null;
-        StringBuilder sb = new StringBuilder();
-        for(String l = br.readLine(); l != null; l = br.readLine()) {
-            if (testRunning == null) {
-                if (l.startsWith("Running")) {
-                    testRunning = l.split(" ")[1];
-                    System.out.println(l);
-                } else {
-                    System.out.println("-- " + l);
-                }
-            } else {
-                if (l.contains("Tests run:")) {
-                    if (!(l.contains("Failures: 0") && l.contains("Errors: 0"))) {
-                        System.out.println("--------- " + testRunning + " output start ---------");
-                        System.out.println(sb.toString());
-                        System.out.println("--------- " + testRunning + " output end  ---------");
+    private static Pattern TEST_START_PATTERN = Pattern.compile("(\\[INFO\\] )?Running (.*)");
+    private static int TEST_NAME_GROUP = 2;
+
+    public static void main(String[] args) {
+        try (Scanner scanner = new Scanner(System.in)) {
+            String testRunning = null;
+            String line = null;
+            Matcher testMatcher = null;
+            StringBuilder testText = new StringBuilder();
+
+            while (scanner.hasNextLine()) {
+                line = scanner.nextLine();
+                if (testRunning == null) {
+                    testMatcher = TEST_START_PATTERN.matcher(line);
+                    if (testMatcher.find()) {
+                        testRunning = testMatcher.group(TEST_NAME_GROUP);
+                        System.out.println(line);
+                    } else {
+                        System.out.println("-- " + line);
                     }
-                    System.out.println(l);
-
-
-                    testRunning = null;
-                    sb = new StringBuilder();
                 } else {
-                    sb.append(testRunning.substring(testRunning.lastIndexOf('.') + 1) + " ++ " + l);
-                    sb.append("\n");
+                    if (line.contains("Tests run:")) {
+                        if (!(line.contains("Failures: 0") && line.contains("Errors: 0"))) {
+                            System.out.println("--------- " + testRunning + " output start ---------");
+                            System.out.println(testText.toString());
+                            System.out.println("--------- " + testRunning + " output end  ---------");
+                        }
+                        System.out.println(line);
+                        testRunning = null;
+                        testText = new StringBuilder();
+                    } else {
+                        testText.append(testRunning.substring(testRunning.lastIndexOf('.') + 1) + " ++ " + line);
+                        testText.append("\n");
+                    }
                 }
             }
         }
     }
-
 }

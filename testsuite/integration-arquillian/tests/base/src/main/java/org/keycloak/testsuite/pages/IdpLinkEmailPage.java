@@ -28,6 +28,9 @@ public class IdpLinkEmailPage extends AbstractPage {
     @FindBy(id = "instruction1")
     private WebElement message;
 
+    @FindBy(linkText = "Click here")
+    private WebElement resendEmailLink;
+
     @Override
     public boolean isCurrent() {
         return PageUtils.getPageTitle(driver).startsWith("Link ");
@@ -40,5 +43,9 @@ public class IdpLinkEmailPage extends AbstractPage {
 
     public String getMessage() {
         return message.getText();
+    }
+
+    public void resendEmail() {
+        resendEmailLink.click();
     }
 }

@@ -221,7 +221,7 @@ public class AssertionType extends CommonAssertionType {
     }
 
     public Set<AttributeStatementType> getAttributeStatements() {
-        Set<AttributeStatementType> attributeStatements = new HashSet<AttributeStatementType>();
+        Set<AttributeStatementType> attributeStatements = new HashSet<>();
         Set<StatementAbstractType> statements = getStatements();
 
         if (statements != null) {

@@ -77,15 +77,15 @@ public enum XmlDSigQNames implements HasQName {
 
     private final QName qName;
 
-    private XmlDSigQNames(String localName) {
+    XmlDSigQNames(String localName) {
         this(JBossSAMLURIConstants.XMLDSIG_NSURI, localName);
     }
 
-    private XmlDSigQNames(HasQName source) {
+    XmlDSigQNames(HasQName source) {
         this.qName = source.getQName();
     }
 
-    private XmlDSigQNames(JBossSAMLURIConstants nsUri, String localName) {
+    XmlDSigQNames(JBossSAMLURIConstants nsUri, String localName) {
         this.qName = new QName(nsUri == null ? null : nsUri.get(), localName);
     }
 

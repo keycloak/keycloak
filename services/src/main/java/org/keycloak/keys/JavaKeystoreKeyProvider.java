@@ -23,6 +23,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.RealmModel;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -47,9 +48,9 @@ public class JavaKeystoreKeyProvider extends AbstractRsaKeyProvider {
 
     @Override
     protected KeyWrapper loadKey(RealmModel realm, ComponentModel model) {
-        try {
+        try (FileInputStream is = new FileInputStream(model.get(JavaKeystoreKeyProviderFactory.KEYSTORE_KEY))) {
             KeyStore keyStore = KeyStore.getInstance("JKS");
-            keyStore.load(new FileInputStream(model.get(JavaKeystoreKeyProviderFactory.KEYSTORE_KEY)), model.get(JavaKeystoreKeyProviderFactory.KEYSTORE_PASSWORD_KEY).toCharArray());
+            keyStore.load(is, model.get(JavaKeystoreKeyProviderFactory.KEYSTORE_PASSWORD_KEY).toCharArray());
 
             PrivateKey privateKey = (PrivateKey) keyStore.getKey(model.get(JavaKeystoreKeyProviderFactory.KEY_ALIAS_KEY), model.get(JavaKeystoreKeyProviderFactory.KEY_PASSWORD_KEY).toCharArray());
             PublicKey publicKey = KeyUtils.extractPublicKey(privateKey);

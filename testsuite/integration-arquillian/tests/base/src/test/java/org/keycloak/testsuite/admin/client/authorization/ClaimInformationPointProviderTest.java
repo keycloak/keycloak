@@ -23,7 +23,6 @@ import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
@@ -63,12 +62,14 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig.PathConfig;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
 
     private static Undertow httpService;
@@ -197,7 +198,7 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
         headers.put("Content-Type", Arrays.asList("application/json"));
 
         ObjectMapper mapper = JsonSerialization.mapper;
-        JsonParser parser = mapper.getFactory().createParser("{\"a\": {\"b\": {\"c\": \"c-value\"}}, \"d\": [\"d-value1\", \"d-value2\"]}");
+        JsonParser parser = mapper.getFactory().createParser("{\"a\": {\"b\": {\"c\": \"c-value\"}}, \"d\": [\"d-value1\", \"d-value2\"], \"e\": {\"number\": 123}}");
         TreeNode treeNode = mapper.readTree(parser);
         HttpFacade httpFacade = createHttpFacade(headers, new ByteArrayInputStream(treeNode.toString().getBytes()));
 
@@ -205,6 +206,58 @@ public class ClaimInformationPointProviderTest extends AbstractKeycloakTest {
 
         assertEquals("c-value", claims.get("claim-from-json-body-object").get(0));
         assertEquals("d-value2", claims.get("claim-from-json-body-array").get(0));
+        assertEquals("123", claims.get("claim-from-json-body-number").get(0));
+    }
+
+    @Test
+    public void testBodyJsonObjectClaim() throws Exception {
+        Map<String, List<String>> headers = new HashMap<>();
+
+        headers.put("Content-Type", Arrays.asList("application/json"));
+
+        ObjectMapper mapper = JsonSerialization.mapper;
+        JsonParser parser = mapper.getFactory().createParser("{\"Individual\" : {\n"
+                + "\n"
+                + "                \"Name\":  \"John\",\n"
+                + "\n"
+                + "                \"Lastname\": \"Doe\",\n"
+                + "\n"
+                + "                \"individualRoles\" : [ {\n"
+                + "\n"
+                + "                                \"roleSpec\": 2342,\n"
+                + "\n"
+                + "                                \"roleId\": 4234},\n"
+                + "\n"
+                + "{\n"
+                + "\n"
+                + "                                \"roleSpec\": 4223,\n"
+                + "\n"
+                + "                                \"roleId\": 523\n"
+                + "\n"
+                + "                }\n"
+                + "\n"
+                + "                ]\n"
+                + "\n"
+                + "}}");
+        TreeNode treeNode = mapper.readTree(parser);
+        HttpFacade httpFacade = createHttpFacade(headers, new ByteArrayInputStream(treeNode.toString().getBytes()));
+
+        Map<String, List<String>> claims = getClaimInformationProviderForPath("/claims-from-body-json-object", "claims").resolve(httpFacade);
+
+        assertEquals(1, claims.size());
+        assertEquals(2, claims.get("individualRoles").size());
+        assertEquals("{\"roleSpec\":2342,\"roleId\":4234}", claims.get("individualRoles").get(0));
+        assertEquals("{\"roleSpec\":4223,\"roleId\":523}", claims.get("individualRoles").get(1));
+
+        headers.put("Content-Type", Arrays.asList("application/json; charset=utf-8"));
+
+        httpFacade = createHttpFacade(headers, new ByteArrayInputStream(treeNode.toString().getBytes()));
+        claims = getClaimInformationProviderForPath("/claims-from-body-json-object", "claims").resolve(httpFacade);
+
+        assertEquals(1, claims.size());
+        assertEquals(2, claims.get("individualRoles").size());
+        assertEquals("{\"roleSpec\":2342,\"roleId\":4234}", claims.get("individualRoles").get(0));
+        assertEquals("{\"roleSpec\":4223,\"roleId\":523}", claims.get("individualRoles").get(1));
     }
 
     @Test

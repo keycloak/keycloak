@@ -17,7 +17,7 @@
         <div class="form-group">
             <label class="col-md-2 control-label" for="host">{{:: 'host' | translate}}</label>
             <div class="col-sm-6">
-                <input ng-disabled="!create" class="form-control" type="text" id="host" name="host" data-ng-model="node.host" required>
+                <input kc-no-reserved-chars ng-disabled="!create" class="form-control" type="text" id="host" name="host" data-ng-model="node.host" required>
             </div>
         </div>
         <div ng-hide="create" class="form-group">

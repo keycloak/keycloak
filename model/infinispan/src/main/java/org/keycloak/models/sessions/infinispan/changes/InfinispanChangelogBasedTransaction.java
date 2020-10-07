@@ -60,7 +60,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
             // Lookup entity from cache
             SessionEntityWrapper<V> wrappedEntity = cache.get(key);
             if (wrappedEntity == null) {
-                logger.warnf("Not present cache item for key %s", key);
+                logger.tracef("Not present cache item for key %s", key);
                 return;
             }
 
@@ -235,7 +235,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
                 task.runUpdate(session);
             } else {
                 if (logger.isTraceEnabled()) {
-                    logger.tracef("Replace SUCCESS for entity: %s . old version: %d, new version: %d", key, oldVersionEntity.getVersion(), newVersionEntity.getVersion());
+                    logger.tracef("Replace SUCCESS for entity: %s . old version: %s, new version: %s", key, oldVersionEntity.getVersion(), newVersionEntity.getVersion());
                 }
             }
         }

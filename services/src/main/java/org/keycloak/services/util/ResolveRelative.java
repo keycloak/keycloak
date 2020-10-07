@@ -17,25 +17,53 @@
 
 package org.keycloak.services.util;
 
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.urls.UrlType;
+
 import javax.ws.rs.core.UriBuilder;
-import java.net.URI;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class ResolveRelative {
-    public static String resolveRelativeUri(URI requestUri, String rootUrl, String url) {
-        if (url == null || !url.startsWith("/")) return url;
-        if (rootUrl != null) {
-            return rootUrl + url;
+
+    public static String resolveRelativeUri(KeycloakSession session, String rootUrl, String url) {
+        String frontendUrl = session.getContext().getUri(UrlType.FRONTEND).getBaseUri().toString();
+        String adminUrl = session.getContext().getUri(UrlType.ADMIN).getBaseUri().toString();
+        return resolveRelativeUri(frontendUrl, adminUrl, rootUrl, url);
+    }
+
+    public static String resolveRelativeUri(String frontendUrl, String adminUrl, String rootUrl, String url) {
+        if (url == null || !url.startsWith("/")) {
+            return url;
+        } else if (rootUrl != null && !rootUrl.isEmpty()) {
+            return resolveRootUrl(frontendUrl, adminUrl, rootUrl) + url;
         } else {
-            UriBuilder builder = UriBuilder.fromPath(url).host(requestUri.getHost());
-            builder.scheme(requestUri.getScheme());
-            if (requestUri.getPort() != -1) {
-                builder.port(requestUri.getPort());
-            }
-            return builder.build().toString();
+            return UriBuilder.fromUri(frontendUrl).replacePath(url).build().toString();
         }
+    }
+    public static String resolveRootUrl(KeycloakSession session, String rootUrl) {
+        String frontendUrl = session.getContext().getUri(UrlType.FRONTEND).getBaseUri().toString();
+        String adminUrl = session.getContext().getUri(UrlType.ADMIN).getBaseUri().toString();
+        return resolveRootUrl(frontendUrl, adminUrl, rootUrl);
+    }
+
+    public static String resolveRootUrl(String frontendUrl, String adminUrl, String rootUrl) {
+        if (rootUrl != null) {
+            if (rootUrl.equals(Constants.AUTH_BASE_URL_PROP)) {
+                rootUrl = frontendUrl;
+                if (rootUrl.endsWith("/")) {
+                    rootUrl = rootUrl.substring(0, rootUrl.length() - 1);
+                }
+            } else if (rootUrl.equals(Constants.AUTH_ADMIN_URL_PROP)) {
+                rootUrl = adminUrl;
+                if (rootUrl.endsWith("/")) {
+                    rootUrl = rootUrl.substring(0, rootUrl.length() - 1);
+                }
+            }
+        }
+        return rootUrl;
     }
 }

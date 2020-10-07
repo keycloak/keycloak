@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -35,7 +36,6 @@ import java.util.stream.Collectors;
 
 import javax.security.cert.X509Certificate;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
@@ -52,7 +52,6 @@ import org.keycloak.adapters.spi.LogoutError;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.Configuration;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
@@ -66,18 +65,21 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
+@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
 
     protected static final String REALM_NAME = "authz-test";
@@ -107,7 +109,7 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
                         .directAccessGrants())
                 .client(ClientBuilder.create().clientId("public-client-test")
                         .publicClient()
-                        .redirectUris("http://localhost:8180/auth/realms/master/app/auth/*")
+                        .redirectUris("http://localhost:8180/auth/realms/master/app/auth/*", "https://localhost:8543/auth/realms/master/app/auth/*")
                         .directAccessGrants())
                 .build());
     }
@@ -337,7 +339,7 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
 
             policy.setCode(code.toString());
 
-            clientResource.authorization().policies().js().create(policy);
+            clientResource.authorization().policies().js().create(policy).close();
 
             createResource(clientResource, "Bank Account", "/api/bank/account/{id}/withdrawal", "withdrawal");
 
@@ -347,12 +349,16 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
             permission.addScope("withdrawal");
             permission.addPolicy(policy.getName());
 
-            clientResource.authorization().permissions().scope().create(permission);
+            clientResource.authorization().permissions().scope().create(permission).close();
         }
     }
 
     private InputStream getAdapterConfiguration(String fileName) {
-        return getClass().getResourceAsStream("/authorization-test/" + fileName);
+        try {
+            return httpsAwareConfigurationStream(getClass().getResourceAsStream("/authorization-test/" + fileName));
+        } catch (IOException e) {
+            throw new AssertionError("Could not load keycloak configuration", e);
+        }
     }
 
     private ResourceRepresentation createResource(ClientResource clientResource, String name, String uri, String... scopes) {
@@ -362,11 +368,12 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
         representation.setUri(uri);
         representation.setScopes(Arrays.asList(scopes).stream().map(ScopeRepresentation::new).collect(Collectors.toSet()));
 
-        javax.ws.rs.core.Response response = clientResource.authorization().resources().create(representation);
+        try (javax.ws.rs.core.Response response = clientResource.authorization().resources().create(representation)) {
 
-        representation.setId(response.readEntity(ResourceRepresentation.class).getId());
+            representation.setId(response.readEntity(ResourceRepresentation.class).getId());
 
-        return representation;
+            return representation;
+        }
     }
 
     private ClientResource getClientResource(String name) {
@@ -576,10 +583,6 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
     }
 
     protected AuthzClient getAuthzClient(String fileName) {
-        try {
-            return AuthzClient.create(JsonSerialization.readValue(getAdapterConfiguration(fileName), Configuration.class));
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to create authz client", cause);
-        }
+        return AuthzClient.create(getAdapterConfiguration(fileName));
     }
 }

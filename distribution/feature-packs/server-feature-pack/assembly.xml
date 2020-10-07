@@ -56,7 +56,7 @@
         <fileSet>
             <directory>../../../</directory>
             <includes>
-                <include>License.html</include>
+                <include>LICENSE.txt</include>
             </includes>
             <outputDirectory>content</outputDirectory>
         </fileSet>

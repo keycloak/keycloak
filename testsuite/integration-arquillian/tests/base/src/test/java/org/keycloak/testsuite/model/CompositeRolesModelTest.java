@@ -17,61 +17,51 @@
 
 package org.keycloak.testsuite.model;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.models.*;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class CompositeRolesModelTest extends AbstractTestRealmKeycloakTest {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
-
-    @Deployment
-    @TargetsContainer(AUTH_SERVER_CURRENT)
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(UserResource.class, CompositeRolesModelTest.class)
-                .addPackages(true,
-                        "org.keycloak.testsuite",
-                        "org.keycloak.testsuite.model");
-    }
-
 
     public static Set<RoleModel> getRequestedRoles(ClientModel application, UserModel user) {
 
         Set<RoleModel> requestedRoles = new HashSet<>();
 
-        Set<RoleModel> roleMappings = user.getRoleMappings();
-        Set<RoleModel> scopeMappings = application.getScopeMappings();
-        Set<RoleModel> appRoles = application.getRoles();
-        if (appRoles != null) scopeMappings.addAll(appRoles);
+        Set<RoleModel> roleMappings = user.getRoleMappingsStream().collect(Collectors.toSet());
+        Stream<RoleModel> scopeMappings = Stream.concat(application.getScopeMappingsStream(), application.getRolesStream());
 
-        for (RoleModel role : roleMappings) {
+        scopeMappings.forEach(scope -> roleMappings.forEach(role -> {
             if (role.getContainer().equals(application)) requestedRoles.add(role);
-            for (RoleModel desiredRole : scopeMappings) {
-                Set<RoleModel> visited = new HashSet<>();
-                applyScope(role, desiredRole, visited, requestedRoles);
-            }
-        }
+
+            Set<RoleModel> visited = new HashSet<>();
+            applyScope(role, scope, visited, requestedRoles);
+        }));
         return requestedRoles;
     }
 
@@ -86,9 +76,7 @@ public class CompositeRolesModelTest extends AbstractTestRealmKeycloakTest {
         }
         if (!scope.isComposite()) return;
 
-        for (RoleModel contained : scope.getComposites()) {
-            applyScope(role, contained, visited, requested);
-        }
+        scope.getCompositesStream().forEach(contained -> applyScope(role, contained, visited, requested));
     }
 
     private static RoleModel getRole(RealmModel realm, String appName, String roleName) {

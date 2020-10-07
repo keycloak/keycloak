@@ -5,34 +5,63 @@
     <meta charset="utf-8">
     <title>Photoz HTML5 Client</title>
 
-    <!-- Load AngularJS -->
-    <script src="lib/angular/angular.min.js"></script>
-    <script src="lib/angular/angular-resource.min.js"></script>
-    <script src="lib/angular/angular-route.min.js"></script>
     <script src="lib/jwt-decode.min.js"></script>
 
     <script src="http://localhost:8180/auth/js/keycloak.js"></script>
     <script src="http://localhost:8180/auth/js/keycloak-authz.js"></script>
-    <script src="js/identity.js" type="text/javascript"></script>
-    <script src="js/app.js" type="text/javascript"></script>
 </head>
 
-<body data-ng-controller="TokenCtrl">
-
-<!--<a href data-ng-click="showRpt()">Show Requesting Party Token </a> | <a href data-ng-click="showAccessToken()">Show Access Token </a> | <a href data-ng-click="requestEntitlements()">Request Entitlements</a> | <a href data-ng-click="requestEntitlement()">Request Entitlement</a> |<a href="" ng-click="Identity.logout()">Sign Out</a>-->
-<a href data-ng-click="showRpt()">Show Requesting Party Token </a> | 
-<a href data-ng-click="showAccessToken()">Show Access Token </a> | 
-<a id="entitlements" href data-ng-click="requestEntitlements()">Request Entitlements</a> | 
-<a id="entitlement" href data-ng-click="requestEntitlement()">Request Entitlement</a> |
-<a id="my-account" href ng-click="Identity.account()">My Account</a> |
-<a href="" ng-click="Identity.logout()">Sign Out</a>
-
-<div id="content-area" class="col-md-9" role="main">
-    <div id="content" ng-view/>
-</div>
-
-<div style="display: none;" id="bearer"></div>
+<h2>Result</h2>
 <pre style="background-color: #ddd; border: 1px solid #ccc; padding: 10px;" id="output"></pre>
+
+<h2>Events</h2>
+<pre style="background-color: #ddd; border: 1px solid #ccc; padding: 10px;" id="events"></pre>
+
+
+<script>
+     function showExpires() {
+        if (!keycloak.tokenParsed) {
+            output("Not authenticated");
+            return;
+        }
+
+        var o = 'Token Expires:\t\t' + new Date((keycloak.tokenParsed.exp + keycloak.timeSkew) * 1000).toLocaleString() + '\n';
+        o += 'Token Expires in:\t' + Math.round(keycloak.tokenParsed.exp + keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds\n';
+
+        if (keycloak.refreshTokenParsed) {
+            o += 'Refresh Token Expires:\t' + new Date((keycloak.refreshTokenParsed.exp + keycloak.timeSkew) * 1000).toLocaleString() + '\n';
+            o += 'Refresh Expires in:\t' + Math.round(keycloak.refreshTokenParsed.exp + keycloak.timeSkew - new Date().getTime() / 1000) + ' seconds';
+        }
+
+        output(o);
+    }
+
+    function showError() {
+        output("Error: " + getParameterByName("error") + "\n" + "Error description: " + getParameterByName("error_description"));
+    }
+
+    function getParameterByName(name, url) {
+        if (!url) url = window.location.href;
+        name = name.replace(/[\[\]]/g, "\\$&");
+        var regex = new RegExp("[?&#]" + name + "(=([^&#]*)|&|#|$)"),
+            results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
+    }
+
+    function output(data) {
+        if (typeof data === 'object') {
+            data = JSON.stringify(data, null, '  ');
+        }
+        document.getElementById('output').innerHTML = data;
+    }
+
+    function event(event) {
+        var e = document.getElementById('events').innerHTML;
+        document.getElementById('events').innerHTML = new Date().toLocaleString() + "\t" + event + "\n" + e;
+    }
+</script>
 
 </body>
 </html>

@@ -18,11 +18,14 @@
 package org.keycloak.examples.authenticator;
 
 import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.CredentialValidator;
+import org.keycloak.authentication.RequiredActionFactory;
+import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.util.ServerCookie;
+import org.keycloak.credential.CredentialProvider;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -34,14 +37,14 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.net.URI;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class SecretQuestionAuthenticator implements Authenticator {
-
-    public static final String CREDENTIAL_TYPE = "secret_question";
+public class SecretQuestionAuthenticator implements Authenticator, CredentialValidator<SecretQuestionCredentialProvider> {
 
     protected boolean hasCookie(AuthenticationFlowContext context) {
         Cookie cookie = context.getHttpRequest().getHttpHeaders().getCookies().get("SECRET_QUESTION_ANSWERED");
@@ -58,17 +61,13 @@ public class SecretQuestionAuthenticator implements Authenticator {
             context.success();
             return;
         }
-        Response challenge = context.form().createForm("secret-question.ftl");
+        Response challenge = context.form()
+                .createForm("secret-question.ftl");
         context.challenge(challenge);
     }
 
     @Override
     public void action(AuthenticationFlowContext context) {
-        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        if (formData.containsKey("cancel")) {
-            context.cancelLogin();
-            return;
-        }
         boolean validated = validateAnswer(context);
         if (!validated) {
             Response challenge =  context.form()
@@ -89,17 +88,17 @@ public class SecretQuestionAuthenticator implements Authenticator {
 
         }
         URI uri = context.getUriInfo().getBaseUriBuilder().path("realms").path(context.getRealm().getName()).build();
-        addCookie("SECRET_QUESTION_ANSWERED", "true",
+        addCookie(context, "SECRET_QUESTION_ANSWERED", "true",
                 uri.getRawPath(),
                 null, null,
                 maxCookieAge,
                 false, true);
     }
 
-    public static void addCookie(String name, String value, String path, String domain, String comment, int maxAge, boolean secure, boolean httpOnly) {
-        HttpResponse response = ResteasyProviderFactory.getContextData(HttpResponse.class);
+    public void addCookie(AuthenticationFlowContext context, String name, String value, String path, String domain, String comment, int maxAge, boolean secure, boolean httpOnly) {
+        HttpResponse response = context.getSession().getContext().getContextObject(HttpResponse.class);
         StringBuffer cookieBuf = new StringBuffer();
-        ServerCookie.appendCookieValue(cookieBuf, 1, name, value, path, domain, comment, maxAge, secure, httpOnly);
+        ServerCookie.appendCookieValue(cookieBuf, 1, name, value, path, domain, comment, maxAge, secure, httpOnly, null);
         String cookie = cookieBuf.toString();
         response.getOutputHeaders().add(HttpHeaders.SET_COOKIE, cookie);
     }
@@ -108,10 +107,14 @@ public class SecretQuestionAuthenticator implements Authenticator {
     protected boolean validateAnswer(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         String secret = formData.getFirst("secret_answer");
-        UserCredentialModel input = new UserCredentialModel();
-        input.setType(SecretQuestionCredentialProvider.SECRET_QUESTION);
-        input.setValue(secret);
-        return context.getSession().userCredentialManager().isValid(context.getRealm(), context.getUser(), input);
+        String credentialId = formData.getFirst("credentialId");
+        if (credentialId == null || credentialId.isEmpty()) {
+            credentialId = getCredentialProvider(context.getSession())
+                    .getDefaultCredential(context.getSession(), context.getRealm(), context.getUser()).getId();
+        }
+
+        UserCredentialModel input = new UserCredentialModel(credentialId, getType(context.getSession()), secret);
+        return getCredentialProvider(context.getSession()).isValid(context.getRealm(), context.getUser(), input);
     }
 
     @Override
@@ -121,7 +124,7 @@ public class SecretQuestionAuthenticator implements Authenticator {
 
     @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
-        return session.userCredentialManager().isConfiguredFor(realm, user, SecretQuestionCredentialProvider.SECRET_QUESTION);
+        return getCredentialProvider(session).isConfiguredFor(realm, user, getType(session));
     }
 
     @Override
@@ -129,8 +132,17 @@ public class SecretQuestionAuthenticator implements Authenticator {
         user.addRequiredAction(SecretQuestionRequiredAction.PROVIDER_ID);
     }
 
+    public List<RequiredActionFactory> getRequiredActions(KeycloakSession session) {
+        return Collections.singletonList((SecretQuestionRequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, SecretQuestionRequiredAction.PROVIDER_ID));
+    }
+
     @Override
     public void close() {
 
+    }
+
+    @Override
+    public SecretQuestionCredentialProvider getCredentialProvider(KeycloakSession session) {
+        return (SecretQuestionCredentialProvider)session.getProvider(CredentialProvider.class, SecretQuestionCredentialProviderFactory.PROVIDER_ID);
     }
 }

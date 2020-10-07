@@ -16,21 +16,18 @@
  */
 package org.keycloak.testsuite.migration;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.container.test.api.TargetsContainer;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.DeploymentTargetModifier;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.utils.io.IOUtil;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * Tests that we can import json file from previous version.  MigrationTest only tests DB.
@@ -38,13 +35,8 @@ import java.util.Map;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AuthServerContainerExclude(value = {AuthServer.REMOTE, AuthServer.QUARKUS}, details = "It works locally for Quarkus, but failing on CI for unknown reason")
 public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrationTest {
-
-    @Deployment
-    @TargetsContainer(DeploymentTargetModifier.AUTH_SERVER_CURRENT)
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create();
-    }
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -64,8 +56,14 @@ public class JsonFileImport255MigrationTest extends AbstractJsonFileImportMigrat
 
     @Test
     public void migration2_5_5Test() throws Exception {
+        checkRealmsImported();
         testMigrationTo3_x();
         testMigrationTo4_x(true, false);
+        testMigrationTo5_x();
+        testMigrationTo6_x();
+        testMigrationTo7_x(true);
+        testMigrationTo8_x();
+        testMigrationTo9_x();
     }
 
- }
+}

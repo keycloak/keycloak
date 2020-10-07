@@ -28,7 +28,6 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
-import org.keycloak.representations.idm.authorization.RulePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
@@ -37,7 +36,6 @@ import org.keycloak.testsuite.console.page.clients.authorization.policy.GroupPol
 import org.keycloak.testsuite.console.page.clients.authorization.policy.JSPolicy;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.PolicySelect;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.RolePolicy;
-import org.keycloak.testsuite.console.page.clients.authorization.policy.RulePolicy;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.TimePolicy;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.UserPolicy;
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
@@ -101,9 +99,6 @@ public class ScopePermissionForm extends Form {
 
     @Page
     private TimePolicy timePolicy;
-
-    @Page
-    private RulePolicy rulePolicy;
 
     @Page
     private GroupPolicy groupPolicy;
@@ -173,8 +168,6 @@ public class ScopePermissionForm extends Form {
             jsPolicy.form().populate((JSPolicyRepresentation) expected, true);
         } else if ("time".equalsIgnoreCase(expected.getType())) {
             timePolicy.form().populate((TimePolicyRepresentation) expected, true);
-        } else if ("rules".equalsIgnoreCase(expected.getType())) {
-            rulePolicy.form().populate((RulePolicyRepresentation) expected, true);
         } else if ("group".equalsIgnoreCase(expected.getType())) {
             groupPolicy.form().populate((GroupPolicyRepresentation) expected, true);
         }

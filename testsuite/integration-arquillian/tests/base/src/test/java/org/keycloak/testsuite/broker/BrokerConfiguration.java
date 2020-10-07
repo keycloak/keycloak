@@ -1,9 +1,9 @@
 package org.keycloak.testsuite.broker;
 
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.SuiteContext;
 
 import java.util.List;
 
@@ -23,14 +23,21 @@ public interface BrokerConfiguration {
      */
     RealmRepresentation createConsumerRealm();
 
-    List<ClientRepresentation> createProviderClients(SuiteContext suiteContext);
+    List<ClientRepresentation> createProviderClients();
 
-    List<ClientRepresentation> createConsumerClients(SuiteContext suiteContext);
+    List<ClientRepresentation> createConsumerClients();
 
     /**
      * @return Representation of the identity provider for declaration in the broker
      */
-    IdentityProviderRepresentation setUpIdentityProvider(SuiteContext suiteContext);
+    default IdentityProviderRepresentation setUpIdentityProvider() {
+        return setUpIdentityProvider(IdentityProviderSyncMode.IMPORT);
+    }
+
+    /**
+     * @return Representation of the identity provider for declaration in the broker
+     */
+    IdentityProviderRepresentation setUpIdentityProvider(IdentityProviderSyncMode force);
 
     /**
      * @return Name of realm containing identity provider. Must be consistent with {@link #createProviderRealm()}
@@ -45,7 +52,7 @@ public interface BrokerConfiguration {
     /**
      * @return Client ID of the identity provider as set in provider realm.
      */
-    String getIDPClientIdInProviderRealm(SuiteContext suiteContext);
+    String getIDPClientIdInProviderRealm();
 
     /**
      * @return User login name of the brokered user

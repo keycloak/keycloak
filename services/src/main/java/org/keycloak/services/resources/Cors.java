@@ -30,6 +30,7 @@ import org.jboss.resteasy.spi.HttpResponse;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
 import org.keycloak.representations.AccessToken;
 
@@ -103,9 +104,9 @@ public class Cors {
         return this;
     }
 
-    public Cors allowedOrigins(UriInfo uriInfo, ClientModel client) {
+    public Cors allowedOrigins(KeycloakSession session, ClientModel client) {
         if (client != null) {
-            allowedOrigins = WebOriginsUtils.resolveValidWebOrigins(uriInfo, client);
+            allowedOrigins = WebOriginsUtils.resolveValidWebOrigins(session, client);
         }
         return this;
     }
@@ -136,14 +137,14 @@ public class Cors {
 
     public Response build() {
         String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
-        if (origin == null) {
+        if (origin == null || origin.equals("null")) {
             logger.trace("No origin header ignoring");
             return builder.build();
         }
 
         if (!preflight && (allowedOrigins == null || (!allowedOrigins.contains(origin) && !allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)))) {
             if (logger.isDebugEnabled()) {
-                logger.debugv("Invalid CORS request: origin {0} not in allowed origins {1}", origin, Arrays.toString(allowedOrigins.toArray()));
+                logger.debugv("Invalid CORS request: origin {0} not in allowed origins {1}", origin, allowedOrigins);
             }
             return builder.build();
         }
@@ -183,14 +184,14 @@ public class Cors {
 
     public void build(HttpResponse response) {
         String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
-        if (origin == null) {
+        if (origin == null || origin.equals("null")) {
             logger.trace("No origin header ignoring");
             return;
         }
 
         if (!preflight && (allowedOrigins == null || (!allowedOrigins.contains(origin) && !allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)))) {
             if (logger.isDebugEnabled()) {
-                logger.debugv("Invalid CORS request: origin {0} not in allowed origins {1}", origin, Arrays.toString(allowedOrigins.toArray()));
+                logger.debugv("Invalid CORS request: origin {0} not in allowed origins {1}", origin, allowedOrigins);
             }
             return;
         }

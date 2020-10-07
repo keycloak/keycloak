@@ -44,7 +44,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
    private static final String USER = "keycloak-user@localhost";
    private static final String PASSWORD = "password";
    private static final String REALM = "test";
-   private static final String EXACT_CERTIFICATE_SUBJECT_DN = "CN=Keycloak, OU=Keycloak, O=Red Hat, L=Boston, ST=MA, C=US";
+   private static final String EXACT_CERTIFICATE_SUBJECT_DN = "EMAILADDRESS=contact@keycloak.org, CN=Keycloak Intermediate CA, OU=Keycloak, O=Red Hat, ST=MA, C=US";
 
    @Override
    public void configureTestRealm(RealmRepresentation testRealm) {

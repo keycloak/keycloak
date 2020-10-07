@@ -18,26 +18,25 @@
 
 package org.keycloak.adapters.elytron;
 
-import java.security.Principal;
-
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.CookieTokenStore;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.adapters.spi.UserSessionManagement;
 import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.Scope;
 
 import javax.security.auth.callback.CallbackHandler;
+import java.util.List;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class ElytronCookieTokenStore implements ElytronTokeStore {
+public class ElytronCookieTokenStore implements ElytronTokeStore, UserSessionManagement {
 
     protected static Logger log = Logger.getLogger(ElytronCookieTokenStore.class);
 
@@ -98,7 +97,7 @@ public class ElytronCookieTokenStore implements ElytronTokeStore {
             return true;
         } else {
             log.debug("Account was not active, removing cookie and returning false");
-            CookieTokenStore.removeCookie(httpFacade);
+            CookieTokenStore.removeCookie(deployment, httpFacade);
             return false;
         }
     }
@@ -145,7 +144,7 @@ public class ElytronCookieTokenStore implements ElytronTokeStore {
             return;
         }
 
-        CookieTokenStore.removeCookie(this.httpFacade);
+        CookieTokenStore.removeCookie(this.httpFacade.getDeployment(), this.httpFacade);
 
         if (glo) {
             KeycloakSecurityContext ksc = (KeycloakSecurityContext) principal.getKeycloakSecurityContext();
@@ -160,5 +159,15 @@ public class ElytronCookieTokenStore implements ElytronTokeStore {
                 ((RefreshableKeycloakSecurityContext) ksc).logout(deployment);
             }
         }
+    }
+
+    @Override
+    public void logoutAll() {
+        //no-op
+    }
+
+    @Override
+    public void logoutHttpSessions(List<String> ids) {
+        //no-op
     }
 }

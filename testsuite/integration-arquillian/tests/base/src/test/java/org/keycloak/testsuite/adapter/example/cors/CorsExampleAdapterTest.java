@@ -28,12 +28,14 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.AngularCorsProductTestApp;
 import org.keycloak.testsuite.adapter.page.CorsDatabaseServiceTestApp;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.util.JavascriptBrowser;
@@ -48,24 +50,34 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static junit.framework.TestCase.assertNotNull;
+import org.junit.Assume;
+import org.keycloak.testsuite.util.DroneUtils;
+
+import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
- * Created by fkiss.
+ * Tests CORS functionality in adapters.
+ *
+ * <p>
+ *    Note, for SSL this test disables TLS certificate verification. Since CORS uses different hostnames
+ *    (localhost-auth for example), the Subject Name won't match.
+ * </p>
+ *
+ * @author fkiss
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
+@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
 
     public static final String CORS = "cors";
-    public static final String AUTH_SERVER_HOST = "localhost-auth";
-    private static final String hostBackup;
 
     @ArquillianResource
     private Deployer deployer;
@@ -87,7 +99,7 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
     @JavascriptBrowser
     private Account jsDriverTestRealmAccount;
 
-    @Deployment(name = AngularCorsProductTestApp.DEPLOYMENT_NAME)
+    @Deployment(name = AngularCorsProductTestApp.DEPLOYMENT_NAME, managed = false)
     protected static WebArchive angularCorsProductExample() throws IOException {
         return exampleDeployment(AngularCorsProductTestApp.CLIENT_ID);
     }
@@ -105,18 +117,17 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
 
     @Before
     public void onBefore() {
+        DroneUtils.addWebDriver(jsDriver);
         deployer.deploy(CorsDatabaseServiceTestApp.DEPLOYMENT_NAME);
+        deployer.deploy(AngularCorsProductTestApp.DEPLOYMENT_NAME);
     }
 
     @After
     public void onAfter() {
         deployer.undeploy(CorsDatabaseServiceTestApp.DEPLOYMENT_NAME);
+        deployer.undeploy(AngularCorsProductTestApp.DEPLOYMENT_NAME);
     }
 
-    static{
-        hostBackup = System.getProperty("auth.server.host", "localhost");
-        System.setProperty("auth.server.host", AUTH_SERVER_HOST);
-    }
 
     @Override
     public void setDefaultPageUriParameters() {
@@ -165,30 +176,22 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
         jsDriverAngularCorsProductPage.navigateTo();
         waitForPageToLoad();
 
-        jsDriverAngularCorsProductPage.loadVersion();
-        waitUntilElement(jsDriverAngularCorsProductPage.getOutput()).text().contains("Keycloak version: " + serverVersion);
     }
 
     @Nullable
     private String getAuthServerVersion() {
-        jsDriver.navigate().to(suiteContext.getAuthServerInfo().getContextRoot().toString() +
+        DroneUtils.getCurrentDriver().navigate().to(suiteContext.getAuthServerInfo().getContextRoot().toString() +
                 "/auth/admin/master/console/#/server-info");
         jsDriverTestRealmLoginPage.form().login("admin", "admin");
 
-        WaitUtils.waitUntilElement(By.tagName("body")).is().visible();
         Pattern pattern = Pattern.compile("<td [^>]+>Server Version</td>" +
                 "\\s+<td [^>]+>([^<]+)</td>");
-        Matcher matcher = pattern.matcher(jsDriver.getPageSource());
+        Matcher matcher = pattern.matcher(DroneUtils.getCurrentDriver().getPageSource());
 
         if (matcher.find()) {
             return matcher.group(1);
         }
 
         return null;
-    }
-
-    @AfterClass
-    public static void afterCorsTest() {
-        System.setProperty("auth.server.host", hostBackup);
     }
 }

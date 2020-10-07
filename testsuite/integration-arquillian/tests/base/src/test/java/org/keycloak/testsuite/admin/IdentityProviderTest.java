@@ -20,6 +20,9 @@ package org.keycloak.testsuite.admin;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
+import org.keycloak.common.enums.SslRequired;
+import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.metadata.EndpointType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.IndexedEndpointType;
@@ -28,18 +31,31 @@ import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderMapperSyncMode;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.broker.OIDCIdentityProviderConfigRep;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminEventPaths;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -58,19 +74,28 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.XMLDSIG_NSURI;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -108,9 +133,21 @@ public class IdentityProviderTest extends AbstractAdminTest {
     }
 
     @Test
+    public void testCreateWithReservedCharacterForAlias() {
+        IdentityProviderRepresentation newIdentityProvider = createRep("ne$&w-identity-provider", "oidc");
+
+        newIdentityProvider.getConfig().put("clientId", "clientId");
+        newIdentityProvider.getConfig().put("clientSecret", "some secret value");
+
+        Response response = realm.identityProviders().create(newIdentityProvider);
+        Assert.assertEquals(400, response.getStatus());
+    }
+    
+    @Test
     public void testCreate() {
         IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
 
+        newIdentityProvider.getConfig().put(IdentityProviderModel.SYNC_MODE, "IMPORT");
         newIdentityProvider.getConfig().put("clientId", "clientId");
         newIdentityProvider.getConfig().put("clientSecret", "some secret value");
 
@@ -127,6 +164,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertNotNull(representation.getInternalId());
         assertEquals("new-identity-provider", representation.getAlias());
         assertEquals("oidc", representation.getProviderId());
+        assertEquals("IMPORT", representation.getConfig().get(IdentityProviderMapperModel.SYNC_MODE));
         assertEquals("clientId", representation.getConfig().get("clientId"));
         assertEquals(ComponentRepresentation.SECRET_VALUE, representation.getConfig().get("clientSecret"));
         assertTrue(representation.isEnabled());
@@ -140,9 +178,143 @@ public class IdentityProviderTest extends AbstractAdminTest {
     }
 
     @Test
+    @AuthServerContainerExclude(REMOTE)
+    public void failCreateInvalidUrl() throws Exception {
+        try (AutoCloseable c = new RealmAttributeUpdater(realmsResouce().realm("test"))
+                .updateWith(r -> r.setSslRequired(SslRequired.ALL.name()))
+                .update()
+        ) {
+            IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
+
+            newIdentityProvider.getConfig().put("clientId", "clientId");
+            newIdentityProvider.getConfig().put("clientSecret", "some secret value");
+
+            OIDCIdentityProviderConfigRep oidcConfig = new OIDCIdentityProviderConfigRep(newIdentityProvider);
+
+            oidcConfig.setAuthorizationUrl("invalid://test");
+
+            try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
+                assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+                assertEquals("The url [authorization_url] is malformed", error.getErrorMessage());
+            }
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl("http://test");
+
+            try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
+                assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+                assertEquals("The url [token_url] requires secure connections", error.getErrorMessage());
+            }
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl(null);
+            oidcConfig.setJwksUrl("http://test");
+
+            try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
+                assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+                assertEquals("The url [jwks_url] requires secure connections", error.getErrorMessage());
+            }
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl(null);
+            oidcConfig.setJwksUrl(null);
+            oidcConfig.setLogoutUrl("http://test");
+
+            try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
+                assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+                assertEquals("The url [logout_url] requires secure connections", error.getErrorMessage());
+            }
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl(null);
+            oidcConfig.setJwksUrl(null);
+            oidcConfig.setLogoutUrl(null);
+            oidcConfig.setUserInfoUrl("http://test");
+
+            try (Response response = this.realm.identityProviders().create(newIdentityProvider)) {
+                assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+                assertEquals("The url [userinfo_url] requires secure connections", error.getErrorMessage());
+            }
+        }
+    }
+
+    @Test
+    public void testCreateWithBasicAuth() {
+        IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
+
+        newIdentityProvider.getConfig().put(IdentityProviderModel.SYNC_MODE, "IMPORT");
+        newIdentityProvider.getConfig().put("clientId", "clientId");
+        newIdentityProvider.getConfig().put("clientSecret", "some secret value");
+        newIdentityProvider.getConfig().put("clientAuthMethod",OIDCLoginProtocol.CLIENT_SECRET_BASIC);
+
+        create(newIdentityProvider);
+
+        IdentityProviderResource identityProviderResource = realm.identityProviders().get("new-identity-provider");
+
+        assertNotNull(identityProviderResource);
+
+        IdentityProviderRepresentation representation = identityProviderResource.toRepresentation();
+
+        assertNotNull(representation);
+
+        assertNotNull(representation.getInternalId());
+        assertEquals("new-identity-provider", representation.getAlias());
+        assertEquals("oidc", representation.getProviderId());
+        assertEquals("IMPORT", representation.getConfig().get(IdentityProviderMapperModel.SYNC_MODE));
+        assertEquals("clientId", representation.getConfig().get("clientId"));
+        assertEquals(ComponentRepresentation.SECRET_VALUE, representation.getConfig().get("clientSecret"));
+        assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, representation.getConfig().get("clientAuthMethod"));
+
+        assertTrue(representation.isEnabled());
+        assertFalse(representation.isStoreToken());
+        assertFalse(representation.isTrustEmail());
+
+        assertEquals("some secret value", testingClient.testing("admin-client-test").getIdentityProviderConfig("new-identity-provider").get("clientSecret"));
+
+        IdentityProviderRepresentation rep = realm.identityProviders().findAll().stream().filter(i -> i.getAlias().equals("new-identity-provider")).findFirst().get();
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getConfig().get("clientSecret"));
+    }
+
+    @Test
+    public void testCreateWithJWT() {
+        IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
+
+        newIdentityProvider.getConfig().put(IdentityProviderModel.SYNC_MODE, "IMPORT");
+        newIdentityProvider.getConfig().put("clientId", "clientId");
+        newIdentityProvider.getConfig().put("clientAuthMethod", OIDCLoginProtocol.PRIVATE_KEY_JWT);
+
+        create(newIdentityProvider);
+
+        IdentityProviderResource identityProviderResource = realm.identityProviders().get("new-identity-provider");
+
+        assertNotNull(identityProviderResource);
+
+        IdentityProviderRepresentation representation = identityProviderResource.toRepresentation();
+
+        assertNotNull(representation);
+
+        assertNotNull(representation.getInternalId());
+        assertEquals("new-identity-provider", representation.getAlias());
+        assertEquals("oidc", representation.getProviderId());
+        assertEquals("IMPORT", representation.getConfig().get(IdentityProviderMapperModel.SYNC_MODE));
+        assertEquals("clientId", representation.getConfig().get("clientId"));
+        assertNull(representation.getConfig().get("clientSecret"));
+        assertEquals(OIDCLoginProtocol.PRIVATE_KEY_JWT, representation.getConfig().get("clientAuthMethod"));
+        assertTrue(representation.isEnabled());
+        assertFalse(representation.isStoreToken());
+        assertFalse(representation.isTrustEmail());
+    }
+
+    @Test
     public void testUpdate() {
         IdentityProviderRepresentation newIdentityProvider = createRep("update-identity-provider", "oidc");
 
+        newIdentityProvider.getConfig().put(IdentityProviderModel.SYNC_MODE, "IMPORT");
         newIdentityProvider.getConfig().put("clientId", "clientId");
         newIdentityProvider.getConfig().put("clientSecret", "some secret value");
 
@@ -179,6 +351,112 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertEquals("changedClientId", representation.getConfig().get("clientId"));
 
         assertEquals("some secret value", testingClient.testing("admin-client-test").getIdentityProviderConfig("changed-alias").get("clientSecret"));
+
+        representation.getConfig().put("clientSecret", "${vault.key}");
+        identityProviderResource.update(representation);
+        event = assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.identityProviderPath(representation.getInternalId()), representation, ResourceType.IDENTITY_PROVIDER);
+        assertThat(event.getRepresentation(), containsString("${vault.key}"));
+        assertThat(event.getRepresentation(), not(containsString(ComponentRepresentation.SECRET_VALUE)));
+
+        assertThat(identityProviderResource.toRepresentation().getConfig(), hasEntry("clientSecret", "${vault.key}"));
+        assertEquals("${vault.key}", testingClient.testing("admin-client-test").getIdentityProviderConfig("changed-alias").get("clientSecret"));
+    }
+
+    @Test
+    public void failUpdateInvalidUrl() throws Exception {
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(realm)
+                .updateWith(r -> r.setSslRequired(SslRequired.ALL.name()))
+                .update()
+        ) {
+            IdentityProviderRepresentation representation = createRep(UUID.randomUUID().toString(), "oidc");
+
+            representation.getConfig().put("clientId", "clientId");
+            representation.getConfig().put("clientSecret", "some secret value");
+
+            try (Response response = realm.identityProviders().create(representation)) {
+                assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            }
+
+            IdentityProviderResource resource = this.realm.identityProviders().get(representation.getAlias());
+            representation = resource.toRepresentation();
+
+            OIDCIdentityProviderConfigRep oidcConfig = new OIDCIdentityProviderConfigRep(representation);
+
+            oidcConfig.setAuthorizationUrl("invalid://test");
+            try {
+                resource.update(representation);
+                fail("Invalid URL");
+            } catch (Exception e) {
+                assertTrue(e instanceof  ClientErrorException);
+                Response response = ClientErrorException.class.cast(e).getResponse();
+                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
+                assertEquals("The url [authorization_url] is malformed", error.getErrorMessage());
+            }
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl("http://test");
+
+            try {
+                resource.update(representation);
+                fail("Invalid URL");
+            } catch (Exception e) {
+                assertTrue(e instanceof  ClientErrorException);
+                Response response = ClientErrorException.class.cast(e).getResponse();
+                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
+                assertEquals("The url [token_url] requires secure connections", error.getErrorMessage());
+            }
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl(null);
+            oidcConfig.setJwksUrl("http://test");
+            try {
+                resource.update(representation);
+                fail("Invalid URL");
+            } catch (Exception e) {
+                assertTrue(e instanceof  ClientErrorException);
+                Response response = ClientErrorException.class.cast(e).getResponse();
+                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
+                assertEquals("The url [jwks_url] requires secure connections", error.getErrorMessage());
+            }
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl(null);
+            oidcConfig.setJwksUrl(null);
+            oidcConfig.setLogoutUrl("http://test");
+            try {
+                resource.update(representation);
+                fail("Invalid URL");
+            } catch (Exception e) {
+                assertTrue(e instanceof  ClientErrorException);
+                Response response = ClientErrorException.class.cast(e).getResponse();
+                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
+                assertEquals("The url [logout_url] requires secure connections", error.getErrorMessage());
+            }
+
+            oidcConfig.setAuthorizationUrl(null);
+            oidcConfig.setTokenUrl(null);
+            oidcConfig.setJwksUrl(null);
+            oidcConfig.setLogoutUrl(null);
+            oidcConfig.setUserInfoUrl("http://localhost");
+
+            try {
+                resource.update(representation);
+                fail("Invalid URL");
+            } catch (Exception e) {
+                assertTrue(e instanceof  ClientErrorException);
+                Response response = ClientErrorException.class.cast(e).getResponse();
+                assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                ErrorRepresentation error = ((ClientErrorException) e).getResponse().readEntity(ErrorRepresentation.class);
+                assertEquals("The url [userinfo_url] requires secure connections", error.getErrorMessage());
+            }
+
+            rau.updateWith(r -> r.setSslRequired(SslRequired.EXTERNAL.name())).update();
+            resource.update(representation);
+        }
     }
 
     @Test
@@ -224,16 +502,16 @@ public class IdentityProviderTest extends AbstractAdminTest {
     }
 
     private IdentityProviderRepresentation createRep(String id, String providerId) {
-        return createRep(id, providerId, null);
+        return createRep(id, providerId,true, null);
     }
 
-    private IdentityProviderRepresentation createRep(String id, String providerId, Map<String, String> config) {
+    private IdentityProviderRepresentation createRep(String id, String providerId,boolean enabled, Map<String, String> config) {
         IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
 
         idp.setAlias(id);
         idp.setDisplayName(id);
         idp.setProviderId(providerId);
-        idp.setEnabled(true);
+        idp.setEnabled(enabled);
         if (config != null) {
             idp.setConfig(config);
         }
@@ -249,52 +527,52 @@ public class IdentityProviderTest extends AbstractAdminTest {
         create(createRep("google", "google"));
         provider = realm.identityProviders().get("google");
         mapperTypes = provider.getMapperTypes();
-        assertMapperTypes(mapperTypes, "google-user-attribute-mapper");
+        assertMapperTypes(mapperTypes, "google-user-attribute-mapper", "oidc-username-idp-mapper");
 
         create(createRep("facebook", "facebook"));
         provider = realm.identityProviders().get("facebook");
         mapperTypes = provider.getMapperTypes();
-        assertMapperTypes(mapperTypes, "facebook-user-attribute-mapper");
+        assertMapperTypes(mapperTypes, "facebook-user-attribute-mapper", "oidc-username-idp-mapper");
 
         create(createRep("github", "github"));
         provider = realm.identityProviders().get("github");
         mapperTypes = provider.getMapperTypes();
-        assertMapperTypes(mapperTypes, "github-user-attribute-mapper");
+        assertMapperTypes(mapperTypes, "github-user-attribute-mapper", "oidc-username-idp-mapper");
 
         create(createRep("twitter", "twitter"));
         provider = realm.identityProviders().get("twitter");
         mapperTypes = provider.getMapperTypes();
-        assertMapperTypes(mapperTypes);
+        assertMapperTypes(mapperTypes, "oidc-username-idp-mapper");
 
         create(createRep("linkedin", "linkedin"));
         provider = realm.identityProviders().get("linkedin");
         mapperTypes = provider.getMapperTypes();
-        assertMapperTypes(mapperTypes, "linkedin-user-attribute-mapper");
+        assertMapperTypes(mapperTypes, "linkedin-user-attribute-mapper", "oidc-username-idp-mapper");
 
         create(createRep("microsoft", "microsoft"));
         provider = realm.identityProviders().get("microsoft");
         mapperTypes = provider.getMapperTypes();
-        assertMapperTypes(mapperTypes, "microsoft-user-attribute-mapper");
+        assertMapperTypes(mapperTypes, "microsoft-user-attribute-mapper", "oidc-username-idp-mapper");
 
         create(createRep("stackoverflow", "stackoverflow"));
         provider = realm.identityProviders().get("stackoverflow");
         mapperTypes = provider.getMapperTypes();
-        assertMapperTypes(mapperTypes, "stackoverflow-user-attribute-mapper");
+        assertMapperTypes(mapperTypes, "stackoverflow-user-attribute-mapper", "oidc-username-idp-mapper");
 
         create(createRep("keycloak-oidc", "keycloak-oidc"));
         provider = realm.identityProviders().get("keycloak-oidc");
         mapperTypes = provider.getMapperTypes();
-        assertMapperTypes(mapperTypes, "keycloak-oidc-role-to-role-idp-mapper", "oidc-user-attribute-idp-mapper", "oidc-role-idp-mapper", "oidc-username-idp-mapper");
+        assertMapperTypes(mapperTypes, "keycloak-oidc-role-to-role-idp-mapper", "oidc-user-attribute-idp-mapper", "oidc-role-idp-mapper", "oidc-username-idp-mapper", "oidc-advanced-role-idp-mapper");
 
         create(createRep("oidc", "oidc"));
         provider = realm.identityProviders().get("oidc");
         mapperTypes = provider.getMapperTypes();
-        assertMapperTypes(mapperTypes, "oidc-user-attribute-idp-mapper", "oidc-role-idp-mapper", "oidc-username-idp-mapper");
+        assertMapperTypes(mapperTypes, "oidc-user-attribute-idp-mapper", "oidc-role-idp-mapper", "oidc-username-idp-mapper", "oidc-advanced-role-idp-mapper");
 
         create(createRep("saml", "saml"));
         provider = realm.identityProviders().get("saml");
         mapperTypes = provider.getMapperTypes();
-        assertMapperTypes(mapperTypes, "saml-user-attribute-idp-mapper", "saml-role-idp-mapper", "saml-username-idp-mapper");
+        assertMapperTypes(mapperTypes, "saml-user-attribute-idp-mapper", "saml-role-idp-mapper", "saml-username-idp-mapper", "saml-advanced-role-idp-mapper");
     }
 
     private void assertMapperTypes(Map<String, IdentityProviderMapperTypeRepresentation> mapperTypes, String ... mapperIds) {
@@ -333,14 +611,14 @@ public class IdentityProviderTest extends AbstractAdminTest {
         form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata.xml");
 
         Map<String, String> result = realm.identityProviders().importFrom(form);
-        assertSamlImport(result, SIGNING_CERT_1);
+        assertSamlImport(result, SIGNING_CERT_1,true);
 
         // Create new SAML identity provider using configuration retrieved from import-config
-        create(createRep("saml", "saml", result));
+        create(createRep("saml", "saml",true, result));
 
         IdentityProviderResource provider = realm.identityProviders().get("saml");
         IdentityProviderRepresentation rep = provider.toRepresentation();
-        assertCreatedSamlIdp(rep);
+        assertCreatedSamlIdp(rep,true);
 
         // Now list the providers - we should see the one just created
         List<IdentityProviderRepresentation> providers = realm.identityProviders().findAll();
@@ -356,6 +634,32 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
         assertSamlExport(body);
     }
+    
+    @Test
+    public void testSamlImportAndExportDisabled() throws URISyntaxException, IOException, ParsingException {
+
+        // Use import-config to convert IDPSSODescriptor file into key value pairs
+        // to use when creating a SAML Identity Provider
+        MultipartFormDataOutput form = new MultipartFormDataOutput();
+        form.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
+
+        URL idpMeta = getClass().getClassLoader().getResource("admin-test/saml-idp-metadata-disabled.xml");
+        byte[] content = Files.readAllBytes(Paths.get(idpMeta.toURI()));
+        String body = new String(content, Charset.forName("utf-8"));
+        form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata-disabled.xml");
+
+        Map<String, String> result = realm.identityProviders().importFrom(form);
+        assertSamlImport(result, SIGNING_CERT_1, false);
+
+        // Create new SAML identity provider using configuration retrieved from import-config
+        create(createRep("saml", "saml", false, result));
+
+        IdentityProviderResource provider = realm.identityProviders().get("saml");
+        IdentityProviderRepresentation rep = provider.toRepresentation();
+        assertCreatedSamlIdp(rep, false);
+        
+    }
+
 
     @Test
     public void testSamlImportAndExportMultipleSigningKeys() throws URISyntaxException, IOException, ParsingException {
@@ -371,14 +675,14 @@ public class IdentityProviderTest extends AbstractAdminTest {
         form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata-two-signing-certs");
 
         Map<String, String> result = realm.identityProviders().importFrom(form);
-        assertSamlImport(result, SIGNING_CERT_1 + "," + SIGNING_CERT_2);
+        assertSamlImport(result, SIGNING_CERT_1 + "," + SIGNING_CERT_2,true);
 
         // Create new SAML identity provider using configuration retrieved from import-config
-        create(createRep("saml", "saml", result));
+        create(createRep("saml", "saml",true, result));
 
         IdentityProviderResource provider = realm.identityProviders().get("saml");
         IdentityProviderRepresentation rep = provider.toRepresentation();
-        assertCreatedSamlIdp(rep);
+        assertCreatedSamlIdp(rep,true);
 
         // Now list the providers - we should see the one just created
         List<IdentityProviderRepresentation> providers = realm.identityProviders().findAll();
@@ -407,6 +711,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         mapper.setIdentityProviderMapper("oidc-hardcoded-role-idp-mapper");
         Map<String, String> config = new HashMap<>();
         config.put("role", "offline_access");
+        config.put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.INHERIT.toString());
         mapper.setConfig(config);
 
         // createRep and add mapper
@@ -423,6 +728,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
         // get mapper
         mapper = provider.getMapperById(id);
+        Assert.assertEquals("INHERIT", mappers.get(0).getConfig().get(IdentityProviderMapperModel.SYNC_MODE));
         Assert.assertNotNull("mapperById not null", mapper);
         Assert.assertEquals("mapper id", id, mapper.getId());
         Assert.assertNotNull("mapper.config exists", mapper.getConfig());
@@ -465,6 +771,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         mapper.setName("my_mapper");
         mapper.setIdentityProviderMapper("oidc-hardcoded-role-idp-mapper");
         Map<String, String> config = new HashMap<>();
+        config.put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.INHERIT.toString());
         config.put("role", "");
         mapper.setConfig(config);
 
@@ -474,7 +781,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
         List<IdentityProviderMapperRepresentation> mappers = provider.getMappers();
         assertEquals(1, mappers.size());
-        assertEquals(0, mappers.get(0).getConfig().size());
+        assertEquals(1, mappers.get(0).getConfig().size());
 
         mapper = provider.getMapperById(mapperId);
         mapper.getConfig().put("role", "offline_access");
@@ -482,8 +789,9 @@ public class IdentityProviderTest extends AbstractAdminTest {
         provider.update(mapperId, mapper);
 
         mappers = provider.getMappers();
+        assertEquals("INHERIT", mappers.get(0).getConfig().get(IdentityProviderMapperModel.SYNC_MODE));
         assertEquals(1, mappers.size());
-        assertEquals(1, mappers.get(0).getConfig().size());
+        assertEquals(2, mappers.get(0).getConfig().size());
         assertEquals("offline_access", mappers.get(0).getConfig().get("role"));
     }
 
@@ -499,6 +807,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         mapper.setName("my_mapper");
         mapper.setIdentityProviderMapper("oidc-hardcoded-role-idp-mapper");
         Map<String, String> config = new HashMap<>();
+        config.put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.INHERIT.toString());
         config.put("role", "offline_access");
         mapper.setConfig(config);
 
@@ -588,13 +897,13 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertEquals("config", expected.getConfig(), actual.getConfig());
     }
 
-    private void assertCreatedSamlIdp(IdentityProviderRepresentation idp) {
+    private void assertCreatedSamlIdp(IdentityProviderRepresentation idp,boolean enabled) {
         //System.out.println("idp: " + idp);
         Assert.assertNotNull("IdentityProviderRepresentation not null", idp);
         Assert.assertNotNull("internalId", idp.getInternalId());
         Assert.assertEquals("alias", "saml", idp.getAlias());
         Assert.assertEquals("providerId", "saml", idp.getProviderId());
-        Assert.assertTrue("enabled", idp.isEnabled());
+        Assert.assertEquals("enabled",enabled, idp.isEnabled());
         Assert.assertEquals("firstBrokerLoginFlowAlias", "first broker login",idp.getFirstBrokerLoginFlowAlias());
         assertSamlConfig(idp.getConfig());
     }
@@ -611,8 +920,11 @@ public class IdentityProviderTest extends AbstractAdminTest {
           "postBindingAuthnRequest",
           "singleSignOnServiceUrl",
           "wantAuthnRequestsSigned",
+          "nameIDPolicyFormat",
           "signingCertificate",
-          "addExtensionsElementWithKeyInfo"
+          "addExtensionsElementWithKeyInfo",
+          "loginHint",
+          "hideOnLoginPage"
         ));
         assertThat(config, hasEntry("validateSignature", "true"));
         assertThat(config, hasEntry("singleLogoutServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml"));
@@ -621,10 +933,16 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertThat(config, hasEntry("singleSignOnServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml"));
         assertThat(config, hasEntry("wantAuthnRequestsSigned", "true"));
         assertThat(config, hasEntry("addExtensionsElementWithKeyInfo", "false"));
+        assertThat(config, hasEntry("nameIDPolicyFormat", "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"));
+        assertThat(config, hasEntry("hideOnLoginPage", "true"));
         assertThat(config, hasEntry(is("signingCertificate"), notNullValue()));
     }
 
-    private void assertSamlImport(Map<String, String> config, String expectedSigningCertificates) {
+    private void assertSamlImport(Map<String, String> config, String expectedSigningCertificates,boolean enabled) {
+        //firtsly check and remove enabledFromMetadata from config
+        boolean enabledFromMetadata = Boolean.valueOf(config.get(SAMLIdentityProviderConfig.ENABLED_FROM_METADATA));
+        config.remove(SAMLIdentityProviderConfig.ENABLED_FROM_METADATA);
+        Assert.assertEquals(enabledFromMetadata,enabled);
         assertSamlConfig(config);
         assertThat(config, hasEntry("signingCertificate", expectedSigningCertificates));
     }
@@ -638,7 +956,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertEquals("Parsed export type", EntityDescriptorType.class, entBody.getClass());
         EntityDescriptorType entity = (EntityDescriptorType) entBody;
 
-        Assert.assertEquals("EntityID", "http://localhost:8180/auth/realms/admin-client-test", entity.getEntityID());
+        Assert.assertEquals("EntityID", oauth.AUTH_SERVER_ROOT + "/realms/admin-client-test", entity.getEntityID());
 
         Assert.assertNotNull("ChoiceType not null", entity.getChoiceType());
         Assert.assertEquals("ChoiceType.size", 1, entity.getChoiceType().size());
@@ -653,9 +971,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertTrue("AuthnRequestsSigned", desc.isAuthnRequestsSigned());
 
         Set<String> expected = new HashSet<>(Arrays.asList(
-                "urn:oasis:names:tc:SAML:2.0:protocol",
-                "urn:oasis:names:tc:SAML:1.1:protocol",
-                "http://schemas.xmlsoap.org/ws/2003/07/secext"));
+                "urn:oasis:names:tc:SAML:2.0:protocol"));
 
         Set<String> actual = new HashSet<>(desc.getProtocolSupportEnumeration());
 
@@ -667,7 +983,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         IndexedEndpointType endpoint = desc.getAssertionConsumerService().get(0);
 
         Assert.assertEquals("AssertionConsumerService.Location",
-                new URI("http://localhost:8180/auth/realms/admin-client-test/broker/saml/endpoint"), endpoint.getLocation());
+                new URI(oauth.AUTH_SERVER_ROOT + "/realms/admin-client-test/broker/saml/endpoint"), endpoint.getLocation());
         Assert.assertEquals("AssertionConsumerService.Binding",
                 new URI("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"), endpoint.getBinding());
         Assert.assertTrue("AssertionConsumerService.isDefault", endpoint.isIsDefault());
@@ -679,7 +995,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         EndpointType sloEndpoint = desc.getSingleLogoutService().get(0);
 
         Assert.assertEquals("SingleLogoutService.Location",
-                new URI("http://localhost:8180/auth/realms/admin-client-test/broker/saml/endpoint"), sloEndpoint.getLocation());
+                new URI(oauth.AUTH_SERVER_ROOT + "/realms/admin-client-test/broker/saml/endpoint"), sloEndpoint.getLocation());
         Assert.assertEquals("SingleLogoutService.Binding",
                 new URI("urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"), sloEndpoint.getBinding());
 
@@ -696,5 +1012,70 @@ public class IdentityProviderTest extends AbstractAdminTest {
         System.out.println(info);
         Assert.assertEquals("id", id, info.get("id"));
         Assert.assertEquals("name", name, info.get("name"));
+    }
+
+    @Test
+    public void testSamlExportSignatureOff() throws URISyntaxException, IOException, ConfigurationException, ParsingException, ProcessingException {
+        // Use import-config to convert IDPSSODescriptor file into key value pairs
+        // to use when creating a SAML Identity Provider
+        MultipartFormDataOutput form = new MultipartFormDataOutput();
+        form.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
+
+        URL idpMeta = getClass().getClassLoader().getResource("admin-test/saml-idp-metadata.xml");
+        byte [] content = Files.readAllBytes(Paths.get(idpMeta.toURI()));
+        String body = new String(content, Charset.forName("utf-8"));
+        form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata.xml");
+
+        Map<String, String> result = realm.identityProviders().importFrom(form);
+
+        // Explicitly disable SP Metadata Signature
+        result.put(SAMLIdentityProviderConfig.SIGN_SP_METADATA, "false");
+
+        // Create new SAML identity provider using configuration retrieved from import-config
+        IdentityProviderRepresentation idpRep = createRep("saml", "saml", true, result);
+        create(idpRep);
+
+        // Perform export, and make sure some of the values are like they're supposed to be
+        Response response = realm.identityProviders().get("saml").export("xml");
+        Assert.assertEquals(200, response.getStatus());
+        body = response.readEntity(String.class);
+        response.close();
+
+        Document document = DocumentUtil.getDocument(body);
+        Element signatureElement = DocumentUtil.getDirectChildElement(document.getDocumentElement(), XMLDSIG_NSURI.get(), "Signature");
+        Assert.assertNull(signatureElement);
+    }
+
+    @Test
+    public void testSamlExportSignatureOn() throws URISyntaxException, IOException, ConfigurationException, ParsingException, ProcessingException {
+        // Use import-config to convert IDPSSODescriptor file into key value pairs
+        // to use when creating a SAML Identity Provider
+        MultipartFormDataOutput form = new MultipartFormDataOutput();
+        form.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
+
+        URL idpMeta = getClass().getClassLoader().getResource("admin-test/saml-idp-metadata.xml");
+        byte [] content = Files.readAllBytes(Paths.get(idpMeta.toURI()));
+        String body = new String(content, Charset.forName("utf-8"));
+        form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata.xml");
+
+        Map<String, String> result = realm.identityProviders().importFrom(form);
+
+        // Explicitly enable SP Metadata Signature
+        result.put(SAMLIdentityProviderConfig.SIGN_SP_METADATA, "true");
+
+        // Create new SAML identity provider using configuration retrieved from import-config
+        IdentityProviderRepresentation idpRep = createRep("saml", "saml", true, result);
+        create(idpRep);
+
+        // Perform export, and make sure some of the values are like they're supposed to be
+        Response response = realm.identityProviders().get("saml").export("xml");
+        Assert.assertEquals(200, response.getStatus());
+        body = response.readEntity(String.class);
+        response.close();
+
+        Document document = DocumentUtil.getDocument(body);
+
+        Element signatureElement = DocumentUtil.getDirectChildElement(document.getDocumentElement(), XMLDSIG_NSURI.get(), "Signature");
+        Assert.assertNotNull(signatureElement);
     }
 }

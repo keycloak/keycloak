@@ -18,9 +18,7 @@
 package org.keycloak.jose.jwe;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
+import java.nio.charset.StandardCharsets;
 import java.security.spec.KeySpec;
 
 import org.keycloak.common.util.Base64;
@@ -122,6 +120,15 @@ public class JWE {
 
     public String encodeJwe() throws JWEException {
         try {
+            if (header == null) throw new IllegalStateException("Header must be set");
+            return encodeJwe(JWERegistry.getAlgProvider(header.getAlgorithm()), JWERegistry.getEncProvider(header.getEncryptionAlgorithm()));
+        } catch (Exception e) {
+            throw new JWEException(e);
+        }
+    }
+
+    public String encodeJwe(JWEAlgorithmProvider algorithmProvider, JWEEncryptionProvider encryptionProvider) throws JWEException {
+        try {
             if (header == null) {
                 throw new IllegalStateException("Header must be set");
             }
@@ -129,14 +136,12 @@ public class JWE {
                 throw new IllegalStateException("Content must be set");
             }
 
-            JWEAlgorithmProvider algorithmProvider = JWERegistry.getAlgProvider(header.getAlgorithm());
             if (algorithmProvider == null) {
                 throw new IllegalArgumentException("No provider for alg '" + header.getAlgorithm() + "'");
             }
 
-            JWEEncryptionProvider encryptionProvider = JWERegistry.getEncProvider(header.getEncryptionAlgorithm());
             if (encryptionProvider == null) {
-                throw new IllegalArgumentException("No provider for enc '" + header.getAlgorithm() + "'");
+                throw new IllegalArgumentException("No provider for enc '" + header.getEncryptionAlgorithm() + "'");
             }
 
             keyStorage.setEncryptionProvider(encryptionProvider);
@@ -153,7 +158,6 @@ public class JWE {
         }
     }
 
-
     private String getEncodedJweString() {
         StringBuilder builder = new StringBuilder();
         builder.append(base64Header).append(".")
@@ -165,53 +169,61 @@ public class JWE {
         return builder.toString();
     }
 
+    private void setupJWEHeader(String jweStr) throws IllegalStateException {
+        String[] parts = jweStr.split("\\.");
+        if (parts.length != 5) {
+            throw new IllegalStateException("Not a JWE String");
+        }
+
+        this.base64Header = parts[0];
+        this.base64Cek = parts[1];
+        this.initializationVector = Base64Url.decode(parts[2]);
+        this.encryptedContent = Base64Url.decode(parts[3]);
+        this.authenticationTag = Base64Url.decode(parts[4]);
+
+        this.header = getHeader();
+    }
+
+    private JWE getProcessedJWE(JWEAlgorithmProvider algorithmProvider, JWEEncryptionProvider encryptionProvider) throws Exception {
+        if (algorithmProvider == null) {
+            throw new IllegalArgumentException("No provider for alg ");
+        }
+
+        if (encryptionProvider == null) {
+            throw new IllegalArgumentException("No provider for enc ");
+        }
+
+        keyStorage.setEncryptionProvider(encryptionProvider);
+
+        byte[] decodedCek = algorithmProvider.decodeCek(Base64Url.decode(base64Cek), keyStorage.getDecryptionKey());
+        keyStorage.setCEKBytes(decodedCek);
+
+        encryptionProvider.verifyAndDecodeJwe(this);
+
+        return this;
+    }
 
     public JWE verifyAndDecodeJwe(String jweStr) throws JWEException {
         try {
-            String[] parts = jweStr.split("\\.");
-            if (parts.length != 5) {
-                throw new IllegalStateException("Not a JWE String");
-            }
+            setupJWEHeader(jweStr);
+            return getProcessedJWE(JWERegistry.getAlgProvider(header.getAlgorithm()), JWERegistry.getEncProvider(header.getEncryptionAlgorithm()));
+        } catch (Exception e) {
+            throw new JWEException(e);
+        }
+    }
 
-            this.base64Header = parts[0];
-            this.base64Cek = parts[1];
-            this.initializationVector = Base64Url.decode(parts[2]);
-            this.encryptedContent = Base64Url.decode(parts[3]);
-            this.authenticationTag = Base64Url.decode(parts[4]);
-
-            this.header = getHeader();
-            JWEAlgorithmProvider algorithmProvider = JWERegistry.getAlgProvider(header.getAlgorithm());
-            if (algorithmProvider == null) {
-                throw new IllegalArgumentException("No provider for alg '" + header.getAlgorithm() + "'");
-            }
-
-            JWEEncryptionProvider encryptionProvider = JWERegistry.getEncProvider(header.getEncryptionAlgorithm());
-            if (encryptionProvider == null) {
-                throw new IllegalArgumentException("No provider for enc '" + header.getAlgorithm() + "'");
-            }
-
-            keyStorage.setEncryptionProvider(encryptionProvider);
-
-            byte[] decodedCek = algorithmProvider.decodeCek(Base64Url.decode(base64Cek), keyStorage.getEncryptionKey());
-            keyStorage.setCEKBytes(decodedCek);
-
-            encryptionProvider.verifyAndDecodeJwe(this);
-
-            return this;
+    public JWE verifyAndDecodeJwe(String jweStr, JWEAlgorithmProvider algorithmProvider, JWEEncryptionProvider encryptionProvider) throws JWEException {
+        try {
+            setupJWEHeader(jweStr);
+            return getProcessedJWE(algorithmProvider, encryptionProvider);
         } catch (Exception e) {
             throw new JWEException(e);
         }
     }
 
     public static String encryptUTF8(String password, String saltString, String payload) {
-        byte[] bytes = null;
-        try {
-            bytes = payload.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        byte[] bytes = payload.getBytes(StandardCharsets.UTF_8);
         return encrypt(password, saltString, bytes);
-
     }
 
 
@@ -247,7 +259,7 @@ public class JWE {
 
             JWE jwe = new JWE();
             jwe.getKeyStorage()
-                    .setEncryptionKey(aesKey);
+                    .setDecryptionKey(aesKey);
 
             jwe.verifyAndDecodeJwe(encodedJwe);
             return jwe.getContent();
@@ -258,11 +270,7 @@ public class JWE {
 
     public static String decryptUTF8(String password, String saltString, String encodedJwe) {
         byte[] payload = decrypt(password, saltString, encodedJwe);
-        try {
-            return new String(payload, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return new String(payload, StandardCharsets.UTF_8);
     }
 
 }

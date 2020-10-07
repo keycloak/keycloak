@@ -160,7 +160,7 @@ public class RealmsResource {
         if (client.getRootUrl() != null && (client.getBaseUrl() == null || client.getBaseUrl().isEmpty())) {
             targetUri = KeycloakUriBuilder.fromUri(client.getRootUrl()).build();
         } else {
-            targetUri = KeycloakUriBuilder.fromUri(ResolveRelative.resolveRelativeUri(session.getContext().getUri().getRequestUri(), client.getRootUrl(), client.getBaseUrl())).build();
+            targetUri = KeycloakUriBuilder.fromUri(ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), client.getBaseUrl())).build();
         }
 
         return Response.seeOther(targetUri).build();
@@ -207,7 +207,9 @@ public class RealmsResource {
     public Object getAccountService(final @PathParam("realm") String name) {
         RealmModel realm = init(name);
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
-        return new AccountLoader().getAccountService(session, event);
+        AccountLoader accountLoader = new AccountLoader(session, event);
+        ResteasyProviderFactory.getInstance().injectProperties(accountLoader);
+        return accountLoader;
     }
 
     @Path("{realm}")

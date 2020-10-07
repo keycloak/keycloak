@@ -17,7 +17,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.NotFoundException;
+import javax.ws.rs.NotFoundException;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -50,7 +50,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * @resource Groups
@@ -97,13 +100,27 @@ public class GroupResource {
      */
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public void updateGroup(GroupRepresentation rep) {
+    public Response updateGroup(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
 
+        boolean exists = siblings().filter(s -> !Objects.equals(s.getId(), group.getId()))
+                .anyMatch(s -> Objects.equals(s.getName(), rep.getName()));
+        if (exists) {
+            return ErrorResponse.exists("Sibling group named '" + rep.getName() + "' already exists.");
+        }
+        
         updateGroup(rep, group);
         adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
-
-
+        
+        return Response.noContent().build();
+    }
+    
+    private Stream<GroupModel> siblings() {
+        if (group.getParentId() == null) {
+            return realm.getTopLevelGroupsStream();
+        } else {
+            return group.getParent().getSubGroupsStream();
+        }
     }
 
     @DELETE
@@ -129,12 +146,6 @@ public class GroupResource {
     public Response addChild(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
 
-        for (GroupModel group : group.getSubGroups()) {
-            if (group.getName().equals(rep.getName())) {
-                return ErrorResponse.exists("Parent already contains subgroup named '" + rep.getName() + "'");
-            }
-        }
-
         Response.ResponseBuilder builder = Response.status(204);
         GroupModel child = null;
         if (rep.getId() != null) {
@@ -142,9 +153,10 @@ public class GroupResource {
             if (child == null) {
                 throw new NotFoundException("Could not find child by id");
             }
+            realm.moveGroup(child, group);
             adminEvent.operation(OperationType.UPDATE);
         } else {
-            child = realm.createGroup(rep.getName());
+            child = realm.createGroup(rep.getName(), group);
             updateGroup(rep, child);
             URI uri = session.getContext().getUri().getBaseUriBuilder()
                                            .path(session.getContext().getUri().getMatchedURIs().get(2))
@@ -154,7 +166,6 @@ public class GroupResource {
             adminEvent.operation(OperationType.CREATE);
 
         }
-        realm.moveGroup(child, group);
         adminEvent.resourcePath(session.getContext().getUri()).representation(rep).success();
 
         GroupRepresentation childRep = ModelToRepresentation.toGroupHierarchy(child, true);
@@ -194,6 +205,9 @@ public class GroupResource {
      *
      * @param firstResult Pagination offset
      * @param maxResults Maximum results size (defaults to 100)
+     * @param briefRepresentation Only return basic information (only guaranteed to return id, username, created, first and last name,
+     *  email, enabled state, email verification state, federation link, and access.
+     *  Note that it means that namely user attributes, required actions, and not before are not returned.)
      * @return
      */
     @GET
@@ -201,18 +215,23 @@ public class GroupResource {
     @Path("members")
     @Produces(MediaType.APPLICATION_JSON)
     public List<UserRepresentation> getMembers(@QueryParam("first") Integer firstResult,
-                                               @QueryParam("max") Integer maxResults) {
+                                               @QueryParam("max") Integer maxResults,
+                                               @QueryParam("briefRepresentation") Boolean briefRepresentation) {
         this.auth.groups().requireViewMembers(group);
-
-
+        
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
+        boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
 
         List<UserRepresentation> results = new ArrayList<UserRepresentation>();
         List<UserModel> userModels = session.users().getGroupMembers(realm, group, firstResult, maxResults);
 
         for (UserModel user : userModels) {
-            results.add(ModelToRepresentation.toRepresentation(session, realm, user));
+            UserRepresentation userRep = briefRepresentationB
+                    ? ModelToRepresentation.toBriefRepresentation(user)
+                    : ModelToRepresentation.toRepresentation(session, realm, user);
+
+            results.add(userRep);
         }
         return results;
     }

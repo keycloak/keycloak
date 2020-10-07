@@ -64,7 +64,7 @@ public class ComponentEntity {
     protected String subType;
 
     @OneToMany(fetch = FetchType.LAZY, cascade ={ CascadeType.ALL}, orphanRemoval = true, mappedBy = "component")
-    Set<ComponentConfigEntity> componentConfigs = new HashSet<>();
+    Set<ComponentConfigEntity> componentConfigs;
 
     public String getId() {
         return id;
@@ -123,6 +123,9 @@ public class ComponentEntity {
     }
 
     public Set<ComponentConfigEntity> getComponentConfigs() {
+        if (componentConfigs == null) {
+            componentConfigs = new HashSet<>();
+        }
         return componentConfigs;
     }
 

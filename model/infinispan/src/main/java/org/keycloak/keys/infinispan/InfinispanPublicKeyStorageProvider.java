@@ -17,7 +17,6 @@
 
 package org.keycloak.keys.infinispan;
 
-import java.security.PublicKey;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -30,6 +29,7 @@ import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.models.KeycloakSession;
@@ -127,11 +127,20 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
 
 
     @Override
-    public PublicKey getPublicKey(String modelKey, String kid, PublicKeyLoader loader) {
+    public KeyWrapper getPublicKey(String modelKey, String kid, PublicKeyLoader loader) {
+        return getPublicKey(modelKey, kid, null, loader);
+    }
+
+    @Override
+    public KeyWrapper getFirstPublicKey(String modelKey, String algorithm, PublicKeyLoader loader) {
+        return getPublicKey(modelKey, null, algorithm, loader);
+    }
+
+    private KeyWrapper getPublicKey(String modelKey, String kid, String algorithm, PublicKeyLoader loader) {
         // Check if key is in cache
         PublicKeysEntry entry = keys.get(modelKey);
         if (entry != null) {
-            PublicKey publicKey = getPublicKey(entry.getCurrentKeys(), kid);
+            KeyWrapper publicKey = algorithm != null ? getPublicKeyByAlg(entry.getCurrentKeys(), algorithm) : getPublicKey(entry.getCurrentKeys(), kid);
             if (publicKey != null) {
                 return publicKey;
             }
@@ -157,13 +166,13 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
                 entry = task.get();
 
                 // Computation finished. Let's see if key is available
-                PublicKey publicKey = getPublicKey(entry.getCurrentKeys(), kid);
+                KeyWrapper publicKey = algorithm != null ? getPublicKeyByAlg(entry.getCurrentKeys(), algorithm) : getPublicKey(entry.getCurrentKeys(), kid);
                 if (publicKey != null) {
                     return publicKey;
                 }
 
             } catch (ExecutionException ee) {
-                throw new RuntimeException("Error when loading public keys", ee);
+                throw new RuntimeException("Error when loading public keys: " + ee.getMessage(), ee);
             } catch (InterruptedException ie) {
                 throw new RuntimeException("Error. Interrupted when loading public keys", ie);
             } finally {
@@ -182,7 +191,7 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
         return null;
     }
 
-    private PublicKey getPublicKey(Map<String, PublicKey> publicKeys, String kid) {
+    private KeyWrapper getPublicKey(Map<String, KeyWrapper> publicKeys, String kid) {
         // Backwards compatibility
         if (kid == null && !publicKeys.isEmpty()) {
             return publicKeys.values().iterator().next();
@@ -191,12 +200,17 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
         }
     }
 
+    private KeyWrapper getPublicKeyByAlg(Map<String, KeyWrapper> publicKeys, String algorithm) {
+        if (algorithm == null) return null;
+        for(KeyWrapper keyWrapper : publicKeys.values())
+            if (algorithm.equals(keyWrapper.getAlgorithm())) return keyWrapper;
+        return null;
+    }
 
     @Override
     public void close() {
 
     }
-
 
     private class WrapperCallable implements Callable<PublicKeysEntry> {
 
@@ -218,7 +232,7 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
             // Check again if we are allowed to send request. There is a chance other task was already finished and removed from tasksInProgress in the meantime.
             if (currentTime > lastRequestTime + minTimeBetweenRequests) {
 
-                Map<String, PublicKey> publicKeys = delegate.loadKeys();
+                Map<String, KeyWrapper> publicKeys = delegate.loadKeys();
 
                 if (log.isDebugEnabled()) {
                     log.debugf("Public keys retrieved successfully for model %s. New kids: %s", modelKey, publicKeys.keySet().toString());

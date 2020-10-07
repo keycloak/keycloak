@@ -41,6 +41,7 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapperFactory;
+import org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapperFactory;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.utils.MediaType;
 
@@ -132,12 +133,27 @@ public class TestLDAPResource {
         LDAPObject defaultGroup1 = LDAPTestUtils.createLDAPGroup(session, realm, ldapModel, "defaultGroup1", descriptionAttrName, "Default Group1 - description");
         LDAPObject defaultGroup11 = LDAPTestUtils.createLDAPGroup(session, realm, ldapModel, "defaultGroup11");
         LDAPObject defaultGroup12 = LDAPTestUtils.createLDAPGroup(session, realm, ldapModel, "defaultGroup12", descriptionAttrName, "Default Group12 - description");
+        LDAPTestUtils.createLDAPGroup(session, realm, ldapModel, "Team 2016/2017", descriptionAttrName, "A group with slashes in the name");
+        LDAPObject teamChild20182019 = LDAPTestUtils.createLDAPGroup(session, realm, ldapModel, "Team Child 2018/2019", descriptionAttrName, "A child group with slashes in the name");
+        LDAPObject teamSubChild20202021 = LDAPTestUtils.createLDAPGroup(session, realm, ldapModel, "Team SubChild 2020/2021", descriptionAttrName, "A sub child group with slashes in the name");
+        LDAPObject defaultGroup13 = LDAPTestUtils.createLDAPGroup(session, realm, ldapModel, "defaultGroup13", descriptionAttrName, "Default Group13 - description");
+        LDAPObject teamSubChild20222023 = LDAPTestUtils.createLDAPGroup(session, realm, ldapModel, "Team SubChild 2022/2023/A/B/C/D/E", descriptionAttrName, "A sub child group with slashes in the name");
+        LDAPObject defaultGroup14 = LDAPTestUtils.createLDAPGroup(session, realm, ldapModel, "defaultGroup14", descriptionAttrName, "Default Group14 - description");
+        LDAPObject teamRoot20242025 = LDAPTestUtils.createLDAPGroup(session, realm, ldapModel, "Team Root 2024/2025/A/B/C/D", descriptionAttrName, "A sub child group with slashes in the name");
+        LDAPObject defaultGroup15 = LDAPTestUtils.createLDAPGroup(session, realm, ldapModel, "defaultGroup15", descriptionAttrName, "Default Group15 - description");
+        LDAPObject teamSubChild20262027 = LDAPTestUtils.createLDAPGroup(session, realm, ldapModel, "Team SubChild 2026/2027", descriptionAttrName, "A sub child group with slashes in the name");
 
-        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group11, false);
-        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group12, true);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group11);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group12);
 
-        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", defaultGroup1, defaultGroup11, false);
-        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", defaultGroup1, defaultGroup12, true);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", defaultGroup1, defaultGroup11);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", defaultGroup1, defaultGroup12);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", defaultGroup1, teamChild20182019);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", teamChild20182019, teamSubChild20202021);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", defaultGroup13, teamSubChild20222023);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", teamSubChild20222023, defaultGroup14);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", teamRoot20242025, defaultGroup15);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", defaultGroup15, teamSubChild20262027);
 
         // Sync LDAP groups to Keycloak DB
         ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ldapModel, "groupsMapper");
@@ -163,6 +179,51 @@ public class TestLDAPResource {
         LDAPTestUtils.updateLDAPPassword(ldapFedProvider, james, "Password1");
     }
 
+    /**
+     * Prepare groups LDAP tests. Creates some LDAP mappers as well as some built-in GRoups and users in LDAP
+     */
+    @POST
+    @Path("/configure-roles")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void prepareRolesLDAPTest() {
+        ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(session, realm);
+        LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+
+        // Add role mapper
+        LDAPTestUtils.addOrUpdateRoleMapper(realm, ldapModel, LDAPGroupMapperMode.LDAP_ONLY);
+
+        // Remove all LDAP groups and users
+        LDAPTestUtils.removeAllLDAPGroups(session, realm, ldapModel, "rolesMapper");
+        LDAPTestUtils.removeAllLDAPUsers(ldapFedProvider, realm);
+
+        // Add some LDAP users for testing
+        LDAPObject john = LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "johnkeycloak", "John", "Doe", "john@email.org", null, "1234");
+        LDAPTestUtils.updateLDAPPassword(ldapFedProvider, john, "Password1");
+        LDAPObject mary = LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "marykeycloak", "Mary", "Kelly", "mary@email.org", null, "5678");
+        LDAPTestUtils.updateLDAPPassword(ldapFedProvider, mary, "Password1");
+        LDAPObject rob = LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "robkeycloak", "Rob", "Brown", "rob@email.org", null, "8910");
+        LDAPTestUtils.updateLDAPPassword(ldapFedProvider, rob, "Password1");
+        LDAPObject james = LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "jameskeycloak", "James", "Brown", "james@email.org", null, "8910");
+        LDAPTestUtils.updateLDAPPassword(ldapFedProvider, james, "Password1");
+
+         // Add some groups for testing
+        LDAPObject group1 = LDAPTestUtils.createLDAPGroup("rolesMapper", session, realm, ldapModel, "group1");
+        LDAPObject group2 = LDAPTestUtils.createLDAPGroup("rolesMapper", session, realm, ldapModel, "group2");
+        LDAPObject group3 = LDAPTestUtils.createLDAPGroup("rolesMapper", session, realm, ldapModel, "group3");
+
+        // add the users to the groups
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, john);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, mary);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, rob);
+
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group2, john);
+        LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group2, mary);
+
+        // Sync LDAP groups to Keycloak DB roles
+        ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ldapModel, "rolesMapper");
+        new RoleLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
+    }
 
     /**
      * Remove specified user directly just from the LDAP server

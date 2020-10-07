@@ -52,6 +52,16 @@ public class ProviderConfigProperty {
     public static final String CLIENT_LIST_TYPE="ClientList";
     public static final String PASSWORD="Password";
 
+    /**
+     * textarea field
+     */
+    public static final String TEXT_TYPE="Text";
+
+    /**
+     * Configure multiple (key, value) pairs
+     */
+    public static final String MAP_TYPE ="Map";
+
     protected String name;
     protected String label;
     protected String helpText;

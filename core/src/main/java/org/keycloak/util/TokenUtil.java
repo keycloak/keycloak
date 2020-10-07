@@ -23,6 +23,8 @@ import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwe.JWEKeyStorage;
+import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
+import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.JsonWebToken;
@@ -38,12 +40,19 @@ public class TokenUtil {
 
     public static final String TOKEN_TYPE_BEARER = "Bearer";
 
+    public static final String TOKEN_TYPE_KEYCLOAK_ID = "Serialized-ID";
+
     public static final String TOKEN_TYPE_ID = "ID";
 
     public static final String TOKEN_TYPE_REFRESH = "Refresh";
 
     public static final String TOKEN_TYPE_OFFLINE = "Offline";
 
+    public static final String TOKEN_TYPE_LOGOUT = "Logout";
+
+    public static final String TOKEN_BACKCHANNEL_LOGOUT_EVENT = "http://schemas.openid.net/event/backchannel-logout";
+    
+    public static final String TOKEN_BACKCHANNEL_LOGOUT_EVENT_REVOKE_OFFLINE_TOKENS = "revoke_offline_access";
 
     public static String attachOIDCScope(String scopeParam) {
         if (scopeParam == null || scopeParam.isEmpty()) {
@@ -172,4 +181,34 @@ public class TokenUtil {
         }
     }
 
+    public static String jweKeyEncryptionEncode(Key encryptionKEK, byte[] contentBytes, String algAlgorithm, String encAlgorithm, String kid, JWEAlgorithmProvider jweAlgorithmProvider, JWEEncryptionProvider jweEncryptionProvider) throws JWEException {
+        JWEHeader jweHeader = new JWEHeader(algAlgorithm, encAlgorithm, null, kid);
+        return jweKeyEncryptionEncode(encryptionKEK, contentBytes, jweHeader, jweAlgorithmProvider, jweEncryptionProvider);
+    }
+
+    private static String jweKeyEncryptionEncode(Key encryptionKEK, byte[] contentBytes, JWEHeader jweHeader, JWEAlgorithmProvider jweAlgorithmProvider, JWEEncryptionProvider jweEncryptionProvider) throws JWEException {
+        JWE jwe = new JWE()
+                .header(jweHeader)
+                .content(contentBytes);
+        jwe.getKeyStorage()
+                .setEncryptionKey(encryptionKEK);
+        String encodedContent = jwe.encodeJwe(jweAlgorithmProvider, jweEncryptionProvider);
+        return encodedContent;
+    }
+
+    public static byte[] jweKeyEncryptionVerifyAndDecode(Key decryptionKEK, String encodedContent) throws JWEException {
+        JWE jwe = new JWE();
+        jwe.getKeyStorage()
+            .setDecryptionKey(decryptionKEK);
+        jwe.verifyAndDecodeJwe(encodedContent);
+        return jwe.getContent();
+    }
+
+    public static byte[] jweKeyEncryptionVerifyAndDecode(Key decryptionKEK, String encodedContent, JWEAlgorithmProvider algorithmProvider, JWEEncryptionProvider encryptionProvider) throws JWEException {
+        JWE jwe = new JWE();
+        jwe.getKeyStorage()
+            .setDecryptionKey(decryptionKEK);
+        jwe.verifyAndDecodeJwe(encodedContent, algorithmProvider, encryptionProvider);
+        return jwe.getContent();
+    }
 }

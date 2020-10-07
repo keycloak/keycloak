@@ -21,20 +21,17 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.jpa.entities.ClientAttributeEntity;
 import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.models.jpa.entities.ClientScopeClientMappingEntity;
-import org.keycloak.models.jpa.entities.ClientScopeEntity;
-import org.keycloak.models.jpa.entities.ClientScopeRoleMappingEntity;
 import org.keycloak.models.jpa.entities.ProtocolMapperEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -44,11 +41,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -106,6 +104,16 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     @Override
     public void setEnabled(boolean enabled) {
         entity.setEnabled(enabled);
+    }
+
+    @Override
+    public boolean isAlwaysDisplayInConsole() {
+        return entity.isAlwaysDisplayInConsole();
+    }
+
+    @Override
+    public void setAlwaysDisplayInConsole(boolean alwaysDisplayInConsole) {
+        entity.setAlwaysDisplayInConsole(alwaysDisplayInConsole);
     }
 
     @Override
@@ -230,29 +238,16 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     }
 
     @Override
-    public Set<RoleModel> getRealmScopeMappings() {
-        Set<RoleModel> roleMappings = getScopeMappings();
-
-        Set<RoleModel> appRoles = new HashSet<>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof RealmModel) {
-                if (((RealmModel) container).getId().equals(realm.getId())) {
-                    appRoles.add(role);
-                }
-            }
-        }
-
-        return appRoles;
+    public Stream<RoleModel> getRealmScopeMappingsStream() {
+        return getScopeMappingsStream().filter(r -> RoleUtils.isRealmRole(r, realm));
     }
 
     @Override
-    public Set<RoleModel> getScopeMappings() {
+    public Stream<RoleModel> getScopeMappingsStream() {
         return getEntity().getScopeMapping().stream()
                 .map(RoleEntity::getId)
                 .map(realm::getRoleById)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+                .filter(Objects::nonNull);
     }
 
     @Override
@@ -302,31 +297,63 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public void setAttribute(String name, String value) {
-        entity.getAttributes().put(name, value);
+        for (ClientAttributeEntity attr : entity.getAttributes()) {
+            if (attr.getName().equals(name)) {
+                attr.setValue(value);
+                return;
+            }
+        }
 
+        ClientAttributeEntity attr = new ClientAttributeEntity();
+        attr.setName(name);
+        attr.setValue(value);
+        attr.setClient(entity);
+        em.persist(attr);
+        entity.getAttributes().add(attr);
     }
 
     @Override
     public void removeAttribute(String name) {
-        entity.getAttributes().remove(name);
+        Iterator<ClientAttributeEntity> it = entity.getAttributes().iterator();
+        while (it.hasNext()) {
+            ClientAttributeEntity attr = it.next();
+            if (attr.getName().equals(name)) {
+                it.remove();
+                em.remove(attr);
+            }
+        }
     }
 
     @Override
     public String getAttribute(String name) {
-        return entity.getAttributes().get(name);
+        return getAttributes().get(name);
     }
 
     @Override
     public Map<String, String> getAttributes() {
-        Map<String, String> copy = new HashMap<>();
-        copy.putAll(entity.getAttributes());
-        return copy;
+        Map<String, String> attrs = new HashMap<>();
+        for (ClientAttributeEntity attr : entity.getAttributes()) {
+            attrs.put(attr.getName(), attr.getValue());
+        }
+        return attrs;
     }
 
     @Override
     public void addClientScope(ClientScopeModel clientScope, boolean defaultScope) {
         if (getClientScopes(defaultScope, false).containsKey(clientScope.getName())) return;
 
+        persist(clientScope, defaultScope);
+    }
+
+    @Override
+    public void addClientScopes(Set<ClientScopeModel> clientScopes, boolean defaultScope) {
+        Map<String, ClientScopeModel> existingClientScopes = getClientScopes(defaultScope, false);
+        clientScopes.stream()
+                .filter(clientScope -> !existingClientScopes.containsKey(clientScope.getName()))
+                .forEach(clientScope -> persist(clientScope, defaultScope));
+    }
+
+    private void persist(ClientScopeModel clientScope, boolean defaultScope) {
         ClientScopeClientMappingEntity entity = new ClientScopeClientMappingEntity();
         entity.setClientScope(ClientScopeAdapter.toClientScopeEntity(clientScope, em));
         entity.setClient(getEntity());
@@ -613,56 +640,54 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public RoleModel getRole(String name) {
-        return session.realms().getClientRole(realm, this, name);
+        return session.roles().getClientRole(this, name);
     }
 
     @Override
     public RoleModel addRole(String name) {
-        return session.realms().addClientRole(realm, this, name);
+        return session.roles().addClientRole(this, name);
     }
 
     @Override
     public RoleModel addRole(String id, String name) {
-        return session.realms().addClientRole(realm, this, id, name);
+        return session.roles().addClientRole(this, id, name);
     }
 
     @Override
     public boolean removeRole(RoleModel roleModel) {
-        return session.realms().removeRole(realm, roleModel);
+        return session.roles().removeRole(roleModel);
     }
 
     @Override
-    public Set<RoleModel> getRoles() {
-        return session.realms().getClientRoles(realm, this);
+    public Stream<RoleModel> getRolesStream() {
+        return session.roles().getClientRolesStream(this, null, null);
+    }
+
+    @Override
+    public Stream<RoleModel> getRolesStream(Integer first, Integer max) {
+        return session.roles().getClientRolesStream(this, first, max);
+    }
+
+    @Override
+    public Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
+        return session.roles().searchForClientRolesStream(this, search, first, max);
     }
 
     @Override
     public boolean hasScope(RoleModel role) {
         if (isFullScopeAllowed()) return true;
-        Set<RoleModel> roles = getScopeMappings();
-        if (roles.contains(role)) return true;
 
-        for (RoleModel mapping : roles) {
-            if (mapping.hasRole(role)) return true;
-        }
-        roles = getRoles();
-        if (roles.contains(role)) return true;
+        if (RoleUtils.hasRole(getScopeMappingsStream(), role))
+            return true;
 
-        for (RoleModel mapping : roles) {
-            if (mapping.hasRole(role)) return true;
-        }
-        return false;
+        return RoleUtils.hasRole(getRolesStream(), role);
     }
 
     @Override
-    public List<String> getDefaultRoles() {
+    public Stream<String> getDefaultRolesStream() {
         Collection<RoleEntity> entities = entity.getDefaultRoles();
-        List<String> roles = new ArrayList<String>();
-        if (entities == null) return roles;
-        for (RoleEntity entity : entities) {
-            roles.add(entity.getName());
-        }
-        return roles;
+        if (entities == null) return Stream.empty();
+        return entities.stream().map(RoleEntity::getName);
     }
 
     @Override

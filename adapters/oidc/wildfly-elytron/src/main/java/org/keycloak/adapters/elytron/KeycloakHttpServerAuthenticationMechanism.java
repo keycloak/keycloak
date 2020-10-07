@@ -18,9 +18,6 @@
 
 package org.keycloak.adapters.elytron;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 import javax.security.auth.callback.CallbackHandler;
@@ -36,7 +33,6 @@ import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthOutcome;
 import org.keycloak.adapters.spi.UserSessionManagement;
 import org.wildfly.security.http.HttpAuthenticationException;
-import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.HttpServerRequest;
 import org.wildfly.security.http.Scope;
@@ -137,25 +133,7 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
 
         nodesRegistrationManagement.tryRegister(httpFacade.getDeployment());
 
-        PreAuthActionsHandler preActions = new PreAuthActionsHandler(new UserSessionManagement() {
-            @Override
-            public void logoutAll() {
-                Collection<String> sessions = httpFacade.getScopeIds(Scope.SESSION);
-                logoutHttpSessions(new ArrayList<>(sessions));
-            }
-
-            @Override
-            public void logoutHttpSessions(List<String> ids) {
-                for (String id : ids) {
-                    HttpScope session = httpFacade.getScope(Scope.SESSION, id);
-
-                    if (session != null) {
-                        session.invalidate();
-                    }
-                }
-
-            }
-        }, deploymentContext, httpFacade);
+        PreAuthActionsHandler preActions = new PreAuthActionsHandler(UserSessionManagement.class.cast(httpFacade.getTokenStore()), deploymentContext, httpFacade);
 
         return preActions.handleRequest();
     }

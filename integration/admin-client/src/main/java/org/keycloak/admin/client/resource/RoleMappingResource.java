@@ -34,12 +34,12 @@ import javax.ws.rs.core.MediaType;
 public interface RoleMappingResource {
 
     @GET
-    public MappingsRepresentation getAll();
+    MappingsRepresentation getAll();
 
     @Path("realm")
-    public RoleScopeResource realmLevel();
+    RoleScopeResource realmLevel();
 
     @Path("clients/{clientUUID}")
-    public RoleScopeResource clientLevel(@PathParam("clientUUID") String clientUUID);
+    RoleScopeResource clientLevel(@PathParam("clientUUID") String clientUUID);
 
 }

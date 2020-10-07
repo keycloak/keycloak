@@ -21,10 +21,12 @@ import org.keycloak.representations.idm.RoleRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 
@@ -36,20 +38,24 @@ import java.util.List;
 public interface RoleScopeResource {
 
     @GET
-    public List<RoleRepresentation> listAll();
+    List<RoleRepresentation> listAll();
 
     @GET
     @Path("available")
-    public List<RoleRepresentation> listAvailable();
+    List<RoleRepresentation> listAvailable();
 
     @GET
     @Path("composite")
-    public List<RoleRepresentation> listEffective();
+    List<RoleRepresentation> listEffective();
+    
+    @GET
+    @Path("composite")
+    List<RoleRepresentation> listEffective(@QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation);
 
     @POST
-    public void add(List<RoleRepresentation> rolesToAdd);
+    void add(List<RoleRepresentation> rolesToAdd);
 
     @DELETE
-    public void remove(List<RoleRepresentation> rolesToRemove);
+    void remove(List<RoleRepresentation> rolesToRemove);
 
 }

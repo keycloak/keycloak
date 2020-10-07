@@ -17,25 +17,8 @@
 
 package org.keycloak.authentication.requiredactions;
 
-import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
-import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
-import org.keycloak.events.Details;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventType;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.FormMessage;
-import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.AttributeFormDataProcessor;
-import org.keycloak.services.validation.Validation;
-
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import java.util.List;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

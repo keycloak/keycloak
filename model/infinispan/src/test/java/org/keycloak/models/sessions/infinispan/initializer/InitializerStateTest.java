@@ -19,7 +19,6 @@ package org.keycloak.models.sessions.infinispan.initializer;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.models.cache.infinispan.UserCacheSession;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionsLoaderContext;
 import org.keycloak.storage.CacheableStorageProviderModel;
 
@@ -35,16 +34,16 @@ public class InitializerStateTest {
 
     @Test
     public void testOfflineLoaderContext() {
-        OfflinePersistentUserSessionLoaderContext ctx = new OfflinePersistentUserSessionLoaderContext(28, 5);
+        OfflinePersistentLoaderContext ctx = new OfflinePersistentLoaderContext(28, 5);
         Assert.assertEquals(ctx.getSegmentsCount(), 6);
 
-        ctx = new OfflinePersistentUserSessionLoaderContext(19, 5);
+        ctx = new OfflinePersistentLoaderContext(19, 5);
         Assert.assertEquals(ctx.getSegmentsCount(), 4);
 
-        ctx = new OfflinePersistentUserSessionLoaderContext(20, 5);
+        ctx = new OfflinePersistentLoaderContext(20, 5);
         Assert.assertEquals(ctx.getSegmentsCount(), 4);
 
-        ctx = new OfflinePersistentUserSessionLoaderContext(21, 5);
+        ctx = new OfflinePersistentLoaderContext(21, 5);
         Assert.assertEquals(ctx.getSegmentsCount(), 5);
     }
 
@@ -78,28 +77,28 @@ public class InitializerStateTest {
 
     @Test
     public void testComputationState() {
-        OfflinePersistentUserSessionLoaderContext ctx = new OfflinePersistentUserSessionLoaderContext(28, 5);
+        OfflinePersistentLoaderContext ctx = new OfflinePersistentLoaderContext(28, 5);
         Assert.assertEquals(ctx.getSegmentsCount(), 6);
 
         InitializerState state = new InitializerState(ctx.getSegmentsCount());
 
         Assert.assertFalse(state.isFinished());
-        List<Integer> segments = state.getUnfinishedSegments(3);
+        List<Integer> segments = state.getSegmentsToLoad(0, 3);
         assertContains(segments, 3, 0, 1, 2);
 
         state.markSegmentFinished(1);
         state.markSegmentFinished(2);
-        segments = state.getUnfinishedSegments(4);
-        assertContains(segments, 4, 0, 3, 4, 5);
+        segments = state.getSegmentsToLoad(0, 3);
+        assertContains(segments, 1, 0);
 
         state.markSegmentFinished(0);
         state.markSegmentFinished(3);
-        segments = state.getUnfinishedSegments(4);
+        segments = state.getSegmentsToLoad(4, 4);
         assertContains(segments, 2, 4, 5);
 
         state.markSegmentFinished(4);
         state.markSegmentFinished(5);
-        segments = state.getUnfinishedSegments(4);
+        segments = state.getSegmentsToLoad(4, 4);
         Assert.assertTrue(segments.isEmpty());
         Assert.assertTrue(state.isFinished());
     }

@@ -31,14 +31,10 @@ import org.keycloak.testsuite.broker.AbstractBaseBrokerTest;
 import org.keycloak.testsuite.broker.BrokerConfiguration;
 import org.keycloak.testsuite.broker.KcOidcBrokerConfiguration;
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
-import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.testsuite.util.WaitUtils;
-import org.openqa.selenium.WebElement;
 
 import javax.ws.rs.core.Response;
 
-import java.util.Collections;
 import java.util.List;
 
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
@@ -49,9 +45,6 @@ import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class AccountBrokerTest extends AbstractBaseBrokerTest {
-
-    @Page
-    protected LoginPage loginPage;
 
     @Page
     protected AccountFederatedIdentityPage identityPage;
@@ -82,30 +75,34 @@ public class AccountBrokerTest extends AbstractBaseBrokerTest {
         log.debug("adding identity provider to realm " + bc.consumerRealmName());
 
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
-        realm.identityProviders().create(bc.setUpIdentityProvider(suiteContext)).close();
+        realm.identityProviders().create(bc.setUpIdentityProvider()).close();
         realm.identityProviders().get(bc.getIDPAlias());
     }
 
     @Before
     public void addClients() {
-        List<ClientRepresentation> clients = bc.createProviderClients(suiteContext);
+        List<ClientRepresentation> clients = bc.createProviderClients();
         if (clients != null) {
             RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
             for (ClientRepresentation client : clients) {
                 log.debug("adding client " + client.getName() + " to realm " + bc.providerRealmName());
 
                 // Remove default client scopes for this test
-                client.setDefaultClientScopes(Collections.emptyList());
+//                client.setDefaultClientScopes(Collections.emptyList());
+
+                fixAuthServerHostAndPortForClientRepresentation(client);
 
                 providerRealm.clients().create(client).close();
             }
         }
 
-        clients = bc.createConsumerClients(suiteContext);
+        clients = bc.createConsumerClients();
         if (clients != null) {
             RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
             for (ClientRepresentation client : clients) {
                 log.debug("adding client " + client.getName() + " to realm " + bc.consumerRealmName());
+
+                fixAuthServerHostAndPortForClientRepresentation(client);
 
                 consumerRealm.clients().create(client).close();
             }
@@ -152,7 +149,7 @@ public class AccountBrokerTest extends AbstractBaseBrokerTest {
         Assert.assertEquals(1, identities.size());
 
         Assert.assertEquals("kc-oidc-idp", identities.get(0).getProvider());
-        Assert.assertEquals("user@localhost.com", identities.get(0).getSubject());
+        Assert.assertEquals("testuser", identities.get(0).getSubject());
         Assert.assertEquals("remove-link-kc-oidc-idp", identities.get(0).getAction().getAttribute("id"));
 
         identities.get(0).getAction().click();

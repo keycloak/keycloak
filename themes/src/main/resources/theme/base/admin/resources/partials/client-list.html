@@ -1,4 +1,5 @@
-<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2" ng-init="init()">
+    
     <kc-tabs-clients></kc-tabs-clients>
 
     <table class="datatable table table-striped table-bordered dataTable no-footer">
@@ -8,17 +9,20 @@
                     <div class="form-inline">
                         <div class="form-group">
                             <div class="input-group">
-                            <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" data-ng-model="search.clientId" class="form-control search" onkeydown="if(event.keyCode === 13) document.getElementById('clientSearch').click()">
+                                <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" data-ng-model="query.clientId" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('clientSearch').click()">
                                 <div class="input-group-addon">
-                                    <i class="fa fa-search" id="clientSearch" data-ng-click="searchClient()"></i>
+                                    <i class="fa fa-search" id="clientSearch" data-ng-click="firstPage()"></i>
                                 </div>
                             </div>
                         </div>
-
+                        
                         <div class="pull-right" data-ng-show="access.manageClients">
                             <a id="createClient" class="btn btn-default" href="#/create/client/{{realm.realm}}">{{:: 'create' | translate}}</a>
                             <a id="importClient" class="btn btn-default" href="#/import/client/{{realm.realm}}" data-ng-show="importButton">{{:: 'import' | translate}}</a>
                         </div>
+                    </div>
+                    <div data-ng-show="!searchLoaded" class="form-inline">
+                        {{:: 'search.loading' | translate }}
                     </div>
                 </th>
             </tr>
@@ -29,25 +33,36 @@
                 <th colspan="3">{{:: 'actions' | translate}}</th>
             </tr>
         </thead>
+        <tfoot data-ng-show="clients && (clients.length >= query.max || query.first > 0)">
+            <tr>
+                <td colspan="6">
+                    <div class="table-nav">
+                        <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">{{:: 'first-page' | translate}}</button>
+                        <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">{{:: 'previous-page' | translate}}</button>
+                        <button data-ng-click="nextPage()" class="next" ng-disabled="clients.length < query.max">{{:: 'next-page' | translate}}</button>
+                    </div>
+                </td>
+            </tr>
+        </tfoot>
         <tbody>
-            <tr ng-repeat="client in clients| filter:search | orderBy:'clientId' | startFrom:(currentPage - 1) * pageSize | limitTo:pageSize">
+            <tr ng-repeat="client in clients">
                 <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></td>
                 <td translate="{{client.enabled}}"></td>
                 <td ng-class="{'text-muted': !client.baseUrl}">
-                    <a href="{{client.rootUrl}}{{client.baseUrl}}" target="_blank" data-ng-show="client.baseUrl">{{client.rootUrl}}{{client.baseUrl}}</a>
+                    <a href="{{client.rootUrl | resolveClientRootUrl}}{{client.baseUrl}}" target="_blank" data-ng-show="client.baseUrl">{{client.rootUrl | resolveClientRootUrl}}{{client.baseUrl}}</a>
                     <span data-ng-hide="client.baseUrl">{{:: 'not-defined' | translate}}</span>
                 </td>
                 <td class="kc-action-cell" kc-open="/realms/{{realm.realm}}/clients/{{client.id}}">{{:: 'edit' | translate}}</td>
                 <td class="kc-action-cell" data-ng-click="exportClient(client)">{{:: 'export' | translate}}</td>
                 <td class="kc-action-cell" data-ng-show="client.access.manage" data-ng-click="removeClient(client)">{{:: 'delete' | translate}}</td>
             </tr>
-            <tr data-ng-show="(clients | filter:search).length == 0">
-                <td class="text-muted" colspan="4" data-ng-show="search.clientId">{{:: 'no-results' | translate}}</td>
-                <td class="text-muted" colspan="4" data-ng-hide="search.clientId">{{:: 'no-clients-available' | translate}}</td>
+            <tr data-ng-show="!clients || clients.length == 0">
+                <td class="text-muted" data-ng-show="!clients" colspan="6">{{:: 'clients.instruction' | translate}}</td>
+                <td class="text-muted" data-ng-show="searchLoaded && clients.length == 0 && lastSearch != null">{{:: 'no-results' | translate}}</td>
+                <td class="text-muted" data-ng-show="searchLoaded && clients.length == 0 && lastSearch == null">{{:: 'no-clients-available' | translate}}</td>
             </tr>
         </tbody>
     </table>
-    <kc-paging current-page='currentPage' number-of-pages='numberOfPages' current-page-input='currentPageInput'></kc-paging>
 </div>
 
 <kc-menu></kc-menu>

@@ -27,25 +27,43 @@ import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.test.spi.event.suite.AfterClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.logging.Logger;
+import org.junit.Assume;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainers;
 import org.keycloak.testsuite.arquillian.containers.SelfManagedAppContainerLifecycle;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
+import org.keycloak.testsuite.utils.fuse.FuseUtils;
+import org.wildfly.extras.creaper.commands.undertow.AddUndertowListener;
+import org.wildfly.extras.creaper.commands.undertow.RemoveUndertowListener;
+import org.wildfly.extras.creaper.commands.undertow.UndertowListenerType;
+import org.wildfly.extras.creaper.commands.web.AddConnector;
+import org.wildfly.extras.creaper.commands.web.AddConnectorSslConfig;
+import org.wildfly.extras.creaper.core.CommandFailedException;
 import org.wildfly.extras.creaper.core.ManagementClient;
+import org.wildfly.extras.creaper.core.online.CliException;
 import org.wildfly.extras.creaper.core.online.ManagementProtocol;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 import org.wildfly.extras.creaper.core.online.OnlineOptions;
+import org.wildfly.extras.creaper.core.online.operations.Address;
+import org.wildfly.extras.creaper.core.online.operations.OperationException;
+import org.wildfly.extras.creaper.core.online.operations.Operations;
+import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
-import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.getAuthServerContextRoot;
+import static org.keycloak.testsuite.util.ServerURLs.getAppServerContextRoot;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 /**
  *
@@ -56,46 +74,39 @@ public class AppServerTestEnricher {
     private static final Logger log = Logger.getLogger(AppServerTestEnricher.class);
 
     public static final String CURRENT_APP_SERVER = System.getProperty("app.server", "undertow");
+    public static final boolean APP_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("app.server.ssl.required", "false"));
 
     @Inject private Instance<ContainerController> containerConrollerInstance;
     @Inject private Instance<TestContext> testContextInstance;
     private TestContext testContext;
 
-    public static List<String> getAppServerQualifiers(Class testClass) {
+    public static Set<String> getAppServerQualifiers(Class testClass) {
+        Set<String> appServerQualifiers = new HashSet<>();
+
         Class<?> annotatedClass = getNearestSuperclassWithAppServerAnnotation(testClass);
 
-        if (annotatedClass == null) return null; // no @AppServerContainer annotation --> no adapter test
+        if (annotatedClass != null) {
 
-        AppServerContainer[] appServerContainers = annotatedClass.getAnnotationsByType(AppServerContainer.class);
+            AppServerContainer[] appServerContainers = annotatedClass.getAnnotationsByType(AppServerContainer.class);
 
-        List<String> appServerQualifiers = new ArrayList<>();
-        for (AppServerContainer appServerContainer : appServerContainers) {
-            appServerQualifiers.add(appServerContainer.value());
+            for (AppServerContainer appServerContainer : appServerContainers) {
+                appServerQualifiers.add(appServerContainer.value());
+            }
+
         }
+
+        for (Method method : testClass.getDeclaredMethods()) {
+            if (method.isAnnotationPresent(AppServerContainers.class)) {
+                for (AppServerContainer appServerContainer : method.getAnnotation(AppServerContainers.class).value()) {
+                    appServerQualifiers.add(appServerContainer.value());
+                }
+            }
+            if (method.isAnnotationPresent(AppServerContainer.class)) {
+                appServerQualifiers.add(method.getAnnotation(AppServerContainer.class).value());
+            }
+        }
+
         return appServerQualifiers;
-    }
-
-    public static String getAppServerContextRoot() {
-        return getAppServerContextRoot(0);
-    }
-
-    public static String getAppServerContextRoot(int clusterPortOffset) {
-        String host = System.getProperty("app.server.host", "localhost");
-
-        boolean sslRequired = Boolean.parseBoolean(System.getProperty("app.server.ssl.required"));
-
-        int port = sslRequired ? parsePort("app.server.https.port") : parsePort("app.server.http.port");
-        String scheme = sslRequired ? "https" : "http";
-
-        return String.format("%s://%s:%s", scheme, host, port + clusterPortOffset);
-    }
-
-    private static int parsePort(String property) {
-        try {
-            return Integer.parseInt(System.getProperty(property));
-        } catch (NumberFormatException ex) {
-            throw new RuntimeException("Failed to get " + property, ex);
-        }
     }
 
     public static String getAppServerBrowserContextRoot() throws MalformedURLException {
@@ -113,8 +124,8 @@ public class AppServerTestEnricher {
     public void updateTestContextWithAppServerInfo(@Observes(precedence = 1) BeforeClass event) {
         testContext = testContextInstance.get();
 
-        List<String> appServerQualifiers = getAppServerQualifiers(testContext.getTestClass());
-        if (appServerQualifiers == null) { // no adapter test
+        Set<String> appServerQualifiers = getAppServerQualifiers(testContext.getTestClass());
+        if (appServerQualifiers.isEmpty()) { // no adapter test
             log.info("\n\n" + testContext);
             return;
         }
@@ -167,10 +178,14 @@ public class AppServerTestEnricher {
     }
 
     public static OnlineManagementClient getManagementClient() {
+        return getManagementClient(200);
+    }
+
+    public static OnlineManagementClient getManagementClient(int portOffset) {
         try {
             return ManagementClient.online(OnlineOptions
                     .standalone()
-                    .hostAndPort(System.getProperty("app.server.host", "localhost"), System.getProperty("app.server","").startsWith("eap6") ? 10199 : 10190)
+                    .hostAndPort(System.getProperty("app.server.host", "localhost"), System.getProperty("app.server","").startsWith("eap6") ? 9999 + portOffset : 9990 + portOffset)
                     .protocol(System.getProperty("app.server","").startsWith("eap6") ? ManagementProtocol.REMOTE : ManagementProtocol.HTTP_REMOTING)
                     .build()
             );
@@ -194,10 +209,77 @@ public class AppServerTestEnricher {
                 log.info("Starting app server: " + testContext.getAppServerInfo().getQualifier());
                 controller.start(testContext.getAppServerInfo().getQualifier());
             }
+            if (isFuseAppServer()) {
+                FuseUtils.setUpFuse(ContainerConstants.APP_SERVER_PREFIX + CURRENT_APP_SERVER);
+            }
         }
     }
 
-    public void stopAppServer(@Observes(precedence = 1) AfterClass event) {
+    public static void enableHTTPSForManagementClient(OnlineManagementClient client) throws CommandFailedException, InterruptedException, TimeoutException, IOException, CliException, OperationException {
+        Administration administration = new Administration(client);
+        Operations operations = new Operations(client);
+
+        if(!operations.exists(Address.coreService("management").and("security-realm", "UndertowRealm"))) {
+            client.execute("/core-service=management/security-realm=UndertowRealm:add()");
+            client.execute("/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=adapter.jks");
+        }
+
+        client.execute("/system-property=javax.net.ssl.trustStore:add(value=${jboss.server.config.dir}/keycloak.truststore)");
+        client.execute("/system-property=javax.net.ssl.trustStorePassword:add(value=secret)");
+
+        if (AppServerTestEnricher.isEAP6AppServer()) {
+            if(!operations.exists(Address.subsystem("web").and("connector", "https"))) {
+                client.apply(new AddConnector.Builder("https")
+                        .protocol("HTTP/1.1")
+                        .scheme("https")
+                        .socketBinding("https")
+                        .secure(true)
+                        .build());
+
+                client.apply(new AddConnectorSslConfig.Builder("https")
+                        .password("secret")
+                        .certificateKeyFile("${jboss.server.config.dir}/adapter.jks")
+                        .build());
+
+
+                String appServerJavaHome = System.getProperty("app.server.java.home", "");
+                if (appServerJavaHome.contains("ibm")) {
+                    // Workaround for bug in IBM JDK: https://bugzilla.redhat.com/show_bug.cgi?id=1430730
+                    // Source: https://access.redhat.com/solutions/4133531
+                    client.execute("/subsystem=web/connector=https/configuration=ssl:write-attribute(name=cipher-suite, value=\"SSL_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA256,SSL_RSA_WITH_AES_128_CBC_SHA256,SSL_ECDH_ECDSA_WITH_AES_128_CBC_SHA256,SSL_ECDH_RSA_WITH_AES_128_CBC_SHA256,SSL_DHE_RSA_WITH_AES_128_CBC_SHA256,SSL_DHE_DSS_WITH_AES_128_CBC_SHA256,SSL_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA,SSL_RSA_WITH_AES_128_CBC_SHA,SSL_ECDH_ECDSA_WITH_AES_128_CBC_SHA,SSL_ECDH_RSA_WITH_AES_128_CBC_SHA,SSL_DHE_RSA_WITH_AES_128_CBC_SHA,SSL_DHE_DSS_WITH_AES_128_CBC_SHA\")");
+                }
+            }
+        } else {
+            client.apply(new RemoveUndertowListener.Builder(UndertowListenerType.HTTPS_LISTENER, "https")
+                    .forDefaultServer());
+
+            administration.reloadIfRequired();
+
+            client.apply(new AddUndertowListener.HttpsBuilder("https", "default-server", "https")
+                    .securityRealm("UndertowRealm")
+                    .build());
+        }
+
+        administration.reloadIfRequired();
+    }
+
+    public static void enableHTTPSForAppServer() throws CommandFailedException, InterruptedException, TimeoutException, IOException, CliException, OperationException {
+        try (OnlineManagementClient client = getManagementClient()) {
+            enableHTTPSForManagementClient(client);
+        }
+    }
+
+    public static void enableHTTPSForAppServer(int portOffset) throws CommandFailedException, InterruptedException, TimeoutException, IOException, CliException, OperationException {
+        try (OnlineManagementClient client = AppServerTestEnricher.getManagementClient(portOffset)) {
+            enableHTTPSForManagementClient(client);
+        }
+    }
+
+    /*
+     * For Fuse: precedence = 2 - app server has to be stopped 
+     * before AuthServerTestEnricher.afterClass is executed
+     */
+    public void stopAppServer(@Observes(precedence = 2) AfterClass event) {
         if (testContext.getAppServerInfo() == null) {
             return; // no adapter test
         }
@@ -267,7 +349,7 @@ public class AppServerTestEnricher {
     }
 
     public static boolean isTomcatAppServer() {
-        return CURRENT_APP_SERVER.equals("tomcat");
+        return CURRENT_APP_SERVER.startsWith("tomcat");
     }
 
     public static boolean isEAP6AppServer() {
@@ -286,8 +368,12 @@ public class AppServerTestEnricher {
         return CURRENT_APP_SERVER.equals("wls");
     }
 
-    public static boolean isOSGiAppServer() {
-        return CURRENT_APP_SERVER.contains("karaf") || CURRENT_APP_SERVER.contains("fuse");
+    public static boolean isFuseAppServer() {
+        return CURRENT_APP_SERVER.contains("fuse");
+    }
+
+    public static boolean isRemoteAppServer() {
+        return CURRENT_APP_SERVER.contains("remote");
     }
 
     private boolean isJBossBased() {

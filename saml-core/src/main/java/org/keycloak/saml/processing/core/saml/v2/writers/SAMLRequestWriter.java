@@ -39,6 +39,7 @@ import java.util.List;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
 
 /**
@@ -63,6 +64,7 @@ public class SAMLRequestWriter extends BaseWriter {
     public void write(AuthnRequestType request) throws ProcessingException {
         StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, JBossSAMLConstants.AUTHN_REQUEST.get(), PROTOCOL_NSURI.get());
         StaxUtil.writeNameSpace(writer, PROTOCOL_PREFIX, PROTOCOL_NSURI.get());
+        StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, ASSERTION_NSURI.get());
         StaxUtil.writeDefaultNameSpace(writer, ASSERTION_NSURI.get());
 
         // Attributes
@@ -89,7 +91,10 @@ public class SAMLRequestWriter extends BaseWriter {
         }
 
         Boolean isPassive = request.isIsPassive();
-        if (isPassive != null) {
+        // The AuthnRequest IsPassive attribute is optional and if omitted its default value is false. 
+        // Some IdPs refuse requests if the IsPassive attribute is present and set to false, so to 
+        // maximize compatibility we emit it only if it is set to true
+        if (isPassive != null && isPassive == true) {
             StaxUtil.writeAttribute(writer, JBossSAMLConstants.IS_PASSIVE.get(), isPassive.toString());
         }
 
@@ -115,7 +120,12 @@ public class SAMLRequestWriter extends BaseWriter {
 
         NameIDType issuer = request.getIssuer();
         if (issuer != null) {
-            write(issuer, new QName(ASSERTION_NSURI.get(), JBossSAMLConstants.ISSUER.get(), ASSERTION_PREFIX));
+            write(issuer, new QName(ASSERTION_NSURI.get(), JBossSAMLConstants.ISSUER.get(), ASSERTION_PREFIX), false);
+        }
+
+        SubjectType subject = request.getSubject();
+        if (subject != null) {
+            write(subject);
         }
 
         Element sig = request.getSignature();
@@ -153,6 +163,7 @@ public class SAMLRequestWriter extends BaseWriter {
         StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, JBossSAMLConstants.LOGOUT_REQUEST.get(), PROTOCOL_NSURI.get());
 
         StaxUtil.writeNameSpace(writer, PROTOCOL_PREFIX, PROTOCOL_NSURI.get());
+        StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, ASSERTION_NSURI.get());
         StaxUtil.writeDefaultNameSpace(writer, ASSERTION_NSURI.get());
 
         // Attributes
@@ -223,7 +234,8 @@ public class SAMLRequestWriter extends BaseWriter {
         }
 
         Boolean allowCreate = nameIDPolicy.isAllowCreate();
-        if (allowCreate != null) {
+        // The NameID AllowCreate attribute must not be used when using the transient NameID format.
+        if (allowCreate != null && (format == null || !NAMEID_FORMAT_TRANSIENT.get().equals(format.toASCIIString()))) {
             StaxUtil.writeAttribute(writer, JBossSAMLConstants.ALLOW_CREATE.get(), allowCreate.toString());
         }
 
@@ -254,6 +266,17 @@ public class SAMLRequestWriter extends BaseWriter {
                 StaxUtil.writeStartElement(writer, ASSERTION_PREFIX, JBossSAMLConstants.AUTHN_CONTEXT_CLASS_REF.get(), ASSERTION_NSURI.get());
                 StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, ASSERTION_NSURI.get());
                 StaxUtil.writeCharacters(writer, classRef);
+                StaxUtil.writeEndElement(writer);
+            }
+        }
+
+        List<String> authnContextDeclRef = requestedAuthnContextType.getAuthnContextDeclRef();
+
+        if (authnContextDeclRef != null && !authnContextDeclRef.isEmpty()) {
+            for (String declRef : authnContextDeclRef) {
+                StaxUtil.writeStartElement(writer, ASSERTION_PREFIX, JBossSAMLConstants.AUTHN_CONTEXT_DECL_REF.get(), ASSERTION_NSURI.get());
+                StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, ASSERTION_NSURI.get());
+                StaxUtil.writeCharacters(writer, declRef);
                 StaxUtil.writeEndElement(writer);
             }
         }

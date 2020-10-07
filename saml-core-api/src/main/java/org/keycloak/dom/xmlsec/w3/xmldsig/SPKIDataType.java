@@ -43,7 +43,7 @@ import java.util.List;
  */
 public class SPKIDataType {
 
-    protected List<Object> spkiSexpAndAny = new ArrayList<Object>();
+    protected List<Object> spkiSexpAndAny = new ArrayList<>();
 
     public void addSPKI(Object obj) {
         this.spkiSexpAndAny.add(obj);

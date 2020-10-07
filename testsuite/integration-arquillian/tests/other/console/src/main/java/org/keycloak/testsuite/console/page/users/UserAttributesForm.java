@@ -113,7 +113,9 @@ public class UserAttributesForm extends Form {
 
     public void setValues(UserRepresentation user) {
         waitUntilElement(usernameInput).is().present();
-        setUsername(user.getUsername());
+        if (user.getUsername() != null) {
+            setUsername(user.getUsername());
+        }
         setEmail(user.getEmail());
         setFirstName(user.getFirstName());
         setLastName(user.getLastName());

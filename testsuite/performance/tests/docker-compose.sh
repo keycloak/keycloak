@@ -417,14 +417,53 @@ case "$OPERATION" in
     ;;
 
     collect)
-        TIMESTAMP=`date +%s`
-        ARTIFACTS_DIR="${PROJECT_BUILD_DIRECTORY}/collected-artifacts/${DEPLOYMENT}-${TIMESTAMP}"
+        TIMESTAMP=`date -u "+%Y-%m-%d_%T_%Z"`
+        ARTIFACTS_DIR="${PROJECT_BUILD_DIRECTORY}/collected-artifacts/${DEPLOYMENT}_${TIMESTAMP}"
         SERVICES=`docker-compose -f $DOCKER_COMPOSE_FILE -p ${PROJECT_NAME} config --services`
-        echo "Collecting docker container logs."
+
+        GNUPLOT_SCRIPTS_DIR="$PROJECT_BASEDIR/src/main/gnuplot/jstat"
+        GNUPLOT_COMMON="$GNUPLOT_SCRIPTS_DIR/common.gp"
+
+        echo "Collecting service logs."
         rm -rf ${ARTIFACTS_DIR}; mkdir -p ${ARTIFACTS_DIR}
         for SERVICE in ${SERVICES}; do 
-            docker logs "${PROJECT_NAME}_${SERVICE}_1" > ${ARTIFACTS_DIR}/${SERVICE}.log 2>&1; 
-            if [[ $? != 0 ]]; then echo "ERROR collecting from: ${SERVICE}"; rm ${ARTIFACTS_DIR}/${SERVICE}.log; fi
+            mkdir -p "${ARTIFACTS_DIR}/${SERVICE}"
+            # log files & configs
+            if [[ $SERVICE =~ .*keycloak.* ]]; then 
+                docker cp "${PROJECT_NAME}_${SERVICE}_1:/opt/jboss/keycloak/standalone/configuration" "${ARTIFACTS_DIR}/${SERVICE}/configuration"
+                docker cp "${PROJECT_NAME}_${SERVICE}_1:/opt/jboss/keycloak/standalone/log" "${ARTIFACTS_DIR}/${SERVICE}/log"
+            elif [[ $SERVICE =~ .*infinispan.* ]]; then 
+                docker cp "${PROJECT_NAME}_${SERVICE}_1:/opt/jboss/infinispan-server/standalone/configuration" "${ARTIFACTS_DIR}/${SERVICE}/configuration"
+                docker cp "${PROJECT_NAME}_${SERVICE}_1:/opt/jboss/infinispan-server/standalone/log" "${ARTIFACTS_DIR}/${SERVICE}/log"
+            elif [[ $SERVICE =~ .*loadbalancer.* ]]; then 
+                docker cp "${PROJECT_NAME}_${SERVICE}_1:/opt/jboss/wildfly/standalone/configuration" "${ARTIFACTS_DIR}/${SERVICE}/configuration"
+                docker cp "${PROJECT_NAME}_${SERVICE}_1:/opt/jboss/wildfly/standalone/log" "${ARTIFACTS_DIR}/${SERVICE}/log"
+            else
+                docker logs "${PROJECT_NAME}_${SERVICE}_1" > ${ARTIFACTS_DIR}/${SERVICE}/docker.log 2>&1; 
+                if [[ $? != 0 ]]; then echo "ERROR collecting from: ${SERVICE}"; rm ${ARTIFACTS_DIR}/${SERVICE}/docker.log; fi
+            fi
+
+#             jstat charts
+            if ${JSTAT:-false}; then
+                JSTAT_DATAFILE="${ARTIFACTS_DIR}/${SERVICE}/log/jstat-gc.log"
+                if [ -f "$JSTAT_DATAFILE" ] && ${GNUPLOT:-false}; then
+                    mkdir -p "${ARTIFACTS_DIR}/${SERVICE}/jstat-charts"
+                    HTML="${ARTIFACTS_DIR}/${SERVICE}/jstat-charts/index.html"
+                    echo "<html><head><title>JStat Charts for $SERVICE</title>" > "$HTML"
+                    echo "<style>div.box{ display: -webkit-inline-box }</style></head>" >> "$HTML"
+                    echo "<body><h1>JStat Charts for $SERVICE</h1>" >> "$HTML"
+                    for GP_SCRIPT in gc-all gc-s0 gc-s1 gc-e gc-o gc-m gc-cc ; do
+                        gnuplot -e "datafile='$JSTAT_DATAFILE'" "$GNUPLOT_COMMON" "$GNUPLOT_SCRIPTS_DIR/${GP_SCRIPT}.gp" > "${ARTIFACTS_DIR}/${SERVICE}/jstat-charts/${GP_SCRIPT}.png"
+                        if [ $? == 0 ]; then 
+                            echo "<div class='box'>" >> "$HTML"
+                            echo "<b>${GP_SCRIPT}</b><br/>" >> "$HTML"
+                            echo "<a href='${GP_SCRIPT}.png'><img src='${GP_SCRIPT}.png' width='400' height='300'/></a>" >> "$HTML"
+                            echo "</div>" >> "$HTML"
+                        fi
+                    done
+                    echo "</body></html>" >> "$HTML"
+                fi
+            fi
         done
         if [ -z "$(ls -A ${ARTIFACTS_DIR})" ]; then echo "No logs were collected."; rm -rf ${ARTIFACTS_DIR}; fi
     ;;

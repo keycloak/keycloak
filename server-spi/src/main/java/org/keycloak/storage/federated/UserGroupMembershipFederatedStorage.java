@@ -18,17 +18,24 @@ package org.keycloak.storage.federated;
 
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public interface UserGroupMembershipFederatedStorage {
-    Set<GroupModel> getGroups(RealmModel realm, String userId);
+    @Deprecated
+    default Set<GroupModel> getGroups(RealmModel realm, String userId) {
+        return getGroupsStream(realm, userId).collect(Collectors.toSet());
+    }
+
+    Stream<GroupModel> getGroupsStream(RealmModel realm, String userId);
+
     void joinGroup(RealmModel realm, String userId, GroupModel group);
     void leaveGroup(RealmModel realm, String userId, GroupModel group);
     List<String> getMembership(RealmModel realm, GroupModel group, int firstResult, int max);

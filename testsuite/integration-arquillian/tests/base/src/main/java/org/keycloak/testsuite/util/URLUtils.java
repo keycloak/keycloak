@@ -2,18 +2,21 @@ package org.keycloak.testsuite.util;
 
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.ie.InternetExplorerDriver;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
 import static org.openqa.selenium.support.ui.ExpectedConditions.not;
 import static org.openqa.selenium.support.ui.ExpectedConditions.urlMatches;
 import static org.openqa.selenium.support.ui.ExpectedConditions.urlToBe;
@@ -71,7 +74,7 @@ public final class URLUtils {
     }
 
     public static boolean currentUrlEquals(String url) {
-        return urlCheck(urlToBe(url));
+        return urlCheck(urlToBe(removeDefaultPorts(url)));
     }
 
     public static boolean currentUrlDoesntEqual(String url) {
@@ -95,11 +98,11 @@ public final class URLUtils {
     }
 
     public static boolean currentUrlStartsWith(String url) {
-        return currentUrlMatches("^" + Pattern.quote(url) + ".*$");
+        return currentUrlMatches("^" + Pattern.quote(removeDefaultPorts(url)) + ".*$");
     }
 
     public static boolean currentUrlDoesntStartWith(String url) {
-        return currentUrlMatches("^(?!" + Pattern.quote(url) + ").+$");
+        return currentUrlMatches("^(?!" + Pattern.quote(removeDefaultPorts(url)) + ").+$");
     }
 
     public static boolean currentUrlMatches(String regex) {
@@ -129,6 +132,27 @@ public final class URLUtils {
             }
         }
         return true;
+    }
+
+    /**
+     * This will send POST request to specified URL with specified form parameters. It's not easily possible to "trick" web driver to send POST
+     * request with custom parameters, which are not directly available in the form.
+     *
+     * See URLUtils.sendPOSTWithWebDriver for more details
+     *
+     * @param postRequestUrl Absolute URL. It can include query parameters etc. The POST request will be send to this URL
+     * @param encodedFormParameters Encoded parameters in the form of "param1=value1&param2=value2"
+     * @return
+     */
+    public static void sendPOSTRequestWithWebDriver(String postRequestUrl, String encodedFormParameters) {
+        WebDriver driver = getCurrentDriver();
+
+        URI uri = KeycloakUriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT + "/realms/master/testing/simulate-post-request")
+                .queryParam("postRequestUrl", postRequestUrl)
+                .queryParam("encodedFormParameters", encodedFormParameters)
+                .build();
+
+        driver.navigate().to(uri.toString());
     }
 
 }

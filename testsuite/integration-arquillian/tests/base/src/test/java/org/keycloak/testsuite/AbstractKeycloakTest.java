@@ -26,7 +26,6 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
@@ -35,9 +34,11 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.KcArquillian;
@@ -51,26 +52,21 @@ import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.TestEventsLogger;
 import org.openqa.selenium.WebDriver;
-import org.wildfly.extras.creaper.commands.undertow.AddUndertowListener;
-import org.wildfly.extras.creaper.commands.undertow.RemoveUndertowListener;
-import org.wildfly.extras.creaper.commands.undertow.SslVerifyClient;
-import org.wildfly.extras.creaper.commands.undertow.UndertowListenerType;
-import org.wildfly.extras.creaper.core.CommandFailedException;
-import org.wildfly.extras.creaper.core.online.CliException;
-import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
-import org.wildfly.extras.creaper.core.online.operations.Address;
-import org.wildfly.extras.creaper.core.online.operations.OperationException;
-import org.wildfly.extras.creaper.core.online.operations.Operations;
-import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.UriBuilder;
+
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -79,15 +75,20 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeoutException;
+import java.util.Scanner;
+import java.util.function.Consumer;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
-import static org.keycloak.testsuite.auth.page.AuthRealm.ADMIN;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
+import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
 
 /**
  *
@@ -96,9 +97,6 @@ import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
 @RunWith(KcArquillian.class)
 @RunAsClient
 public abstract class AbstractKeycloakTest {
-
-    protected static final boolean AUTH_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required", "false"));
-
     protected static final String ENGLISH_LOCALE_NAME = "English";
 
     protected Logger log = Logger.getLogger(this.getClass());
@@ -131,26 +129,22 @@ public abstract class AbstractKeycloakTest {
 
     @Page
     protected Account accountPage;
+
     @Page
     protected OIDCLogin loginPage;
+
     @Page
     protected UpdatePassword updatePasswordPage;
 
     @Page
-    protected WelcomePage welcomePage;
+    protected LoginPasswordUpdatePage passwordUpdatePage;
 
-    protected UserRepresentation adminUser;
+    @Page
+    protected WelcomePage welcomePage;
 
     private PropertiesConfiguration constantsProperties;
 
     private boolean resetTimeOffset;
-
-    @BeforeClass
-    public static void setUpAuthServer() throws Exception {
-        if (AUTH_SERVER_SSL_REQUIRED) {
-            enableHTTPSForAuthServer();
-        }
-    }
 
     @Before
     public void beforeAbstractKeycloakTest() throws Exception {
@@ -160,8 +154,6 @@ public abstract class AbstractKeycloakTest {
         }
 
         getTestingClient();
-
-        adminUser = createAdminUserRepresentation();
 
         setDefaultPageUriParameters();
 
@@ -189,13 +181,8 @@ public abstract class AbstractKeycloakTest {
     }
 
     public void reconnectAdminClient() throws Exception {
-        if (adminClient != null && !adminClient.isClosed()) {
-            adminClient.close();
-        }
-
-        String authServerContextRoot = suiteContext.getAuthServerInfo().getContextRoot().toString();
-        adminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(), authServerContextRoot);
-        testContext.setAdminClient(adminClient);
+        testContext.reconnectAdminClient();
+        adminClient = testContext.getAdminClient();
     }
 
     protected void beforeAbstractKeycloakTestRealmImport() throws Exception {
@@ -218,11 +205,8 @@ public abstract class AbstractKeycloakTest {
             }
         } else {
             log.info("calling all TestCleanup");
-            // Logout all users after the test
-            List<RealmRepresentation> realms = testContext.getTestRealmReps();
-            for (RealmRepresentation realm : realms) {
-                adminClient.realm(realm.getRealm()).logoutAll();
-            }
+            // Remove all sessions
+            testContext.getTestRealmReps().stream().forEach((r)->testingClient.testing().removeUserSessions(r.getRealm()));
 
             // Cleanup objects
             for (TestCleanup cleanup : testContext.getCleanups().values()) {
@@ -331,11 +315,6 @@ public abstract class AbstractKeycloakTest {
     public KeycloakTestingClient getTestingClient() {
         if (testingClient == null) {
             testingClient = testContext.getTestingClient();
-            if (testingClient == null) {
-                String authServerContextRoot = suiteContext.getAuthServerInfo().getContextRoot().toString();
-                testingClient = KeycloakTestingClient.getInstance(authServerContextRoot + "/auth");
-                testContext.setTestingClient(testingClient);
-            }
         }
         return testingClient;
     }
@@ -360,12 +339,80 @@ public abstract class AbstractKeycloakTest {
         }
     }
 
+    public void fixAuthServerHostAndPortForClientRepresentation(ClientRepresentation cr) {
+        cr.setBaseUrl(removeDefaultPorts(replaceAuthHostWithRealHost(cr.getBaseUrl())));
+        cr.setAdminUrl(removeDefaultPorts(replaceAuthHostWithRealHost(cr.getAdminUrl())));
+
+        if (cr.getRedirectUris() != null && !cr.getRedirectUris().isEmpty()) {
+            List<String> fixedUrls = new ArrayList<>(cr.getRedirectUris().size());
+            for (String url : cr.getRedirectUris()) {
+                fixedUrls.add(removeDefaultPorts(replaceAuthHostWithRealHost(url)));
+            }
+
+            cr.setRedirectUris(fixedUrls);
+        }
+    }
+
+    public String replaceAuthHostWithRealHost(String url) {
+        if (url != null && (url.contains("localhost:8180") || url.contains("localhost:8543"))) {
+            return url.replaceFirst("localhost:(\\d)+", AUTH_SERVER_HOST + ":" + AUTH_SERVER_PORT);
+        }
+
+        return url;
+    }
+
     public void importTestRealms() {
         addTestRealms();
         log.info("importing test realms");
         for (RealmRepresentation testRealm : testRealmReps) {
             importRealm(testRealm);
         }
+    }
+
+    private void modifySamlAttributes(ClientRepresentation cr) {
+        if (cr.getProtocol() != null && cr.getProtocol().equals("saml")) {
+            log.debug("Modifying attributes of SAML client: " + cr.getClientId());
+            for (Map.Entry<String, String> entry : cr.getAttributes().entrySet()) {
+                cr.getAttributes().put(entry.getKey(), replaceHttpValuesWithHttps(entry.getValue()));
+            }
+        }
+    }
+
+    private void modifyRedirectUrls(ClientRepresentation cr) {
+        if (cr.getRedirectUris() != null && cr.getRedirectUris().size() > 0) {
+            List<String> redirectUrls = cr.getRedirectUris();
+            List<String> fixedRedirectUrls = new ArrayList<>(redirectUrls.size());
+            for (String url : redirectUrls) {
+                fixedRedirectUrls.add(replaceHttpValuesWithHttps(url));
+            }
+            cr.setRedirectUris(fixedRedirectUrls);
+        }
+    }
+
+    private void modifyMainUrls(ClientRepresentation cr) {
+        cr.setBaseUrl(replaceHttpValuesWithHttps(cr.getBaseUrl()));
+        cr.setAdminUrl(replaceHttpValuesWithHttps(cr.getAdminUrl()));
+    }
+
+    private String replaceHttpValuesWithHttps(String input) {
+        if (input == null) {
+            return null;
+        }
+        if ("".equals(input)) {
+            return "";
+        }
+        return input
+              .replace("http", "https")
+              .replace("8080", "8543")
+              .replace("8180", "8543");
+    }
+
+    /**
+     * @return Return <code>true</code> if you wish to automatically post-process realm and replace
+     * all http values with https (and correct ports).
+     */
+    protected boolean modifyRealmForSSL() {
+        return false;
     }
 
 
@@ -379,14 +426,35 @@ public abstract class AbstractKeycloakTest {
     }
 
 
-    private UserRepresentation createAdminUserRepresentation() {
-        UserRepresentation adminUserRep = new UserRepresentation();
-        adminUserRep.setUsername(ADMIN);
-        setPasswordFor(adminUserRep, ADMIN);
-        return adminUserRep;
-    }
-
     public void importRealm(RealmRepresentation realm) {
+        if (modifyRealmForSSL()) {
+            if (AUTH_SERVER_SSL_REQUIRED) {
+                log.debugf("Modifying %s for SSL", realm.getId());
+                for (ClientRepresentation cr : realm.getClients()) {
+                    modifyMainUrls(cr);
+                    modifyRedirectUrls(cr);
+                    modifySamlAttributes(cr);
+                }
+            }
+        }
+
+        if (!AUTH_SERVER_HOST.equals("localhost")) {
+            if (!AUTH_SERVER_SSL_REQUIRED) {
+                realm.setSslRequired("none");
+            }
+            if (realm.getClients() != null) {
+                for (ClientRepresentation cr : realm.getClients()) {
+                    fixAuthServerHostAndPortForClientRepresentation(cr);
+                }
+            }
+
+            if (realm.getApplications() != null) {
+                for (ClientRepresentation cr : realm.getApplications()) {
+                    fixAuthServerHostAndPortForClientRepresentation(cr);
+                }
+            }
+        }
+
         log.debug("--importing realm: " + realm.getRealm());
         try {
             adminClient.realms().realm(realm.getRealm()).remove();
@@ -419,14 +487,47 @@ public abstract class AbstractKeycloakTest {
      * @return ID of the newly created user
      */
     public String createUser(String realm, String username, String password, String... requiredActions) {
-        List<String> requiredUserActions = Arrays.asList(requiredActions);
+        UserRepresentation homer = createUserRepresentation(username, password);
+        homer.setRequiredActions(Arrays.asList(requiredActions));
 
-        UserRepresentation homer = new UserRepresentation();
-        homer.setEnabled(true);
-        homer.setUsername(username);
-        homer.setRequiredActions(requiredUserActions);
+        return ApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
+    }
 
-        return ApiUtil.createUserAndResetPasswordWithAdminClient(adminClient.realm(realm), homer, password);
+    public String createUser(String realm, String username, String password, String firstName, String lastName, String email, Consumer<UserRepresentation> customizer) {
+        UserRepresentation user = createUserRepresentation(username, email, firstName, lastName, true, password);
+        customizer.accept(user);
+        return ApiUtil.createUserWithAdminClient(adminClient.realm(realm), user);
+    }
+
+    public String createUser(String realm, String username, String password, String firstName, String lastName, String email) {
+        UserRepresentation homer = createUserRepresentation(username, email, firstName, lastName, true, password);
+        return ApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
+    }
+
+    public static UserRepresentation createUserRepresentation(String username, String email, String firstName, String lastName, List<String> groups, boolean enabled) {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername(username);
+        user.setEmail(email);
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setGroups(groups);
+        user.setEnabled(enabled);
+        return user;
+    }
+
+    public static UserRepresentation createUserRepresentation(String username, String email, String firstName, String lastName, boolean enabled) {
+        return createUserRepresentation(username, email, firstName, lastName, null, enabled);
+    }
+
+    public static UserRepresentation createUserRepresentation(String username, String email, String firstName, String lastName, boolean enabled, String password) {
+        UserRepresentation user = createUserRepresentation(username, email, firstName, lastName, enabled);
+        setPasswordFor(user, password);
+        return user;
+    }
+
+    public static UserRepresentation createUserRepresentation(String username, String password) {
+        UserRepresentation user = createUserRepresentation(username, null, null, null, true, password);
+        return user;
     }
 
     public void setRequiredActionEnabled(String realm, String requiredAction, boolean enabled, boolean defaultAction) {
@@ -505,7 +606,7 @@ public abstract class AbstractKeycloakTest {
         return Time.currentTime();
     }
 
-    private String invokeTimeOffset(int offset) {
+    protected String invokeTimeOffset(int offset) {
         // adminClient depends on Time.offset for auto-refreshing tokens
         Time.setOffset(offset);
         Map result = testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(offset)));
@@ -536,28 +637,31 @@ public abstract class AbstractKeycloakTest {
         return log;
     }
 
-    private static void enableHTTPSForAuthServer() throws IOException, CommandFailedException, TimeoutException, InterruptedException, CliException, OperationException {
-        OnlineManagementClient client = AuthServerTestEnricher.getManagementClient();
-        Administration administration = new Administration(client);
-        Operations operations = new Operations(client);
+    protected String getAccountRedirectUrl(String realm) {
+        return AccountFormService
+              .loginRedirectUrl(UriBuilder.fromUri(oauth.AUTH_SERVER_ROOT))
+              .build(realm)
+              .toString();
+    }
 
-        if(!operations.exists(Address.coreService("management").and("security-realm", "UndertowRealm"))) {
-            client.execute("/core-service=management/security-realm=UndertowRealm:add()");
-            client.execute("/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=keycloak.jks");
-            client.execute("/core-service=management/security-realm=UndertowRealm/authentication=truststore:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=keycloak.truststore");
+    protected String getAccountRedirectUrl() {
+        return getAccountRedirectUrl("test");
+    }
+
+    protected static InputStream httpsAwareConfigurationStream(InputStream input) throws IOException {
+        if (!AUTH_SERVER_SSL_REQUIRED) {
+            return input;
         }
-
-        client.apply(new RemoveUndertowListener.Builder(UndertowListenerType.HTTPS_LISTENER, "https")
-                .forDefaultServer());
-
-        administration.reloadIfRequired();
-
-        client.apply(new AddUndertowListener.HttpsBuilder("https", "default-server", "https")
-                .securityRealm("UndertowRealm")
-                .verifyClient(SslVerifyClient.REQUESTED)
-                .build());
-
-        administration.reloadIfRequired();
-        client.close();
+        PipedInputStream in = new PipedInputStream();
+        final PipedOutputStream out = new PipedOutputStream(in);
+        try (PrintWriter pw = new PrintWriter(out)) {
+            try (Scanner s = new Scanner(input)) {
+                while (s.hasNextLine()) {
+                    String lineWithReplaces = s.nextLine().replace("http://localhost:8180/auth", AUTH_SERVER_SCHEME + "://localhost:" + AUTH_SERVER_PORT + "/auth");
+                    pw.println(lineWithReplaces);
+                }
+            }
+        }
+        return in;
     }
 }

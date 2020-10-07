@@ -66,6 +66,10 @@ public class ContainerInfo implements Comparable<ContainerInfo> {
         return getQualifier().toLowerCase().contains("undertow");
     }
 
+    public boolean isQuarkus() {
+        return getQualifier().toLowerCase().contains("quarkus");
+    }
+
     public boolean isAS7() {
         return getQualifier().toLowerCase().contains("as7");
     }
@@ -79,7 +83,7 @@ public class ContainerInfo implements Comparable<ContainerInfo> {
     }
 
     public boolean isJBossBased() {
-        return isAS7() || isWildfly() || isEAP();
+        return isAS7() || isWildfly() || isEAP() || getQualifier().toLowerCase().contains("jboss");
     }
 
     @Override

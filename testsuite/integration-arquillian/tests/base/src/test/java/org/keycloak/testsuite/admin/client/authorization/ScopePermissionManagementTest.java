@@ -134,23 +134,25 @@ public class ScopePermissionManagementTest extends AbstractPolicyManagementTest 
 
         ScopePermissionsResource permissions = authorization.permissions().scope();
 
-        permissions.create(permission1);
+        permissions.create(permission1).close();
 
         ScopePermissionRepresentation permission2 = new ScopePermissionRepresentation();
 
         permission2.setName(permission1.getName());
 
-        Response response = permissions.create(permission2);
-
-        assertEquals(Response.Status.CONFLICT.getStatusCode(), response.getStatus());
+        try (Response response = permissions.create(permission2)) {
+            assertEquals(Response.Status.CONFLICT.getStatusCode(), response.getStatus());
+        }
     }
 
     private void assertCreated(AuthorizationResource authorization, ScopePermissionRepresentation representation) {
         ScopePermissionsResource permissions = authorization.permissions().scope();
-        Response response = permissions.create(representation);
-        ScopePermissionRepresentation created = response.readEntity(ScopePermissionRepresentation.class);
-        ScopePermissionResource permission = permissions.findById(created.getId());
-        assertRepresentation(representation, permission);
+
+        try (Response response = permissions.create(representation)) {
+            ScopePermissionRepresentation created = response.readEntity(ScopePermissionRepresentation.class);
+            ScopePermissionResource permission = permissions.findById(created.getId());
+            assertRepresentation(representation, permission);
+        }
     }
 
     private void assertRepresentation(ScopePermissionRepresentation representation, ScopePermissionResource permission) {

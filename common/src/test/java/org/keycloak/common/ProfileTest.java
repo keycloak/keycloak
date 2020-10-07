@@ -6,7 +6,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
@@ -20,32 +19,61 @@ public class ProfileTest {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
-    public void checkDefaults() {
+    public void checkDefaultsKeycloak() {
         Assert.assertEquals("community", Profile.getName());
-        assertEquals(Profile.getDisabledFeatures(), Profile.Feature.ACCOUNT2, Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.DOCKER, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE);
-        assertEquals(Profile.getPreviewFeatures(), Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE);
-        assertEquals(Profile.getExperimentalFeatures(), Profile.Feature.ACCOUNT2);
+        assertEquals(Profile.getDisabledFeatures(), Profile.Feature.ACCOUNT2, Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.DOCKER, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.UPLOAD_SCRIPTS, Profile.Feature.CLIENT_POLICIES);
+        assertEquals(Profile.getPreviewFeatures(), Profile.Feature.ACCOUNT2, Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.CLIENT_POLICIES);
+        assertEquals(Profile.getDeprecatedFeatures(), Profile.Feature.UPLOAD_SCRIPTS);
+
+        Assert.assertTrue(Profile.Feature.WEB_AUTHN.hasDifferentProductType());
+        Assert.assertEquals(Profile.Feature.WEB_AUTHN.getTypeProject(), Profile.Type.DEFAULT);
+    }
+
+    @Test
+    public void checkDefaultsRH_SSO() {
+        System.setProperty("keycloak.profile", "product");
+        String backUpName = Version.NAME;
+        Version.NAME = "rh-sso";
+        Profile.init();
+
+        Assert.assertEquals("product", Profile.getName());
+        assertEquals(Profile.getDisabledFeatures(), Profile.Feature.ACCOUNT2, Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.DOCKER, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.UPLOAD_SCRIPTS, Profile.Feature.WEB_AUTHN, Profile.Feature.CLIENT_POLICIES);
+        assertEquals(Profile.getPreviewFeatures(), Profile.Feature.ACCOUNT2, Profile.Feature.ACCOUNT_API, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.WEB_AUTHN, Profile.Feature.CLIENT_POLICIES);
+        assertEquals(Profile.getDeprecatedFeatures(), Profile.Feature.UPLOAD_SCRIPTS);
+
+        Assert.assertTrue(Profile.Feature.WEB_AUTHN.hasDifferentProductType());
+        Assert.assertEquals(Profile.Feature.WEB_AUTHN.getTypeProduct(), Profile.Type.PREVIEW);
+
+        System.setProperty("keycloak.profile", "community");
+        Version.NAME = backUpName;
+        Profile.init();
     }
 
     @Test
     public void configWithSystemProperties() {
         Assert.assertEquals("community", Profile.getName());
         Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.DOCKER));
+        Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.OPENSHIFT_INTEGRATION));
         Assert.assertTrue(Profile.isFeatureEnabled(Profile.Feature.IMPERSONATION));
+        Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS));
 
         System.setProperty("keycloak.profile", "preview");
         System.setProperty("keycloak.profile.feature.docker", "enabled");
         System.setProperty("keycloak.profile.feature.impersonation", "disabled");
+        System.setProperty("keycloak.profile.feature.upload_scripts", "enabled");
 
         Profile.init();
 
         Assert.assertEquals("preview", Profile.getName());
         Assert.assertTrue(Profile.isFeatureEnabled(Profile.Feature.DOCKER));
+        Assert.assertTrue(Profile.isFeatureEnabled(Profile.Feature.OPENSHIFT_INTEGRATION));
         Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.IMPERSONATION));
+        Assert.assertTrue(Profile.isFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS));
 
         System.getProperties().remove("keycloak.profile");
         System.getProperties().remove("keycloak.profile.feature.docker");
         System.getProperties().remove("keycloak.profile.feature.impersonation");
+        System.getProperties().remove("keycloak.profile.feature.upload_scripts");
 
         Profile.init();
     }
@@ -55,6 +83,7 @@ public class ProfileTest {
         Assert.assertEquals("community", Profile.getName());
         Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.DOCKER));
         Assert.assertTrue(Profile.isFeatureEnabled(Profile.Feature.IMPERSONATION));
+        Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS));
 
         File d = temporaryFolder.newFolder();
         File f = new File(d, "profile.properties");
@@ -63,6 +92,7 @@ public class ProfileTest {
         p.setProperty("profile", "preview");
         p.setProperty("feature.docker", "enabled");
         p.setProperty("feature.impersonation", "disabled");
+        p.setProperty("feature.upload_scripts", "enabled");
         PrintWriter pw = new PrintWriter(f);
         p.list(pw);
         pw.close();
@@ -73,7 +103,9 @@ public class ProfileTest {
 
         Assert.assertEquals("preview", Profile.getName());
         Assert.assertTrue(Profile.isFeatureEnabled(Profile.Feature.DOCKER));
+        Assert.assertTrue(Profile.isFeatureEnabled(Profile.Feature.OPENSHIFT_INTEGRATION));
         Assert.assertFalse(Profile.isFeatureEnabled(Profile.Feature.IMPERSONATION));
+        Assert.assertTrue(Profile.isFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS));
 
         System.getProperties().remove("jboss.server.config.dir");
 

@@ -32,12 +32,14 @@ import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD
 public class Users {
 
     public static String getPasswordOf(UserRepresentation user) {
-        String value = null;
-        CredentialRepresentation password = getPasswordCredentialOf(user);
-        if (password != null) {
-            value = password.getValue();
+        CredentialRepresentation credential = getPasswordCredentialOf(user);
+        if (credential == null) {
+            return null;
         }
-        return value;
+        if (credential.getValue() != null && !credential.getValue().isEmpty()) {
+            return credential.getValue();
+        }
+        return credential.getSecretData();
     }
 
     public static CredentialRepresentation getPasswordCredentialOf(UserRepresentation user) {

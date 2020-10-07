@@ -47,6 +47,10 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
 
     private Integer expiredRefresh;
 
+    private Integer expiredRememberMe;
+
+    private Integer expiredRefreshRememberMe;
+
     private String brokerSessionId;
     private String brokerUserId;
 
@@ -82,10 +86,17 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
     }
 
     public UserSessionPredicate expired(Integer expired, Integer expiredRefresh) {
+        return this.expired(expired, expiredRefresh, null, null);
+    }
+
+    public UserSessionPredicate expired(Integer expired, Integer expiredRefresh, Integer expiredRememberMe, Integer expiredRefreshRememberMe) {
         this.expired = expired;
         this.expiredRefresh = expiredRefresh;
+        this.expiredRememberMe = expiredRememberMe;
+        this.expiredRefreshRememberMe = expiredRefreshRememberMe;
         return this;
     }
+
 
     public UserSessionPredicate brokerSessionId(String id) {
         this.brokerSessionId = id;
@@ -121,30 +132,39 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
             return false;
         }
 
-        if (expired != null && expiredRefresh != null && entity.getStarted() > expired && entity.getLastSessionRefresh() > expiredRefresh) {
-            return false;
+        if (entity.isRememberMe()) {
+            if (expiredRememberMe != null && expiredRefreshRememberMe != null && entity.getStarted() > expiredRememberMe && entity.getLastSessionRefresh() > expiredRefreshRememberMe) {
+                return false;
+            }
+        }
+        else {
+            if (expired != null && expiredRefresh != null && entity.getStarted() > expired && entity.getLastSessionRefresh() > expiredRefresh) {
+                return false;
+            }
         }
 
         if (expired == null && expiredRefresh != null && entity.getLastSessionRefresh() > expiredRefresh) {
             return false;
         }
-
         return true;
     }
 
     public static class ExternalizerImpl implements Externalizer<UserSessionPredicate> {
 
         private static final int VERSION_1 = 1;
+        private static final int VERSION_2 = 2;
 
         @Override
         public void writeObject(ObjectOutput output, UserSessionPredicate obj) throws IOException {
-            output.writeByte(VERSION_1);
+            output.writeByte(VERSION_2);
 
             MarshallUtil.marshallString(obj.realm, output);
             MarshallUtil.marshallString(obj.user, output);
             MarshallUtil.marshallString(obj.client, output);
             KeycloakMarshallUtil.marshall(obj.expired, output);
             KeycloakMarshallUtil.marshall(obj.expiredRefresh, output);
+            KeycloakMarshallUtil.marshall(obj.expiredRememberMe, output);
+            KeycloakMarshallUtil.marshall(obj.expiredRefreshRememberMe, output);
             MarshallUtil.marshallString(obj.brokerSessionId, output);
             MarshallUtil.marshallString(obj.brokerUserId, output);
 
@@ -155,6 +175,8 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
             switch (input.readByte()) {
                 case VERSION_1:
                     return readObjectVersion1(input);
+                case VERSION_2:
+                    return readObjectVersion2(input);
                 default:
                     throw new IOException("Unknown version");
             }
@@ -165,6 +187,17 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
             res.user(MarshallUtil.unmarshallString(input));
             res.client(MarshallUtil.unmarshallString(input));
             res.expired(KeycloakMarshallUtil.unmarshallInteger(input), KeycloakMarshallUtil.unmarshallInteger(input));
+            res.brokerSessionId(MarshallUtil.unmarshallString(input));
+            res.brokerUserId(MarshallUtil.unmarshallString(input));
+            return res;
+        }
+
+        public UserSessionPredicate readObjectVersion2(ObjectInput input) throws IOException, ClassNotFoundException {
+            UserSessionPredicate res = new UserSessionPredicate(MarshallUtil.unmarshallString(input));
+            res.user(MarshallUtil.unmarshallString(input));
+            res.client(MarshallUtil.unmarshallString(input));
+            res.expired(KeycloakMarshallUtil.unmarshallInteger(input), KeycloakMarshallUtil.unmarshallInteger(input),
+                    KeycloakMarshallUtil.unmarshallInteger(input), KeycloakMarshallUtil.unmarshallInteger(input));
             res.brokerSessionId(MarshallUtil.unmarshallString(input));
             res.brokerUserId(MarshallUtil.unmarshallString(input));
             return res;

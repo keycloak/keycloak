@@ -1,0 +1,3 @@
+
+echo ** Updating jdbc url properties **
+/subsystem=datasources/data-source=KeycloakDS/:write-attribute(name=connection-url,value="@JDBC_URL@")

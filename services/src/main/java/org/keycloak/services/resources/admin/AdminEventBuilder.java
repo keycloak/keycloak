@@ -120,6 +120,14 @@ public class AdminEventBuilder {
         return this;
     }
 
+    /**
+     * Setter for custom resource types with values different from {@link ResourceType}.
+     */
+    public AdminEventBuilder resource(String resourceType){
+        adminEvent.setResourceTypeAsString(resourceType);
+        return this;
+    }
+
     public AdminEventBuilder authRealm(RealmModel realm) {
         AuthDetails authDetails = adminEvent.getAuthDetails();
         if(authDetails == null) {
@@ -232,7 +240,7 @@ public class AdminEventBuilder {
         if(realm.isAdminEventsDetailsEnabled()) {
             includeRepresentation = true;
         }
-        adminEvent.setTime(Time.toMillis(Time.currentTime()));
+        adminEvent.setTime(Time.currentTimeMillis());
 
         if (store != null) {
             try {

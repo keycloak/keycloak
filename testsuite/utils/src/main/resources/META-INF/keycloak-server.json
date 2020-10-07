@@ -1,75 +1,65 @@
 {
 
     "hostname": {
-        "provider": "request",
+        "provider": "${keycloak.hostname.provider:}",
 
-        "fixed": {
-            "hostname": "localhost",
-            "httpPort": "-1",
-            "httpsPort": "-1"
+        "default": {
+            "frontendUrl": "${keycloak.frontendUrl:}",
+            "adminUrl": "${keycloak.adminUrl:}",
+            "forceBackendUrlToFrontendUrl": "${keycloak.hostname.default.forceBackendUrlToFrontendUrl:}"
         }
-    },
-
-    "admin": {
-        "realm": "master"
     },
 
     "eventsStore": {
-        "provider": "${keycloak.eventsStore.provider:jpa}"
-    },
-
-    "eventsListener": {
-        "jboss-logging" : {
-            "success-level": "debug",
-            "error-level": "warn"
-        }
+        "provider": "${keycloak.eventsStore.provider:}"
     },
 
     "realm": {
-        "provider": "${keycloak.realm.provider:jpa}"
+        "provider": "${keycloak.realm.provider:}"
+    },
+
+    "client": {
+        "provider": "${keycloak.client.provider:jpa}"
+    },
+
+    "group": {
+        "provider": "${keycloak.group.provider:jpa}"
+    },
+
+    "role": {
+        "provider": "${keycloak.role.provider:jpa}"
+    },
+
+    "mapStorage": {
+        "provider": "${keycloak.mapStorage.provider:concurrenthashmap}",
+        "concurrenthashmap": {
+            "dir": "${project.build.directory:target}"
+        }
     },
 
     "user": {
-        "provider": "${keycloak.user.provider:jpa}"
+        "provider": "${keycloak.user.provider:}"
     },
 
     "userFederatedStorage": {
-        "provider": "${keycloak.userFederatedStorage.provider:jpa}"
+        "provider": "${keycloak.userFederatedStorage.provider:}"
     },
 
     "userSessionPersister": {
-        "provider": "${keycloak.userSessionPersister.provider:jpa}"
+        "provider": "${keycloak.userSessionPersister.provider:}"
     },
 
     "authorizationPersister": {
-        "provider": "${keycloak.authorization.provider:jpa}"
-    },
-
-    "userCache": {
-        "default" : {
-            "enabled": true
-        }
-    },
-
-    "timer": {
-        "provider": "basic"
+        "provider": "${keycloak.authorization.provider:}"
     },
 
     "theme": {
-        "staticMaxAge": "${keycloak.theme.staticMaxAge:2592000}",
-        "cacheTemplates": "${keycloak.theme.cacheTemplates:true}",
-        "cacheThemes": "${keycloak.theme.cacheThemes:true}",
+        "staticMaxAge": "${keycloak.theme.staticMaxAge:}",
+        "cacheTemplates": "${keycloak.theme.cacheTemplates:}",
+        "cacheThemes": "${keycloak.theme.cacheThemes:}",
         "folder": {
             "dir": "${keycloak.theme.dir}"
         }
-    },
-
-    "scheduled": {
-        "interval": 900
-    },
-
-    "connectionsHttpClient": {
-        "default": {}
     },
 
     "connectionsJpa": {
@@ -79,17 +69,9 @@
             "driverDialect": "${keycloak.connectionsJpa.driverDialect:}",
             "user": "${keycloak.connectionsJpa.user:sa}",
             "password": "${keycloak.connectionsJpa.password:}",
-            "initializeEmpty": true,
-            "migrationStrategy": "update",
-            "showSql": "${keycloak.connectionsJpa.showSql:false}",
-            "formatSql": "${keycloak.connectionsJpa.formatSql:true}",
-            "globalStatsInterval": "${keycloak.connectionsJpa.globalStatsInterval:-1}"
-        }
-    },
-
-    "realmCache": {
-        "default" : {
-            "enabled": true
+            "showSql": "${keycloak.connectionsJpa.showSql:}",
+            "formatSql": "${keycloak.connectionsJpa.formatSql:}",
+            "globalStatsInterval": "${keycloak.connectionsJpa.globalStatsInterval:}"
         }
     },
 
@@ -98,14 +80,15 @@
             "jgroupsUdpMcastAddr": "${keycloak.connectionsInfinispan.jgroupsUdpMcastAddr:234.56.78.90}",
             "nodeName": "${keycloak.connectionsInfinispan.nodeName,jboss.node.name:}",
             "siteName": "${keycloak.connectionsInfinispan.siteName,jboss.site.name:}",
-            "clustered": "${keycloak.connectionsInfinispan.clustered:false}",
-            "async": "${keycloak.connectionsInfinispan.async:false}",
-            "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:1}",
-            "l1Lifespan": "${keycloak.connectionsInfinispan.l1Lifespan:600000}",
-            "remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:false}",
-            "remoteStoreHost": "${keycloak.connectionsInfinispan.remoteStoreServer:localhost}",
-            "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
-            "hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}"
+            "clustered": "${keycloak.connectionsInfinispan.clustered:}",
+            "async": "${keycloak.connectionsInfinispan.async:}",
+            "sessionsOwners": "${keycloak.connectionsInfinispan.sessionsOwners:}",
+            "l1Lifespan": "${keycloak.connectionsInfinispan.l1Lifespan:}",
+            "remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:}",
+            "remoteStoreHost": "${keycloak.connectionsInfinispan.remoteStoreServer:}",
+            "remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:}",
+            "hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
+            "embedded": "${keycloak.connectionsInfinispan.embedded:true}"
         }
     },
 
@@ -113,10 +96,34 @@
     },
 
     "jta-lookup": {
-        "provider": "${keycloak.jta.lookup.provider:jboss}",
-        "jboss" : {
-            "enabled": true
-        }
+        "provider": "${keycloak.jta.lookup.provider:}"
+    },
 
+    "login-protocol": {
+        "saml": {
+            "knownProtocols": [
+                "http=${auth.server.http.port}",
+                "https=${auth.server.https.port}"
+            ]
+        }
+    },
+
+    "x509cert-lookup": {
+        "provider": "${keycloak.x509cert.lookup.provider:}",
+        "haproxy": {
+            "sslClientCert": "x-ssl-client-cert",
+            "sslCertChainPrefix": "x-ssl-client-cert-chain",
+            "certificateChainLength": 1
+        },
+        "apache": {
+            "sslClientCert": "x-ssl-client-cert",
+            "sslCertChainPrefix": "x-ssl-client-cert-chain",
+            "certificateChainLength": 1
+        },
+        "nginx": {
+            "sslClientCert": "x-ssl-client-cert",
+            "sslCertChainPrefix": "x-ssl-client-cert-chain",
+            "certificateChainLength": 1
+        }
     }
 }

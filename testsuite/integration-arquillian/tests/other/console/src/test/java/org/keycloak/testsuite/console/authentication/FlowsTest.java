@@ -24,7 +24,6 @@ package org.keycloak.testsuite.console.authentication;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.authentication.flows.CreateExecution;
@@ -34,8 +33,7 @@ import org.keycloak.testsuite.console.page.authentication.flows.CreateFlowForm;
 import org.keycloak.testsuite.console.page.authentication.flows.Flows;
 import org.keycloak.testsuite.console.page.authentication.flows.FlowsTable;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -145,7 +143,7 @@ public class FlowsTest extends AbstractConsoleTest {
         //UI
         assertEquals("Test Copy Of Browser", flowsPage.getFlowSelectValue());
         assertTrue(flowsPage.table().getFlowsAliasesWithRequirements().containsKey("Test Copy Of Browser Forms"));
-        assertEquals(6,flowsPage.table().getFlowsAliasesWithRequirements().size());
+        assertEquals(8, flowsPage.table().getFlowsAliasesWithRequirements().size());
 
         
         //rest: copied flow present
@@ -189,15 +187,6 @@ public class FlowsTest extends AbstractConsoleTest {
         flowsPage.clickCopy();
         modalDialog.ok();
         
-        //init order
-        //first should be Cookie
-        //second Kerberos
-        //third Identity provider redirector
-        //fourth Test Copy Of Browser Forms
-            //a) Username Password Form
-            //b) OTP Form
-        
-        
         flowsPage.table().clickLevelDownButton("Cookie");
         assertAlertSuccess();
         
@@ -213,21 +202,24 @@ public class FlowsTest extends AbstractConsoleTest {
         flowsPage.table().clickLevelUpButton("OTP Form");
         assertAlertSuccess();
 
-        List<String> expectedOrder = new ArrayList<>();
-        Collections.addAll(expectedOrder, "Kerberos", "Cookie", "Copy Of Browser Forms", "OTP Form",
-                                          "Username Password Form", "Identity Provider Redirector");
-
+        List<String> expectedOrder = Arrays.asList(
+                "Kerberos",
+                "Cookie",
+                "Copy Of Browser Forms",
+                "Username Password Form",
+                "Copy Of Browser Browser - Conditional OTP",
+                "OTP Form",
+                "Condition - User Configured",
+                "Identity Provider Redirector"
+        );
+        
         //UI
-        assertEquals(6,flowsPage.table().getFlowsAliasesWithRequirements().size());
-        assertTrue(expectedOrder.containsAll(flowsPage.table().getFlowsAliasesWithRequirements().keySet()));
+        assertEquals(expectedOrder, flowsPage.table().getFlowsAliasesWithRequirements().keySet().stream().collect(Collectors.toList()));
 
         //REST
-        List<AuthenticationExecutionExportRepresentation> executionsRest =
-                getFlowFromREST("Copy of browser").getAuthenticationExecutions();
-        assertEquals("auth-spnego", executionsRest.get(0).getAuthenticator());
-        assertEquals("auth-cookie", executionsRest.get(1).getAuthenticator());
-        assertEquals("Copy of browser forms", executionsRest.get(2).getFlowAlias());
-        assertEquals("identity-provider-redirector", executionsRest.get(3).getAuthenticator());
+        assertEquals(expectedOrder.stream().map(displayName -> displayName.toLowerCase()).collect(Collectors.toList()), // case-insensitive comparison needed
+                testRealmResource().flows().getExecutions("Copy of browser").stream().map(e -> e.getDisplayName().toLowerCase()).collect(Collectors.toList()));
+
         flowsPage.clickDelete();
         modalDialog.confirmDeletion();
     }
@@ -244,20 +236,25 @@ public class FlowsTest extends AbstractConsoleTest {
         assertAlertSuccess();
         flowsPage.table().changeRequirement("OTP Form", FlowsTable.RequirementOption.DISABLED);
         assertAlertSuccess();
-        flowsPage.table().changeRequirement("OTP Form", FlowsTable.RequirementOption.OPTIONAL);
+        flowsPage.table().changeRequirement("Forms", FlowsTable.RequirementOption.CONDITIONAL);
         assertAlertSuccess();
 
+        List<String> expectedOrder = Arrays.asList(
+                "DISABLED", 
+                "ALTERNATIVE", 
+                "ALTERNATIVE",
+                "CONDITIONAL", 
+                "REQUIRED", 
+                "CONDITIONAL",
+                "REQUIRED", 
+                "DISABLED"
+        );
+
         //UI
-        List<String> expectedOrder = new ArrayList<>();
-        Collections.addAll(expectedOrder,"DISABLED", "ALTERNATIVE", "ALTERNATIVE",
-                                         "ALTERNATIVE", "REQUIRED", "OPTIONAL");
-        assertTrue(expectedOrder.containsAll(flowsPage.table().getFlowsAliasesWithRequirements().values()));
-        
+        assertEquals(expectedOrder, flowsPage.table().getFlowsAliasesWithRequirements().values().stream().collect(Collectors.toList()));
+
         //REST:
-        List<AuthenticationExecutionExportRepresentation> browserFlow = getFlowFromREST("browser").getAuthenticationExecutions();
-        assertEquals("DISABLED", browserFlow.get(0).getRequirement());
-        assertEquals("ALTERNATIVE", browserFlow.get(1).getRequirement());
-        assertEquals("ALTERNATIVE", browserFlow.get(2).getRequirement());
+        assertEquals(expectedOrder, testRealmResource().flows().getExecutions("browser").stream().map(e -> e.getRequirement()).collect(Collectors.toList()));
     }
     
     @Test
@@ -281,22 +278,24 @@ public class FlowsTest extends AbstractConsoleTest {
         createExecutionPage.form().save();
         assertAlertSuccess();
 
+        List<String> expectedOrder = Arrays.asList(
+                "Identity Provider Redirector",
+                "Copy Of Browser Forms",
+                "Username Password Form",
+                "Copy Of Browser Browser - Conditional OTP",
+                "Condition - User Configured",
+                "OTP Form",
+                "NestedFlow",
+                "Reset Password"
+        );
+
         //UI
-        List<String> expectedOrder = new ArrayList<>();
-        Collections.addAll(expectedOrder, "Identity Provider Redirector", "Copy Of Browser Forms",
-                                          "Username Password Form", "OTP Form", "NestedFlow", "Reset Password");
-
-        assertEquals(6,flowsPage.table().getFlowsAliasesWithRequirements().size());
-        assertTrue(expectedOrder.containsAll(flowsPage.table().getFlowsAliasesWithRequirements().keySet()));
-
+        assertEquals(expectedOrder, flowsPage.table().getFlowsAliasesWithRequirements().keySet().stream().collect(Collectors.toList()));
+        
         //REST
-        List<AuthenticationExecutionExportRepresentation> executionsRest =
-                getFlowFromREST("Copy of browser").getAuthenticationExecutions();
-        assertEquals("identity-provider-redirector", executionsRest.get(0).getAuthenticator());
-        String tmpFlowAlias = executionsRest.get(1).getFlowAlias();
-        assertEquals("Copy of browser forms", tmpFlowAlias);
-        assertEquals("Username Password Form", testRealmResource().flows().getExecutions(tmpFlowAlias).get(0).getDisplayName());
-        assertEquals("nestedFlow", testRealmResource().flows().getExecutions(tmpFlowAlias).get(2).getDisplayName());
+        assertEquals(expectedOrder.stream().map(displayName -> displayName.toLowerCase()).collect(Collectors.toList()), // case-insensitive comparison needed
+                testRealmResource().flows().getExecutions("Copy of browser").stream().map(e -> e.getDisplayName().toLowerCase()).collect(Collectors.toList()));
+        
     }
 
     private AuthenticationFlowRepresentation getFlowFromREST(String alias) {

@@ -41,9 +41,8 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.broker.BrokerTestTools;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
@@ -67,6 +66,7 @@ import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
 import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -126,9 +126,6 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         servlet.setClientId("client-linking");
         servlet.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         String uri = "/client-linking";
-        if (!isRelative()) {
-            uri = appServerContextRootPage.toString() + uri;
-        }
         servlet.setAdminUrl(uri);
         servlet.setDirectAccessGrantsEnabled(true);
         servlet.setBaseUrl(uri);
@@ -200,12 +197,13 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
     }
 
     public void createParentChild() {
-        BrokerTestTools.createKcOidcBroker(adminClient, CHILD_IDP, PARENT_IDP, suiteContext);
+        BrokerTestTools.createKcOidcBroker(adminClient, CHILD_IDP, PARENT_IDP);
     }
 
 
     @Test
     public void testErrorConditions() throws Exception {
+        String helloUrl = appPage.getUriBuilder().clone().path("hello").build().toASCIIString();
 
         RealmResource realm = adminClient.realms().realm(CHILD_IDP);
         List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
@@ -217,7 +215,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
                 .path("link")
                 .queryParam("response", "true");
 
-        UriBuilder directLinking = UriBuilder.fromUri(AuthServerTestEnricher.getAuthServerContextRoot() + "/auth")
+        UriBuilder directLinking = UriBuilder.fromUri(getAuthServerContextRoot() + "/auth")
                 .path("realms/child/broker/{provider}/link")
                 .queryParam("client_id", "client-linking")
                 .queryParam("redirect_uri", redirectUri.build())
@@ -239,17 +237,18 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
 
         // now log in
 
-        navigateTo( appPage.getInjectedUrl() + "/hello");
+
+        navigateTo(helloUrl);
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         loginPage.login("child", "password");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(appPage.getInjectedUrl() + "/hello"));
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(helloUrl));
         Assert.assertTrue(driver.getPageSource().contains("Unknown request:"));
 
         // now test CSRF with bad hash.
 
         navigateTo(linkUrl);
 
-        Assert.assertTrue(driver.getPageSource().contains("We're sorry..."));
+        Assert.assertTrue(driver.getPageSource().contains("We are sorry..."));
 
         logoutAll();
 
@@ -268,10 +267,10 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         roles.add(userRole);
         clientResource.getScopeMappings().realmLevel().add(roles);
 
-        navigateTo( appPage.getInjectedUrl() + "/hello");
+        navigateTo(helloUrl);
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         loginPage.login("child", "password");
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(appPage.getInjectedUrl() + "/hello"));
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(helloUrl));
         Assert.assertTrue(driver.getPageSource().contains("Unknown request:"));
 
 
@@ -375,12 +374,6 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         Assert.assertTrue(links.isEmpty());
 
         logoutAll();
-
-
-
-
-
-
     }
 
     @Test
@@ -516,7 +509,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
 
             String uri = "/auth/realms/child/broker/parent-idp/login";
 
-            uri = UriBuilder.fromUri(AuthServerTestEnricher.getAuthServerContextRoot())
+            uri = UriBuilder.fromUri(getAuthServerContextRoot())
                     .path(uri)
                     .queryParam(LoginActionsService.SESSION_CODE, queryParams.get(LoginActionsService.SESSION_CODE))
                     .queryParam(Constants.CLIENT_ID, queryParams.get(Constants.CLIENT_ID))
@@ -578,7 +571,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         loginUpdateProfilePage.update("Joe", "Doe", "joe@parent.com");
 
         errorPage.assertCurrent();
-        Assert.assertEquals("You are already authenticated as different user 'child' in this session. Please logout first.", errorPage.getError());
+        Assert.assertEquals("You are already authenticated as different user 'child' in this session. Please log out first.", errorPage.getError());
 
         logoutAll();
 

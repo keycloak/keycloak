@@ -24,31 +24,73 @@ export = Keycloak;
 
 /**
  * Creates a new Keycloak client instance.
- * @param config Path to a JSON config file or a plain config object.
+ * @param config A configuration object or path to a JSON config file.
  */
-declare function Keycloak(config?: string|{}): Keycloak.KeycloakInstance;
+declare function Keycloak(config?: Keycloak.KeycloakConfig | string): Keycloak.KeycloakInstance;
 
 declare namespace Keycloak {
-	type KeycloakAdapterName = 'cordova' | 'cordova-native' |'default' | any;
 	type KeycloakOnLoad = 'login-required'|'check-sso';
 	type KeycloakResponseMode = 'query'|'fragment';
 	type KeycloakResponseType = 'code'|'id_token token'|'code id_token token';
 	type KeycloakFlow = 'standard'|'implicit'|'hybrid';
+	type KeycloakPkceMethod = 'S256';
+
+	interface KeycloakConfig {
+		/**
+		 * URL to the Keycloak server, for example: http://keycloak-server/auth
+		 */
+		url?: string;
+		/**
+		 * Name of the realm, for example: 'myrealm'
+		 */
+		realm: string;
+		/**
+		 * Client identifier, example: 'myapp'
+		 */
+		clientId: string;
+	}
 
 	interface KeycloakInitOptions {
 		/**
-		 * @private Undocumented.
+		 * Adds a [cryptographic nonce](https://en.wikipedia.org/wiki/Cryptographic_nonce)
+		 * to verify that the authentication response matches the request.
+		 * @default true
 		 */
 		useNonce?: boolean;
 
 		/**
-		 * Allows to use different adapter:
 		 * 
-		 * - {string} default - using browser api for redirects
-		 * - {string} cordova - using cordova plugins 
-		 * - {function} - allows to provide custom function as adapter.
+		 * Allow usage of different types of adapters or a custom adapter to make Keycloak work in different environments.
+		 *
+		 * The following options are supported:
+		 * - `default` - Use default APIs that are available in browsers.
+		 * - `cordova` - Use a WebView in Cordova.
+		 * - `cordova-native` - Use Cordova native APIs, this is recommended over `cordova`.
+		 *
+		 * It's also possible to pass in a custom adapter for the environment you are running Keycloak in. In order to do so extend the `KeycloakAdapter` interface and implement the methods that are defined there.
+		 *
+		 * For example:
+		 *
+		 * ```ts
+		 * import Keycloak, { KeycloakAdapter } from 'keycloak-js';
+		 *
+		 * // Implement the 'KeycloakAdapter' interface so that all required methods are guaranteed to be present.
+		 * const MyCustomAdapter: KeycloakAdapter = {
+		 * 	login(options) {
+		 * 		// Write your own implementation here.
+		 * 	}
+		 *
+		 * 	// The other methods go here...
+		 * };
+		 *
+		 * const keycloak = new Keycloak();
+		 *
+		 * keycloak.init({
+		 * 	adapter: MyCustomAdapter,
+		 * });
+		 * ```
 		 */
-		adapter?: KeycloakAdapterName;
+		adapter?: 'default' | 'cordova' | 'cordova-native' | KeycloakAdapter;
 		
 		/**
 		 * Specifies an action to do on load.
@@ -105,10 +147,37 @@ declare namespace Keycloak {
 		redirectUri?: string;
 
 		/**
+		 * Specifies an uri to redirect to after silent check-sso.
+		 * Silent check-sso will only happen, when this redirect uri is given and
+		 * the specified uri is available whithin the application.
+		 */
+		silentCheckSsoRedirectUri?: string;
+
+		/**
+		 * Specifies whether the silent check-sso should fallback to "non-silent"
+		 * check-sso when 3rd party cookies are blocked by the browser. Defaults
+		 * to true.
+		 */
+		silentCheckSsoFallback?: boolean;
+
+		/**
 		 * Set the OpenID Connect flow.
 		 * @default standard
 		 */
 		flow?: KeycloakFlow;
+
+		/**
+		 * Configures the Proof Key for Code Exchange (PKCE) method to use.
+		 * The currently allowed method is 'S256'.
+		 * If not configured, PKCE will not be used.
+		 */
+		pkceMethod?: KeycloakPkceMethod;
+
+		/**
+		 * Enables logging messages from Keycloak to the console.
+		 * @default false
+		 */
+		enableLogging?: boolean
 	}
 
 	interface KeycloakLoginOptions {
@@ -135,7 +204,7 @@ declare namespace Keycloak {
 		 * If value is `'register'` then user is redirected to registration page,
 		 * otherwise to login page.
 		 */
-		action?: 'register';
+		action?: string;
 
 		/**
 		 * Used just if user is already authenticated. Specifies maximum time since
@@ -160,13 +229,6 @@ declare namespace Keycloak {
                  * of the OIDC 1.0 specification.
 		 */
 		locale?: string;
-                
-                /**
-		 * Specifies the desired Keycloak locale for the UI.  This differs from
-                 * the locale param in that it tells the Keycloak server to set a cookie and update
-                 * the user's profile to a new preferred locale.
-		 */
-		kcLocale?: string;
 
 		/**
 		 * Specifies arguments that are passed to the Cordova in-app-browser (if applicable).
@@ -177,16 +239,29 @@ declare namespace Keycloak {
 		cordovaOptions?: { [optionName: string]: string };
 	}
 
+	interface KeycloakLogoutOptions {
+		/**
+		 * Specifies the uri to redirect to after logout.
+		 */
+		redirectUri?: string;
+	}
+
+	interface KeycloakRegisterOptions extends Omit<KeycloakLoginOptions, 'action'> { }
+
 	type KeycloakPromiseCallback<T> = (result: T) => void;
 
-	interface KeycloakPromise<TSuccess, TError> {
+	interface KeycloakPromise<TSuccess, TError> extends Promise<TSuccess> {
 		/**
 		 * Function to call if the promised action succeeds.
+		 * 
+		 * @deprecated Use `.then()` instead.
 		 */
 		success(callback: KeycloakPromiseCallback<TSuccess>): KeycloakPromise<TSuccess, TError>;
 
 		/**
 		 * Function to call if the promised action throws an error.
+		 * 
+		 * @deprecated Use `.catch()` instead.
 		 */
 		error(callback: KeycloakPromiseCallback<TError>): KeycloakPromise<TSuccess, TError>;
 	}
@@ -198,8 +273,8 @@ declare namespace Keycloak {
 
 	interface KeycloakAdapter {
 		login(options?: KeycloakLoginOptions): KeycloakPromise<void, void>;
-		logout(options?: any): KeycloakPromise<void, void>;
-		register(options?: KeycloakLoginOptions): KeycloakPromise<void, void>;
+		logout(options?: KeycloakLogoutOptions): KeycloakPromise<void, void>;
+		register(options?: KeycloakRegisterOptions): KeycloakPromise<void, void>;
 		accountManagement(): KeycloakPromise<void, void>;
 		redirectUri(options: { redirectUri: string; }, encodeHash: boolean): string;
 	}
@@ -222,11 +297,17 @@ declare namespace Keycloak {
 		nonce?: string;
 		sub?: string;
 		session_state?: string;
-		realm_access?: { roles: string[] };
-		resource_access?: string[];
+		realm_access?: KeycloakRoles;
+		resource_access?: KeycloakResourceAccess;
 	}
 
-	// export interface KeycloakUserInfo {}
+	interface KeycloakResourceAccess {
+		[key: string]: KeycloakRoles
+	}
+
+	interface KeycloakRoles {
+		roles: string[];
+	}
 
 	/**
 	 * A client for the Keycloak authentication server.
@@ -263,12 +344,12 @@ declare namespace Keycloak {
 		/**
 		 * The realm roles associated with the token.
 		 */
-		realmAccess?: { roles: string[] };
+		realmAccess?: KeycloakRoles;
 
 		/**
 		 * The resource roles associated with the token.
 		 */
-		resourceAccess?: string[];
+		resourceAccess?: KeycloakResourceAccess;
 
 		/**
 		 * The base64 encoded token that can be sent in the Authorization header in
@@ -393,6 +474,11 @@ declare namespace Keycloak {
 		onTokenExpired?(): void;
 
 		/**
+		 * Called when a AIA has been requested by the application.
+		 */
+		onActionUpdate?(status: 'success'|'cancelled'|'error'): void;
+
+		/**
 		 * Called to initialize the adapter.
 		 * @param initOptions Initialization options.
 		 * @returns A promise to set functions to be invoked on success or error.
@@ -408,16 +494,14 @@ declare namespace Keycloak {
 		/**
 		 * Redirects to logout.
 		 * @param options Logout options.
-		 * @param options.redirectUri Specifies the uri to redirect to after logout.
 		 */
-		logout(options?: any): KeycloakPromise<void, void>;
+		logout(options?: KeycloakLogoutOptions): KeycloakPromise<void, void>;
 
 		/**
 		 * Redirects to registration form.
-		 * @param options Supports same options as Keycloak#login but `action` is
-		 *                set to `'register'`.
+		 * @param options The options used for the registration.
 		 */
-		register(options?: any): KeycloakPromise<void, void>;
+		register(options?: KeycloakRegisterOptions): KeycloakPromise<void, void>;
 
 		/**
 		 * Redirects to the Account Management Console.
@@ -433,16 +517,14 @@ declare namespace Keycloak {
 		/**
 		 * Returns the URL to logout the user.
 		 * @param options Logout options.
-		 * @param options.redirectUri Specifies the uri to redirect to after logout.
 		 */
-		createLogoutUrl(options?: any): string;
+		createLogoutUrl(options?: KeycloakLogoutOptions): string;
 
 		/**
 		 * Returns the URL to registration page.
-		 * @param options Supports same options as Keycloak#createLoginUrl but
-		 *                `action` is set to `'register'`.
+		 * @param options The options used for creating the registration URL.
 		 */
-		createRegisterUrl(options?: KeycloakLoginOptions): string;
+		createRegisterUrl(options?: KeycloakRegisterOptions): string;
 
 		/**
 		 * Returns the URL to the Account Management Console.
@@ -464,13 +546,13 @@ declare namespace Keycloak {
 		 *          still valid, or if the token is no longer valid.
 		 * @example
 		 * ```js
-		 * keycloak.updateToken(5).success(function(refreshed) {
+		 * keycloak.updateToken(5).then(function(refreshed) {
 		 *   if (refreshed) {
 		 *     alert('Token was successfully refreshed');
 		 *   } else {
 		 *     alert('Token is still valid');
 		 *   }
-		 * }).error(function() {
+		 * }).catch(function() {
 		 *   alert('Failed to refresh the token, or the session has expired');
 		 * });
 		 */

@@ -25,6 +25,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.ModelException;
@@ -49,13 +50,16 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
 
@@ -224,6 +228,13 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
             return getFederatedStorage().removeFederatedIdentity(realm, user.getId(), socialProvider);
         }
     }
+    
+    @Override
+    public void preRemove(RealmModel realm, IdentityProviderModel provider) {
+        localStorage().preRemove(realm, provider);
+        getFederatedStorage().preRemove(realm, provider);
+    }
+    
 
     @Override
     public void addConsent(RealmModel realm, String userId, UserConsentModel consent) {
@@ -344,8 +355,10 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
                 RealmModel realmModel = session.realms().getRealm(realm.getId());
                 if (realmModel == null) return;
                 UserModel deletedUser = session.userLocalStorage().getUserById(userId, realmModel);
-                new UserManager(session).removeUser(realmModel, deletedUser, session.userLocalStorage());
-                logger.debugf("Removed invalid user '%s'", userName);
+                if (deletedUser != null) {
+                    new UserManager(session).removeUser(realmModel, deletedUser, session.userLocalStorage());
+                    logger.debugf("Removed invalid user '%s'", userName);
+                }
             }
 
         });
@@ -402,7 +415,11 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
     public UserModel getUserByEmail(String email, RealmModel realm) {
         UserModel user = localStorage().getUserByEmail(email, realm);
         if (user != null) {
-            return importValidation(realm, user);
+            user = importValidation(realm, user);
+            // Case when email was changed directly in the userStorage and doesn't correspond anymore to the email from local DB
+            if (email.equalsIgnoreCase(user.getEmail())) {
+                return user;
+            }
         }
         for (UserLookupProvider provider : getEnabledStorageProviders(session, realm, UserLookupProvider.class)) {
             user = provider.getUserByEmail(email, realm);
@@ -458,6 +475,31 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
     @Override
     public int getUsersCount(RealmModel realm) {
         return getUsersCount(realm, false);
+    }
+
+    @Override
+    public int getUsersCount(RealmModel realm, Set<String> groupIds) {
+        return localStorage().getUsersCount(realm, groupIds);
+    }
+
+    @Override
+    public int getUsersCount(String search, RealmModel realm) {
+        return localStorage().getUsersCount(search, realm);
+    }
+
+    @Override
+    public int getUsersCount(String search, RealmModel realm, Set<String> groupIds) {
+        return localStorage().getUsersCount(search, realm, groupIds);
+    }
+
+    @Override
+    public int getUsersCount(Map<String, String> params, RealmModel realm) {
+        return localStorage().getUsersCount(params, realm);
+    }
+
+    @Override
+    public int getUsersCount(Map<String, String> params, RealmModel realm, Set<String> groupIds) {
+        return localStorage().getUsersCount(params, realm, groupIds);
     }
 
     @FunctionalInterface
@@ -553,7 +595,11 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
     public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
         List<UserModel> results = query((provider, first, max) -> {
             if (provider instanceof UserQueryProvider) {
-                return ((UserQueryProvider)provider).searchForUser(attributes, realm, first, max);
+                if (attributes.containsKey(UserModel.SEARCH)) {
+                    return ((UserQueryProvider)provider).searchForUser(attributes.get(UserModel.SEARCH), realm, first, max);
+                } else {
+                    return ((UserQueryProvider)provider).searchForUser(attributes, realm, first, max);
+                }
 
             }
             return Collections.EMPTY_LIST;
@@ -581,7 +627,14 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
             }
             return Collections.EMPTY_LIST;
         }, realm,0, Integer.MAX_VALUE - 1);
+        results = removeDuplicates(results);
         return importValidation(realm, results);
+    }
+
+    private static List<UserModel> removeDuplicates(List<UserModel> withDuplicates) {
+        Set<UserModel> withoutDuplicates  = new TreeSet<>(Comparator.comparing(UserModel::getId));
+        withoutDuplicates.addAll(withDuplicates);
+        return new ArrayList<>(withoutDuplicates);
     }
 
     @Override

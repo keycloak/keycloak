@@ -17,7 +17,12 @@
 
 package org.keycloak.testsuite.util;
 
-import com.google.common.base.Charsets;
+import static org.keycloak.testsuite.admin.Users.getPasswordOf;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
+import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.http.Header;
@@ -31,6 +36,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.jboss.arquillian.drone.webdriver.htmlunit.DroneHtmlUnitDriver;
 import org.junit.Assert;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
@@ -38,13 +44,19 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.AsymmetricSignatureSignerContext;
 import org.keycloak.crypto.AsymmetricSignatureVerifierContext;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.ServerECDSASignatureSignerContext;
+import org.keycloak.crypto.ServerECDSASignatureVerifierContext;
+import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -55,23 +67,23 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.UriBuilder;
+import com.google.common.base.Charsets;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Collections;
 import java.util.HashMap;
@@ -80,7 +92,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static org.keycloak.testsuite.admin.Users.getPasswordOf;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.UriBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -90,17 +104,19 @@ public class OAuthClient {
     public static String SERVER_ROOT;
     public static String AUTH_SERVER_ROOT;
     public static String APP_ROOT;
+    public static String APP_AUTH_ROOT;
     private static final boolean sslRequired = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
 
     static {
-        updateURLs(AuthServerTestEnricher.getAuthServerContextRoot());
+        updateURLs(getAuthServerContextRoot());
     }
 
     // Workaround, but many tests directly use system properties like OAuthClient.AUTH_SERVER_ROOT instead of taking the URL from suite context
     public static void updateURLs(String serverRoot) {
-        SERVER_ROOT = serverRoot;
+        SERVER_ROOT = removeDefaultPorts(serverRoot);
         AUTH_SERVER_ROOT = SERVER_ROOT + "/auth";
         APP_ROOT = AUTH_SERVER_ROOT + "/realms/master/app";
+        APP_AUTH_ROOT = APP_ROOT + "/auth";
     }
 
     private WebDriver driver;
@@ -112,6 +128,8 @@ public class OAuthClient {
     private String clientId;
 
     private String redirectUri;
+
+    private String kcAction;
 
     private StateParamProvider state;
 
@@ -142,6 +160,8 @@ public class OAuthClient {
     private String codeChallenge;
     private String codeChallengeMethod;
     private String origin;
+
+    private Map<String, String> customParameters;
 
     private boolean openid = true;
 
@@ -183,6 +203,16 @@ public class OAuthClient {
         }
     }
 
+    public class BackchannelLogoutUrlBuilder {
+        private final String backchannelLogoutPath = "/backchannel-logout";
+
+        private final UriBuilder b = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(baseUrl)).path(backchannelLogoutPath);
+
+        public String build() {
+            return b.build(realm).toString();
+        }
+    }
+
     public void init(WebDriver driver) {
         this.driver = driver;
 
@@ -208,6 +238,7 @@ public class OAuthClient {
         codeChallenge = null;
         codeChallengeMethod = null;
         origin = null;
+        customParameters = null;
         openid = true;
     }
 
@@ -222,22 +253,94 @@ public class OAuthClient {
         return new AuthorizationEndpointResponse(this);
     }
 
+    public AuthorizationEndpointResponse doLoginSocial(String brokerId, String username, String password) {
+        openLoginForm();
+        WaitUtils.waitForPageToLoad();
+
+        WebElement socialButton = findSocialButton(brokerId);
+        clickLink(socialButton);
+        fillLoginForm(username, password);
+
+        return new AuthorizationEndpointResponse(this);
+    }
+
+    public void updateAccountInformation(String username, String email) {
+        WaitUtils.waitForPageToLoad();
+        updateAccountInformation(username, email, "First", "Last");
+    }
+
+    public void linkUsers(String username, String password) {
+        WaitUtils.waitForPageToLoad();
+        WebElement linkAccountButton = driver.findElement(By.id("linkAccount"));
+        waitUntilElement(linkAccountButton).is().clickable();
+        linkAccountButton.click();
+
+        WaitUtils.waitForPageToLoad();
+        WebElement usernameInput = driver.findElement(By.id("username"));
+        usernameInput.clear();
+        usernameInput.sendKeys(username);
+        WebElement passwordInput = driver.findElement(By.id("password"));
+        passwordInput.clear();
+        passwordInput.sendKeys(password);
+
+        WebElement loginButton = driver.findElement(By.id("kc-login"));
+        waitUntilElement(loginButton).is().clickable();
+        loginButton.click();
+    }
+
     public AuthorizationEndpointResponse doLogin(UserRepresentation user) {
 
         return doLogin(user.getUsername(), getPasswordOf(user));
     }
 
+    public AuthorizationEndpointResponse doRememberMeLogin(String username, String password) {
+        openLoginForm();
+        fillLoginForm(username, password, true);
+
+        return new AuthorizationEndpointResponse(this);
+    }
+
     public void fillLoginForm(String username, String password) {
+        this.fillLoginForm(username, password, false);
+    }
+
+    public void fillLoginForm(String username, String password, boolean rememberMe) {
         WaitUtils.waitForPageToLoad();
         String src = driver.getPageSource();
         try {
             driver.findElement(By.id("username")).sendKeys(username);
             driver.findElement(By.id("password")).sendKeys(password);
+            if (rememberMe) {
+                driver.findElement(By.id("rememberMe")).click();
+            }
             driver.findElement(By.name("login")).click();
         } catch (Throwable t) {
             System.err.println(src);
             throw t;
         }
+    }
+
+    private void updateAccountInformation(String username, String email, String firstName, String lastName) {
+
+        WebElement usernameInput = driver.findElement(By.id("username"));
+        usernameInput.clear();
+        usernameInput.sendKeys(username);
+
+        WebElement emailInput = driver.findElement(By.id("email"));
+        emailInput.clear();
+        emailInput.sendKeys(email);
+
+        WebElement firstNameInput = driver.findElement(By.id("firstName"));
+        firstNameInput.clear();
+        firstNameInput.sendKeys(firstName);
+
+        WebElement lastNameInput = driver.findElement(By.id("lastName"));
+        lastNameInput.clear();
+        lastNameInput.sendKeys(lastName);
+
+        WebElement submitButton = driver.findElement(By.cssSelector("input[type=\"submit\"]"));
+        waitUntilElement(submitButton).is().clickable();
+        submitButton.click();
     }
 
     public void doLoginGrant(String username, String password) {
@@ -250,34 +353,43 @@ public class OAuthClient {
         return this;
     }
 
+    public Supplier<CloseableHttpClient> getHttpClient() {
+        return httpClient;
+    }
+
     public static CloseableHttpClient newCloseableHttpClient() {
         if (sslRequired) {
-            KeyStore keystore = null;
-            // load the keystore containing the client certificate - keystore type is probably jks or pkcs12
             String keyStorePath = System.getProperty("client.certificate.keystore");
             String keyStorePassword = System.getProperty("client.certificate.keystore.passphrase");
-            try {
-                keystore = KeystoreUtil.loadKeyStore(keyStorePath, keyStorePassword);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            // load the trustore
-            KeyStore truststore = null;
             String trustStorePath = System.getProperty("client.truststore");
             String trustStorePassword = System.getProperty("client.truststore.passphrase");
-            try {
-                truststore = KeystoreUtil.loadKeyStore(trustStorePath, trustStorePassword);
-            } catch(Exception e) {
-                e.printStackTrace();
-            }
-            return (CloseableHttpClient) new org.keycloak.adapters.HttpClientBuilder()
-                    .keyStore(keystore, keyStorePassword)
-                    .trustStore(truststore)
-                    .hostnameVerification(org.keycloak.adapters.HttpClientBuilder.HostnameVerificationPolicy.ANY)
-                    .build();
+            return newCloseableHttpClientSSL(keyStorePath, keyStorePassword, trustStorePath, trustStorePassword);
         }
         return HttpClientBuilder.create().build();
+    }
+
+    public static CloseableHttpClient newCloseableHttpClientSSL(String keyStorePath,
+            String keyStorePassword, String trustStorePath, String trustStorePassword) {
+        KeyStore keystore = null;
+        // load the keystore containing the client certificate - keystore type is probably jks or pkcs12
+        try {
+            keystore = KeystoreUtil.loadKeyStore(keyStorePath, keyStorePassword);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // load the trustore
+        KeyStore truststore = null;
+        try {
+            truststore = KeystoreUtil.loadKeyStore(trustStorePath, trustStorePassword);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return (CloseableHttpClient) new org.keycloak.adapters.HttpClientBuilder()
+                .keyStore(keystore, keyStorePassword)
+                .trustStore(truststore)
+                .hostnameVerification(org.keycloak.adapters.HttpClientBuilder.HostnameVerificationPolicy.ANY)
+                .build();
     }
 
     public CloseableHttpResponse doPreflightRequest() {
@@ -395,7 +507,7 @@ public class OAuthClient {
         return introspectTokenWithClientCredential(clientId, clientSecret, "refresh_token", tokenToIntrospect);
     }
 
-    public AccessTokenResponse doGrantAccessTokenRequest(String clientSecret, String username,  String password) throws Exception {
+    public AccessTokenResponse doGrantAccessTokenRequest(String clientSecret, String username, String password) throws Exception {
         return doGrantAccessTokenRequest(realm, username, password, null, clientId, clientSecret);
     }
 
@@ -405,6 +517,11 @@ public class OAuthClient {
 
     public AccessTokenResponse doGrantAccessTokenRequest(String realm, String username, String password, String totp,
                                                          String clientId, String clientSecret) throws Exception {
+        return doGrantAccessTokenRequest(realm, username, password, totp, clientId, clientSecret, null);
+    }
+
+    public AccessTokenResponse doGrantAccessTokenRequest(String realm, String username, String password, String totp,
+                                                         String clientId, String clientSecret, String userAgent) throws Exception {
         try (CloseableHttpClient client = httpClient.get()) {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
 
@@ -413,7 +530,7 @@ public class OAuthClient {
             parameters.add(new BasicNameValuePair("username", username));
             parameters.add(new BasicNameValuePair("password", password));
             if (totp != null) {
-                parameters.add(new BasicNameValuePair("totp", totp));
+                parameters.add(new BasicNameValuePair("otp", totp));
 
             }
             if (clientSecret != null) {
@@ -437,6 +554,10 @@ public class OAuthClient {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scope));
             }
 
+            if (userAgent != null) {
+                post.addHeader("User-Agent", userAgent);
+            }
+
             UrlEncodedFormEntity formEntity;
             try {
                 formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
@@ -451,6 +572,11 @@ public class OAuthClient {
 
     public AccessTokenResponse doTokenExchange(String realm, String token, String targetAudience,
                                                String clientId, String clientSecret) throws Exception {
+        return doTokenExchange(realm, token, targetAudience, clientId, clientSecret, null);
+    }
+
+    public AccessTokenResponse doTokenExchange(String realm, String token, String targetAudience,
+                                               String clientId, String clientSecret, Map<String, String> additionalParams) throws Exception {
         try (CloseableHttpClient client = httpClient.get()) {
             HttpPost post = new HttpPost(getResourceOwnerPasswordCredentialGrantUrl(realm));
 
@@ -459,6 +585,12 @@ public class OAuthClient {
             parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN, token));
             parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE));
             parameters.add(new BasicNameValuePair(OAuth2Constants.AUDIENCE, targetAudience));
+
+            if (additionalParams != null) {
+                for (Map.Entry<String, String> entry : additionalParams.entrySet()) {
+                    parameters.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+                }
+            }
 
             if (clientSecret != null) {
                 String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
@@ -591,6 +723,74 @@ public class OAuthClient {
         return client.execute(post);
     }
 
+    public CloseableHttpResponse doBackchannelLogout(String logoutTokon) {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            return doBackchannelLogout(logoutTokon, client);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public CloseableHttpResponse doBackchannelLogout(String logoutToken, CloseableHttpClient client) throws IOException {
+        HttpPost post = new HttpPost(getBackchannelLogoutUrl().build());
+        List<NameValuePair> parameters = new LinkedList<>();
+        if (logoutToken != null) {
+            parameters.add(new BasicNameValuePair(OAuth2Constants.LOGOUT_TOKEN, logoutToken));
+        }
+
+        UrlEncodedFormEntity formEntity;
+        try {
+            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        post.setEntity(formEntity);
+
+        return client.execute(post);
+    }
+
+    public CloseableHttpResponse doTokenRevoke(String token, String tokenTypeHint, String clientSecret) {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            return doTokenRevoke(token, tokenTypeHint, clientSecret, client);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public CloseableHttpResponse doTokenRevoke(String token, String tokenTypeHint, String clientSecret,
+        CloseableHttpClient client) throws IOException {
+        HttpPost post = new HttpPost(getTokenRevocationUrl());
+
+        List<NameValuePair> parameters = new LinkedList<>();
+        if (token != null) {
+            parameters.add(new BasicNameValuePair("token", token));
+        }
+        if (tokenTypeHint != null) {
+            parameters.add(new BasicNameValuePair("token_type_hint", tokenTypeHint));
+        }
+
+        if (origin != null) {
+            post.addHeader("Origin", origin);
+        }
+
+        if (clientId != null && clientSecret != null) {
+            String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+            post.setHeader("Authorization", authorization);
+        } else if (clientId != null) {
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
+        }
+
+        UrlEncodedFormEntity formEntity;
+        try {
+            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        post.setEntity(formEntity);
+
+        return client.execute(post);
+    }
+
     // KEYCLOAK-6771 Certificate Bound Token
     public AccessTokenResponse doRefreshTokenRequest(String refreshToken, String password) {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
@@ -644,7 +844,7 @@ public class OAuthClient {
 
     public OIDCConfigurationRepresentation doWellKnownRequest(String realm) {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            return SimpleHttp.doGet(AUTH_SERVER_ROOT + "/realms/" + realm + "/.well-known/openid-configuration", client).asJson(OIDCConfigurationRepresentation.class);
+            return SimpleHttp.doGet(baseUrl + "/realms/" + realm + "/.well-known/openid-configuration", client).asJson(OIDCConfigurationRepresentation.class);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
@@ -680,13 +880,40 @@ public class OAuthClient {
             String kid = verifier.getHeader().getKeyId();
             String algorithm = verifier.getHeader().getAlgorithm().name();
             KeyWrapper key = getRealmPublicKey(realm, algorithm, kid);
-            AsymmetricSignatureVerifierContext verifierContext = new AsymmetricSignatureVerifierContext(key);
+            AsymmetricSignatureVerifierContext verifierContext;
+            switch (algorithm) {
+                case Algorithm.ES256:
+                case Algorithm.ES384:
+                case Algorithm.ES512:
+                    verifierContext = new ServerECDSASignatureVerifierContext(key);
+                    break;
+                default:
+                    verifierContext = new AsymmetricSignatureVerifierContext(key);
+            }
             verifier.verifierContext(verifierContext);
             verifier.verify();
             return verifier.getToken();
         } catch (VerificationException e) {
             throw new RuntimeException("Failed to decode token", e);
         }
+    }
+
+    public SignatureSignerContext createSigner(PrivateKey privateKey, String kid, String algorithm) {
+        KeyWrapper keyWrapper = new KeyWrapper();
+        keyWrapper.setAlgorithm(algorithm);
+        keyWrapper.setKid(kid);
+        keyWrapper.setPrivateKey(privateKey);
+        SignatureSignerContext signer;
+        switch (algorithm) {
+            case Algorithm.ES256:
+            case Algorithm.ES384:
+            case Algorithm.ES512:
+                signer = new ServerECDSASignatureSignerContext(keyWrapper);
+                break;
+            default:
+                signer = new AsymmetricSignatureSignerContext(keyWrapper);
+        }
+        return signer;
     }
 
     public String getClientId() {
@@ -711,7 +938,7 @@ public class OAuthClient {
 
     public Map<String, String> getCurrentQuery() {
         Map<String, String> m = new HashMap<>();
-        List<NameValuePair> pairs = URLEncodedUtils.parse(getCurrentUri(), Charset.forName("UTF-8"));
+        List<NameValuePair> pairs = URLEncodedUtils.parse(getCurrentUri(), "UTF-8");
         for (NameValuePair p : pairs) {
             m.put(p.getName(), p.getValue());
         }
@@ -745,6 +972,23 @@ public class OAuthClient {
     public String getRedirectUri() {
         return redirectUri;
     }
+    
+    /**
+     * Application-initiated action.
+     * 
+     * @return The action name.
+     */
+    public String getKcAction() {
+        return kcAction;
+    }
+
+    public String getState() {
+        return state.getState();
+    }
+
+    public String getNonce() {
+        return nonce;
+    }
 
     public String getLoginFormUrl() {
         UriBuilder b = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(baseUrl));
@@ -759,6 +1003,9 @@ public class OAuthClient {
         }
         if (redirectUri != null) {
             b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
+        }
+        if (kcAction != null) {
+            b.queryParam(Constants.KC_ACTION, kcAction);
         }
         String state = this.state.getState();
         if (state != null) {
@@ -791,7 +1038,11 @@ public class OAuthClient {
         }
         if (codeChallengeMethod != null) {
             b.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
-        }  
+        }
+        if (customParameters != null) {
+            customParameters.keySet().stream().forEach(i -> b.queryParam(i, customParameters.get(i)));
+        }
+
         return b.build(realm).toString();
     }
 
@@ -818,6 +1069,15 @@ public class OAuthClient {
 
     public LogoutUrlBuilder getLogoutUrl() {
         return new LogoutUrlBuilder();
+    }
+
+    public BackchannelLogoutUrlBuilder getBackchannelLogoutUrl() {
+        return new BackchannelLogoutUrlBuilder();
+    }
+
+    public String getTokenRevocationUrl() {
+        UriBuilder b = OIDCLoginProtocolService.tokenRevocationUrl(UriBuilder.fromUri(baseUrl));
+        return b.build(realm).toString();
     }
 
     public String getResourceOwnerPasswordCredentialGrantUrl() {
@@ -861,6 +1121,11 @@ public class OAuthClient {
 
     public OAuthClient redirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
+        return this;
+    }
+    
+    public OAuthClient kcAction(String kcAction) {
+        this.kcAction = kcAction;
         return this;
     }
 
@@ -955,6 +1220,14 @@ public class OAuthClient {
         return this;
     }
 
+    public OAuthClient addCustomerParameter(String key, String value) {
+        if (customParameters == null) {
+            customParameters = new HashMap<>();
+        }
+        customParameters.put(key, value);
+        return this;
+    }
+
     public static class AuthorizationEndpointResponse {
 
         private boolean isRedirected;
@@ -1039,12 +1312,14 @@ public class OAuthClient {
 
         private String idToken;
         private String accessToken;
+        private String issuedTokenType;
         private String tokenType;
         private int expiresIn;
         private int refreshExpiresIn;
         private String refreshToken;
         // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
         private String scope;
+        private String sessionState;
 
         private String error;
         private String errorDescription;
@@ -1073,9 +1348,11 @@ public class OAuthClient {
                 if (statusCode == 200) {
                     idToken = (String) responseJson.get("id_token");
                     accessToken = (String) responseJson.get("access_token");
+                    issuedTokenType = (String) responseJson.get("issued_token_type");
                     tokenType = (String) responseJson.get("token_type");
                     expiresIn = (Integer) responseJson.get("expires_in");
                     refreshExpiresIn = (Integer) responseJson.get("refresh_expires_in");
+                    sessionState = (String) responseJson.get("session_state");
 
                     // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
                     if (responseJson.containsKey(OAuth2Constants.SCOPE)) {
@@ -1126,6 +1403,10 @@ public class OAuthClient {
             return refreshToken;
         }
 
+        public String getIssuedTokenType() {
+            return issuedTokenType;
+        }
+
         public String getTokenType() {
             return tokenType;
         }
@@ -1133,6 +1414,10 @@ public class OAuthClient {
         // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
         public String getScope() {
             return scope;
+        }
+
+        public String getSessionState() {
+            return sessionState;
         }
 
         public Map<String, String> getHeaders() {
@@ -1167,8 +1452,8 @@ public class OAuthClient {
 
     private JSONWebKeySet getRealmKeys(String realm) {
         String certUrl = baseUrl + "/realms/" + realm + "/protocol/openid-connect/certs";
-        try {
-            return SimpleHttp.doGet(certUrl, httpClient.get()).asJson(JSONWebKeySet.class);
+        try (CloseableHttpClient client = httpClient.get()){
+            return SimpleHttp.doGet(certUrl, client).asJson(JSONWebKeySet.class);
         } catch (IOException e) {
             throw new RuntimeException("Failed to retrieve keys", e);
         }
@@ -1180,9 +1465,9 @@ public class OAuthClient {
                 PublicKey publicKey = JWKParser.create(k).toPublicKey();
 
                 KeyWrapper key = new KeyWrapper();
-                key.setKid(key.getKid());
+                key.setKid(k.getKeyId());
                 key.setAlgorithm(k.getAlgorithm());
-                key.setVerifyKey(publicKey);
+                key.setPublicKey(publicKey);
                 key.setUse(KeyUse.SIG);
 
                 return key;
@@ -1195,7 +1480,23 @@ public class OAuthClient {
         publicKeys.clear();
     }
 
+    public void setBrowserHeader(String name, String value) {
+        if (driver instanceof DroneHtmlUnitDriver) {
+            DroneHtmlUnitDriver droneDriver = (DroneHtmlUnitDriver) this.driver;
+            droneDriver.getWebClient().removeRequestHeader(name);
+            droneDriver.getWebClient().addRequestHeader(name, value);
+        }
+    }
 
+    public WebDriver getDriver() {
+        return driver;
+    }
+
+    private WebElement findSocialButton(String providerId) {
+        String id = "zocial-" + providerId;
+        return DroneUtils.getCurrentDriver().findElement(By.id(id));
+    }
+    
     private interface StateParamProvider {
 
         String getState();

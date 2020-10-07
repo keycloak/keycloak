@@ -48,7 +48,7 @@ public class DefaultClientCertificateLookup implements X509ClientCertificateLook
     public X509Certificate[] getCertificateChain(HttpRequest httpRequest) {
 
         X509Certificate[] certs = (X509Certificate[]) httpRequest.getAttribute(JAVAX_SERVLET_REQUEST_X509_CERTIFICATE);
-        if (certs != null) {
+        if (logger.isTraceEnabled() && certs != null) {
             for (X509Certificate cert : certs) {
                 logger.tracef("Certificate's SubjectDN => \"%s\"", cert.getSubjectDN().getName());
             }

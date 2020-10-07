@@ -14,10 +14,12 @@
                     <div class="col-md-4">
                         <label class="control-label" for="available">{{:: 'available-roles' | translate}}</label>
                         <kc-tooltip>{{:: 'default.available-roles.tooltip' | translate}}</kc-tooltip>
-                        <select id="available" class="form-control" multiple size="5"
+                        <select id="available" class="form-control overflow-select" multiple size="5"
                                 ng-multiple="true"
-                                ng-model="selectedRealmRoles"
-                                ng-options="r for r in availableRealmRoles | orderBy:'toString()'">
+                                ng-model="selectedRealmRoles">
+                            <option ng-repeat="r in availableRealmRoles | orderBy:'toString()'" value="{{r}}" title="{{r.toString()}}">
+                                {{r.toString()}}
+                            </option>
                         </select>
                         <button ng-disabled="selectedRealmRoles.length == 0" class="btn btn-default" type="submit" ng-click="addRealmDefaultRole()">
                             {{:: 'add-selected' | translate}} <i class="fa fa-angle-double-right"></i>
@@ -26,10 +28,12 @@
                     <div class="col-md-4">
                         <label class="control-label" for="assigned">{{:: 'realm-default-roles' | translate}}</label>
                         <kc-tooltip>{{:: 'realm-default-roles.tooltip' | translate}}</kc-tooltip>
-                        <select id="assigned" class="form-control" multiple size=5
+                        <select id="assigned" class="form-control overflow-select" multiple size=5
                                 ng-multiple="true"
-                                ng-model="selectedRealmDefRoles"
-                                ng-options="r for r in realm.defaultRoles | orderBy:'toString()'">
+                                ng-model="selectedRealmDefRoles">
+                            <option ng-repeat="r in realm.defaultRoles | orderBy:'toString()'" value="{{r}}" title="{{r.toString()}}">
+                                {{r.toString()}}
+                            </option>
                         </select>
                         <button ng-disabled="selectedRealmDefRoles.length == 0" class="btn btn-default" type="submit" ng-click="deleteRealmDefaultRole()">
                             <i class="fa fa-angle-double-left"></i> {{:: 'remove-selected' | translate}}
@@ -40,22 +44,22 @@
         </div>
 
         <div class="form-group">
-            <label class="col-md-2 control-label" class="control-label">
-                <span>{{:: 'client-roles' | translate}}</span>
-                <select class="form-control" id="clients" name="clients" ng-change="changeClient()" ng-model="client" ng-options="a.clientId for a in clients | orderBy:'clientId'" ng-disabled="false"></select>
-            </label>
-            <div class="col-md-10" data-ng-show="client">
-                <div class="row" data-ng-hide="client">
-                    <div class="col-md-4"><span class="text-muted">{{:: 'select-client-to-view-roles' | translate}}</span></div>
+           <label class="col-md-2 control-label" for="clients">{{:: 'client-roles' | translate}}</label>
+                <div class="col-md-6">
+                    <input type="hidden" ui-select2="clientsUiSelect" id="clients" data-ng-model="selectedClient" data-ng-change="changeClient(selectedClient);" data-placeholder="{{:: 'authz-select-client' | translate}}...">
+                    </input>
                 </div>
-                <div class="row" data-ng-show="client">
+                <div class="col-md-10 col-md-push-2">
+                    <div class="row" data-ng-show="selectedClient">
                     <div class="col-md-4">
                         <label class="control-label" for="available-client">{{:: 'available-roles' | translate}}</label>
                         <kc-tooltip>{{:: 'default.available-roles-client.tooltip' | translate}}</kc-tooltip>
-                        <select id="available-client" class="form-control" multiple size="5"
+                        <select id="available-client" class="form-control overflow-select" multiple size="5"
                                 ng-multiple="true"
-                                ng-model="selectedClientRoles"
-                                ng-options="r for r in availableClientRoles | orderBy:'toString()'">
+                                ng-model="selectedClientRoles">
+                            <option ng-repeat="r in availableClientRoles | orderBy:'toString()'" value="{{r}}" title="{{r.toString()}}">
+                                {{r.toString()}}
+                            </option>
                         </select>
                         <button ng-disabled="selectedClientRoles.length == 0" class="btn btn-default" type="submit" ng-click="addClientDefaultRole()">
                             {{:: 'add-selected' | translate}} <i class="fa fa-angle-double-right"></i>
@@ -64,10 +68,12 @@
                     <div class="col-md-4">
                         <label class="control-label" for="assigned-client">{{:: 'client-default-roles' | translate}}</label>
                         <kc-tooltip>{{:: 'client-default-roles.tooltip' | translate}}</kc-tooltip>
-                        <select id="assigned-client" class="form-control" multiple size=5
+                        <select id="assigned-client" class="form-control overflow-select" multiple size=5
                                 ng-multiple="true"
-                                ng-model="selectedClientDefRoles"
-                                ng-options="r for r in client.defaultRoles | orderBy:'toString()'">
+                                ng-model="selectedClientDefRoles">
+                            <option ng-repeat="r in selectedClient.defaultRoles | orderBy:'toString()'" value="{{r}}" title="{{r.toString()}}">
+                                {{r.toString()}}
+                            </option>
                         </select>
                         <button ng-disabled="selectedClientDefRoles.length == 0" class="btn btn-default" type="submit" ng-click="rmClientDefaultRole()">
                             <i class="fa fa-angle-double-left"></i> {{:: 'remove-selected' | translate}}

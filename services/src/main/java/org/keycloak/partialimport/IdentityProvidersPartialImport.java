@@ -72,7 +72,7 @@ public class IdentityProvidersPartialImport extends AbstractPartialImport<Identi
     @Override
     public void create(RealmModel realm, KeycloakSession session, IdentityProviderRepresentation idpRep) {
         idpRep.setInternalId(KeycloakModelUtils.generateId());
-        IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, idpRep);
+        IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, idpRep, session);
         realm.addIdentityProvider(identityProvider);
     }
 

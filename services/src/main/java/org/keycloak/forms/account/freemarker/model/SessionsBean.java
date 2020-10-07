@@ -37,7 +37,7 @@ public class SessionsBean {
     private RealmModel realm;
 
     public SessionsBean(RealmModel realm, List<UserSessionModel> sessions) {
-        this.events = new LinkedList<UserSessionBean>();
+        this.events = new LinkedList<>();
         for (UserSessionModel session : sessions) {
             this.events.add(new UserSessionBean(realm, session));
         }
@@ -72,12 +72,13 @@ public class SessionsBean {
         }
 
         public Date getExpires() {
-            int max = session.getStarted() + realm.getSsoSessionMaxLifespan();
+            int maxLifespan = session.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ? realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan();
+            int max = session.getStarted() + maxLifespan;
             return Time.toDate(max);
         }
 
         public Set<String> getClients() {
-            Set<String> clients = new HashSet<String>();
+            Set<String> clients = new HashSet<>();
             for (String clientUUID : session.getAuthenticatedClientSessions().keySet()) {
                 ClientModel client = realm.getClientById(clientUUID);
                 clients.add(client.getClientId());

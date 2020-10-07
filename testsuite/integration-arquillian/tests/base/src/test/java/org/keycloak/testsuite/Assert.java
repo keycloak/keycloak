@@ -36,7 +36,10 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
 /**
@@ -145,4 +148,11 @@ public class Assert extends org.junit.Assert {
         org.junit.Assert.assertThat(actual, allOf(greaterThanOrEqualTo(expected - 50), lessThanOrEqualTo(expected)));
     }
 
+    public static void assertRoleAttributes(Map<String, List<String>> expected, Map<String, List<String>> actual) {
+        assertThat(actual.keySet(), equalTo(expected.keySet()));
+        for (String expectedKey : expected.keySet()) {
+            assertThat(actual.get(expectedKey).size(), is(equalTo(expected.get(expectedKey).size())));
+            assertThat(actual.get(expectedKey), containsInAnyOrder(expected.get(expectedKey).toArray()));
+        }
+    }
 }

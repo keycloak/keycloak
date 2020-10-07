@@ -17,13 +17,17 @@
 
 package org.keycloak.protocol.saml;
 
+import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.w3c.dom.Document;
 
 import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
@@ -33,25 +37,37 @@ import java.net.URI;
  * @version $Revision: 1 $
  */
 public class JaxrsSAML2BindingBuilder extends BaseSAML2BindingBuilder<JaxrsSAML2BindingBuilder> {
-    public static class PostBindingBuilder extends BasePostBindingBuilder {
+
+    private final KeycloakSession session;
+
+    public JaxrsSAML2BindingBuilder(KeycloakSession session) {
+        this.session = session;
+    }
+
+    public class PostBindingBuilder extends BasePostBindingBuilder {
         public PostBindingBuilder(JaxrsSAML2BindingBuilder builder, Document document) throws ProcessingException {
             super(builder, document);
         }
+
         public Response request(String actionUrl) throws ConfigurationException, ProcessingException, IOException {
-            return buildResponse(document, actionUrl, true);
+            return createResponse(actionUrl, GeneralConstants.SAML_REQUEST_KEY);
         }
+
         public Response response(String actionUrl) throws ConfigurationException, ProcessingException, IOException {
-            return buildResponse(document, actionUrl, false);
-        }
-        protected Response buildResponse(Document responseDoc, String actionUrl, boolean asRequest) throws ProcessingException, ConfigurationException, IOException {
-            String str = builder.buildHtmlPostResponse(responseDoc, actionUrl, asRequest);
-
-            return Response.ok(str, MediaType.TEXT_HTML_TYPE)
-                    .header("Pragma", "no-cache")
-                    .header("Cache-Control", "no-cache, no-store").build();
+            return createResponse(actionUrl, GeneralConstants.SAML_RESPONSE_KEY);
         }
 
+        private Response createResponse(String actionUrl, String key) throws ProcessingException, ConfigurationException, IOException {
+            MultivaluedMap<String,String> formData = new MultivaluedHashMap<>();
+            formData.add(GeneralConstants.URL, actionUrl);
+            formData.add(key, BaseSAML2BindingBuilder.getSAMLResponse(document));
 
+            if (this.getRelayState() != null) {
+                formData.add(GeneralConstants.RELAY_STATE, this.getRelayState());
+            }
+
+            return session.getProvider(LoginFormsProvider.class).setFormData(formData).createSamlPostForm();
+        }
     }
 
     public static class RedirectBindingBuilder extends BaseRedirectBindingBuilder {
@@ -79,10 +95,12 @@ public class JaxrsSAML2BindingBuilder extends BaseSAML2BindingBuilder<JaxrsSAML2
 
     }
 
+    @Override
     public RedirectBindingBuilder redirectBinding(Document document) throws ProcessingException  {
         return new RedirectBindingBuilder(this, document);
     }
 
+    @Override
     public PostBindingBuilder postBinding(Document document) throws ProcessingException  {
         return new PostBindingBuilder(this, document);
     }

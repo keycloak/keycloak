@@ -297,8 +297,13 @@ if (outcome == failed) of /subsystem=elytron/:read-resource
 end-if
 
 if (outcome == failed) of /subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:read-resource
-    echo Adding channel-creation-options READ_TIMEOUT and MAX_OUTBOUND_MESSAGES to ejb3 remote
+    echo Adding channel-creation-options READ_TIMEOUT to ejb3 remote
     /subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:add(value="${prop.remoting-connector.read.timeout:20}",type=xnio)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=ejb3/service=remote/channel-creation-options=MAX_OUTBOUND_MESSAGES/:read-resource
+    echo Adding channel-creation-options MAX_OUTBOUND_MESSAGES to ejb3 remote
     /subsystem=ejb3/service=remote/channel-creation-options=MAX_OUTBOUND_MESSAGES/:add(value=1234,type=remoting)
     echo
 end-if
@@ -565,6 +570,216 @@ if (outcome == success) of /subsystem=jgroups/stack=tcp/transport=TCP/property=p
     catch
         echo
     end-try
+end-if
+
+# Migrate from 4.8.3 to 5.0.0
+if (outcome == failed) of /subsystem=logging/logger=io.jaegertracing.Configuration/:read-resource
+    echo Adding io.jaegertracing.Configuration logger
+    /subsystem=logging/logger=io.jaegertracing.Configuration/:add(category=io.jaegertracing.Configuration,level=WARN)
+    echo
+end-if
+
+# Migrate from 5.0.0 to 6.0.0
+if (result == NON_XA) of /subsystem=infinispan/cache-container=hibernate/local-cache=entity/component=transaction/:read-attribute(name=mode)
+    echo Removing NON_XA transaction mode from infinispan/hibernate/entity
+    /subsystem=infinispan/cache-container=hibernate/local-cache=entity/component=transaction/:undefine-attribute(name=mode)
+    echo
+end-if
+
+if (result == false) of /subsystem=datasources/data-source=ExampleDS/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to ExampleDS datasource 
+    /subsystem=datasources/data-source=ExampleDS/:write-attribute(name=statistics-enabled,value=${wildfly.datasources.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /subsystem=datasources/data-source=KeycloakDS/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to KeycloakDS datasource 
+    /subsystem=datasources/data-source=KeycloakDS/:write-attribute(name=statistics-enabled,value=${wildfly.datasources.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /subsystem=ejb3/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to ejb3 subsystem
+    /subsystem=ejb3/:write-attribute(name=statistics-enabled,value=${wildfly.ejb3.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /subsystem=transactions/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to transactions subsystem
+    /subsystem=transactions/:write-attribute(name=statistics-enabled,value=${wildfly.transactions.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /subsystem=undertow/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to undertow subsystem
+    /subsystem=undertow/:write-attribute(name=statistics-enabled,value=${wildfly.undertow.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /subsystem=webservices/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to webservices subsystem
+    /subsystem=webservices/:write-attribute(name=statistics-enabled,value=${wildfly.webservices.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (outcome == failed) of /extension=org.jboss.as.weld/:read-resource
+    echo Adding weld extension
+    /extension=org.jboss.as.weld/:add
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=weld/:read-resource
+    echo Adding weld subsystem
+    /subsystem=weld/:add
+    echo
+end-if
+
+if (outcome == failed) of /extension=org.wildfly.extension.microprofile.config-smallrye/:read-resource
+    echo Adding microprofile.config-smallrye extension...
+    /extension=org.wildfly.extension.microprofile.config-smallrye/:add(module=org.wildfly.extension.microprofile.config-smallrye)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=microprofile-config-smallrye/:read-resource
+    echo Adding microprofile-config-smallrye subsystem
+    /subsystem=microprofile-config-smallrye/:add
+    echo
+end-if
+
+if (outcome == failed) of /extension=org.wildfly.extension.microprofile.health-smallrye/:read-resource
+    echo Adding microprofile.health-smallrye extension...
+    /extension=org.wildfly.extension.microprofile.health-smallrye/:add(module=org.wildfly.extension.microprofile.health-smallrye)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=microprofile-health-smallrye/:read-resource
+    echo Adding microprofile-health-smallrye subsystem
+    /subsystem=microprofile-health-smallrye/:add
+    /subsystem=microprofile-health-smallrye/:write-attribute(name=security-enabled,value=false)
+    echo
+end-if
+
+if (outcome == failed) of /extension=org.wildfly.extension.microprofile.metrics-smallrye/:read-resource
+    echo Adding microprofile.metrics-smallrye extension...
+    /extension=org.wildfly.extension.microprofile.metrics-smallrye/:add(module=org.wildfly.extension.microprofile.metrics-smallrye)
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=microprofile-metrics-smallrye/:read-resource
+    echo Adding microprofile-metrics-smallrye subsystem
+    /subsystem=microprofile-metrics-smallrye/:add
+    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=security-enabled,value=false)
+    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=exposed-subsystems,value=[*])
+    echo
+end-if
+
+if (result == "Keycloak") of :read-attribute(name=product-name)
+    echo Adding microprofile-metrics-smallrye subsystem prefix attribute to Keycloak
+    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=prefix,value=${wildfly.metrics.prefix:wildfly})
+else
+    echo Adding microprofile-metrics-smallrye subsystem prefix attribute to RH-SSO
+    /subsystem=microprofile-metrics-smallrye/:write-attribute(name=prefix,value=${wildfly.metrics.prefix:jboss})
+end-if
+
+# Migrate from 6.0.1 to 7.0.0
+if (outcome == success) of /subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:read-resource
+    echo Removing READ_TIMEOUT option from remote service from ejb3 subsystem
+    /subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:remove
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=infinispan/cache-container=web/distributed-cache=routing:read-resource
+    echo Adding distributed cache routing to web cache container to infinispan subsystem
+    /subsystem=infinispan/cache-container=web/distributed-cache=routing/:add
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=infinispan/cache-container=web/replicated-cache=sso:read-resource
+    echo Adding replicated cache sso to web cache container to infinispan subsystem
+    /subsystem=infinispan/cache-container=web/replicated-cache=sso/:add
+    /subsystem=infinispan/cache-container=web/replicated-cache=sso/component=locking/:add(isolation=REPEATABLE_READ)
+    /subsystem=infinispan/cache-container=web/replicated-cache=sso/component=transaction/:add(mode=BATCH)
+    echo
+end-if
+
+if (outcome == failed) of /socket-binding-group=standard-sockets/socket-binding=jgroups-tcp-fd/:read-resource
+    echo Adding jgroups-tcp-fd socket binding to socket binding group
+    /socket-binding-group=standard-sockets/socket-binding=jgroups-tcp-fd/:add(interface=private,port=57600)
+    echo
+end-if
+
+if (outcome == failed) of /socket-binding-group=standard-sockets/socket-binding=jgroups-udp-fd/:read-resource
+    echo Adding jgroups-udp-fd socket binding to socket binding group
+    /socket-binding-group=standard-sockets/socket-binding=jgroups-udp-fd/:add(interface=private,port=54200)
+    echo
+end-if
+
+if (result == undefined) of /subsystem=jgroups/stack=tcp/protocol=FD_SOCK/:read-attribute(name=socket-binding)
+    echo Adding socket-binding for FD_SOCK protocol for tcp stack in jgroups subsystem
+    /subsystem=jgroups/stack=tcp/protocol=FD_SOCK/:write-attribute(name=socket-binding,value=jgroups-tcp-fd)
+    echo
+end-if
+
+if (result == undefined) of /subsystem=jgroups/stack=udp/protocol=FD_SOCK/:read-attribute(name=socket-binding)
+    echo Adding socket-binding for FD_SOCK protocol for udp stack in jgroups subsystem
+    /subsystem=jgroups/stack=udp/protocol=FD_SOCK/:write-attribute(name=socket-binding,value=jgroups-udp-fd)
+    echo
+end-if
+
+if (result == "true") of /subsystem=keycloak-server/spi=truststore/provider=file:map-get(name=properties, key=disabled)
+    echo Disabling Truststore Provider
+    /subsystem=keycloak-server/spi=truststore/provider=file:write-attribute(name=enabled, value=false)
+    echo Removing deprecated option
+    /subsystem=keycloak-server/spi=truststore/provider=file:map-remove(name=properties, key=disabled)
+    echo
+end-if
+
+# Migrate from 7.0.0 to 8.0.0
+
+if ((result.time == 100L) && (result.unit == MILLISECONDS)) of /subsystem=ejb3/thread-pool=default:read-attribute(name=keepalive-time)
+    echo Changing thread pool keepalive of ejb3 subsystem
+    /subsystem=ejb3/thread-pool=default:write-attribute(name=keepalive-time.time, value=60)
+    /subsystem=ejb3/thread-pool=default:write-attribute(name=keepalive-time.unit,value=SECONDS)
+    echo
+end-if
+
+if (result == UP) of /subsystem=microprofile-health-smallrye:read-attribute(name=empty-liveness-checks-status)
+    echo Adding empty-liveness-checks-status attribute to microprofile-health-smallrye subsystem
+    /subsystem=microprofile-health-smallrye:write-attribute(name=empty-liveness-checks-status, value=${env.MP_HEALTH_EMPTY_LIVENESS_CHECKS_STATUS:UP})
+    echo
+end-if
+
+if (result == UP) of /subsystem=microprofile-health-smallrye:read-attribute(name=empty-readiness-checks-status)
+    echo Adding empty-readiness-checks-status attribute to microprofile-health-smallrye subsystem
+    /subsystem=microprofile-health-smallrye:write-attribute(name=empty-readiness-checks-status, value=${env.MP_HEALTH_EMPTY_READINESS_CHECKS_STATUS:UP})
+    echo
+end-if
+
+if (outcome == failed) of /subsystem=keycloak-server/spi=hostname/provider=default/:read-resource
+    echo Adding default hostname provider
+    /subsystem=keycloak-server/spi=hostname/provider=default/:add(properties={frontendUrl => "${keycloak.frontendUrl:}",forceBackendUrlToFrontendUrl => "false"},enabled=true)
+end-if
+
+if (result == request) of /subsystem=keycloak-server/spi=hostname/:read-attribute(name=default-provider)
+    echo Switching from request to default hostname provider
+
+    /subsystem=keycloak-server/spi=hostname/:write-attribute(name=default-provider,value=default)
+end-if
+
+if (result != fixed) of /subsystem=keycloak-server/spi=hostname/:read-attribute(name=default-provider)
+    try
+        /subsystem=keycloak-server/spi=hostname/provider=fixed:remove
+        echo Removed config for unused fixed hostname provider
+    catch
+    end-try
+end-if
+
+# Migrate from 10.0.2 to 11.0.0 (migration changes for infinispan update from 9.4.18.Final to 10.1.8.Final)
+
+if (result != org.keycloak.keycloak-model-infinispan) of /subsystem=infinispan/cache-container=keycloak:read-attribute(name=module)
+    echo Setting class loader for keycloak cache-container so JBoss Marshalling works properly with Infinispan 10.x
+    /subsystem=infinispan/cache-container=keycloak:write-attribute(name=module,value=org.keycloak.keycloak-model-infinispan)
+    echo
 end-if
 
 echo *** End Migration ***

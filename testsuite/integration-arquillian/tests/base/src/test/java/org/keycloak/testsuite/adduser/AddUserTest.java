@@ -20,13 +20,17 @@ package org.keycloak.testsuite.adduser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.credential.hash.Pbkdf2Sha256PasswordHashProviderFactory;
 import org.keycloak.models.Constants;
+import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.wildfly.adduser.AddUser;
 
@@ -34,20 +38,36 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.List;
 
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.text.IsEmptyString.isEmptyOrNullString;
 import static org.junit.Assert.*;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class AddUserTest extends AbstractKeycloakTest {
 
     @ArquillianResource
     private ContainerController controller;
+
+    @BeforeClass
+    public static void enabled() {
+        // don't run with auth-server-undertow for now
+        ContainerAssume.assumeNotAuthServerUndertow();
+
+        // container auth-server-remote cannot be restarted
+        ContainerAssume.assumeNotAuthServerRemote();
+
+        // don't run with auth-server-quarkus for now
+        ContainerAssume.assumeNotAuthServerQuarkus();
+    }
 
     @Test
     public void addUserTest() throws Exception {
@@ -67,7 +87,7 @@ public class AddUserTest extends AbstractKeycloakTest {
                 new TypeReference<List<RealmRepresentation>>() {
                 });
 
-        assertThat("File 'keycloak-add-user.json' is empty.", realms.size() > 0, is(true));
+        assertThat("File 'keycloak-add-user.json' is empty.", realms, not(empty()));
 
         //-----------------Get-Indexes-------------------//
         int realmIndex = getRealmIndex(realmName, realms);
@@ -83,8 +103,9 @@ public class AddUserTest extends AbstractKeycloakTest {
         //------------------Credentials-----------------------------//
         assertThat("User Credentials are NULL", user.getCredentials().get(0), notNullValue());
         CredentialRepresentation credentials = user.getCredentials().get(0);
-        assertThat("User Credentials have wrong Algorithm.", credentials.getAlgorithm(), is(Pbkdf2Sha256PasswordHashProviderFactory.ID));
-        assertThat("User Credentials have wrong Hash Iterations", credentials.getHashIterations(), is(100000));
+        PasswordCredentialModel pcm = PasswordCredentialModel.createFromCredentialModel(RepresentationToModel.toModel(credentials));
+        assertThat("User Credentials have wrong Algorithm.", pcm.getPasswordCredentialData().getAlgorithm(), is(Pbkdf2Sha256PasswordHashProviderFactory.ID));
+        assertThat("User Credentials have wrong Hash Iterations", pcm.getPasswordCredentialData().getHashIterations(), is(100000));
 
         //------------------Restart--Container---------------------//
         controller.stop(authServerQualifier);

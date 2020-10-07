@@ -32,7 +32,7 @@ import java.util.List;
  */
 public class SAML11AttributeStatementType extends SAML11SubjectStatementType {
 
-    protected List<SAML11AttributeType> attribute = new ArrayList<SAML11AttributeType>();
+    protected List<SAML11AttributeType> attribute = new ArrayList<>();
 
     public void add(SAML11AttributeType aAttribute) {
         this.attribute.add(aAttribute);

@@ -44,7 +44,7 @@ import java.util.List;
  */
 public class AuthzDecisionStatementType extends StatementAbstractType {
 
-    protected List<ActionType> action = new ArrayList<ActionType>();
+    protected List<ActionType> action = new ArrayList<>();
     protected EvidenceType evidence;
     protected String resource;
     protected DecisionType decision;

@@ -9,13 +9,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="shortcut icon" href="${resourceUrl}/img/favicon.ico">
-    <#if properties.styles?has_content>
+    <#if properties.stylesCommon?has_content>
+    <#list properties.stylesCommon?split(' ') as style>
+    <link href="${resourceCommonUrl}/${style}" rel="stylesheet" />
+    </#list>
     <#list properties.styles?split(' ') as style>
     <link href="${resourceUrl}/${style}" rel="stylesheet" />
     </#list>
     </#if>
 
     <script type="text/javascript">
+        var authServerUrl = '${authServerUrl}';
         var authUrl = '${authUrl}';
         var consoleBaseUrl = '${consoleBaseUrl}';
         var resourceUrl = '${resourceUrl}';
@@ -24,40 +28,40 @@
     </script>
 
     <!-- Minimized versions (for those that have one) -->
-    <script src="${resourceUrl}/node_modules/jquery/dist/jquery.min.js" type="text/javascript"></script>
-    <script src="${resourceUrl}/node_modules/select2/select2.js" type="text/javascript"></script>
-    <script src="${resourceUrl}/node_modules/angular/angular.min.js"></script>
-    <script src="${resourceUrl}/node_modules/angular-resource/angular-resource.min.js"></script>
-    <script src="${resourceUrl}/node_modules/angular-route/angular-route.min.js"></script>
-    <script src="${resourceUrl}/node_modules/angular-cookies/angular-cookies.min.js"></script>
-    <script src="${resourceUrl}/node_modules/angular-sanitize/angular-sanitize.min.js"></script>
-    <script src="${resourceUrl}/node_modules/angular-translate/dist/angular-translate.min.js"></script>
-    <script src="${resourceUrl}/node_modules/angular-translate-loader-url/angular-translate-loader-url.min.js"></script>
-    <script src="${resourceUrl}/node_modules/angular-ui-select2/src/select2.js" type="text/javascript"></script>
-    <script src="${resourceUrl}/node_modules/autofill-event/autofill-event.js"></script>
+    <script src="${resourceCommonUrl}/node_modules/jquery/dist/jquery.min.js" type="text/javascript"></script>
+    <script src="${resourceCommonUrl}/node_modules/select2/select2.js" type="text/javascript"></script>
+    <script src="${resourceCommonUrl}/node_modules/angular/angular.min.js"></script>
+    <script src="${resourceCommonUrl}/node_modules/angular-resource/angular-resource.min.js"></script>
+    <script src="${resourceCommonUrl}/node_modules/angular-route/angular-route.min.js"></script>
+    <script src="${resourceCommonUrl}/node_modules/angular-cookies/angular-cookies.min.js"></script>
+    <script src="${resourceCommonUrl}/node_modules/angular-sanitize/angular-sanitize.min.js"></script>
+    <script src="${resourceCommonUrl}/node_modules/angular-translate/dist/angular-translate.min.js"></script>
+    <script src="${resourceCommonUrl}/node_modules/angular-translate-loader-url/angular-translate-loader-url.min.js"></script>
+    <script src="${resourceCommonUrl}/node_modules/angular-ui-select2/src/select2.js" type="text/javascript"></script>
+    <script src="${resourceCommonUrl}/node_modules/autofill-event/autofill-event.js"></script>
     
     
     <!-- Unminimized versions
-    <script src="${resourceUrl}/node_modules/jquery/dist/jquery.js" type="text/javascript"></script>
-    <script src="${resourceUrl}/node_modules/select2/select2.js" type="text/javascript"></script>
-    <script src="${resourceUrl}/node_modules/angular/angular.js"></script>
-    <script src="${resourceUrl}/node_modules/angular-resource/angular-resource.js"></script>
-    <script src="${resourceUrl}/node_modules/angular-route/angular-route.js"></script>
-    <script src="${resourceUrl}/node_modules/angular-cookies/angular-cookies.js"></script>
-    <script src="${resourceUrl}/node_modules/angular-sanitize/angular-sanitize.js"></script>
-    <script src="${resourceUrl}/node_modules/angular-translate/dist/angular-translate.js"></script>
-    <script src="${resourceUrl}/node_modules/angular-translate-loader-url/angular-translate-loader-url.js"></script>
-    <script src="${resourceUrl}/node_modules/angular-ui-select2/src/select2.js" type="text/javascript"></script>
-    <script src="${resourceUrl}/node_modules/autofill-event/autofill-event.js"></script>
+    <script src="${resourceCommonUrl}/node_modules/jquery/dist/jquery.js" type="text/javascript"></script>
+    <script src="${resourceCommonUrl}/node_modules/select2/select2.js" type="text/javascript"></script>
+    <script src="${resourceCommonUrl}/node_modules/angular/angular.js"></script>
+    <script src="${resourceCommonUrl}/node_modules/angular-resource/angular-resource.js"></script>
+    <script src="${resourceCommonUrl}/node_modules/angular-route/angular-route.js"></script>
+    <script src="${resourceCommonUrl}/node_modules/angular-cookies/angular-cookies.js"></script>
+    <script src="${resourceCommonUrl}/node_modules/angular-sanitize/angular-sanitize.js"></script>
+    <script src="${resourceCommonUrl}/node_modules/angular-translate/dist/angular-translate.js"></script>
+    <script src="${resourceCommonUrl}/node_modules/angular-translate-loader-url/angular-translate-loader-url.js"></script>
+    <script src="${resourceCommonUrl}/node_modules/angular-ui-select2/src/select2.js" type="text/javascript"></script>
+    <script src="${resourceCommonUrl}/node_modules/autofill-event/autofill-event.js"></script>
     -->
 
     <!-- Libraries not managed by yarn -->
-    <script src="${resourceUrl}/lib/angular/ui-bootstrap-tpls-0.11.0.js"></script>
-    <script src="${resourceUrl}/lib/angular/treeview/angular.treeview.js"></script>
-    <script src="${resourceUrl}/lib/fileupload/angular-file-upload.min.js"></script>
-    <script src="${resourceUrl}/lib/filesaver/FileSaver.js"></script>
-    <script src="${resourceUrl}/lib/ui-ace/min/ace.js"></script>
-    <script src="${resourceUrl}/lib/ui-ace/ui-ace.min.js"></script>
+    <script src="${resourceCommonUrl}/lib/angular/ui-bootstrap-tpls-0.11.0.js"></script>
+    <script src="${resourceCommonUrl}/lib/angular/treeview/angular.treeview.js"></script>
+    <script src="${resourceCommonUrl}/lib/fileupload/angular-file-upload.min.js"></script>
+    <script src="${resourceCommonUrl}/lib/filesaver/FileSaver.js"></script>
+    <script src="${resourceCommonUrl}/lib/ui-ace/min/ace.js"></script>
+    <script src="${resourceCommonUrl}/lib/ui-ace/ui-ace.min.js"></script>
 
     <script src="${authUrl}/js/keycloak.js?version=${resourceVersion}" type="text/javascript"></script>
 
@@ -100,14 +104,8 @@
 
         <span class="pficon pficon-ok" ng-show="notification.type == 'success'"></span>
         <span class="pficon pficon-info" ng-show="notification.type == 'info'"></span>
-        <span class="pficon-layered" ng-show="notification.type == 'danger'">
-            <span class="pficon pficon-error-octagon"></span>
-            <span class="pficon pficon-error-exclamation"></span>
-        </span>
-        <span class="pficon-layered" ng-show="notification.type == 'warning'">
-            <span class="pficon pficon-warning-triangle"></span>
-            <span class="pficon pficon-warning-exclamation"></span>
-        </span>
+        <span class="pficon pficon-warning-triangle-o" ng-show="notification.type == 'warning'"></span>
+        <span class="pficon pficon-error-circle-o" ng-show="notification.type == 'danger'"></span>
         <strong>{{notification.header}}</strong> {{notification.message}}
     </div>
 </div>

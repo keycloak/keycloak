@@ -24,20 +24,20 @@ import org.keycloak.events.admin.AdminEventQuery;
  */
 public interface EventStoreProvider extends EventListenerProvider {
 
-    public EventQuery createQuery();
+    EventQuery createQuery();
 
-    public AdminEventQuery createAdminQuery();
+    AdminEventQuery createAdminQuery();
 
-    public void clear();
+    void clear();
 
-    public void clear(String realmId);
+    void clear(String realmId);
 
-    public void clear(String realmId, long olderThan);
+    void clear(String realmId, long olderThan);
 
-    public void clearAdmin();
+    void clearAdmin();
 
-    public void clearAdmin(String realmId);
+    void clearAdmin(String realmId);
 
-    public void clearAdmin(String realmId, long olderThan);
+    void clearAdmin(String realmId, long olderThan);
 
 }

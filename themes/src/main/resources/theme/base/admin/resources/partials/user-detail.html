@@ -20,16 +20,16 @@
             <div class="form-group">
                 <label class="col-md-2 control-label"for="id">{{:: 'created-at' | translate}}</label>
                 <div class="col-md-6">
-                    {{user.createdTimestamp|date:'shortDate'}}&nbsp;{{user.createdTimestamp|date:'mediumTime'}}
+                    {{user.createdTimestamp|date:('dateFormat' | translate)}}&nbsp;{{user.createdTimestamp|date:('timeFormat' | translate)}}
                 </div>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" data-ng-hide="emailAsUsername">
                 <label class="col-md-2 control-label"for="username">{{:: 'username' | translate}} <span class="required" data-ng-show="create">*</span></label>
                 <div class="col-md-6">
                     <!-- Characters >,<,/,\ are forbidden in username -->
                     <input class="form-control" type="text" id="username" name="username" data-ng-model="user.username" autofocus
-                           required ng-pattern="/^[^\<\>\\\/]*$/" data-ng-readonly="!editUsername">
+                           data-ng-required="!emailAsUsername" ng-pattern="/^[^\<\>\\\/]*$/" data-ng-readonly="!editUsername">
                 </div>
             </div>
 
@@ -121,7 +121,7 @@
                 </div>
             </div>
 
-            <div class="form-group clearfix" data-ng-hide="create || !access.impersonation">
+            <div class="form-group clearfix" data-ng-hide="create || !access.impersonation || !serverInfo.featureEnabled('IMPERSONATION')">
                 <label class="col-md-2 control-label" for="impersonate">{{:: 'impersonate-user' | translate}}</label>
 
                 <div class="col-md-6">

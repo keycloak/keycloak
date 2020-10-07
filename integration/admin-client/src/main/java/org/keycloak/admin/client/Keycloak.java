@@ -14,11 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.admin.client;
 
-import org.jboss.resteasy.client.jaxrs.ResteasyClient;
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 import org.jboss.resteasy.plugins.providers.jackson.ResteasyJackson2Provider;
 import org.keycloak.admin.client.resource.BearerAuthFilter;
@@ -28,38 +25,36 @@ import org.keycloak.admin.client.resource.ServerInfoResource;
 import org.keycloak.admin.client.token.TokenManager;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSession;
-
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
 import java.net.URI;
 
 import static org.keycloak.OAuth2Constants.PASSWORD;
 
 /**
- * Provides a Keycloak client. By default, this implementation uses a {@link ResteasyClient RESTEasy client} with the
- * default {@link ResteasyClientBuilder} settings. To customize the underling client, use a {@link KeycloakBuilder} to
- * create a Keycloak client.
+ * Provides a Keycloak client. By default, this implementation uses a the default RestEasy client builder settings.
+ * To customize the underling client, use a {@link KeycloakBuilder} to create a Keycloak client.
  *
  * To read Responses, you can use {@link CreatedResponseUtil} for objects created
  *
  * @author rodrigo.sasaki@icarros.com.br
  * @see KeycloakBuilder
  */
-public class Keycloak {
+public class Keycloak implements AutoCloseable {
     private final Config config;
     private final TokenManager tokenManager;
-    private String authToken;
+    private final String authToken;
     private final ResteasyWebTarget target;
-    private final ResteasyClient client;
-    private static final boolean authServerSslRequired = Boolean.parseBoolean(System.getProperty("auth.server.ssl.required"));
+    private final Client client;
+    private boolean closed = false;
 
-    Keycloak(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, String grantType, ResteasyClient resteasyClient, String authtoken) {
+    Keycloak(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, String grantType, Client resteasyClient, String authtoken) {
         config = new Config(serverUrl, realm, username, password, clientId, clientSecret, grantType);
-        client = resteasyClient != null ? resteasyClient : new ResteasyClientBuilder().connectionPoolSize(10).build();
+        client = resteasyClient != null ? resteasyClient : newRestEasyClient(null, null, false);
         authToken = authtoken;
         tokenManager = authtoken == null ? new TokenManager(config, client) : null;
 
-        target = client.target(config.getServerUrl());
+        target = (ResteasyWebTarget) client.target(config.getServerUrl());
         target.register(newAuthFilter());
     }
 
@@ -67,47 +62,48 @@ public class Keycloak {
         return authToken != null ? new BearerAuthFilter(authToken) : new BearerAuthFilter(tokenManager);
     }
 
-    public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, SSLContext sslContext) {
-        return getInstance(serverUrl, realm, username, password, clientId, clientSecret, sslContext, null);
-    }
-
-    public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, SSLContext sslContext, ResteasyJackson2Provider customJacksonProvider) {
-        ResteasyClientBuilder clientBuilder = new ResteasyClientBuilder()
-                .sslContext(sslContext)
-                .hostnameVerification(ResteasyClientBuilder.HostnameVerificationPolicy.WILDCARD)
-                .connectionPoolSize(10);
+    private static Client newRestEasyClient(ResteasyJackson2Provider customJacksonProvider, SSLContext sslContext, boolean disableTrustManager) {
+        ClientBuilder clientBuilder = ClientBuilderWrapper.create(sslContext, disableTrustManager);
 
         if (customJacksonProvider != null) {
-            clientBuilder.register(customJacksonProvider);
+            clientBuilder.register(customJacksonProvider, 100);
+        } else {
+            clientBuilder.register(JacksonProvider.class, 100);
         }
 
-        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, clientBuilder.build(), null);
+        return clientBuilder.build();
     }
 
-    private static ResteasyClientBuilder newResteasyClientBuilder() {
-        if (authServerSslRequired) {
-            // Disable PKIX path validation errors when running tests using SSL
-            HostnameVerifier hostnameVerifier = new HostnameVerifier() {
-                @Override
-                public boolean verify(String hostName, SSLSession session) {
-                    return true;
-                }
-            };
-            return new ResteasyClientBuilder().disableTrustManager().hostnameVerifier(hostnameVerifier);
-        }
-        return new ResteasyClientBuilder();
+    public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, SSLContext sslContext, ResteasyJackson2Provider customJacksonProvider, boolean disableTrustManager, String authToken) {
+        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, newRestEasyClient(customJacksonProvider, sslContext, disableTrustManager), authToken);
     }
 
     public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret) {
-        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, null, null);
+        return getInstance(serverUrl, realm, username, password, clientId, clientSecret, null, null, false, null);
+    }
+
+    public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, SSLContext sslContext) {
+        return getInstance(serverUrl, realm, username, password, clientId, clientSecret, sslContext, null, false, null);
+    }
+
+    public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, SSLContext sslContext, ResteasyJackson2Provider customJacksonProvider) {
+        return getInstance(serverUrl, realm, username, password, clientId, clientSecret, sslContext, customJacksonProvider, false, null);
     }
 
     public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId) {
-        return new Keycloak(serverUrl, realm, username, password, clientId, null, PASSWORD, null, null);
+        return getInstance(serverUrl, realm, username, password, clientId, null, null, null, false, null);
+    }
+
+    public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, SSLContext sslContext) {
+        return getInstance(serverUrl, realm, username, password, clientId, null, sslContext, null, false, null);
     }
 
     public static Keycloak getInstance(String serverUrl, String realm, String clientId, String authToken) {
-        return new Keycloak(serverUrl, realm, null, null, clientId, null, PASSWORD, null, authToken);
+        return getInstance(serverUrl, realm, null, null, clientId, null, null, null, false, authToken);
+    }
+
+    public static Keycloak getInstance(String serverUrl, String realm, String clientId, String authToken, SSLContext sllSslContext) {
+        return getInstance(serverUrl, realm, null, null, clientId, null, sllSslContext, null, false, authToken);
     }
 
     public RealmsResource realms() {
@@ -136,13 +132,15 @@ public class Keycloak {
      * @return
      */
     public <T> T proxy(Class<T> proxyClass, URI absoluteURI) {
-        return client.target(absoluteURI).register(newAuthFilter()).proxy(proxyClass);
+        return ((ResteasyWebTarget) client.target(absoluteURI)).register(newAuthFilter()).proxy(proxyClass);
     }
 
     /**
      * Closes the underlying client. After calling this method, this <code>Keycloak</code> instance cannot be reused.
      */
+    @Override
     public void close() {
+        closed = true;
         client.close();
     }
 
@@ -150,6 +148,6 @@ public class Keycloak {
      * @return true if the underlying client is closed.
      */
     public boolean isClosed() {
-        return client.isClosed();
+        return closed;
     }
 }

@@ -7,6 +7,7 @@ ENV CONFIGURATION standalone.xml
 
 # Ensure signals are forwarded to the JVM process correctly for graceful shutdown
 ENV LAUNCH_JBOSS_IN_BACKGROUND 1
+ENV JSTAT false
 
 USER root
 RUN yum -y install iproute

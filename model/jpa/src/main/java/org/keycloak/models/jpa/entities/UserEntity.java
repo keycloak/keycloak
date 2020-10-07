@@ -34,8 +34,8 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -44,8 +44,8 @@ import java.util.Collection;
 @NamedQueries({
         @NamedQuery(name="getAllUsersByRealm", query="select u from UserEntity u where u.realmId = :realmId order by u.username"),
         @NamedQuery(name="getAllUsersByRealmExcludeServiceAccount", query="select u from UserEntity u where u.realmId = :realmId and (u.serviceAccountClientLink is null) order by u.username"),
-        @NamedQuery(name="searchForUser", query="select u from UserEntity u where u.realmId = :realmId and (u.serviceAccountClientLink is null) and " +
-                "( lower(u.username) like :search or lower(concat(u.firstName, ' ', u.lastName)) like :search or u.email like :search ) order by u.username"),
+        @NamedQuery(name="searchForUserCount", query="select count(u) from UserEntity u where u.realmId = :realmId and (u.serviceAccountClientLink is null) and " +
+                "( lower(u.username) like :search or lower(concat(coalesce(u.firstName, ''), ' ', coalesce(u.lastName, ''))) like :search or u.email like :search )"),
         @NamedQuery(name="getRealmUserByUsername", query="select u from UserEntity u where u.username = :username and u.realmId = :realmId"),
         @NamedQuery(name="getRealmUserByEmail", query="select u from UserEntity u where u.email = :email and u.realmId = :realmId"),
         @NamedQuery(name="getRealmUserByLastName", query="select u from UserEntity u where u.lastName = :lastName and u.realmId = :realmId"),
@@ -98,17 +98,17 @@ public class UserEntity {
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
-    protected Collection<UserAttributeEntity> attributes = new ArrayList<UserAttributeEntity>();
+    protected Collection<UserAttributeEntity> attributes;
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
-    protected Collection<UserRequiredActionEntity> requiredActions = new ArrayList<UserRequiredActionEntity>();
+    protected Collection<UserRequiredActionEntity> requiredActions;
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
-    protected Collection<CredentialEntity> credentials = new ArrayList<CredentialEntity>();
+    protected Collection<CredentialEntity> credentials;
 
     @Column(name="FEDERATION_LINK")
     protected String federationLink;
@@ -193,6 +193,9 @@ public class UserEntity {
     }
 
     public Collection<UserAttributeEntity> getAttributes() {
+        if (attributes == null) {
+            attributes = new LinkedList<>();
+        }
         return attributes;
     }
 
@@ -201,6 +204,9 @@ public class UserEntity {
     }
 
     public Collection<UserRequiredActionEntity> getRequiredActions() {
+        if (requiredActions == null) {
+            requiredActions = new LinkedList<>();
+        }
         return requiredActions;
     }
 
@@ -217,6 +223,9 @@ public class UserEntity {
     }
 
     public Collection<CredentialEntity> getCredentials() {
+        if (credentials == null) {
+            credentials = new LinkedList<>();
+        }
         return credentials;
     }
 

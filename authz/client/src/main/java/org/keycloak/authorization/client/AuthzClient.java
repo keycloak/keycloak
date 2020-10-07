@@ -17,14 +17,18 @@
  */
 package org.keycloak.authorization.client;
 
+import static org.keycloak.constants.ServiceUrlConstants.AUTHZ_DISCOVERY_URL;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.resource.AuthorizationResource;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.authorization.client.util.Http;
 import org.keycloak.authorization.client.util.TokenCallable;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
@@ -53,8 +57,18 @@ public class AuthzClient {
     public static AuthzClient create() throws RuntimeException {
         InputStream configStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("keycloak.json");
 
-        if (configStream == null) {
-            throw new RuntimeException("Could not find any keycloak.json file in classpath.");
+        return create(configStream);
+    }
+
+    /**
+     * <p>Creates a new instance.
+     *
+     * @param configStream the input stream with the configuration data
+     * @return a new instance
+     */
+    public static AuthzClient create(InputStream configStream) throws RuntimeException {
+        if (Objects.isNull(configStream)) {
+            throw new IllegalArgumentException("Config input stream can not be null");
         }
 
         try {
@@ -228,8 +242,7 @@ public class AuthzClient {
             throw new IllegalArgumentException("Configuration URL can not be null.");
         }
 
-        configurationUrl += "/realms/" + configuration.getRealm() + "/.well-known/uma2-configuration";
-
+        configurationUrl = KeycloakUriBuilder.fromUri(configurationUrl).clone().path(AUTHZ_DISCOVERY_URL).build(configuration.getRealm()).toString(); 
         this.configuration = configuration;
 
         this.http = new Http(configuration, authenticator != null ? authenticator : configuration.getClientAuthenticator());

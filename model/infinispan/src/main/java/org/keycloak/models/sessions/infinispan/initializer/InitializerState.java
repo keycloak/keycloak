@@ -44,15 +44,12 @@ public class InitializerState extends SessionEntity {
 
     private final int segmentsCount;
     private final BitSet segments;
-    private int lowestUnfinishedSegment = 0;
 
     public InitializerState(int segmentsCount) {
         this.segmentsCount = segmentsCount;
         this.segments = new BitSet(segmentsCount);
 
         log.debugf("segmentsCount: %d", segmentsCount);
-
-        updateLowestUnfinishedSegment();
     }
 
     private InitializerState(String realmId, int segmentsCount, BitSet segments) {
@@ -61,8 +58,14 @@ public class InitializerState extends SessionEntity {
         this.segments = segments;
 
         log.debugf("segmentsCount: %d", segmentsCount);
+    }
 
-        updateLowestUnfinishedSegment();
+    /**
+     * Getter for the segments count.
+     * @return The number of segments of the state
+     */
+    public int getSegmentsCount() {
+        return segmentsCount;
     }
 
     /** Return true just if computation is entirely finished (all segments are true) */
@@ -70,39 +73,23 @@ public class InitializerState extends SessionEntity {
         return segments.cardinality() == segmentsCount;
     }
 
-    /** Return next un-finished segments. It returns at most {@code maxSegmentCount} segments. */
-    public List<Integer> getUnfinishedSegments(int maxSegmentCount) {
+    /** Return next un-finished segments in the next row of segments.
+     * @param segmentToLoad The segment we are loading
+     * @param maxSegmentCount The max segment to load
+     * @return The list of segments to work on this step
+     */
+    public List<Integer> getSegmentsToLoad(int segmentToLoad, int maxSegmentCount) {
         List<Integer> result = new LinkedList<>();
-        int next = lowestUnfinishedSegment;
-        boolean remaining = lowestUnfinishedSegment != -1;
-
-        while (remaining && result.size() < maxSegmentCount) {
-            next = getNextUnfinishedSegmentFromIndex(next);
-            if (next == -1) {
-                remaining = false;
-            } else {
-                result.add(next);
-                next++;
+        for (int i = segmentToLoad; i < (segmentToLoad + maxSegmentCount) && i < segmentsCount; i++) {
+            if (!segments.get(i)) {
+                result.add(i);
             }
         }
-
         return result;
     }
 
     public void markSegmentFinished(int index) {
         segments.set(index);
-        updateLowestUnfinishedSegment();
-    }
-
-    private void updateLowestUnfinishedSegment() {
-        this.lowestUnfinishedSegment = getNextUnfinishedSegmentFromIndex(lowestUnfinishedSegment);
-    }
-
-    private int getNextUnfinishedSegmentFromIndex(int index) {
-        final int nextFreeSegment = this.segments.nextClearBit(index);
-        return (nextFreeSegment < this.segmentsCount)
-          ? nextFreeSegment
-          : -1;
     }
 
     @Override
@@ -119,7 +106,6 @@ public class InitializerState extends SessionEntity {
         int hash = 3;
         hash = 97 * hash + this.segmentsCount;
         hash = 97 * hash + Objects.hashCode(this.segments);
-        hash = 97 * hash + this.lowestUnfinishedSegment;
         return hash;
     }
 
@@ -136,9 +122,6 @@ public class InitializerState extends SessionEntity {
         }
         final InitializerState other = (InitializerState) obj;
         if (this.segmentsCount != other.segmentsCount) {
-            return false;
-        }
-        if (this.lowestUnfinishedSegment != other.lowestUnfinishedSegment) {
             return false;
         }
         if ( ! Objects.equals(this.segments, other.segments)) {

@@ -19,13 +19,18 @@ package org.keycloak.models;
 
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderModel;
+import org.keycloak.storage.role.RoleStorageProvider;
+import org.keycloak.storage.role.RoleStorageProviderModel;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -34,6 +39,7 @@ import java.util.*;
 public interface RealmModel extends RoleContainerModel {
     interface RealmCreationEvent extends ProviderEvent {
         RealmModel getCreatedRealm();
+        KeycloakSession getKeycloakSession();
     }
 
     interface RealmPostCreateEvent extends ProviderEvent {
@@ -177,6 +183,12 @@ public interface RealmModel extends RoleContainerModel {
     int getSsoSessionMaxLifespan();
     void setSsoSessionMaxLifespan(int seconds);
 
+    int getSsoSessionIdleTimeoutRememberMe();
+    void setSsoSessionIdleTimeoutRememberMe(int seconds);
+
+    int getSsoSessionMaxLifespanRememberMe();
+    void setSsoSessionMaxLifespanRememberMe(int seconds);
+
     int getOfflineSessionIdleTimeout();
     void setOfflineSessionIdleTimeout(int seconds);
 
@@ -188,6 +200,18 @@ public interface RealmModel extends RoleContainerModel {
 
     int getOfflineSessionMaxLifespan();
     void setOfflineSessionMaxLifespan(int seconds);
+
+    int getClientSessionIdleTimeout();
+    void setClientSessionIdleTimeout(int seconds);
+
+    int getClientSessionMaxLifespan();
+    void setClientSessionMaxLifespan(int seconds);
+
+    int getClientOfflineSessionIdleTimeout();
+    void setClientOfflineSessionIdleTimeout(int seconds);
+
+    int getClientOfflineSessionMaxLifespan();
+    void setClientOfflineSessionMaxLifespan(int seconds);
 
     void setAccessTokenLifespan(int seconds);
 
@@ -233,15 +257,65 @@ public interface RealmModel extends RoleContainerModel {
     OTPPolicy getOTPPolicy();
     void setOTPPolicy(OTPPolicy policy);
 
+    /**
+     * @return  WebAuthn policy for 2-factor authentication
+     */
+    WebAuthnPolicy getWebAuthnPolicy();
+
+    /**
+     * Set WebAuthn policy for 2-factor authentication
+     *
+     * @param policy
+     */
+    void setWebAuthnPolicy(WebAuthnPolicy policy);
+
+    /**
+     *
+     * @return WebAuthn passwordless policy below. This is temporary and will be removed later.
+     */
+    WebAuthnPolicy getWebAuthnPolicyPasswordless();
+
+    /**
+     * Set WebAuthn passwordless policy below. This is temporary and will be removed later.
+     * @param policy
+     */
+    void setWebAuthnPolicyPasswordless(WebAuthnPolicy policy);
+
     RoleModel getRoleById(String id);
 
-    List<GroupModel> getDefaultGroups();
+    @Deprecated
+    default List<GroupModel> getDefaultGroups() {
+        return getDefaultGroupsStream().collect(Collectors.toList());
+    }
+
+    Stream<GroupModel> getDefaultGroupsStream();
 
     void addDefaultGroup(GroupModel group);
 
     void removeDefaultGroup(GroupModel group);
 
-    List<ClientModel> getClients();
+    @Deprecated
+    default List<ClientModel> getClients() {
+        return getClientsStream(null, null).collect(Collectors.toList());
+    }
+
+    Stream<ClientModel> getClientsStream();
+
+    @Deprecated
+    default List<ClientModel> getClients(Integer firstResult, Integer maxResults) {
+        return getClientsStream(firstResult, maxResults).collect(Collectors.toList());
+    }
+
+    Stream<ClientModel> getClientsStream(Integer firstResult, Integer maxResults);
+
+    Long getClientsCount();
+
+    @Deprecated
+    default List<ClientModel> getAlwaysDisplayInConsoleClients() {
+        return getAlwaysDisplayInConsoleClientsStream().collect(Collectors.toList());
+    }
+
+    Stream<ClientModel> getAlwaysDisplayInConsoleClientsStream();
 
     ClientModel addClient(String name);
 
@@ -252,6 +326,13 @@ public interface RealmModel extends RoleContainerModel {
     ClientModel getClientById(String id);
     ClientModel getClientByClientId(String clientId);
 
+    @Deprecated
+    default List<ClientModel> searchClientByClientId(String clientId, Integer firstResult, Integer maxResults) {
+        return searchClientByClientIdStream(clientId, firstResult, maxResults).collect(Collectors.toList());
+    }
+
+    Stream<ClientModel> searchClientByClientIdStream(String clientId, Integer firstResult, Integer maxResults);
+    
     void updateRequiredCredentials(Set<String> creds);
 
     Map<String, String> getBrowserSecurityHeaders();
@@ -288,6 +369,7 @@ public interface RealmModel extends RoleContainerModel {
 
     List<AuthenticationExecutionModel> getAuthenticationExecutions(String flowId);
     AuthenticationExecutionModel getAuthenticationExecutionById(String id);
+    AuthenticationExecutionModel getAuthenticationExecutionByFlowId(String flowId);
     AuthenticationExecutionModel addAuthenticatorExecution(AuthenticationExecutionModel model);
     void updateAuthenticatorExecution(AuthenticationExecutionModel model);
     void removeAuthenticatorExecution(AuthenticationExecutionModel model);
@@ -317,8 +399,8 @@ public interface RealmModel extends RoleContainerModel {
     IdentityProviderMapperModel addIdentityProviderMapper(IdentityProviderMapperModel model);
     void removeIdentityProviderMapper(IdentityProviderMapperModel mapping);
     void updateIdentityProviderMapper(IdentityProviderMapperModel mapping);
-    public IdentityProviderMapperModel getIdentityProviderMapperById(String id);
-    public IdentityProviderMapperModel getIdentityProviderMapperByName(String brokerAlias, String name);
+    IdentityProviderMapperModel getIdentityProviderMapperById(String id);
+    IdentityProviderMapperModel getIdentityProviderMapperByName(String brokerAlias, String name);
 
 
     /**
@@ -341,6 +423,16 @@ public interface RealmModel extends RoleContainerModel {
     void removeComponent(ComponentModel component);
     void removeComponents(String parentId);
     List<ComponentModel> getComponents(String parentId, String providerType);
+
+    /**
+     * Returns stream of ComponentModels for specific parentId and providerType.
+     * @param parentId id of parent
+     * @param providerType type of provider
+     * @return stream of ComponentModels
+     */
+    default Stream<ComponentModel> getComponentsStream(String parentId, String providerType) {
+        return getComponents(parentId, providerType).stream();
+    }
 
     List<ComponentModel> getComponents(String parentId);
 
@@ -365,6 +457,25 @@ public interface RealmModel extends RoleContainerModel {
         }
         Collections.sort(list, ClientStorageProviderModel.comparator);
         return list;
+    }
+
+    default
+    List<RoleStorageProviderModel> getRoleStorageProviders() {
+        List<RoleStorageProviderModel> list = new LinkedList<>();
+        for (ComponentModel component : getComponents(getId(), RoleStorageProvider.class.getName())) {
+            list.add(new RoleStorageProviderModel(component));
+        }
+        Collections.sort(list, RoleStorageProviderModel.comparator);
+        return list;
+    }
+
+    /**
+     * Returns stream of ComponentModels that represent StorageProviders for class storageProviderClass in this realm
+     * @param storageProviderClass class
+     * @return stream of StorageProviders
+     */
+    default Stream<ComponentModel> getStorageProviders(Class<? extends Provider> storageProviderClass) {
+        return getComponentsStream(getId(), storageProviderClass.getName());
     }
 
     String getLoginTheme();
@@ -434,16 +545,53 @@ public interface RealmModel extends RoleContainerModel {
     String getDefaultLocale();
     void setDefaultLocale(String locale);
 
-    GroupModel createGroup(String name);
-    GroupModel createGroup(String id, String name);
+    default GroupModel createGroup(String name) {
+        return createGroup(null, name, null);
+    };
+
+    default GroupModel createGroup(String id, String name) {
+        return createGroup(id, name, null);
+    };
+
+    default GroupModel createGroup(String name, GroupModel toParent) {
+        return createGroup(null, name, toParent);
+    };
+
+    GroupModel createGroup(String id, String name, GroupModel toParent);
 
     GroupModel getGroupById(String id);
-    List<GroupModel> getGroups();
+
+    @Deprecated
+    default List<GroupModel> getGroups() {
+        return getGroupsStream().collect(Collectors.toList());
+    }
+
+    Stream<GroupModel> getGroupsStream();
+
     Long getGroupsCount(Boolean onlyTopGroups);
     Long getGroupsCountByNameContaining(String search);
-    List<GroupModel> getTopLevelGroups();
-    List<GroupModel> getTopLevelGroups(Integer first, Integer max);
-    List<GroupModel> searchForGroupByName(String search, Integer first, Integer max);
+
+    @Deprecated
+    default List<GroupModel> getTopLevelGroups() {
+        return getTopLevelGroupsStream().collect(Collectors.toList());
+    }
+
+    Stream<GroupModel> getTopLevelGroupsStream();
+
+    @Deprecated
+    default List<GroupModel> getTopLevelGroups(Integer first, Integer max) {
+        return getTopLevelGroupsStream(first, max).collect(Collectors.toList());
+    }
+
+    Stream<GroupModel> getTopLevelGroupsStream(Integer first, Integer max);
+
+    @Deprecated
+    default List<GroupModel> searchForGroupByName(String search, Integer first, Integer max) {
+        return searchForGroupByNameStream(search, first, max).collect(Collectors.toList());
+    }
+
+    Stream<GroupModel> searchForGroupByNameStream(String search, Integer first, Integer max);
+
     boolean removeGroup(GroupModel group);
     void moveGroup(GroupModel group, GroupModel toParent);
 

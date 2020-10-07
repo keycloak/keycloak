@@ -22,6 +22,7 @@ import org.keycloak.credential.UserCredentialStoreManager;
 import org.keycloak.jose.jws.DefaultTokenManager;
 import org.keycloak.keys.DefaultKeyManager;
 import org.keycloak.models.ClientProvider;
+import org.keycloak.models.GroupProvider;
 import org.keycloak.models.TokenManager;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -29,6 +30,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RoleProvider;
 import org.keycloak.models.ThemeManager;
 import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserProvider;
@@ -37,18 +39,25 @@ import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.services.clientpolicy.ClientPolicyManager;
+import org.keycloak.services.clientpolicy.DefaultClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.ClientStorageManager;
+import org.keycloak.storage.GroupStorageManager;
+import org.keycloak.storage.RoleStorageManager;
 import org.keycloak.storage.UserStorageManager;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
-import org.keycloak.theme.DefaultThemeManager;
+import org.keycloak.vault.DefaultVaultTranscriber;
+import org.keycloak.vault.VaultProvider;
+import org.keycloak.vault.VaultTranscriber;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -57,12 +66,17 @@ public class DefaultKeycloakSession implements KeycloakSession {
 
     private final DefaultKeycloakSessionFactory factory;
     private final Map<Integer, Provider> providers = new HashMap<>();
-    private final List<Provider> closable = new LinkedList<Provider>();
+    private final List<Provider> closable = new LinkedList<>();
     private final DefaultKeycloakTransactionManager transactionManager;
     private final Map<String, Object> attributes = new HashMap<>();
     private RealmProvider model;
+    private ClientProvider clientProvider;
+    private GroupProvider groupProvider;
+    private RoleProvider roleProvider;
     private UserStorageManager userStorageManager;
     private ClientStorageManager clientStorageManager;
+    private RoleStorageManager roleStorageManager;
+    private GroupStorageManager groupStorageManager;
     private UserCredentialStoreManager userCredentialStorageManager;
     private UserSessionProvider sessionProvider;
     private AuthenticationSessionProvider authenticationSessionProvider;
@@ -71,6 +85,8 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private KeyManager keyManager;
     private ThemeManager themeManager;
     private TokenManager tokenManager;
+    private VaultTranscriber vaultTranscriber;
+    private ClientPolicyManager clientPolicyManager;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
@@ -92,6 +108,36 @@ public class DefaultKeycloakSession implements KeycloakSession {
         }
     }
 
+    private ClientProvider getClientProvider() {
+        // TODO: Extract ClientProvider from CacheRealmProvider and use that instead
+        ClientProvider cache = getProvider(CacheRealmProvider.class);
+        if (cache != null) {
+            return cache;
+        } else {
+            return clientStorageManager();
+        }
+    }
+
+    private GroupProvider getGroupProvider() {
+        // TODO: Extract GroupProvider from CacheRealmProvider and use that instead
+        GroupProvider cache = getProvider(CacheRealmProvider.class);
+        if (cache != null) {
+            return cache;
+        } else {
+            return groupStorageManager();
+        }
+    }
+
+    private RoleProvider getRoleProvider() {
+        // TODO: Extract RoleProvider from CacheRealmProvider and use that instead
+        RoleProvider cache = getProvider(CacheRealmProvider.class);
+        if (cache != null) {
+            return cache;
+        } else {
+            return roleStorageManager();
+        }
+    }
+
     @Override
     public UserCache userCache() {
         return getProvider(UserCache.class);
@@ -109,9 +155,10 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getAttribute(String attribute, Class<T> clazz) {
         Object value = getAttribute(attribute);
-        return value != null && clazz.isInstance(value) ? (T) value : null;
+        return clazz.isInstance(value) ? (T) value : null;
     }
 
     @Override
@@ -154,13 +201,41 @@ public class DefaultKeycloakSession implements KeycloakSession {
 
     @Override
     public ClientProvider clientLocalStorage() {
-        return realmLocalStorage();
+        return getProvider(ClientProvider.class);
+    }
+
+    @Override
+    public GroupProvider groupLocalStorage() {
+        return getProvider(GroupProvider.class);
     }
 
     @Override
     public ClientProvider clientStorageManager() {
-        if (clientStorageManager == null) clientStorageManager = new ClientStorageManager(this);
+        if (clientStorageManager == null) {
+            clientStorageManager = new ClientStorageManager(this, factory.getClientStorageProviderTimeout());
+        }
         return clientStorageManager;
+    }
+
+    @Override
+    public RoleProvider roleLocalStorage() {
+        return getProvider(RoleProvider.class);
+    }
+
+    @Override
+    public RoleProvider roleStorageManager() {
+        if (roleStorageManager == null) {
+            roleStorageManager = new RoleStorageManager(this, factory.getRoleStorageProviderTimeout());
+        }
+        return roleStorageManager;
+    }
+
+    @Override
+    public GroupProvider groupStorageManager() {
+        if (groupStorageManager == null) {
+            groupStorageManager = new GroupStorageManager(this);
+        }
+        return groupStorageManager;
     }
 
 
@@ -186,27 +261,34 @@ public class DefaultKeycloakSession implements KeycloakSession {
         return userCredentialStorageManager;
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends Provider> T getProvider(Class<T> clazz) {
         Integer hash = clazz.hashCode();
         T provider = (T) providers.get(hash);
+        // KEYCLOAK-11890 - Avoid using HashMap.computeIfAbsent() to implement logic in outer if() block below,
+        // since per JDK-8071667 the remapping function should not modify the map during computation. While
+        // allowed on JDK 1.8, attempt of such a modification throws ConcurrentModificationException with JDK 9+
         if (provider == null) {
             ProviderFactory<T> providerFactory = factory.getProviderFactory(clazz);
             if (providerFactory != null) {
-                provider = providerFactory.create(this);
+                provider = providerFactory.create(DefaultKeycloakSession.this);
                 providers.put(hash, provider);
             }
         }
         return provider;
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends Provider> T getProvider(Class<T> clazz, String id) {
         Integer hash = clazz.hashCode() + id.hashCode();
         T provider = (T) providers.get(hash);
+        // KEYCLOAK-11890 - Avoid using HashMap.computeIfAbsent() to implement logic in outer if() block below,
+        // since per JDK-8071667 the remapping function should not modify the map during computation. While
+        // allowed on JDK 1.8, attempt of such a modification throws ConcurrentModificationException with JDK 9+
         if (provider == null) {
             ProviderFactory<T> providerFactory = factory.getProviderFactory(clazz, id);
-
             if (providerFactory != null) {
-                provider = providerFactory.create(this);
+                provider = providerFactory.create(DefaultKeycloakSession.this);
                 providers.put(hash, provider);
             }
         }
@@ -227,6 +309,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
             return null;
         }
 
+        @SuppressWarnings("unchecked")
         ComponentFactory<T, T> componentFactory = (ComponentFactory<T, T>) providerFactory;
         T provider = componentFactory.create(this, componentModel);
         enlistForClose(provider);
@@ -241,11 +324,9 @@ public class DefaultKeycloakSession implements KeycloakSession {
 
     @Override
     public <T extends Provider> Set<T> getAllProviders(Class<T> clazz) {
-        Set<T> providers = new HashSet<T>();
-        for (String id : listProviderIds(clazz)) {
-            providers.add(getProvider(clazz, id));
-        }
-        return providers;
+        return listProviderIds(clazz).stream()
+            .map(id -> getProvider(clazz, id))
+            .collect(Collectors.toSet());
     }
 
     @Override
@@ -259,6 +340,30 @@ public class DefaultKeycloakSession implements KeycloakSession {
             model = getRealmProvider();
         }
         return model;
+    }
+
+    @Override
+    public ClientProvider clients() {
+        if (clientProvider == null) {
+            clientProvider = getClientProvider();
+        }
+        return clientProvider;
+    }
+
+    @Override
+    public GroupProvider groups() {
+        if (groupProvider == null) {
+            groupProvider = getGroupProvider();
+        }
+        return groupProvider;
+    }
+
+    @Override
+    public RoleProvider roles() {
+        if (roleProvider == null) {
+            roleProvider = getRoleProvider();
+        }
+        return roleProvider;
     }
 
 
@@ -289,7 +394,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     @Override
     public ThemeManager theme() {
         if (themeManager == null) {
-            themeManager = new DefaultThemeManager(this);
+            themeManager = factory.getThemeManagerFactory().create(this);
         }
         return themeManager;
     }
@@ -302,18 +407,32 @@ public class DefaultKeycloakSession implements KeycloakSession {
         return tokenManager;
     }
 
-    public void close() {
-        for (Provider p : providers.values()) {
-            try {
-                p.close();
-            } catch (Exception e) {
-            }
+    @Override
+    public VaultTranscriber vault() {
+        if (this.vaultTranscriber == null) {
+            this.vaultTranscriber = new DefaultVaultTranscriber(this.getProvider(VaultProvider.class));
         }
-        for (Provider p : closable) {
-            try {
-                p.close();
-            } catch (Exception e) {
-            }
-        }
+        return this.vaultTranscriber;
     }
+
+    @Override
+    public ClientPolicyManager clientPolicy() {
+        if (clientPolicyManager == null) {
+            clientPolicyManager = new DefaultClientPolicyManager(this);
+        }
+        return clientPolicyManager;
+    }
+
+    public void close() {
+        Consumer<? super Provider> safeClose = p -> {
+            try {
+                p.close();
+            } catch (Exception e) {
+                // Ignore exception
+            }
+        };
+        providers.values().forEach(safeClose);
+        closable.forEach(safeClose);
+    }
+
 }

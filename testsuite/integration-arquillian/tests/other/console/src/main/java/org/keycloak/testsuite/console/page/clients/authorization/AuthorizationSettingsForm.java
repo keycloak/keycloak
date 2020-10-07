@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.console.page.clients.authorization;
 
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
 import org.openqa.selenium.support.FindBy;
@@ -33,6 +34,9 @@ public class AuthorizationSettingsForm extends Form {
     @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='server.allowRemoteResourceManagement']]")
     private OnOffSwitch allowRemoteResourceManagement;
 
+    @FindBy(id = "server.decisionStrategy")
+    private Select decisionStrategy;
+
     public void setEnforcementMode(PolicyEnforcerConfig.EnforcementMode mode) {
         enforcementMode.selectByValue(mode.name());
     }
@@ -47,5 +51,13 @@ public class AuthorizationSettingsForm extends Form {
 
     public boolean isAllowRemoteResourceManagement() {
         return allowRemoteResourceManagement.isOn();
+    }
+
+    public DecisionStrategy getDecisionStrategy() {
+        return DecisionStrategy.valueOf(decisionStrategy.getFirstSelectedOption().getAttribute("value"));
+    }
+
+    public void setDecisionStrategy(DecisionStrategy decisionStrategy) {
+        enforcementMode.selectByValue(decisionStrategy.name());
     }
 }

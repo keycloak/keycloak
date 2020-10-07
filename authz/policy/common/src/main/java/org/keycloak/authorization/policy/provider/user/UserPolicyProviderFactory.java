@@ -182,7 +182,7 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
                 UserModel removedUser = ((UserRemovedEvent) event).getUser();
                 RealmModel realm = ((UserRemovedEvent) event).getRealm();
                 ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
-                realm.getClients().forEach(clientModel -> {
+                realm.getClientsStream().forEach(clientModel -> {
                     ResourceServer resourceServer = resourceServerStore.findById(clientModel.getId());
 
                     if (resourceServer != null) {
@@ -196,9 +196,8 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
                             }
 
                             try {
-                                if (users.isEmpty()) {
-                                    policyStore.delete(policy.getId());
-                                } else {
+                                // just update the policy, let the UserSynchronizer to actually remove the policy if necessary
+                                if (!users.isEmpty()) {
                                     policy.putConfig("users", JsonSerialization.writeValueAsString(users));
                                 }
                             } catch (IOException e) {

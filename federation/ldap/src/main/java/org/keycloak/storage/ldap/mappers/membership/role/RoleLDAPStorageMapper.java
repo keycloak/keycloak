@@ -38,6 +38,7 @@ import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.CommonLDAPGroupMapper;
 import org.keycloak.storage.ldap.mappers.membership.CommonLDAPGroupMapperConfig;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
+import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 import org.keycloak.storage.ldap.mappers.membership.UserRolesRetrieveStrategy;
 import org.keycloak.storage.user.SynchronizationResult;
 
@@ -45,7 +46,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 /**
  * Map realm roles or roles of particular client to LDAP groups
@@ -75,7 +80,6 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
     public CommonLDAPGroupMapperConfig getConfig() {
         return config;
     }
-
 
     @Override
     public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
@@ -124,24 +128,25 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
         logger.debugf("Syncing roles from LDAP into Keycloak DB. Mapper is [%s], LDAP provider is [%s]", mapperModel.getName(), ldapProvider.getModel().getName());
 
         // Send LDAP query to load all roles
-        LDAPQuery ldapRoleQuery = createRoleQuery(false);
-        List<LDAPObject> ldapRoles = LDAPUtils.loadAllLDAPObjects(ldapRoleQuery, ldapProvider);
+        try (LDAPQuery ldapRoleQuery = createRoleQuery(false)) {
+            List<LDAPObject> ldapRoles = LDAPUtils.loadAllLDAPObjects(ldapRoleQuery, ldapProvider);
 
-        RoleContainerModel roleContainer = getTargetRoleContainer(realm);
-        String rolesRdnAttr = config.getRoleNameLdapAttribute();
-        for (LDAPObject ldapRole : ldapRoles) {
-            String roleName = ldapRole.getAttributeAsString(rolesRdnAttr);
+            RoleContainerModel roleContainer = getTargetRoleContainer(realm);
+            String rolesRdnAttr = config.getRoleNameLdapAttribute();
+            for (LDAPObject ldapRole : ldapRoles) {
+                String roleName = ldapRole.getAttributeAsString(rolesRdnAttr);
 
-            if (roleContainer.getRole(roleName) == null) {
-                logger.debugf("Syncing role [%s] from LDAP to keycloak DB", roleName);
-                roleContainer.addRole(roleName);
-                syncResult.increaseAdded();
-            } else {
-                syncResult.increaseUpdated();
+                if (roleContainer.getRole(roleName) == null) {
+                    logger.debugf("Syncing role [%s] from LDAP to keycloak DB", roleName);
+                    roleContainer.addRole(roleName);
+                    syncResult.increaseAdded();
+                } else {
+                    syncResult.increaseUpdated();
+                }
             }
-        }
 
-        return syncResult;
+            return syncResult;
+        }
     }
 
 
@@ -165,32 +170,33 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
         logger.debugf("Syncing roles from Keycloak into LDAP. Mapper is [%s], LDAP provider is [%s]", mapperModel.getName(), ldapProvider.getModel().getName());
 
         // Send LDAP query to see which roles exists there
-        LDAPQuery ldapQuery = createRoleQuery(false);
-        List<LDAPObject> ldapRoles = LDAPUtils.loadAllLDAPObjects(ldapQuery, ldapProvider);
+        try (LDAPQuery ldapQuery = createRoleQuery(false)) {
+            List<LDAPObject> ldapRoles = LDAPUtils.loadAllLDAPObjects(ldapQuery, ldapProvider);
 
-        Set<String> ldapRoleNames = new HashSet<>();
-        String rolesRdnAttr = config.getRoleNameLdapAttribute();
-        for (LDAPObject ldapRole : ldapRoles) {
-            String roleName = ldapRole.getAttributeAsString(rolesRdnAttr);
-            ldapRoleNames.add(roleName);
-        }
-
-
-        RoleContainerModel roleContainer = getTargetRoleContainer(realm);
-        Set<RoleModel> keycloakRoles = roleContainer.getRoles();
-
-        for (RoleModel keycloakRole : keycloakRoles) {
-            String roleName = keycloakRole.getName();
-            if (ldapRoleNames.contains(roleName)) {
-                syncResult.increaseUpdated();
-            } else {
-                logger.debugf("Syncing role [%s] from Keycloak to LDAP", roleName);
-                createLDAPRole(roleName);
-                syncResult.increaseAdded();
+            Set<String> ldapRoleNames = new HashSet<>();
+            String rolesRdnAttr = config.getRoleNameLdapAttribute();
+            for (LDAPObject ldapRole : ldapRoles) {
+                String roleName = ldapRole.getAttributeAsString(rolesRdnAttr);
+                ldapRoleNames.add(roleName);
             }
-        }
 
-        return syncResult;
+
+            RoleContainerModel roleContainer = getTargetRoleContainer(realm);
+            Stream<RoleModel> keycloakRoles = roleContainer.getRolesStream();
+
+            Consumer<String> syncRoleFromKCToLDAP = roleName -> {
+                if (ldapRoleNames.contains(roleName)) {
+                    syncResult.increaseUpdated();
+                } else {
+                    logger.debugf("Syncing role [%s] from Keycloak to LDAP", roleName);
+                    createLDAPRole(roleName);
+                    syncResult.increaseAdded();
+                }
+            };
+            keycloakRoles.map(RoleModel::getName).forEach(syncRoleFromKCToLDAP);
+
+            return syncResult;
+        }
     }
 
     // TODO: Possible to merge with GroupMapper and move to common class
@@ -245,7 +251,7 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
 
     public LDAPObject createLDAPRole(String roleName) {
         LDAPObject ldapRole = LDAPUtils.createLDAPGroup(ldapProvider, roleName, config.getRoleNameLdapAttribute(), config.getRoleObjectClasses(ldapProvider),
-                config.getRolesDn(), Collections.<String, Set<String>>emptyMap());
+                config.getRolesDn(), Collections.<String, Set<String>>emptyMap(), config.getMembershipLdapAttribute());
 
         logger.debugf("Creating role [%s] to LDAP with DN [%s]", roleName, ldapRole.getDn().toString());
         return ldapRole;
@@ -259,7 +265,7 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
 
         String membershipUserAttrName = getMembershipUserLdapAttribute();
 
-        LDAPUtils.addMember(ldapProvider, config.getMembershipTypeLdapAttribute(), config.getMembershipLdapAttribute(), membershipUserAttrName, ldapRole, ldapUser, true);
+        LDAPUtils.addMember(ldapProvider, config.getMembershipTypeLdapAttribute(), config.getMembershipLdapAttribute(), membershipUserAttrName, ldapRole, ldapUser);
     }
 
     public void deleteRoleMappingInLDAP(LDAPObject ldapUser, LDAPObject ldapRole) {
@@ -268,10 +274,11 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
     }
 
     public LDAPObject loadLDAPRoleByName(String roleName) {
-        LDAPQuery ldapQuery = createRoleQuery(true);
-        Condition roleNameCondition = new LDAPQueryConditionsBuilder().equal(config.getRoleNameLdapAttribute(), roleName);
-        ldapQuery.addWhereCondition(roleNameCondition);
-        return ldapQuery.getFirstResult();
+        try (LDAPQuery ldapQuery = createRoleQuery(true)) {
+            Condition roleNameCondition = new LDAPQueryConditionsBuilder().equal(config.getRoleNameLdapAttribute(), roleName);
+            ldapQuery.addWhereCondition(roleNameCondition);
+            return ldapQuery.getFirstResult();
+        }
     }
 
     protected List<LDAPObject> getLDAPRoleMappings(LDAPObject ldapUser) {
@@ -325,48 +332,43 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
         }
 
         @Override
-        public Set<RoleModel> getRealmRoleMappings() {
+        public Stream<RoleModel> getRealmRoleMappingsStream() {
             if (roleContainer.equals(realm)) {
-                Set<RoleModel> ldapRoleMappings = getLDAPRoleMappingsConverted();
+                Stream<RoleModel> ldapRoleMappings = getLDAPRoleMappingsConverted();
 
                 if (config.getMode() == LDAPGroupMapperMode.LDAP_ONLY) {
                     // Use just role mappings from LDAP
                     return ldapRoleMappings;
                 } else {
                     // Merge mappings from both DB and LDAP
-                    Set<RoleModel> modelRoleMappings = super.getRealmRoleMappings();
-                    ldapRoleMappings.addAll(modelRoleMappings);
-                    return ldapRoleMappings;
+                    return Stream.concat(ldapRoleMappings, super.getRealmRoleMappingsStream());
                 }
             } else {
-                return super.getRealmRoleMappings();
+                return super.getRealmRoleMappingsStream();
             }
         }
 
         @Override
-        public Set<RoleModel> getClientRoleMappings(ClientModel client) {
+        public Stream<RoleModel> getClientRoleMappingsStream(ClientModel client) {
             if (roleContainer.equals(client)) {
-                Set<RoleModel> ldapRoleMappings = getLDAPRoleMappingsConverted();
+                Stream<RoleModel> ldapRoleMappings = getLDAPRoleMappingsConverted();
 
                 if (config.getMode() == LDAPGroupMapperMode.LDAP_ONLY) {
                     // Use just role mappings from LDAP
                     return ldapRoleMappings;
                 } else {
                     // Merge mappings from both DB and LDAP
-                    Set<RoleModel> modelRoleMappings = super.getClientRoleMappings(client);
-                    ldapRoleMappings.addAll(modelRoleMappings);
-                    return ldapRoleMappings;
+                    return Stream.concat(ldapRoleMappings, super.getClientRoleMappingsStream(client));
                 }
             } else {
-                return super.getClientRoleMappings(client);
+                return super.getClientRoleMappingsStream(client);
             }
         }
 
         @Override
         public boolean hasRole(RoleModel role) {
-            Set<RoleModel> roles = getRoleMappings();
-            return RoleUtils.hasRole(roles, role)
-              || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
+            return RoleUtils.hasRole(getRoleMappingsStream(), role)
+              || RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
         }
 
         @Override
@@ -387,78 +389,70 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
         }
 
         @Override
-        public Set<RoleModel> getRoleMappings() {
-            Set<RoleModel> modelRoleMappings = super.getRoleMappings();
+        public Stream<RoleModel> getRoleMappingsStream() {
+            Stream<RoleModel> modelRoleMappings = super.getRoleMappingsStream();
 
-            Set<RoleModel> ldapRoleMappings = getLDAPRoleMappingsConverted();
+            Stream<RoleModel> ldapRoleMappings = getLDAPRoleMappingsConverted();
 
             if (config.getMode() == LDAPGroupMapperMode.LDAP_ONLY) {
                 // For LDAP-only we want to retrieve role mappings of target container just from LDAP
-                Set<RoleModel> modelRolesCopy = new HashSet<>(modelRoleMappings);
-                for (RoleModel role : modelRolesCopy) {
-                    if (role.getContainer().equals(roleContainer)) {
-                        modelRoleMappings.remove(role);
-                    }
-                }
+                modelRoleMappings = modelRoleMappings.filter(role -> !Objects.equals(role.getContainer(), roleContainer));
             }
 
-            modelRoleMappings.addAll(ldapRoleMappings);
-            return modelRoleMappings;
+            return Stream.concat(modelRoleMappings, ldapRoleMappings);
         }
 
-        protected Set<RoleModel> getLDAPRoleMappingsConverted() {
+        protected Stream<RoleModel> getLDAPRoleMappingsConverted() {
             if (cachedLDAPRoleMappings != null) {
-                return new HashSet<>(cachedLDAPRoleMappings);
+                return cachedLDAPRoleMappings.stream();
             }
 
             List<LDAPObject> ldapRoles = getLDAPRoleMappings(ldapUser);
-
-            Set<RoleModel> roles = new HashSet<>();
             String roleNameLdapAttr = config.getRoleNameLdapAttribute();
-            for (LDAPObject role : ldapRoles) {
-                String roleName = role.getAttributeAsString(roleNameLdapAttr);
-                RoleModel modelRole = roleContainer.getRole(roleName);
-                if (modelRole == null) {
-                    // Add role to local DB
-                    modelRole = roleContainer.addRole(roleName);
-                }
-                roles.add(modelRole);
-            }
+            cachedLDAPRoleMappings = ldapRoles.stream()
+                    .map(role -> {
+                        String roleName = role.getAttributeAsString(roleNameLdapAttr);
+                        RoleModel modelRole = roleContainer.getRole(roleName);
+                        if (modelRole == null) {
+                            // Add role to local DB
+                            modelRole = roleContainer.addRole(roleName);
+                        }
+                        return modelRole;
+                    }).collect(Collectors.toSet());
 
-            cachedLDAPRoleMappings = new HashSet<>(roles);
-
-            return roles;
+            return cachedLDAPRoleMappings.stream();
         }
 
         @Override
         public void deleteRoleMapping(RoleModel role) {
             if (role.getContainer().equals(roleContainer)) {
 
-                LDAPQuery ldapQuery = createRoleQuery(true);
-                LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
-                Condition roleNameCondition = conditionsBuilder.equal(config.getRoleNameLdapAttribute(), role.getName());
+                try (LDAPQuery ldapQuery = createRoleQuery(true)) {
+                    LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
+                    Condition roleNameCondition = conditionsBuilder.equal(config.getRoleNameLdapAttribute(), role.getName());
 
-                String membershipUserAttrName = getMembershipUserLdapAttribute();
-                String membershipUserAttr = LDAPUtils.getMemberValueOfChildObject(ldapUser, config.getMembershipTypeLdapAttribute(), membershipUserAttrName);
+                    String membershipUserAttrName = getMembershipUserLdapAttribute();
+                    String membershipUserAttr = LDAPUtils.getMemberValueOfChildObject(ldapUser, config.getMembershipTypeLdapAttribute(), membershipUserAttrName);
 
-                Condition membershipCondition = conditionsBuilder.equal(config.getMembershipLdapAttribute(), membershipUserAttr);
+                    Condition membershipCondition = conditionsBuilder.equal(config.getMembershipLdapAttribute(), membershipUserAttr);
 
-                ldapQuery.addWhereCondition(roleNameCondition).addWhereCondition(membershipCondition);
-                LDAPObject ldapRole = ldapQuery.getFirstResult();
+                    ldapQuery.addWhereCondition(roleNameCondition).addWhereCondition(membershipCondition);
+                    LDAPObject ldapRole = ldapQuery.getFirstResult();
 
-                if (ldapRole == null) {
-                    // Role mapping doesn't exist in LDAP. For LDAP_ONLY mode, we don't need to do anything. For READ_ONLY, delete it in local DB.
-                    if (config.getMode() == LDAPGroupMapperMode.READ_ONLY) {
-                        super.deleteRoleMapping(role);
-                    }
-                } else {
-                    // Role mappings exists in LDAP. For LDAP_ONLY mode, we can just delete it in LDAP. For READ_ONLY we can't delete it -> throw error
-                    if (config.getMode() == LDAPGroupMapperMode.READ_ONLY) {
-                        throw new ModelException("Not possible to delete LDAP role mappings as mapper mode is READ_ONLY");
+                    if (ldapRole == null) {
+                        // Role mapping doesn't exist in LDAP. For LDAP_ONLY mode, we don't need to do anything. For READ_ONLY, delete it in local DB.
+                        if (config.getMode() == LDAPGroupMapperMode.READ_ONLY) {
+                            super.deleteRoleMapping(role);
+                        }
                     } else {
-                        // Delete ldap role mappings
-                        cachedLDAPRoleMappings = null;
-                        deleteRoleMappingInLDAP(ldapUser, ldapRole);
+                        // Role mappings exists in LDAP. For LDAP_ONLY mode, we can just delete it in LDAP. For READ_ONLY we can't delete it -> throw error
+                        if (config.getMode() == LDAPGroupMapperMode.READ_ONLY) {
+                            throw new ModelException("Not possible to delete LDAP role mappings as mapper mode is READ_ONLY");
+                        } else {
+                            // Delete ldap role mappings
+                            cachedLDAPRoleMappings = null;
+                            deleteRoleMappingInLDAP(ldapUser, ldapRole);
+                        }
                     }
                 }
             } else {
@@ -467,5 +461,27 @@ public class RoleLDAPStorageMapper extends AbstractLDAPStorageMapper implements 
         }
     }
 
+    public LDAPObject loadRoleGroupByName(String roleName) {
+        try (LDAPQuery ldapQuery = createRoleQuery(true)) {
+            Condition roleNameCondition = new LDAPQueryConditionsBuilder().equal(config.getRoleNameLdapAttribute(), roleName);
+            ldapQuery.addWhereCondition(roleNameCondition);
+            return ldapQuery.getFirstResult();
+        }
+    }
 
+    @Override
+    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+        if (config.getMode() == LDAPGroupMapperMode.IMPORT) {
+            // only results from Keycloak should be returned, or imported LDAP and KC items will duplicate
+            return Collections.emptyList();
+        }
+
+        LDAPObject ldapGroup = loadRoleGroupByName(role.getName());
+        if (ldapGroup == null) {
+            return Collections.emptyList();
+        }
+
+        MembershipType membershipType = config.getMembershipTypeLdapAttribute();
+        return membershipType.getGroupMembers(realm, this, ldapGroup, firstResult, maxResults);
+    }
 }

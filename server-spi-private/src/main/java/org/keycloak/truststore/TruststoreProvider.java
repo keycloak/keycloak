@@ -19,7 +19,11 @@ package org.keycloak.truststore;
 
 import org.keycloak.provider.Provider;
 
+import java.security.cert.X509Certificate;
 import java.security.KeyStore;
+import java.util.Map;
+import javax.net.ssl.SSLSocketFactory;
+import javax.security.auth.x500.X500Principal;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -28,5 +32,17 @@ public interface TruststoreProvider extends Provider {
 
     HostnameVerificationPolicy getPolicy();
 
+    SSLSocketFactory getSSLSocketFactory();
+
     KeyStore getTruststore();
+
+    /**
+     * @return root certificates from the configured truststore as a map where the key is the X500Principal of the corresponding X509Certificate
+     */
+    Map<X500Principal, X509Certificate> getRootCertificates();
+
+    /**
+     * @return intermediate certificates from the configured truststore as a map where the key is the X500Principal of the corresponding X509Certificate
+     */
+    Map<X500Principal, X509Certificate> getIntermediateCertificates();
 }

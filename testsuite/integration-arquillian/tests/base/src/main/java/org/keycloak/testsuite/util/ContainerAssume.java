@@ -21,15 +21,26 @@ import org.jboss.logging.Logger;
 import org.junit.Assume;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 
+import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.APP_SERVER_SSL_REQUIRED;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
+
 public class ContainerAssume {
 
     private static final Logger log = Logger.getLogger(ContainerAssume.class);
-    private static final String fuse6 = "fuse63";
-    private static final String fuse7 = "fuse7";
 
     public static void assumeNotAuthServerUndertow() {
         Assume.assumeFalse("Doesn't work on auth-server-undertow", 
                 AuthServerTestEnricher.AUTH_SERVER_CONTAINER.equals(AuthServerTestEnricher.AUTH_SERVER_CONTAINER_DEFAULT));
+    }
+    public static void assumeAuthServerUndertow() {
+        Assume.assumeTrue("Only works on auth-server-undertow",
+                AuthServerTestEnricher.AUTH_SERVER_CONTAINER.equals(AuthServerTestEnricher.AUTH_SERVER_CONTAINER_DEFAULT));
+    }
+    
+
+    public static void assumeNotAuthServerRemote() {
+        Assume.assumeFalse("Doesn't work on auth-server-remote", 
+                AuthServerTestEnricher.AUTH_SERVER_CONTAINER.equals("auth-server-remote"));
     }
 
     public static void assumeClusteredContainer() {
@@ -38,21 +49,20 @@ public class ContainerAssume {
                     AuthServerTestEnricher.AUTH_SERVER_CLUSTER_PROPERTY), AuthServerTestEnricher.AUTH_SERVER_CLUSTER);
     }
 
-    public static void assumeNotAppServerUndertow() {
-        log.warn("TODO: Not stable on app-server-undertow. "
-                + "It throws: KC-SERVICES0057: Logout for client '${CLIENT_NAME}' failed\n" 
-                + "org.apache.http.NoHttpResponseException: localhost:8280 failed to respond");
-        Assume.assumeFalse("Not stable on app-server-undertow. "
-                + "It throws: KC-SERVICES0057: Logout for client '${CLIENT_NAME}' failed\n" 
-                + "org.apache.http.NoHttpResponseException: localhost:8280 failed to respond",
-                System.getProperty("app.server", "undertow").equals("undertow"));
+    public static void assumeAuthServerSSL() {
+        Assume.assumeTrue("Only works with the SSL configured", AUTH_SERVER_SSL_REQUIRED);
     }
 
-    public static void assumeNotAppServerFuse6() {
-        Assume.assumeFalse("The test doesn't work on " + fuse6, fuse6.equals(System.getProperty("app.server")));
+    public static void assumeAppServerSSL() {
+        Assume.assumeTrue("Only works with the SSL configured for app server", APP_SERVER_SSL_REQUIRED);
     }
 
-    public static void assumeNotAppServerFuse7() {
-        Assume.assumeFalse("The test doesn't work on " + fuse7, System.getProperty("app.server").contains(fuse7));
+    public static void assumeNotAppServerSSL() {
+        Assume.assumeFalse("Only works with the SSL disabled for app server", APP_SERVER_SSL_REQUIRED);
+    }
+
+    public static void assumeNotAuthServerQuarkus() {
+        Assume.assumeFalse("Doesn't work on auth-server-quarkus",
+                AuthServerTestEnricher.AUTH_SERVER_CONTAINER.equals("auth-server-quarkus"));
     }
 }

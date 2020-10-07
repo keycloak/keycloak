@@ -33,7 +33,7 @@ import java.util.List;
  */
 public class SAML11AttributeType extends SAML11AttributeDesignatorType {
 
-    protected List<Object> attributeValues = new ArrayList<Object>();
+    protected List<Object> attributeValues = new ArrayList<>();
 
     public SAML11AttributeType(String attributeName, URI attributeNamespace) {
         super(attributeName, attributeNamespace);

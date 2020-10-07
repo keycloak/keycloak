@@ -18,6 +18,7 @@
 
 package org.keycloak.authorization.jpa.entities;
 
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
 import javax.persistence.Column;
@@ -42,6 +43,9 @@ public class ResourceServerEntity {
     @Column(name = "POLICY_ENFORCE_MODE")
     private PolicyEnforcementMode policyEnforcementMode = PolicyEnforcementMode.ENFORCING;
 
+    @Column(name = "DECISION_STRATEGY")
+    private DecisionStrategy decisionStrategy = DecisionStrategy.UNANIMOUS;
+
     public String getId() {
         return this.id;
     }
@@ -64,6 +68,17 @@ public class ResourceServerEntity {
 
     public void setPolicyEnforcementMode(PolicyEnforcementMode policyEnforcementMode) {
         this.policyEnforcementMode = policyEnforcementMode;
+    }
+
+    public void setDecisionStrategy(DecisionStrategy decisionStrategy) {
+        if (DecisionStrategy.CONSENSUS.equals(decisionStrategy)) {
+            throw new IllegalArgumentException("Strategy " + decisionStrategy + " not supported");
+        }
+        this.decisionStrategy = decisionStrategy;
+    }
+
+    public DecisionStrategy getDecisionStrategy() {
+        return decisionStrategy;
     }
 
     @Override

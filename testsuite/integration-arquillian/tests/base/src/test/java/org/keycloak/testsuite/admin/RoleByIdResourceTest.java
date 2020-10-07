@@ -176,7 +176,7 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
             Map<String, List<String>> roleAttributes = role.getAttributes();
             assertNotNull(roleAttributes);
 
-            assertEquals(attributes, roleAttributes);
+            Assert.assertRoleAttributes(attributes, roleAttributes);
 
 
             // delete an attribute
@@ -188,7 +188,7 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
             roleAttributes = role.getAttributes();
             assertNotNull(roleAttributes);
 
-            assertEquals(attributes, roleAttributes);
+            Assert.assertRoleAttributes(attributes, roleAttributes);
         }
     }
 }

@@ -17,18 +17,17 @@
 
 package org.keycloak.models.cache.infinispan;
 
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.infinispan.entities.CachedClientScope;
+import org.keycloak.models.utils.RoleUtils;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -157,14 +156,10 @@ public class ClientScopeAdapter implements ClientScopeModel {
         updated.setProtocol(protocol);
     }
 
-    public Set<RoleModel> getScopeMappings() {
-        if (isUpdated()) return updated.getScopeMappings();
-        Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (String id : cached.getScope()) {
-            roles.add(cacheSession.getRoleById(id, getRealm()));
-
-        }
-        return roles;
+    public Stream<RoleModel> getScopeMappingsStream() {
+        if (isUpdated()) return updated.getScopeMappingsStream();
+        return cached.getScope().stream()
+          .map(id -> cacheSession.getRoleById(cachedRealm, id));
     }
 
     public void addScopeMapping(RoleModel role) {
@@ -177,20 +172,8 @@ public class ClientScopeAdapter implements ClientScopeModel {
         updated.deleteScopeMapping(role);
     }
 
-    public Set<RoleModel> getRealmScopeMappings() {
-        Set<RoleModel> roleMappings = getScopeMappings();
-
-        Set<RoleModel> appRoles = new HashSet<RoleModel>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof RealmModel) {
-                if (((RealmModel) container).getId().equals(cachedRealm.getId())) {
-                    appRoles.add(role);
-                }
-            }
-        }
-
-        return appRoles;
+    public Stream<RoleModel> getRealmScopeMappingsStream() {
+        return getScopeMappingsStream().filter(r -> RoleUtils.isRealmRole(r, cachedRealm));
     }
 
     @Override
@@ -198,12 +181,7 @@ public class ClientScopeAdapter implements ClientScopeModel {
         if (isUpdated()) return updated.hasScope(role);
         if (cached.getScope().contains(role.getId())) return true;
 
-        Set<RoleModel> roles = getScopeMappings();
-
-        for (RoleModel mapping : roles) {
-            if (mapping.hasRole(role)) return true;
-        }
-       return false;
+        return RoleUtils.hasRole(getScopeMappingsStream(), role);
     }
 
 
@@ -230,7 +208,7 @@ public class ClientScopeAdapter implements ClientScopeModel {
     @Override
     public Map<String, String> getAttributes() {
         if (isUpdated()) return updated.getAttributes();
-        Map<String, String> copy = new HashMap<String, String>();
+        Map<String, String> copy = new HashMap<>();
         copy.putAll(cached.getAttributes());
         return copy;
     }
@@ -239,7 +217,7 @@ public class ClientScopeAdapter implements ClientScopeModel {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || !(o instanceof ClientModel)) return false;
+        if (!(o instanceof ClientScopeModel)) return false;
 
         ClientScopeModel that = (ClientScopeModel) o;
         return that.getId().equals(getId());

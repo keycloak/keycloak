@@ -11,7 +11,7 @@ public final class DockerCertFileUtils {
     public static final String END_CERT = "-----END CERTIFICATE-----";
     public static final String BEGIN_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----";
     public static final String END_PRIVATE_KEY = "-----END PRIVATE KEY-----";
-    public final static String LINE_SEPERATOR = System.getProperty("line.separator");
+    public static final String LINE_SEPERATOR = System.getProperty("line.separator");
 
     private DockerCertFileUtils() {
     }

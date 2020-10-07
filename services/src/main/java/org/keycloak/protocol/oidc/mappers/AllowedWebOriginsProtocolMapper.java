@@ -22,8 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import javax.ws.rs.core.UriInfo;
-
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
@@ -75,11 +73,10 @@ public class AllowedWebOriginsProtocolMapper extends AbstractOIDCProtocolMapper 
     public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
                                             UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         ClientModel client = clientSessionCtx.getClientSession().getClient();
-        UriInfo uriInfo = session.getContext().getUri();
 
         Set<String> allowedOrigins = client.getWebOrigins();
         if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
-            token.setAllowedOrigins(WebOriginsUtils.resolveValidWebOrigins(uriInfo, client));
+            token.setAllowedOrigins(WebOriginsUtils.resolveValidWebOrigins(session, client));
         }
 
         return token;

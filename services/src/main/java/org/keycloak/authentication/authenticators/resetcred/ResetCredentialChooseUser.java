@@ -54,9 +54,10 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
         if (existingUserId != null) {
             UserModel existingUser = AbstractIdpAuthenticator.getExistingUser(context.getSession(), context.getRealm(), context.getAuthenticationSession());
 
-            logger.debugf("Forget-password triggered when reauthenticating user after first broker login. Skipping reset-credential-choose-user screen and using user '%s' ", existingUser.getUsername());
+            logger.debugf("Forget-password triggered when reauthenticating user after first broker login. Prefilling reset-credential-choose-user screen with user '%s' ", existingUser.getUsername());
             context.setUser(existingUser);
-            context.success();
+            Response challenge = context.form().createPasswordReset();
+            context.challenge(challenge);
             return;
         }
 
@@ -106,10 +107,12 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
             event.clone()
                     .detail(Details.USERNAME, username)
                     .error(Errors.USER_NOT_FOUND);
+            context.clearUser();
         } else if (!user.isEnabled()) {
             event.clone()
                     .detail(Details.USERNAME, username)
                     .user(user).error(Errors.USER_DISABLED);
+            context.clearUser();
         } else {
             context.setUser(user);
         }

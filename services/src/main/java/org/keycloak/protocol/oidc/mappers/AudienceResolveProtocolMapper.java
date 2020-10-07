@@ -79,7 +79,14 @@ public class AudienceResolveProtocolMapper extends AbstractOIDCProtocolMapper im
     @Override
     public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
                                             UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        String clientId = clientSessionCtx.getClientSession().getClient().getClientId();
+
         for (Map.Entry<String, AccessToken.Access> entry : RoleResolveUtil.getAllResolvedClientRoles(session, clientSessionCtx).entrySet()) {
+            // Don't add client itself to the audience
+            if (entry.getKey().equals(clientId)) {
+                continue;
+            }
+
             AccessToken.Access access = entry.getValue();
             if (access != null && access.getRoles() != null && !access.getRoles().isEmpty()) {
                 token.addAudience(entry.getKey());

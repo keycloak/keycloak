@@ -28,10 +28,10 @@ import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
 
 import javax.persistence.EntityManager;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -45,10 +45,12 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     };
     private static final Logger logger = Logger.getLogger(JpaEventStoreProvider.class);
 
-    private EntityManager em;
+    private final EntityManager em;
+    private final int maxDetailLength;
 
-    public JpaEventStoreProvider(EntityManager em) {
+    public JpaEventStoreProvider(EntityManager em, int maxDetailLength) {
         this.em = em;
+        this.maxDetailLength = maxDetailLength;
     }
 
     @Override
@@ -105,7 +107,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
     public void close() {
     }
 
-    static EventEntity convertEvent(Event event) {
+    private EventEntity convertEvent(Event event) {
         EventEntity eventEntity = new EventEntity();
         eventEntity.setId(UUID.randomUUID().toString());
         eventEntity.setTime(event.getTime());
@@ -117,11 +119,29 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         eventEntity.setIpAddress(event.getIpAddress());
         eventEntity.setError(event.getError());
         try {
-            eventEntity.setDetailsJson(mapper.writeValueAsString(event.getDetails()));
+            if (maxDetailLength > 0 && event.getDetails() != null) {
+                Map<String, String> result = new HashMap<>(event.getDetails());
+                result.entrySet().forEach(t -> t.setValue(trimToMaxLength(t.getValue())));
+
+                eventEntity.setDetailsJson(mapper.writeValueAsString(result));
+            } else {
+                eventEntity.setDetailsJson(mapper.writeValueAsString(event.getDetails()));
+            }
         } catch (IOException ex) {
             logger.error("Failed to write log details", ex);
         }
         return eventEntity;
+    }
+
+    private String trimToMaxLength(String detail) {
+        if (detail != null && detail.length() > maxDetailLength) {
+            // (maxDetailLength - 3) takes "..." into account
+            String result = detail.substring(0, maxDetailLength - 3).concat("...");
+            logger.warn("Detail was truncated to " + result);
+            return result;
+        } else {
+            return detail;
+        }
     }
 
     static Event convertEvent(EventEntity eventEntity) {
@@ -151,8 +171,8 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         setAuthDetails(adminEventEntity, adminEvent.getAuthDetails());
         adminEventEntity.setOperationType(adminEvent.getOperationType().toString());
 
-        if (adminEvent.getResourceType() != null) {
-            adminEventEntity.setResourceType(adminEvent.getResourceType().toString());
+        if (adminEvent.getResourceTypeAsString() != null) {
+            adminEventEntity.setResourceType(adminEvent.getResourceTypeAsString());
         }
 
         adminEventEntity.setResourcePath(adminEvent.getResourcePath());
@@ -172,7 +192,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         adminEvent.setOperationType(OperationType.valueOf(adminEventEntity.getOperationType()));
 
         if (adminEventEntity.getResourceType() != null) {
-            adminEvent.setResourceType(ResourceType.valueOf(adminEventEntity.getResourceType()));
+            adminEvent.setResourceTypeAsString(adminEventEntity.getResourceType());
         }
 
         adminEvent.setResourcePath(adminEventEntity.getResourcePath());

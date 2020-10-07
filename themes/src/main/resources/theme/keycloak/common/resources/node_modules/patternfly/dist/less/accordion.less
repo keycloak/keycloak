@@ -1,0 +1,18 @@
+.fixed-height-accordion-pf {
+  display: flex;
+  flex-direction: column;
+
+  .panel {
+    display: flex;
+    flex-direction: column;
+
+    &.panel-open {
+      flex: 1;
+    }
+
+    .collapse.in {
+      flex: 1;
+      overflow-y: auto;
+    }
+  }
+}

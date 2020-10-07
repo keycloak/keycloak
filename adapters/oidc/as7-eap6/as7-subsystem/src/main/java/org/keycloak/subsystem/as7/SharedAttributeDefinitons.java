@@ -182,7 +182,7 @@ class SharedAttributeDefinitons {
 
 
 
-    protected static final List<SimpleAttributeDefinition> ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
+    protected static final List<SimpleAttributeDefinition> ATTRIBUTES = new ArrayList<>();
     static {
         ATTRIBUTES.add(REALM_PUBLIC_KEY);
         ATTRIBUTES.add(AUTH_SERVER_URL);

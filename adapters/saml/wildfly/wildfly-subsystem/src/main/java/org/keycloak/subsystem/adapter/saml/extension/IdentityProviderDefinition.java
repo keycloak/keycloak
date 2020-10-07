@@ -36,38 +36,57 @@ import java.util.HashMap;
  */
 public class IdentityProviderDefinition extends SimpleResourceDefinition {
 
-    static final SimpleAttributeDefinition SIGNATURES_REQUIRED =
+    private static final SimpleAttributeDefinition SIGNATURES_REQUIRED =
             new SimpleAttributeDefinitionBuilder(Constants.Model.SIGNATURES_REQUIRED, ModelType.BOOLEAN, true)
                     .setXmlName(Constants.XML.SIGNATURES_REQUIRED)
                     .build();
 
-    static final SimpleAttributeDefinition SIGNATURE_ALGORITHM =
+    private static final SimpleAttributeDefinition SIGNATURE_ALGORITHM =
             new SimpleAttributeDefinitionBuilder(Constants.Model.SIGNATURE_ALGORITHM, ModelType.STRING, true)
                     .setXmlName(Constants.XML.SIGNATURE_ALGORITHM)
                     .build();
 
-    static final SimpleAttributeDefinition SIGNATURE_CANONICALIZATION_METHOD =
+    private static final SimpleAttributeDefinition SIGNATURE_CANONICALIZATION_METHOD =
             new SimpleAttributeDefinitionBuilder(Constants.Model.SIGNATURE_CANONICALIZATION_METHOD, ModelType.STRING, true)
                     .setXmlName(Constants.XML.SIGNATURE_CANONICALIZATION_METHOD)
                     .build();
 
-    static final ObjectTypeAttributeDefinition SINGLE_SIGN_ON =
+    private static final SimpleAttributeDefinition METADATA_URL =
+            new SimpleAttributeDefinitionBuilder(Constants.Model.METADATA_URL, ModelType.STRING, true)
+                    .setXmlName(Constants.XML.METADATA_URL)
+                    .setAllowExpression(true)
+                    .build();
+
+    private static final ObjectTypeAttributeDefinition SINGLE_SIGN_ON =
             ObjectTypeAttributeDefinition.Builder.of(Constants.Model.SINGLE_SIGN_ON,
                     SingleSignOnDefinition.ATTRIBUTES)
                     .setAllowNull(false)
                     .build();
 
-    static final ObjectTypeAttributeDefinition SINGLE_LOGOUT =
+    private static final ObjectTypeAttributeDefinition SINGLE_LOGOUT =
             ObjectTypeAttributeDefinition.Builder.of(Constants.Model.SINGLE_LOGOUT,
                     SingleLogoutDefinition.ATTRIBUTES)
                     .setAllowNull(false)
                     .build();
 
-    static final SimpleAttributeDefinition[] ATTRIBUTES = {SIGNATURES_REQUIRED, SIGNATURE_ALGORITHM, SIGNATURE_CANONICALIZATION_METHOD};
+    private static final ObjectTypeAttributeDefinition ALLOWED_CLOCK_SKEW =
+            ObjectTypeAttributeDefinition.Builder.of(Constants.Model.ALLOWED_CLOCK_SKEW,
+                    AllowedClockSkew.ATTRIBUTES)
+                    .setAllowNull(true)
+                    .build();
 
-    static final SimpleAttributeDefinition[] ALL_ATTRIBUTES = {SIGNATURES_REQUIRED, SIGNATURE_ALGORITHM, SIGNATURE_CANONICALIZATION_METHOD, SINGLE_SIGN_ON, SINGLE_LOGOUT};
+    private static final ObjectTypeAttributeDefinition HTTP_CLIENT =
+            ObjectTypeAttributeDefinition.Builder.of(Constants.Model.HTTP_CLIENT,
+                    HttpClientDefinition.ATTRIBUTES)
+                    .setAllowNull(true)
+                    .build();
 
-    static final HashMap<String, SimpleAttributeDefinition> ATTRIBUTE_MAP = new HashMap<>();
+    static final SimpleAttributeDefinition[] ATTRIBUTES = {SIGNATURES_REQUIRED, SIGNATURE_ALGORITHM, SIGNATURE_CANONICALIZATION_METHOD, METADATA_URL};
+
+    static final SimpleAttributeDefinition[] ALL_ATTRIBUTES = {SIGNATURES_REQUIRED, SIGNATURE_ALGORITHM, SIGNATURE_CANONICALIZATION_METHOD, METADATA_URL,
+            SINGLE_SIGN_ON, SINGLE_LOGOUT, ALLOWED_CLOCK_SKEW, HTTP_CLIENT};
+
+    private static final HashMap<String, SimpleAttributeDefinition> ATTRIBUTE_MAP = new HashMap<>();
 
     static {
         for (SimpleAttributeDefinition def : ALL_ATTRIBUTES) {

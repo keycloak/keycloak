@@ -16,14 +16,19 @@
  */
 package org.keycloak.testsuite.federation;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.storage.UserStorageProviderFactory;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -34,11 +39,26 @@ public class UserMapStorageFactory implements UserStorageProviderFactory<UserMap
 
     public static final String PROVIDER_ID = "user-password-map-arq";
 
-    protected Map<String, String> userPasswords = new HashMap<>();
+    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+
+    static {
+        ProviderConfigProperty attr = new ProviderConfigProperty("attr", "attr",
+                "This is some attribute",
+                ProviderConfigProperty.STRING_TYPE, null);
+        configProperties.add(attr);
+    }
+
+    private final Map<String, String> userPasswords = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Set<String>> userGroups = new ConcurrentHashMap<>();
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return configProperties;
+    }
 
     @Override
     public UserMapStorage create(KeycloakSession session, ComponentModel model) {
-        return new UserMapStorage(session, model, userPasswords);
+        return new UserMapStorage(session, model, userPasswords, userGroups);
     }
 
     @Override
@@ -59,5 +79,10 @@ public class UserMapStorageFactory implements UserStorageProviderFactory<UserMap
     @Override
     public void close() {
 
+    }
+
+    public void clear() {
+        userPasswords.clear();
+        userGroups.clear();
     }
 }

@@ -28,9 +28,11 @@ import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.util.Iterator;
 
 /**
  * LinkedIn social provider. See https://developer.linkedin.com/docs/oauth2
@@ -43,14 +45,20 @@ public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider<OAu
 
 	public static final String AUTH_URL = "https://www.linkedin.com/oauth/v2/authorization";
 	public static final String TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken";
-	public static final String PROFILE_URL = "https://api.linkedin.com/v1/people/~:(id,formatted-name,email-address,public-profile-url)?format=json";
-	public static final String DEFAULT_SCOPE = "r_basicprofile r_emailaddress";
+	public static final String PROFILE_URL = "https://api.linkedin.com/v2/me";
+	public static final String EMAIL_URL = "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))";
+	public static final String EMAIL_SCOPE = "r_emailaddress";
+	public static final String DEFAULT_SCOPE = "r_liteprofile " + EMAIL_SCOPE;
 
 	public LinkedInIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
 		super(session, config);
 		config.setAuthorizationUrl(AUTH_URL);
 		config.setTokenUrl(TOKEN_URL);
 		config.setUserInfoUrl(PROFILE_URL);
+		// email scope is mandatory in order to resolve the username using the email address
+		if (!config.getDefaultScope().contains(EMAIL_SCOPE)) {
+			config.setDefaultScope(config.getDefaultScope() + " " + EMAIL_SCOPE);
+		}
 	}
 
 	@Override
@@ -67,17 +75,14 @@ public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider<OAu
 	protected BrokeredIdentityContext extractIdentityFromProfile(EventBuilder event, JsonNode profile) {
 		BrokeredIdentityContext user = new BrokeredIdentityContext(getJsonProperty(profile, "id"));
 
-		String username = extractUsernameFromProfileURL(getJsonProperty(profile, "publicProfileUrl"));
-		user.setUsername(username);
-		user.setName(getJsonProperty(profile, "formattedName"));
-		user.setEmail(getJsonProperty(profile, "emailAddress"));
+		user.setFirstName(getFirstMultiLocaleString(profile, "firstName"));
+		user.setLastName(getFirstMultiLocaleString(profile, "lastName"));
 		user.setIdpConfig(getConfig());
 		user.setIdp(this);
 
 		AbstractJsonUserAttributeMapper.storeUserProfileForMapper(user, profile, getConfig().getAlias());
 
 		return user;
-
 	}
 
 
@@ -85,48 +90,66 @@ public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider<OAu
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 		log.debug("doGetFederatedIdentity()");
 		try {
-			JsonNode profile = SimpleHttp.doGet(PROFILE_URL, session).header("Authorization", "Bearer " + accessToken).asJson();
-			return extractIdentityFromProfile(null, profile);
+			BrokeredIdentityContext identity = extractIdentityFromProfile(null, doHttpGet(PROFILE_URL, accessToken));
+
+			identity.setEmail(fetchEmailAddress(accessToken, identity));
+
+			if (identity.getUsername() == null) {
+				identity.setUsername(identity.getEmail());
+			}
+
+			return identity;
 		} catch (Exception e) {
 			throw new IdentityBrokerException("Could not obtain user profile from linkedIn.", e);
 		}
 	}
 
-	protected static String extractUsernameFromProfileURL(String profileURL) {
-		if (isNotBlank(profileURL)) {
-
-			try {
-				log.debug("go to extract username from profile URL " + profileURL);
-				URL u = new URL(profileURL);
-				String path = u.getPath();
-				if (isNotBlank(path) && path.length() > 1) {
-					if (path.startsWith("/")) {
-						path = path.substring(1);
-					}
-					String[] pe = path.split("/");
-					if (pe.length >= 2) {
-						return URLDecoder.decode(pe[1], "UTF-8");
-					} else {
-						log.warn("LinkedIn profile URL path is without second part: " + profileURL);
-					}
-				} else {
-					log.warn("LinkedIn profile URL is without path part: " + profileURL);
-				}
-			} catch (MalformedURLException e) {
-				log.warn("LinkedIn profile URL is malformed: " + profileURL);
-			} catch (Exception e) {
-				log.warn("LinkedIn profile URL " + profileURL + " username extraction failed due: " + e.getMessage());
-			}
-		}
-		return null;
-	}
-
-	private static boolean isNotBlank(String s) {
-		return s != null && s.trim().length() > 0;
-	}
-
 	@Override
 	protected String getDefaultScopes() {
 		return DEFAULT_SCOPE;
+	}
+
+	private String fetchEmailAddress(String accessToken, BrokeredIdentityContext identity) {
+		if (identity.getEmail() == null && getConfig().getDefaultScope() != null && getConfig().getDefaultScope().contains(EMAIL_SCOPE)) {
+			try {
+				JsonNode emailAddressNode = doHttpGet(EMAIL_URL, accessToken).findPath("emailAddress");
+
+				if (emailAddressNode != null) {
+					return emailAddressNode.asText();
+				}
+			} catch (IOException cause) {
+				throw new RuntimeException("Failed to retrieve user email", cause);
+			}
+		}
+
+		return null;
+	}
+
+	private JsonNode doHttpGet(String url, String bearerToken) throws IOException {
+		JsonNode response = SimpleHttp.doGet(url, session).header("Authorization", "Bearer " + bearerToken).asJson();
+
+		if (response.hasNonNull("serviceErrorCode")) {
+			throw new IdentityBrokerException("Could not obtain response from [" + url + "]. Response from server: " + response);
+		}
+
+		return response;
+	}
+
+	private String getFirstMultiLocaleString(JsonNode node, String name) {
+		JsonNode claim = node.get(name);
+
+		if (claim != null) {
+			JsonNode localized = claim.get("localized");
+
+			if (localized != null) {
+				Iterator<JsonNode> iterator = localized.iterator();
+
+				if (iterator.hasNext()) {
+					return iterator.next().asText();
+				}
+			}
+		}
+
+		return null;
 	}
 }

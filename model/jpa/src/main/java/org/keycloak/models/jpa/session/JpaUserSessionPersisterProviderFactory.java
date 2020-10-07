@@ -52,4 +52,9 @@ public class JpaUserSessionPersisterProviderFactory implements UserSessionPersis
     public String getId() {
         return ID;
     }
+
+    @Override
+    public int order() {
+        return 100;
+    }
 }

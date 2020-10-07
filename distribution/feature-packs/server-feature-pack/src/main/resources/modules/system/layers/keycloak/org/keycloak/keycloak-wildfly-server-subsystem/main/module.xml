@@ -45,6 +45,11 @@
         <module name="org.keycloak.keycloak-services"/>
         <module name="org.keycloak.keycloak-server-spi-private"/>
         <module name="org.keycloak.keycloak-wildfly-adapter" optional="true"/>
-        <module name="org.jboss.metadata"/>
+        <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-common"/>
+        <module name="org.keycloak.keycloak-server-spi"/>
+        <module name="org.keycloak.keycloak-authz-policy-common"/>
+        <module name="org.jboss.metadata.common"/>
+        <module name="org.jboss.metadata.web"/>
     </dependencies>
 </module>

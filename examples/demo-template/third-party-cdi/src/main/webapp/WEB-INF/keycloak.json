@@ -1,9 +1,0 @@
-{
-  "realm" : "demo",
-  "resource" : "third-party",
-  "auth-server-url" : "/auth",
-  "ssl-required" : "external",
-   "credentials" : {
-       "secret": "password"
-   }
-}

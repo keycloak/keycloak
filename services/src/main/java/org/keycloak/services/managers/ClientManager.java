@@ -164,7 +164,6 @@ public class ClientManager {
             // Don't use federation for service account user
             UserModel user = realmManager.getSession().userLocalStorage().addUser(client.getRealm(), username);
             user.setEnabled(true);
-            user.setEmail(username + "@placeholder.org");
             user.setServiceAccountClientLink(client.getId());
         }
 
@@ -205,7 +204,6 @@ public class ClientManager {
         if (serviceAccountUser != null) {
             String username = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + newClientId;
             serviceAccountUser.setUsername(username);
-            serviceAccountUser.setEmail(username + "@placeholder.org");
         }
     }
 
@@ -294,7 +292,7 @@ public class ClientManager {
 
         if (clientModel.isPublicClient() && !clientModel.isBearerOnly()) rep.setPublicClient(true);
         if (clientModel.isBearerOnly()) rep.setBearerOnly(true);
-        if (clientModel.getRoles().size() > 0) rep.setUseResourceRoleMappings(true);
+        if (clientModel.getRolesStream().count() > 0) rep.setUseResourceRoleMappings(true);
 
         rep.setResource(clientModel.getClientId());
 
@@ -338,7 +336,7 @@ public class ClientManager {
                 }
             }
         }
-        if (clientModel.getRoles().size() > 0) {
+        if (clientModel.getRolesStream().count() > 0) {
             buffer.append("    <use-resource-role-mappings>true</use-resource-role-mappings>\n");
         }
         buffer.append("</secure-deployment>\n");

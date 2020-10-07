@@ -38,6 +38,7 @@ public enum JBossSAMLURIConstants {
     ASSERTION_NSURI("urn:oasis:names:tc:SAML:2.0:assertion"),
     ATTRIBUTE_FORMAT_BASIC("urn:oasis:names:tc:SAML:2.0:attrname-format:basic"),
     ATTRIBUTE_FORMAT_URI("urn:oasis:names:tc:SAML:2.0:attrname-format:uri"),
+    ATTRIBUTE_FORMAT_UNSPECIFIED("urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified"),
 
     CLAIMS_EMAIL_ADDRESS_2005("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"),
     CLAIMS_EMAIL_ADDRESS("http://schemas.xmlsoap.org/claims/EmailAddress"),
@@ -64,6 +65,8 @@ public enum JBossSAMLURIConstants {
     HOLDER_OF_KEY("urn:oasis:names:tc:SAML:2.0:cm:holder-of-key"),
 
     METADATA_NSURI("urn:oasis:names:tc:SAML:2.0:metadata"),
+    // http://docs.oasis-open.org/security/saml/Post2.0/sstc-metadata-attr-cd-01.pdf
+    METADATA_ENTITY_ATTRIBUTES_NSURI("urn:oasis:names:tc:SAML:metadata:attribute"),
 
     NAMEID_FORMAT_TRANSIENT("urn:oasis:names:tc:SAML:2.0:nameid-format:transient"),
     NAMEID_FORMAT_PERSISTENT("urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"),

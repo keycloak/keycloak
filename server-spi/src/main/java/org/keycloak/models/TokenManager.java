@@ -18,6 +18,7 @@ package org.keycloak.models;
 
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
+import org.keycloak.representations.LogoutToken;
 
 public interface TokenManager {
 
@@ -41,4 +42,11 @@ public interface TokenManager {
 
     String signatureAlgorithm(TokenCategory category);
 
+    <T> T decodeClientJWT(String token, ClientModel client, Class<T> clazz);
+
+    String encodeAndEncrypt(Token token);
+    String cekManagementAlgorithm(TokenCategory category);
+    String encryptAlgorithm(TokenCategory category);
+
+    LogoutToken initLogoutToken(ClientModel client, UserModel user, AuthenticatedClientSessionModel clientSessionModel);
 }

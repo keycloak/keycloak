@@ -77,7 +77,6 @@ public enum SAMLMetadataQNames implements HasQName {
     ATTR_IS_REQUIRED(null, "isRequired"),
     ATTR_NAME(null, "Name"),
     ATTR_NAME_FORMAT(null, "NameFormat"),
-
     // Elements from other namespaces that can be direct subelements of this namespace's elements
     SIGNATURE(XmlDSigQNames.SIGNATURE),
     KEY_INFO(XmlDSigQNames.KEY_INFO),
@@ -85,20 +84,22 @@ public enum SAMLMetadataQNames implements HasQName {
     OAEP_PARAMS(JBossSAMLURIConstants.XMLENC_NSURI, "OAEPparams"),
     ATTR_X500_ENCODING(JBossSAMLURIConstants.X500_NSURI, "Encoding"),
     ATTRIBUTE(SAMLAssertionQNames.ATTRIBUTE),
+    ASSERTION(SAMLAssertionQNames.ASSERTION),
+    ENTITY_ATTRIBUTES(JBossSAMLURIConstants.METADATA_ENTITY_ATTRIBUTES_NSURI, "EntityAttributes"),
 
     UNKNOWN_ELEMENT("");
 
     private final QName qName;
 
-    private SAMLMetadataQNames(String localName) {
+    SAMLMetadataQNames(String localName) {
         this.qName = new QName(JBossSAMLURIConstants.METADATA_NSURI.get(), localName);
     }
 
-    private SAMLMetadataQNames(HasQName source) {
+    SAMLMetadataQNames(HasQName source) {
         this.qName = source.getQName();
     }
 
-    private SAMLMetadataQNames(JBossSAMLURIConstants nsUri, String localName) {
+    SAMLMetadataQNames(JBossSAMLURIConstants nsUri, String localName) {
         this.qName = new QName(nsUri == null ? null : nsUri.get(), localName);
     }
 

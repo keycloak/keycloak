@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>4.6.0.Final-SNAPSHOT</version>
+        <version>12.0.0-SNAPSHOT</version>
     </parent>
 
     <name>SAML Adapters Distribution Parent</name>
@@ -32,7 +32,6 @@
 
     <modules>
         <module>wildfly-adapter</module>
-        <module>as7-eap6-adapter</module>
     </modules>
 
     <profiles>
@@ -44,17 +43,22 @@
                 </property>
             </activation>
             <modules>
-                <module>jetty81-adapter-zip</module>
-                <!-- jetty 9.1 doesn't work right now
-                <module>jetty91-adapter-zip</module> -->
                 <module>jetty92-adapter-zip</module>
                 <module>jetty93-adapter-zip</module>
                 <module>jetty94-adapter-zip</module>
-                <module>tomcat6-adapter-zip</module>
+                <module>tomcat-adapter-zip</module>
                 <module>tomcat7-adapter-zip</module>
-                <module>tomcat8-adapter-zip</module>
             </modules>
         </profile>
+        <profile>
+             <id>AS7</id>
+             <activation>
+                 <jdk>(,9]</jdk>
+             </activation>
+             <modules>
+                 <module>as7-eap6-adapter</module>
+             </modules>
+         </profile>
     </profiles>
 
 </project>

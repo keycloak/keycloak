@@ -190,6 +190,11 @@ th.w-40 {
     height: 26px;
 }
 
+/*********** html select ********/
+.overflow-select {
+    overflow: auto;
+}
+
 
 /*********** New Menu ***********/
 
@@ -215,7 +220,7 @@ th.w-40 {
 
 .sidebar-pf .nav-pills > li > a:hover{
   background: #393f44;
-  border-color:#292e34; 
+  border-color:#292e34;
   border-left-color: #393f44;
   color: #fff;
 }
@@ -315,13 +320,8 @@ th.w-40 {
   width: 148px;
 }
 
-.navbar-pf .navbar-utility > li > a{
-  padding: 22px 30px 23px 40px!important;
-}
-/* @media (min-width: 768px) */
-.navbar-pf .navbar-utility li.dropdown > .dropdown-toggle .pficon-user {
-  top: 22px;
-  left:20px;
+.navbar-pf .navbar-utility .dropdown-toggle {
+    padding: 23px !important;
 }
 
 .clickable {
@@ -405,3 +405,76 @@ table.kc-authz-table-expanded {
   font-family: 'text-security-disc';
   font-size: 14px;
 }
+
+/* Deactivation styles for user-group membership tree models */
+
+div[tree-model] li .deactivate {
+    color: #4a5053;
+    opacity: 0.4;
+}
+
+div[tree-model] li .deactivate_selected {
+    background-color: #dcdcdc;
+    font-weight: bold;
+    padding: 1px 5px;
+}
+
+/* search highlighting */
+
+div[tree-model] li .highlight {
+    background-color: #aaddff;
+}
+
+/* Manage credentials */
+table.credentials-table {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+table.credentials-table td {
+    vertical-align: middle !important;
+}
+
+table.credentials-table input[type='text'] {
+    width: 100%;
+}
+
+td.credential-arrows-cell {
+    width: 75px;
+}
+
+td.credential-label-cell {
+    padding: 5px !important;
+}
+
+td.credential-action-cell {
+    padding: 0px !important;
+}
+
+td.credential-action-cell div.kc-action-cell {
+    width: 100%;
+    height: 36px;
+    line-height: 34px;
+}
+
+td.credential-action-cell.expanded div.kc-action-cell {
+    border-bottom: 1px solid #d1d1d1;
+}
+
+table.credential-data-table td {
+    word-break: break-all;
+}
+
+table.credential-data-table tr:first-child td {
+    border-top: 0;
+}
+
+table.credential-data-table td:first-child {
+    width: 150px;
+}
+
+table.credential-data-table td.key {
+    text-align: right;
+    font-weight: bold;
+}
+

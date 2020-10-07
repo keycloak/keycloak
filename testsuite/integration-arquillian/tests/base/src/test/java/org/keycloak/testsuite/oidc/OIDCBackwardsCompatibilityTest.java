@@ -17,9 +17,7 @@
 
 package org.keycloak.testsuite.oidc;
 
-import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -33,18 +31,21 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
+
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
@@ -64,11 +65,6 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
 
     @Page
     protected ErrorPage errorPage;
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(OIDCBackwardsCompatibilityTest.class, AbstractTestRealmKeycloakTest.class);
-    }
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

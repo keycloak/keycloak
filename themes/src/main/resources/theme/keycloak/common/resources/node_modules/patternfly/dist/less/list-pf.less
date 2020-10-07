@@ -1,0 +1,178 @@
+//
+// PatternFly List
+// --------------------------------------------------
+
+.list-pf {
+  border-bottom: 1px solid @list-pf-border-color;
+}
+
+.list-pf-item {
+  border-color: @list-pf-border-color;
+  border-left-color: @color-pf-white;
+  border-right-color: @color-pf-white;
+  border-style: solid;
+  border-width: 1px;
+  border-bottom: none;
+  &:hover {
+    background-color: @list-pf-hover-background-color;
+  }
+  &.active {
+    background-color: @list-pf-header-background-color;
+    border-color: @list-pf-active-border-color;
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+    box-shadow: 0 2px 6px rgba(3, 3, 3, .2);
+  }
+}
+
+.list-pf-expansion {
+  background-color: @color-pf-white;
+}
+
+.list-pf-container {
+  align-items: flex-start;
+  display: flex;
+  padding: @list-pf-padding;
+  .list-pf-expansion & {
+    border-top: 1px solid @list-pf-active-border-color;
+  }
+  // when wide enough, if the list is not stacked, then center items vertically
+  @media (min-width: @screen-md-min) {
+    .list-pf:not(.list-pf-stacked) & {
+      align-items: center;
+    }
+  }
+}
+
+.list-pf-chevron {
+  min-width: 1.2em; // ensures that the width does not shift when the chevron is sideways
+}
+
+.list-pf-chevron,
+.list-pf-select {
+  margin-right: 10px;
+  //add the divider line if there is a chevron or a select
+  + .list-pf-content {
+    border-left: 1px solid @color-pf-black-300;
+    padding-left: (@grid-gutter-width/2);
+  }
+  .fa, .fas, .far, .fab, .fal {
+    font-size: 22px;
+  }
+}
+
+// add this class to manage flexed contents in the list item content
+.list-pf-content-flex {
+  align-items: flex-start;
+  display:flex;
+  flex-grow: 1;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  min-width: 0;
+  // when wide enough, if the list is not stacked, then center items vertically
+  @media (min-width: @screen-md-min) {
+    .list-pf:not(.list-pf-stacked) & {
+      align-items: center;
+    }
+  }
+}
+
+.list-pf-left {
+  flex-grow: 0;
+  margin-left: 0;
+  margin-right: (@grid-gutter-width/2);
+}
+.list-pf-icon {
+  align-items: center;
+  display:flex;
+  justify-content: center;
+}
+.list-pf-icon-bordered {
+  border-radius: 50%;
+  border: 2px solid @list-view-accented-border;
+}
+.list-pf-icon-small {
+  font-size: 1.4em;
+  height: 30px;
+  line-height: 30px;
+  width: 30px;
+}
+
+
+.list-pf-content-wrapper {
+  align-items: center;
+  display:flex;
+  flex-grow: 1;
+  flex-wrap: wrap;
+  min-width: 0;
+  // when at larger breakpoints, don't stack the contents and add some space between the children
+  @media (min-width: @screen-md-min) {
+    flex-wrap: nowrap;
+    & > * + * {
+      margin-left: @grid-gutter-width;
+    }
+  }
+  // if the list is stacked, then align the contents to the top
+  .list-pf-stacked & {
+    align-items: flex-start;
+  }
+
+}
+
+.list-pf-main-content {
+  align-items: center;
+  display: flex;
+  flex-basis: @list-pf-main-content-width;
+  flex-grow: 1;
+  flex-shrink: 1;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+// at larger breakpoints, if the list is not stacked, then don't wrap the main contents and add some space between them
+.list-pf:not(.list-pf-stacked) .list-pf-main-content {
+  @media (min-width: @screen-md-min) {
+      flex-wrap: nowrap;
+      width: auto;
+      & > * + * {
+        margin-left: @grid-gutter-width;
+      }
+  }
+}
+
+// Title and description are break-word wrapped; add .text-overflow-pf to truncate and ellipse instead
+.list-pf-title {
+  flex-grow: 1;
+  flex-shrink: 1;
+  flex-basis: 100%;
+  font-weight: bold;
+  min-width: 0;
+  word-wrap: break-word;
+}
+.list-pf-description {
+  flex-grow: 1;
+  flex-shrink: 1;
+  flex-basis: 100%;
+  min-width: 0;
+  word-wrap: break-word;
+}
+
+.list-pf-additional-content {
+  display: flex;
+  flex-basis: ((100% - @list-pf-main-content-width) + 1%); // this adjusts the proportions but adding up to > 100% allows for proper wrapping
+  flex-grow: 1;
+  flex-shrink: 1;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.list-pf-actions {
+  display: flex;
+  align-items: flex-start;
+  flex-grow: 0;
+  margin-left: @grid-gutter-width;
+  //by default, space contents apart
+  & > * + * {
+    margin-left: (@grid-gutter-width / 4);
+  }
+
+}

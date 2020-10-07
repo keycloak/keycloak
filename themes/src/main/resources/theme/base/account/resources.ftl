@@ -136,6 +136,7 @@
                                 <form action="${url.getResourceGrant(resource.id)}" name="approveForm-${resource.id}-${permission.requester.username}" method="post">
                                     <input type="hidden" name="action" value="grant">
                                     <input type="hidden" name="requester" value="${permission.requester.username}">
+                                    <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
                                     <tr>
                                         <td>
                                             <#if resource.displayName??>${resource.displayName}<#else>${resource.name}</#if>
@@ -202,20 +203,24 @@
                                 </a>
                             </td>
                             <td>
-                                <a href="${resource.resourceServer.redirectUri}">${resource.resourceServer.name}</a>
+                                <#if resource.resourceServer.baseUri??>
+                                    <a href="${resource.resourceServer.baseUri}">${resource.resourceServer.name}</a>
+                                <#else>
+                                    ${resource.resourceServer.name}
+                                </#if>
                             </td>
                             <td>
                                 <#if resource.shares?size != 0>
                                     <a href="${url.getResourceDetailUrl(resource.id)}">${resource.shares?size} <i class="fa fa-users"></i></a>
                                 <#else>
-                                    This resource is not being shared.
+                                    ${msg("notBeingShared")}
                                 </#if>
                             </td>
                         </tr>
                     </#list>
                 <#else>
                     <tr>
-                        <td colspan="4">You don't have any resource</td>
+                        <td colspan="4">${msg("notHaveAnyResource")}</td>
                     </tr>
                 </#if>
                 </tbody>
@@ -234,6 +239,7 @@
         <div class="col-md-12">
             <form action="${url.resourceUrl}" name="shareForm" method="post">
                 <input type="hidden" name="action" value="cancel"/>
+                <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
                 <table class="table table-striped table-bordered">
                     <thead>
                         <tr>
@@ -256,10 +262,14 @@
                                         <#if resource.displayName??>${resource.displayName}<#else>${resource.name}</#if>
                                     </td>
                                     <td>
-                                        <#if resource.owner.email??>${resource.owner.email}<#else>${resource.owner.username}</#if>
+                                        ${resource.ownerName}
                                     </td>
                                     <td>
-                                        <a href="${resource.resourceServer.redirectUri}">${resource.resourceServer.name}</a>
+                                        <#if resource.resourceServer.baseUri??>
+                                            <a href="${resource.resourceServer.baseUri}">${resource.resourceServer.name}</a>
+                                        <#else>
+                                            ${resource.resourceServer.name}
+                                        </#if>
                                     </td>
                                     <td>
                                         <#if resource.permissions?size != 0>
@@ -291,7 +301,7 @@
                             </#list>
                         <#else>
                             <tr>
-                                <td colspan="6">There are no resources shared with you</td>
+                                <td colspan="6">${msg("noResourcesSharedWithYou")}</td>
                             </tr>
                         </#if>
                     </tbody>
@@ -316,11 +326,8 @@
         </div>
         <div class="row">
             <div class="col-md-12">
-                <#if authorization.resourcesWaitingOthersApproval?size != 0>
-                    <i class="pficon pficon-info"></i> You have ${authorization.resourcesWaitingOthersApproval?size} permission request(s) <a href="#" onclick="document.getElementById('waitingApproval').style.display=''">waiting</a> for approval.
-                <#else>
-                    You have no permission requests waiting for approval.
-                </#if>
+                <i class="pficon pficon-info"></i> ${msg("havePermissionRequestsWaitingForApproval",authorization.resourcesWaitingOthersApproval?size)}
+                <a href="#" onclick="document.getElementById('waitingApproval').style.display=''">${msg("clickHereForDetails")}</a>
                 <div class="row">
                     <div class="col-md-12"></div>
                 </div>
@@ -334,6 +341,7 @@
                     <div class="col-md-12">
                         <form action="${url.resourceUrl}" name="waitingApprovalForm" method="post">
                             <input type="hidden" name="action" value="cancelRequest"/>
+                            <input type="hidden" id="stateChecker" name="stateChecker" value="${stateChecker}">
                             <table class="table table-striped table-bordered">
                                 <thead>
                                     <tr>
@@ -354,7 +362,7 @@
                                                 <#if resource.displayName??>${resource.displayName}<#else>${resource.name}</#if>
                                             </td>
                                             <td>
-                                                <#if resource.owner.email??>${resource.owner.email}<#else>${resource.owner.username}</#if>
+                                                ${resource.ownerName}
                                             </td>
                                             <td>
                                                 <ul>

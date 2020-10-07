@@ -25,12 +25,12 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Permission;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,10 +56,13 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
     public void onComplete(Result result) {
         ResourcePermission permission = result.getPermission();
         Resource resource = permission.getResource();
-        List<Scope> requestedScopes = permission.getScopes();
+        Collection<Scope> requestedScopes = permission.getScopes();
 
         if (Effect.PERMIT.equals(result.getEffect())) {
-            grantPermission(authorizationProvider, permissions, permission, resource != null ? resource.getScopes() : requestedScopes, resourceServer, request, result);
+            if (permission.getScopes().isEmpty() && !resource.getScopes().isEmpty()) {
+                return;
+            }
+            grantPermission(authorizationProvider, permissions, permission, requestedScopes, resourceServer, request, result);
         } else {
             Set<Scope> grantedScopes = new HashSet<>();
             Set<Scope> deniedScopes = new HashSet<>();
@@ -70,6 +73,8 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
             for (Result.PolicyResult policyResult : result.getResults()) {
                 Policy policy = policyResult.getPolicy();
                 Set<Scope> policyScopes = policy.getScopes();
+                Set<Resource> policyResources = policy.getResources();
+                boolean containsResource = policyResources.contains(resource);
 
                 if (isGranted(policyResult)) {
                     if (isScopePermission(policy)) {
@@ -78,7 +83,7 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
                                 grantedScopes.add(scope);
                                 // we need to grant any scope granted by a permission in case it is not explicitly
                                 // associated with the resource. For instance, resources inheriting scopes from parent resources.
-                                if (!resource.getScopes().contains(scope)) {
+                                if (resource != null && !resource.getScopes().contains(scope)) {
                                     deniedScopes.remove(scope);
                                 }
                             }
@@ -89,15 +94,21 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
                         userManagedPermissions.add(policyResult);
                     }
                     if (!resourceGranted) {
-                        resourceGranted = policy.getResources().contains(resource);
+                        resourceGranted = isGrantingAccessToResource(resource, policy) && containsResource;
                     }
                 } else {
                     if (isResourcePermission(policy)) {
-                        if (!resourceGranted) {
+                        // deny all requested scopes if the resource-based permission is associated with the resource or if the
+                        // resource was not granted by any other permission
+                        if (containsResource || !resourceGranted) {
                             deniedScopes.addAll(requestedScopes);
                         }
                     } else {
-                        deniedScopes.addAll(policyScopes);
+                        // deny all scopes associated with the scope-based permission if the permission is associated with the 
+                        // resource or if the permission applies to any resource associated with the scopes
+                        if (containsResource || policyResources.isEmpty()) {
+                            deniedScopes.addAll(policyScopes);
+                        }
                     }
                     if (!anyDeny) {
                         anyDeny = true;
@@ -105,7 +116,11 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
                 }
             }
 
-            // remove any scope denied from the list of granted scopes
+            if (DecisionStrategy.AFFIRMATIVE.equals(resourceServer.getDecisionStrategy())) {
+                // remove any scope that was granted from the list of denied scopes if the decision strategy is affirmative
+                deniedScopes.removeAll(grantedScopes);
+            }
+
             grantedScopes.removeAll(deniedScopes);
 
             if (userManagedPermissions.isEmpty()) {
@@ -114,7 +129,13 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
                 }
             } else {
                 for (Result.PolicyResult userManagedPermission : userManagedPermissions) {
-                    grantedScopes.addAll(userManagedPermission.getPolicy().getScopes());
+                    Set<Scope> scopes = new HashSet<>(userManagedPermission.getPolicy().getScopes());
+
+                    if (!requestedScopes.isEmpty()) {
+                        scopes.retainAll(requestedScopes);
+                    }
+
+                    grantedScopes.addAll(scopes);
                 }
 
                 if (grantedScopes.isEmpty() && !resource.getScopes().isEmpty()) {
@@ -130,6 +151,25 @@ public class DecisionPermissionCollector extends AbstractDecisionCollector {
 
             grantPermission(authorizationProvider, permissions, permission, grantedScopes, resourceServer, request, result);
         }
+    }
+
+    /**
+     * Checks if the given {@code policy} is eligible to grant access to a resource. Resources are only granted if policy is 
+     * not a scope-permission or, if so, the resource is a user-owned resource so that permissions can be overridden when 
+     * inheriting policies from a typed/parent resource.
+     * 
+     * @param resource the resource
+     * @param policy the policy that grants access to the resources
+     * @return {@code true} if the resource should be granted 
+     */
+    private boolean isGrantingAccessToResource(Resource resource, Policy policy) {
+        boolean scopePermission = isScopePermission(policy);
+        
+        if (!scopePermission) {
+            return true;
+        }
+        
+        return resource != null && !resource.getOwner().equals(resourceServer.getId());
     }
 
     public Collection<Permission> results() {

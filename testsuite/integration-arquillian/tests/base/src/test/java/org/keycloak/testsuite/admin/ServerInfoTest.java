@@ -20,17 +20,22 @@ package org.keycloak.testsuite.admin;
 import org.junit.Test;
 import org.keycloak.common.Version;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.info.ProviderRepresentation;
 import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ServerInfoTest extends AbstractKeycloakTest {
 
     @Test
@@ -59,7 +64,9 @@ public class ServerInfoTest extends AbstractKeycloakTest {
         assertNotNull(info.getSystemInfo().getServerTime());
         assertNotNull(info.getSystemInfo().getUptime());
 
-        log.infof("JPA Connections provider info: %s", info.getProviders().get("connectionsJpa").getProviders().get("default").getOperationalInfo().toString());
+        Map<String, ProviderRepresentation> jpaProviders = info.getProviders().get("connectionsJpa").getProviders();
+        ProviderRepresentation jpaProvider = jpaProviders.values().iterator().next();
+        log.infof("JPA Connections provider info: %s", jpaProvider.getOperationalInfo().toString());
     }
 
     @Override

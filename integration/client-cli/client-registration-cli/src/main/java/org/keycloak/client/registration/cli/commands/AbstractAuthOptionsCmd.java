@@ -25,7 +25,6 @@ public abstract class AbstractAuthOptionsCmd extends AbstractGlobalOptionsCmd {
 
     static final String DEFAULT_CLIENT = "admin-cli";
 
-
     @Option(name = "config", description = "Path to the config file (~/.keycloak/kcreg.config by default)", hasValue = true)
     protected String config;
 
@@ -68,6 +67,9 @@ public abstract class AbstractAuthOptionsCmd extends AbstractGlobalOptionsCmd {
     @Option(name = "trustpass", description = "Truststore password (prompted for if not specified and --truststore is used)", hasValue = true)
     protected String trustPass;
 
+    @Option(name = "insecure", description = "Turns off TLS validation", hasValue = false)
+    protected boolean insecure;
+
     @Option(shortName = 't', name = "token", description = "Initial / Registration access token to use)", hasValue = true)
     protected String token;
 
@@ -90,6 +92,7 @@ public abstract class AbstractAuthOptionsCmd extends AbstractGlobalOptionsCmd {
         trustStore = parent.trustStore;
         trustPass = parent.trustPass;
         token = parent.token;
+        insecure = parent.insecure;
     }
 
     protected void applyDefaultOptionValues() {
@@ -151,6 +154,10 @@ public abstract class AbstractAuthOptionsCmd extends AbstractGlobalOptionsCmd {
             } catch (Exception e) {
                 throw new RuntimeException("Failed to load truststore: " + truststore, e);
             }
+        }
+
+        if (insecure) {
+            HttpUtil.setSkipCertificateValidation();
         }
     }
 

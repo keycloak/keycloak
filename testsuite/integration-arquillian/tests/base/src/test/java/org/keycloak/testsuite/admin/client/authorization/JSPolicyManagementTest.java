@@ -18,25 +18,30 @@ package org.keycloak.testsuite.admin.client.authorization;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 
 import java.util.Collections;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.JSPoliciesResource;
 import org.keycloak.admin.client.resource.JSPolicyResource;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public class JSPolicyManagementTest extends AbstractPolicyManagementTest {
-
+    
     @Test
     public void testCreate() {
         AuthorizationResource authorization = getClient().authorization();
@@ -86,27 +91,30 @@ public class JSPolicyManagementTest extends AbstractPolicyManagementTest {
         representation.setCode("$evaluation.grant()");
 
         JSPoliciesResource policies = authorization.policies().js();
-        Response response = policies.create(representation);
-        JSPolicyRepresentation created = response.readEntity(JSPolicyRepresentation.class);
+        try (Response response = policies.create(representation)) {
+            JSPolicyRepresentation created = response.readEntity(JSPolicyRepresentation.class);
 
-        policies.findById(created.getId()).remove();
+            policies.findById(created.getId()).remove();
 
-        JSPolicyResource removed = policies.findById(created.getId());
+            JSPolicyResource removed = policies.findById(created.getId());
 
-        try {
-            removed.toRepresentation();
-            fail("Permission not removed");
-        } catch (NotFoundException ignore) {
+            try {
+                removed.toRepresentation();
+                fail("Permission not removed");
+            } catch (NotFoundException ignore) {
 
+            }
         }
     }
 
     private void assertCreated(AuthorizationResource authorization, JSPolicyRepresentation representation) {
         JSPoliciesResource permissions = authorization.policies().js();
-        Response response = permissions.create(representation);
-        JSPolicyRepresentation created = response.readEntity(JSPolicyRepresentation.class);
-        JSPolicyResource permission = permissions.findById(created.getId());
-        assertRepresentation(representation, permission);
+
+        try (Response response = permissions.create(representation)) {
+            JSPolicyRepresentation created = response.readEntity(JSPolicyRepresentation.class);
+            JSPolicyResource permission = permissions.findById(created.getId());
+            assertRepresentation(representation, permission);
+        }
     }
 
     private void assertRepresentation(JSPolicyRepresentation representation, JSPolicyResource permission) {

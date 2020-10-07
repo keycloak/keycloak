@@ -25,6 +25,8 @@ import org.jboss.logging.Logger;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Manages relationship to users and sessions so that forced admin logout can be implemented
@@ -35,6 +37,7 @@ import java.util.Set;
 public class UndertowUserSessionManagement implements SessionListener {
     private static final Logger log = Logger.getLogger(UndertowUserSessionManagement.class);
     protected volatile boolean registered;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     public void login(SessionManager manager) {
         if (!registered) {
@@ -43,21 +46,48 @@ public class UndertowUserSessionManagement implements SessionListener {
         }
     }
 
-    public void logoutAll(SessionManager manager) {
-        Set<String> allSessions = manager.getAllSessions();
-        for (String sessionId : allSessions) logoutSession(manager, sessionId);
-    }
-
-    public void logoutHttpSessions(SessionManager manager, List<String> sessionIds) {
-        log.debug("logoutHttpSessions: " + sessionIds);
-
-        for (String sessionId : sessionIds) {
-            logoutSession(manager, sessionId);
+    /**
+     * This method runs the given runnable in the current thread if the session manager does not use distributed sessions,
+     * or in a separate thread if it does. This is to work around:
+     * <pre>
+     *   org.infinispan.util.concurrent.TimeoutException: ISPN000299: Unable to acquire lock after 15 seconds for key SessionCreationMetaDataKey
+     * </pre>
+     * See https://issues.jboss.org/browse/KEYCLOAK-9822
+     * @param r
+     */
+    private void workaroundIspnDeadlock(final SessionManager manager, Runnable r) {
+        if (manager.getClass().getName().equals("org.wildfly.clustering.web.undertow.session.DistributableSessionManager")) {
+            executor.submit(r);
+        } else {
+            r.run();
         }
     }
 
+    public void logoutAll(final SessionManager manager) {
+        final Set<String> allSessions = manager.getAllSessions();
+        workaroundIspnDeadlock(manager, new Runnable() {
+            @Override
+            public void run() {
+                for (String sessionId : allSessions) logoutSession(manager, sessionId);
+            }
+        });
+    }
+
+    public void logoutHttpSessions(final SessionManager manager, final List<String> sessionIds) {
+        log.debugf("logoutHttpSessions: %s", sessionIds);
+
+        workaroundIspnDeadlock(manager, new Runnable() {
+            @Override
+            public void run() {
+                for (String sessionId : sessionIds) {
+                    logoutSession(manager, sessionId);
+                }
+            }
+        });
+    }
+
     protected void logoutSession(SessionManager manager, String httpSessionId) {
-        log.debug("logoutHttpSession: " + httpSessionId);
+        log.debugf("logoutHttpSession: %s", httpSessionId);
         Session session = getSessionById(manager, httpSessionId);
         try {
             if (session != null) session.invalidate(null);

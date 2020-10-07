@@ -20,8 +20,8 @@ package org.keycloak;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.jose.jws.Algorithm;
-import org.keycloak.jose.jws.crypto.HashProvider;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.jose.jws.crypto.HashUtils;
 
 import java.security.Security;
 
@@ -37,13 +37,19 @@ public class AtHashTest {
     }
 
     @Test
-    public void testAtHash() throws Exception {
-        verifyHash("jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y", "77QmUPtjPfzWtF2AnpK9RQ");
-        verifyHash("ya29.eQETFbFOkAs8nWHcmYXKwEi0Zz46NfsrUU_KuQLOLTwWS40y6Fb99aVzEXC0U14m61lcPMIr1hEIBA", "aUAkJG-u6x4RTWuILWy-CA");
+    public void testAtHashRsa() {
+        verifyHash(Algorithm.RS256,"jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y", "77QmUPtjPfzWtF2AnpK9RQ");
+        verifyHash(Algorithm.RS256,"ya29.eQETFbFOkAs8nWHcmYXKwEi0Zz46NfsrUU_KuQLOLTwWS40y6Fb99aVzEXC0U14m61lcPMIr1hEIBA", "aUAkJG-u6x4RTWuILWy-CA");
     }
 
-    private void verifyHash(String accessToken, String expectedAtHash) {
-        String atHash = HashProvider.oidcHash(Algorithm.RS256, accessToken);
+    @Test
+    public void testAtHashEs() {
+        verifyHash(Algorithm.ES256,"jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y", "77QmUPtjPfzWtF2AnpK9RQ");
+        verifyHash(Algorithm.ES256,"ya29.eQETFbFOkAs8nWHcmYXKwEi0Zz46NfsrUU_KuQLOLTwWS40y6Fb99aVzEXC0U14m61lcPMIr1hEIBA", "aUAkJG-u6x4RTWuILWy-CA");
+    }
+
+    private void verifyHash(String jwtAlgorithm, String accessToken, String expectedAtHash) {
+        String atHash = HashUtils.oidcHash(jwtAlgorithm, accessToken);
         Assert.assertEquals(expectedAtHash, atHash);
     }
 }

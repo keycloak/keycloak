@@ -16,48 +16,55 @@
  */
 package org.keycloak.testsuite.auth.page.login;
 
-import org.keycloak.testsuite.auth.page.login.LoginForm.TotpSetupForm;
+import org.keycloak.testsuite.util.UIUtils;
+import org.keycloak.testsuite.util.URLUtils;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.ui.Select;
 
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
 /**
- *
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
 public class OneTimeCode extends Authenticate {
-    @FindBy(id = "kc-totp-login-form")
-    private TotpSetupForm form;
+    @FindBy(id = "otp")
+    private WebElement otpInputField;
 
-    @FindBy(xpath = ".//label[@for='totp']")
-    private WebElement totpInputLabel;
-    
-    public TotpSetupForm form() {
-        return form;
+    @FindBy(xpath = ".//label[@for='otp']")
+    private WebElement otpInputLabel;
+
+    @FindBy(className = "alert-error")
+    private WebElement loginErrorMessage;
+
+    public String getOtpLabel() {
+        return getTextFromElement(otpInputLabel);
     }
 
-    public String getTotpLabel() {
-        return getTextFromElement(totpInputLabel);
-    }
-
-    public boolean isTotpLabelPresent() {
+    public boolean isOtpLabelPresent() {
         try {
-            return totpInputLabel.isDisplayed();
-        }
-        catch (NoSuchElementException e) {
+            return otpInputLabel.isDisplayed();
+        } catch (NoSuchElementException e) {
             return false;
         }
     }
 
     public void sendCode(String code) {
-        form.setTotp(code);
+        setOtp(code);
         submit();
+    }
+
+    public String getError() {
+        return loginErrorMessage != null ? loginErrorMessage.getText() : null;
     }
 
     @Override
     public boolean isCurrent() {
-        return super.isCurrent() && isTotpLabelPresent();
+        return URLUtils.currentUrlStartsWith(toString() + "?") && isOtpLabelPresent();
+    }
+
+    public void setOtp(String value) {
+        UIUtils.setTextInputValue(otpInputField, value);
     }
 }

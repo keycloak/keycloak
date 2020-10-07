@@ -20,12 +20,15 @@ package org.keycloak.adapters.saml;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 
+import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import java.io.Serializable;
+import java.net.URI;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.w3c.dom.Document;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -41,14 +44,20 @@ public class SamlPrincipal implements Serializable, Principal {
     private String samlSubject;
     private String nameIDFormat;
     private AssertionType assertion;
+    private Document assertionDocument;
 
     public SamlPrincipal(AssertionType assertion, String name, String samlSubject, String nameIDFormat, MultivaluedHashMap<String, String> attributes, MultivaluedHashMap<String, String> friendlyAttributes) {
+        this(assertion, null, name, samlSubject, nameIDFormat, attributes, friendlyAttributes);
+    }
+
+    public SamlPrincipal(AssertionType assertion, Document assertionDocument, String name, String samlSubject, String nameIDFormat, MultivaluedHashMap<String, String> attributes, MultivaluedHashMap<String, String> friendlyAttributes) {
         this.name = name;
         this.attributes = attributes;
         this.friendlyAttributes = friendlyAttributes;
         this.samlSubject = samlSubject;
         this.nameIDFormat = nameIDFormat;
         this.assertion = assertion;
+        this.assertionDocument = assertionDocument;
     }
 
     public SamlPrincipal() {
@@ -79,6 +88,37 @@ public class SamlPrincipal implements Serializable, Principal {
      */
     public String getNameIDFormat() {
         return nameIDFormat;
+    }
+
+    /**
+     * Subject nameID format
+     *
+     * @return
+     */
+    public NameIDType getNameID() {
+        if (assertion != null
+          && assertion.getSubject() != null
+          && assertion.getSubject().getSubType() != null
+          && assertion.getSubject().getSubType().getBaseID() instanceof NameIDType) {
+            return (NameIDType) assertion.getSubject().getSubType().getBaseID();
+        }
+
+        NameIDType res = new NameIDType();
+        res.setValue(getSamlSubject());
+        if (getNameIDFormat() != null) {
+            res.setFormat(URI.create(getNameIDFormat()));
+        }
+        return res;
+    }
+
+    /*
+     * The assertion element in DOM format, to respect the original syntax.
+     * It's only available if option <em>keepDOMAssertion</em> is set to true.
+     *
+     * @return The document assertion or null
+     */
+    public Document getAssertionDocument() {
+        return assertionDocument;
     }
 
     @Override
@@ -168,4 +208,32 @@ public class SamlPrincipal implements Serializable, Principal {
 
     }
 
+    @Override
+    public boolean equals(Object other) {
+        if (this == other)
+            return true;
+
+        if (!(other instanceof SamlPrincipal))
+            return false;
+
+        SamlPrincipal otherPrincipal = (SamlPrincipal) other;
+
+        return (this.name != null ? this.name.equals(otherPrincipal.name) : otherPrincipal.name == null) &&
+                (this.samlSubject != null ? this.samlSubject.equals(otherPrincipal.samlSubject) : otherPrincipal.samlSubject == null) &&
+                (this.nameIDFormat != null ? this.nameIDFormat.equals(otherPrincipal.nameIDFormat) : otherPrincipal.nameIDFormat == null) &&
+                (this.attributes != null ? this.attributes.equals(otherPrincipal.attributes) : otherPrincipal.attributes == null) &&
+                (this.friendlyAttributes != null ? this.friendlyAttributes.equals(otherPrincipal.friendlyAttributes) : otherPrincipal.friendlyAttributes == null);
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (this.name == null ? 0 : this.name.hashCode());
+        result = prime * result + (this.samlSubject == null ? 0 : this.samlSubject.hashCode());
+        result = prime * result + (this.nameIDFormat == null ? 0 : this.nameIDFormat.hashCode());
+        result = prime * result + (this.attributes == null ? 0 : this.attributes.hashCode());
+        result = prime * result + (this.friendlyAttributes == null ? 0 : this.friendlyAttributes.hashCode());
+        return result;
+    }
 }

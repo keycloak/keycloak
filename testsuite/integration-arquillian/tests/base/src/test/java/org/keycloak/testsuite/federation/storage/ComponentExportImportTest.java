@@ -1,78 +1,100 @@
 package org.keycloak.testsuite.federation.storage;
 
-import java.io.File;
-import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
-import javax.ws.rs.NotFoundException;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
-import static org.junit.Assert.fail;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+
+
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
-import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
+import org.keycloak.testsuite.util.RealmBuilder;
+
+import javax.ws.rs.NotFoundException;
+import java.io.File;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
+
+import static org.junit.Assert.fail;
+import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  *
  * @author tkyjovsk
  */
-public class ComponentExportImportTest extends AbstractAuthTest implements Serializable {
+@AuthServerContainerExclude(AuthServer.REMOTE)
+public class ComponentExportImportTest extends AbstractAuthTest {
+
+    private static final String REALM_NAME = "exported-component";
 
     private File exportFile;
-
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(ComponentExportImportTest.class, AbstractAuthTest.class, RealmResource.class)
-                .addPackages(true, "org.keycloak.testsuite");
-    }
 
     @Before
     public void setDirs() {
         exportFile = new File (new File(System.getProperty("auth.server.config.dir", "target")), "singleFile-full.json");
         log.infof("Export file: %s", exportFile);
-    }
 
-    public void clearExportImportProperties() {
-        // Clear export/import properties after test
-        Properties systemProps = System.getProperties();
-        Set<String> propsToRemove = new HashSet<>();
-
-        for (Object key : systemProps.keySet()) {
-            if (key.toString().startsWith(ExportImportConfig.PREFIX)) {
-                propsToRemove.add(key.toString());
+        // Remove realm if exists
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName(REALM_NAME);
+            if (realm != null) {
+                session.realms().removeRealm(realm.getId());
             }
-        }
-
-        for (String propToRemove : propsToRemove) {
-            systemProps.remove(propToRemove);
-        }
+        });
     }
+
+
+    @Override
+    public RealmResource testRealmResource() {
+        return adminClient.realm(REALM_NAME);
+    }
+
+
+    static void clearExportImportProperties(KeycloakTestingClient testingClient) {
+        testingClient.server().run(session -> {
+            // Clear export/import properties after test
+            Properties systemProps = System.getProperties();
+            Set<String> propsToRemove = new HashSet<>();
+
+            for (Object key : systemProps.keySet()) {
+                if (key.toString().startsWith(ExportImportConfig.PREFIX)) {
+                    propsToRemove.add(key.toString());
+                }
+            }
+
+            for (String propToRemove : propsToRemove) {
+                systemProps.remove(propToRemove);
+            }
+        });
+    }
+
 
     protected String addComponent(ComponentRepresentation component) {
         return ApiUtil.getCreatedId(testRealmResource().components().add(component));
     }
 
     @Test
-    @Ignore
     public void testSingleFile() {
-        clearExportImportProperties();
+        clearExportImportProperties(testingClient);
 
+        RealmRepresentation realmRep = RealmBuilder.create()
+                .name(REALM_NAME)
+                .build();
+        adminClient.realms().create(realmRep);
         String realmId = testRealmResource().toRepresentation().getId();
-        String realmName = testRealmResource().toRepresentation().getRealm();
 
         ComponentRepresentation parentComponent = new ComponentRepresentation();
         parentComponent.setParentId(realmId);
@@ -83,6 +105,7 @@ public class ComponentExportImportTest extends AbstractAuthTest implements Seria
         parentComponent.setConfig(new MultivaluedHashMap<>());
         parentComponent.getConfig().putSingle("priority", Integer.toString(0));
         parentComponent.getConfig().putSingle("attr", "value");
+        parentComponent.getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(false));
         String parentComponentId = addComponent(parentComponent);
 
         ComponentRepresentation subcomponent = new ComponentRepresentation();
@@ -94,24 +117,38 @@ public class ComponentExportImportTest extends AbstractAuthTest implements Seria
         subcomponent.setConfig(new MultivaluedHashMap<>());
         subcomponent.getConfig().putSingle("priority", Integer.toString(0));
         subcomponent.getConfig().putSingle("attr", "value2");
+        subcomponent.getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(false));
         String subcomponentId = addComponent(subcomponent);
+
+        final String exportFilePath = exportFile.getAbsolutePath();
 
         // export 
         testingClient.server().run(session -> {
             ExportImportConfig.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
-            ExportImportConfig.setFile(exportFile.getAbsolutePath());
-            ExportImportConfig.setRealmName(realmName);
+            ExportImportConfig.setFile(exportFilePath);
+            ExportImportConfig.setRealmName(REALM_NAME);
             ExportImportConfig.setAction(ExportImportConfig.ACTION_EXPORT);
             new ExportImportManager(session).runExport();
         });
 
+        testRealmResource().remove();
+
+        try {
+            testRealmResource().toRepresentation();
+            Assert.fail("Realm wasn't expected to be found");
+        } catch (NotFoundException nfe) {
+            // Expected
+        }
+
         // import 
         testingClient.server().run(session -> {
-            Assert.assertNull(session.realms().getRealmByName(TEST));
+            Assert.assertNull(session.realms().getRealmByName(REALM_NAME));
             ExportImportConfig.setAction(ExportImportConfig.ACTION_IMPORT);
             new ExportImportManager(session).runImport();
-            Assert.assertNotNull(session.realms().getRealmByName(TEST));
         });
+
+        // Assert realm was imported
+        Assert.assertNotNull(testRealmResource().toRepresentation());
 
         try {
             parentComponent = testRealmResource().components().component(parentComponentId).toRepresentation();
@@ -127,7 +164,7 @@ public class ComponentExportImportTest extends AbstractAuthTest implements Seria
         Assert.assertEquals(parentComponent.getProviderType(), UserStorageProvider.class.getName());
         Assert.assertEquals(parentComponent.getConfig().getFirst("attr"), "value");
 
-        Assert.assertEquals(subcomponent.getParentId(), realmId);
+        Assert.assertEquals(subcomponent.getParentId(), parentComponent.getId());
         Assert.assertEquals(subcomponent.getName(), "child");
         Assert.assertEquals(subcomponent.getSubType(), "subtype2");
         Assert.assertEquals(subcomponent.getProviderId(), UserMapStorageFactory.PROVIDER_ID);

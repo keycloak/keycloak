@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc;
 
+import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.ClientModel;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -118,11 +119,79 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(OIDCConfigAttributes.USE_MTLS_HOK_TOKEN, val);
     }
 
+    public String getTlsClientAuthSubjectDn() {
+        return getAttribute(X509ClientAuthenticator.ATTR_SUBJECT_DN);
+     }
+
+    public void setTlsClientAuthSubjectDn(String tls_client_auth_subject_dn) {
+        setAttribute(X509ClientAuthenticator.ATTR_SUBJECT_DN, tls_client_auth_subject_dn);
+    }
+
+    public String getPkceCodeChallengeMethod() {
+        return getAttribute(OIDCConfigAttributes.PKCE_CODE_CHALLENGE_METHOD);
+    }
+
+    public void setPkceCodeChallengeMethod(String codeChallengeMethodName) {
+        setAttribute(OIDCConfigAttributes.PKCE_CODE_CHALLENGE_METHOD, codeChallengeMethodName);
+    }
+
     public String getIdTokenSignedResponseAlg() {
         return getAttribute(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG);
     }
     public void setIdTokenSignedResponseAlg(String algName) {
         setAttribute(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG, algName);
+    }
+
+    public String getIdTokenEncryptedResponseAlg() {
+        return getAttribute(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ALG);
+    }
+
+    public void setIdTokenEncryptedResponseAlg(String algName) {
+        setAttribute(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ALG, algName);
+    }
+
+    public String getIdTokenEncryptedResponseEnc() {
+        return getAttribute(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC);
+    }
+
+    public void setIdTokenEncryptedResponseEnc(String encName) {
+        setAttribute(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC, encName);
+    }
+
+    public String getTokenEndpointAuthSigningAlg() {
+        return getAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG);
+    }
+
+    public void setTokenEndpointAuthSigningAlg(String algName) {
+        setAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, algName);
+    }
+
+    public String getBackchannelLogoutUrl() {
+        return getAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL);
+    }
+
+    public void setBackchannelLogoutUrl(String backchannelLogoutUrl) {
+        setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, backchannelLogoutUrl);
+    }
+
+    public boolean isBackchannelLogoutSessionRequired() {
+        String backchannelLogoutSessionRequired = getAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_SESSION_REQUIRED);
+        return Boolean.parseBoolean(backchannelLogoutSessionRequired);
+    }
+
+    public void setBackchannelLogoutSessionRequired(boolean backchannelLogoutSessionRequired) {
+        String val = String.valueOf(backchannelLogoutSessionRequired);
+        setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_SESSION_REQUIRED, val);
+    }
+
+    public boolean getBackchannelLogoutRevokeOfflineTokens() {
+        String backchannelLogoutRevokeOfflineTokens = getAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_TOKENS);
+        return Boolean.parseBoolean(backchannelLogoutRevokeOfflineTokens);
+    }
+
+    public void setBackchannelLogoutRevokeOfflineTokens(boolean backchannelLogoutRevokeOfflineTokens) {
+        String val = String.valueOf(backchannelLogoutRevokeOfflineTokens);
+        setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_TOKENS, val);
     }
 
     private String getAttribute(String attrKey) {

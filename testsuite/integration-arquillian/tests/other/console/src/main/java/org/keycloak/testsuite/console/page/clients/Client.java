@@ -2,11 +2,13 @@ package org.keycloak.testsuite.console.page.clients;
 
 import org.jboss.arquillian.graphene.fragment.Root;
 import org.keycloak.testsuite.console.page.fragment.Breadcrumb;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import static org.keycloak.testsuite.console.page.fragment.Breadcrumb.BREADCRUMB_XPATH;
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 import org.openqa.selenium.NoSuchElementException;
 
@@ -17,6 +19,7 @@ import org.openqa.selenium.NoSuchElementException;
 public class Client extends Clients {
 
     public static final String ID = "id"; // TODO client.id vs client.clientId
+    public static final String CLIENT_TABS_XPATH = "//div[@data-ng-controller='ClientTabCtrl']/ul";
 
     @Override
     public String getUriFragment() {
@@ -50,10 +53,11 @@ public class Client extends Clients {
         modalDialog.confirmDeletion();
     }
 
-    @FindBy(xpath = "//div[@data-ng-controller='ClientTabCtrl']/ul")
+    @FindBy(xpath = CLIENT_TABS_XPATH)
     protected ClientTabs clientTabs;
 
     public ClientTabs tabs() {
+        waitUntilElement(By.xpath(CLIENT_TABS_XPATH)).is().present(); // a workaround to make FF stable
         return clientTabs;
     }
 

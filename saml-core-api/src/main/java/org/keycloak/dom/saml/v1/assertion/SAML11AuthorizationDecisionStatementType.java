@@ -35,7 +35,7 @@ import java.util.List;
  */
 public class SAML11AuthorizationDecisionStatementType extends SAML11SubjectStatementType {
 
-    protected List<SAML11ActionType> actions = new ArrayList<SAML11ActionType>();
+    protected List<SAML11ActionType> actions = new ArrayList<>();
 
     protected SAML11EvidenceType evidence;
 

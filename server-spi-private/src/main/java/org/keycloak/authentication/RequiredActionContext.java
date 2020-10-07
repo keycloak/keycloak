@@ -37,11 +37,17 @@ import java.net.URI;
  * @version $Revision: 1 $
  */
 public interface RequiredActionContext {
-    public static enum Status {
+    enum Status {
         CHALLENGE,
         SUCCESS,
         IGNORE,
         FAILURE
+    }
+
+    enum KcActionStatus {
+        SUCCESS,
+        CANCELLED,
+        ERROR
     }
 
     /**

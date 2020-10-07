@@ -32,8 +32,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.junit.Test;
 import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
 
@@ -75,7 +73,7 @@ public class ConcurrentLoginCrossDCTest extends ConcurrentLoginTest {
         AtomicReference<String> userSessionId = new AtomicReference<>();
         LoginTask loginTask = null;
 
-        try (CloseableHttpClient httpClient = HttpClientBuilder.create().setRedirectStrategy(new LaxRedirectStrategy()).build()) {
+        try (CloseableHttpClient httpClient = getHttpsAwareClient()) {
             loginTask = new LoginTask(httpClient, userSessionId, LOGIN_TASK_DELAY_MS, LOGIN_TASK_RETRIES, false, Arrays.asList(
               createHttpClientContextForUser(httpClient, "test-user@localhost", "password")
             ));

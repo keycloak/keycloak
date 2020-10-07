@@ -40,12 +40,12 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.Configuration;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
@@ -54,6 +54,8 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -63,6 +65,7 @@ import org.keycloak.util.JsonSerialization;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class ConflictingScopePermissionTest extends AbstractAuthzTest {
 
     @Override
@@ -103,6 +106,7 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
         ResourceServerRepresentation settings = authorization.getSettings();
 
         settings.setPolicyEnforcementMode(PolicyEnforcementMode.ENFORCING);
+        settings.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
 
         authorization.update(settings);
 
@@ -130,6 +134,46 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
         assertTrue(permissions.isEmpty());
     }
 
+    /**
+     * <p>Scope Read on Resource A has two conflicting permissions. One is granting access for Marta and the other for Kolo.
+     *
+     * <p>Scope Read should not be granted for Marta.
+     */
+    @Test
+    public void testMartaCanAccessResourceA() throws Exception {
+        ClientResource client = getClient(getRealm());
+        AuthorizationResource authorization = client.authorization();
+        ResourceServerRepresentation settings = authorization.getSettings();
+
+        settings.setPolicyEnforcementMode(PolicyEnforcementMode.ENFORCING);
+        settings.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
+
+        authorization.update(settings);
+
+        Collection<Permission> permissions = getEntitlements("marta", "password");
+
+        assertEquals(1, permissions.size());
+
+        for (Permission permission : new ArrayList<>(permissions)) {
+            String resourceSetName = permission.getResourceName();
+
+            switch (resourceSetName) {
+                case "Resource A":
+                    assertThat(permission.getScopes(), containsInAnyOrder("execute", "write", "read"));
+                    permissions.remove(permission);
+                    break;
+                case "Resource C":
+                    assertThat(permission.getScopes(), containsInAnyOrder("execute", "write", "read"));
+                    permissions.remove(permission);
+                    break;
+                default:
+                    fail("Unexpected permission for resource [" + resourceSetName + "]");
+            }
+        }
+
+        assertTrue(permissions.isEmpty());
+    }
+
     @Test
     public void testWithPermissiveMode() throws Exception {
         ClientResource client = getClient(getRealm());
@@ -137,6 +181,7 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
         ResourceServerRepresentation settings = authorization.getSettings();
 
         settings.setPolicyEnforcementMode(PolicyEnforcementMode.PERMISSIVE);
+        settings.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
 
         authorization.update(settings);
 
@@ -175,6 +220,7 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
         ResourceServerRepresentation settings = authorization.getSettings();
 
         settings.setPolicyEnforcementMode(PolicyEnforcementMode.DISABLED);
+        settings.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
 
         authorization.update(settings);
 
@@ -275,7 +321,7 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
 
         representation.setConfig(config);
 
-        client.authorization().policies().create(representation);
+        client.authorization().policies().create(representation).close();
     }
 
     private void createResourcePermission(String name, String resourceName, List<String> policies, ClientResource client) throws IOException {
@@ -285,7 +331,7 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
         representation.addResource(resourceName);
         representation.addPolicy(policies.toArray(new String[policies.size()]));
 
-        client.authorization().permissions().resource().create(representation);
+        client.authorization().permissions().resource().create(representation).close();
     }
 
     private void createScopePermission(String name, String resourceName, List<String> scopes, List<String> policies, ClientResource client) throws IOException {
@@ -301,14 +347,10 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
         representation.addScope(scopes.toArray(new String[scopes.size()]));
         representation.addPolicy(policies.toArray(new String[policies.size()]));
 
-        authorization.permissions().scope().create(representation);
+        authorization.permissions().scope().create(representation).close();
     }
 
     private AuthzClient getAuthzClient() {
-        try {
-            return AuthzClient.create(JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/default-keycloak.json"), Configuration.class));
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to create authz client", cause);
-        }
+        return AuthzClient.create(getClass().getResourceAsStream("/authorization-test/default-keycloak.json"));
     }
 }

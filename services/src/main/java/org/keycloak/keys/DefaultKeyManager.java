@@ -67,7 +67,7 @@ public class DefaultKeyManager implements KeyManager {
                 List<KeyProvider> providers = getProviders(realm);
                 activeKey = getActiveKey(providers, realm, use, algorithm);
                 if (activeKey != null) {
-                    logger.warnv("Fallback key created: realm={0} algorithm={1} use={2}", realm.getName(), algorithm, use.name());
+                    logger.infov("No keys found for realm={0} and algorithm={1} for use={2}. Generating keys.", realm.getName(), algorithm, use.name());
                     return activeKey;
                 } else {
                     break;
@@ -137,9 +137,7 @@ public class DefaultKeyManager implements KeyManager {
     public List<KeyWrapper> getKeys(RealmModel realm) {
         List<KeyWrapper> keys = new LinkedList<>();
         for (KeyProvider p : getProviders(realm)) {
-            for (KeyWrapper key : p .getKeys()) {
-                keys.add(key);
-            }
+            keys.addAll(p.getKeys());
         }
         return keys;
     }
@@ -148,7 +146,7 @@ public class DefaultKeyManager implements KeyManager {
     @Deprecated
     public ActiveRsaKey getActiveRsaKey(RealmModel realm) {
         KeyWrapper key = getActiveKey(realm, KeyUse.SIG, Algorithm.RS256);
-        return new ActiveRsaKey(key.getKid(), (PrivateKey) key.getSignKey(), (PublicKey) key.getVerifyKey(), key.getCertificate());
+        return new ActiveRsaKey(key.getKid(), (PrivateKey) key.getPrivateKey(), (PublicKey) key.getPublicKey(), key.getCertificate());
     }
 
     @Override
@@ -169,7 +167,7 @@ public class DefaultKeyManager implements KeyManager {
     @Deprecated
     public PublicKey getRsaPublicKey(RealmModel realm, String kid) {
         KeyWrapper key = getKey(realm, kid, KeyUse.SIG, Algorithm.RS256);
-        return key != null ? (PublicKey) key.getVerifyKey() : null;
+        return key != null ? (PublicKey) key.getPublicKey() : null;
     }
 
     @Override
@@ -200,7 +198,7 @@ public class DefaultKeyManager implements KeyManager {
         for (KeyWrapper key : getKeys(realm, KeyUse.SIG, Algorithm.RS256)) {
             RsaKeyMetadata m = new RsaKeyMetadata();
             m.setCertificate(key.getCertificate());
-            m.setPublicKey((PublicKey) key.getVerifyKey());
+            m.setPublicKey((PublicKey) key.getPublicKey());
             m.setKid(key.getKid());
             m.setProviderId(key.getProviderId());
             m.setProviderPriority(key.getProviderPriority());

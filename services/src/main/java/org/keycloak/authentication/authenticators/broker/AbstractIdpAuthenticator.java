@@ -56,6 +56,8 @@ public abstract class AbstractIdpAuthenticator implements Authenticator {
     // Set after firstBrokerLogin is successfully finished and contains the providerId of the provider, whose 'first-broker-login' flow was just finished
     public static final String FIRST_BROKER_LOGIN_SUCCESS = "FIRST_BROKER_LOGIN_SUCCESS";
 
+    // Set if nested firstBrokerLogin is detected, allowing to report a detailed error
+    public static final String NESTED_FIRST_BROKER_CONTEXT = "NESTED_FIRST_BROKER_CONTEXT";
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {

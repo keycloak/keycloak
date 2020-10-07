@@ -12,6 +12,9 @@
             <module name="org.keycloak.keycloak-model-jpa"/>
             <module name="org.keycloak.keycloak-kerberos-federation"/>
             <module name="org.keycloak.keycloak-ldap-federation"/>
+            <module name="org.infinispan"/>
+            <module name="org.apache.commons.io"/>
+            <module name="org.apache.httpcomponents.core"/>
         </dependencies>
     </deployment>
 </jboss-deployment-structure>

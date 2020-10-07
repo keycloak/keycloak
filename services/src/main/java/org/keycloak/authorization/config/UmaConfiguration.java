@@ -17,8 +17,6 @@
  */
 package org.keycloak.authorization.config;
 
-import java.net.URI;
-
 import javax.ws.rs.core.UriBuilder;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -52,7 +50,7 @@ public class UmaConfiguration extends OIDCConfigurationRepresentation {
         configuration.setGrantTypesSupported(oidcConfig.getGrantTypesSupported());
         configuration.setTokenEndpointAuthMethodsSupported(oidcConfig.getTokenEndpointAuthMethodsSupported());
         configuration.setTokenEndpointAuthSigningAlgValuesSupported(oidcConfig.getTokenEndpointAuthSigningAlgValuesSupported());
-        configuration.setTokenIntrospectionEndpoint(oidcConfig.getTokenIntrospectionEndpoint());
+        configuration.setIntrospectionEndpoint(oidcConfig.getIntrospectionEndpoint());
         configuration.setLogoutEndpoint(oidcConfig.getLogoutEndpoint());
 
         UriBuilder uriBuilder = session.getContext().getUri().getBaseUriBuilder();

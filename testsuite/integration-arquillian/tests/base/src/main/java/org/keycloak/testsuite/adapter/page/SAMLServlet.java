@@ -17,9 +17,20 @@
 
 package org.keycloak.testsuite.adapter.page;
 
-import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
-import static org.keycloak.testsuite.util.WaitUtils.pause;
+import javax.ws.rs.core.UriBuilder;
+import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
+import org.keycloak.testsuite.util.WaitUtils;
+
+import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
+
+import org.openqa.selenium.By;
 
 /**
  * @author mhajas
@@ -27,9 +38,8 @@ import static org.keycloak.testsuite.util.WaitUtils.pause;
 public abstract class SAMLServlet extends AbstractPageWithInjectedUrl {
 
     public void logout() {
-        driver.navigate().to(getUriBuilder().queryParam("GLO", "true").build().toASCIIString());
-        getUriBuilder().replaceQueryParam("GLO");
-        pause(300);
+        driver.navigate().to(getUriBuilder().clone().queryParam("GLO", "true").build().toASCIIString());
+        waitForPageToLoad();
     }
 
     public void checkRoles(boolean check) {
@@ -41,7 +51,33 @@ public abstract class SAMLServlet extends AbstractPageWithInjectedUrl {
     }
 
     public void checkRolesEndPoint(boolean value) {
-        driver.navigate().to(getUriBuilder().build().toASCIIString() + "/" + (value ? "" : "un") + "checkRoles");
-        pause(300);
+        driver.navigate().to(getUriBuilder().clone().path((value ? "" : "un") + "checkRoles").build().toASCIIString());
+        waitForPageToLoad();
+    }
+
+    public void setRolesToCheck(String roles) {
+        UriBuilder uriBuilder = getUriBuilder().clone();
+        String toASCIIString = uriBuilder.path("setCheckRoles").queryParam("roles", roles).build().toASCIIString();
+        driver.navigate().to(toASCIIString);
+        waitForPageToLoad();
+        WaitUtils.waitUntilElement(By.tagName("body")).text().contains("These roles will be checked:");
+    }
+
+    public List<String> rolesList() {
+        String rolesPattern = getFromPageByPattern("Roles");
+        if (rolesPattern != null) {
+            return Arrays.stream(rolesPattern.split(",")).filter(s -> !s.isEmpty()).collect(Collectors.toList());
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
+    public String getFromPageByPattern(String text) {
+        Pattern p = Pattern.compile(text + ": (.*)");
+        Matcher m = p.matcher(driver.getPageSource());
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
     }
 }

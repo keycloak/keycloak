@@ -44,7 +44,7 @@
         <div class="form-group">
             <label class="col-md-2 control-label" for="lookAhead">{{:: 'look-ahead-window' | translate}}</label>
             <div class="col-md-6">
-                <input class="form-control" type="number" required min="1" max="120" id="lookAhead" name="lookAhead" data-ng-model="realm.otpPolicyLookAheadWindow" autofocus>
+                <input class="form-control" type="number" required min="0" max="120" id="lookAhead" name="lookAhead" data-ng-model="realm.otpPolicyLookAheadWindow" autofocus>
             </div>
             <kc-tooltip>{{:: 'otp.look-ahead-window.tooltip' | translate}}</kc-tooltip>
         </div>

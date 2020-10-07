@@ -86,27 +86,30 @@ public class AggregatePolicyManagementTest extends AbstractPolicyManagementTest 
         representation.addPolicy("Only Marta Policy");
 
         AggregatePoliciesResource policies = authorization.policies().aggregate();
-        Response response = policies.create(representation);
-        AggregatePolicyRepresentation created = response.readEntity(AggregatePolicyRepresentation.class);
 
-        policies.findById(created.getId()).remove();
+        try (Response response = policies.create(representation)) {
+            AggregatePolicyRepresentation created = response.readEntity(AggregatePolicyRepresentation.class);
 
-        AggregatePolicyResource removed = policies.findById(created.getId());
+            policies.findById(created.getId()).remove();
 
-        try {
-            removed.toRepresentation();
-            fail("Policy not removed");
-        } catch (NotFoundException ignore) {
+            AggregatePolicyResource removed = policies.findById(created.getId());
 
+            try {
+                removed.toRepresentation();
+                fail("Policy not removed");
+            } catch (NotFoundException ignore) {
+
+            }
         }
     }
 
     private void assertCreated(AuthorizationResource authorization, AggregatePolicyRepresentation representation) {
         AggregatePoliciesResource permissions = authorization.policies().aggregate();
-        Response response = permissions.create(representation);
-        AggregatePolicyRepresentation created = response.readEntity(AggregatePolicyRepresentation.class);
-        AggregatePolicyResource permission = permissions.findById(created.getId());
-        assertRepresentation(representation, permission);
+        try (Response response = permissions.create(representation)) {
+            AggregatePolicyRepresentation created = response.readEntity(AggregatePolicyRepresentation.class);
+            AggregatePolicyResource permission = permissions.findById(created.getId());
+            assertRepresentation(representation, permission);
+        }
     }
 
     private void assertRepresentation(AggregatePolicyRepresentation representation, AggregatePolicyResource policy) {

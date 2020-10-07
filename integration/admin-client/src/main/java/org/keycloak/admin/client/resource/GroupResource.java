@@ -73,7 +73,7 @@ public interface GroupResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public GroupRepresentation toRepresentation();
+    GroupRepresentation toRepresentation();
 
     /**
      * Update group
@@ -82,10 +82,10 @@ public interface GroupResource {
      */
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public void update(GroupRepresentation rep);
+    void update(GroupRepresentation rep);
 
     @DELETE
-    public void remove();
+    void remove();
 
 
     /**
@@ -99,11 +99,11 @@ public interface GroupResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response subGroup(GroupRepresentation rep);
+    Response subGroup(GroupRepresentation rep);
 
 
     @Path("role-mappings")
-    public RoleMappingResource roles();
+    RoleMappingResource roles();
 
     /**
      * Get users
@@ -116,7 +116,8 @@ public interface GroupResource {
     @NoCache
     @Path("/members")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<UserRepresentation> members();
+    List<UserRepresentation> members();
+
     /**
      * Get users
      * <p/>
@@ -130,6 +131,26 @@ public interface GroupResource {
     @NoCache
     @Path("/members")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<UserRepresentation> members(@QueryParam("first") Integer firstResult,
-                                            @QueryParam("max") Integer maxResults);
+    List<UserRepresentation> members(@QueryParam("first") Integer firstResult,
+                                     @QueryParam("max") Integer maxResults);
+
+    /**
+     * Get users
+     * <p/>
+     * Returns a list of users, filtered according to query parameters
+     *
+     * @param firstResult Pagination offset
+     * @param maxResults  Pagination size
+     * @param briefRepresentation Only return basic information (only guaranteed to return id, username, created, first and last name,
+     *      email, enabled state, email verification state, federation link, and access.
+     *      Note that it means that namely user attributes, required actions, and not before are not returned.)
+     * @return
+     */
+    @GET
+    @NoCache
+    @Path("/members")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> members(@QueryParam("first") Integer firstResult,
+                                     @QueryParam("max") Integer maxResults,
+                                     @QueryParam("briefRepresentation") Boolean briefRepresentation);
 }

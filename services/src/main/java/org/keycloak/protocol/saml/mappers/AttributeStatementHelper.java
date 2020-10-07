@@ -26,6 +26,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +54,7 @@ public class AttributeStatementHelper {
     }
 
     public static void addAttributes(AttributeStatementType attributeStatement, ProtocolMapperModel mappingModel,
-                                    List<String> attributeValues) {
+                                    Collection<String> attributeValues) {
 
         AttributeType attribute = createAttributeType(mappingModel);
         attributeValues.forEach(attribute::addAttributeValue);
@@ -66,8 +67,8 @@ public class AttributeStatementHelper {
         AttributeType attribute = new AttributeType(attributeName);
         String attributeType = mappingModel.getConfig().get(SAML_ATTRIBUTE_NAMEFORMAT);
         String attributeNameFormat = JBossSAMLURIConstants.ATTRIBUTE_FORMAT_BASIC.get();
-        if ("URI Reference".equals(attributeType)) attributeNameFormat = JBossSAMLURIConstants.ATTRIBUTE_FORMAT_URI.get();
-        else if ("Unspecified".equals(attributeType)) attributeNameFormat = "urn:oasis:names:tc:SAML2.0:attrname-format:unspecified";
+        if (URI_REFERENCE.equals(attributeType)) attributeNameFormat = JBossSAMLURIConstants.ATTRIBUTE_FORMAT_URI.get();
+        else if (UNSPECIFIED.equals(attributeType)) attributeNameFormat = JBossSAMLURIConstants.ATTRIBUTE_FORMAT_UNSPECIFIED.get();
         attribute.setNameFormat(attributeNameFormat);
         String friendlyName = mappingModel.getConfig().get(FRIENDLY_NAME);
         if (friendlyName != null && !friendlyName.trim().equals("")) attribute.setFriendlyName(friendlyName);
@@ -89,7 +90,7 @@ public class AttributeStatementHelper {
         property.setName(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT);
         property.setLabel("SAML Attribute NameFormat");
         property.setHelpText("SAML Attribute NameFormat.  Can be basic, URI reference, or unspecified.");
-        List<String> types = new ArrayList(3);
+        List<String> types = new ArrayList<>(3);
         types.add(AttributeStatementHelper.BASIC);
         types.add(AttributeStatementHelper.URI_REFERENCE);
         types.add(AttributeStatementHelper.UNSPECIFIED);
@@ -103,7 +104,7 @@ public class AttributeStatementHelper {
         mapper.setName(name);
         mapper.setProtocolMapper(mapperId);
         mapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
-        Map<String, String> config = new HashMap<String, String>();
+        Map<String, String> config = new HashMap<>();
         if (userAttribute != null) config.put(ProtocolMapperUtils.USER_ATTRIBUTE, userAttribute);
         config.put(SAML_ATTRIBUTE_NAME, samlAttributeName);
         if (friendlyName != null) {

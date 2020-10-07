@@ -16,7 +16,15 @@
  */
 package org.keycloak.services.managers;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -26,19 +34,21 @@ import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.TokenManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.util.ResolveRelative;
 
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
@@ -49,6 +59,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -64,19 +76,19 @@ public class ResourceAdminManager {
         this.session = session;
     }
 
-    public static String resolveUri(URI requestUri, String rootUrl, String uri) {
-        String absoluteURI = ResolveRelative.resolveRelativeUri(requestUri, rootUrl, uri);
+    public static String resolveUri(KeycloakSession session, String rootUrl, String uri) {
+        String absoluteURI = ResolveRelative.resolveRelativeUri(session, rootUrl, uri);
         return StringPropertyReplacer.replaceProperties(absoluteURI);
 
    }
 
-    public static String getManagementUrl(URI requestUri, ClientModel client) {
+    public static String getManagementUrl(KeycloakSession session, ClientModel client) {
         String mgmtUrl = client.getManagementUrl();
         if (mgmtUrl == null || mgmtUrl.equals("")) {
             return null;
         }
 
-        String absoluteURI = ResolveRelative.resolveRelativeUri(requestUri, client.getRootUrl(), mgmtUrl);
+        String absoluteURI = ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), mgmtUrl);
 
         // this is for resolving URI like "http://${jboss.host.name}:8080/..." in order to send request to same machine and avoid request to LB in cluster environment
         return StringPropertyReplacer.replaceProperties(absoluteURI);
@@ -84,8 +96,8 @@ public class ResourceAdminManager {
 
     // For non-cluster setup, return just single configured managementUrls
     // For cluster setup, return the management Urls corresponding to all registered cluster nodes
-    private List<String> getAllManagementUrls(URI requestUri, ClientModel client) {
-        String baseMgmtUrl = getManagementUrl(requestUri, client);
+    private List<String> getAllManagementUrls(ClientModel client) {
+        String baseMgmtUrl = getManagementUrl(session, client);
         if (baseMgmtUrl == null) {
             return Collections.emptyList();
         }
@@ -107,14 +119,14 @@ public class ResourceAdminManager {
         return result;
     }
 
-    public void logoutUser(URI requestUri, RealmModel realm, UserModel user, KeycloakSession keycloakSession) {
+    public void logoutUser(RealmModel realm, UserModel user, KeycloakSession keycloakSession) {
         keycloakSession.users().setNotBeforeForUser(realm, user, Time.currentTime());
 
         List<UserSessionModel> userSessions = keycloakSession.sessions().getUserSessions(realm, user);
-        logoutUserSessions(requestUri, realm, userSessions);
+        logoutUserSessions(realm, userSessions);
     }
 
-    protected void logoutUserSessions(URI requestUri, RealmModel realm, List<UserSessionModel> userSessions) {
+    protected void logoutUserSessions(RealmModel realm, List<UserSessionModel> userSessions) {
         // Map from "app" to clientSessions for this app
         MultivaluedHashMap<String, AuthenticatedClientSessionModel> clientSessions = new MultivaluedHashMap<>();
         for (UserSessionModel userSession : userSessions) {
@@ -128,7 +140,7 @@ public class ResourceAdminManager {
             if (entry.getValue().size() == 0) {
                 continue;
             }
-            logoutClientSessions(requestUri, realm, entry.getValue().get(0).getClient(), entry.getValue());
+            logoutClientSessions(realm, entry.getValue().get(0).getClient(), entry.getValue());
         }
     }
 
@@ -139,12 +151,12 @@ public class ResourceAdminManager {
     }
 
 
-    public boolean logoutClientSession(URI requestUri, RealmModel realm, ClientModel resource, AuthenticatedClientSessionModel clientSession) {
-        return logoutClientSessions(requestUri, realm, resource, Arrays.asList(clientSession));
+    public Response logoutClientSession(RealmModel realm, ClientModel resource, AuthenticatedClientSessionModel clientSession) {
+        return logoutClientSessions(realm, resource, Arrays.asList(clientSession));
     }
 
-    protected boolean logoutClientSessions(URI requestUri, RealmModel realm, ClientModel resource, List<AuthenticatedClientSessionModel> clientSessions) {
-        String managementUrl = getManagementUrl(requestUri, resource);
+    protected Response logoutClientSessions(RealmModel realm, ClientModel resource, List<AuthenticatedClientSessionModel> clientSessions) {
+        String managementUrl = getManagementUrl(session, resource);
         if (managementUrl != null) {
 
             // Key is host, value is list of http sessions for this host
@@ -164,20 +176,19 @@ public class ResourceAdminManager {
 
             if (adapterSessionIds == null || adapterSessionIds.isEmpty()) {
                 logger.debugv("Can't logout {0}: no logged adapter sessions", resource.getClientId());
-                return false;
+                return null;
             }
 
             if (managementUrl.contains(CLIENT_SESSION_HOST_PROPERTY)) {
-                boolean allPassed = true;
                 // Send logout separately to each host (needed for single-sign-out in cluster for non-distributable apps - KEYCLOAK-748)
                 for (Map.Entry<String, List<String>> entry : adapterSessionIds.entrySet()) {
                     String host = entry.getKey();
                     List<String> sessionIds = entry.getValue();
                     String currentHostMgmtUrl = managementUrl.replace(CLIENT_SESSION_HOST_PROPERTY, host);
-                    allPassed = sendLogoutRequest(realm, resource, sessionIds, userSessions, 0, currentHostMgmtUrl) && allPassed;
+                    sendLogoutRequest(realm, resource, sessionIds, userSessions, 0, currentHostMgmtUrl);
                 }
+                return Response.ok().build();
 
-                return allPassed;
             } else {
                 // Send single logout request
                 List<String> allSessionIds = new ArrayList<String>();
@@ -189,33 +200,102 @@ public class ResourceAdminManager {
             }
         } else {
             logger.debugv("Can't logout {0}: no management url", resource.getClientId());
-            return false;
+            return null;
+        }
+    }
+
+    public Response logoutClientSessionWithBackchannelLogoutUrl(ClientModel resource,
+            AuthenticatedClientSessionModel clientSession) {
+        String backchannelLogoutUrl = getBackchannelLogoutUrl(session, resource);
+        // Send logout separately to each host (needed for single-sign-out in cluster for non-distributable apps -
+        // KEYCLOAK-748)
+        if (backchannelLogoutUrl.contains(CLIENT_SESSION_HOST_PROPERTY)) {
+            String host = clientSession.getNote(AdapterConstants.CLIENT_SESSION_HOST);
+            String currentHostMgmtUrl = backchannelLogoutUrl.replace(CLIENT_SESSION_HOST_PROPERTY, host);
+            return sendBackChannelLogoutRequestToClientUri(resource, clientSession, currentHostMgmtUrl);
+        } else {
+            return sendBackChannelLogoutRequestToClientUri(resource, clientSession, backchannelLogoutUrl);
+        }
+    }
+
+    public static String getBackchannelLogoutUrl(KeycloakSession session, ClientModel client) {
+        String backchannelLogoutUrl = OIDCAdvancedConfigWrapper.fromClientModel(client).getBackchannelLogoutUrl();
+        if (backchannelLogoutUrl == null || backchannelLogoutUrl.equals("")) {
+            return null;
+        }
+
+        String absoluteURI = ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), backchannelLogoutUrl);
+        // this is for resolving URI like "http://${jboss.host.name}:8080/..." in order to send request to same machine
+        // and avoid request to LB in cluster environment
+        return StringPropertyReplacer.replaceProperties(absoluteURI);
+    }
+
+    protected Response sendBackChannelLogoutRequestToClientUri(ClientModel resource,
+                                                              AuthenticatedClientSessionModel clientSessionModel, String managementUrl) {
+        UserModel user = clientSessionModel.getUserSession().getUser();
+
+        LogoutToken logoutToken = session.tokens().initLogoutToken(resource, user, clientSessionModel);
+        String token = session.tokens().encode(logoutToken);
+        if (logger.isDebugEnabled())
+            logger.debugv("logout resource {0} url: {1} sessionIds: ", resource.getClientId(), managementUrl);
+        HttpPost post = null;
+        try {
+            post = new HttpPost(managementUrl);
+            List<NameValuePair> parameters = new LinkedList<>();
+            if (logoutToken != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.LOGOUT_TOKEN, token));
+            }
+            HttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+            UrlEncodedFormEntity formEntity;
+            formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            post.setEntity(formEntity);
+            HttpResponse response = httpClient.execute(post);
+            int status = response.getStatusLine().getStatusCode();
+            EntityUtils.consumeQuietly(response.getEntity());
+            boolean success = status == 204 || status == 200;
+            logger.debugf("logout success for %s: %s", managementUrl, success);
+            return Response.status(status).build();
+        } catch (IOException e) {
+            ServicesLogger.LOGGER.logoutFailed(e, resource.getClientId());
+            return Response.serverError().build();
+        } finally {
+            if (post != null) {
+                post.releaseConnection();
+            }
         }
     }
 
     // Methods for logout all
 
-    public GlobalRequestResult logoutAll(URI requestUri, RealmModel realm) {
+    public GlobalRequestResult logoutAll(RealmModel realm) {
         realm.setNotBefore(Time.currentTime());
-        List<ClientModel> resources = realm.getClients();
-        logger.debugv("logging out {0} resources ", resources.size());
+        Stream<ClientModel> resources = realm.getClientsStream();
 
         GlobalRequestResult finalResult = new GlobalRequestResult();
-        for (ClientModel resource : resources) {
-            GlobalRequestResult currentResult = logoutClient(requestUri, realm, resource, realm.getNotBefore());
+        AtomicInteger counter = new AtomicInteger(0);
+        resources.forEach(r -> {
+            counter.getAndIncrement();
+            GlobalRequestResult currentResult = logoutClient(realm, r, realm.getNotBefore());
             finalResult.addAll(currentResult);
-        }
+        });
+        logger.debugv("logging out {0} resources ", counter);
+
         return finalResult;
     }
 
-    public GlobalRequestResult logoutClient(URI requestUri, RealmModel realm, ClientModel resource) {
+    public GlobalRequestResult logoutClient(RealmModel realm, ClientModel resource) {
         resource.setNotBefore(Time.currentTime());
-        return logoutClient(requestUri, realm, resource, resource.getNotBefore());
+        return logoutClient(realm, resource, resource.getNotBefore());
     }
 
 
-    protected GlobalRequestResult logoutClient(URI requestUri, RealmModel realm, ClientModel resource, int notBefore) {
-        List<String> mgmtUrls = getAllManagementUrls(requestUri, resource);
+    protected GlobalRequestResult logoutClient(RealmModel realm, ClientModel resource, int notBefore) {
+
+        if (!resource.isEnabled()) {
+            return new GlobalRequestResult();
+        }
+
+        List<String> mgmtUrls = getAllManagementUrls(resource);
         if (mgmtUrls.isEmpty()) {
             logger.debug("No management URL or no registered cluster nodes for the client " + resource.getClientId());
             return new GlobalRequestResult();
@@ -226,7 +306,7 @@ public class ResourceAdminManager {
         // Propagate this to all hosts
         GlobalRequestResult result = new GlobalRequestResult();
         for (String mgmtUrl : mgmtUrls) {
-            if (sendLogoutRequest(realm, resource, null, null, notBefore, mgmtUrl)) {
+            if (sendLogoutRequest(realm, resource, null, null, notBefore, mgmtUrl) != null) {
                 result.addSuccessRequest(mgmtUrl);
             } else {
                 result.addFailedRequest(mgmtUrl);
@@ -235,7 +315,7 @@ public class ResourceAdminManager {
         return result;
     }
 
-    protected boolean sendLogoutRequest(RealmModel realm, ClientModel resource, List<String> adapterSessionIds, List<String> userSessions, int notBefore, String managementUrl) {
+    protected Response sendLogoutRequest(RealmModel realm, ClientModel resource, List<String> adapterSessionIds, List<String> userSessions, int notBefore, String managementUrl) {
         LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getClientId(), adapterSessionIds, notBefore, userSessions);
         String token = session.tokens().encode(adminAction);
         if (logger.isDebugEnabled()) logger.debugv("logout resource {0} url: {1} sessionIds: " + adapterSessionIds, resource.getClientId(), managementUrl);
@@ -244,29 +324,29 @@ public class ResourceAdminManager {
             int status = session.getProvider(HttpClientProvider.class).postText(target.toString(), token);
             boolean success = status == 204 || status == 200;
             logger.debugf("logout success for %s: %s", managementUrl, success);
-            return success;
+            return Response.ok().build();
         } catch (IOException e) {
             ServicesLogger.LOGGER.logoutFailed(e, resource.getClientId());
-            return false;
+            return Response.serverError().build();
         }
     }
 
-    public GlobalRequestResult pushRealmRevocationPolicy(URI requestUri, RealmModel realm) {
+    public GlobalRequestResult pushRealmRevocationPolicy(RealmModel realm) {
         GlobalRequestResult finalResult = new GlobalRequestResult();
-        for (ClientModel client : realm.getClients()) {
-            GlobalRequestResult currentResult = pushRevocationPolicy(requestUri, realm, client, realm.getNotBefore());
+        realm.getClientsStream().forEach(c -> {
+            GlobalRequestResult currentResult = pushRevocationPolicy(realm, c, realm.getNotBefore());
             finalResult.addAll(currentResult);
-        }
+        });
         return finalResult;
     }
 
-    public GlobalRequestResult pushClientRevocationPolicy(URI requestUri, RealmModel realm, ClientModel client) {
-        return pushRevocationPolicy(requestUri, realm, client, client.getNotBefore());
+    public GlobalRequestResult pushClientRevocationPolicy(RealmModel realm, ClientModel client) {
+        return pushRevocationPolicy(realm, client, client.getNotBefore());
     }
 
 
-    protected GlobalRequestResult pushRevocationPolicy(URI requestUri, RealmModel realm, ClientModel resource, int notBefore) {
-        List<String> mgmtUrls = getAllManagementUrls(requestUri, resource);
+    protected GlobalRequestResult pushRevocationPolicy(RealmModel realm, ClientModel resource, int notBefore) {
+        List<String> mgmtUrls = getAllManagementUrls(resource);
         if (mgmtUrls.isEmpty()) {
             logger.debugf("No management URL or no registered cluster nodes for the client %s", resource.getClientId());
             return new GlobalRequestResult();
@@ -297,8 +377,8 @@ public class ResourceAdminManager {
           : loginProtocol.sendPushRevocationPolicyRequest(realm, resource, notBefore, managementUrl);
     }
 
-    public GlobalRequestResult testNodesAvailability(URI requestUri, RealmModel realm, ClientModel client) {
-        List<String> mgmtUrls = getAllManagementUrls(requestUri, client);
+    public GlobalRequestResult testNodesAvailability(RealmModel realm, ClientModel client) {
+        List<String> mgmtUrls = getAllManagementUrls(client);
         if (mgmtUrls.isEmpty()) {
             logger.debug("No management URL or no registered cluster nodes for the application " + client.getClientId());
             return new GlobalRequestResult();

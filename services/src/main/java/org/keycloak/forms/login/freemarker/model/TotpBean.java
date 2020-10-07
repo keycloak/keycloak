@@ -21,12 +21,17 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.utils.TotpUtils;
 
 import javax.ws.rs.core.UriBuilder;
+import java.util.Collections;
+import java.util.List;
 
 /**
+ * Used for UpdateTotp required action
+ *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class TotpBean {
@@ -37,11 +42,17 @@ public class TotpBean {
     private final String totpSecretQrCode;
     private final boolean enabled;
     private UriBuilder uriBuilder;
+    private final List<CredentialModel> otpCredentials;
 
     public TotpBean(KeycloakSession session, RealmModel realm, UserModel user, UriBuilder uriBuilder) {
         this.realm = realm;
         this.uriBuilder = uriBuilder;
-        this.enabled = session.userCredentialManager().isConfiguredFor(realm, user, CredentialModel.OTP);
+        this.enabled = session.userCredentialManager().isConfiguredFor(realm, user, OTPCredentialModel.TYPE);
+        if (enabled) {
+            otpCredentials = session.userCredentialManager().getStoredCredentialsByType(realm, user, OTPCredentialModel.TYPE);
+        } else {
+            otpCredentials = Collections.EMPTY_LIST;
+        }
         this.totpSecret = HmacOTP.generateSecret(20);
         this.totpSecretEncoded = TotpUtils.encode(totpSecret);
         this.totpSecretQrCode = TotpUtils.qrCode(totpSecret, realm, user);
@@ -64,17 +75,19 @@ public class TotpBean {
     }
 
     public String getManualUrl() {
-        return uriBuilder.replaceQueryParam("mode", "manual").build().toString();
+        return uriBuilder.replaceQueryParam("session_code").replaceQueryParam("mode", "manual").build().toString();
     }
 
     public String getQrUrl() {
-        return uriBuilder.replaceQueryParam("mode", "qr").build().toString();
+        return uriBuilder.replaceQueryParam("session_code").replaceQueryParam("mode", "qr").build().toString();
     }
 
     public OTPPolicy getPolicy() {
         return realm.getOTPPolicy();
     }
 
+    public List<CredentialModel> getOtpCredentials() {
+        return otpCredentials;
+    }
 
 }
-

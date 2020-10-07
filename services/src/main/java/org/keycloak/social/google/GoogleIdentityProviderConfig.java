@@ -28,6 +28,10 @@ public class GoogleIdentityProviderConfig extends OIDCIdentityProviderConfig {
         super(model);
     }
 
+    public GoogleIdentityProviderConfig() {
+        
+    }
+
     public boolean isUserIp() {
         String userIp = getConfig().get("userIp");
         return userIp == null ? false : Boolean.valueOf(userIp);
@@ -47,4 +51,12 @@ public class GoogleIdentityProviderConfig extends OIDCIdentityProviderConfig {
         getConfig().put("hostedDomain", hostedDomain);
     }
 
+    public boolean isOfflineAccess() {
+        String offlineAccess = getConfig().get("offlineAccess");
+        return offlineAccess == null ? false : Boolean.valueOf(offlineAccess);
+    }
+    
+    public void setOfflineAccess(boolean offlineAccess) {
+        getConfig().put("offlineAccess", String.valueOf(offlineAccess));
+    }
 }

@@ -51,7 +51,7 @@ public class ScriptBasedAuthenticatorFactory implements AuthenticatorFactory, En
 
     static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.REQUIRED,
-            AuthenticationExecutionModel.Requirement.OPTIONAL,
+            AuthenticationExecutionModel.Requirement.ALTERNATIVE,
             AuthenticationExecutionModel.Requirement.DISABLED};
 
     static final ScriptBasedAuthenticator SINGLETON = new ScriptBasedAuthenticator();
@@ -153,6 +153,6 @@ public class ScriptBasedAuthenticatorFactory implements AuthenticatorFactory, En
 
     @Override
     public boolean isSupported() {
-        return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS);
+        return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS) && Profile.isFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS);
     }
 }

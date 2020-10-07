@@ -38,7 +38,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.testsuite.util.KerberosRule;
-import org.keycloak.util.ldap.KerberosEmbeddedServer;
+import org.keycloak.testsuite.KerberosEmbeddedServer;
 
 /**
  * Test for the LDAPStorageProvider with kerberos enabled (kerberos with LDAP integration)
@@ -85,7 +85,7 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
 
         for (AuthenticationExecutionInfoRepresentation execution : executions) {
             if ("basic-auth".equals(execution.getProviderId())) {
-                execution.setRequirement("OPTIONAL");
+                execution.setRequirement("ALTERNATIVE");
                 testRealmResource().flows().updateExecutions("http challenge", execution);
             }
             if ("auth-spnego".equals(execution.getProviderId())) {

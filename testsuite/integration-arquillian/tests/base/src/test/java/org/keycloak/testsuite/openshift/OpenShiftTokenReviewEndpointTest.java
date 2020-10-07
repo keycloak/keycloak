@@ -1,5 +1,9 @@
 package org.keycloak.testsuite.openshift;
 
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.Before;
@@ -8,13 +12,13 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.openshift.OpenShiftTokenReviewRequestRepresentation;
@@ -28,10 +32,14 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.util.JsonSerialization;
 
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.Collections;
@@ -42,7 +50,13 @@ import java.util.Map;
 
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.*;
+import static org.keycloak.common.Profile.Feature.OPENSHIFT_INTEGRATION;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+
+@AuthServerContainerExclude({AuthServer.REMOTE, AuthServer.QUARKUS})
+@EnableFeature(value = OPENSHIFT_INTEGRATION, skipRestart = true)
 public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakTest {
 
     private static boolean flowConfigured;
@@ -71,7 +85,19 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
         client.setPublicClient(false);
         client.setClientAuthenticatorType("testsuite-client-dummy");
 
-        testRealm.getUsers().add(UserBuilder.create().username("groups-user").password("password").addGroups("/topGroup", "/topGroup/level2group").build());
+        testRealm.getUsers().add(
+                UserBuilder.create()
+                        .username("groups-user")
+                        .password("password")
+                        .addGroups("/topGroup", "/topGroup/level2group")
+                        .role("account", "view-profile")
+                        .build());
+
+        testRealm.getUsers().add(
+                UserBuilder.create()
+                        .username("empty-audience")
+                        .password("password")
+                        .build());
     }
 
     @Before
@@ -106,8 +132,7 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
 
     @Test
     public void basicTest() {
-        Review r = new Review().invoke()
-                .assertSuccess();
+        Review r = new Review().invoke();
 
         String userId = testRealm().users().search(r.username).get(0).getId();
 
@@ -194,14 +219,16 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
     public void customScopes() {
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setProtocol("openid-connect");
-        clientScope.setId("user:info");
         clientScope.setName("user:info");
 
-        testRealm().clientScopes().create(clientScope);
+        String id;
+        try (Response r = testRealm().clientScopes().create(clientScope)) {
+            id = ApiUtil.getCreatedId(r);
+        }
 
         ClientRepresentation clientRep = testRealm().clients().findByClientId("test-app").get(0);
 
-        testRealm().clients().get(clientRep.getId()).addOptionalClientScope("user:info");
+        testRealm().clients().get(clientRep.getId()).addOptionalClientScope(id);
 
         try {
             oauth.scope("user:info");
@@ -209,35 +236,15 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
                     .invoke()
                     .assertSuccess().assertScope("openid", "user:info", "profile", "email");
         } finally {
-            testRealm().clients().get(clientRep.getId()).removeOptionalClientScope("user:info");
+            testRealm().clients().get(clientRep.getId()).removeOptionalClientScope(id);
         }
     }
 
     @Test
-    public void emptyScope() {
-        ClientRepresentation clientRep = testRealm().clients().findByClientId("test-app").get(0);
-
-        List<String> scopes = new LinkedList<>();
-        for (ClientScopeRepresentation s : testRealm().clients().get(clientRep.getId()).getDefaultClientScopes()) {
-            scopes.add(s.getId());
-        }
-
-        for (String s : scopes) {
-            testRealm().clients().get(clientRep.getId()).removeDefaultClientScope(s);
-        }
-
-        oauth.openid(false);
-        try {
-            new Review()
-                    .invoke()
-                    .assertSuccess().assertEmptyScope();
-        } finally {
-            oauth.openid(true);
-
-            for (String s : scopes) {
-                testRealm().clients().get(clientRep.getId()).addDefaultClientScope(s);
-            }
-        }
+    public void emptyAudience() {
+        new Review().username("empty-audience")
+                .invoke()
+                .assertError(401, "Token verification failure");
     }
 
     @Test
@@ -363,25 +370,28 @@ public class OpenShiftTokenReviewEndpointTest extends AbstractTestRealmKeycloakT
                     runAfterTokenRequest.run(this);
                 }
 
-                CloseableHttpClient client = HttpClientBuilder.create().build();
+                try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+                    String url = getAuthServerContextRoot() + "/auth/realms/" + realm + "/protocol/openid-connect/ext/openshift-token-review/" + clientId;
 
-                String url = AuthServerTestEnricher.getAuthServerContextRoot() + "/auth/realms/" + realm +"/protocol/openid-connect/ext/openshift-token-review/" + clientId;
+                    OpenShiftTokenReviewRequestRepresentation request = new OpenShiftTokenReviewRequestRepresentation();
+                    OpenShiftTokenReviewRequestRepresentation.Spec spec = new OpenShiftTokenReviewRequestRepresentation.Spec();
+                    spec.setToken(token);
+                    spec.setAudiences(new String[]{"account"});
+                    request.setSpec(spec);
 
-                OpenShiftTokenReviewRequestRepresentation request = new OpenShiftTokenReviewRequestRepresentation();
-                OpenShiftTokenReviewRequestRepresentation.Spec spec = new OpenShiftTokenReviewRequestRepresentation.Spec();
-                spec.setToken(token);
-                request.setSpec(spec);
+                    HttpPost post = new HttpPost(url);
+                    post.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString());
+                    post.setHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.toString());
+                    post.setEntity(new StringEntity(JsonSerialization.writeValueAsString(request)));
 
-                SimpleHttp.Response r = SimpleHttp.doPost(url, client).json(request).asResponse();
+                    try (CloseableHttpResponse resp = client.execute(post)) {
+                        responseStatus = resp.getStatusLine().getStatusCode();
+                        response = JsonSerialization.readValue(resp.getEntity().getContent(), OpenShiftTokenReviewResponseRepresentation.class);
+                    }
 
-                responseStatus = r.getStatus();
-                response = r.asJson(OpenShiftTokenReviewResponseRepresentation.class);
-
-                assertEquals("authentication.k8s.io/v1beta1", response.getApiVersion());
-                assertEquals("TokenReview", response.getKind());
-
-                client.close();
-
+                    assertEquals("authentication.k8s.io/v1beta1", response.getApiVersion());
+                    assertEquals("TokenReview", response.getKind());
+                }
                 return this;
             } catch (Exception e) {
                 throw new RuntimeException(e);

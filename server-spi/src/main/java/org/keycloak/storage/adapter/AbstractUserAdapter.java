@@ -22,9 +22,9 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserModelDefaultMethods;
 import org.keycloak.models.utils.DefaultRoles;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.storage.ReadOnlyException;
@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * This abstract class provides implementations for everything but getUsername().  getId() returns a default value
@@ -49,7 +50,7 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public abstract class AbstractUserAdapter implements UserModel {
+public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
     protected KeycloakSession session;
     protected RealmModel realm;
     protected ComponentModel storageProviderModel;
@@ -62,7 +63,7 @@ public abstract class AbstractUserAdapter implements UserModel {
 
     @Override
     public Set<String> getRequiredActions() {
-        return Collections.EMPTY_SET;
+        return Collections.emptySet();
     }
 
     @Override
@@ -93,8 +94,8 @@ public abstract class AbstractUserAdapter implements UserModel {
      *
      * @return
      */
-    protected Set<GroupModel> getGroupsInternal() {
-        return Collections.EMPTY_SET;
+    protected Stream<GroupModel> getGroupsInternal() {
+        return Stream.empty();
     }
 
     /**
@@ -109,11 +110,10 @@ public abstract class AbstractUserAdapter implements UserModel {
     }
 
     @Override
-    public Set<GroupModel> getGroups() {
-        Set<GroupModel> set = new HashSet<>();
-        if (appendDefaultGroups()) set.addAll(realm.getDefaultGroups());
-        set.addAll(getGroupsInternal());
-        return set;
+    public Stream<GroupModel> getGroupsStream() {
+        Stream<GroupModel> groups = getGroupsInternal();
+        if (appendDefaultGroups()) groups = Stream.concat(groups, realm.getDefaultGroupsStream());
+        return groups;
     }
 
     @Override
@@ -130,46 +130,23 @@ public abstract class AbstractUserAdapter implements UserModel {
 
     @Override
     public boolean isMemberOf(GroupModel group) {
-        Set<GroupModel> roles = getGroups();
-        return RoleUtils.isMember(roles, group);
+        return RoleUtils.isMember(getGroupsStream(), group);
     }
 
     @Override
-    public Set<RoleModel> getRealmRoleMappings() {
-        Set<RoleModel> roleMappings = getRoleMappings();
-
-        Set<RoleModel> realmRoles = new HashSet<RoleModel>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof RealmModel) {
-                realmRoles.add(role);
-            }
-        }
-        return realmRoles;
+    public Stream<RoleModel> getRealmRoleMappingsStream() {
+        return getRoleMappingsStream().filter(RoleUtils::isRealmRole);
     }
 
     @Override
-    public Set<RoleModel> getClientRoleMappings(ClientModel app) {
-        Set<RoleModel> roleMappings = getRoleMappings();
-
-        Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof ClientModel) {
-                ClientModel appModel = (ClientModel) container;
-                if (appModel.getId().equals(app.getId())) {
-                    roles.add(role);
-                }
-            }
-        }
-        return roles;
+    public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
+        return getRoleMappingsStream().filter(r -> RoleUtils.isClientRole(r, app));
     }
 
     @Override
     public boolean hasRole(RoleModel role) {
-        Set<RoleModel> roles = getRoleMappings();
-        return RoleUtils.hasRole(roles, role)
-          || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
+        return RoleUtils.hasRole(getRoleMappingsStream(), role)
+          || RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
     }
 
     @Override
@@ -189,16 +166,15 @@ public abstract class AbstractUserAdapter implements UserModel {
         return true;
     }
 
-    protected Set<RoleModel> getRoleMappingsInternal() {
-        return Collections.EMPTY_SET;
+    protected Stream<RoleModel> getRoleMappingsInternal() {
+        return Stream.empty();
     }
 
     @Override
-    public Set<RoleModel> getRoleMappings() {
-        Set<RoleModel> set = new HashSet<>();
-        if (appendDefaultRolesToRoleMappings()) set.addAll(DefaultRoles.getDefaultRoles(realm));
-        set.addAll(getRoleMappingsInternal());
-        return set;
+    public Stream<RoleModel> getRoleMappingsStream() {
+        Stream<RoleModel> roleMappings = getRoleMappingsInternal();
+        if (appendDefaultRolesToRoleMappings()) return Stream.concat(roleMappings, DefaultRoles.getDefaultRoles(realm));
+        return roleMappings;
     }
 
 
@@ -313,17 +289,25 @@ public abstract class AbstractUserAdapter implements UserModel {
 
     @Override
     public String getFirstAttribute(String name) {
+        if (name.equals(UserModel.USERNAME)) {
+            return getUsername();
+        }
         return null;
     }
 
     @Override
     public Map<String, List<String>> getAttributes() {
-        return new MultivaluedHashMap<>();
+        MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
+        attributes.add(UserModel.USERNAME, getUsername());
+        return attributes;
     }
 
     @Override
     public List<String> getAttribute(String name) {
-        return null;
+        if (name.equals(UserModel.USERNAME)) {
+            return Collections.singletonList(getUsername());
+        }
+        return Collections.emptyList();
     }
 
     @Override

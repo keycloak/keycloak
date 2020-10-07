@@ -26,6 +26,8 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -46,11 +48,11 @@ public class OAuthGrantPage extends LanguageComboboxAwarePage {
 
 
     public void accept(){
-        acceptButton.click();
+        clickLink(acceptButton);
     }
 
     public void cancel(){
-        cancelButton.click();
+        clickLink(cancelButton);
     }
 
     @Override

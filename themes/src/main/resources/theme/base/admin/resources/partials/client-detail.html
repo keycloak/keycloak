@@ -37,6 +37,13 @@
                 </div>
                 <kc-tooltip>{{:: 'client.enabled.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="serverInfo.featureEnabled('ACCOUNT2') && !(accessType === 'bearer-only' && protocol === 'openid-connect')">
+                <label class="col-md-2 control-label" for="alwaysDisplayInConsole">{{:: 'alwaysDisplayInConsole' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="clientEdit.alwaysDisplayInConsole" name="alwaysDisplayInConsole" id="alwaysDisplayInConsole" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'alwaysDisplayInConsole.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix block" data-ng-show="client.origin">
                 <label class="col-md-2 control-label">{{:: 'client-origin-link' | translate}}</label>
                 <div class="col-md-6">
@@ -132,7 +139,7 @@
                     <input ng-model="clientEdit.serviceAccountsEnabled" name="serviceAccountsEnabled" id="serviceAccountsEnabled" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
             </div>
-            <div class="form-group" data-ng-show="protocol == 'openid-connect'">
+            <div class="form-group" data-ng-show="protocol == 'openid-connect' && !clientEdit.publicClient && !clientEdit.bearerOnly">
                 <label class="col-md-2 control-label" for="authorizationServicesEnabled">{{:: 'authz-authorization-services-enabled' | translate}}</label>
                 <kc-tooltip>{{:: 'authz-authorization-services-enabled.tooltip' | translate}}</kc-tooltip>
                 <div class="col-md-6">
@@ -352,6 +359,27 @@
 
                 <kc-tooltip>{{:: 'web-origins.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="backchannelLogoutUrl">{{:: 'backchannel-logout-url' | translate}}</label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" name="backchannelLogoutUrl" id="backchannelLogoutUrl" data-ng-model="clientEdit.attributes['backchannel.logout.url']">
+                </div>
+                <kc-tooltip>{{:: 'backchannel-logout-url.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="backchannelLogoutSessionRequired">{{:: 'backchannel-logout-session-required' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="backchannelLogoutSessionRequired" name="backchannelLogoutSessionRequired" id="backchannelLogoutSessionRequired" onoffswitch ng-click="switchChange()" on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'backchannel-logout-session-required.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="backchannelLogoutRevokeOfflineSessions">{{:: 'backchannel-logout-revoke-offline-sessions' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="backchannelLogoutRevokeOfflineSessions" name="backchannelLogoutRevokeOfflineSessions" id="backchannelLogoutRevokeOfflineSessions" onoffswitch ng-click="switchChange()" on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'backchannel-logout-revoke-offline-sessions.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
         <fieldset data-ng-show="protocol == 'saml'">
             <legend collapsed><span class="text">{{:: 'fine-saml-endpoint-conf' | translate}}</span>  <kc-tooltip>{{:: 'fine-saml-endpoint-conf.tooltip' | translate}}</kc-tooltip></legend>
@@ -419,6 +447,36 @@
             </div>
 
             <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="idTokenEncryptedResponseAlg">{{:: 'id-token-encrypted-response-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="idTokenEncryptedResponseAlg"
+                                ng-change="changeIdTokenEncryptedResponseAlg()"
+                                ng-model="idTokenEncryptedResponseAlg">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('cekmanagement')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'id-token-encrypted-response-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="idTokenEncryptedResponseEnc">{{:: 'id-token-encrypted-response-enc' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="idTokenEncryptedResponseEnc"
+                                ng-change="changeIdTokenEncryptedResponseEnc()"
+                                ng-model="idTokenEncryptedResponseEnc">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('contentencryption')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'id-token-encrypted-response-enc.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block">
                 <label class="col-md-2 control-label" for="userInfoSignedResponseAlg">{{:: 'user-info-signed-response-alg' | translate}}</label>
                 <div class="col-sm-6">
                     <div>
@@ -438,8 +496,10 @@
                     <div>
                         <select class="form-control" id="requestObjectSignatureAlg"
                                 ng-change="changeRequestObjectSignatureAlg()"
-                                ng-model="requestObjectSignatureAlg"
-                                ng-options="sig for sig in requestObjectSignatureAlgorithms">
+                                ng-model="requestObjectSignatureAlg">
+                            <option value="any">any</option>
+                            <option value="none">none</option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('clientSignature')" value="{{provider}}">{{provider}}</option>
                         </select>
                     </div>
                 </div>
@@ -471,10 +531,10 @@
             </div>
         </fieldset>
 
-        <fieldset data-ng-show="protocol == 'openid-connect'">
+        <fieldset>
             <legend collapsed><span class="text">{{:: 'advanced-client-settings' | translate}}</span>  <kc-tooltip>{{:: 'advanced-client-settings.tooltip' | translate}}</kc-tooltip></legend>
 
-            <div class="form-group">
+            <div class="form-group" data-ng-show="protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="accessTokenLifespan">{{:: 'access-token-lifespan' | translate}}</label>
 
                 <div class="col-md-6 time-selector">
@@ -491,12 +551,111 @@
                 <kc-tooltip>{{:: 'access-token-lifespan.tooltip' | translate}}</kc-tooltip>
             </div>
 
+            <div class="form-group" data-ng-show="protocol == 'saml'">
+                <label class="col-md-2 control-label" for="samlAssertionLifespan">{{:: 'saml-assertion-lifespan' | translate}}</label>
+
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" min="1"
+                           max="31536000" data-ng-model="samlAssertionLifespan.time"
+                           id="samlAssertionLifespan" name="samlAssertionLifespan"
+                           data-ng-change="updateAssertionLifespan()"/>
+                    <select class="form-control" name="samlAssertionLifespanUnit" data-ng-model="samlAssertionLifespan.unit" data-ng-change="updateAssertionLifespan()">
+                        <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                        <option value="Hours">{{:: 'hours' | translate}}</option>
+                        <option value="Days">{{:: 'days' | translate}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'saml-assertion-lifespan.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="clientSessionIdleTimeout">{{:: 'client-session-idle' | translate}}</label>
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" min="0"
+                           max="31536000" data-ng-model="clientSessionIdleTimeout.time"
+                           id="clientSessionIdleTimeout" name="clientSessionIdleTimeout"
+                           data-ng-change="updateClientSessionIdleTimeout()"/>
+                    <select class="form-control" name="clientSessionIdleTimeoutUnit" data-ng-model="clientSessionIdleTimeout.unit" data-ng-change="updateClientSessionIdleTimeout()">
+                        <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                        <option value="Hours">{{:: 'hours' | translate}}</option>
+                        <option value="Days">{{:: 'days' | translate}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'client-session-idle.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="clientSessionMaxLifespan">{{:: 'client-session-max' | translate}}</label>
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" min="0"
+                           max="31536000" data-ng-model="clientSessionMaxLifespan.time"
+                           id="clientSessionMaxLifespan" name="clientSessionMaxLifespan"
+                           data-ng-change="updateClientSessionMaxLifespan()"/>
+                    <select class="form-control" name="clientSessionMaxLifespanUnit" data-ng-model="clientSessionMaxLifespan.unit" data-ng-change="updateClientSessionMaxLifespan()">
+                        <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                        <option value="Hours">{{:: 'hours' | translate}}</option>
+                        <option value="Days">{{:: 'days' | translate}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'client-session-max.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="clientOfflineSessionIdleTimeout">{{::
+                    'client-offline-session-idle' | translate}}</label>
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" min="0" max="31536000"
+                        data-ng-model="clientOfflineSessionIdleTimeout.time" id="clientOfflineSessionIdleTimeout"
+                        name="clientOfflineSessionIdleTimeout" data-ng-change="updateClientOfflineSessionIdleTimeout()" /> <select
+                        class="form-control" name="clientOfflineSessionIdleTimeoutUnit"
+                        data-ng-model="clientOfflineSessionIdleTimeout.unit"
+                        data-ng-change="updateClientOfflineSessionIdleTimeout()">
+                        <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                        <option value="Hours">{{:: 'hours' | translate}}</option>
+                        <option value="Days">{{:: 'days' | translate}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'client-offline-session-idle.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="clientOfflineSessionMaxLifespan">{{::
+                    'client-offline-session-max' | translate}}</label>
+                <div class="col-md-6 time-selector">
+                    <input class="form-control" type="number" min="0" max="31536000"
+                        data-ng-model="clientOfflineSessionMaxLifespan.time" id="clientOfflineSessionMaxLifespan"
+                        name="clientOfflineSessionMaxLifespan" data-ng-change="updateClientOfflineSessionMaxLifespan()" /> <select
+                        class="form-control" name="clientOfflineSessionMaxLifespanUnit"
+                        data-ng-model="clientOfflineSessionMaxLifespan.unit"
+                        data-ng-change="updateClientOfflineSessionMaxLifespan()">
+                        <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                        <option value="Hours">{{:: 'hours' | translate}}</option>
+                        <option value="Days">{{:: 'days' | translate}}</option>
+                    </select>
+                </div>
+                <kc-tooltip>{{:: 'client-offline-session-max.tooltip' | translate}}</kc-tooltip>
+            </div>
+
             <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="tlsClientCertificateBoundAccessTokens">{{:: 'tls-client-certificate-bound-access-tokens' | translate}}</label>
                 <div class="col-sm-6">
                     <input ng-model="tlsClientCertificateBoundAccessTokens" ng-click="switchChange()" name="tlsClientCertificateBoundAccessTokens" id="tlsClientCertificateBoundAccessTokens" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
                 <kc-tooltip>{{:: 'tls-client-certificate-bound-access-tokens.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="changePkceCodeChallengeMethod">{{:: 'pkce-code-challenge-method' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="pkceCodeChallengeMethod"
+                                ng-change="changePkceCodeChallengeMethod()"
+                                ng-model="pkceCodeChallengeMethod"
+                                ng-options="method for method in changePkceCodeChallengeMethodOptions">
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'pkce-code-challenge-method.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
 

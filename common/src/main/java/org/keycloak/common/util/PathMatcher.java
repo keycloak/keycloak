@@ -28,6 +28,7 @@ public abstract class PathMatcher<P> {
 
     public P matches(final String targetUri) {
         int patternCount = 0;
+        int bracketsPatternCount = 0;
         P matchingPath = null;
         P matchingAnyPath = null;
         P matchingAnySuffixPath = null;
@@ -50,8 +51,9 @@ public abstract class PathMatcher<P> {
 
                 if (templateUri != null) {
                     int length = expectedUri.split("\\/").length;
+                    int bracketsLength = expectedUri.split("\\{").length;
 
-                    if (exactMatch(expectedUri, targetUri, templateUri) && (patternCount == 0 || length > patternCount)) {
+                    if (exactMatch(expectedUri, targetUri, templateUri) && (patternCount == 0 || length > patternCount || bracketsLength < bracketsPatternCount)) {
                         matchingUri = templateUri;
                         P resolved = resolvePathConfig(entry, targetUri);
 
@@ -60,6 +62,7 @@ public abstract class PathMatcher<P> {
                         }
 
                         patternCount = length;
+                        bracketsPatternCount = bracketsLength;
                     }
                 }
             }

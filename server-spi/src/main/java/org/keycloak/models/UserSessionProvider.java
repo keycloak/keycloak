@@ -19,6 +19,7 @@ package org.keycloak.models;
 
 import org.keycloak.provider.Provider;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -63,7 +64,7 @@ public interface UserSessionProvider extends Provider {
     void removeUserSession(RealmModel realm, UserSessionModel session);
     void removeUserSessions(RealmModel realm, UserModel user);
 
-    /** Implementation should propagate removal of expired userSessions to userSessionPersister too **/
+    /** Implementation doesn't need to propagate removal of expired userSessions to userSessionPersister. Cleanup on persister will be called separately **/
     void removeExpired(RealmModel realm);
     void removeUserSessions(RealmModel realm);
 
@@ -85,13 +86,16 @@ public interface UserSessionProvider extends Provider {
     /** Will automatically attach newly created offline client session to the offlineUserSession **/
     AuthenticatedClientSessionModel createOfflineClientSession(AuthenticatedClientSessionModel clientSession, UserSessionModel offlineUserSession);
     List<UserSessionModel> getOfflineUserSessions(RealmModel realm, UserModel user);
+    UserSessionModel getOfflineUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId);
+    List<UserSessionModel> getOfflineUserSessionByBrokerUserId(RealmModel realm, String brokerUserId);
 
     long getOfflineSessionsCount(RealmModel realm, ClientModel client);
     List<UserSessionModel> getOfflineUserSessions(RealmModel realm, ClientModel client, int first, int max);
 
-    /** Triggered by persister during pre-load. It optionally imports authenticatedClientSessions too if requested. Otherwise the imported UserSession will have empty list of AuthenticationSessionModel **/
-    UserSessionModel importUserSession(UserSessionModel persistentUserSession, boolean offline, boolean importAuthenticatedClientSessions);
+    /** Triggered by persister during pre-load. It imports authenticatedClientSessions too **/
+    void importUserSessions(Collection<UserSessionModel> persistentUserSessions, boolean offline);
 
     void close();
 
+    
 }

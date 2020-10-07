@@ -55,8 +55,10 @@ public class ApiUtil {
         URI location = response.getLocation();
         if (!response.getStatusInfo().equals(Status.CREATED)) {
             StatusType statusInfo = response.getStatusInfo();
+            response.bufferEntity();
+            String body = response.readEntity(String.class);
             throw new WebApplicationException("Create method returned status "
-                    + statusInfo.getReasonPhrase() + " (Code: " + statusInfo.getStatusCode() + "); expected status: Created (201)", response);
+                    + statusInfo.getReasonPhrase() + " (Code: " + statusInfo.getStatusCode() + "); expected status: Created (201). Response body: " + body, response);
         }
         if (location == null) {
             return null;
@@ -171,8 +173,20 @@ public class ApiUtil {
      * @return ID of the new user
      */
     public static String createUserAndResetPasswordWithAdminClient(RealmResource realm, UserRepresentation user, String password) {
+        return createUserAndResetPasswordWithAdminClient(realm, user, password, false);
+    }
+
+    /**
+     * Creates a user and sets the password
+     * @param realm
+     * @param user
+     * @param password
+     * @param temporary
+     * @return ID of the new user
+     */
+    public static String createUserAndResetPasswordWithAdminClient(RealmResource realm, UserRepresentation user, String password, boolean temporary) {
         String id = createUserWithAdminClient(realm, user);
-        resetUserPassword(realm.users().get(id), password, false);
+        resetUserPassword(realm.users().get(id), password, temporary);
         return id;
     }
 

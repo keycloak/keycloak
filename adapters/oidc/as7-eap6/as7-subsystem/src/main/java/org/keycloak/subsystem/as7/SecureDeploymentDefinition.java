@@ -105,7 +105,7 @@ class SecureDeploymentDefinition extends SimpleResourceDefinition {
                     .setValidator(new IntRangeValidator(-1, true))
                     .build();
 
-    protected static final List<SimpleAttributeDefinition> DEPLOYMENT_ONLY_ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
+    protected static final List<SimpleAttributeDefinition> DEPLOYMENT_ONLY_ATTRIBUTES = new ArrayList<>();
     static {
         DEPLOYMENT_ONLY_ATTRIBUTES.add(REALM);
         DEPLOYMENT_ONLY_ATTRIBUTES.add(RESOURCE);
@@ -119,13 +119,13 @@ class SecureDeploymentDefinition extends SimpleResourceDefinition {
         DEPLOYMENT_ONLY_ATTRIBUTES.add(PUBLIC_KEY_CACHE_TTL);
     }
 
-    protected static final List<SimpleAttributeDefinition> ALL_ATTRIBUTES = new ArrayList<SimpleAttributeDefinition>();
+    protected static final List<SimpleAttributeDefinition> ALL_ATTRIBUTES = new ArrayList<>();
     static {
         ALL_ATTRIBUTES.addAll(DEPLOYMENT_ONLY_ATTRIBUTES);
         ALL_ATTRIBUTES.addAll(SharedAttributeDefinitons.ATTRIBUTES);
     }
 
-    private static final Map<String, SimpleAttributeDefinition> DEFINITION_LOOKUP = new HashMap<String, SimpleAttributeDefinition>();
+    private static final Map<String, SimpleAttributeDefinition> DEFINITION_LOOKUP = new HashMap<>();
     static {
         for (SimpleAttributeDefinition def : ALL_ATTRIBUTES) {
             DEFINITION_LOOKUP.put(def.getXmlName(), def);

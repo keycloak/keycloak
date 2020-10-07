@@ -84,7 +84,7 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
 
         if (formData.size() > 0) forms.setFormData(formData);
 
-        return forms.createLogin();
+        return forms.createLoginUsernamePassword();
     }
 
 
@@ -103,4 +103,5 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
     public void close() {
 
     }
+
 }

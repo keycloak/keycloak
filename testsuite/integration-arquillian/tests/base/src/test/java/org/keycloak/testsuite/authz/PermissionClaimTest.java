@@ -22,6 +22,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,7 +41,6 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.ResourcesResource;
 import org.keycloak.authorization.client.AuthzClient;
-import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
@@ -55,17 +55,19 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class PermissionClaimTest extends AbstractAuthzTest {
 
     private JSPolicyRepresentation claimAPolicy;
@@ -247,7 +249,9 @@ public class PermissionClaimTest extends AbstractAuthzTest {
         updatePermission.addScope("update");
         updatePermission.addPolicy(claimCPolicy.getName());
 
-        updatePermission = authorization.permissions().scope().create(updatePermission).readEntity(ScopePermissionRepresentation.class);
+        try (Response response = authorization.permissions().scope().create(updatePermission)) {
+            updatePermission = response.readEntity(ScopePermissionRepresentation.class);
+        }
 
         AuthzClient authzClient = getAuthzClient();
         AuthorizationRequest request = new AuthorizationRequest();
@@ -320,7 +324,9 @@ public class PermissionClaimTest extends AbstractAuthzTest {
         updatePermission.addResource(resourceA.getName());
         updatePermission.addPolicy(claimCPolicy.getName());
 
-        updatePermission = authorization.permissions().resource().create(updatePermission).readEntity(ResourcePermissionRepresentation.class);
+        try (Response response = authorization.permissions().resource().create(updatePermission)) {
+            updatePermission = response.readEntity(ResourcePermissionRepresentation.class);
+        }
 
         AuthzClient authzClient = getAuthzClient();
         AuthorizationResponse response = authzClient.authorization("marta", "password").authorize();
@@ -357,7 +363,9 @@ public class PermissionClaimTest extends AbstractAuthzTest {
         resourceInstance.setType(resourceA.getType());
         resourceInstance.setOwner("marta");
 
-        resourceInstance = authorization.resources().create(resourceInstance).readEntity(ResourceRepresentation.class);
+        try (Response response1 = authorization.resources().create(resourceInstance)) {
+            resourceInstance = response1.readEntity(ResourceRepresentation.class);
+        }
 
         AuthorizationRequest request = new AuthorizationRequest();
 
@@ -377,7 +385,9 @@ public class PermissionClaimTest extends AbstractAuthzTest {
         resourceInstancePermission.addResource(resourceInstance.getId());
         resourceInstancePermission.addPolicy(claimCPolicy.getName());
 
-        resourceInstancePermission = authorization.permissions().resource().create(resourceInstancePermission).readEntity(ResourcePermissionRepresentation.class);
+        try (Response response1 = authorization.permissions().resource().create(resourceInstancePermission)) {
+            resourceInstancePermission = response1.readEntity(ResourcePermissionRepresentation.class);
+        }
 
         response = authzClient.authorization("marta", "password").authorize(request);
         assertNotNull(response.getToken());
@@ -452,7 +462,7 @@ public class PermissionClaimTest extends AbstractAuthzTest {
 
     private AuthzClient getAuthzClient() {
         try {
-            return AuthzClient.create(JsonSerialization.readValue(getClass().getResourceAsStream("/authorization-test/default-keycloak.json"), Configuration.class));
+            return AuthzClient.create(httpsAwareConfigurationStream(getClass().getResourceAsStream("/authorization-test/default-keycloak.json")));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to create authz client", cause);
         }

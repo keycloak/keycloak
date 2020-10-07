@@ -30,7 +30,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.page.MultiTenant;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.containers.ContainerConstants;
+import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.util.URLAssert;
 import org.keycloak.testsuite.util.WaitUtils;
 
@@ -42,6 +42,11 @@ import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
  * @author Juraci Paixão Kröhling <juraci at kroehling.de>
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
+@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
+@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
+@AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 public class MultiTenancyTest extends AbstractServletsAdapterTest {
     
     @Page
@@ -90,6 +95,8 @@ public class MultiTenancyTest extends AbstractServletsAdapterTest {
 
         doTenantRequests("tenant1", false);
         doTenantRequests("tenant2", true);
+
+        logout("tenant1");
     }
     
     /**
@@ -120,6 +127,8 @@ public class MultiTenancyTest extends AbstractServletsAdapterTest {
         
         driver.navigate().to(tenantPage.getTenantRealmUrl("tenant2"));
         URLAssert.assertCurrentUrlStartsWith(authServerPage.toString());
+
+        logout("tenant1");
     }
     
     private void doTenantRequests(String tenant, boolean logout) {
@@ -144,5 +153,13 @@ public class MultiTenancyTest extends AbstractServletsAdapterTest {
             Assert.assertTrue(driver.getCurrentUrl().startsWith(tenantLoginUrl));
         }
         log.debug("---------------------------------------------------------------------------------------");
+    }
+
+    private void logout(String tenant) {
+        String tenantLoginUrl = OIDCLoginProtocolService.authUrl(UriBuilder.fromUri(authServerPage.getAuthRoot())).build(tenant).toString();
+        URL tenantUrl = tenantPage.getTenantRealmUrl(tenant);
+        driver.navigate().to(tenantUrl + "/logout");
+        Assert.assertFalse(driver.getPageSource().contains("Username: bburke@redhat.com"));
+        Assert.assertTrue(driver.getCurrentUrl().startsWith(tenantLoginUrl));
     }
 }

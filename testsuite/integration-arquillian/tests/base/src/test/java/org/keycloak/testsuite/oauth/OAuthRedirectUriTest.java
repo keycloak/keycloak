@@ -25,12 +25,9 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.hamcrest.Matchers;
-import org.hamcrest.core.StringStartsWith;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jgroups.protocols.TP;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -46,7 +43,6 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.openqa.selenium.By;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -106,49 +102,49 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
         RealmBuilder realm = RealmBuilder.edit(realmRepresentation).testEventListener();
 
-        ClientBuilder installedApp = ClientBuilder.create().id("test-installed").name("test-installed")
+        ClientBuilder installedApp = ClientBuilder.create().clientId("test-installed").name("test-installed")
                 .redirectUris(Constants.INSTALLED_APP_URN, Constants.INSTALLED_APP_URL)
                 .secret("password");
         realm.client(installedApp);
 
-        ClientBuilder installedApp2 = ClientBuilder.create().id("test-installed2").name("test-installed2")
+        ClientBuilder installedApp2 = ClientBuilder.create().clientId("test-installed2").name("test-installed2")
                 .redirectUris(Constants.INSTALLED_APP_URL + "/myapp")
                 .secret("password");
         realm.client(installedApp2);
 
-        ClientBuilder installedApp3 = ClientBuilder.create().id("test-wildcard").name("test-wildcard")
+        ClientBuilder installedApp3 = ClientBuilder.create().clientId("test-wildcard").name("test-wildcard")
                 .redirectUris("http://example.com/foo/*", "http://with-dash.example.local/foo/*", "http://localhost:8280/foo/*")
                 .secret("password");
         realm.client(installedApp3);
 
-        ClientBuilder installedApp4 = ClientBuilder.create().id("test-dash").name("test-dash")
+        ClientBuilder installedApp4 = ClientBuilder.create().clientId("test-dash").name("test-dash")
                 .redirectUris("http://with-dash.example.local", "http://with-dash.example.local/foo")
                 .secret("password");
         realm.client(installedApp4);
 
-        ClientBuilder installedApp5 = ClientBuilder.create().id("test-root-url").name("test-root-url")
+        ClientBuilder installedApp5 = ClientBuilder.create().clientId("test-root-url").name("test-root-url")
                 .rootUrl("http://with-dash.example.local")
                 .redirectUris("/foo")
                 .secret("password");
         realm.client(installedApp5);
 
-        ClientBuilder installedApp6 = ClientBuilder.create().id("test-relative-url").name("test-relative-url")
+        ClientBuilder installedApp6 = ClientBuilder.create().clientId("test-relative-url").name("test-relative-url")
                 .rootUrl("")
                 .redirectUris("/auth")
                 .secret("password");
         realm.client(installedApp6);
 
-        ClientBuilder installedApp7 = ClientBuilder.create().id("test-query-component").name("test-query-component")
+        ClientBuilder installedApp7 = ClientBuilder.create().clientId("test-query-component").name("test-query-component")
                 .redirectUris("http://localhost?foo=bar", "http://localhost?foo=bar*")
                 .secret("password");
         realm.client(installedApp7);
 
-        ClientBuilder installedApp8 = ClientBuilder.create().id("test-fragment").name("test-fragment")
-                .redirectUris("http://localhost/*")
+        ClientBuilder installedApp8 = ClientBuilder.create().clientId("test-fragment").name("test-fragment")
+                .redirectUris("http://localhost:8180/*", "https://localhost:8543/*")
                 .secret("password");
         realm.client(installedApp8);
 
-        ClientBuilder installedAppCustomScheme = ClientBuilder.create().id("custom-scheme").name("custom-scheme")
+        ClientBuilder installedAppCustomScheme = ClientBuilder.create().clientId("custom-scheme").name("custom-scheme")
                 .redirectUris("android-app://org.keycloak.examples.cordova/https/keycloak-cordova-example.github.io/login")
                 .secret("password");
         realm.client(installedAppCustomScheme);
@@ -159,6 +155,14 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
     @Test
     public void testNoParam() throws IOException {
         oauth.redirectUri(null);
+        oauth.openLoginForm();
+        Assert.assertTrue(errorPage.isCurrent());
+        Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+    }
+
+    @Test
+    public void testRelativeUri() throws IOException {
+        oauth.redirectUri("/foo/../bar");
         oauth.openLoginForm();
         Assert.assertTrue(errorPage.isCurrent());
         Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());

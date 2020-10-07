@@ -299,8 +299,13 @@ if (outcome == failed) of /profile=$clusteredProfile/subsystem=elytron/:read-res
 end-if
 
 if (outcome == failed) of /profile=$clusteredProfile/subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:read-resource
-    echo Adding channel-creation-options READ_TIMEOUT and MAX_OUTBOUND_MESSAGES to ejb3 remote
+    echo Adding channel-creation-options READ_TIMEOUT to ejb3 remote
     /profile=$clusteredProfile/subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:add(value="${prop.remoting-connector.read.timeout:20}",type=xnio)
+    echo
+end-if
+
+if (outcome == failed) of /profile=$clusteredProfile/subsystem=ejb3/service=remote/channel-creation-options=MAX_OUTBOUND_MESSAGES/:read-resource
+    echo Adding channel-creation-options MAX_OUTBOUND_MESSAGES to ejb3 remote
     /profile=$clusteredProfile/subsystem=ejb3/service=remote/channel-creation-options=MAX_OUTBOUND_MESSAGES/:add(value=1234,type=remoting)
     echo
 end-if
@@ -361,18 +366,6 @@ end-if
 if (outcome == failed) of /profile=$clusteredProfile/subsystem=undertow/server=default-server/https-listener=https/:read-resource
     echo Adding https-listener
     /profile=$clusteredProfile/subsystem=undertow/server=default-server/https-listener=https/:add(socket-binding=https,security-realm=ApplicationRealm,enable-http2=true)
-    echo
-end-if
-
-if (outcome == success) of /socket-binding-group=ha-sockets/socket-binding=jgroups-tcp-fd/:read-resource
-    echo Removing socket-binding jgroups-tcp-fd
-    /socket-binding-group=ha-sockets/socket-binding=jgroups-tcp-fd/:remove
-    echo
-end-if
-
-if (outcome == success) of /socket-binding-group=ha-sockets/socket-binding=jgroups-udp-fd/:read-resource
-    echo Removing socket-binding jgroups-udp-fd
-    /socket-binding-group=ha-sockets/socket-binding=jgroups-udp-fd/:remove
     echo
 end-if
 
@@ -569,6 +562,145 @@ if (outcome == success) of /profile=$clusteredProfile/subsystem=jgroups/stack=tc
     catch
         echo
     end-try
+end-if
+
+# Migrate from 4.8.3 to 5.0.0
+if (outcome == failed) of /profile=$clusteredProfile/subsystem=logging/logger=io.jaegertracing.Configuration/:read-resource
+    echo Adding io.jaegertracing.Configuration logger
+    /profile=$clusteredProfile/subsystem=logging/logger=io.jaegertracing.Configuration/:add(category=io.jaegertracing.Configuration,level=WARN)
+    echo
+end-if
+
+# Migrate from 5.0.0 to 6.0.0
+if (result == NON_XA) of /profile=$clusteredProfile/subsystem=infinispan/cache-container=hibernate/local-cache=entity/component=transaction/:read-attribute(name=mode)
+    echo Removing NON_XA transaction mode from infinispan/hibernate/entity
+    /profile=$clusteredProfile/subsystem=infinispan/cache-container=hibernate/local-cache=entity/component=transaction/:undefine-attribute(name=mode)
+    echo
+end-if
+
+if (result == false) of /profile=$clusteredProfile/subsystem=datasources/data-source=ExampleDS/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to ExampleDS datasource 
+    /profile=$clusteredProfile/subsystem=datasources/data-source=ExampleDS/:write-attribute(name=statistics-enabled,value=${wildfly.datasources.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /profile=$clusteredProfile/subsystem=datasources/data-source=KeycloakDS/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to KeycloakDS datasource 
+    /profile=$clusteredProfile/subsystem=datasources/data-source=KeycloakDS/:write-attribute(name=statistics-enabled,value=${wildfly.datasources.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /profile=$clusteredProfile/subsystem=ejb3/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to ejb3 subsystem
+    /profile=$clusteredProfile/subsystem=ejb3/:write-attribute(name=statistics-enabled,value=${wildfly.ejb3.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /profile=$clusteredProfile/subsystem=transactions/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to transactions subsystem
+    /profile=$clusteredProfile/subsystem=transactions/:write-attribute(name=statistics-enabled,value=${wildfly.transactions.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /profile=$clusteredProfile/subsystem=undertow/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to undertow subsystem
+    /profile=$clusteredProfile/subsystem=undertow/:write-attribute(name=statistics-enabled,value=${wildfly.undertow.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+if (result == false) of /profile=$clusteredProfile/subsystem=webservices/:read-attribute(name=statistics-enabled)
+    echo Adding statistics-enabled expression to webservices subsystem
+    /profile=$clusteredProfile/subsystem=webservices/:write-attribute(name=statistics-enabled,value=${wildfly.webservices.statistics-enabled:${wildfly.statistics-enabled:false}})
+    echo
+end-if
+
+# Migrate from 6.0.1 to 7.0.0
+if (outcome == success) of /profile=$clusteredProfile/subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:read-resource
+    echo Removing READ_TIMEOUT option from remote service from ejb3 subsystem
+    /profile=$clusteredProfile/subsystem=ejb3/service=remote/channel-creation-options=READ_TIMEOUT/:remove
+    echo
+end-if
+
+if (outcome == failed) of /profile=$clusteredProfile/subsystem=infinispan/cache-container=web/distributed-cache=routing:read-resource
+    echo Adding distributed cache routing to web cache container to infinispan subsystem
+    /profile=$clusteredProfile/subsystem=infinispan/cache-container=web/distributed-cache=routing/:add
+    echo
+end-if
+
+if (outcome == failed) of /profile=$clusteredProfile/subsystem=infinispan/cache-container=web/replicated-cache=sso:read-resource
+    echo Adding replicated cache sso to web cache container to infinispan subsystem
+    /profile=$clusteredProfile/subsystem=infinispan/cache-container=web/replicated-cache=sso/:add
+    /profile=$clusteredProfile/subsystem=infinispan/cache-container=web/replicated-cache=sso/component=locking/:add(isolation=REPEATABLE_READ)
+    /profile=$clusteredProfile/subsystem=infinispan/cache-container=web/replicated-cache=sso/component=transaction/:add(mode=BATCH)
+    echo
+end-if
+
+if (outcome == failed) of /socket-binding-group=ha-sockets/socket-binding=jgroups-tcp-fd/:read-resource
+    echo Adding jgroups-tcp-fd socket binding to ha-sockets binding group
+    /socket-binding-group=ha-sockets/socket-binding=jgroups-tcp-fd/:add(interface=private,port=57600)
+    echo
+end-if
+
+if (outcome == failed) of /socket-binding-group=ha-sockets/socket-binding=jgroups-udp-fd/:read-resource
+    echo Adding jgroups-udp-fd socket binding to ha-sockets binding group
+    /socket-binding-group=ha-sockets/socket-binding=jgroups-udp-fd/:add(interface=private,port=54200)
+    echo
+end-if
+
+if (result == undefined) of /profile=$clusteredProfile/subsystem=jgroups/stack=tcp/protocol=FD_SOCK/:read-attribute(name=socket-binding)
+    echo Adding socket-binding for FD_SOCK protocol for tcp stack in jgroups subsystem
+    /profile=$clusteredProfile/subsystem=jgroups/stack=tcp/protocol=FD_SOCK/:write-attribute(name=socket-binding,value=jgroups-tcp-fd)
+    echo
+end-if
+
+if (result == undefined) of /profile=$clusteredProfile/subsystem=jgroups/stack=udp/protocol=FD_SOCK/:read-attribute(name=socket-binding)
+    echo Adding socket-binding for FD_SOCK protocol for udp stack in jgroups subsystem
+    /profile=$clusteredProfile/subsystem=jgroups/stack=udp/protocol=FD_SOCK/:write-attribute(name=socket-binding,value=jgroups-udp-fd)
+    echo
+end-if
+
+if (result == "true") of /subsystem=keycloak-server/spi=truststore/provider=file:map-get(name=properties, key=disabled)
+    echo Disabling Truststore Provider
+    /subsystem=keycloak-server/spi=truststore/provider=file:write-attribute(name=enabled, value=false)
+    echo Removing deprecated option
+    /subsystem=keycloak-server/spi=truststore/provider=file:map-remove(name=properties, key=disabled)
+    echo
+end-if
+
+# Migrate from 7.0.0 to 8.0.0
+
+if ((result.time == 100L) && (result.unit == MILLISECONDS)) of /profile=$clusteredProfile/subsystem=ejb3/thread-pool=default:read-attribute(name=keepalive-time)
+    echo Changing thread pool keepalive of ejb3 subsystem
+    /profile=$clusteredProfile/subsystem=ejb3/thread-pool=default:write-attribute(name=keepalive-time.time, value=60)
+    /profile=$clusteredProfile/subsystem=ejb3/thread-pool=default:write-attribute(name=keepalive-time.unit,value=SECONDS)
+    echo
+end-if
+
+if (outcome == failed) of /profile=$clusteredProfile/subsystem=keycloak-server/spi=hostname/provider=default/:read-resource
+    echo Adding default hostname provider
+    /profile=$clusteredProfile/subsystem=keycloak-server/spi=hostname/provider=default/:add(properties={frontendUrl => "${keycloak.frontendUrl:}",forceBackendUrlToFrontendUrl => "false"},enabled=true)
+end-if
+
+if (result == request) of /profile=$clusteredProfile/subsystem=keycloak-server/spi=hostname/:read-attribute(name=default-provider)
+    echo Switching from request to default hostname provider
+
+    /profile=$clusteredProfile/subsystem=keycloak-server/spi=hostname/:write-attribute(name=default-provider,value=default)
+end-if
+
+if (result != fixed) of /profile=$clusteredProfile/subsystem=keycloak-server/spi=hostname/:read-attribute(name=default-provider)
+    try
+        /profile=$clusteredProfile/subsystem=keycloak-server/spi=hostname/provider=fixed:remove
+        echo Removed config for unused fixed hostname provider
+    catch
+    end-try
+end-if
+
+# Migrate from 10.0.2 to 11.0.0 (migration changes for infinispan update from 9.4.18.Final to 10.1.8.Final)
+
+if (result != org.keycloak.keycloak-model-infinispan) of /profile=$clusteredProfile/subsystem=infinispan/cache-container=keycloak:read-attribute(name=module)
+    echo Setting class loader for keycloak cache-container in auth-server-clustered profile so JBoss Marshalling works properly with Infinispan 10.x
+    /profile=$clusteredProfile/subsystem=infinispan/cache-container=keycloak:write-attribute(name=module,value=org.keycloak.keycloak-model-infinispan)
+    echo
 end-if
 
 echo *** End Migration of /profile=$clusteredProfile ***

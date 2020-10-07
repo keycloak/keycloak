@@ -29,7 +29,7 @@ public class ES384SignatureProviderFactory implements SignatureProviderFactory {
 
     @Override
     public SignatureProvider create(KeycloakSession session) {
-        return new AsymmetricSignatureProvider(session, Algorithm.ES384);
+        return new ECDSASignatureProvider(session, Algorithm.ES384);
     }
 
 }

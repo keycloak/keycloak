@@ -43,7 +43,7 @@ public class MultiTenantResolver implements KeycloakConfigResolver {
             realm = realm.split("\\?")[0];
         }
         
-        InputStream is = getClass().getResourceAsStream("/adapter-test/multi-tenant/WEB-INF/" + realm + "-keycloak.json");
+        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream("/" + realm + "-keycloak.json");
 
         if (is == null) {
             throw new IllegalStateException("Not able to find the file /" + realm + "-keycloak.json");

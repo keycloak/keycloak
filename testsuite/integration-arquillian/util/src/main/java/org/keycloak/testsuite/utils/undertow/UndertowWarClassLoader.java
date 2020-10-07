@@ -19,8 +19,10 @@ package org.keycloak.testsuite.utils.undertow;
 
 
 
+import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.commons.io.IOUtils;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.Node;
 
@@ -36,6 +38,15 @@ public class UndertowWarClassLoader extends ClassLoader {
         this.archive = archive;
     }
 
+    @Override
+    protected Class<?> findClass(String name) {
+        try (InputStream resourceAsStream = getResourceAsStream(name.replace('.', '/') + ".class")) {
+            byte[] bytes = IOUtils.toByteArray(resourceAsStream);
+            return defineClass(name, bytes, 0, bytes.length);            
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to find class [" + name + "]", e);
+        }
+    }
 
     @Override
     public InputStream getResourceAsStream(String name) {

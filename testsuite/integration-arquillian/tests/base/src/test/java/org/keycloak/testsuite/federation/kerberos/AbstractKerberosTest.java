@@ -20,12 +20,12 @@ package org.keycloak.testsuite.federation.kerberos;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 import java.net.URI;
-import java.nio.charset.Charset;
 import java.security.Principal;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -72,6 +72,8 @@ import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -83,6 +85,7 @@ import org.keycloak.testsuite.util.OAuthClient;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
     protected KeycloakSPNegoSchemeFactory spnegoSchemeFactory;
@@ -315,7 +318,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
 
     protected OAuthClient.AccessTokenResponse assertAuthenticationSuccess(String codeUrl) throws Exception {
-        List<NameValuePair> pairs = URLEncodedUtils.parse(new URI(codeUrl), Charset.forName("UTF-8"));
+        List<NameValuePair> pairs = URLEncodedUtils.parse(new URI(codeUrl), "UTF-8");
         String code = null;
         String state = null;
         for (NameValuePair pair : pairs) {
@@ -335,18 +338,25 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
 
     protected void updateProviderEditMode(UserStorageProvider.EditMode editMode) {
-        List<ComponentRepresentation> reps = testRealmResource().components().query("test", UserStorageProvider.class.getName());
-        Assert.assertEquals(1, reps.size());
-        ComponentRepresentation kerberosProvider = reps.get(0);
-        kerberosProvider.getConfig().putSingle(LDAPConstants.EDIT_MODE, editMode.toString());
-        testRealmResource().components().component(kerberosProvider.getId()).update(kerberosProvider);
+        updateUserStorageProvider(kerberosProvider -> kerberosProvider.getConfig().putSingle(LDAPConstants.EDIT_MODE, editMode.toString()));
     }
 
     protected void updateProviderValidatePasswordPolicy(Boolean validatePasswordPolicy) {
+        updateUserStorageProvider(kerberosProvider -> kerberosProvider.getConfig().putSingle(LDAPConstants.VALIDATE_PASSWORD_POLICY, validatePasswordPolicy.toString()));
+    }
+
+
+    /**
+     * Update UserStorage provider (Kerberos provider or LDAP provider with Kerberos enabled) with specified updater and save it
+     *
+     */
+    protected void updateUserStorageProvider(Consumer<ComponentRepresentation> updater) {
         List<ComponentRepresentation> reps = testRealmResource().components().query("test", UserStorageProvider.class.getName());
         Assert.assertEquals(1, reps.size());
         ComponentRepresentation kerberosProvider = reps.get(0);
-        kerberosProvider.getConfig().putSingle(LDAPConstants.VALIDATE_PASSWORD_POLICY, validatePasswordPolicy.toString());
+
+        updater.accept(kerberosProvider);
+
         testRealmResource().components().component(kerberosProvider.getId()).update(kerberosProvider);
     }
 

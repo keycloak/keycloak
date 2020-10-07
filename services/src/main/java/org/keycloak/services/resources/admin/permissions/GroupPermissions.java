@@ -141,7 +141,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
 
     @Override
     public boolean canList() {
-        return root.hasOneAdminRole(AdminRoles.VIEW_USERS, AdminRoles.MANAGE_USERS, AdminRoles.QUERY_GROUPS);
+        return canView() || root.hasOneAdminRole(AdminRoles.VIEW_USERS, AdminRoles.MANAGE_USERS, AdminRoles.QUERY_GROUPS);
     }
 
     @Override
@@ -363,6 +363,13 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     @Override
     public void requireManageMembership(GroupModel group) {
         if (!canManageMembership(group)) {
+            throw new ForbiddenException();
+        }
+    }
+
+    @Override
+    public void requireManageMembers(GroupModel group) {
+        if (!canManageMembers(group)) {
             throw new ForbiddenException();
         }
     }

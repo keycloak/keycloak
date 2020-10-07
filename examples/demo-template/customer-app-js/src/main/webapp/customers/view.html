@@ -98,8 +98,8 @@ User <b id="subject"></b> made this request.
     }
 
     keycloak.init({ onLoad: 'login-required' })
-        .success(reloadData)
-        .error(function(errorData) {
+        .then(reloadData)
+        .catch(function(errorData) {
             document.getElementById('customers').innerHTML = '<b>Failed to load data. Error: ' + JSON.stringify(errorData) + '</b>';
         });
 

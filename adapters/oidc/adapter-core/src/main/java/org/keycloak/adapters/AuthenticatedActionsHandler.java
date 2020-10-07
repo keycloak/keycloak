@@ -89,7 +89,8 @@ public class AuthenticatedActionsHandler {
              return true;
         }
         // Don't allow a CORS request if we're not validating CORS requests.
-        if (!deployment.isCors() && facade.getRequest().getHeader(CorsHeaders.ORIGIN) != null) {
+        String origin = facade.getRequest().getHeader(CorsHeaders.ORIGIN);
+        if (!deployment.isCors() && origin != null && !origin.equals("null")) {
             facade.getResponse().setStatus(200);
             facade.getResponse().end();
             return true;
@@ -101,6 +102,7 @@ public class AuthenticatedActionsHandler {
         if (!deployment.isCors()) return false;
         KeycloakSecurityContext securityContext = facade.getSecurityContext();
         String origin = facade.getRequest().getHeader(CorsHeaders.ORIGIN);
+        origin = "null".equals(origin) ? null : origin;
         String exposeHeaders = deployment.getCorsExposedHeaders();
 
         if (deployment.getPolicyEnforcer() != null) {
@@ -118,15 +120,14 @@ public class AuthenticatedActionsHandler {
         if (securityContext != null && origin != null && !origin.equals(requestOrigin)) {
             AccessToken token = securityContext.getToken();
             Set<String> allowedOrigins = token.getAllowedOrigins();
-            if (log.isDebugEnabled()) {
-                for (String a : allowedOrigins) log.debug("   " + a);
-            }
+
+            log.debugf("Allowed origins in token: %s", allowedOrigins);
+
             if (allowedOrigins == null || (!allowedOrigins.contains("*") && !allowedOrigins.contains(origin))) {
                 if (allowedOrigins == null) {
                     log.debugv("allowedOrigins was null in token");
                 } else {
                     log.debugv("allowedOrigins did not contain origin");
-
                 }
                 facade.getResponse().sendError(403);
                 facade.getResponse().end();
@@ -140,7 +141,7 @@ public class AuthenticatedActionsHandler {
                 facade.getResponse().setHeader(CorsHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, exposeHeaders);
             }
         } else {
-            log.debugv("cors validation not needed as we're not a secure session or origin header was null: {0}", facade.getRequest().getURI());
+            log.debugv("cors validation not needed as we are not a secure session or origin header was null: {0}", facade.getRequest().getURI());
         }
         return false;
     }
@@ -159,11 +160,9 @@ public class AuthenticatedActionsHandler {
 
             if (session != null) {
                 session.setAuthorizationContext(authorizationContext);
-
-                return authorizationContext.isGranted();
             }
 
-            return true;
+            return authorizationContext.isGranted();
         } catch (Exception e) {
             throw new RuntimeException("Failed to enforce policy decisions.", e);
         }

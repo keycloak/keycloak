@@ -35,15 +35,19 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
  */
 public class KeycloakSamlExtension implements Extension {
 
-    public static final String SUBSYSTEM_NAME = "keycloak-saml";
-    public static final String NAMESPACE = "urn:jboss:domain:keycloak-saml:1.1";
+    static final String SUBSYSTEM_NAME = "keycloak-saml";
+    private static final String NAMESPACE_1_1 = "urn:jboss:domain:keycloak-saml:1.1";
+    private static final String NAMESPACE_1_2 = "urn:jboss:domain:keycloak-saml:1.2";
+    private static final String NAMESPACE_1_3 = "urn:jboss:domain:keycloak-saml:1.3";
+
+    static final String CURRENT_NAMESPACE = NAMESPACE_1_3;
     private static final KeycloakSubsystemParser PARSER = new KeycloakSubsystemParser();
     static final PathElement PATH_SUBSYSTEM = PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME);
     private static final String RESOURCE_NAME = KeycloakSamlExtension.class.getPackage().getName() + ".LocalDescriptions";
     private static final ModelVersion MGMT_API_VERSION = ModelVersion.create(1, 1, 0);
     static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME);
 
-    public static StandardResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefix) {
+    static StandardResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefix) {
         StringBuilder prefix = new StringBuilder(SUBSYSTEM_NAME);
         for (String kp : keyPrefix) {
             prefix.append('.').append(kp);
@@ -56,7 +60,9 @@ public class KeycloakSamlExtension implements Extension {
      */
     @Override
     public void initializeParsers(final ExtensionParsingContext context) {
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, KeycloakSamlExtension.NAMESPACE, PARSER);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, KeycloakSamlExtension.NAMESPACE_1_1, PARSER);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, KeycloakSamlExtension.NAMESPACE_1_2, PARSER);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, KeycloakSamlExtension.NAMESPACE_1_3, PARSER);
     }
 
     /**

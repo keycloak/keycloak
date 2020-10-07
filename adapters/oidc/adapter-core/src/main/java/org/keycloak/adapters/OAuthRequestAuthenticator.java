@@ -226,7 +226,7 @@ public class OAuthRequestAuthenticator {
                 tokenStore.saveRequest();
                 log.debug("Sending redirect to login page: " + redirect);
                 exchange.getResponse().setStatus(302);
-                exchange.getResponse().setCookie(deployment.getStateCookieName(), state, /* need to set path? */ null, null, -1, deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr()), true);
+                exchange.getResponse().setCookie(deployment.getStateCookieName(), state, "/", null, -1, deployment.getSslRequired().isRequired(facade.getRequest().getRemoteAddr()), true);
                 exchange.getResponse().setHeader("Location", redirect);
                 return true;
             }
@@ -327,16 +327,16 @@ public class OAuthRequestAuthenticator {
         if (challenge != null) return challenge;
 
         AccessTokenResponse tokenResponse = null;
-        strippedOauthParametersRequestUri = stripOauthParametersFromRedirect();
+        strippedOauthParametersRequestUri = rewrittenRedirectUri(stripOauthParametersFromRedirect());
     
         try {
             // For COOKIE store we don't have httpSessionId and single sign-out won't be available
             String httpSessionId = deployment.getTokenStore() == TokenStore.SESSION ? reqAuthenticator.changeHttpSessionId(true) : null;
-            tokenResponse = ServerRequest.invokeAccessCodeToToken(deployment, code, rewrittenRedirectUri(strippedOauthParametersRequestUri), httpSessionId);
+            tokenResponse = ServerRequest.invokeAccessCodeToToken(deployment, code, strippedOauthParametersRequestUri, httpSessionId);
         } catch (ServerRequest.HttpFailure failure) {
             log.error("failed to turn code into token");
             log.error("status from server: " + failure.getStatus());
-            if (failure.getError() != null) {
+            if (failure.getError() != null && !failure.getError().trim().isEmpty()) {
                 log.error("   " + failure.getError());
             }
             return challenge(403, OIDCAuthenticationError.Reason.CODE_TO_TOKEN_FAILURE, null);

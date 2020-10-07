@@ -19,11 +19,13 @@ package org.keycloak.testsuite.admin.authentication;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.testsuite.actions.DummyRequiredActionFactory;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
 import javax.ws.rs.NotFoundException;
@@ -37,6 +39,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
+@EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public class RequiredActionsTest extends AbstractAuthenticationTest {
 
     @Test
@@ -49,22 +52,26 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
         addRequiredAction(expected, "UPDATE_PROFILE", "Update Profile", true, false, null);
         addRequiredAction(expected, "VERIFY_EMAIL", "Verify Email", true, false, null);
         addRequiredAction(expected, "terms_and_conditions", "Terms and Conditions", false, false, null);
+        addRequiredAction(expected, "update_user_locale", "Update User Locale", true, false, null);
 
         compareRequiredActions(expected, sort(result));
 
         RequiredActionProviderRepresentation forUpdate = newRequiredAction("VERIFY_EMAIL", "Verify Email", false, false, null);
-        try {
-            authMgmtResource.updateRequiredAction(forUpdate.getAlias(), forUpdate);
-            Assert.fail("updateRequiredAction should fail due to null config");
-        } catch (Exception ignored) {
-        }
+        authMgmtResource.updateRequiredAction(forUpdate.getAlias(), forUpdate);
+        assertAdminEvents.assertEvent(REALM_NAME, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(forUpdate.getAlias()), ResourceType.REQUIRED_ACTION);
+
+        result = authMgmtResource.getRequiredActions();
+        RequiredActionProviderRepresentation updated = findRequiredActionByAlias(forUpdate.getAlias(), result);
+
+        Assert.assertNotNull("Required Action still there", updated);
+        compareRequiredAction(forUpdate, updated);
 
         forUpdate.setConfig(Collections.<String, String>emptyMap());
         authMgmtResource.updateRequiredAction(forUpdate.getAlias(), forUpdate);
         assertAdminEvents.assertEvent(REALM_NAME, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(forUpdate.getAlias()), ResourceType.REQUIRED_ACTION);
 
         result = authMgmtResource.getRequiredActions();
-        RequiredActionProviderRepresentation updated = findRequiredActionByAlias(forUpdate.getAlias(), result);
+        updated = findRequiredActionByAlias(forUpdate.getAlias(), result);
 
         Assert.assertNotNull("Required Action still there", updated);
         compareRequiredAction(forUpdate, updated);
@@ -74,9 +81,9 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
     public void testCRUDRequiredAction() {
         int lastPriority = authMgmtResource.getRequiredActions().get(authMgmtResource.getRequiredActions().size() - 1).getPriority();
 
-        // Just Dummy RequiredAction is not registered in the realm
+        // Dummy RequiredAction is not registered in the realm and WebAuthn actions
         List<RequiredActionProviderSimpleRepresentation> result = authMgmtResource.getUnregisteredRequiredActions();
-        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(3, result.size());
         RequiredActionProviderSimpleRepresentation action = result.get(0);
         Assert.assertEquals(DummyRequiredActionFactory.PROVIDER_ID, action.getProviderId());
         Assert.assertEquals("Dummy Action", action.getName());

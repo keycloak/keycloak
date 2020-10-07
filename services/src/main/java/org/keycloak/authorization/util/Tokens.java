@@ -18,15 +18,11 @@
 
 package org.keycloak.authorization.util;
 
-import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
-
-import javax.ws.rs.core.Response.Status;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -34,9 +30,7 @@ import javax.ws.rs.core.Response.Status;
 public class Tokens {
 
     public static AccessToken getAccessToken(KeycloakSession keycloakSession) {
-        AppAuthManager authManager = new AppAuthManager();
-        KeycloakContext context = keycloakSession.getContext();
-        AuthResult authResult = authManager.authenticateBearerToken(keycloakSession, context.getRealm(), context.getUri(), context.getConnection(), context.getRequestHeaders());
+        AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(keycloakSession).authenticate();
 
         if (authResult != null) {
             return authResult.getToken();
@@ -46,9 +40,9 @@ public class Tokens {
     }
 
     public static AccessToken getAccessToken(String accessToken, KeycloakSession keycloakSession) {
-        AppAuthManager authManager = new AppAuthManager();
-        KeycloakContext context = keycloakSession.getContext();
-        AuthResult authResult = authManager.authenticateBearerToken(accessToken, keycloakSession, context.getRealm(), context.getUri(), context.getConnection(), context.getRequestHeaders());
+        AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(keycloakSession)
+                .setTokenString(accessToken)
+                .authenticate();
 
         if (authResult != null) {
             return authResult.getToken();

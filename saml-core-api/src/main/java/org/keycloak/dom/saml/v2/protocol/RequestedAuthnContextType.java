@@ -43,8 +43,8 @@ import java.util.List;
  */
 public class RequestedAuthnContextType {
 
-    protected List<String> authnContextClassRef = new ArrayList<String>();
-    protected List<String> authnContextDeclRef = new ArrayList<String>();
+    protected List<String> authnContextClassRef = new ArrayList<>();
+    protected List<String> authnContextDeclRef = new ArrayList<>();
     protected AuthnContextComparisonType comparison;
 
     /**

@@ -1,0 +1,61 @@
+{
+    "allowRemoteResourceManagement": true,
+    "policyEnforcementMode": "ENFORCING",
+    "resources": [
+        {
+            "name": "Default Resource",
+            "type": "urn:test:resources:default",
+            "ownerManagedAccess": false,
+            "attributes": {},
+            "uris": [
+                "/*"
+            ]
+        },
+        {
+            "name": "test",
+            "type": "test",
+            "ownerManagedAccess": true,
+            "displayName": "test",
+            "attributes": {},
+            "uris": [
+                "/test"
+            ]
+        }
+    ],
+    "policies": [
+        {
+            "name": "Default Policy",
+            "description": "A policy that grants access only for users within this realm",
+            "type": "js",
+            "logic": "POSITIVE",
+            "decisionStrategy": "AFFIRMATIVE",
+            "config": {
+                "code": "// by default, grants any permission associated with this policy: $evaluation.grant();"
+            }
+        },
+        {
+            "name": "Default Permission",
+            "description": "A permission that applies to the default resource type",
+            "type": "resource",
+            "logic": "POSITIVE",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+                "defaultResourceType": "urn:test:resources:default",
+                "applyPolicies": "[\"Default Policy\"]"
+            }
+        },
+        {
+            "name": "test-permission",
+            "description": "test-permission",
+            "type": "resource",
+            "logic": "POSITIVE",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+                "resources": "[\"test\"]",
+                "applyPolicies": "[\"Default Policy\"]"
+            }
+        }
+    ],
+    "scopes": [],
+    "decisionStrategy": "UNANIMOUS"
+}

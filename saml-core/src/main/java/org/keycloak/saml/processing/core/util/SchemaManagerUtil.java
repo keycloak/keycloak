@@ -28,28 +28,28 @@ import java.util.List;
 public class SchemaManagerUtil {
 
     public static List<String> getXMLSchemas() {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
 
         list.add("schema/w3c/xmlschema/xml.xsd");
         return list;
     }
 
     public static List<String> getXMLDSig() {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
 
         list.add("schema/w3c/xmldsig/xmldsig-core-schema.xsd");
         return list;
     }
 
     public static List<String> getXMLEnc() {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
 
         list.add("schema/w3c/xmlenc/xenc-schema.xsd");
         return list;
     }
 
     public static List<String> getXACMLSchemas() {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
 
         list.add("schema/xacml/access_control-xacml-2.0-policy-schema-os.xsd");
         list.add("schema/xacml/access_control-xacml-2.0-context-schema-os.xsd");
@@ -57,7 +57,7 @@ public class SchemaManagerUtil {
     }
 
     public static List<String> getSAML2Schemas() {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
 
         list.add("schema/saml/v2/saml-schema-assertion-2.0.xsd");
         list.add("schema/saml/v2/saml-schema-protocol-2.0.xsd");
@@ -72,7 +72,7 @@ public class SchemaManagerUtil {
     }
 
     public static List<String> getSAML11Schemas() {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
 
         list.add("schema/saml/v1/saml-schema-assertion-1.0.xsd");
         list.add("schema/saml/v1/oasis-sstc-saml-schema-assertion-1.1.xsd");
@@ -81,7 +81,7 @@ public class SchemaManagerUtil {
     }
 
     public static List<String> getWSTrustSchemas() {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
 
         list.add("schema/wstrust/v1_3/ws-trust-1.3.xsd");
         list.add("schema/wstrust/v1_3/oasis-200401-wss-wssecurity-secext-1.0.xsd");
@@ -92,7 +92,7 @@ public class SchemaManagerUtil {
     }
 
     public static List<String> getSchemas() {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         list.addAll(getXMLSchemas());
         list.addAll(getXMLDSig());
         list.addAll(getXMLEnc());

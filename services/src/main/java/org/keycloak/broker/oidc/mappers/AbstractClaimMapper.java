@@ -25,12 +25,10 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.util.JsonSerialization;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -41,6 +39,14 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
     public static final String CLAIM_VALUE = "claim.value";
 
     public static Object getClaimValue(JsonWebToken token, String claim) {
+
+        switch (claim) {
+            case "sub":
+                return token.getSubject();
+            default:
+                // found no match, try other claims
+        }
+
         List<String> split = OIDCAttributeMapperHelper.splitClaimPath(claim);
         Map<String, Object> jsonObject = token.getOtherClaims();
         final int length = split.size();
@@ -120,7 +126,12 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
         } else if (value instanceof List) {
             List list = (List)value;
             for (Object val : list) {
-            	if (valueEquals(desiredValue, val)) return true;
+                if (valueEquals(desiredValue, val)) return true;
+            }
+        } else if (value instanceof JsonNode) {
+            try {
+                if (JsonSerialization.readValue(desiredValue, JsonNode.class).equals(value)) return true;
+            } catch (Exception ignore) {
             }
         }
         return false;

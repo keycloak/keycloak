@@ -34,6 +34,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserManager;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -132,7 +133,7 @@ public class KerberosFederationProvider implements UserStorageProvider,
 
     @Override
     public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
-        if (!(input instanceof UserCredentialModel) || !CredentialModel.PASSWORD.equals(input.getType())) return false;
+        if (!(input instanceof UserCredentialModel) || !PasswordCredentialModel.TYPE.equals(input.getType())) return false;
         if (kerberosConfig.getEditMode() == EditMode.READ_ONLY) {
             throw new ReadOnlyException("Can't change password in Keycloak database. Change password with your Kerberos server");
         }
@@ -151,12 +152,12 @@ public class KerberosFederationProvider implements UserStorageProvider,
 
     @Override
     public boolean supportsCredentialType(String credentialType) {
-        return credentialType.equals(CredentialModel.KERBEROS) || (kerberosConfig.isAllowPasswordAuthentication() && credentialType.equals(CredentialModel.PASSWORD));
+        return credentialType.equals(UserCredentialModel.KERBEROS) || (kerberosConfig.isAllowPasswordAuthentication() && credentialType.equals(PasswordCredentialModel.TYPE));
     }
 
     @Override
     public boolean supportsCredentialAuthenticationFor(String type) {
-        return CredentialModel.KERBEROS.equals(type);
+        return UserCredentialModel.KERBEROS.equals(type);
     }
 
     @Override
@@ -167,8 +168,8 @@ public class KerberosFederationProvider implements UserStorageProvider,
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
         if (!(input instanceof UserCredentialModel)) return false;
-        if (input.getType().equals(UserCredentialModel.PASSWORD) && !session.userCredentialManager().isConfiguredLocally(realm, user, UserCredentialModel.PASSWORD)) {
-            return validPassword(user.getUsername(), ((UserCredentialModel)input).getValue());
+        if (input.getType().equals(PasswordCredentialModel.TYPE) && !session.userCredentialManager().isConfiguredLocally(realm, user, PasswordCredentialModel.TYPE)) {
+            return validPassword(user.getUsername(), input.getChallengeResponse());
         } else {
             return false; // invalid cred type
         }
@@ -188,7 +189,7 @@ public class KerberosFederationProvider implements UserStorageProvider,
         if (!(input instanceof UserCredentialModel)) return null;
         UserCredentialModel credential = (UserCredentialModel)input;
         if (credential.getType().equals(UserCredentialModel.KERBEROS)) {
-            String spnegoToken = credential.getValue();
+            String spnegoToken = credential.getChallengeResponse();
             SPNEGOAuthenticator spnegoAuthenticator = factory.createSPNEGOAuthenticator(spnegoToken, kerberosConfig);
 
             spnegoAuthenticator.authenticate();
@@ -207,9 +208,14 @@ public class KerberosFederationProvider implements UserStorageProvider,
 
                     return new CredentialValidationOutput(user, CredentialValidationOutput.Status.AUTHENTICATED, state);
                 }
-            }  else {
+            }  else if (spnegoAuthenticator.getResponseToken() != null) {
+                // Case when SPNEGO handshake requires multiple steps
+                logger.tracef("SPNEGO Handshake will continue");
                 state.put(KerberosConstants.RESPONSE_TOKEN, spnegoAuthenticator.getResponseToken());
                 return new CredentialValidationOutput(null, CredentialValidationOutput.Status.CONTINUE, state);
+            } else {
+                logger.tracef("SPNEGO Handshake not successful");
+                return CredentialValidationOutput.failed();
             }
 
         } else {

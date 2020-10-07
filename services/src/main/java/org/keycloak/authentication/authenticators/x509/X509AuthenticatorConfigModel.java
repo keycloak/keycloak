@@ -55,20 +55,22 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
 
     public enum MappingSourceType {
         SERIALNUMBER(MAPPING_SOURCE_CERT_SERIALNUMBER),
-        ISSUERDN_CN(MAPPING_SOURCE_CERT_ISSUERDN_CN),
-        ISSUERDN_EMAIL(MAPPING_SOURCE_CERT_ISSUERDN_EMAIL),
         ISSUERDN(MAPPING_SOURCE_CERT_ISSUERDN),
         SUBJECTDN_CN(MAPPING_SOURCE_CERT_SUBJECTDN_CN),
         SUBJECTDN_EMAIL(MAPPING_SOURCE_CERT_SUBJECTDN_EMAIL),
         SUBJECTALTNAME_EMAIL(MAPPING_SOURCE_CERT_SUBJECTALTNAME_EMAIL),
-        SUBJECTDN(MAPPING_SOURCE_CERT_SUBJECTDN);
-
+        SUBJECTALTNAME_OTHERNAME(MAPPING_SOURCE_CERT_SUBJECTALTNAME_OTHERNAME),
+        SUBJECTDN(MAPPING_SOURCE_CERT_SUBJECTDN),
+        SHA256_THUMBPRINT(MAPPING_SOURCE_CERT_SHA256_THUMBPRINT),
+        SERIALNUMBER_ISSUERDN(MAPPING_SOURCE_CERT_SERIALNUMBER_ISSUERDN),
+        CERTIFICATE_PEM(MAPPING_SOURCE_CERT_CERTIFICATE_PEM);
+        
         private String name;
         MappingSourceType(String name) {
             this.name = name;
         }
         public String getName() {  return this.name; }
-        static public MappingSourceType parse(String name) throws IllegalArgumentException, IndexOutOfBoundsException {
+        public static MappingSourceType parse(String name) throws IllegalArgumentException, IndexOutOfBoundsException {
             if (name == null || name.trim().length() == 0)
                 throw new IllegalArgumentException("name");
 
@@ -138,6 +140,19 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
             getConfig().put(OCSPRESPONDER_URI, responderUri);
         } else {
             getConfig().remove(OCSPRESPONDER_URI);
+        }
+        return this;
+    }
+
+    public String getOCSPResponderCertificate() {
+        return getConfig().getOrDefault(OCSPRESPONDER_CERTIFICATE, null);
+    }
+
+    public X509AuthenticatorConfigModel setOCSPResponderCertificate(String responderCert) {
+        if (responderCert != null) {
+            getConfig().put(OCSPRESPONDER_CERTIFICATE, responderCert);
+        } else {
+            getConfig().remove(OCSPRESPONDER_CERTIFICATE);
         }
         return this;
     }
@@ -230,4 +245,30 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
         return this;
     }
 
+    public boolean isCanonicalDnEnabled() {
+        return Boolean.parseBoolean(getConfig().get(CANONICAL_DN));
+    }
+
+    public X509AuthenticatorConfigModel setCanonicalDnEnabled(boolean value) {
+        getConfig().put(CANONICAL_DN, Boolean.toString(value));
+        return this;
+    }
+
+    public boolean isCertValidationEnabled() {
+        return Boolean.parseBoolean(getConfig().get(TIMESTAMP_VALIDATION));
+    }
+
+    public X509AuthenticatorConfigModel setCertValidationEnabled(boolean value) {
+        getConfig().put(TIMESTAMP_VALIDATION, Boolean.toString(value));
+        return this;
+    }
+    
+    public boolean isSerialnumberHex() {
+        return Boolean.parseBoolean(getConfig().get(SERIALNUMBER_HEX));
+    }
+
+    public X509AuthenticatorConfigModel setSerialnumberHex(boolean value) {
+        getConfig().put(SERIALNUMBER_HEX, Boolean.toString(value));
+        return this;
+    }
 }

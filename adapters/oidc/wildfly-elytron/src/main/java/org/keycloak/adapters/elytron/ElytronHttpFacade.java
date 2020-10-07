@@ -18,8 +18,9 @@
 
 package org.keycloak.adapters.elytron;
 
+import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.CookieImpl;
-import org.bouncycastle.asn1.cmp.Challenge;
+import io.undertow.servlet.handlers.ServletRequestContext;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
@@ -31,16 +32,18 @@ import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.adapters.spi.LogoutError;
 import org.keycloak.enums.TokenStore;
 import org.wildfly.security.auth.server.SecurityIdentity;
-import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpServerCookie;
-import org.wildfly.security.http.HttpServerMechanismsResponder;
 import org.wildfly.security.http.HttpServerRequest;
 import org.wildfly.security.http.HttpServerResponse;
 import org.wildfly.security.http.Scope;
 
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.cert.X509Certificate;
+import javax.servlet.ServletInputStream;
+import javax.servlet.ServletRequest;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -201,9 +204,13 @@ class ElytronHttpFacade implements OIDCHttpFacade {
                 if (query != null) {
                     String[] parameters = query.split("&");
                     for (String parameter : parameters) {
-                        String[] keyValue = parameter.split("=");
+                        String[] keyValue = parameter.split("=", 2);
                         if (keyValue[0].equals(param)) {
-                            return keyValue[1];
+                            try {
+                                return URLDecoder.decode(keyValue[1], "UTF-8");
+                            } catch (IOException e) {
+                                throw new RuntimeException("Failed to decode request URI", e);
+                            }
                         }
                     }
                 }
@@ -247,7 +254,26 @@ class ElytronHttpFacade implements OIDCHttpFacade {
                 }
 
                 if (buffered) {
-                    return inputStream = new BufferedInputStream(request.getInputStream());
+                    HttpScope exchangeScope = getScope(Scope.EXCHANGE);
+                    HttpServerExchange exchange = ProtectedHttpServerExchange.class.cast(exchangeScope.getAttachment(UNDERTOW_EXCHANGE)).getExchange();
+                    ServletRequestContext context = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
+                    ServletRequest servletRequest = context.getServletRequest();
+
+                    inputStream = new BufferedInputStream(exchange.getInputStream());
+
+                    context.setServletRequest(new HttpServletRequestWrapper((HttpServletRequest) servletRequest) {
+                        @Override
+                        public ServletInputStream getInputStream() {
+                            inputStream.mark(0);
+                            return new ServletInputStream() {
+                                @Override
+                                public int read() throws IOException {
+                                    return inputStream.read();
+                                }
+                            };
+                        }
+                    });
+                    return inputStream;
                 }
 
                 return request.getInputStream();

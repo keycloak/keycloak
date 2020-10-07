@@ -35,13 +35,17 @@ public interface TestOIDCEndpointsApplicationResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/generate-keys")
-    Map<String, String> generateKeys();
+    Map<String, String> generateKeys(@QueryParam("jwaAlgorithm") String jwaAlgorithm);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/get-keys-as-pem")
     Map<String, String> getKeysAsPem();
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/get-keys-as-base64")
+    Map<String, String> getKeysAsBase64();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -55,6 +59,11 @@ public interface TestOIDCEndpointsApplicationResource {
     void setOIDCRequest(@QueryParam("realmName") String realmName, @QueryParam("clientId") String clientId,
                         @QueryParam("redirectUri") String redirectUri, @QueryParam("maxAge") String maxAge,
                         @QueryParam("jwaAlgorithm") String jwaAlgorithm);
+
+    @GET
+    @Path("/register-oidc-request")
+    @Produces(org.keycloak.utils.MediaType.APPLICATION_JWT)
+    void registerOIDCRequest(@QueryParam("requestObject") String encodedRequestObject, @QueryParam("jwaAlgorithm") String jwaAlgorithm);
 
     @GET
     @Path("/get-oidc-request")

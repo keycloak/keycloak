@@ -32,7 +32,6 @@ import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.VersionRepresentation;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.adapters.action.AdminAction;
@@ -84,9 +83,6 @@ public class PreAuthActionsHandler {
             if (!resolveDeployment()) return true;
             handlePushNotBefore();
             return true;
-        } else if (requestUri.endsWith(AdapterConstants.K_VERSION)) {
-            handleVersion();
-            return true;
         } else if (requestUri.endsWith(AdapterConstants.K_TEST_AVAILABLE)) {
             if (!resolveDeployment()) return true;
             handleTestAvailable();
@@ -107,13 +103,13 @@ public class PreAuthActionsHandler {
         if (!facade.getRequest().getMethod().equalsIgnoreCase("OPTIONS")) {
             return false;
         }
-        if (facade.getRequest().getHeader(CorsHeaders.ORIGIN) == null) {
+        String origin = facade.getRequest().getHeader(CorsHeaders.ORIGIN);
+        if (origin == null || origin.equals("null")) {
             log.debug("checkCorsPreflight: no origin header");
             return false;
         }
         log.debug("Preflight request returning");
         facade.getResponse().setStatus(200);
-        String origin = facade.getRequest().getHeader(CorsHeaders.ORIGIN);
         facade.getResponse().setHeader(CorsHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
         facade.getResponse().setHeader(CorsHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
         String requestMethods = facade.getRequest().getHeader(CorsHeaders.ACCESS_CONTROL_REQUEST_METHOD);
@@ -244,25 +240,6 @@ public class PreAuthActionsHandler {
 
         }
         return true;
-    }
-
-    protected void handleVersion()  {
-        try {
-            facade.getResponse().setStatus(200);
-            KeycloakDeployment deployment = deploymentContext.resolveDeployment(facade);
-            if (deployment.isCors()) {
-                String origin = facade.getRequest().getHeader(CorsHeaders.ORIGIN);
-                if (origin == null) {
-                    log.debug("no origin header set in request");
-                } else {
-                    facade.getResponse().setHeader(CorsHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
-                }
-            }
-            facade.getResponse().setHeader("Content-Type", "application/json");
-            JsonSerialization.writeValueToStream(facade.getResponse().getOutputStream(), VersionRepresentation.SINGLETON);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     protected void handleJwksRequest() {

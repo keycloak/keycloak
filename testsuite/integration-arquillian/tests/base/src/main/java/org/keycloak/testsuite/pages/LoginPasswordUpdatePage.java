@@ -19,6 +19,10 @@ package org.keycloak.testsuite.pages;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -39,11 +43,21 @@ public class LoginPasswordUpdatePage extends LanguageComboboxAwarePage {
     @FindBy(xpath = "//span[@class='kc-feedback-text']")
     private WebElement feedbackMessage;
 
+    @FindBy(id = "logout-sessions")
+    private WebElement logoutSessionsCheckbox;
+    
+    @FindBy(name = "cancel-aia")
+    private WebElement cancelAIAButton;
+
     public void changePassword(String newPassword, String passwordConfirm) {
         newPasswordInput.sendKeys(newPassword);
         passwordConfirmInput.sendKeys(passwordConfirm);
 
         submitButton.click();
+    }
+    
+    public void cancel() {
+        cancelAIAButton.click();
     }
 
     public boolean isCurrent() {
@@ -61,4 +75,27 @@ public class LoginPasswordUpdatePage extends LanguageComboboxAwarePage {
     public String getFeedbackMessage() {
         return feedbackMessage.getText();
     }
+
+    public boolean isLogoutSessionDisplayed() {
+        return isElementVisible(logoutSessionsCheckbox);
+    }
+
+    public boolean isLogoutSessionsChecked() {
+        return logoutSessionsCheckbox.isSelected();
+    }
+
+    public void checkLogoutSessions() {
+        assertFalse("Logout sessions is checked", isLogoutSessionsChecked());
+        logoutSessionsCheckbox.click();
+    }
+
+    public void uncheckLogoutSessions() {
+        assertTrue("Logout sessions is not checked", isLogoutSessionsChecked());
+        logoutSessionsCheckbox.click();
+    }
+
+    public boolean isCancelDisplayed() {
+        return isElementVisible(cancelAIAButton);
+    }
+
 }

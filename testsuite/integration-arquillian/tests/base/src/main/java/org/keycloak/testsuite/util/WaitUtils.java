@@ -23,6 +23,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.support.ui.ExpectedCondition;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -50,7 +51,7 @@ public final class WaitUtils {
 
     public static final Integer PAGELOAD_TIMEOUT_MILLIS = Integer.parseInt(System.getProperty(PAGELOAD_TIMEOUT_PROP, "10000"));
 
-    public static final int IMPLICIT_ELEMENT_WAIT_MILLIS = 750;
+    public static final int IMPLICIT_ELEMENT_WAIT_MILLIS = 1500; // high value means more stable but slower tests; it needs to be balanced
 
     // Should be no longer necessary for finding elements since we have implicit wait
     public static ElementBuilder<Void> waitUntilElement(By by) {
@@ -77,6 +78,12 @@ public final class WaitUtils {
 //                .until(invisibilityOfAllElements(Collections.singletonList(element)));
     }
 
+    public static void waitUntilElementClassContains(WebElement element, String value) {
+        new WebDriverWait(getCurrentDriver(), 1).until(
+                ExpectedConditions.attributeContains(element, "class", value)
+        );
+    }
+
     public static void pause(long millis) {
         if (millis > 0) {
             log.info("Wait: " + millis + "ms");
@@ -86,6 +93,28 @@ public final class WaitUtils {
                 Logger.getLogger(WaitUtils.class.getName()).log(Level.SEVERE, null, ex);
                 Thread.currentThread().interrupt();
             }
+        }
+    }
+
+    /**
+     * Waits for DOMContent to load
+     */
+    public static void waitForDomContentToLoad() {
+        WebDriver driver = getCurrentDriver();
+
+        if (driver instanceof HtmlUnitDriver) {
+            return; // not needed
+        }
+
+        WebDriverWait wait = new WebDriverWait(driver, PAGELOAD_TIMEOUT_MILLIS / 1000);
+
+        try {
+            wait
+                    .pollingEvery(Duration.ofMillis(500))
+                    .until(javaScriptThrowsNoExceptions(
+                    "if (document.readyState !== 'complete') { throw \"Not ready\";}"));
+        } catch (TimeoutException e) {
+            log.warn("waitForPageToLoad time exceeded!");
         }
     }
 
@@ -131,14 +160,9 @@ public final class WaitUtils {
                     + "}");
         }
         else if (
-                currentUrl.matches("^[^\\/]+:\\/\\/[^\\/]+\\/auth\\/realms\\/[^\\/]+\\/account\\/.*$") // check for Account Console URL
-                && driver.getPageSource().contains("patternfly-ng") // check for new Account Console (don't use this strategy with the old one)
+                currentUrl.matches("^[^\\/]+:\\/\\/[^\\/]+\\/auth\\/realms\\/[^\\/]+\\/account\\/.*#/.+$") // check for new Account Console URL
         ) {
-            waitCondition = javaScriptThrowsNoExceptions(
-                    "if (!window.getAngularTestability(document.querySelector('app-root')).isStable()) {" +
-                        "throw 'Not ready';" +
-                    "}"
-            );
+            pause(2000); // TODO rework this temporary workaround once KEYCLOAK-11201 and/or KEYCLOAK-8181 are fixed
         }
 
         if (waitCondition != null) {

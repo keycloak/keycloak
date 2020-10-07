@@ -17,8 +17,6 @@
 
 package org.keycloak.testsuite.runonserver;
 
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.ComparisonFailure;
 import org.junit.Test;
 import org.keycloak.models.ModelException;
@@ -26,32 +24,31 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
-import java.io.IOException;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * This checks running code on the server for tests works and is not a test of the actual server
  *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class RunOnServerTest extends AbstractKeycloakTest {
 
-    @Deployment
-    public static WebArchive deploy() {
-        return RunOnServerDeployment.create(RunOnServerTest.class);
-    }
-
     @Test
-    public void runOnServerString() throws IOException {
+    public void runOnServerString() {
         String string = testingClient.server().fetch(session -> "Hello world!", String.class);
         assertEquals("Hello world!", string);
     }
 
     @Test
-    public void runOnServerRep() throws IOException {
+    public void runOnServerRep() {
         final String realmName = "master";
 
         RealmRepresentation realmRep = testingClient.server().fetch(session -> {
@@ -63,18 +60,18 @@ public class RunOnServerTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void runOnServerHelpers() throws IOException {
+    public void runOnServerHelpers() {
         RealmRepresentation realmRep = testingClient.server().fetch(RunHelpers.internalRealm());
         assertEquals("master", realmRep.getRealm());
     }
 
     @Test
-    public void runOnServerNoResponse() throws IOException {
+    public void runOnServerNoResponse() {
         testingClient.server().run(session -> System.out.println("Hello world!"));
     }
 
     @Test
-    public void runOnServerAssertOnServer() throws IOException {
+    public void runOnServerAssertOnServer() {
         try {
             testingClient.server().run(session -> assertEquals("foo", "bar"));
             fail("Expected exception");
@@ -84,7 +81,7 @@ public class RunOnServerTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void runOnServerExceptionOnServer() throws IOException {
+    public void runOnServerExceptionOnServer() {
         try {
             testingClient.server().run(session -> {
                 throw new ModelException("Something went wrong");

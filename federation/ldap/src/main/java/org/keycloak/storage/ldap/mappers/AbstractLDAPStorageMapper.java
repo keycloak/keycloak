@@ -22,15 +22,14 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.user.SynchronizationResult;
 
 import javax.naming.AuthenticationException;
 import java.util.Collections;
 import java.util.List;
+import org.keycloak.models.RoleModel;
 
 /**
  * Stateful per-request object
@@ -49,22 +48,27 @@ public abstract class AbstractLDAPStorageMapper implements LDAPStorageMapper {
         this.session = ldapProvider.getSession();
     }
 
-
+    @Override
     public SynchronizationResult syncDataFromFederationProviderToKeycloak(RealmModel realm) {
         return new SynchronizationResult();
     }
 
-
+    @Override
     public SynchronizationResult syncDataFromKeycloakToFederationProvider(RealmModel realm) {
         return new SynchronizationResult();
     }
 
-
+    @Override
     public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
         return Collections.emptyList();
     }
 
+    @Override
+    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+        return Collections.emptyList();
+    }
 
+    @Override
     public boolean onAuthenticationFailure(LDAPObject ldapUser, UserModel user, AuthenticationException ldapException, RealmModel realm) {
         return false;
     }
@@ -75,11 +79,10 @@ public abstract class AbstractLDAPStorageMapper implements LDAPStorageMapper {
         return Boolean.parseBoolean(paramm);
     }
 
-
+    @Override
     public LDAPStorageProvider getLdapProvider() {
         return ldapProvider;
     }
-
 
     @Override
     public void close() {

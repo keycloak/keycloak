@@ -35,6 +35,9 @@ public class LDAPConstants {
     public static final String VENDOR_TIVOLI = "tivoli";
     public static final String VENDOR_NOVELL_EDIRECTORY="edirectory" ;
 
+    // Could be discovered by rootDse supportedExtension: 1.3.6.1.4.1.4203.1.11.1
+    public static final String USE_PASSWORD_MODIFY_EXTENDED_OP = "usePasswordModifyExtendedOp";
+
     public static final String USERNAME_LDAP_ATTRIBUTE = "usernameLDAPAttribute";
     public static final String RDN_LDAP_ATTRIBUTE = "rdnLDAPAttribute";
     public static final String UUID_LDAP_ATTRIBUTE = "uuidLDAPAttribute";
@@ -66,11 +69,14 @@ public class LDAPConstants {
     public static final String CONNECTION_POOLING_TIMEOUT = "connectionPoolingTimeout";
     public static final String CONNECTION_TIMEOUT = "connectionTimeout";
     public static final String READ_TIMEOUT = "readTimeout";
+    // Could be discovered by rootDse supportedControl: 1.2.840.113556.1.4.319
     public static final String PAGINATION = "pagination";
 
     public static final String EDIT_MODE = "editMode";
 
     public static final String VALIDATE_PASSWORD_POLICY = "validatePasswordPolicy";
+
+    public static final String TRUST_EMAIL = "trustEmail";
 
     // Count of users processed per single transaction during sync process
     public static final String BATCH_SIZE_FOR_SYNC = "batchSizeForSync";
@@ -81,6 +87,9 @@ public class LDAPConstants {
 
     // Custom user search filter
     public static final String CUSTOM_USER_SEARCH_FILTER = "customUserSearchFilter";
+
+    // Could be discovered by rootDse supportedExtension: 1.3.6.1.4.1.1466.20037
+    public static final String START_TLS = "startTls";
 
     // Custom attributes on UserModel, which is mapped to LDAP
     public static final String LDAP_ID = "LDAP_ID";
@@ -115,11 +124,14 @@ public class LDAPConstants {
     public static final String EMPTY_ATTRIBUTE_VALUE = " ";
     public static final String EMPTY_MEMBER_ATTRIBUTE_VALUE = "cn=empty-membership-placeholder";
 
-    public static final String CUSTOM_ATTRIBUTE_ENABLED = "enabled";
+    public static final String ENABLED = "enabled";
+
+
     public static final String CUSTOM_ATTRIBUTE_CREATE_DATE = "createDate";
     public static final String CUSTOM_ATTRIBUTE_EXPIRY_DATE = "expiryDate";
     public static final String ENTRY_UUID = "entryUUID";
     public static final String OBJECT_GUID = "objectGUID";
+    public static final String NOVELL_EDIRECTORY_GUID = "guid";
     public static final String CREATE_TIMESTAMP = "createTimestamp";
     public static final String MODIFY_TIMESTAMP = "modifyTimestamp";
 

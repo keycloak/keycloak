@@ -74,12 +74,11 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
 
             UserModel federatedUser = session.users().addUser(realm, username);
             federatedUser.setEnabled(true);
-            federatedUser.setEmail(brokerContext.getEmail());
-            federatedUser.setFirstName(brokerContext.getFirstName());
-            federatedUser.setLastName(brokerContext.getLastName());
 
             for (Map.Entry<String, List<String>> attr : serializedCtx.getAttributes().entrySet()) {
-                federatedUser.setAttribute(attr.getKey(), attr.getValue());
+                if (!UserModel.USERNAME.equalsIgnoreCase(attr.getKey())) {
+                    federatedUser.setAttribute(attr.getKey(), attr.getValue());
+                }
             }
 
             AuthenticatorConfigModel config = context.getAuthenticatorConfig();
@@ -99,19 +98,20 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
 
             // Set duplicated user, so next authenticators can deal with it
             context.getAuthenticationSession().setAuthNote(EXISTING_USER_INFO, duplication.serialize());
-
-            Response challengeResponse = context.form()
-                    .setError(Messages.FEDERATED_IDENTITY_EXISTS, duplication.getDuplicateAttributeName(), duplication.getDuplicateAttributeValue())
-                    .createErrorPage(Response.Status.CONFLICT);
-            context.challenge(challengeResponse);
-
+            //Only show error message if the authenticator was required
             if (context.getExecution().isRequired()) {
+                Response challengeResponse = context.form()
+                        .setError(Messages.FEDERATED_IDENTITY_EXISTS, duplication.getDuplicateAttributeName(), duplication.getDuplicateAttributeValue())
+                        .createErrorPage(Response.Status.CONFLICT);
+                context.challenge(challengeResponse);
                 context.getEvent()
                         .user(duplication.getExistingUserId())
                         .detail("existing_" + duplication.getDuplicateAttributeName(), duplication.getDuplicateAttributeValue())
                         .removeDetail(Details.AUTH_METHOD)
                         .removeDetail(Details.AUTH_TYPE)
                         .error(Errors.FEDERATED_IDENTITY_EXISTS);
+            } else {
+                context.attempted();
             }
         }
     }

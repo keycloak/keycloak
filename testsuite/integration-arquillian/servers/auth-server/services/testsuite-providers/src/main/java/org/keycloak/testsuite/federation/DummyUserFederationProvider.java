@@ -27,11 +27,15 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -47,6 +51,12 @@ public class DummyUserFederationProvider implements UserStorageProvider,
     private final Map<String, UserModel> users;
     private KeycloakSession session;
     private ComponentModel component;
+
+    // Hardcoded password of test-user
+    public static final String HARDCODED_PASSWORD = "secret";
+
+    // Hardcoded otp code, which will be always considered valid for the test-user
+    public static final String HARDCODED_OTP = "123456";
 
 
 
@@ -103,7 +113,7 @@ public class DummyUserFederationProvider implements UserStorageProvider,
     }
 
     public Set<String> getSupportedCredentialTypes() {
-        return Collections.singleton(UserCredentialModel.PASSWORD);
+        return new HashSet<>(Arrays.asList(PasswordCredentialModel.TYPE, OTPCredentialModel.TYPE));
     }
 
     @Override
@@ -113,7 +123,7 @@ public class DummyUserFederationProvider implements UserStorageProvider,
 
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
-        if (!CredentialModel.PASSWORD.equals(credentialType)) return false;
+        if (!supportsCredentialType(credentialType)) return false;
 
         if (user.getUsername().equals("test-user")) {
             return true;
@@ -123,14 +133,16 @@ public class DummyUserFederationProvider implements UserStorageProvider,
     }
 
     @Override
-    public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
+    public boolean isValid(RealmModel realm, UserModel user, CredentialInput credentialInput) {
         if (user.getUsername().equals("test-user")) {
-            UserCredentialModel password = (UserCredentialModel)input;
-            if (password.getType().equals(UserCredentialModel.PASSWORD)) {
-                return "secret".equals(password.getValue());
+            if (PasswordCredentialModel.TYPE.equals(credentialInput.getType())) {
+                return HARDCODED_PASSWORD.equals(credentialInput.getChallengeResponse());
+            } else if (OTPCredentialModel.TYPE.equals(credentialInput.getType())) {
+                return HARDCODED_OTP.equals(credentialInput.getChallengeResponse());
             }
         }
-        return false;    }
+        return false;
+    }
 
      @Override
     public void close() {

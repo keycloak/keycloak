@@ -23,7 +23,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.client.AbstractReadOnlyClientStorageAdapter;
@@ -37,6 +37,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -58,7 +60,7 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
     }
 
     @Override
-    public ClientModel getClientById(String id, RealmModel realm) {
+    public ClientModel getClientById(RealmModel realm, String id) {
         StorageId storageId = new StorageId(id);
         final String clientId = storageId.getExternalId();
         if (this.clientId.equals(clientId)) return new ClientAdapter(realm);
@@ -66,7 +68,7 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
     }
 
     @Override
-    public ClientModel getClientByClientId(String clientId, RealmModel realm) {
+    public ClientModel getClientByClientId(RealmModel realm, String clientId) {
         if (this.clientId.equals(clientId)) return new ClientAdapter(realm);
         return null;
     }
@@ -74,6 +76,19 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
     @Override
     public void close() {
 
+    }
+
+    @Override
+    public Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
+        if (Boolean.parseBoolean(component.getConfig().getFirst(HardcodedClientStorageProviderFactory.DELAYED_SEARCH))) try {
+            Thread.sleep(5000l);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(HardcodedClientStorageProvider.class).warn(ex.getCause());
+        }
+        if (clientId != null && this.clientId.toLowerCase().contains(clientId.toLowerCase())) {
+            return Stream.of(new ClientAdapter(realm));
+        }
+        return Stream.empty();
     }
 
     public class ClientAdapter extends AbstractReadOnlyClientStorageAdapter {
@@ -100,6 +115,11 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
         @Override
         public boolean isEnabled() {
             return true;
+        }
+
+        @Override
+        public boolean isAlwaysDisplayInConsole() {
+            return false;
         }
 
         @Override
@@ -260,16 +280,13 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
         }
 
         @Override
-        public Set<RoleModel> getScopeMappings() {
-            RoleModel offlineAccess = realm.getRole("offline_access");
-            Set<RoleModel> set = new HashSet<>();
-            set.add(offlineAccess);
-            return set;
+        public Stream<RoleModel> getScopeMappingsStream() {
+            return Stream.of(realm.getRole("offline_access"));
         }
 
         @Override
-        public Set<RoleModel> getRealmScopeMappings() {
-            return Collections.EMPTY_SET;
+        public Stream<RoleModel> getRealmScopeMappingsStream() {
+            return Stream.empty();
         }
 
         @Override

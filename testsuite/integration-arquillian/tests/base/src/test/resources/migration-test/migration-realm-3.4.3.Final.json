@@ -303,7 +303,28 @@
     "enabled" : true,
     "totp" : false,
     "emailVerified" : false,
-    "credentials" : [ ],
+    "credentials" : [ {
+      "type" : "totp",
+      "hashedSaltedValue" : "dSdmuHLQhkm54oIm0A0S",
+      "hashIterations" : 0,
+      "counter" : 0,
+      "algorithm" : "HmacSHA1",
+      "digits" : 8,
+      "period" : 40,
+      "createdDate" : 1570002889420,
+      "config" : { }
+    }, {
+      "type" : "password",
+      "hashedSaltedValue" : "kNwotFPNeuwelpT1HWt+E4ONXFK6wjd+h0zbzNBRGwOqacAjeY7vYN9QZQ46DlEKSdn04cEU/3RvX8WPcRegxg==",
+      "salt" : "rEIJDbs+BQqpx31v8mONWA==",
+      "hashIterations" : 27500,
+      "counter" : 0,
+      "algorithm" : "pbkdf2-sha256",
+      "digits" : 0,
+      "period" : 0,
+      "createdDate" : 1570002786025,
+      "config" : { }
+    } ],
     "disableableCredentialTypes" : [ ],
     "requiredActions" : [ ],
     "realmRoles" : [ "offline_access", "uma_authorization" ],
@@ -312,7 +333,45 @@
     },
     "notBefore" : 0,
     "groups" : [ ]
-  } ],
+  },
+  {
+    "id" : "3a15a4f3-0e14-4b57-8753-2d774ef02fce",
+    "createdTimestamp" : 1531933208712,
+    "username" : "offline-test-user",
+    "enabled" : true,
+    "totp" : false,
+    "emailVerified" : false,
+    "credentials" : [ {
+      "type" : "password",
+      "hashedSaltedValue" : "kNwotFPNeuwelpT1HWt+E4ONXFK6wjd+h0zbzNBRGwOqacAjeY7vYN9QZQ46DlEKSdn04cEU/3RvX8WPcRegxg==",
+      "salt" : "rEIJDbs+BQqpx31v8mONWA==",
+      "hashIterations" : 27500,
+      "counter" : 0,
+      "algorithm" : "pbkdf2-sha256",
+      "digits" : 0,
+      "period" : 0,
+      "createdDate" : 1570002786025,
+      "config" : { }
+    } ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "offline_access", "uma_authorization" ],
+    "clientRoles" : {
+      "account" : [ "manage-account", "view-profile" ]
+    },
+    "notBefore" : 0,
+    "groups" : [ ]
+  }  ],
+  "clientScopeMappings" : {
+    "migration-test-client": [
+      {
+        "clientTemplate": "Default test template",
+        "roles": [
+          "migration-test-client-role"
+        ]
+      }
+    ]
+  },
   "clients" : [ {
     "id" : "6b9ba4ca-fb7c-4e17-a3e6-88f3a17397cc",
     "clientId" : "account",
@@ -648,7 +707,7 @@
     "surrogateAuthRequired" : false,
     "enabled" : true,
     "clientAuthenticatorType" : "client-secret",
-    "secret" : "d926c1c0-056a-4418-86d5-f103112dec43",
+    "secret" : "secret",
     "redirectUris" : [ ],
     "webOrigins" : [ ],
     "notBefore" : 0,
@@ -658,7 +717,7 @@
     "implicitFlowEnabled" : false,
     "directAccessGrantsEnabled" : true,
     "serviceAccountsEnabled" : false,
-    "publicClient" : true,
+    "publicClient" : false,
     "frontchannelLogout" : false,
     "protocol" : "openid-connect",
     "attributes" : { },
@@ -1011,6 +1070,33 @@
     "useTemplateMappers" : false
   },
   {
+    "id": "26519045-3cd4-4f2a-974b-e1447907834a",
+    "clientId": "client-with-template",
+    "surrogateAuthRequired": false,
+    "enabled": true,
+    "clientAuthenticatorType": "client-secret",
+    "secret": "**********",
+    "redirectUris": [],
+    "webOrigins": [],
+    "notBefore": 0,
+    "bearerOnly": false,
+    "consentRequired": false,
+    "standardFlowEnabled": true,
+    "implicitFlowEnabled": false,
+    "directAccessGrantsEnabled": true,
+    "serviceAccountsEnabled": false,
+    "publicClient": true,
+    "frontchannelLogout": false,
+    "protocol": "openid-connect",
+    "attributes": {},
+    "fullScopeAllowed": false,
+    "nodeReRegistrationTimeout": -1,
+    "clientTemplate": "Default test template",
+    "useTemplateConfig": false,
+    "useTemplateScope": true,
+    "useTemplateMappers": true
+  },
+  {
       "id": "70e8e897-82d4-49ab-82c9-c37e1a48b6bb",
       "clientId": "authz-servlet",
       "adminUrl": "http://localhost:8080/authz-servlet",
@@ -1066,7 +1152,15 @@
         ]
       }
     }],
-  "clientTemplates" : [ ],
+  "clientTemplates": [
+    {
+      "id": "d43ae38d-80a1-471a-9a80-5f9a0d34d7a4",
+      "name": "Default test template",
+      "description": "Test client template",
+      "protocol": "openid-connect",
+      "fullScopeAllowed": false
+    }
+  ],
   "browserSecurityHeaders" : {
     "xContentTypeOptions" : "nosniff",
     "xRobotsTag" : "none",

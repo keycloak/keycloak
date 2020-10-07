@@ -44,6 +44,7 @@ import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.spi.LogoutError;
 import org.keycloak.adapters.spi.SessionIdMapper;
+import org.keycloak.adapters.spi.SessionIdMapperUpdater;
 import org.wildfly.security.auth.callback.AnonymousAuthorizationCallback;
 import org.wildfly.security.auth.callback.AuthenticationCompleteCallback;
 import org.wildfly.security.auth.callback.SecurityIdentityCallback;
@@ -68,16 +69,16 @@ class ElytronHttpFacade implements HttpFacade {
     private boolean restored;
     private SamlSession samlSession;
 
-    public ElytronHttpFacade(HttpServerRequest request, SessionIdMapper idMapper, SamlDeploymentContext deploymentContext, CallbackHandler handler) {
+    public ElytronHttpFacade(HttpServerRequest request, SessionIdMapper idMapper, SessionIdMapperUpdater idMapperUpdater, SamlDeploymentContext deploymentContext, CallbackHandler handler) {
         this.request = request;
         this.deploymentContext = deploymentContext;
         this.callbackHandler = handler;
         this.responseConsumer = response -> {};
-        this.sessionStore = createTokenStore(idMapper);
+        this.sessionStore = createTokenStore(idMapper, idMapperUpdater);
     }
 
-    private SamlSessionStore createTokenStore(SessionIdMapper idMapper) {
-        return new ElytronSamlSessionStore(this, idMapper, getDeployment());
+    private SamlSessionStore createTokenStore(SessionIdMapper idMapper, SessionIdMapperUpdater idMapperUpdater) {
+        return new ElytronSamlSessionStore(this, idMapper, idMapperUpdater, getDeployment());
     }
 
     void authenticationComplete(SamlSession samlSession) {
@@ -180,7 +181,22 @@ class ElytronHttpFacade implements HttpFacade {
 
             @Override
             public String getQueryParamValue(String param) {
-                return request.getFirstParameterValue(param);
+                URI requestURI = request.getRequestURI();
+                String query = requestURI.getQuery();
+                if (query != null) {
+                    String[] parameters = query.split("&");
+                    for (String parameter : parameters) {
+                        String[] keyValue = parameter.split("=", 2);
+                        if (keyValue[0].equals(param)) {
+                            try {
+                                return URLDecoder.decode(keyValue[1], "UTF-8");
+                            } catch (IOException e) {
+                                throw new RuntimeException("Failed to decode request URI", e);
+                            }
+                        }
+                    }
+                }
+                return null;
             }
 
             @Override

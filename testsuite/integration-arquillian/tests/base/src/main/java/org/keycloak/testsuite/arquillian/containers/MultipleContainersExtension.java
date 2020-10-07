@@ -17,12 +17,12 @@
 package org.keycloak.testsuite.arquillian.containers;
 
 import org.jboss.arquillian.container.impl.client.ContainerDeploymentContextHandler;
-import org.jboss.arquillian.container.impl.client.container.ContainerDeployController;
 import org.jboss.arquillian.container.impl.client.container.ContainerLifecycleController;
 import org.jboss.arquillian.container.impl.client.container.DeploymentExceptionHandler;
 import org.jboss.arquillian.container.impl.client.deployment.ArchiveDeploymentExporter;
 import org.jboss.arquillian.container.impl.context.ContainerContextImpl;
 import org.jboss.arquillian.container.impl.context.DeploymentContextImpl;
+import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.core.spi.LoadableExtension;
 
 import java.util.logging.Logger;
@@ -43,12 +43,13 @@ public class MultipleContainersExtension implements LoadableExtension {
 
         logger.info("Multiple containers extension registering.");
 
+        builder.service(DeployableContainer.class, KeycloakQuarkusServerDeployableContainer.class);
+
         builder.context(ContainerContextImpl.class).context(DeploymentContextImpl.class);
 
         builder.observer(RegistryCreator.class)
                 .observer(ContainerDeploymentContextHandler.class)
                 .observer(ContainerLifecycleController.class)
-                .observer(ContainerDeployController.class)
                 .observer(ArchiveDeploymentExporter.class)
                 .observer(DeploymentExceptionHandler.class);
     }

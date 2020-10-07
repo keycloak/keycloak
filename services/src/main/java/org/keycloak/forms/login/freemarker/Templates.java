@@ -28,10 +28,16 @@ public class Templates {
         switch (page) {
             case LOGIN:
                 return "login.ftl";
+            case LOGIN_USERNAME:
+                return "login-username.ftl";
+            case LOGIN_PASSWORD:
+                return "login-password.ftl";
             case LOGIN_TOTP:
-                return "login-totp.ftl";
+                return "login-otp.ftl";
             case LOGIN_CONFIG_TOTP:
                 return "login-config-totp.ftl";
+            case LOGIN_WEBAUTHN:
+                return "webauthn-authenticate.ftl";
             case LOGIN_VERIFY_EMAIL:
                 return "login-verify-email.ftl";
             case LOGIN_IDP_LINK_CONFIRM:
@@ -44,12 +50,16 @@ public class Templates {
                 return "login-reset-password.ftl";
             case LOGIN_UPDATE_PASSWORD:
                 return "login-update-password.ftl";
+            case LOGIN_SELECT_AUTHENTICATOR:
+                return "select-authenticator.ftl";
             case REGISTER:
                 return "register.ftl";
             case INFO:
                 return "info.ftl";
             case ERROR:
                 return "error.ftl";
+            case ERROR_WEBAUTHN:
+                return "webauthn-error.ftl";
             case LOGIN_UPDATE_PROFILE:
                 return "login-update-profile.ftl";
             case CODE:
@@ -58,6 +68,8 @@ public class Templates {
                 return "login-page-expired.ftl";
             case X509_CONFIRM:
                 return "login-x509-info.ftl";
+            case SAML_POST_FORM:
+                return "saml-post-form.ftl";
             default:
                 throw new IllegalArgumentException();
         }

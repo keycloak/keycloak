@@ -34,7 +34,7 @@ public class Pbkdf2PasswordHashProviderFactory implements PasswordHashProviderFa
 
     @Override
     public PasswordHashProvider create(KeycloakSession session) {
-        return new Pbkdf2PasswordHashProvider(ID, PBKDF2_ALGORITHM, 20000);
+        return new Pbkdf2PasswordHashProvider(ID, PBKDF2_ALGORITHM, DEFAULT_ITERATIONS);
     }
 
     @Override

@@ -145,6 +145,10 @@ public class LoginForm extends Form {
         return accountFields.getUsernameLabel();
     }
 
+    public String getUsername() {
+        return accountFields.getUsername();
+    }
+
     public String getPasswordLabel() {
         return passwordFields.getPasswordLabel();
     }
@@ -157,6 +161,9 @@ public class LoginForm extends Form {
         @FindBy(id = "totp")
         private WebElement totpInputField;
 
+        @FindBy(id = "userLabel")
+        private WebElement userLabelInputField;
+
         @FindBy(id = "totpSecret")
         private WebElement totpSecret;
 
@@ -165,6 +172,10 @@ public class LoginForm extends Form {
 
         public void setTotp(String value) {
             UIUtils.setTextInputValue(totpInputField, value);
+        }
+
+        public void setUserLabel(String value) {
+            UIUtils.setTextInputValue(userLabelInputField, value);
         }
         
         public String getTotpSecret() {

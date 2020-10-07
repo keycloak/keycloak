@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc.endpoints.request;
 
 import javax.ws.rs.core.MultivaluedMap;
+
 import java.util.Set;
 
 /**
@@ -29,23 +30,40 @@ class AuthzEndpointQueryStringParser extends AuthzEndpointRequestParser {
 
     private final MultivaluedMap<String, String> requestParams;
 
+    private String invalidRequestMessage = null;
+
     public AuthzEndpointQueryStringParser(MultivaluedMap<String, String> requestParams) {
         this.requestParams = requestParams;
     }
 
     @Override
     protected String getParameter(String paramName) {
+        checkDuplicated(requestParams, paramName);
         return requestParams.getFirst(paramName);
     }
 
     @Override
     protected Integer getIntParameter(String paramName) {
+        checkDuplicated(requestParams, paramName);
         String paramVal = requestParams.getFirst(paramName);
         return paramVal==null ? null : Integer.parseInt(paramVal);
+    }
+
+    public String getInvalidRequestMessage() {
+        return invalidRequestMessage;
     }
 
     @Override
     protected Set<String> keySet() {
         return requestParams.keySet();
     }
+
+    private void checkDuplicated(MultivaluedMap<String, String> requestParams, String paramName) {
+        if (invalidRequestMessage == null) {
+            if (requestParams.get(paramName) != null && requestParams.get(paramName).size() != 1) {
+                invalidRequestMessage = "duplicated parameter";
+            }
+        }
+    }
+
 }

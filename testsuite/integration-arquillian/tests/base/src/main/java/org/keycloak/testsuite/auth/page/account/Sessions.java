@@ -24,6 +24,8 @@ import javax.ws.rs.core.UriBuilder;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+
 /**
  *
  * @author <a href="mailto:pmensik@redhat.com">Petr Mensik</a>
@@ -40,7 +42,7 @@ public class Sessions extends AccountManagement {
     private WebElement logoutAllLink;
 
     public void logoutAll() {
-        logoutAllLink.click();
+        clickLink(logoutAllLink);
     }
 
     public List<List<String>> getSessions() {

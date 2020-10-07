@@ -23,9 +23,11 @@ import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
@@ -47,6 +49,7 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
         ProviderFactory<AuthorizationProvider> providerFactory = factory.getProviderFactory(AuthorizationProvider.class);
         AuthorizationProvider authorizationProvider = providerFactory.create(event.getKeycloakSession());
 
+        removeFromUserPermissionTickets(event, authorizationProvider);
         removeUserResources(event, authorizationProvider);
         removeFromUserPolicies(event, authorizationProvider);
     }
@@ -86,7 +89,7 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
         RealmModel realm = event.getRealm();
         UserModel userModel = event.getUser();
 
-        realm.getClients().forEach(clientModel -> {
+        realm.getClientsStream().forEach(clientModel -> {
             ResourceServer resourceServer = resourceServerStore.findById(clientModel.getId());
 
             if (resourceServer != null) {
@@ -103,5 +106,26 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
                 });
             }
         });
+    }
+
+    private void removeFromUserPermissionTickets(UserRemovedEvent event, AuthorizationProvider authorizationProvider) {
+        StoreFactory storeFactory = authorizationProvider.getStoreFactory();
+        PermissionTicketStore ticketStore = storeFactory.getPermissionTicketStore();
+        UserModel userModel = event.getUser();
+        Map<String, String> attributes = new HashMap<>();
+
+        attributes.put(PermissionTicket.OWNER, userModel.getId());
+
+        for (PermissionTicket ticket : ticketStore.find(attributes, null, -1, -1)) {
+            ticketStore.delete(ticket.getId());
+        }
+
+        attributes = new HashMap<>();
+        
+        attributes.put(PermissionTicket.REQUESTER, userModel.getId());
+
+        for (PermissionTicket ticket : ticketStore.find(attributes, null, -1, -1)) {
+            ticketStore.delete(ticket.getId());
+        }
     }
 }

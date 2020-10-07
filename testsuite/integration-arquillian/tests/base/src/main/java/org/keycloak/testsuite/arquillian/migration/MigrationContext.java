@@ -43,7 +43,7 @@ public class MigrationContext {
 
         try (FileInputStream fis = new FileInputStream(file)) {
             String offlineToken = StreamUtil.readString(fis, Charset.forName("UTF-8"));
-
+            logger.infof("Successfully read offline token: %s", offlineToken);
             File f = new File(file);
             f.delete();
             logger.infof("Deleted file with offline token: %s", file);
@@ -67,7 +67,7 @@ public class MigrationContext {
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
             oauth.realm("Migration");
             oauth.clientId("migration-test-client");
-            OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("b2c07929-69e3-44c6-8d7f-76939000b3e4", "migration-test-user", "admin");
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("secret", "offline-test-user", "password2");
             return tokenResponse.getRefreshToken();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -77,7 +77,7 @@ public class MigrationContext {
 
     private void saveOfflineToken(String offlineToken) throws Exception {
         String file = getOfflineTokenLocation();
-        logger.infof("Saving offline token to file: %s", file);
+        logger.infof("Saving offline token to file: %s, Offline token is: %s", file, offlineToken);
 
         try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(file)))) {
             writer.print(offlineToken);
@@ -85,10 +85,12 @@ public class MigrationContext {
     }
 
 
-    // Needs to save offline token inside "basedir". There are issues with saving into directory "target" as it's cleared among restarts and
-    // using "mvn install" instead of "mvn clean install" doesn't work ATM. Improve if needed...
     private String getOfflineTokenLocation() {
-        return System.getProperty("basedir") + "/offline-token.txt";
+        String tmpDir = System.getProperty("java.io.tmpdir", "");
+        if (tmpDir == null) {
+            tmpDir = System.getProperty("basedir");
+        }
+        return tmpDir + "/offline-token.txt";
     }
 
 }

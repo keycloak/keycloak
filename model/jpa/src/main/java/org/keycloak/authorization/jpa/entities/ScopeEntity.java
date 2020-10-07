@@ -32,7 +32,7 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -71,7 +71,7 @@ public class ScopeEntity {
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = {})
     @JoinTable(name = "SCOPE_POLICY", joinColumns = @JoinColumn(name = "SCOPE_ID"), inverseJoinColumns = @JoinColumn(name = "POLICY_ID"))
-    private List<PolicyEntity> policies = new ArrayList<>();
+    private List<PolicyEntity> policies;
 
     public String getId() {
         return id;
@@ -114,6 +114,9 @@ public class ScopeEntity {
     }
 
     public List<PolicyEntity> getPolicies() {
+        if (policies == null) {
+            policies = new LinkedList<>();
+        }
         return policies;
     }
 

@@ -18,11 +18,8 @@
 var module = angular.module('product', []);
 
 function getAuthServerUrl() {
-    var url = 'http://localhost-auth:8180';
-    if (window.location.href.indexOf("8643") > -1) {
-        url = url.replace("8180","8543");
-        url = url.replace("http","https");
-    }
+    let authUrl = auth.authz.authServerUrl
+    var url = authUrl.substring(0, authUrl.length - 5);
 
     return url;
 }
@@ -51,7 +48,7 @@ angular.element(document).ready(function ($http) {
     var keycloakAuth = new Keycloak('keycloak.json');
     auth.loggedIn = false;
 
-    keycloakAuth.init({ onLoad: 'login-required' }).success(function () {
+    keycloakAuth.init({ onLoad: 'login-required' }).then(function () {
         console.log('here login');
         auth.loggedIn = true;
         auth.authz = keycloakAuth;
@@ -60,7 +57,7 @@ angular.element(document).ready(function ($http) {
             return auth;
         });
         angular.bootstrap(document, ["product"]);
-    }).error(function () {
+    }).catch(function () {
             alert("failed to login");
         });
 
@@ -71,9 +68,8 @@ module.controller('GlobalCtrl', function($scope, $http) {
     $scope.roles = [];
     $scope.serverInfo = [];
     $scope.realm = [];
-    $scope.version = [];
     $scope.reloadData = function() {
-        $http.get(getAppServerUrl("localhost-db") + "/cors-database/products").success(function(data, status, headers, config) {
+        $http.get(getAppServerUrl("localhost-db-127.0.0.1.nip.io") + "/cors-database/products").success(function(data, status, headers, config) {
             $scope.products = angular.fromJson(data);
             $scope.headers = headers();
         });
@@ -112,12 +108,6 @@ module.controller('GlobalCtrl', function($scope, $http) {
         });
     };
 
-    $scope.loadVersion = function() {
-        $http.get(getAppServerUrl("localhost-db") + "/cors-database/products/k_version").success(function(data) {
-            $scope.version = angular.fromJson(data);
-        });
-    };
-
     $scope.logout = logout;
 });
 
@@ -127,12 +117,12 @@ module.factory('authInterceptor', function($q, Auth) {
         request: function (config) {
             var deferred = $q.defer();
             if (Auth.authz.token) {
-                Auth.authz.updateToken(5).success(function() {
+                Auth.authz.updateToken(5).then(function() {
                     config.headers = config.headers || {};
                     config.headers.Authorization = 'Bearer ' + Auth.authz.token;
 
                     deferred.resolve(config);
-                }).error(function() {
+                }).catch(function() {
                         deferred.reject('Failed to refresh token');
                     });
             }

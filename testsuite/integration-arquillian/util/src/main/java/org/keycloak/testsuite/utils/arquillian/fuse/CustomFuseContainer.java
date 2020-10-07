@@ -106,12 +106,16 @@ public class CustomFuseContainer<T extends KarafManagedContainerConfiguration> e
             boolean fuse7 = new File(karafHomeDir, "lib/boot/").exists();
             if (fuse7) {
                 log.info("Adding karaf4 libraries to classpath.");
-                File karafLibBootDir = new File(karafHomeDir, "lib/boot/");
-                String[] libs = karafLibBootDir.list((File dir, String name) -> name.endsWith(".jar"));
-                for (String lib : libs) {
-                    String separator = classPath.length() > 0 ? File.pathSeparator : "";
-                    classPath.append(separator).append(new File(karafLibBootDir, lib));
+                String[] libDirs  = { "lib/boot/", "lib/ext/" };
+                for (String libDir : libDirs) {
+                    File karafLibBootDir = new File(karafHomeDir, libDir);
+                    String[] libs = karafLibBootDir.list((File dir, String name) -> name.endsWith(".jar"));
+                    for (String lib : libs) {
+                        String separator = classPath.length() > 0 ? File.pathSeparator : "";
+                        classPath.append(separator).append(new File(karafLibBootDir, lib));
+                    }
                 }
+
             } else { //fuse6
                 log.info("Adding karaf3 libraries to classpath.");
                 File karafLibDir = new File(karafHomeDir, "lib");
@@ -194,7 +198,12 @@ public class CustomFuseContainer<T extends KarafManagedContainerConfiguration> e
 
     @Override
     public void stop() throws LifecycleException {
-        super.stop();
+        try {
+            super.stop();
+        } catch (LifecycleException ex) {
+            log.info("Couldn't uninstall arquillian bundle. This should be non-blocking issue, proceeding with destroying karaf process.");
+        }
+
         destroyKarafProcess();
     }
 

@@ -48,7 +48,7 @@ public class AccessToken extends IDToken {
             Access access = new Access();
             access.verifyCaller = verifyCaller;
             if (roles != null) {
-                access.roles = new HashSet<String>();
+                access.roles = new HashSet<>();
                 access.roles.addAll(roles);
             }
             return access;
@@ -70,7 +70,7 @@ public class AccessToken extends IDToken {
         }
 
         public Access addRole(String role) {
-            if (roles == null) roles = new HashSet<String>();
+            if (roles == null) roles = new HashSet<>();
             roles.add(role);
             return this;
         }

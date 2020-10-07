@@ -36,6 +36,8 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.keycloak.representations.idm.ComponentRepresentation.SECRET_VALUE;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.util.JsonSerialization.writeValueAsPrettyString;
 
 /**
@@ -43,12 +45,18 @@ import static org.keycloak.util.JsonSerialization.writeValueAsPrettyString;
  */
 public class SMTPConnectionTest extends AbstractKeycloakTest {
 
+    public final String SMTP_PASSWORD = setSmtpPassword();
+
     @Rule
     public GreenMailRule greenMailRule = new GreenMailRule();
     private RealmResource realm;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
+    }
+
+    public String setSmtpPassword() {
+        return "admin";
     }
 
     @Before
@@ -59,10 +67,9 @@ public class SMTPConnectionTest extends AbstractKeycloakTest {
         realm.users().get(user.getId()).update(user);
     }
 
-    private String settings(String host, String port, String from, String auth, String ssl, String starttls,
+    private Map<String, String> settings(String host, String port, String from, String auth, String ssl, String starttls,
                             String username, String password) throws Exception {
-        Map<String, String> config = smtpMap(host, port, from, auth, ssl, starttls, username, password, "", "");
-        return writeValueAsPrettyString(config);
+        return smtpMap(host, port, from, auth, ssl, starttls, username, password, "", "");
     }
 
     private Map<String, String> smtpMap(String host, String port, String from, String auth, String ssl, String starttls,
@@ -89,6 +96,7 @@ public class SMTPConnectionTest extends AbstractKeycloakTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testWithProperSettings() throws Exception {
         Response response = realm.testSMTPConnection(settings("127.0.0.1", "3025", "auto@keycloak.org", null, null, null,
                 null, null));
@@ -104,20 +112,22 @@ public class SMTPConnectionTest extends AbstractKeycloakTest {
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testWithAuthEnabledValidCredentials() throws Exception {
         greenMailRule.credentials("admin@localhost", "admin");
         Response response = realm.testSMTPConnection(settings("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
-                "admin@localhost", "admin"));
+                "admin@localhost", SMTP_PASSWORD));
         assertStatus(response, 204);
     }
 
     @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void testAuthEnabledAndSavedCredentials() throws Exception {
         RealmRepresentation realmRep = realm.toRepresentation();
         Map<String, String> oldSmtp = realmRep.getSmtpServer();
         try {
             realmRep.setSmtpServer(smtpMap("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
-                    "admin@localhost", "admin", null, null));
+                    "admin@localhost", SMTP_PASSWORD, null, null));
             realm.update(realmRep);
 
             greenMailRule.credentials("admin@localhost", "admin");

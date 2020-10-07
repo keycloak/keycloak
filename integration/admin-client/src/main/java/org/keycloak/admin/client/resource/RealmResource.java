@@ -24,9 +24,11 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -120,7 +122,7 @@ public interface RealmResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<EventRepresentation> getEvents(@QueryParam("type") List<String> types, @QueryParam("client") String client,
+    List<EventRepresentation> getEvents(@QueryParam("type") List<String> types, @QueryParam("client") String client,
             @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
             @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults);
@@ -146,31 +148,31 @@ public interface RealmResource {
     @GET
     @Path("events/config")
     @Produces(MediaType.APPLICATION_JSON)
-    public RealmEventsConfigRepresentation getRealmEventsConfig();
+    RealmEventsConfigRepresentation getRealmEventsConfig();
 
     @PUT
     @Path("events/config")
     @Consumes(MediaType.APPLICATION_JSON)
-    public void updateRealmEventsConfig(RealmEventsConfigRepresentation rep);
+    void updateRealmEventsConfig(RealmEventsConfigRepresentation rep);
 
     @GET
     @Path("group-by-path/{path: .*}")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public GroupRepresentation getGroupByPath(@PathParam("path") String path);
+    GroupRepresentation getGroupByPath(@PathParam("path") String path);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-groups")
-    public List<GroupRepresentation> getDefaultGroups();
+    List<GroupRepresentation> getDefaultGroups();
 
     @PUT
     @Path("default-groups/{groupId}")
-    public void addDefaultGroup(@PathParam("groupId") String groupId);
+    void addDefaultGroup(@PathParam("groupId") String groupId);
 
     @DELETE
     @Path("default-groups/{groupId}")
-    public void removeDefaultGroup(@PathParam("groupId") String groupId);
+    void removeDefaultGroup(@PathParam("groupId") String groupId);
 
     @Path("identity-provider")
     IdentityProvidersResource identityProviders();
@@ -208,16 +210,38 @@ public interface RealmResource {
 
     @Path("testLDAPConnection")
     @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @NoCache
+    @Deprecated
     Response testLDAPConnection(@FormParam("action") String action, @FormParam("connectionUrl") String connectionUrl,
                                 @FormParam("bindDn") String bindDn, @FormParam("bindCredential") String bindCredential,
                                 @FormParam("useTruststoreSpi") String useTruststoreSpi, @FormParam("connectionTimeout") String connectionTimeout);
 
-    @Path("testSMTPConnection/{config}")
+    @Path("testLDAPConnection")
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @NoCache
+    Response testLDAPConnection(TestLdapConnectionRepresentation config);
+
+    @POST
+    @Path("ldap-server-capabilities")
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
+    List<LDAPCapabilityRepresentation> ldapServerCapabilities(TestLdapConnectionRepresentation config);
+
+    @Path("testSMTPConnection")
+    @POST
+    @NoCache
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Deprecated
+    Response testSMTPConnection(@FormParam("config") String config);
+
+    @Path("testSMTPConnection")
     @POST
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
-    Response testSMTPConnection(final @PathParam("config") String config) throws Exception;
+    Response testSMTPConnection(Map<String, String> config);
 
     @Path("clear-realm-cache")
     @POST

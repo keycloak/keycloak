@@ -117,7 +117,7 @@ public class ResourceAdapter extends AbstractAuthorizationModel implements Resou
     public List<Scope> getScopes() {
         List<Scope> scopes = new LinkedList<>();
         for (ScopeEntity scope : entity.getScopes()) {
-            scopes.add(storeFactory.getScopeStore().findById(scope.getId(), entity.getResourceServer().getId()));
+            scopes.add(storeFactory.getScopeStore().findById(scope.getId(), entity.getResourceServer()));
         }
 
         return Collections.unmodifiableList(scopes);
@@ -136,8 +136,8 @@ public class ResourceAdapter extends AbstractAuthorizationModel implements Resou
     }
 
     @Override
-    public ResourceServer getResourceServer() {
-        return storeFactory.getResourceServerStore().findById(entity.getResourceServer().getId());
+    public String getResourceServer() {
+        return entity.getResourceServer();
     }
 
     @Override
@@ -243,7 +243,7 @@ public class ResourceAdapter extends AbstractAuthorizationModel implements Resou
 
     @Override
     public boolean isFetched(String association) {
-        return em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(this, association);
+        return em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(this.entity, association);
     }
 
 

@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.admin.client.authorization;
 
 import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -29,6 +30,7 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.client.AbstractClientTest;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -36,12 +38,14 @@ import org.keycloak.testsuite.util.UserBuilder;
 import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 
 import java.util.List;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public abstract class AbstractAuthorizationTest extends AbstractClientTest {
 
     protected static final String RESOURCE_SERVER_CLIENT_ID = "resource-server-test";
@@ -107,13 +111,13 @@ public abstract class AbstractAuthorizationTest extends AbstractClientTest {
 
         ResourceScopesResource resources = getClientResource().authorization().scopes();
 
-        Response response = resources.create(newScope);
+        try (Response response = resources.create(newScope)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
 
-        assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            ScopeRepresentation stored = response.readEntity(ScopeRepresentation.class);
 
-        ScopeRepresentation stored = response.readEntity(ScopeRepresentation.class);
-
-        return resources.scope(stored.getId());
+            return resources.scope(stored.getId());
+        }
     }
 
     private RealmBuilder createTestRealm() {

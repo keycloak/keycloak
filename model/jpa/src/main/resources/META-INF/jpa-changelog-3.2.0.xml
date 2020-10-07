@@ -53,6 +53,9 @@
             <not>
                 <changeSetExecuted id="3.2.0-fixed" author="keycloak" changeLogFile="META-INF/jpa-changelog-3.2.0.xml"/>
             </not>
+            <not>
+                <changeSetExecuted id="3.2.0" author="keycloak" changeLogFile="META-INF/jpa-changelog-3.2.0.xml"/>
+            </not>
         </preConditions>
         
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.RemoveDuplicateOfflineSessions" />

@@ -4,4 +4,12 @@
     <li ng-class="{active: path[3] == 'required-actions'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/authentication/required-actions">{{:: 'required-actions' | translate}}</a></li>
     <li ng-class="{active: path[3] == 'password-policy'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/authentication/password-policy">{{:: 'password-policy' | translate}}</a></li>
     <li ng-class="{active: path[3] == 'otp-policy'}" data-ng-show="access.viewRealm"><a href="#/realms/{{realm.realm}}/authentication/otp-policy">{{:: 'otp-policy' | translate}}</a></li>
+    <li ng-class="{active: path[3] == 'webauthn-policy'}" data-ng-show="access.viewRealm && serverInfo.featureEnabled('WEB_AUTHN')">
+        <a href="#/realms/{{realm.realm}}/authentication/webauthn-policy">{{:: 'webauthn-policy' | translate}}</a>
+        <kc-tooltip>{{:: 'webauthn-policy.tooltip' | translate}}</kc-tooltip>
+    </li>
+    <li ng-class="{active: path[3] == 'webauthn-policy-passwordless'}" data-ng-show="access.viewRealm && serverInfo.featureEnabled('WEB_AUTHN')">
+        <a href="#/realms/{{realm.realm}}/authentication/webauthn-policy-passwordless">{{:: 'webauthn-policy-passwordless' | translate}}</a>
+        <kc-tooltip>{{:: 'webauthn-policy-passwordless.tooltip' | translate}}</kc-tooltip>
+    </li>
 </ul>

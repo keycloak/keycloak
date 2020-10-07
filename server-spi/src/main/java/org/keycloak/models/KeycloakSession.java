@@ -20,8 +20,10 @@ package org.keycloak.models;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.provider.Provider;
+import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
+import org.keycloak.vault.VaultTranscriber;
 
 import java.util.Set;
 
@@ -111,6 +113,32 @@ public interface KeycloakSession {
      * @return
      * @throws IllegalStateException if transaction is not active
      */
+    ClientProvider clients();
+
+    /**
+     * Returns a managed group provider instance.
+     *
+     * @return Currently used GroupProvider instance.
+     * @throws IllegalStateException if transaction is not active
+     */
+    GroupProvider groups();
+
+    /**
+     * Returns a managed provider instance.  Will start a provider transaction.  This transaction is managed by the KeycloakSession
+     * transaction.
+     *
+     * @return
+     * @throws IllegalStateException if transaction is not active
+     */
+    RoleProvider roles();
+
+    /**
+     * Returns a managed provider instance.  Will start a provider transaction.  This transaction is managed by the KeycloakSession
+     * transaction.
+     *
+     * @return
+     * @throws IllegalStateException if transaction is not active
+     */
     UserSessionProvider sessions();
 
 
@@ -136,6 +164,16 @@ public interface KeycloakSession {
 
 
     ClientProvider clientStorageManager();
+
+    /**
+     * @return RoleStorageManager instance
+     */
+    RoleProvider roleStorageManager();
+
+    /**
+     * @return GroupStorageManager instance
+     */
+    GroupProvider groupStorageManager();
 
     /**
      * Un-cached view of all users in system including users loaded by UserStorageProviders
@@ -168,6 +206,20 @@ public interface KeycloakSession {
     ClientProvider clientLocalStorage();
 
     /**
+     * Keycloak specific local storage for groups.  No cache in front, this api talks directly to storage configured for Keycloak
+     *
+     * @return
+     */
+    GroupProvider groupLocalStorage();
+
+    /**
+     * Keycloak specific local storage for roles.  No cache in front, this api talks directly to storage configured for Keycloak
+     *
+     * @return
+     */
+    RoleProvider roleLocalStorage();
+
+    /**
      * Hybrid storage for UserStorageProviders that can't store a specific piece of keycloak data in their external storage.
      * No cache in front.
      *
@@ -195,5 +247,15 @@ public interface KeycloakSession {
      * @return
      */
     TokenManager tokens();
+
+    /**
+     * Vault transcriber
+     */
+    VaultTranscriber vault();
+
+    /**
+     * Client Policy Manager
+     */
+    ClientPolicyManager clientPolicy();
 
 }

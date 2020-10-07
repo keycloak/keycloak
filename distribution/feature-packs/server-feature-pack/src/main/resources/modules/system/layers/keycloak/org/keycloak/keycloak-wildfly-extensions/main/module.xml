@@ -25,11 +25,17 @@
     </resources>
 
     <dependencies>
+        <module name="com.fasterxml.jackson.core.jackson-databind"/>
+        <module name="javax.servlet.api"/>
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-server-spi"/>
         <module name="org.keycloak.keycloak-server-spi-private"/>
         <module name="org.keycloak.keycloak-services"/>
+        <module name="org.jboss.dmr"/>
+        <module name="org.jboss.logging"/>
         <module name="org.jboss.modules"/>
+        <module name="org.jboss.resteasy.resteasy-jaxrs"/>
+        <module name="org.wildfly.security.elytron"/>
     </dependencies>
 </module>

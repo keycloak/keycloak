@@ -10,6 +10,7 @@ import org.openqa.selenium.support.FindBy;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
 /**
@@ -88,7 +89,7 @@ public class ClientMappers extends Client {
         }
         
         public void clickAddSelectedBuiltinMapper() {
-            addSelectedButton.click();
+            clickLink(addSelectedButton);
         }
 
         public ProtocolMapperRepresentation getMappingFromRow(WebElement row) {

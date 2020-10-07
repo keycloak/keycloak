@@ -2,6 +2,7 @@ package org.keycloak.testsuite.cli.registration;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientInitialAccessResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
@@ -47,11 +48,6 @@ import static org.keycloak.testsuite.cli.KcRegExec.execute;
  */
 public abstract class AbstractRegCliTest extends AbstractCliTest {
 
-    protected String serverUrl = isAuthServerSSL() ?
-            "https://localhost:" + getAuthServerHttpsPort() + "/auth" :
-            "http://localhost:" + getAuthServerHttpPort() + "/auth";
-
-
     @Before
     public void deleteDefaultConfig() {
         getDefaultConfigFilePath().delete();
@@ -61,32 +57,9 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
         return "true".equals(System.getProperty("test.intermittent"));
     }
 
-    static boolean isAuthServerSSL() {
-        return "true".equals(System.getProperty("auth.server.ssl.required"));
-    }
-
-    static int getAuthServerHttpsPort() {
-        try {
-            return Integer.valueOf(System.getProperty("auth.server.https.port"));
-        } catch (Exception e) {
-            throw new RuntimeException("System property 'auth.server.https.port' not set or invalid: '"
-                    + System.getProperty("auth.server.https.port") + "'");
-        }
-    }
-
-    static int getAuthServerHttpPort() {
-        try {
-            return Integer.valueOf(System.getProperty("auth.server.http.port"));
-        } catch (Exception e) {
-            throw new RuntimeException("System property 'auth.server.http.port' not set or invalid: '"
-                    + System.getProperty("auth.server.http.port") + "'");
-        }
-    }
-
     static File getDefaultConfigFilePath() {
         return new File(System.getProperty("user.home") + "/.keycloak/kcreg.config");
     }
-
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -159,23 +132,13 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
                 .build();
 
         realmRepresentation.getClients().add(regClient);
-
     }
 
-
     void loginAsUser(File configFile, String server, String realm, String user, String password) {
-
         KcRegExec exe = execute("config credentials --server " + server + " --realm " + realm +
                 " --user " + user + " --password " + password + " --config " + configFile.getAbsolutePath());
 
-        Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
-
-        List<String> lines = exe.stdoutLines();
-        Assert.assertTrue("stdout output empty", lines.size() == 0);
-
-        lines = exe.stderrLines();
-        Assert.assertTrue("stderr output one line", lines.size() == 1);
-        Assert.assertEquals("stderr first line", "Logging into " + server + " as user " + user + " of realm " + realm, lines.get(0));
+        assertExitCodeAndStreamSizes(exe, 0, 0, 1);
     }
 
     void assertFieldsEqualWithExclusions(ConfigData config1, ConfigData config2, String ... excluded) {

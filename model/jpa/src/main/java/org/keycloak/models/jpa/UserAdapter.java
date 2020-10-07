@@ -22,9 +22,9 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
@@ -36,12 +36,25 @@ import org.keycloak.models.utils.RoleUtils;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.persistence.LockModeType;
+
+import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -61,6 +74,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         this.session = session;
     }
 
+    @Override
     public UserEntity getEntity() {
         return user;
     }
@@ -103,43 +117,72 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public void setSingleAttribute(String name, String value) {
-        String firstExistingAttrId = null;
-        List<UserAttributeEntity> toRemove = new ArrayList<>();
-        for (UserAttributeEntity attr : user.getAttributes()) {
-            if (attr.getName().equals(name)) {
-                if (firstExistingAttrId == null) {
-                    attr.setValue(value);
-                    firstExistingAttrId = attr.getId();
-                } else {
-                    toRemove.add(attr);
+        if (UserModel.FIRST_NAME.equals(name)) {
+            user.setFirstName(value);
+            return;
+        } else if (UserModel.LAST_NAME.equals(name)) {
+            user.setLastName(value);
+            return;
+        } else if (UserModel.EMAIL.equals(name)) {
+            setEmail(value);
+            return;
+        } else if (UserModel.USERNAME.equals(name)) {
+            setUsername(value);
+            return;
+        }
+        // Remove all existing
+        if (value == null) {
+            user.getAttributes().removeIf(a -> a.getName().equals(name));
+        } else {
+            String firstExistingAttrId = null;
+            List<UserAttributeEntity> toRemove = new ArrayList<>();
+            for (UserAttributeEntity attr : user.getAttributes()) {
+                if (attr.getName().equals(name)) {
+                    if (firstExistingAttrId == null) {
+                        attr.setValue(value);
+                        firstExistingAttrId = attr.getId();
+                    } else {
+                        toRemove.add(attr);
+                    }
                 }
             }
-        }
 
-        if (firstExistingAttrId != null) {
-            // Remove attributes through HQL to avoid StaleUpdateException
-            Query query = em.createNamedQuery("deleteUserAttributesByNameAndUserOtherThan");
-            query.setParameter("name", name);
-            query.setParameter("userId", user.getId());
-            query.setParameter("attrId", firstExistingAttrId);
-            int numUpdated = query.executeUpdate();
+            if (firstExistingAttrId != null) {
+                // Remove attributes through HQL to avoid StaleUpdateException
+                Query query = em.createNamedQuery("deleteUserAttributesByNameAndUserOtherThan");
+                query.setParameter("name", name);
+                query.setParameter("userId", user.getId());
+                query.setParameter("attrId", firstExistingAttrId);
+                int numUpdated = query.executeUpdate();
 
-            // Remove attribute from local entity
-            user.getAttributes().removeAll(toRemove);
-        } else {
-
-            persistAttributeValue(name, value);
+                // Remove attribute from local entity
+                user.getAttributes().removeAll(toRemove);
+            } else {
+                persistAttributeValue(name, value);
+            }
         }
     }
 
     @Override
     public void setAttribute(String name, List<String> values) {
+        String valueToSet = (values != null && values.size() > 0) ? values.get(0) : null;
+        if (UserModel.FIRST_NAME.equals(name)) {
+            user.setFirstName(valueToSet);
+            return;
+        } else if (UserModel.LAST_NAME.equals(name)) {
+            user.setLastName(valueToSet);
+            return;
+        } else if (UserModel.EMAIL.equals(name)) {
+            setEmail(valueToSet);
+            return;
+        } else if (UserModel.USERNAME.equals(name)) {
+            setUsername(valueToSet);
+            return;
+        }
         // Remove all existing
         removeAttribute(name);
-
-        // Put all new
-        for (String value : values) {
-            persistAttributeValue(name, value);
+        for (Iterator<String> it = values.stream().filter(Objects::nonNull).iterator(); it.hasNext();) {
+            persistAttributeValue(name, it.next());
         }
     }
 
@@ -155,24 +198,37 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public void removeAttribute(String name) {
-        // KEYCLOAK-3296 : Remove attribute through HQL to avoid StaleUpdateException
-        Query query = em.createNamedQuery("deleteUserAttributesByNameAndUser");
-        query.setParameter("name", name);
-        query.setParameter("userId", user.getId());
-        int numUpdated = query.executeUpdate();
-
-        // KEYCLOAK-3494 : Also remove attributes from local user entity
         List<UserAttributeEntity> toRemove = new ArrayList<>();
         for (UserAttributeEntity attr : user.getAttributes()) {
             if (attr.getName().equals(name)) {
                 toRemove.add(attr);
             }
         }
+
+        if (toRemove.isEmpty()) {
+            return;
+        }
+
+        // KEYCLOAK-3296 : Remove attribute through HQL to avoid StaleUpdateException
+        Query query = em.createNamedQuery("deleteUserAttributesByNameAndUser");
+        query.setParameter("name", name);
+        query.setParameter("userId", user.getId());
+        query.executeUpdate();
+        // KEYCLOAK-3494 : Also remove attributes from local user entity
         user.getAttributes().removeAll(toRemove);
     }
 
     @Override
     public String getFirstAttribute(String name) {
+        if (UserModel.FIRST_NAME.equals(name)) {
+            return user.getFirstName();
+        } else if (UserModel.LAST_NAME.equals(name)) {
+            return user.getLastName();
+        } else if (UserModel.EMAIL.equals(name)) {
+            return user.getEmail();
+        } else if (UserModel.USERNAME.equals(name)) {
+            return user.getUsername();
+        }
         for (UserAttributeEntity attr : user.getAttributes()) {
             if (attr.getName().equals(name)) {
                 return attr.getValue();
@@ -183,6 +239,15 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public List<String> getAttribute(String name) {
+        if (UserModel.FIRST_NAME.equals(name)) {
+            return Collections.singletonList(user.getFirstName());
+        } else if (UserModel.LAST_NAME.equals(name)) {
+            return Collections.singletonList(user.getLastName());
+        } else if (UserModel.EMAIL.equals(name)) {
+            return Collections.singletonList(user.getEmail());
+        } else if (UserModel.USERNAME.equals(name)) {
+            return Collections.singletonList(user.getUsername());
+        }
         List<String> result = new ArrayList<>();
         for (UserAttributeEntity attr : user.getAttributes()) {
             if (attr.getName().equals(name)) {
@@ -198,6 +263,10 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         for (UserAttributeEntity attr : user.getAttributes()) {
             result.add(attr.getName(), attr.getValue());
         }
+        result.add(UserModel.FIRST_NAME, user.getFirstName());
+        result.add(UserModel.LAST_NAME, user.getLastName());
+        result.add(UserModel.EMAIL, user.getEmail());
+        result.add(UserModel.USERNAME, user.getUsername());
         return result;
     }
 
@@ -289,20 +358,56 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         user.setEmailVerified(verified);
     }
 
-    @Override
-    public Set<GroupModel> getGroups() {
+    private TypedQuery<String> createGetGroupsQuery() {
         // we query ids only as the group  might be cached and following the @ManyToOne will result in a load
         // even if we're getting just the id.
-        TypedQuery<String> query = em.createNamedQuery("userGroupIds", String.class);
-        query.setParameter("user", getEntity());
-        List<String> ids = query.getResultList();
-        Set<GroupModel> groups = new HashSet<>();
-        for (String groupId : ids) {
-            GroupModel group = realm.getGroupById(groupId);
-            if (group == null) continue;
-            groups.add(group);
-        }
-        return groups;
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
+        Root<UserGroupMembershipEntity> root = queryBuilder.from(UserGroupMembershipEntity.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(builder.equal(root.get("user"), getEntity()));
+
+        queryBuilder.select(root.get("groupId"));
+        queryBuilder.where(predicates.toArray(new Predicate[0]));
+
+        return em.createQuery(queryBuilder);
+    }
+
+    private TypedQuery<Long> createCountGroupsQuery() {
+        // we query ids only as the group  might be cached and following the @ManyToOne will result in a load
+        // even if we're getting just the id.
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<Long> queryBuilder = builder.createQuery(Long.class);
+        Root<UserGroupMembershipEntity> root = queryBuilder.from(UserGroupMembershipEntity.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(builder.equal(root.get("user"), getEntity()));
+
+        queryBuilder.select(builder.count(root));
+        queryBuilder.where(predicates.toArray(new Predicate[0]));
+        return em.createQuery(queryBuilder);
+    }
+
+    @Override
+    public Stream<GroupModel> getGroupsStream() {
+        return getGroupsStream(null, null, null);
+    }
+
+    @Override
+    public Stream<GroupModel> getGroupsStream(String search, Integer first, Integer max) {
+        return session.groups().getGroupsStream(realm, closing(createGetGroupsQuery().getResultStream()), search, first, max);
+    }
+
+    @Override
+    public long getGroupsCount() {
+        return createCountGroupsQuery().getSingleResult();
+    }
+
+    @Override
+    public long getGroupsCountByNameContaining(String search) {
+        if (search == null) return getGroupsCount();
+        return session.groups().getGroupsCount(realm, closing(createGetGroupsQuery().getResultStream()), search);
     }
 
     @Override
@@ -327,6 +432,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         if (user == null || group == null) return;
 
         TypedQuery<UserGroupMembershipEntity> query = getUserGroupMappingQuery(group);
+        query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         List<UserGroupMembershipEntity> results = query.getResultList();
         if (results.size() == 0) return;
         for (UserGroupMembershipEntity entity : results) {
@@ -338,8 +444,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public boolean isMemberOf(GroupModel group) {
-        Set<GroupModel> roles = getGroups();
-        return RoleUtils.isMember(roles, group);
+        return RoleUtils.isMember(getGroupsStream(), group);
     }
 
     protected TypedQuery<UserGroupMembershipEntity> getUserGroupMappingQuery(GroupModel group) {
@@ -352,9 +457,8 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
 
     @Override
     public boolean hasRole(RoleModel role) {
-        Set<RoleModel> roles = getRoleMappings();
-        return RoleUtils.hasRole(roles, role)
-          || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
+        return RoleUtils.hasRole(getRoleMappingsStream(), role)
+                || RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
     }
 
     protected TypedQuery<UserRoleMappingEntity> getUserRoleMappingEntityTypedQuery(RoleModel role) {
@@ -380,34 +484,18 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     }
 
     @Override
-    public Set<RoleModel> getRealmRoleMappings() {
-        Set<RoleModel> roleMappings = getRoleMappings();
-
-        Set<RoleModel> realmRoles = new HashSet<RoleModel>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof RealmModel) {
-                realmRoles.add(role);
-            }
-        }
-        return realmRoles;
+    public Stream<RoleModel> getRealmRoleMappingsStream() {
+        return getRoleMappingsStream().filter(RoleUtils::isRealmRole);
     }
 
 
     @Override
-    public Set<RoleModel> getRoleMappings() {
+    public Stream<RoleModel> getRoleMappingsStream() {
         // we query ids only as the role might be cached and following the @ManyToOne will result in a load
         // even if we're getting just the id.
         TypedQuery<String> query = em.createNamedQuery("userRoleMappingIds", String.class);
         query.setParameter("user", getEntity());
-        List<String> ids = query.getResultList();
-        Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (String roleId : ids) {
-            RoleModel roleById = realm.getRoleById(roleId);
-            if (roleById == null) continue;
-            roles.add(roleById);
-        }
-        return roles;
+        return closing(query.getResultStream().map(realm::getRoleById).filter(Objects::nonNull));
     }
 
     @Override
@@ -415,6 +503,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         if (user == null || role == null) return;
 
         TypedQuery<UserRoleMappingEntity> query = getUserRoleMappingEntityTypedQuery(role);
+        query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         List<UserRoleMappingEntity> results = query.getResultList();
         if (results.size() == 0) return;
         for (UserRoleMappingEntity entity : results) {
@@ -424,20 +513,8 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     }
 
     @Override
-    public Set<RoleModel> getClientRoleMappings(ClientModel app) {
-        Set<RoleModel> roleMappings = getRoleMappings();
-
-        Set<RoleModel> roles = new HashSet<RoleModel>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof ClientModel) {
-                ClientModel appModel = (ClientModel)container;
-                if (appModel.getId().equals(app.getId())) {
-                   roles.add(role);
-                }
-            }
-        }
-        return roles;
+    public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
+        return getRoleMappingsStream().filter(r -> RoleUtils.isClientRole(r, app));
     }
 
     @Override
@@ -474,7 +551,6 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     public int hashCode() {
         return getId().hashCode();
     }
-
 
 
 }

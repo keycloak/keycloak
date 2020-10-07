@@ -67,7 +67,7 @@ public class InternationalizationTest extends AbstractRealmTest {
         localeDropdown.selectByText(LOCALE_CS_NAME);
         assertLocale(".//label[@for='password']", LABEL_CS_PASSWORD);
 
-        loginToTestRealmConsoleAs(testUser);
+        loginPage.form().login(testUser);
         assertConsoleLocale(LABEL_CS_REALM_SETTINGS);
 
         testRealmAccountPage.navigateTo();

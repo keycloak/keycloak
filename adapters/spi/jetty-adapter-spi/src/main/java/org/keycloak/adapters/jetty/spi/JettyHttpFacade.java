@@ -85,7 +85,7 @@ public class JettyHttpFacade implements HttpFacade {
 
         @Override
         public String getRelativePath() {
-            return request.getServletPath();
+            return request.getServletPath() + (request.getPathInfo() != null ? request.getPathInfo() : "");
         }
 
         @Override

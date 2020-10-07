@@ -18,13 +18,14 @@
 package org.keycloak.storage.ldap.mappers.membership;
 
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 
 /**
  * Mapper related to mapping of LDAP groups to keycloak model objects (either keycloak roles or keycloak groups)
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface CommonLDAPGroupMapper {
+public interface CommonLDAPGroupMapper extends LDAPStorageMapper {
 
     LDAPQuery createLDAPGroupQuery();
 

@@ -91,6 +91,6 @@ public class UserOperations {
     }
 
     public static String getIdFromUsername(String rootUrl, String realm, String auth, String username) {
-        return getIdForType(rootUrl, realm, auth, "users", "username", username);
+        return getIdForType(rootUrl, realm, auth, "users", "username", username, "username");
     }
 }

@@ -29,6 +29,13 @@ public interface OrderedModel {
 
     class OrderedModelComparator<OM extends OrderedModel> implements Comparator<OM> {
 
+        public static final OrderedModelComparator INSTANCE = new OrderedModelComparator();
+
+        @SuppressWarnings("unchecked")
+        public static <T extends OrderedModel> OrderedModelComparator<T> getInstance() {
+            return INSTANCE;
+        }
+
         @Override
         public int compare(OM o1, OM o2) {
             int o1order = parseOrder(o1);

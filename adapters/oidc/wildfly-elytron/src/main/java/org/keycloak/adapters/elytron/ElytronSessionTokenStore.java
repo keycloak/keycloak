@@ -18,19 +18,27 @@
 
 package org.keycloak.adapters.elytron;
 
-import java.util.function.Consumer;
+import static org.keycloak.adapters.elytron.ElytronHttpFacade.UNDERTOW_EXCHANGE;
 
 import javax.security.auth.callback.CallbackHandler;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
+import io.undertow.server.HttpServerExchange;
+import io.undertow.server.session.Session;
+import io.undertow.server.session.SessionConfig;
+import io.undertow.server.session.SessionManager;
+import io.undertow.servlet.handlers.ServletRequestContext;
 import org.jboss.logging.Logger;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.AdapterTokenStore;
 import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.RequestAuthenticator;
+import org.keycloak.adapters.spi.UserSessionManagement;
 import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpScopeNotification;
 import org.wildfly.security.http.Scope;
@@ -38,7 +46,7 @@ import org.wildfly.security.http.Scope;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class ElytronSessionTokenStore implements ElytronTokeStore {
+public class ElytronSessionTokenStore implements ElytronTokeStore, UserSessionManagement {
 
     private static Logger log = Logger.getLogger(ElytronSessionTokenStore.class);
 
@@ -131,16 +139,20 @@ public class ElytronSessionTokenStore implements ElytronTokeStore {
 
         if (!session.exists()) {
             session.create();
+            session.registerForNotification(httpScopeNotification -> {
+                if (!httpScopeNotification.isOfType(HttpScopeNotification.SessionNotificationType.UNDEPLOY)) {
+                    HttpScope invalidated = httpScopeNotification.getScope(Scope.SESSION);
+
+                    if (invalidated != null) {
+                        invalidated.setAttachment(ElytronAccount.class.getName(), null);
+                        invalidated.setAttachment(KeycloakSecurityContext.class.getName(), null);
+                    }
+                }
+            });
         }
 
         session.setAttachment(ElytronAccount.class.getName(), account);
         session.setAttachment(KeycloakSecurityContext.class.getName(), account.getKeycloakSecurityContext());
-
-        session.registerForNotification(httpScopeNotification -> {
-            if (!httpScopeNotification.isOfType(HttpScopeNotification.SessionNotificationType.UNDEPLOY)) {
-                logout();
-            }
-        });
 
         HttpScope scope = this.httpFacade.getScope(Scope.EXCHANGE);
 
@@ -176,27 +188,72 @@ public class ElytronSessionTokenStore implements ElytronTokeStore {
             return;
         }
 
+        KeycloakSecurityContext ksc = (KeycloakSecurityContext) session.getAttachment(KeycloakSecurityContext.class.getName());
+
         try {
-            if (glo) {
-                KeycloakSecurityContext ksc = (KeycloakSecurityContext) session.getAttachment(KeycloakSecurityContext.class.getName());
-
-                if (ksc == null) {
-                    return;
-                }
-
+            if (glo && ksc != null) {
                 KeycloakDeployment deployment = httpFacade.getDeployment();
+
+                session.invalidate();
 
                 if (!deployment.isBearerOnly() && ksc != null && ksc instanceof RefreshableKeycloakSecurityContext) {
                     ((RefreshableKeycloakSecurityContext) ksc).logout(deployment);
                 }
+            } else {
+                session.setAttachment(ElytronAccount.class.getName(), null);
+                session.setAttachment(KeycloakSecurityContext.class.getName(), null);
             }
-
-            session.setAttachment(KeycloakSecurityContext.class.getName(), null);
-            session.setAttachment(ElytronAccount.class.getName(), null);
-            session.invalidate();
         } catch (IllegalStateException ise) {
             // Session may be already logged-out in case that app has adminUrl
             log.debugf("Session %s logged-out already", session.getID());
         }
+    }
+
+    @Override
+    public void logoutAll() {
+        Collection<String> sessions = httpFacade.getScopeIds(Scope.SESSION);
+        logoutHttpSessions(new ArrayList<>(sessions));
+    }
+
+    @Override
+    public void logoutHttpSessions(List<String> ids) {
+        HttpServerExchange exchange = ProtectedHttpServerExchange.class.cast(httpFacade.getScope(Scope.EXCHANGE).getAttachment(UNDERTOW_EXCHANGE)).getExchange();
+        ServletRequestContext servletRequestContext = exchange.getAttachment(ServletRequestContext.ATTACHMENT_KEY);
+        SessionManager sessionManager = servletRequestContext.getDeployment().getSessionManager();
+
+        for (String id : ids) {
+            // TODO: Workaround for WFLY-3345. Remove this once we fix KEYCLOAK-733. Same applies to legacy wildfly adapter.
+            Session session = sessionManager.getSession(null, new SessionConfig() {
+
+                @Override
+                public void setSessionId(HttpServerExchange exchange, String sessionId) {
+                }
+
+                @Override
+                public void clearSession(HttpServerExchange exchange, String sessionId) {
+                }
+
+                @Override
+                public String findSessionId(HttpServerExchange exchange) {
+                    return id;
+                }
+
+                @Override
+                public SessionCookieSource sessionCookieSource(HttpServerExchange exchange) {
+                    return null;
+                }
+
+                @Override
+                public String rewriteUrl(String originalUrl, String sessionId) {
+                    return null;
+                }
+
+            });
+
+            if (session != null) {
+                session.invalidate(exchange);
+            }
+        }
+
     }
 }

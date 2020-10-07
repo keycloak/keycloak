@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -131,11 +130,8 @@ public class PolicyEnforcer {
     }
 
     private void loadClaimInformationPointProviders(ServiceLoader<ClaimInformationPointProviderFactory> loader) {
-        Iterator<ClaimInformationPointProviderFactory> iterator = loader.iterator();
 
-        while (iterator.hasNext()) {
-            ClaimInformationPointProviderFactory factory = iterator.next();
-
+        for (ClaimInformationPointProviderFactory factory : loader) {
             factory.init(this);
 
             claimInformationPointProviderFactories.put(factory.getName(), factory);
@@ -143,7 +139,7 @@ public class PolicyEnforcer {
     }
 
     private Map<String, PathConfig> configurePaths(ProtectedResource protectedResource, PolicyEnforcerConfig enforcerConfig) {
-        boolean loadPathsFromServer = true;
+        boolean loadPathsFromServer = !enforcerConfig.getLazyLoadPaths();
 
         for (PathConfig pathConfig : enforcerConfig.getPaths()) {
             if (!PolicyEnforcerConfig.EnforcementMode.DISABLED.equals(pathConfig.getEnforcementMode())) {
@@ -273,9 +269,11 @@ public class PolicyEnforcer {
 
                         if (!matchingResources.isEmpty()) {
                             Map<String, Map<String, Object>> cipConfig = null;
+                            PolicyEnforcerConfig.EnforcementMode enforcementMode = PolicyEnforcerConfig.EnforcementMode.ENFORCING;
 
                             if (pathConfig != null) {
                                 cipConfig = pathConfig.getClaimInformationPointConfig();
+                                enforcementMode = pathConfig.getEnforcementMode();
                             }
 
                             pathConfig = PathConfig.createPathConfigs(matchingResources.get(0)).iterator().next();
@@ -283,6 +281,8 @@ public class PolicyEnforcer {
                             if (cipConfig != null) {
                                 pathConfig.setClaimInformationPointConfig(cipConfig);
                             }
+                            
+                            pathConfig.setEnforcementMode(enforcementMode);
                         }
                     } catch (Exception cause) {
                         LOGGER.errorf(cause, "Could not lazy load resource with path [" + targetUri + "] from server");
@@ -304,6 +304,10 @@ public class PolicyEnforcer {
         @Override
         protected Collection<PathConfig> getPaths() {
             return paths.values();
+        }
+
+        public PathCache getPathCache() {
+            return pathCache;
         }
 
         @Override

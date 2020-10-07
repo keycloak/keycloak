@@ -17,6 +17,7 @@
 
 package org.keycloak.cluster.infinispan;
 
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -26,11 +27,14 @@ import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import org.keycloak.models.sessions.infinispan.initializer.SessionLoader;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionsLoader;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheSessionsLoaderContext;
 import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
@@ -44,7 +48,9 @@ public class RemoteCacheSessionsLoaderTest {
 
     private static final int COUNT = 10000;
 
-    public static void main(String[] args) throws Exception {
+    @Test
+    @Ignore
+    public void testRemoteCache() throws Exception {
         String cacheName = InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
         Cache cache1 = createManager(1, cacheName).getCache(cacheName);
         Cache cache2 = cache1.getCacheManager().getCache("local");
@@ -110,7 +116,7 @@ public class RemoteCacheSessionsLoaderTest {
             Set<String> visitedKeys = new HashSet<>();
             for (int currentSegment=0 ; currentSegment<ctx.getSegmentsCount() ; currentSegment++) {
                 logger.infof("Loading segment %d", currentSegment);
-                loader.loadSessions(null, ctx, currentSegment);
+                loader.loadSessions(null, ctx, new SessionLoader.WorkerContext(currentSegment, currentSegment));
 
                 logger.infof("Loaded %d keys for segment %d", cache2.keySet().size(), currentSegment);
                 totalCount = totalCount + cache2.keySet().size();
