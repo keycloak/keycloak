@@ -70,7 +70,7 @@ public class AdvancedClaimToRoleMapper extends AbstractClaimMapper {
         ProviderConfigProperty roleProperty = new ProviderConfigProperty();
         roleProperty.setName(ConfigConstants.ROLE);
         roleProperty.setLabel("Role");
-        roleProperty.setHelpText("Role to grant to user if claim is present. Click 'Select Role' button to browse roles, or just type it in the textbox. To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
+        roleProperty.setHelpText("Role to grant to user if claim is present. Click 'Select Role' button to browse roles, or just type it in the textbox. To reference a client role the syntax is clientname.clientrole, i.e. myclient.myrole");
         roleProperty.setType(ProviderConfigProperty.ROLE_TYPE);
         configProperties.add(roleProperty);
     }
@@ -149,7 +149,7 @@ public class AdvancedClaimToRoleMapper extends AbstractClaimMapper {
 
     @Override
     public String getHelpText() {
-        return "If all claims exists, grant the user the specified realm or application role.";
+        return "If all claims exists, grant the user the specified realm or client role.";
     }
 
     protected boolean hasAllClaimValues(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {

@@ -39,7 +39,7 @@ public class HardcodedLDAPRoleStorageMapperFactory extends AbstractLDAPStorageMa
 
     static {
         ProviderConfigProperty roleAttr = createConfigProperty(HardcodedLDAPRoleStorageMapper.ROLE, "Role",
-                "Role to grant to user.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole",
+                "Role to grant to user.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference a client role the syntax is clientname.clientrole, i.e. myclient.myrole",
                 ProviderConfigProperty.ROLE_TYPE, null);
         configProperties.add(roleAttr);
     }

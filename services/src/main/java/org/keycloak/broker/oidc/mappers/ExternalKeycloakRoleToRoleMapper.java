@@ -56,13 +56,13 @@ public class ExternalKeycloakRoleToRoleMapper extends AbstractClaimMapper {
         property1 = new ProviderConfigProperty();
         property1.setName(EXTERNAL_ROLE);
         property1.setLabel("External role");
-        property1.setHelpText("External role to check for.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole.");
+        property1.setHelpText("External role to check for.  To reference a client role the syntax is clientname.clientrole, i.e. myclient.myrole");
         property1.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property1);
         property = new ProviderConfigProperty();
         property.setName(ConfigConstants.ROLE);
         property.setLabel("Role");
-        property.setHelpText("Role to grant to user if external role is present.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
+        property.setHelpText("Role to grant to user if external role is present.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference a client role the syntax is clientname.clientrole, i.e. myclient.myrole");
         property.setType(ProviderConfigProperty.ROLE_TYPE);
         configProperties.add(property);
     }
@@ -144,7 +144,7 @@ public class ExternalKeycloakRoleToRoleMapper extends AbstractClaimMapper {
 
     @Override
     public String getHelpText() {
-        return "Looks for an external role in a keycloak access token.  If external role exists, grant the user the specified realm or application role.";
+        return "Looks for an external role in a keycloak access token.  If external role exists, grant the user the specified realm or client role.";
     }
 
 }

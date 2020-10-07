@@ -66,7 +66,7 @@ public class ClaimToRoleMapper extends AbstractClaimMapper {
         property = new ProviderConfigProperty();
         property.setName(ConfigConstants.ROLE);
         property.setLabel("Role");
-        property.setHelpText("Role to grant to user if claim is present.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference an application role the syntax is appname.approle, i.e. myapp.myrole");
+        property.setHelpText("Role to grant to user if claim is present.  Click 'Select Role' button to browse roles, or just type it in the textbox.  To reference a client role the syntax is clientname.clientrole, i.e. myclient.myrole");
         property.setType(ProviderConfigProperty.ROLE_TYPE);
         configProperties.add(property);
     }
@@ -140,7 +140,7 @@ public class ClaimToRoleMapper extends AbstractClaimMapper {
 
     @Override
     public String getHelpText() {
-        return "If a claim exists, grant the user the specified realm or application role.";
+        return "If a claim exists, grant the user the specified realm or client role.";
     }
 
 }
