@@ -43,9 +43,9 @@ export const NewClientForm = () => {
   const save = async () => {
     try {
       await httpClient.doPost(`/admin/realms/${realm}/clients`, client);
-      addAlert("Client created", AlertVariant.success);
+      addAlert(t("createSuccess"), AlertVariant.success);
     } catch (error) {
-      addAlert(`Could not create client: '${error}'`, AlertVariant.danger);
+      addAlert(t("createError", { error }), AlertVariant.danger);
     }
   };
 
