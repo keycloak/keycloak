@@ -81,7 +81,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         registerPage.register("firstName", "lastName", "registerExistingUser@email", "roleRichUser", "password", "password");
 
         registerPage.assertCurrent();
-        assertEquals("Username already exists.", registerPage.getError());
+        assertEquals("Username already exists.", registerPage.getInputAccountErrors().getUsernameError());
 
         // assert form keeps form fields on error
         assertEquals("firstName", registerPage.getFirstName());
@@ -105,7 +105,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         registerPage.register("firstName", "lastName", "test-user@localhost", "registerExistingUser", "password", "password");
 
         registerPage.assertCurrent();
-        assertEquals("Email already exists.", registerPage.getError());
+        assertEquals("Email already exists.", registerPage.getInputAccountErrors().getEmailError());
 
         // assert form keeps form fields on error
         assertEquals("firstName", registerPage.getFirstName());
@@ -155,7 +155,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         registerPage.register("firstName", "lastName", "registerUserInvalidPasswordConfirm@email", "registerUserInvalidPasswordConfirm", "password", "invalid");
 
         registerPage.assertCurrent();
-        assertEquals("Password confirmation doesn't match.", registerPage.getError());
+        assertEquals("Password confirmation doesn't match.", registerPage.getInputPasswordErrors().getPasswordConfirmError());
 
         // assert form keeps form fields on error
         assertEquals("firstName", registerPage.getFirstName());
@@ -180,7 +180,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         registerPage.register("firstName", "lastName", "registerUserMissingPassword@email", "registerUserMissingPassword", null, null);
 
         registerPage.assertCurrent();
-        assertEquals("Please specify password.", registerPage.getError());
+        assertEquals("Please specify password.", registerPage.getInputPasswordErrors().getPasswordError());
 
         events.expectRegister("registerUserMissingPassword", "registerUserMissingPassword@email")
                 .removeDetail(Details.USERNAME)
@@ -208,7 +208,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             registerPage.register("firstName", "lastName", "registerPasswordPolicy@email", "registerPasswordPolicy", "pass", "pass");
 
             registerPage.assertCurrent();
-            assertEquals("Invalid password: minimum length 8.", registerPage.getError());
+            assertEquals("Invalid password: minimum length 8.", registerPage.getInputPasswordErrors().getPasswordError());
 
             events.expectRegister("registerPasswordPolicy", "registerPasswordPolicy@email")
                     .removeDetail(Details.USERNAME)
@@ -240,7 +240,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         registerPage.register("firstName", "lastName", "registerUserMissingUsername@email", null, "password", "password");
 
         registerPage.assertCurrent();
-        assertEquals("Please specify username.", registerPage.getError());
+        assertEquals("Please specify username.", registerPage.getInputAccountErrors().getUsernameError());
 
         events.expectRegister(null, "registerUserMissingUsername@email")
                 .removeDetail(Details.USERNAME)
@@ -258,11 +258,11 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
         registerPage.assertCurrent();
 
-        assertEquals("Please specify username.\n" +
-                "Please specify first name.\n" +
-                "Please specify last name.\n" +
-                "Please specify email.\n" +
-                "Please specify password.", registerPage.getError());
+        assertEquals("Please specify username.", registerPage.getInputAccountErrors().getUsernameError());
+        assertEquals("Please specify first name.", registerPage.getInputAccountErrors().getFirstNameError());
+        assertEquals("Please specify last name.", registerPage.getInputAccountErrors().getLastNameError());
+        assertEquals("Please specify email.", registerPage.getInputAccountErrors().getEmailError());
+        assertEquals("Please specify password.", registerPage.getInputPasswordErrors().getPasswordError());
 
         events.expectRegister(null, "registerUserMissingUsername@email")
                 .removeDetail(Details.USERNAME)
@@ -278,7 +278,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
         registerPage.register("firstName", "lastName", null, "registerUserMissingEmail", "password", "password");
         registerPage.assertCurrent();
-        assertEquals("Please specify email.", registerPage.getError());
+        assertEquals("Please specify email.", registerPage.getInputAccountErrors().getEmailError());
         events.expectRegister("registerUserMissingEmail", null)
                 .removeDetail("email")
                 .error("invalid_registration").assertEvent();
@@ -293,7 +293,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         registerPage.register("firstName", "lastName", "registerUserInvalidEmailemail", "registerUserInvalidEmail", "password", "password");
         registerPage.assertCurrent();
         assertEquals("registerUserInvalidEmailemail", registerPage.getEmail());
-        assertEquals("Invalid email address.", registerPage.getError());
+        assertEquals("Invalid email address.", registerPage.getInputAccountErrors().getEmailError());
         events.expectRegister("registerUserInvalidEmail", "registerUserInvalidEmailemail")
                 .error("invalid_registration").assertEvent();
     }
@@ -480,19 +480,19 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         registerPage.register("firstName", "lastName", "registerUserNotUsername@email", "registerUserNotUsername", "registerUserNotUsername", "registerUserNotUsername");
 
         assertTrue(registerPage.isCurrent());
-        assertEquals("Invalid password: must not be equal to the username.", registerPage.getError());
+        assertEquals("Invalid password: must not be equal to the username.", registerPage.getInputPasswordErrors().getPasswordError());
 
         adminClient.realm("test").users().create(UserBuilder.create().username("registerUserNotUsername").build());
 
         registerPage.register("firstName", "lastName", "registerUserNotUsername@email", "registerUserNotUsername", "registerUserNotUsername", "registerUserNotUsername");
 
         assertTrue(registerPage.isCurrent());
-        assertEquals("Username already exists.", registerPage.getError());
+        assertEquals("Username already exists.", registerPage.getInputAccountErrors().getUsernameError());
 
         registerPage.register("firstName", "lastName", "registerUserNotUsername@email", null, "password", "password");
 
         assertTrue(registerPage.isCurrent());
-        assertEquals("Please specify username.", registerPage.getError());
+        assertEquals("Please specify username.", registerPage.getInputAccountErrors().getUsernameError());
     }
 
     // KEYCLOAK-12729
@@ -514,7 +514,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             registerPage.registerWithEmailAsUsername("firstName", "lastName", "registerUserNotEmail@email", "registerUserNotEmail@email", "registerUserNotEmail@email");
 
             assertTrue(registerPage.isCurrent());
-            assertEquals("Invalid password: must not be equal to the email.", registerPage.getError());
+            assertEquals("Invalid password: must not be equal to the email.", registerPage.getInputPasswordErrors().getPasswordError());
         } finally {
             configureRealmRegistrationEmailAsUsername(false);
         }
@@ -536,7 +536,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             registerPage.registerWithEmailAsUsername("firstName", "lastName", "test-user@localhost", "password", "password");
 
             registerPage.assertCurrent();
-            assertEquals("Email already exists.", registerPage.getError());
+            assertEquals("Email already exists.", registerPage.getInputAccountErrors().getEmailError());
 
             events.expectRegister("test-user@localhost", "test-user@localhost").user((String) null).error("email_in_use").assertEvent();
         } finally {
@@ -555,12 +555,12 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
             registerPage.registerWithEmailAsUsername("firstName", "lastName", null, "password", "password");
             registerPage.assertCurrent();
-            assertEquals("Please specify email.", registerPage.getError());
+            assertEquals("Please specify email.", registerPage.getInputAccountErrors().getEmailError());
             events.expectRegister(null, null).removeDetail("username").removeDetail("email").error("invalid_registration").assertEvent();
 
             registerPage.registerWithEmailAsUsername("firstName", "lastName", "registerUserInvalidEmailemail", "password", "password");
             registerPage.assertCurrent();
-            assertEquals("Invalid email address.", registerPage.getError());
+            assertEquals("Invalid email address.", registerPage.getInputAccountErrors().getEmailError());
             events.expectRegister("registerUserInvalidEmailemail", "registerUserInvalidEmailemail").error("invalid_registration").assertEvent();
         } finally {
             configureRealmRegistrationEmailAsUsername(false);

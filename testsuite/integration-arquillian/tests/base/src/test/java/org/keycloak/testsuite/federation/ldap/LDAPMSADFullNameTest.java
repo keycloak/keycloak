@@ -243,7 +243,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
         registerPage.assertCurrent();
 
         registerPage.register("John", "Existing", "johnyanth@check.cz", "existingkc", "Password1", "Password1");
-        Assert.assertEquals("Username already exists.", registerPage.getError());
+        Assert.assertEquals("Username already exists.", registerPage.getInputAccountErrors().getUsernameError());
 
         registerPage.register("John", "Existing", "johnyanth@check.cz", "existingkc2", "Password1", "Password1");
         appPage.logout();
