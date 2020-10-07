@@ -56,6 +56,20 @@ public final class Environment {
         return profile;
     }
 
+    public static String getProfileOrDefault(String defaultProfile) {
+        String profile = System.getProperty("kc.profile");
+
+        if (profile == null) {
+            profile = System.getenv("KC_PROFILE");
+        }
+
+        if (profile == null) {
+            profile = defaultProfile;
+        }
+        
+        return profile;
+    }
+
     public static Optional<String> getBuiltTimeProperty(String name) {
         String value = KeycloakRecorder.getBuiltTimeProperty(name);
 

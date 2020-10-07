@@ -109,9 +109,9 @@ public final class PropertyMappers {
                 case "postgres-10":
                     return "io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect";
             }
-            throw invalidDatabaseVendor(db, "h2-file", "h2-mem", "mariadb", "postgres", "postgres-95", "postgres-10");
-        }, "The database vendor. Possible values are: h2-mem, h2-file, mariadb, postgres95, postgres10.");
-        create("db", "quarkus.datasource.driver", (db, context) -> {
+            return null;
+        }, null);
+        create("db", "quarkus.datasource.jdbc.driver", (db, context) -> {
             switch (db.toLowerCase()) {
                 case "h2-file":
                 case "h2-mem":
@@ -124,8 +124,21 @@ public final class PropertyMappers {
             }
             return null;
         }, null);
+        create("db", "quarkus.datasource.db-kind", (db, context) -> {
+            switch (db.toLowerCase()) {
+                case "h2-file":
+                case "h2-mem":
+                    return "h2";
+                case "mariadb":
+                    return "mariadb";
+                case "postgres-95":
+                case "postgres-10":
+                    return "postgresql";
+            }
+            throw invalidDatabaseVendor(db, "h2-file", "h2-mem", "mariadb", "postgres", "postgres-95", "postgres-10");
+        }, "The database vendor. Possible values are: h2-mem, h2-file, mariadb, postgres95, postgres10.");
         create("db", "quarkus.datasource.jdbc.transactions", (db, context) -> "xa", null);
-        create("db.url", "db", "quarkus.datasource.url", (db, context) -> {
+        create("db.url", "db", "quarkus.datasource.jdbc.url", (db, context) -> {
             switch (db.toLowerCase()) {
                 case "h2-file":
                     return "jdbc:h2:file:${kc.home.dir:${kc.db.url.path:~}}/${kc.data.dir:data}/keycloakdb${kc.db.url.properties:;;AUTO_SERVER=TRUE}";
