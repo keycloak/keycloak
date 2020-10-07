@@ -23,7 +23,7 @@
        <subsystem>bean-validation.xml</subsystem>
        <subsystem>core-management.xml</subsystem>
        <subsystem supplement="default">keycloak-datasources.xml</subsystem>
-       <subsystem>deployment-scanner.xml</subsystem>
+       <subsystem>keycloak-deployment-scanner.xml</subsystem>
        <subsystem>ee.xml</subsystem>
        <subsystem>ejb3.xml</subsystem>
        <subsystem>io.xml</subsystem>

@@ -24,6 +24,10 @@
     </extensions>
 
     <system-properties>
+        <property name="jboss.as.management.blocking.timeout" value="86400"/>
+    </system-properties>
+
+    <system-properties>
         <!-- IPv4 is not required, but setting this helps avoid unintended use of IPv6 -->
         <property name="java.net.preferIPv4Stack" value="true"/>
     </system-properties>

@@ -27,6 +27,10 @@
         <?EXTENSIONS?>
     </extensions>
 
+    <system-properties>
+        <property name="jboss.as.management.blocking.timeout" value="86400"/>
+    </system-properties>
+
     <management>
         <security-realms>
             <security-realm name="ManagementRealm">

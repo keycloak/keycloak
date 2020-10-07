@@ -20,3 +20,5 @@
 /subsystem=keycloak-server/spi=jta-lookup/provider=jboss/:add(enabled=true)
 /subsystem=keycloak-server/spi=publicKeyStorage/:add
 /subsystem=keycloak-server/spi=publicKeyStorage/provider=infinispan/:add(properties={minTimeBetweenRequests => "10"},enabled=true)
+/system-property=jboss.as.management.blocking.timeout:add(value=86400)
+/subsystem=deployment-scanner/scanner=default:write-attribute(name=deployment-timeout,value=86400)
