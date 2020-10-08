@@ -1,7 +1,7 @@
 import FileSaver from "file-saver";
 
 import { ClientRepresentation } from "./clients/models/client-model";
-import { ProviderRepresentation } from "./clients/models/server-info";
+import { ProviderRepresentation } from "./context/server-info/server-info";
 
 export const sortProvider = (
   a: [string, ProviderRepresentation],

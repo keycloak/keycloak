@@ -7,6 +7,7 @@ import {
   FormGroup,
   PageSection,
   Select,
+  SelectOption,
   SelectVariant,
   Switch,
   TextInput,
@@ -19,6 +20,7 @@ import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { HttpClientContext } from "../../context/http-service/HttpClientContext";
 import { RealmContext } from "../../context/realm-context/RealmContext";
 import { useAlerts } from "../../components/alert/Alerts";
+import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
 
 export const NewClientScopeForm = () => {
   const { t } = useTranslation("client-scopes");
@@ -28,6 +30,7 @@ export const NewClientScopeForm = () => {
 
   const httpClient = useContext(HttpClientContext)!;
   const { realm } = useContext(RealmContext);
+  const providers = useLoginProviders();
 
   const [open, isOpen] = useState(false);
   const { addAlert } = useAlerts();
@@ -110,9 +113,18 @@ export const NewClientScopeForm = () => {
                 }}
                 selections={value}
                 variant={SelectVariant.single}
-                aria-label="Select Encryption type"
+                aria-label={t("selectEncryptionType")}
+                placeholderText={t("common:selectOne")}
                 isOpen={open}
-              ></Select>
+              >
+                {providers.map((option) => (
+                  <SelectOption
+                    selected={option === value}
+                    key={option}
+                    value={option}
+                  />
+                ))}
+              </Select>
             )}
           />
         </FormGroup>

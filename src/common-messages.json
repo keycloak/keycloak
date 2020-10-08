@@ -21,6 +21,7 @@
     "enabled": "Enabled",
     "disabled": "Disabled",
     "disable": "Disable",
+    "selectOne": "Select an option",
 
     "signOut": "Sign out",
     "manageAccount": "Manage account",

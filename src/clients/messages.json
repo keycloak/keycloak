@@ -14,6 +14,7 @@
     "details": "Details",
     "clientList": "Client list",
     "clientSettings": "Client details",
+    "selectEncryptionType": "Select Encryption type",
     "generalSettings": "General Settings",
     "capabilityConfig": "Capability config",
     "clientsExplain": "Clients are applications and services that can request authentication of a user",
