@@ -1,0 +1,11 @@
+[[_transient-session]]
+
+=== Transient sessions
+
+{project_name} has concept of transient sessions. When transient sessions are used, there is no real user session created after successful authentication.
+Only a temporary transient session is created for the scope of the current request that successfully authenticated the user. This transient session allows {project_name}
+to run <<_protocol-mappers, protocol mappers>> after the authentication.
+
+When transient sessions are used, the client application has no way to refresh or introspect the token or check if a specific session is valid.
+In some situations, these actions are not needed, so you can avoid the additional overhead for persistence of user sessions.
+This would mean the save of performance, memory and network communication (in case of cluster and cross-datacenter environments).

@@ -1,5 +1,11 @@
 == Migration Changes
 
+=== Migrating to 12.0.0
+
+==== Skip creation of user session for the Docker protocol authentication
+
+No user session is created after successful authentication with the Docker protocol. For details, please refer to the link:{adminguide_link}#_docker[{adminguide_name}].
+
 === Migrating to 11.0.0
 
 ==== Upgrade to Wildfly 20

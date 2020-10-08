@@ -17,6 +17,10 @@ NOTE: This flow assumes that a `docker login` command has already been performed
  * The Docker client will get the bearer token from the JSON response and use it in the Authorization header to request the protected resource.
  * When the Docker registry receives the new request for the protected resource with the token from the {project_name} server, the registry validates the token and grants access to the requested resource (if appropriate).
 
+NOTE: No user session is created on the {project_name} side after successful authentication with the Docker protocol. The Docker protocol is
+not used in case of browser SSO session and it does not have a way to refresh token or ask {project_name} server if a particular token/session
+is still valid. So creating the session is unnecessary overhead for this protocol. For more details, see the <<_transient-session, transient session>> section.
+
 ====  {project_name} Docker Registry v2 Authentication Server URI Endpoints
 
 {project_name} really only has one endpoint for all Docker auth v2 requests.
