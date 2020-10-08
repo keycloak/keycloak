@@ -22,7 +22,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr data-ng-repeat="data in stats">
+        <tr data-ng-repeat="data in stats | orderBy:'clientId'">
             <td><a href="#/realms/{{realm.realm}}/clients/{{data.id}}/sessions">{{data.clientId}}</a></td>
             <td>{{data.active}}</td>
             <td>{{data.offline}}</td>
