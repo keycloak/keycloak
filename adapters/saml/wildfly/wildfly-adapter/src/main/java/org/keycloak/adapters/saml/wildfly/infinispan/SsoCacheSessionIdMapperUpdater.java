@@ -24,12 +24,15 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.server.session.Session;
 import io.undertow.server.session.SessionListener;
 import org.infinispan.Cache;
+import org.jboss.logging.Logger;
 
 /**
  *
  * @author hmlnarik
  */
 public class SsoCacheSessionIdMapperUpdater implements SessionIdMapperUpdater, SessionListener {
+
+    private static final Logger LOG = Logger.getLogger(SsoCacheSessionIdMapperUpdater.class.getName());
 
     private final SessionIdMapperUpdater delegate;
     /**
@@ -52,12 +55,28 @@ public class SsoCacheSessionIdMapperUpdater implements SessionIdMapperUpdater, S
 
     @Override
     public void map(SessionIdMapper idMapper, String sso, String principal, String httpSessionId) {
+        LOG.debugf("Adding mapping (%s, %s, %s)", sso, principal, httpSessionId);
+
         httpSessionToSsoCache.put(httpSessionId, new String[] {sso, principal});
         this.delegate.map(idMapper, sso, principal, httpSessionId);
     }
 
     @Override
+    public boolean refreshMapping(SessionIdMapper idMapper, String httpSessionId) {
+        LOG.debugf("Refreshing session %s", httpSessionId);
+
+        String[] ssoAndPrincipal = httpSessionToSsoCache.get(httpSessionId);
+        if (ssoAndPrincipal != null) {
+            this.delegate.map(idMapper, ssoAndPrincipal[0], ssoAndPrincipal[1], httpSessionId);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public void removeSession(SessionIdMapper idMapper, String httpSessionId) {
+        LOG.debugf("Removing session %s", httpSessionId);
+
         httpSessionToSsoCache.remove(httpSessionId);
         this.delegate.removeSession(idMapper, httpSessionId);
     }
