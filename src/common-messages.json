@@ -27,6 +27,7 @@
     "manageAccount": "Manage account",
     "serverInfo": "Server info",
     "help": "Help",
+    "helpLabel": "More help for {{label}}",
     "documentation": "Documentation",
     "enableHelpMode": "Enable help mode",
 

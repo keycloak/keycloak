@@ -4,6 +4,10 @@ import {
   PageHeader,
   PageHeaderTools,
   PageHeaderToolsItem,
+  PageSection,
+  FormGroup,
+  Form,
+  TextInput,
 } from "@patternfly/react-core";
 import { Meta } from "@storybook/react";
 
@@ -13,8 +17,6 @@ import {
   HelpContext,
   HelpHeader,
 } from "../components/help-enabler/HelpHeader";
-import { I18nextProvider } from "react-i18next";
-import i18n from "../i18n";
 
 export default {
   title: "Help System Example",
@@ -27,10 +29,30 @@ export const HelpSystem = () => (
   </Help>
 );
 
-export const HelpItemz = () => (
-  <I18nextProvider i18n={i18n}>
-    <HelpItem item="storybook" />
-  </I18nextProvider>
+export const HelpItems = () => (
+  <HelpItem
+    helpText="This explains the related field"
+    forLabel="Field label"
+    forID="storybook-example-id"
+  />
+);
+
+export const FormFieldHelp = () => (
+  <Form isHorizontal>
+    <FormGroup
+      label="Label"
+      labelIcon={
+        <HelpItem
+          helpText="This explains the related field"
+          forLabel="Field label"
+          forID="storybook-form-help"
+        />
+      }
+      fieldId="storybook-form-help"
+    >
+      <TextInput isRequired type="text" id="storybook-form-help"></TextInput>
+    </FormGroup>
+  </Form>
 );
 
 const HelpSystemTest = () => {
@@ -50,7 +72,10 @@ const HelpSystemTest = () => {
         />
       }
     >
-      Help system is {enabled ? "enabled" : "not on, guess you don't need help"}
+      <PageSection>Help system is {enabled ? "enabled" : "not on"}</PageSection>
+      <PageSection variant="light">
+        <FormFieldHelp />
+      </PageSection>
     </Page>
   );
 };

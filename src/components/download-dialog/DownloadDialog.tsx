@@ -128,10 +128,16 @@ export const DownloadDialog = ({
             <FormGroup
               fieldId="type"
               label={t("clients:formatOption")}
-              labelIcon={<HelpItem item="client.downloadType" />}
+              labelIcon={
+                <HelpItem
+                  helpText={t("clients-help:downloadType")}
+                  forLabel={t("clients:formatOption")}
+                  forID="type"
+                />
+              }
             >
               <Select
-                id="type"
+                toggleId="type"
                 isOpen={openType}
                 onToggle={() => {
                   setOpenType(!openType);
@@ -161,7 +167,13 @@ export const DownloadDialog = ({
             <FormGroup
               fieldId="details"
               label={t("clients:details")}
-              labelIcon={<HelpItem item="client.details" />}
+              labelIcon={
+                <HelpItem
+                  helpText={t("clients-help:details")}
+                  forLabel={t("clients:details")}
+                  forID=""
+                />
+              }
             >
               <TextArea
                 id="details"
