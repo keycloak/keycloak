@@ -26,7 +26,6 @@ import org.keycloak.models.utils.RoleUtils;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -79,9 +78,9 @@ public class ClientScopeAdapter implements ClientScopeModel {
     }
 
     @Override
-    public Set<ProtocolMapperModel> getProtocolMappers() {
-        if (isUpdated()) return updated.getProtocolMappers();
-        return cached.getProtocolMappers();
+    public Stream<ProtocolMapperModel> getProtocolMappersStream() {
+        if (isUpdated()) return updated.getProtocolMappersStream();
+        return cached.getProtocolMappers().stream();
     }
 
     @Override

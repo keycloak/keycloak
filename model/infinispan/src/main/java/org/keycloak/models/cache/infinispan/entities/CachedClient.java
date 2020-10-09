@@ -94,9 +94,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         redirectUris.addAll(model.getRedirectUris());
         webOrigins.addAll(model.getWebOrigins());
         scope.addAll(model.getScopeMappingsStream().map(RoleModel::getId).collect(Collectors.toSet()));
-        for (ProtocolMapperModel mapper : model.getProtocolMappers()) {
-            this.protocolMappers.add(mapper);
-        }
+        protocolMappers.addAll(model.getProtocolMappersStream().collect(Collectors.toSet()));
         surrogateAuthRequired = model.isSurrogateAuthRequired();
         managementUrl = model.getManagementUrl();
         rootUrl = model.getRootUrl();

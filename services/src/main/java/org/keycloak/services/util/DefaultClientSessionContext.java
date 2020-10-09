@@ -20,7 +20,9 @@ package org.keycloak.services.util;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -81,7 +83,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
 
     public static DefaultClientSessionContext fromClientSessionAndScopeParameter(AuthenticatedClientSessionModel clientSession, String scopeParam, KeycloakSession session) {
-        Set<ClientScopeModel> requestedClientScopes = TokenManager.getRequestedClientScopes(scopeParam, clientSession.getClient());
+        Stream<ClientScopeModel> requestedClientScopes = TokenManager.getRequestedClientScopes(scopeParam, clientSession.getClient());
         return fromClientSessionAndClientScopes(clientSession, requestedClientScopes, session);
     }
 
@@ -91,12 +93,10 @@ public class DefaultClientSessionContext implements ClientSessionContext {
     }
 
 
-    public static DefaultClientSessionContext fromClientSessionAndClientScopes(AuthenticatedClientSessionModel clientSession, Set<ClientScopeModel> clientScopes, KeycloakSession session) {
-        Set<String> clientScopeIds = new HashSet<>();
-        for (ClientScopeModel clientScope : clientScopes) {
-            clientScopeIds.add(clientScope.getId());
-        }
-
+    public static DefaultClientSessionContext fromClientSessionAndClientScopes(AuthenticatedClientSessionModel clientSession,
+                                                                               Stream<ClientScopeModel> clientScopes,
+                                                                               KeycloakSession session) {
+        Set<String> clientScopeIds = clientScopes.map(ClientScopeModel::getId).collect(Collectors.toSet());
         return new DefaultClientSessionContext(clientSession, clientScopeIds, session);
     }
 
@@ -114,12 +114,12 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
 
     @Override
-    public Set<ClientScopeModel> getClientScopes() {
+    public Stream<ClientScopeModel> getClientScopesStream() {
         // Load client scopes if not yet present
         if (clientScopes == null) {
             clientScopes = loadClientScopes();
         }
-        return clientScopes;
+        return clientScopes.stream();
     }
 
 
@@ -134,12 +134,12 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
 
     @Override
-    public Set<ProtocolMapperModel> getProtocolMappers() {
+    public Stream<ProtocolMapperModel> getProtocolMappersStream() {
         // Load protocolMappers if not yet present
         if (protocolMappers == null) {
             protocolMappers = loadProtocolMappers();
         }
-        return protocolMappers;
+        return protocolMappers.stream();
     }
 
 
@@ -154,28 +154,12 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     @Override
     public String getScopeString() {
-        StringBuilder builder = new StringBuilder();
-
         // Add both default and optional scopes to scope parameter. Don't add client itself
-        boolean first = true;
-        for (ClientScopeModel clientScope : getClientScopes()) {
-            if (clientScope instanceof ClientModel) {
-                continue;
-            }
-
-            if (!clientScope.isIncludeInTokenScope()) {
-                continue;
-            }
-
-            if (first) {
-                first = false;
-            } else {
-                builder.append(" ");
-            }
-            builder.append(clientScope.getName());
-        }
-
-        String scopeParam = builder.toString();
+        String scopeParam = getClientScopesStream()
+                .filter(((Predicate<ClientScopeModel>) ClientModel.class::isInstance).negate())
+                .filter(ClientScopeModel::isIncludeInTokenScope)
+                .map(ClientScopeModel::getName)
+                .collect(Collectors.joining(" "));
 
         // See if "openid" scope is requested
         String scopeSent = clientSession.getNote(OAuth2Constants.SCOPE);
@@ -246,34 +230,26 @@ public class DefaultClientSessionContext implements ClientSessionContext {
     private Set<RoleModel> loadRoles() {
         UserModel user = clientSession.getUserSession().getUser();
         ClientModel client = clientSession.getClient();
-
-        Set<ClientScopeModel> clientScopes = getClientScopes();
-
-        return TokenManager.getAccess(user, client, clientScopes);
+        return TokenManager.getAccess(user, client, getClientScopesStream());
     }
 
 
     private Set<ProtocolMapperModel> loadProtocolMappers() {
-        Set<ClientScopeModel> clientScopes = getClientScopes();
         String protocol = clientSession.getClient().getProtocol();
 
         // Being rather defensive. But protocol should normally always be there
         if (protocol == null) {
-            logger.warnf("Client '%s' doesn't have protocol set. Fallback to openid-connect. Please fix client configuration", clientSession.getClient().getClientId());
+            logger.warnf("Client '%s' doesn't have protocol set. Fallback to openid-connect. Please fix client configuration",
+                    clientSession.getClient().getClientId());
             protocol = OIDCLoginProtocol.LOGIN_PROTOCOL;
         }
 
-        Set<ProtocolMapperModel> protocolMappers = new HashSet<>();
-        for (ClientScopeModel clientScope : clientScopes) {
-            Set<ProtocolMapperModel> currentMappers = clientScope.getProtocolMappers();
-            for (ProtocolMapperModel currentMapper : currentMappers) {
-                if (protocol.equals(currentMapper.getProtocol()) && ProtocolMapperUtils.isEnabled(session, currentMapper)) {
-                    protocolMappers.add(currentMapper);
-                }
-            }
-        }
-
-        return protocolMappers;
+        String finalProtocol = protocol;
+        return getClientScopesStream()
+                .flatMap(clientScope -> clientScope.getProtocolMappersStream()
+                        .filter(mapper -> Objects.equals(finalProtocol, mapper.getProtocol()) &&
+                                ProtocolMapperUtils.isEnabled(session, mapper)))
+                .collect(Collectors.toSet());
     }
 
 

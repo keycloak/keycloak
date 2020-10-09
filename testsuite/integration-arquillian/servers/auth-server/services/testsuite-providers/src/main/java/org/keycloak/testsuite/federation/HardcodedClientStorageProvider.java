@@ -261,8 +261,8 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
         }
 
         @Override
-        public Set<ProtocolMapperModel> getProtocolMappers() {
-            return Collections.EMPTY_SET;
+        public Stream<ProtocolMapperModel> getProtocolMappersStream() {
+            return Stream.empty();
         }
 
         @Override
