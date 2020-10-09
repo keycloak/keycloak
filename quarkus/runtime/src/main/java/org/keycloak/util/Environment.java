@@ -57,11 +57,7 @@ public final class Environment {
     }
 
     public static String getProfileOrDefault(String defaultProfile) {
-        String profile = System.getProperty("kc.profile");
-
-        if (profile == null) {
-            profile = System.getenv("KC_PROFILE");
-        }
+        String profile = getProfile();
 
         if (profile == null) {
             profile = defaultProfile;

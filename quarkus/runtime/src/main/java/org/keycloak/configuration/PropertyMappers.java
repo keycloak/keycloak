@@ -161,7 +161,7 @@ public final class PropertyMappers {
     }
 
     private static void configureClustering() {
-        createWithDefault("cluster.enabled", "kc.spi.connections-infinispan.default.clustered", "placeholder", (value, context) -> {
+        createWithDefault("clustered", "kc.spi.connections-infinispan.default.clustered", "placeholder", (value, context) -> {
             if ("true".equals(value) || "false".equals(value)) {
                 return value;
             }

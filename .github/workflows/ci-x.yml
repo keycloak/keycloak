@@ -47,6 +47,8 @@ jobs:
       - name: Extract Maven Repo
         shell: bash
         run: tar -xzvf maven-repo.tgz -C ~
+      - name: Run Quarkus unit tests
+        run: mvn clean install -B -Pquarkus -f quarkus/pom.xml
       - name: Build testsuite
         run: mvn clean install -B -Pquarkus,auth-server-quarkus -DskipTests -f testsuite/pom.xml
       - name: Run base tests

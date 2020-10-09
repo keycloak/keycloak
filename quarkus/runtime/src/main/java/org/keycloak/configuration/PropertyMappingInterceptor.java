@@ -46,7 +46,7 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
         }
         
         return value.withValue(
-                StringPropertyReplacer.replaceProperties(PropertyMappers.getValue(context, name).getValue(),
+                StringPropertyReplacer.replaceProperties(value.getValue(),
                         property -> {
                             ConfigValue prop = context.proceed(property);
                             
