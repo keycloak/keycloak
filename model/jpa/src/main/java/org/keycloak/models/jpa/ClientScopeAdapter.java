@@ -32,11 +32,9 @@ import org.keycloak.models.utils.RoleUtils;
 
 import javax.persistence.EntityManager;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -100,22 +98,22 @@ public class ClientScopeAdapter implements ClientScopeModel, JpaModel<ClientScop
     }
 
     @Override
-    public Set<ProtocolMapperModel> getProtocolMappers() {
-        Set<ProtocolMapperModel> mappings = new HashSet<ProtocolMapperModel>();
-        for (ProtocolMapperEntity entity : this.entity.getProtocolMappers()) {
-            ProtocolMapperModel mapping = new ProtocolMapperModel();
-            mapping.setId(entity.getId());
-            mapping.setName(entity.getName());
-            mapping.setProtocol(entity.getProtocol());
-            mapping.setProtocolMapper(entity.getProtocolMapper());
-            Map<String, String> config = new HashMap<String, String>();
-            if (entity.getConfig() != null) {
-                config.putAll(entity.getConfig());
-            }
-            mapping.setConfig(config);
-            mappings.add(mapping);
-        }
-        return mappings;
+    public Stream<ProtocolMapperModel> getProtocolMappersStream() {
+        return this.entity.getProtocolMappers().stream()
+                .map(entity -> {
+                    ProtocolMapperModel mapping = new ProtocolMapperModel();
+                    mapping.setId(entity.getId());
+                    mapping.setName(entity.getName());
+                    mapping.setProtocol(entity.getProtocol());
+                    mapping.setProtocolMapper(entity.getProtocolMapper());
+                    Map<String, String> config = new HashMap<>();
+                    if (entity.getConfig() != null) {
+                        config.putAll(entity.getConfig());
+                    }
+                    mapping.setConfig(config);
+                    return mapping;
+                })
+                .distinct();
     }
 
     @Override

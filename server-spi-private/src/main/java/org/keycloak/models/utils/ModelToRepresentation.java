@@ -555,13 +555,10 @@ public class ModelToRepresentation {
         rep.setName(clientScopeModel.getName());
         rep.setDescription(clientScopeModel.getDescription());
         rep.setProtocol(clientScopeModel.getProtocol());
-        if (!clientScopeModel.getProtocolMappers().isEmpty()) {
-            List<ProtocolMapperRepresentation> mappings = new LinkedList<>();
-            for (ProtocolMapperModel model : clientScopeModel.getProtocolMappers()) {
-                mappings.add(toRepresentation(model));
-            }
+        List<ProtocolMapperRepresentation> mappings = clientScopeModel.getProtocolMappersStream()
+                .map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
+        if (!mappings.isEmpty())
             rep.setProtocolMappers(mappings);
-        }
 
         rep.setAttributes(new HashMap<>(clientScopeModel.getAttributes()));
 
@@ -621,13 +618,10 @@ public class ModelToRepresentation {
             rep.setRegisteredNodes(new HashMap<>(clientModel.getRegisteredNodes()));
         }
 
-        if (!clientModel.getProtocolMappers().isEmpty()) {
-            List<ProtocolMapperRepresentation> mappings = new LinkedList<>();
-            for (ProtocolMapperModel model : clientModel.getProtocolMappers()) {
-                mappings.add(toRepresentation(model));
-            }
+        List<ProtocolMapperRepresentation> mappings = clientModel.getProtocolMappersStream()
+                .map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
+        if (!mappings.isEmpty())
             rep.setProtocolMappers(mappings);
-        }
 
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findById(clientModel.getId());

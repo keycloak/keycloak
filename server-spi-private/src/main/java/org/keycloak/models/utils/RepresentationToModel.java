@@ -1414,8 +1414,7 @@ public class RepresentationToModel {
 
         if (resourceRep.getProtocolMappers() != null) {
             // first, remove all default/built in mappers
-            Set<ProtocolMapperModel> mappers = client.getProtocolMappers();
-            for (ProtocolMapperModel mapper : mappers) client.removeProtocolMapper(mapper);
+            client.getProtocolMappersStream().collect(Collectors.toList()).forEach(client::removeProtocolMapper);
 
             for (ProtocolMapperRepresentation mapper : resourceRep.getProtocolMappers()) {
                 client.addProtocolMapper(toModel(mapper));
@@ -1556,10 +1555,10 @@ public class RepresentationToModel {
     public static void updateClientProtocolMappers(ClientRepresentation rep, ClientModel resource) {
 
         if (rep.getProtocolMappers() != null) {
-            Map<String,ProtocolMapperModel> existingProtocolMappers = new HashMap<>();
-            for (ProtocolMapperModel existingProtocolMapper : resource.getProtocolMappers()) {
-                existingProtocolMappers.put(generateProtocolNameKey(existingProtocolMapper.getProtocol(), existingProtocolMapper.getName()), existingProtocolMapper);
-            }
+            Map<String,ProtocolMapperModel> existingProtocolMappers =
+                    resource.getProtocolMappersStream().collect(Collectors.toMap(mapper ->
+                            generateProtocolNameKey(mapper.getProtocol(), mapper.getName()), Function.identity()));
+
 
             for (ProtocolMapperRepresentation protocolMapperRepresentation : rep.getProtocolMappers()) {
                 String protocolNameKey = generateProtocolNameKey(protocolMapperRepresentation.getProtocol(), protocolMapperRepresentation.getName());
@@ -1606,8 +1605,7 @@ public class RepresentationToModel {
         if (resourceRep.getProtocol() != null) clientScope.setProtocol(resourceRep.getProtocol());
         if (resourceRep.getProtocolMappers() != null) {
             // first, remove all default/built in mappers
-            Set<ProtocolMapperModel> mappers = clientScope.getProtocolMappers();
-            for (ProtocolMapperModel mapper : mappers) clientScope.removeProtocolMapper(mapper);
+            clientScope.getProtocolMappersStream().collect(Collectors.toList()).forEach(clientScope::removeProtocolMapper);
 
             for (ProtocolMapperRepresentation mapper : resourceRep.getProtocolMappers()) {
                 clientScope.addProtocolMapper(toModel(mapper));

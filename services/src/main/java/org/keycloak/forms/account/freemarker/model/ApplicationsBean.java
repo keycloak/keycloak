@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -57,9 +58,10 @@ public class ApplicationsBean {
             }
 
             // Construct scope parameter with all optional scopes to see all potentially available roles
-            Set<ClientScopeModel> allClientScopes = new HashSet<>(client.getClientScopes(true, true).values());
-            allClientScopes.addAll(client.getClientScopes(false, true).values());
-            allClientScopes.add(client);
+            Stream<ClientScopeModel> allClientScopes = Stream.concat(
+                    client.getClientScopes(true, true).values().stream(),
+                    client.getClientScopes(false, true).values().stream());
+            allClientScopes = Stream.concat(allClientScopes, Stream.of(client)).distinct();
 
             Set<RoleModel> availableRoles = TokenManager.getAccess(user, client, allClientScopes);
 
