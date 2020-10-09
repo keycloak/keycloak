@@ -159,7 +159,7 @@ public class ServletSamlSessionStore implements SamlSessionStore {
             return false;
         }
 
-        if (! idMapper.hasSession(session.getId())) {
+        if (! idMapper.hasSession(session.getId()) && ! idMapperUpdater.refreshMapping(idMapper, session.getId())) {
             log.debugf("Session %s has expired on some other node", session.getId());
             session.removeAttribute(SamlSession.class.getName());
             return false;
