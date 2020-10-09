@@ -51,6 +51,7 @@ public class Serialization {
         }
         try {
             // Naive solution but will do.
+            @SuppressWarnings("unchecked")
             final T res = MAPPER.readValue(MAPPER.writeValueAsBytes(orig), (Class<T>) orig.getClass());
             return res;
         } catch (IOException ex) {

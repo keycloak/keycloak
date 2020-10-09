@@ -72,9 +72,9 @@ public class AdminEventBuilder {
     }
 
     /**
-     * Refreshes the builder assuming that the realm event information has 
+     * Refreshes the builder assuming that the realm event information has
      * changed. Thought to be used when the updateRealmEventsConfig has
-     * modified the events configuration. Now the store and the listeners are 
+     * modified the events configuration. Now the store and the listeners are
      * updated to have previous and new setup.
      * @param session The session
      * @return The same builder
@@ -82,7 +82,7 @@ public class AdminEventBuilder {
     public AdminEventBuilder refreshRealmEventsConfig(KeycloakSession session) {
         return this.updateStore(session).addListeners(session);
     }
-    
+
     private AdminEventBuilder updateStore(KeycloakSession session) {
         if (realm.isAdminEventsEnabled() && store == null) {
             this.store = session.getProvider(EventStoreProvider.class);
@@ -92,7 +92,7 @@ public class AdminEventBuilder {
         }
         return this;
     }
-    
+
     private AdminEventBuilder addListeners(KeycloakSession session) {
         realm.getEventsListenersStream()
                 .filter(((Predicate<String>) listeners::containsKey).negate())
@@ -233,15 +233,15 @@ public class AdminEventBuilder {
     }
 
     private void send() {
-        boolean includeRepresentation = false;
-        if(realm.isAdminEventsDetailsEnabled()) {
-            includeRepresentation = true;
-        }
-        adminEvent.setTime(Time.currentTimeMillis());
+        boolean includeRepresentation = realm.isAdminEventsDetailsEnabled();
+
+        // Event needs to be copied because the same builder can be used with another event
+        AdminEvent eventCopy = new AdminEvent(adminEvent);
+        eventCopy.setTime(Time.currentTimeMillis());
 
         if (store != null) {
             try {
-                store.onEvent(adminEvent, includeRepresentation);
+                store.onEvent(eventCopy, includeRepresentation);
             } catch (Throwable t) {
                 ServicesLogger.LOGGER.failedToSaveEvent(t);
             }
@@ -250,7 +250,7 @@ public class AdminEventBuilder {
         if (listeners != null) {
             for (EventListenerProvider l : listeners.values()) {
                 try {
-                    l.onEvent(adminEvent, includeRepresentation);
+                    l.onEvent(eventCopy, includeRepresentation);
                 } catch (Throwable t) {
                     ServicesLogger.LOGGER.failedToSendType(t, l);
                 }

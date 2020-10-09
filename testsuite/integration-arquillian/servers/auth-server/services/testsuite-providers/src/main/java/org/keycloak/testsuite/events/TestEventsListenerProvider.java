@@ -19,7 +19,9 @@ package org.keycloak.testsuite.events;
 
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventListenerTransaction;
 import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.models.KeycloakSession;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -27,22 +29,26 @@ import java.util.concurrent.LinkedBlockingQueue;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public class EventsListenerProvider implements EventListenerProvider {
+public class TestEventsListenerProvider implements EventListenerProvider {
 
     private static final BlockingQueue<Event> events = new LinkedBlockingQueue<Event>();
     private static final BlockingQueue<AdminEvent> adminEvents = new LinkedBlockingQueue<>();
+    private final EventListenerTransaction tx = new EventListenerTransaction((event, includeRepre) -> adminEvents.add(event), events::add);
+
+    public TestEventsListenerProvider(KeycloakSession session) {
+        session.getTransactionManager().enlistAfterCompletion(tx);
+    }
 
     @Override
     public void onEvent(Event event) {
-        events.add(event);
+        tx.addEvent(event);
     }
 
     @Override
     public void onEvent(AdminEvent event, boolean includeRepresentation) {
-        // Save the copy for case when same AdminEventBuilder is used more times during same transaction to avoid overwriting previously referenced event
-        adminEvents.add(copy(event));
+        tx.addAdminEvent(event, includeRepresentation);
     }
-
+    
     @Override
     public void close() {
 
@@ -62,18 +68,5 @@ public class EventsListenerProvider implements EventListenerProvider {
 
     public static void clearAdminEvents() {
         adminEvents.clear();
-    }
-
-    private AdminEvent copy(AdminEvent adminEvent) {
-        AdminEvent newEvent = new AdminEvent();
-        newEvent.setAuthDetails(adminEvent.getAuthDetails());
-        newEvent.setError(adminEvent.getError());
-        newEvent.setOperationType(adminEvent.getOperationType());
-        newEvent.setResourceType(adminEvent.getResourceType());
-        newEvent.setRealmId(adminEvent.getRealmId());
-        newEvent.setRepresentation(adminEvent.getRepresentation());
-        newEvent.setResourcePath(adminEvent.getResourcePath());
-        newEvent.setTime(adminEvent.getTime());
-        return newEvent;
     }
 }

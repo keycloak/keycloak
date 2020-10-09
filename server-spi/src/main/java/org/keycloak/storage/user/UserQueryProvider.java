@@ -214,7 +214,7 @@ public interface UserQueryProvider {
      * @param firstResult
      * @param maxResults
      * @return
-     * @deprecated Use {@link #searchForUserStream(String, RealmModel, int, int) searchForUserStream} instead.
+     * @deprecated Use {@link #searchForUserStream(String, RealmModel, Integer, Integer) searchForUserStream} instead.
      */
     @Deprecated
     List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults);
@@ -231,8 +231,8 @@ public interface UserQueryProvider {
      * @param maxResults maximum number of results to return. Ignored if negative.
      * @return a non-null {@link Stream} of users that match the search criteria.
      */
-    default Stream<UserModel> searchForUserStream(String search, RealmModel realm, int firstResult, int maxResults) {
-        List<UserModel> value = this.searchForUser(search, realm, firstResult, maxResults);
+    default Stream<UserModel> searchForUserStream(String search, RealmModel realm, Integer firstResult, Integer maxResults) {
+        List<UserModel> value = this.searchForUser(search, realm, firstResult == null ? -1 : firstResult, maxResults == null ? -1 : maxResults);
         return value != null ? value.stream() : Stream.empty();
     }
 
@@ -294,7 +294,7 @@ public interface UserQueryProvider {
      * @param firstResult
      * @param maxResults
      * @return
-     * @deprecated Use {@link #searchForUserStream(Map, RealmModel, int, int) searchForUserStream} instead.
+     * @deprecated Use {@link #searchForUserStream(Map, RealmModel, Integer, Integer) searchForUserStream} instead.
      */
     @Deprecated
     List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults);
@@ -317,8 +317,8 @@ public interface UserQueryProvider {
      * @param maxResults maximum number of results to return. Ignored if negative.
      * @return a non-null {@link Stream} of users that match the search criteria.
      */
-    default Stream<UserModel> searchForUserStream(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
-        List<UserModel> value = this.searchForUser(params, realm, firstResult, maxResults);
+    default Stream<UserModel> searchForUserStream(Map<String, String> params, RealmModel realm, Integer firstResult, Integer maxResults) {
+        List<UserModel> value = this.searchForUser(params, realm, firstResult == null ? -1 : firstResult, maxResults == null ? -1 : maxResults);
         return value != null ? value.stream() : Stream.empty();
     }
 
@@ -362,7 +362,7 @@ public interface UserQueryProvider {
      * @param firstResult
      * @param maxResults
      * @return
-     * @deprecated Use {@link #getGroupMembersStream(RealmModel, GroupModel, int, int) getGroupMembersStream} instead.
+     * @deprecated Use {@link #getGroupMembersStream(RealmModel, GroupModel, Integer, Integer) getGroupMembersStream} instead.
      */
     @Deprecated
     List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults);
@@ -379,8 +379,8 @@ public interface UserQueryProvider {
      * @param maxResults maximum number of results to return. Ignored if negative.
      * @return a non-null {@link Stream} of users that belong to the group.
      */
-    default Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
-        List<UserModel> value = this.getGroupMembers(realm, group, firstResult, maxResults);
+    default Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
+        List<UserModel> value = this.getGroupMembers(realm, group, firstResult == null ? -1 : firstResult, maxResults == null ? -1 : maxResults);
         return value != null ? value.stream() : Stream.empty();
     }
 
@@ -405,17 +405,17 @@ public interface UserQueryProvider {
      * @return a non-null {@link Stream} of users that have the specified role.
      */
     default Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role) {
-        return Stream.empty();
+        return getRoleMembersStream(realm, role, null, null);
     }
 
     /**
      * Search for users that have a specific role with a specific roleId.
      *
+     * @param role
      * @param firstResult
      * @param maxResults
-     * @param role
      * @return
-     * @deprecated Use {@link #getRoleMembersStream(RealmModel, RoleModel, int, int) getRoleMembersStream} instead.
+     * @deprecated Use {@link #getRoleMembersStream(RealmModel, RoleModel, Integer, Integer) getRoleMembersStream} instead.
      */
     @Deprecated
     default List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
@@ -431,7 +431,7 @@ public interface UserQueryProvider {
      * @param maxResults maximum number of results to return. Ignored if negative.
      * @return a non-null {@link Stream} of users that have the specified role.
      */
-    default Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+    default Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
         return Stream.empty();
     }
 
@@ -506,7 +506,7 @@ public interface UserQueryProvider {
         }
 
         @Override
-        Stream<UserModel> searchForUserStream(String search, RealmModel realm, int firstResult, int maxResults);
+        Stream<UserModel> searchForUserStream(String search, RealmModel realm, Integer firstResult, Integer maxResults);
 
         @Override
         default List<UserModel> searchForUser(Map<String, String> params, RealmModel realm) {
@@ -522,7 +522,7 @@ public interface UserQueryProvider {
         }
 
         @Override
-        Stream<UserModel> searchForUserStream(Map<String, String> params, RealmModel realm, int firstResult, int maxResults);
+        Stream<UserModel> searchForUserStream(Map<String, String> params, RealmModel realm, Integer firstResult, Integer maxResults);
 
         @Override
         default List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
@@ -538,7 +538,7 @@ public interface UserQueryProvider {
         }
 
         @Override
-        Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, int firstResult, int maxResults);
+        Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults);
 
         @Override
         default List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {

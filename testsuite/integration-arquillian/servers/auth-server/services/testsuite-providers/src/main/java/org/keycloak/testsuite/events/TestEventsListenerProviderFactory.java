@@ -26,15 +26,13 @@ import org.keycloak.models.KeycloakSessionFactory;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public class EventsListenerProviderFactory implements EventListenerProviderFactory {
+public class TestEventsListenerProviderFactory implements EventListenerProviderFactory {
 
     public static final String PROVIDER_ID = "event-queue";
 
-    private static final EventsListenerProvider INSTANCE = new EventsListenerProvider();
-
     @Override
     public EventListenerProvider create(KeycloakSession session) {
-        return INSTANCE;
+        return new TestEventsListenerProvider(session);
     }
 
     @Override
