@@ -115,14 +115,14 @@ public class ConfigurationTest {
 
     @Test
     public void testSysPropPriorityOverEnvVar() {
-        putEnvVar("KC_HOSTNAME_DEFAULT_FRONTEND_URL", "http://envvar.com");
+        putEnvVar("KC_SPI_HOSTNAME_DEFAULT_FRONTEND_URL", "http://envvar.com");
         System.setProperty("kc.spi.hostname.default.frontend-url", "http://propvar.com");
         assertEquals("http://propvar.com", initConfig("hostname", "default").get("frontendUrl"));
     }
 
     @Test
-    public void testCLIPriorityOverSysVar() {
-        System.setProperty("kc.hostname.frontend-url", "http://propvar.com");
+    public void testCLIPriorityOverSysProp() {
+        System.setProperty("kc.spi.hostname.default.frontend-url", "http://propvar.com");
         System.setProperty("kc.config.args", "--spi-hostname-default-frontend-url=http://cli.com");
         assertEquals("http://cli.com", initConfig("hostname", "default").get("frontendUrl"));
     }
@@ -165,7 +165,7 @@ public class ConfigurationTest {
         System.setProperty("kc.config.args", "--spi-action-token-handler-verify-email-some-property=test");
         assertEquals("test", initConfig("action-token-handler", "verify-email").get("some-property"));
         System.setProperty("kc.config.args", "--spi-action-token-handler-verify-email-some-property=test");
-        assertEquals("test", initConfig("action-token-handler", "verify-email").get("some-property"));
+        assertEquals("test", initConfig("actionTokenHandler", "verifyEmail").get("someProperty"));
 
         // test multi-word SPI names using slashes
         System.setProperty("kc.config.args", "--spi-client-registration-openid-connect-static-jwk-url=http://c.jwk.url");
@@ -173,17 +173,11 @@ public class ConfigurationTest {
     }
 
     @Test
-    public void testSpiConfigurationUsingProperties() {
-        System.setProperty("kc.spi.hostname.default.frontend-url", "http://spifull.com");
-        assertEquals("http://spifull.com", initConfig("hostname", "default").get("frontendUrl"));
-    }
-
-    @Test
     public void testPropertyMapping() {
         System.setProperty("kc.config.args", "--db=mariadb,--db-url=jdbc:mariadb://localhost/keycloak");
         SmallRyeConfig config = createConfig();
         assertEquals(MariaDBDialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
-        assertEquals("jdbc:mariadb://localhost/keycloak", config.getConfigValue("quarkus.datasource.url").getValue());
+        assertEquals("jdbc:mariadb://localhost/keycloak", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
     }
 
     @Test
@@ -196,7 +190,7 @@ public class ConfigurationTest {
         System.setProperty("kc.config.args", "--db=h2-mem");
         config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
-        assertEquals("jdbc:h2:mem:keycloakdb", config.getConfigValue("quarkus.datasource.url").getValue());
+        assertEquals("jdbc:h2:mem:keycloakdb", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
     }
 
     @Test
@@ -206,12 +200,12 @@ public class ConfigurationTest {
         System.setProperty("kc.config.args", "--db=h2-file");
         SmallRyeConfig config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
-        assertEquals("jdbc:h2:file:test-dir/data/keycloakdb;;test=test;test1=test1", config.getConfigValue("quarkus.datasource.url").getValue());
+        assertEquals("jdbc:h2:file:test-dir/data/keycloakdb;;test=test;test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         System.setProperty("kc.db.url.properties", "?test=test&test1=test1");
         System.setProperty("kc.config.args", "--db=mariadb");
         config = createConfig();
-        assertEquals("jdbc:mariadb://localhost/keycloak?test=test&test1=test1", config.getConfigValue("quarkus.datasource.url").getValue());
+        assertEquals("jdbc:mariadb://localhost/keycloak?test=test&test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
     }
 
     // KEYCLOAK-15632
@@ -245,7 +239,7 @@ public class ConfigurationTest {
 
         // If explicitly set, then it is always used regardless of the profile
         System.clearProperty("kc.profile");
-        System.setProperty("kc.config.args", "--cluster-enabled=true");
+        System.setProperty("kc.config.args", "--clustered=true");
 
         Assert.assertTrue(initConfig("connectionsInfinispan", "default").getBoolean("clustered"));
         System.setProperty("kc.profile", "dev");
