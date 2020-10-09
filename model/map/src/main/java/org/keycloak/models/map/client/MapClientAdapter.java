@@ -26,10 +26,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import com.google.common.base.Functions;
 import java.security.MessageDigest;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -478,8 +475,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
     /*************** Protocol mappers ****************/
 
     @Override
-    public Set<ProtocolMapperModel> getProtocolMappers() {
-        return Collections.unmodifiableSet(new HashSet<>(entity.getProtocolMappers()));
+    public Stream<ProtocolMapperModel> getProtocolMappersStream() {
+        return entity.getProtocolMappers().stream().distinct();
     }
 
     @Override

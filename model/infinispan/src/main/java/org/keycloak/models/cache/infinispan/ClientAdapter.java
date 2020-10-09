@@ -357,9 +357,9 @@ public class ClientAdapter implements ClientModel, CachedObject {
     }
 
     @Override
-    public Set<ProtocolMapperModel> getProtocolMappers() {
-        if (isUpdated()) return updated.getProtocolMappers();
-        return cached.getProtocolMappers();
+    public Stream<ProtocolMapperModel> getProtocolMappersStream() {
+        if (isUpdated()) return updated.getProtocolMappersStream();
+        return cached.getProtocolMappers().stream();
     }
 
     @Override

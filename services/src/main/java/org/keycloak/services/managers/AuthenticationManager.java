@@ -91,7 +91,6 @@ import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -1098,10 +1097,9 @@ public class AuthenticationManager {
         // todo scope param protocol independent
         String scopeParam = authSession.getClientNote(OAuth2Constants.SCOPE);
 
-        Set<String> requestedClientScopes = new HashSet<String>();
-        for (ClientScopeModel clientScope : org.keycloak.protocol.oidc.TokenManager.getRequestedClientScopes(scopeParam, client)) {
-            requestedClientScopes.add(clientScope.getId());
-        }
+        Set<String> requestedClientScopes = TokenManager.getRequestedClientScopes(scopeParam, client)
+                .map(ClientScopeModel::getId).collect(Collectors.toSet());
+
         authSession.setClientScopes(requestedClientScopes);
     }
 
