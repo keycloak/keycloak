@@ -40,6 +40,7 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
     private HashMap<String, AuthenticatorConfigRepresentation> expectedConfigs = new HashMap<>();
 
     {
+        expectedConfigs.put("ciba-decoupled", newConfig("Default Config", new String[]{"defaultUserIdField", "user_info"}));
         expectedConfigs.put("idp-review-profile", newConfig("review profile config", new String[]{"update.profile.on.first.login", "missing"}));
         expectedConfigs.put("idp-create-user-if-unique", newConfig("create unique user config", new String[]{"require.password.update.after.registration", "false"}));
     }
@@ -135,6 +136,13 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         addExecInfo(execs, "Browser - Conditional OTP", null, false, 1, 1, CONDITIONAL, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL});
         addExecInfo(execs, "Condition - user configured", "conditional-user-configured", false, 2, 0, REQUIRED, null, new String[]{REQUIRED, DISABLED});
         addExecInfo(execs, "OTP Form", "auth-otp-form", false, 2, 1, REQUIRED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED});
+        expected.add(new FlowExecutions(flow, execs));
+
+        flow = newFlow("ciba", "OpenID Connect CIBA flow", "basic-flow", true, true);
+        addExecExport(flow, null, false, "ciba-decoupled", false, "Default Config", REQUIRED, 10);
+
+        execs = new LinkedList<>();
+        addExecInfo(execs, "CIBA Decoupled Authenticator", "ciba-decoupled", true, 0, 0, REQUIRED, null, new String[]{REQUIRED});
         expected.add(new FlowExecutions(flow, execs));
 
         flow = newFlow("clients", "Base authentication for clients", "client-flow", true, true);

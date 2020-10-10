@@ -789,7 +789,12 @@ public class RepresentationToModel {
             newRealm.setDirectGrantFlow(newRealm.getFlowByAlias(rep.getDirectGrantFlow()));
         }
         if (rep.getCibaFlow() == null) {
-            newRealm.setCIBAFlow(newRealm.getFlowByAlias(DefaultAuthenticationFlows.CIBA_FLOW));
+            AuthenticationFlowModel cibaFlowModel = newRealm.getFlowByAlias(DefaultAuthenticationFlows.CIBA_FLOW);
+            if (cibaFlowModel != null) {
+                newRealm.setCIBAFlow(cibaFlowModel);
+            } else {
+                DefaultAuthenticationFlows.cibaFlow(newRealm, true);
+            }
         } else {
             newRealm.setCIBAFlow(newRealm.getFlowByAlias(rep.getCibaFlow()));
         }
