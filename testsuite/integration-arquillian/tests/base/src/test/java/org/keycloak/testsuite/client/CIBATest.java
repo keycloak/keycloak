@@ -7,12 +7,12 @@ import static org.hamcrest.Matchers.containsString;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.jgroups.util.UUID;
 
 import static org.junit.Assert.assertThat;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -40,6 +40,8 @@ import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.EnableCiba;
 import org.keycloak.testsuite.ciba.DecoupledAuthenticationRequest;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
@@ -52,6 +54,8 @@ import org.keycloak.testsuite.util.OAuthClient.AuthenticationRequestAcknowledgem
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+@EnableCiba
+@AuthServerContainerExclude({REMOTE, QUARKUS})
 public class CIBATest extends AbstractTestRealmKeycloakTest {
 
     private final String DECOUPLED_AUTHN_SERVER_NAME = "decoupled-authn-server";
