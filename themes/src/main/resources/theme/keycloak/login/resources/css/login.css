@@ -574,6 +574,71 @@ ul#kc-totp-supported-apps {
     width: 40%;
 }
 
+/* Internet Explorer 11 compatibility workaround for select-authenticator screen */
+@media all and (-ms-high-contrast: none),
+(-ms-high-contrast: active) {
+    .select-auth-box-parent {
+        border-top: 1px solid #f0f0f0;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+        cursor: pointer;
+    }
+
+    .select-auth-box-headline {
+        font-size: 16px;
+        color: #06c;
+        font-weight: bold;
+    }
+
+    .select-auth-box-desc {
+        font-size: 14px;
+    }
+
+    .pf-l-stack {
+        flex-basis: 100%;
+    }
+}
+/* End of IE11 workaround for select-authenticator screen */
+
+.select-auth-box-arrow{
+    display: flex;
+    align-items: center;
+    margin-right: 2rem;
+}
+
+.select-auth-box-icon{
+    display: flex;
+    flex: 0 0 2em;
+    justify-content: center;
+    margin-right: 1rem;
+    margin-left: 3rem;
+}
+
+.select-auth-box-parent{
+    border-top: 1px solid var(--pf-global--palette--black-200);
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    cursor: pointer;
+}
+
+.select-auth-box-parent:hover{
+    background-color: #f7f8f8;
+}
+
+.select-auth-container {
+    padding-bottom: 0px !important;
+}
+
+.select-auth-box-headline {
+    font-size: var(--pf-global--FontSize--md);
+    color: var(--pf-global--primary-color--100);
+    font-weight: bold;
+}
+
+.select-auth-box-desc {
+    font-size: var(--pf-global--FontSize--sm);
+}
+
 .card-pf {
     margin: 0 auto;
     box-shadow: var(--pf-global--BoxShadow--lg);

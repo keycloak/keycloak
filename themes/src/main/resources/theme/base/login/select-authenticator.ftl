@@ -1,5 +1,5 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout displayInfo=true; section>
+<@layout.registrationLayout displayInfo=false; section>
     <#if section = "header" || section = "show-username">
         <script type="text/javascript">
             function fillAndSubmit(authExecId) {
@@ -15,21 +15,22 @@
         <form id="kc-select-credential-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
             <div class="${properties.kcSelectAuthListClass!}">
                 <#list auth.authenticationSelections as authenticationSelection>
-                    <div class="${properties.kcSelectAuthListItemClass!}">
-                        <div class="${properties.kcSelectAuthListItemInfoClass!}" onclick="fillAndSubmit('${authenticationSelection.authExecId}')">
-                            <div class="${properties.kcSelectAuthListItemLeftClass!}">
-                                <span class="${properties['${authenticationSelection.iconCssClass}']!authenticationSelection.iconCssClass}"></span>
+                    <div class="${properties.kcSelectAuthListItemClass!}" onclick="fillAndSubmit('${authenticationSelection.authExecId}')">
+
+                        <div class="${properties.kcSelectAuthListItemIconClass!}">
+                            <i class="${properties['${authenticationSelection.iconCssClass}']!authenticationSelection.iconCssClass} fa-2x"></i>
+                        </div>
+                        <div class="${properties.kcSelectAuthListItemBodyClass!}">
+                            <div class="${properties.kcSelectAuthListItemHeadingClass!}">
+                                ${msg('${authenticationSelection.displayName}')}
                             </div>
-                            <div class="${properties.kcSelectAuthListItemBodyClass!}">
-                                <div class="${properties.kcSelectAuthListItemDescriptionClass!}">
-                                    <div class="${properties.kcSelectAuthListItemHeadingClass!}">
-                                        ${msg('${authenticationSelection.displayName}')}
-                                    </div>
-                                    <div class="${properties.kcSelectAuthListItemHelpTextClass!}">
-                                        ${msg('${authenticationSelection.helpText}')}
-                                    </div>
-                                </div>
+                            <div class="${properties.kcSelectAuthListItemDescriptionClass!}">
+                                ${msg('${authenticationSelection.helpText}')}
                             </div>
+                        </div>
+                        <div class="${properties.kcSelectAuthListItemFillClass!}"></div>
+                        <div class="${properties.kcSelectAuthListItemArrowClass!}">
+                            <i class="${properties.kcSelectAuthListItemArrowIconClass!}"></i>
                         </div>
                     </div>
                 </#list>
