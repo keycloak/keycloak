@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.oauth;
 
 import org.apache.http.HttpResponse;
+import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -51,7 +52,10 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
@@ -137,6 +141,12 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("secret1");
 
         assertEquals(200, response.getStatusCode());
+
+        // older clients which use client-credentials grant may create a refresh-token and session, see KEYCLOAK-9551.
+        List<Map<String, String>> clientSessionStats = getAdminClient().realm(oauth.getRealm()).getClientSessionStats();
+        assertThat(clientSessionStats, hasSize(1));
+        Map<String, String> sessionStats = clientSessionStats.get(0);
+        assertEquals(sessionStats.get("clientId"), oauth.getClientId());
 
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
@@ -337,6 +347,10 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         Assert.assertNotNull("Access-Token should be present", tokenString);
         oauth.verifyToken(tokenString);
         Assert.assertNull("Refresh-Token should not be present", response.getRefreshToken());
+
+        // new clients which use client-credentials grant should NOT create a refresh-token or session, see KEYCLOAK-9551.
+        List<Map<String, String>> clientSessionStats = getAdminClient().realm(oauth.getRealm()).getClientSessionStats();
+        assertThat(clientSessionStats, empty());
     }
 
     private void conductClientCredentialsAuthRequest(String expectedRefreshAlg, String expectedAccessAlg, String realmTokenAlg) throws Exception {
