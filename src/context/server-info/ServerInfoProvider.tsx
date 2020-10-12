@@ -4,7 +4,7 @@ import { HttpClientContext } from "../http-service/HttpClientContext";
 import { sortProvider } from "../../util";
 import { DataLoader } from "../../components/data-loader/DataLoader";
 
-const ServerInfoContext = createContext<ServerInfoRepresentation>(
+export const ServerInfoContext = createContext<ServerInfoRepresentation>(
   {} as ServerInfoRepresentation
 );
 

@@ -1,0 +1,58 @@
+{
+  "id": "d695a07e-f0e0-4248-b606-21aaf6b54055",
+  "name": "dog",
+  "description": "Great for Juice",
+  "protocol": "openid-connect",
+  "attributes": {
+    "include.in.token.scope": "true",
+    "display.on.consent.screen": "true",
+    "gui.order": "0",
+    "consent.screen.text": "So cool!"
+  },
+  "protocolMappers": [
+    {
+      "id": "f8673b15-97d8-4b7c-b3a2-23394041fb40",
+      "name": "upn",
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-usermodel-property-mapper",
+      "consentRequired": false,
+      "config": {
+        "userinfo.token.claim": "true",
+        "user.attribute": "username",
+        "id.token.claim": "true",
+        "access.token.claim": "true",
+        "claim.name": "upn",
+        "jsonType.label": "String"
+      }
+    },
+    {
+      "id": "bd2e4c38-2e00-4674-9a3e-d15a88d2565a",
+      "name": "realm roles",
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-usermodel-realm-role-mapper",
+      "consentRequired": false,
+      "config": {
+        "user.attribute": "foo",
+        "access.token.claim": "true",
+        "claim.name": "realm_access.roles",
+        "jsonType.label": "String",
+        "multivalued": "true"
+      }
+    },
+    {
+      "id": "fed9caae-e3e4-4711-9035-087193dd25c4",
+      "name": "username",
+      "protocol": "openid-connect",
+      "protocolMapper": "oidc-usermodel-property-mapper",
+      "consentRequired": false,
+      "config": {
+        "userinfo.token.claim": "true",
+        "user.attribute": "username",
+        "id.token.claim": "true",
+        "access.token.claim": "true",
+        "claim.name": "preferred_username",
+        "jsonType.label": "String"
+      }
+    }
+  ]
+}
