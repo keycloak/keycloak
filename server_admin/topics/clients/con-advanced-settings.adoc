@@ -1,0 +1,90 @@
+[id="con-advanced-settings_{context}"]
+==== Advanced Settings
+When you click _Advanced Settings_, additional fields are displayed.
+
+[[_mtls-client-certificate-bound-tokens]]
+*OAuth 2.0 Mutual TLS Certificate Bound Access Tokens Enabled*
+
+[NOTE]
+====
+To enable mutual TLS in {project_name}, see <<_enable-mtls-wildfly, Enable mutual SSL in WildFly>>.
+====
+
+Mutual TLS binds an access token and a refresh token together with a client certificate, which is exchanged during a TLS handshake. This binding prevents an attacker from using stolen tokens.
+
+This type of token is a holder-of-key token. Unlike bearer tokens, the recipient of a holder-of-key token can verify if the sender of the token is legitimate.
+
+If this setting is on, the workflow is:
+
+. A token request is sent to the token endpoint in an authorization code flow or hybrid flow.
+. {project_name} requests a client certificate.
+. {project_name} receives the client certificate.
+. {project_name} successfully verifies the client certificate.
+
+If verification fails, {project_name} rejects the token.
+
+In the following cases, {project_name} will verify the client sending the access token or the refresh token:
+
+* A token refresh request is sent to the token endpoint with a holder-of-key refresh token.
+* A UserInfo request is sent to UserInfo endpoint with a holder-of-key access token.
+* A logout request is sent to Logout endpoint with a holder-of-key refresh token.
+
+See https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3[Mutual TLS Client Certificate Bound Access Tokens] in the OAuth 2.0 Mutual TLS Client Authentication and Certificate Bound Access Tokens for more details.
+
+[NOTE]
+====
+Currently, {project_name} client adapters do not support holder-of-key token verification. {project_name} adapters treat access and refresh tokens as bearer tokens.
+====
+
+[[_proof-key-for-code-exchange]]
+*Proof Key for Code Exchange Code Challenge Method*
+
+If an attacker steals an authorization code of a legitimate client, Proof Key for Code Exchange (PKCE) prevents the attacker from receiving the tokens that apply to the code.
+
+An administrator can select one of these options:
+
+`(blank)`:: {project_name} does not apply PKCE unless the client sends appropriate PKCE parameters to {project_name}s authorization endpoint.
+`S256`:: {project_name} applies to the client PKCE whose code challenge method is S256.
+`plain`:: {project_name} applies to the client PKCE whose code challenge method is plain.
+
+See https://tools.ietf.org/html/rfc7636[RFC 7636 Proof Key for Code Exchange by OAuth Public Clients] for more details.
+
+[[_jwe-id-token-encryption]]
+*Signed and Encrypted ID Token Support*
+
+{project_name} can encrypt ID tokens according to the https://tools.ietf.org/html/rfc7516[Json Web Encryption (JWE)] specification. The administrator determines if ID tokens are encrypted for each client.
+
+The key used for encrypting the ID token is the Content Encryption Key (CEK). {project_name} and a client must negotiate which CEK is used and how it is delivered. The method used to determine the CEK is the Key Management Mode. The Key Management Mode that {project_name} supports is Key Encryption.
+
+In Key Encryption:
+
+. The client generates an asymmetric cryptographic key pair.
+. The public key is used to encrypt the CEK. 
+. {project_name} generates a CEK per ID token
+. {project_name} encrypts the ID token using this generated CEK
+. {project_name} encrypts the CEK using the client's public key. 
+. The client decrypts this encrypted CEK using their private key
+. The client decrypts the ID token using the decrypted CEK. 
+
+No party, other than the client, can decrypt the ID token.
+
+The client must pass its public key for encrypting CEK to {project_name}. {project_name} supports downloading public keys from a URL provided by the client. The client must provide public keys according to the https://tools.ietf.org/html/rfc7517[Json Web Keys (JWK)] specification. 
+
+The procedure is:
+
+. Open the client's `Credentials` tab.
+. Select `Signed Jwt` from the `Client Authenticator` menu.
+. Set the `JWKS URL` switch to ON.
+. Input the client's public key URL in the `JWKS URL` textbox.
+
+Key Encryption's algorithms are defined in the https://tools.ietf.org/html/rfc7518#section-4.1[Json Web Algorithm (JWA)] specification. {project_name} supports:
+
+* RSAES-PKCS1-v1_5(RSA1_5)
+* RSAES OAEP using default parameters (RSA-OAEP)
+* RSAES OAEP 256 using SHA-256 and MFG1 (RSA-OAEP-256)
+
+The procedure to select the algorithm is:
+
+. Open the client's `Settings` tab.
+. Open `Fine Grain OpenID Connect Configuration`.
+. Select the algorithm from `ID Token Encryption Content Encryption Algorithm` pulldown menu.
