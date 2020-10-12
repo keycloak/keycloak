@@ -21,7 +21,7 @@ export type ListEmptyStateProps = {
   instructions: string;
   primaryActionText: string;
   onPrimaryAction: MouseEventHandler<HTMLButtonElement>;
-  secondaryActions: Action[];
+  secondaryActions?: Action[];
 };
 
 export const ListEmptyState = ({
@@ -42,17 +42,19 @@ export const ListEmptyState = ({
         <Button variant="primary" onClick={onPrimaryAction}>
           {primaryActionText}
         </Button>
-        <EmptyStateSecondaryActions>
-          {secondaryActions.map((action) => (
-            <Button
-              key={action.text}
-              variant={action.type || ButtonVariant.primary}
-              onClick={action.onClick}
-            >
-              {action.text}
-            </Button>
-          ))}
-        </EmptyStateSecondaryActions>
+        {secondaryActions && (
+          <EmptyStateSecondaryActions>
+            {secondaryActions.map((action) => (
+              <Button
+                key={action.text}
+                variant={action.type || ButtonVariant.primary}
+                onClick={action.onClick}
+              >
+                {action.text}
+              </Button>
+            ))}
+          </EmptyStateSecondaryActions>
+        )}
       </EmptyState>
     </>
   );
