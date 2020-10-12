@@ -161,16 +161,18 @@ public final class PropertyMappers {
     }
 
     private static void configureClustering() {
-        createWithDefault("clustered", "kc.spi.connections-infinispan.default.clustered", "placeholder", (value, context) -> {
-            if ("true".equals(value) || "false".equals(value)) {
-                return value;
+        createWithDefault("cluster", "kc.spi.connections-infinispan.default.config-file", "placeholder", (value, context) -> {
+
+            if ("placeholder".equals(value)) {
+                // Clustering is disabled by default for the "dev" profile. Otherwise enabled
+                value = ("dev".equalsIgnoreCase(ProfileManager.getActiveProfile())) ? "local" : "default";
             }
 
-            // Clustering is disabled by default for the "dev" profile. Otherwise enabled
-            value = ("dev".equalsIgnoreCase(ProfileManager.getActiveProfile())) ? "false" : "true";
-            return value;
+            return "cluster-" + value + ".xml";
 
-        }, "Enables Clustering. Possible values are 'true' or 'false'.");
+        }, "Specifies clustering configuration. The specified value points to the infinispan configuration file prefixed with the 'cluster-` "
+                + "inside the distribution configuration directory. Supported values out of the box are 'local' and 'cluster'. Value 'local' points to the file cluster-local.xml and " +
+                "effectively disables clustering and use infinispan caches in the local mode. Value 'default' points to the file cluster-default.xml, which has clustering enabled for infinispan caches.");
     }
 
     static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
