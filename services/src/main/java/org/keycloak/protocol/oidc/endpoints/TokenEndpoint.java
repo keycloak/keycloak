@@ -715,10 +715,17 @@ public class TokenEndpoint {
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
 
-        // TODO: This should create transient session by default - hence not persist userSession at all. However we should have compatibility switch for support
-        // persisting of userSession
+        // persisting of userSession by default
+        UserSessionModel.SessionPersistenceState sessionPersistenceState = UserSessionModel.SessionPersistenceState.PERSISTENT;
+
+        boolean useRefreshToken = OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshTokenForClientCredentialsGrant();
+        if (!useRefreshToken) {
+            // we don't want to store a session hence we mark it as transient, see KEYCLOAK-9551
+            sessionPersistenceState = UserSessionModel.SessionPersistenceState.TRANSIENT;
+        }
+
         UserSessionModel userSession = session.sessions().createUserSession(authSession.getParentSession().getId(), realm, clientUser, clientUsername,
-                clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
+                clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null, sessionPersistenceState);
         event.session(userSession);
 
         AuthenticationManager.setClientScopesInSession(authSession);
@@ -734,8 +741,7 @@ public class TokenEndpoint {
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSessionCtx)
                 .generateAccessToken();
 
-        // KEYCLOAK-9551 Client Credentials Grant generates refresh token handling
-        boolean useRefreshToken = OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshTokenForClientCredentialsGrant();
+        // Make refresh token generation optional, see KEYCLOAK-9551
         if (useRefreshToken) {
             responseBuilder = responseBuilder.generateRefreshToken();
         }
@@ -749,13 +755,6 @@ public class TokenEndpoint {
         AccessTokenResponse res = responseBuilder.build();
 
         event.success();
-
-        // KEYCLOAK-9551 Client Credentials Grant generates refresh token handling
-        if (!useRefreshToken) {
-            // remove dangling user session if refresh_token is not used.
-            // Note that the generated access_token cannot be verified via the token_introspection endpoint if the associated session is missing.
-            session.sessions().removeUserSession(realm, userSession);
-        }
 
         return cors.builder(Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).build();
     }
