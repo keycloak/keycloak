@@ -40,8 +40,22 @@ exports[`<ListEmptyState /> render 1`] = `
         data-ouia-safe="true"
         type="button"
       >
-        Add a thing
+        Add it now!
       </button>
+      <div
+        class="pf-c-empty-state__secondary"
+      >
+        <button
+          aria-disabled="false"
+          class="pf-c-button pf-m-primary"
+          data-ouia-component-id="OUIA-Generated-Button-primary-2"
+          data-ouia-component-type="PF4/Button"
+          data-ouia-safe="true"
+          type="button"
+        >
+          Add a thing
+        </button>
+      </div>
     </div>
   </div>
 </DocumentFragment>
