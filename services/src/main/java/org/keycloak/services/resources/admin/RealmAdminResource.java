@@ -597,18 +597,19 @@ public class RealmAdminResource {
     public void deleteSession(@PathParam("session") String sessionId) {
         auth.users().requireManage();
 
-        UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
         UserSessionModel offlineSession = session.sessions().getOfflineUserSession(realm, sessionId);
-        if (userSession == null && offlineSession == null) {
-            throw new NotFoundException("Session not found");
-        }
         if (offlineSession != null) {
-            AuthenticationManager.backchannelLogout(session, realm, offlineSession, uriInfo, connection, headers, true, true);
-        } else if (userSession != null) {
-            AuthenticationManager.backchannelLogout(session, realm, userSession, uriInfo, connection, headers, true, false);
+            AuthenticationManager.backchannelLogout(session, realm, offlineSession, session.getContext().getUri(), connection, headers, true, true);
+            adminEvent.operation(OperationType.DELETE).resource(ResourceType.USER_SESSION).resourcePath(session.getContext().getUri()).success();
+        } else {
+            UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
+            if (userSession != null) {
+                AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), connection, headers, true, false);
+                adminEvent.operation(OperationType.DELETE).resource(ResourceType.USER_SESSION).resourcePath(session.getContext().getUri()).success();
+            } else {
+                throw new NotFoundException("Session not found");
+            }
         }
-
-        adminEvent.operation(OperationType.DELETE).resource(ResourceType.USER_SESSION).resourcePath(uriInfo).success();
     }
 
     /**
