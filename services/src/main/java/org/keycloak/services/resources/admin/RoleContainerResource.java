@@ -336,7 +336,7 @@ public class RoleContainerResource extends RoleResource {
     }
 
     /**
-     * Return object stating whether role Authoirzation permissions have been initialized or not and a reference
+     * Return object stating whether role Authorization permissions have been initialized or not and a reference
      *
      *
      * @param roleName
@@ -361,7 +361,7 @@ public class RoleContainerResource extends RoleResource {
     }
 
     /**
-     * Return object stating whether role Authoirzation permissions have been initialized or not and a reference
+     * Return object stating whether role Authorization permissions have been initialized or not and a reference
      *
      *
      * @param roleName
