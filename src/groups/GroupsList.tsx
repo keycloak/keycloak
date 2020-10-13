@@ -80,7 +80,10 @@ export const GroupsList = ({ list, refresh }: GroupsListProps) => {
     },
     {
       title: t("common:Delete"),
-      onClick: async (_: React.MouseEvent<Element, MouseEvent>, rowId: number) => {
+      onClick: async (
+        _: React.MouseEvent<Element, MouseEvent>,
+        rowId: number
+      ) => {
         try {
           await httpClient.doDelete(
             `/admin/realms/${realm}/groups/${list![rowId].id}`

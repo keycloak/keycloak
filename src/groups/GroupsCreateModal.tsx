@@ -29,7 +29,7 @@ export const GroupsCreateModal = ({
   setIsCreateModalOpen,
   createGroupName,
   setCreateGroupName,
-  refresh
+  refresh,
 }: GroupsCreateModalProps) => {
   const { t } = useTranslation("groups");
   const httpClient = useContext(HttpClientContext)!;
@@ -53,7 +53,10 @@ export const GroupsCreateModal = ({
         refresh();
         addAlert(t("groupCreated"), AlertVariant.success);
       } catch (error) {
-        addAlert(`${t("couldNotCreateGroup")} ': '${error}'`, AlertVariant.danger);
+        addAlert(
+          `${t("couldNotCreateGroup")} ': '${error}'`,
+          AlertVariant.danger
+        );
       }
     }
   };

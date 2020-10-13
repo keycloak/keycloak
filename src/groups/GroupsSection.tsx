@@ -96,43 +96,46 @@ export const GroupsSection = () => {
         {rawData ? (
           <>
             <TableToolbar
-            inputGroupName="groupsToolbarTextInput"
-            inputGroupPlaceholder={t("searchGroups")}
-            inputGroupOnChange={filterGroups}
-            toolbarItem={
-              <>
-                <ToolbarItem>
-                  <Button variant="primary" onClick={() => handleModalToggle()}>
-                    {t("createGroup")}
-                  </Button>
-                </ToolbarItem>
-                <ToolbarItem>
-                  <Dropdown
-                    onSelect={onKebabSelect}
-                    toggle={<KebabToggle onToggle={onKebabToggle} />}
-                    isOpen={isKebabOpen}
-                    isPlain
-                    dropdownItems={[
-                      <DropdownItem key="action" component="button">
-                        {t("delete")}
-                      </DropdownItem>,
-                    ]}
-                  />
-                </ToolbarItem>
-              </>
-            }
-          >
-          <GroupsList list={filteredData || rawData} refresh={loader}/>
-          </TableToolbar>
-          <GroupsCreateModal
-            isCreateModalOpen={isCreateModalOpen}
-            handleModalToggle={handleModalToggle}
-            setIsCreateModalOpen={setIsCreateModalOpen}
-            createGroupName={createGroupName}
-            setCreateGroupName={setCreateGroupName}
-            refresh={loader}
-          />
-        </>
+              inputGroupName="groupsToolbarTextInput"
+              inputGroupPlaceholder={t("searchGroups")}
+              inputGroupOnChange={filterGroups}
+              toolbarItem={
+                <>
+                  <ToolbarItem>
+                    <Button
+                      variant="primary"
+                      onClick={() => handleModalToggle()}
+                    >
+                      {t("createGroup")}
+                    </Button>
+                  </ToolbarItem>
+                  <ToolbarItem>
+                    <Dropdown
+                      onSelect={onKebabSelect}
+                      toggle={<KebabToggle onToggle={onKebabToggle} />}
+                      isOpen={isKebabOpen}
+                      isPlain
+                      dropdownItems={[
+                        <DropdownItem key="action" component="button">
+                          {t("delete")}
+                        </DropdownItem>,
+                      ]}
+                    />
+                  </ToolbarItem>
+                </>
+              }
+            >
+              <GroupsList list={filteredData || rawData} refresh={loader} />
+            </TableToolbar>
+            <GroupsCreateModal
+              isCreateModalOpen={isCreateModalOpen}
+              handleModalToggle={handleModalToggle}
+              setIsCreateModalOpen={setIsCreateModalOpen}
+              createGroupName={createGroupName}
+              setCreateGroupName={setCreateGroupName}
+              refresh={loader}
+            />
+          </>
         ) : (
           <div className="pf-u-text-align-center">
             <Spinner />
