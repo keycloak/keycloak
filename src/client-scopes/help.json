@@ -1,0 +1,10 @@
+{
+  "client-scopes-help": {
+    "name": "Name of the client scope. Must be unique in the realm. Name should not contain space characters as it is used as value of scope parameter",
+    "description": "Description of the client scope",
+    "protocol": "Which SSO protocol configuration is being supplied by this client scope",
+    "displayOnConsentScreen": "If on, and this client scope is added to some client with consent required, the text specified by 'Consent Screen Text' will be displayed on consent screen. If off, this client scope will not be displayed on the consent screen",
+    "consentScreenText": "Text that will be shown on the consent screen when this client scope is added to some client with consent required. Defaults to name of client scope if it is not filled",
+    "guiOrder": "Specify order of the provider in GUI (such as in Consent page) as integer"
+  }
+}

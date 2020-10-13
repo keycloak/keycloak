@@ -37,15 +37,15 @@ export const NewClientForm = () => {
     directAccessGrantsEnabled: false,
     standardFlowEnabled: false,
   });
-  const [add, Alerts] = useAlerts();
+  const { addAlert } = useAlerts();
   const methods = useForm<ClientRepresentation>({ defaultValues: client });
 
   const save = async () => {
     try {
       await httpClient.doPost(`/admin/realms/${realm}/clients`, client);
-      add("Client created", AlertVariant.success);
+      addAlert(t("createSuccess"), AlertVariant.success);
     } catch (error) {
-      add(`Could not create client: '${error}'`, AlertVariant.danger);
+      addAlert(t("createError", { error }), AlertVariant.danger);
     }
   };
 
@@ -93,7 +93,6 @@ export const NewClientForm = () => {
   const title = t("createClient");
   return (
     <>
-      <Alerts />
       <ViewHeader
         titleKey="clients:createClient"
         subKey="clients:clientsExplain"

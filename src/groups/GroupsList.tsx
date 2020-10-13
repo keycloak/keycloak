@@ -15,18 +15,22 @@ import { useAlerts } from "../components/alert/Alerts";
 
 type GroupsListProps = {
   list?: GroupRepresentation[];
+  refresh: () => void;
 };
 
-export const GroupsList = ({ list }: GroupsListProps) => {
+type FormattedData = {
+  cells: JSX.Element[];
+  selected: boolean;
+};
+
+export const GroupsList = ({ list, refresh }: GroupsListProps) => {
   const { t } = useTranslation("groups");
   const httpClient = useContext(HttpClientContext)!;
   const columnGroupName: keyof GroupRepresentation = "name";
   const columnGroupNumber: keyof GroupRepresentation = "membersLength";
   const { realm } = useContext(RealmContext);
-  const [add, Alerts] = useAlerts();
-  const [formattedData, setFormattedData] = useState([
-    { cells: [<Button key="0">Test</Button>], selected: false },
-  ]);
+  const { addAlert } = useAlerts();
+  const [formattedData, setFormattedData] = useState<FormattedData[]>([]);
 
   const formatData = (data: GroupRepresentation[]) =>
     data.map((group: { [key: string]: any }, index) => {
@@ -38,7 +42,7 @@ export const GroupsList = ({ list }: GroupsListProps) => {
             {groupName}
           </Button>,
           <div className="keycloak-admin--groups__member-count" key={index}>
-            <UsersIcon />
+            <UsersIcon key={`user-icon-${index}`} />
             {groupNumber}
           </div>,
         ],
@@ -51,7 +55,7 @@ export const GroupsList = ({ list }: GroupsListProps) => {
   }, [list]);
 
   function onSelect(
-    event: React.FormEvent<HTMLInputElement>,
+    _: React.FormEvent<HTMLInputElement>,
     isSelected: boolean,
     rowId: number
   ) {
@@ -76,22 +80,22 @@ export const GroupsList = ({ list }: GroupsListProps) => {
     },
     {
       title: t("common:Delete"),
-      onClick: (_: React.MouseEvent<Element, MouseEvent>, rowId: number) => {
+      onClick: async (_: React.MouseEvent<Element, MouseEvent>, rowId: number) => {
         try {
-          httpClient.doDelete(
+          await httpClient.doDelete(
             `/admin/realms/${realm}/groups/${list![rowId].id}`
           );
-          add(t("Group deleted"), AlertVariant.success);
+          refresh();
+          addAlert(t("Group deleted"), AlertVariant.success);
         } catch (error) {
-          add(`${t("clientDeleteError")} ${error}`, AlertVariant.danger);
+          addAlert(`${t("clientDeleteError")} ${error}`, AlertVariant.danger);
         }
       },
     },
   ];
 
   return (
-    <React.Fragment>
-      <Alerts />
+    <>
       {formattedData && (
         <Table
           actions={actions}
@@ -106,6 +110,6 @@ export const GroupsList = ({ list }: GroupsListProps) => {
           <TableBody />
         </Table>
       )}
-    </React.Fragment>
+    </>
   );
 };

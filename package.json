@@ -4,16 +4,16 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "postinstall": "grunt",
-    "start": "snowpack dev",
     "build": "snowpack build",
-    "test": "jest",
+    "build-storybook": "build-storybook -s public",
     "check-types": "tsc -p ./",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
-    "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\"",
+    "format-check": "prettier --check \"src/**/*.{js,jsx,ts,tsx}\"",
     "lint": "eslint ./src/**/*.ts*",
+    "postinstall": "grunt",
+    "start": "snowpack dev",
     "storybook": "start-storybook -p 6006 -s public",
-    "build-storybook": "build-storybook -s public"
+    "test": "jest"
   },
   "dependencies": {
     "@patternfly/patternfly": "^4.42.2",

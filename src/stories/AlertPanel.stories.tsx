@@ -3,7 +3,7 @@ import { AlertVariant, Button } from "@patternfly/react-core";
 import { Meta } from "@storybook/react";
 
 import { AlertPanel } from "../components/alert/AlertPanel";
-import { useAlerts } from "../components/alert/Alerts";
+import { AlertProvider, useAlerts } from "../components/alert/Alerts";
 
 export default {
   title: "Alert Panel",
@@ -17,11 +17,12 @@ export const Api = () => (
   />
 );
 export const AddAlert = () => {
-  const [add, Alerts] = useAlerts();
+  const { addAlert } = useAlerts();
   return (
-    <>
-      <Alerts />
-      <Button onClick={() => add("Hello", AlertVariant.default)}>Add</Button>
-    </>
+    <AlertProvider>
+      <Button onClick={() => addAlert("Hello", AlertVariant.default)}>
+        Add
+      </Button>
+    </AlertProvider>
   );
 };

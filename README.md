@@ -1,26 +1,26 @@
 # Keycloak Admin Console V2
-This project is the next generation of the Keycloak Administration Console.  It is written with React and PatternFly 4.
+This project is the next generation of the Keycloak Administration Console.  It is written with React and [PatternFly 4][1].
 
 ### Development Instructions
 
-For development on this project you will need a running Keycloak server listening on port 8180.  You will also need [yarn installed on your local machine.](https://classic.yarnpkg.com)
+For development on this project you will need a running Keycloak server listening on port 8180.  You will also need [yarn installed on your local machine.][2]
 
 1. Start keycloak
-    * Download Keycloak server from [https://www.keycloak.org/downloads](https://www.keycloak.org/downloads)
-    * Start Keycloak server like this from the bin directory:
-        ```bash
-        $> standalone -Djboss.socket.binding.port-offset=100
-        ```
-    * or download and run with one command
+    * Download and run with one command
         ```bash
         $> ./start.js
         ```
-1. Go to the clients section of the exising Keycloak Admin Console and add the client
+    * or download Keycloak server from [keycloak downloads page][3] unpack and run it like:
+        ```bash
+        $> cd <unpacked download folder>/bin
+        $> standalone -Djboss.socket.binding.port-offset=100
+        ```
+1. Go to the clients section of the existing Keycloak Admin Console and add the client
     * like this:
     ![realm settings](./realm-settings.png "Realm Settings")
     * or click on the "Select file" button and import `security-admin-console-v2.json`
 
-1. Install dependecies and run:
+1. Install dependencies and run:
     ```bash
     $> yarn
     $> yarn start
@@ -30,6 +30,7 @@ For development on this project you will need a running Keycloak server listenin
 
 ```bash
 $> yarn format
+$> yarn check-types
 $> yarn lint
 ```
 
@@ -40,3 +41,7 @@ $> npx grunt switch-rh-sso
 ```
 
 To switch back just do a `git checkout public`
+
+[1]: https://www.patternfly.org/v4/
+[2]: (https://classic.yarnpkg.com)
+[3]: https://www.keycloak.org/downloads

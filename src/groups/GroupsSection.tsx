@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HttpClientContext } from "../context/http-service/HttpClientContext";
 import { GroupsList } from "./GroupsList";
@@ -17,6 +17,7 @@ import {
   KebabToggle,
   PageSection,
   PageSectionVariants,
+  Spinner,
   ToolbarItem,
 } from "@patternfly/react-core";
 import "./GroupsSection.css";
@@ -24,22 +25,18 @@ import "./GroupsSection.css";
 export const GroupsSection = () => {
   const { t } = useTranslation("groups");
   const httpClient = useContext(HttpClientContext)!;
-  const [rawData, setRawData] = useState([{}]);
-  const [filteredData, setFilteredData] = useState([{}]);
-  const [max, setMax] = useState(10);
-  const [first, setFirst] = useState(0);
+  const [rawData, setRawData] = useState<{ [key: string]: any }[]>();
+  const [filteredData, setFilteredData] = useState<object[]>();
   const [isKebabOpen, setIsKebabOpen] = useState(false);
   const [createGroupName, setCreateGroupName] = useState("");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const columnID: keyof GroupRepresentation = "id";
   const membersLength: keyof GroupRepresentation = "membersLength";
   const columnGroupName: keyof GroupRepresentation = "name";
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
   const loader = async () => {
     const groups = await httpClient.doGet<ServerGroupsArrayRepresentation[]>(
-      "/admin/realms/master/groups",
-      { params: { first, max } }
+      "/admin/realms/master/groups"
     );
     const groupsData = groups.data!;
 
@@ -62,24 +59,19 @@ export const GroupsSection = () => {
         return object;
       }
     );
-    return updatedObject;
+
+    setRawData(updatedObject);
   };
 
   useEffect(() => {
-    loader().then((data: GroupRepresentation[]) => {
-      data && setRawData(data);
-      setFilteredData(data);
-    });
-  }, [createGroupName]);
+    loader();
+  }, []);
 
   // Filter groups
   const filterGroups = (newInput: string) => {
-    const localRowData: object[] = [];
-    rawData.forEach(function (obj: { [key: string]: string }) {
+    const localRowData = rawData!.filter((obj: { [key: string]: string }) => {
       const groupName = obj[columnGroupName];
-      if (groupName.toLowerCase().includes(newInput.toLowerCase())) {
-        localRowData.push(obj);
-      }
+      return groupName.toLowerCase().includes(newInput.toLowerCase());
     });
     setFilteredData(localRowData);
   };
@@ -101,53 +93,51 @@ export const GroupsSection = () => {
     <React.Fragment>
       <ViewHeader titleKey="groups:groups" subKey="groups:groupsDescription" />
       <PageSection variant={PageSectionVariants.light}>
-        <TableToolbar
-          count={10}
-          first={first}
-          max={max}
-          onNextClick={setFirst}
-          onPreviousClick={setFirst}
-          onPerPageSelect={(f, m) => {
-            setFirst(f);
-            setMax(m);
-          }}
-          inputGroupName="groupsToolbarTextInput"
-          inputGroupPlaceholder="Search groups"
-          inputGroupOnChange={filterGroups}
-          toolbarItem={
-            <>
-              <ToolbarItem>
-                <Button variant="primary" onClick={() => handleModalToggle()}>
-                  {t("createGroup")}
-                </Button>
-              </ToolbarItem>
-              <ToolbarItem>
-                <Dropdown
-                  onSelect={onKebabSelect}
-                  toggle={<KebabToggle onToggle={onKebabToggle} />}
-                  isOpen={isKebabOpen}
-                  isPlain
-                  dropdownItems={[
-                    <DropdownItem key="action" component="button">
-                      {t("delete")}
-                    </DropdownItem>,
-                  ]}
-                />
-              </ToolbarItem>
-            </>
-          }
-        >
-          {rawData && filteredData && (
-            <GroupsList list={filteredData ? filteredData : rawData} />
-          )}
-        </TableToolbar>
-        <GroupsCreateModal
-          isCreateModalOpen={isCreateModalOpen}
-          handleModalToggle={handleModalToggle}
-          setIsCreateModalOpen={setIsCreateModalOpen}
-          createGroupName={createGroupName}
-          setCreateGroupName={setCreateGroupName}
-        />
+        {rawData ? (
+          <>
+            <TableToolbar
+            inputGroupName="groupsToolbarTextInput"
+            inputGroupPlaceholder={t("searchGroups")}
+            inputGroupOnChange={filterGroups}
+            toolbarItem={
+              <>
+                <ToolbarItem>
+                  <Button variant="primary" onClick={() => handleModalToggle()}>
+                    {t("createGroup")}
+                  </Button>
+                </ToolbarItem>
+                <ToolbarItem>
+                  <Dropdown
+                    onSelect={onKebabSelect}
+                    toggle={<KebabToggle onToggle={onKebabToggle} />}
+                    isOpen={isKebabOpen}
+                    isPlain
+                    dropdownItems={[
+                      <DropdownItem key="action" component="button">
+                        {t("delete")}
+                      </DropdownItem>,
+                    ]}
+                  />
+                </ToolbarItem>
+              </>
+            }
+          >
+          <GroupsList list={filteredData || rawData} refresh={loader}/>
+          </TableToolbar>
+          <GroupsCreateModal
+            isCreateModalOpen={isCreateModalOpen}
+            handleModalToggle={handleModalToggle}
+            setIsCreateModalOpen={setIsCreateModalOpen}
+            createGroupName={createGroupName}
+            setCreateGroupName={setCreateGroupName}
+            refresh={loader}
+          />
+        </>
+        ) : (
+          <div className="pf-u-text-align-center">
+            <Spinner />
+          </div>
+        )}
       </PageSection>
     </React.Fragment>
   );

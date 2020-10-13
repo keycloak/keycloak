@@ -35,7 +35,7 @@ export const ClientList = ({ baseUrl, clients, refresh }: ClientListProps) => {
   const { t } = useTranslation("clients");
   const httpClient = useContext(HttpClientContext)!;
   const { realm } = useContext(RealmContext);
-  const [add, Alerts] = useAlerts();
+  const { addAlert } = useAlerts();
 
   const emptyFormatter = (): IFormatter => (data?: IFormatterValueType) => {
     return data ? data : "—";
@@ -85,7 +85,6 @@ export const ClientList = ({ baseUrl, clients, refresh }: ClientListProps) => {
     });
   return (
     <>
-      <Alerts />
       <Table
         variant={TableVariant.compact}
         cells={[
@@ -113,9 +112,12 @@ export const ClientList = ({ baseUrl, clients, refresh }: ClientListProps) => {
                   `/admin/realms/${realm}/clients/${data[rowId].client.id}`
                 );
                 refresh();
-                add(t("clientDeletedSuccess"), AlertVariant.success);
+                addAlert(t("clientDeletedSuccess"), AlertVariant.success);
               } catch (error) {
-                add(`${t("clientDeleteError")} ${error}`, AlertVariant.danger);
+                addAlert(
+                  `${t("clientDeleteError")} ${error}`,
+                  AlertVariant.danger
+                );
               }
             },
           },

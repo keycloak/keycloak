@@ -3,13 +3,13 @@ import { useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button, PageSection, Spinner } from "@patternfly/react-core";
 
-import { TableToolbar } from "../components/table-toolbar/TableToolbar";
 import { ClientList } from "./ClientList";
 import { HttpClientContext } from "../context/http-service/HttpClientContext";
 import { KeycloakContext } from "../context/auth/KeycloakContext";
 import { ClientRepresentation } from "./models/client-model";
 import { RealmContext } from "../context/realm-context/RealmContext";
 import { ViewHeader } from "../components/view-header/ViewHeader";
+import { PaginatingTableToolbar } from "../components/table-toolbar/PaginatingTableToolbar";
 
 export const ClientsSection = () => {
   const { t } = useTranslation("clients");
@@ -38,7 +38,7 @@ export const ClientsSection = () => {
 
   useEffect(() => {
     loader();
-  }, []);
+  }, [first, max]);
 
   return (
     <>
@@ -48,12 +48,12 @@ export const ClientsSection = () => {
       />
       <PageSection variant="light">
         {!clients && (
-          <div style={{ textAlign: "center" }}>
+          <div className="pf-u-text-align-center">
             <Spinner />
           </div>
         )}
         {clients && (
-          <TableToolbar
+          <PaginatingTableToolbar
             count={clients!.length}
             first={first}
             max={max}
@@ -86,7 +86,7 @@ export const ClientsSection = () => {
               refresh={loader}
               baseUrl={keycloak!.authServerUrl()!}
             />
-          </TableToolbar>
+          </PaginatingTableToolbar>
         )}
       </PageSection>
     </>

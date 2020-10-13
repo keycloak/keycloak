@@ -4,17 +4,16 @@ import { mount } from "enzyme";
 import { act } from "react-dom/test-utils";
 
 import { AlertPanel } from "../AlertPanel";
-import { useAlerts } from "../Alerts";
+import { AlertProvider, useAlerts } from "../Alerts";
 
 jest.useFakeTimers();
 
 const WithButton = () => {
-  const [add, _, hide, alerts] = useAlerts();
+  const { addAlert } = useAlerts();
   return (
-    <>
-      <AlertPanel alerts={alerts} onCloseAlert={hide} />
-      <Button onClick={() => add("Hello")}>Add</Button>
-    </>
+    <AlertProvider>
+      <Button onClick={() => addAlert("Hello")}>Add</Button>
+    </AlertProvider>
   );
 };
 

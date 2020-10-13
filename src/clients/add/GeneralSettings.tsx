@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState } from "react";
 import {
   FormGroup,
   Form,
@@ -9,9 +9,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { Controller, UseFormMethods } from "react-hook-form";
 
-import { HttpClientContext } from "../../context/http-service/HttpClientContext";
-import { sortProvider } from "../../util";
-import { ServerInfoRepresentation } from "../models/server-info";
+import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
 import { ClientDescription } from "../ClientDescription";
 
 type GeneralSettingsProps = {
@@ -19,24 +17,11 @@ type GeneralSettingsProps = {
 };
 
 export const GeneralSettings = ({ form }: GeneralSettingsProps) => {
-  const httpClient = useContext(HttpClientContext)!;
   const { t } = useTranslation();
-  const { errors, control, register } = form;
+  const { errors, control } = form;
 
-  const [providers, setProviders] = useState<string[]>([]);
+  const providers = useLoginProviders();
   const [open, isOpen] = useState(false);
-
-  useEffect(() => {
-    (async () => {
-      const response = await httpClient.doGet<ServerInfoRepresentation>(
-        "/admin/serverinfo"
-      );
-      const providers = Object.entries(
-        response.data!.providers["login-protocol"].providers
-      );
-      setProviders(["", ...new Map(providers.sort(sortProvider)).keys()]);
-    })();
-  }, []);
 
   return (
     <Form isHorizontal>
@@ -63,15 +48,15 @@ export const GeneralSettings = ({ form }: GeneralSettingsProps) => {
               }}
               selections={value}
               variant={SelectVariant.single}
-              aria-label="Select Encryption type"
+              aria-label={t("selectEncryptionType")}
+              placeholderText={t("common:selectOne")}
               isOpen={open}
             >
               {providers.map((option) => (
                 <SelectOption
                   selected={option === value}
                   key={option}
-                  value={option === "" ? "Select an option" : option}
-                  isPlaceholder={option === ""}
+                  value={option}
                 />
               ))}
             </Select>

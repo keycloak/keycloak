@@ -26,7 +26,7 @@ export const ImportForm = () => {
   const form = useForm<ClientRepresentation>();
   const { register, handleSubmit, setValue } = form;
 
-  const [add, Alerts] = useAlerts();
+  const { addAlert } = useAlerts();
 
   const handleFileChange = (value: string | File) => {
     const defaultClient = {
@@ -45,14 +45,13 @@ export const ImportForm = () => {
   const save = async (client: ClientRepresentation) => {
     try {
       await httpClient.doPost(`/admin/realms/${realm}/clients`, client);
-      add(t("clientImportSuccess"), AlertVariant.success);
+      addAlert(t("clientImportSuccess"), AlertVariant.success);
     } catch (error) {
-      add(`${t("clientImportError")} '${error}'`, AlertVariant.danger);
+      addAlert(`${t("clientImportError")} '${error}'`, AlertVariant.danger);
     }
   };
   return (
     <>
-      <Alerts />
       <ViewHeader
         titleKey="clients:importClient"
         subKey="clients:clientsExplain"

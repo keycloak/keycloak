@@ -5,7 +5,9 @@ import { HelpItem } from "../HelpItem";
 
 describe("<HelpItem />", () => {
   it("render", () => {
-    const comp = render(<HelpItem item="storybook" />);
+    const comp = render(
+      <HelpItem helpText="storybook" forLabel="storybook" forID="placeholder" />
+    );
     expect(comp.asFragment()).toMatchSnapshot();
   });
 });

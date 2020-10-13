@@ -20,6 +20,7 @@ type GroupsCreateModalProps = {
   setIsCreateModalOpen: (isCreateModalOpen: boolean) => void;
   createGroupName: string;
   setCreateGroupName: (createGroupName: string) => void;
+  refresh: () => void;
 };
 
 export const GroupsCreateModal = ({
@@ -28,11 +29,12 @@ export const GroupsCreateModal = ({
   setIsCreateModalOpen,
   createGroupName,
   setCreateGroupName,
+  refresh
 }: GroupsCreateModalProps) => {
   const { t } = useTranslation("groups");
   const httpClient = useContext(HttpClientContext)!;
   const { realm } = useContext(RealmContext);
-  const [add, Alerts] = useAlerts();
+  const { addAlert } = useAlerts();
   const form = useForm();
   const { register, errors } = form;
 
@@ -43,21 +45,21 @@ export const GroupsCreateModal = ({
   const submitForm = async () => {
     if (await form.trigger()) {
       try {
-        httpClient.doPost(`/admin/realms/${realm}/groups`, {
+        await httpClient.doPost(`/admin/realms/${realm}/groups`, {
           name: createGroupName,
         });
         setIsCreateModalOpen(false);
         setCreateGroupName("");
-        add(t("groupCreated"), AlertVariant.success);
+        refresh();
+        addAlert(t("groupCreated"), AlertVariant.success);
       } catch (error) {
-        add(`${t("couldNotCreateGroup")} ': '${error}'`, AlertVariant.danger);
+        addAlert(`${t("couldNotCreateGroup")} ': '${error}'`, AlertVariant.danger);
       }
     }
   };
 
   return (
-    <React.Fragment>
-      <Alerts />
+    <>
       <Modal
         variant={ModalVariant.small}
         title={t("createAGroup")}
@@ -88,6 +90,6 @@ export const GroupsCreateModal = ({
           </FormGroup>
         </Form>
       </Modal>
-    </React.Fragment>
+    </>
   );
 };

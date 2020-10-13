@@ -746,11 +746,6 @@ Object {
         </tbody>
       </table>
     </div>
-    <div>
-      <ul
-        class="pf-c-alert-group pf-m-toast"
-      />
-    </div>
   </body>,
   "container": <div>
     <table
