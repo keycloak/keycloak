@@ -69,6 +69,9 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
         event.event(EventType.UPDATE_PROFILE);
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         UserModel user = context.getUser();
+
+        String oldFirstName = user.getFirstName();
+        String oldLastName = user.getLastName();
         String oldEmail = user.getEmail();
         UserProfileValidationResult result = forUpdateProfile(user, formData, context.getSession()).validate();
         final UserProfile updatedProfile = result.getProfile();
@@ -84,11 +87,19 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
         }
 
         String newEmail = updatedProfile.getAttributes().getFirstAttribute(UserModel.EMAIL);
+        String newFirstName = updatedProfile.getAttributes().getFirstAttribute(UserModel.FIRST_NAME);
+        String newLastName = updatedProfile.getAttributes().getFirstAttribute(UserModel.LAST_NAME);
 
         UserUpdateHelper.updateUserProfile(context.getRealm(), user, updatedProfile);
+        if (result.hasAttributeChanged(UserModel.FIRST_NAME)) {
+            event.detail(Details.PREVIOUS_FIRST_NAME, oldFirstName).detail(Details.UPDATED_FIRST_NAME, newFirstName);
+        }
+        if (result.hasAttributeChanged(UserModel.LAST_NAME)) {
+            event.detail(Details.PREVIOUS_LAST_NAME, oldLastName).detail(Details.UPDATED_LAST_NAME, newLastName);
+        }
         if (result.hasAttributeChanged(UserModel.EMAIL)) {
             user.setEmailVerified(false);
-            event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, newEmail).success();
+            event.detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, newEmail);
         }
         context.success();
 
