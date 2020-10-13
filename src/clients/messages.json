@@ -28,6 +28,7 @@
     "clientDeleteError": "Could not delete client:",
     "clientDeleteConfirmTitle": "Delete client?",
     "disableConfirmTitle": "Disable client?",
+    "downloadAdapterConfig": "Download adapter config",
     "disableConfirm": "If you disable this client, you cannot initiate a login or obtain access tokens.",
     "clientDeleteConfirm": "If you delete this client, all associated data will be removed.",
     "clientAuthentication": "Client authentication",
