@@ -818,7 +818,7 @@ public class RealmTest extends AbstractAdminTest {
 
         tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "secret");
         assertEquals(400, tokenResponse.getStatusCode());
-        assertEquals("Session not active", tokenResponse.getErrorDescription());
+        assertEquals("Offline user session not found", tokenResponse.getErrorDescription());
     }
 
     @Test
@@ -860,7 +860,6 @@ public class RealmTest extends AbstractAdminTest {
         client.setRedirectUris(Collections.singletonList(redirectUri));
         client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         client.setSecret("secret");
-        client.setDefaultRoles(new String[]{OAuth2Constants.OFFLINE_ACCESS});
         client.setDefaultClientScopes(Lists.newArrayList(OAuth2Constants.SCOPE_OPENID, OAuth2Constants.OFFLINE_ACCESS));
         Response resp = realm.clients().create(client);
         String clientDbId = ApiUtil.getCreatedId(resp);
@@ -895,7 +894,6 @@ public class RealmTest extends AbstractAdminTest {
         client.setRedirectUris(Collections.singletonList(redirectUri));
         client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         client.setSecret("secret");
-        client.setDefaultRoles(new String[]{"offline_access"});
         Response resp = realm.clients().create(client);
         String clientDbId = ApiUtil.getCreatedId(resp);
         getCleanup().addClientUuid(clientDbId);
