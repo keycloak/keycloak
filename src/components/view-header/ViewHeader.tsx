@@ -12,15 +12,18 @@ import {
   ToolbarItem,
   Badge,
   Select,
+  ButtonProps,
 } from "@patternfly/react-core";
 import { HelpContext } from "../help-enabler/HelpHeader";
 import { useTranslation } from "react-i18next";
 import { PageBreadCrumbs } from "../bread-crumb/PageBreadCrumbs";
+import { ExternalLink } from "../external-link/ExternalLink";
 
 export type ViewHeaderProps = {
   titleKey: string;
   badge?: string;
   subKey: string;
+  subKeyLinkProps?: ButtonProps;
   selectItems?: ReactElement[];
   isEnabled?: boolean;
   onSelect?: (value: string) => void;
@@ -31,6 +34,7 @@ export const ViewHeader = ({
   titleKey,
   badge,
   subKey,
+  subKeyLinkProps,
   selectItems,
   isEnabled = true,
   onSelect,
@@ -98,7 +102,16 @@ export const ViewHeader = ({
         </Level>
         {enabled && (
           <TextContent>
-            <Text>{t(subKey)}</Text>
+            <Text>
+              {t(subKey)}
+              {subKeyLinkProps && (
+                <ExternalLink
+                  {...subKeyLinkProps}
+                  isInline
+                  className="pf-u-ml-md"
+                />
+              )}
+            </Text>
           </TextContent>
         )}
       </PageSection>

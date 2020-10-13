@@ -22,6 +22,10 @@ Extended.args = {
   titleKey: "This is the title",
   badge: "badge",
   subKey: "This is the description.",
+  subKeyLinkProps: {
+    title: "More information",
+    href: "http://google.com",
+  },
   selectItems: [
     <SelectOption key="first" value="first-item">
       First item
