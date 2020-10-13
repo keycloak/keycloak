@@ -46,6 +46,8 @@ import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.openqa.selenium.By;
 
+import javax.ws.rs.ClientErrorException;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -123,6 +125,23 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
                 .filter(credentialRep -> credentialRep.getType().equals(OTPCredentialModel.TYPE))
                 .findFirst().get().getId();
         user.removeCredential(totpCredentialId);
+    }
+
+    // KEYCLOAK-3365
+    @Test
+    public void testReadOnlyUserDoesNotThrowIfUnchanged() {
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        UserRepresentation userRepresentation = user.toRepresentation();
+        user.update(userRepresentation);
+    }
+
+    // KEYCLOAK-3365
+    @Test(expected = ClientErrorException.class)
+    public void testReadOnlyUserThrowsIfChanged() {
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        UserRepresentation userRepresentation = user.toRepresentation();
+        userRepresentation.setFirstName("Jane");
+        user.update(userRepresentation);
     }
 
     private void setTotpRequirementExecutionForRealm(AuthenticationExecutionModel.Requirement requirement) {
