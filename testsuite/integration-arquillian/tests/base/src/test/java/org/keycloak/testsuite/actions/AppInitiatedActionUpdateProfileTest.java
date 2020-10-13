@@ -82,8 +82,10 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
 
         updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
 
-        events.expectRequiredAction(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "New first")
+                .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "New last")
+                .detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com")
+                .assertEvent();
         events.expectLogin().assertEvent();
 
         assertKcActionStatus("success");
@@ -111,8 +113,11 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
         updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
 
         events.expectLogin().assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "New first")
+                .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "New last")
+                .detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com")
+                .assertEvent();
+        events.expectLogin().assertEvent();
 
         assertKcActionStatus("success");
 
@@ -159,9 +164,12 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
 
         events.expectLogin()
                 .event(EventType.UPDATE_PROFILE)
+                .detail(Details.PREVIOUS_FIRST_NAME, "John")
+                .detail(Details.UPDATED_FIRST_NAME, "New first")
+                .detail(Details.PREVIOUS_LAST_NAME, "Doh")
+                .detail(Details.UPDATED_LAST_NAME, "New last")
                 .detail(Details.USERNAME, "john-doh@localhost")
-                .user(userId)
-                .session(Matchers.nullValue(String.class))
+                .user(userId).session(Matchers.nullValue(String.class))
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
 

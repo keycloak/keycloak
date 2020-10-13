@@ -75,11 +75,14 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         UserProfile newProfile = result.getProfile();
         String email = newProfile.getAttributes().getFirstAttribute(UserModel.EMAIL);
 
+        String username = newProfile.getAttributes().getFirstAttribute(UserModel.USERNAME);
+        String firstName = newProfile.getAttributes().getFirstAttribute(UserModel.FIRST_NAME);
+        String lastName = newProfile.getAttributes().getFirstAttribute(UserModel.LAST_NAME);
         context.getEvent().detail(Details.EMAIL, email);
 
-        String username = newProfile.getAttributes().getFirstAttribute(UserModel.USERNAME);
-
         context.getEvent().detail(Details.USERNAME, username);
+        context.getEvent().detail(Details.FIRST_NAME, firstName);
+        context.getEvent().detail(Details.LAST_NAME, lastName);
 
         List<FormMessage> errors = Validation.getFormErrorsFromValidation(result);
         if (context.getRealm().isRegistrationEmailAsUsername()) {
