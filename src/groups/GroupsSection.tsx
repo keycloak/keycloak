@@ -8,6 +8,7 @@ import {
   ServerGroupMembersRepresentation,
 } from "./models/server-info";
 import { TableToolbar } from "../components/table-toolbar/TableToolbar";
+import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
   Button,
   Divider,
@@ -90,16 +91,17 @@ export const GroupsSection = () => {
         </Title>
       </PageSection>
       <Divider />
+
       <PageSection variant={PageSectionVariants.light}>
         {!rawData && (
           <div className="pf-u-text-align-center">
             <Spinner />
           </div>
         )}
-        {rawData && (
+        {rawData && rawData.length > 0 ? (
           <TableToolbar
             inputGroupName="groupsToolbarTextInput"
-            inputGroupPlaceholder="Search groups"
+            inputGroupPlaceholder={t("searchGroups")}
             inputGroupOnChange={filterGroups}
             toolbarItem={
               <>
@@ -122,8 +124,25 @@ export const GroupsSection = () => {
               </>
             }
           >
-            <GroupsList list={filteredData || rawData} />
+            {rawData && (
+              <GroupsList list={filteredData ? filteredData : rawData} />
+            )}
+            {filteredData && filteredData.length === 0 && (
+              <ListEmptyState
+                hasIcon={true}
+                isSearchVariant={true}
+                message={t("noSearchResults")}
+                instructions={t("noSearchResultsInstructions")}
+              />
+            )}
           </TableToolbar>
+        ) : (
+          <ListEmptyState
+            hasIcon={true}
+            message={t("noGroupsInThisRealm")}
+            instructions={t("noGroupsInThisRealmInstructions")}
+            primaryActionText={t("createGroup")}
+          />
         )}
       </PageSection>
     </React.Fragment>
