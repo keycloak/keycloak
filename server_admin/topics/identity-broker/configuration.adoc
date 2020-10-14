@@ -18,7 +18,8 @@ configuration page for that identity provider type.
 image:{project_images}/add-identity-provider.png[]
 
 Above is an example of configuring a Facebook social login provider.  Once you configure an IDP, it will appear on the {project_name}
-login page as an option.
+login page as an option. It's possible to have custom icons on login screen for each identity provider.
+For more details, please refer to the link:{developerguide_link}#custom-identity-providers-icons[custom icons].
 
 .IDP login page
 image:{project_images}/identity-provider-login-page.png[]

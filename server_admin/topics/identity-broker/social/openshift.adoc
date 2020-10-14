@@ -36,7 +36,7 @@ grantMethod: prompt <4>
 Use client ID and secret defined by `oc create` command to enter them back on the {project_name} `Add identity provider` page.
 Go back to {project_name} and specify those items.
 
-Please refer to https://docs.okd.io/latest/authentication/configuring-internal-oauth.html#oauth-register-additional-client_configuring-internal-oauth[official OpenShift documentation] for more detailed guides.
+Please refer to https://docs.okd.io/latest/authentication/configuring-oauth-clients.html#oauth-register-additional-client_configuring-oauth-clients[official OpenShift documentation] for more detailed guides.
 
 ==== OpenShift 4
 
@@ -81,4 +81,4 @@ Go back to {project_name} and specify those items.
 TIP: The OpenShift API server returns `The client is not authorized to request a token using this method` whenever `OAuthClient`
  `name`, `secret` or `redirectURIs` is incorrect. Make sure you copy-pasted them into {project_name} OpenShift 4 Identity Provider page correctly.
 
-Please refer to https://docs.okd.io/latest/authentication/configuring-internal-oauth.html#oauth-register-additional-client_configuring-internal-oauth[official OpenShift documentation] for more detailed guides.
+Please refer to https://docs.okd.io/latest/authentication/configuring-oauth-clients.html#oauth-register-additional-client_configuring-oauth-clients[official OpenShift documentation] for more detailed guides.

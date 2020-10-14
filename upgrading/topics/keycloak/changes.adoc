@@ -6,6 +6,14 @@
 
 No user session is created after successful authentication with the Docker protocol. For details, please refer to the link:{adminguide_link}#_docker[{adminguide_name}].
 
+==== Upgrade to PatternFly 4
+
+The {project_name} login theme components have been upgraded to PatternFly 4.
+The old PatternFly 3 runs simultaneously with the new one, so it's possible to keep PF3 components.
+However, there are some changes in login theme design, so please upgrade your custom login theme despite these changes.
+There is an example with the changes in `keycloak/examples/themes/theme/sunrise` folder.
+No additional setup is required.
+
 === Migrating to 11.0.0
 
 ==== Upgrade to Wildfly 20

@@ -52,7 +52,7 @@
 :apidocs_link: {project_doc_base_url}/api_documentation/index
 :developerguide_name: Server Developer Guide
 :developerguide_link: {project_doc_base_url}/server_developer_guide/
-:developerguide_deploying_themes: {developerguide_link}#deploying_themes
+:developerguide_deploying_themes: {developerguide_link}#deploying-themes
 :developerguide_actiontoken_name: Action Token SPI
 :developerguide_actiontoken_link: {developerguide_link}#_action_token_spi
 :developerguide_jsproviders_name: JavaScript Providers
