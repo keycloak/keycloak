@@ -5,14 +5,17 @@ import {
   TableBody,
   TableVariant,
 } from "@patternfly/react-table";
-import { Button } from "@patternfly/react-core";
+import { Button, AlertVariant } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { GroupRepresentation } from "./models/groups";
 import { UsersIcon } from "@patternfly/react-icons";
 import { HttpClientContext } from "../context/http-service/HttpClientContext";
+import { RealmContext } from "../context/realm-context/RealmContext";
+import { useAlerts } from "../components/alert/Alerts";
 
-type GroupsListProps = {
+export type GroupsListProps = {
   list?: GroupRepresentation[];
+  refresh: () => void;
 };
 
 type FormattedData = {
@@ -20,11 +23,13 @@ type FormattedData = {
   selected: boolean;
 };
 
-export const GroupsList = ({ list }: GroupsListProps) => {
+export const GroupsList = ({ list, refresh }: GroupsListProps) => {
   const { t } = useTranslation("groups");
   const httpClient = useContext(HttpClientContext)!;
   const columnGroupName: keyof GroupRepresentation = "name";
   const columnGroupNumber: keyof GroupRepresentation = "membersLength";
+  const { realm } = useContext(RealmContext);
+  const { addAlert } = useAlerts();
   const [formattedData, setFormattedData] = useState<FormattedData[]>([]);
 
   const formatData = (data: GroupRepresentation[]) =>
@@ -67,15 +72,6 @@ export const GroupsList = ({ list }: GroupsListProps) => {
     }
   }
 
-  // Delete individual rows using the action in the table
-  function onDelete(rowIndex: number) {
-    const localFilteredData = [...list!];
-    httpClient.doDelete(
-      `/admin/realms/master/groups/${localFilteredData[rowIndex].id}`
-    );
-    // TO DO update the state
-  }
-
   const tableHeader = [{ title: t("groupName") }, { title: t("members") }];
   const actions = [
     {
@@ -84,7 +80,20 @@ export const GroupsList = ({ list }: GroupsListProps) => {
     },
     {
       title: t("common:Delete"),
-      onClick: () => onDelete,
+      onClick: async (
+        _: React.MouseEvent<Element, MouseEvent>,
+        rowId: number
+      ) => {
+        try {
+          await httpClient.doDelete(
+            `/admin/realms/${realm}/groups/${list![rowId].id}`
+          );
+          refresh();
+          addAlert(t("Group deleted"), AlertVariant.success);
+        } catch (error) {
+          addAlert(`${t("clientDeleteError")} ${error}`, AlertVariant.danger);
+        }
+      },
     },
   ];
 
