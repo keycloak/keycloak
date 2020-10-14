@@ -54,13 +54,8 @@ public class KeycloakMain {
     }
 
     static void start(CommandLine cmd) {
-        // We should use the method call below to start the server once Quarkus is released with https://github.com/quarkusio/quarkus/pull/12532.
-        // It will allow us to properly handle exception thrown during startup and at runtime.
-//        Quarkus.run(null, (integer, throwable) -> {
-//            error(cmd, String.format("Failed to start server using profile (%s).", getProfileOrDefault("none")), throwable.getCause());
-//        });
-        Quarkus.run(null, (integer) -> {
-            error(cmd, String.format("Failed to start server using profile (%s).", getProfileOrDefault("none")), null);
+        Quarkus.run(null, (integer, throwable) -> {
+            error(cmd, String.format("Failed to start server using profile (%s).", getProfileOrDefault("none")), throwable.getCause());
         });
         Quarkus.waitForExit();
     }
