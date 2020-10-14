@@ -56,6 +56,11 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
         doCreateResource(new ResourceRepresentation("/resources/{pattern}/{pattern}/*", Collections.emptySet(), "/resources/{pattern}/{pattern}/*", null));
         doCreateResource(new ResourceRepresentation("/resources/{pattern}/sub-resources/{pattern}/*", Collections.emptySet(), "/resources/{pattern}/sub-resources/{pattern}/*", null));
         doCreateResource(new ResourceRepresentation("/resources/{pattern}/sub-resource", Collections.emptySet(), "/resources/{pattern}/sub-resources/{pattern}/*", null));
+        doCreateResource(new ResourceRepresentation("/rest/{version}/loader/loadTwo", Collections.emptySet(), "/rest/{version}/loader/loadTwo", null));
+        doCreateResource(new ResourceRepresentation("/rest/{version}/loader/load", Collections.emptySet(), "/rest/{version}/loader/load", null));
+        doCreateResource(new ResourceRepresentation(
+                "/rest/{version}/carts/{cartId}/cartactions/{actionId}", Collections.emptySet(), "/rest/{version}/carts/{cartId}/cartactions/{actionId}", null));
+        doCreateResource(new ResourceRepresentation("/rest/v1/carts/{cartId}/cartactions/123", Collections.emptySet(), "/rest/v1/carts/{cartId}/cartactions/123", null));
 
         AuthzClient authzClient = getAuthzClient();
 
@@ -100,6 +105,60 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
         assertNotNull(resources);
         assertEquals(1, resources.size());
         assertEquals("/resources/{pattern}/sub-resources/{pattern}/*", resources.get(0).getUri());
+
+        resources = authzClient.protection().resource().findByMatchingUri("/rest/v1/loader/load");
+
+        assertNotNull(resources);
+        assertEquals(1, resources.size());
+        assertEquals("/rest/{version}/loader/load", resources.get(0).getUri());
+
+        resources = authzClient.protection().resource().findByMatchingUri("/rest/v2/carts/123/cartactions/123");
+
+        assertNotNull(resources);
+        assertEquals(1, resources.size());
+        assertEquals("/rest/{version}/carts/{cartId}/cartactions/{actionId}", resources.get(0).getUri());
+
+        resources = authzClient.protection().resource().findByMatchingUri("/rest/v2/carts/{cartId}/cartactions/123");
+
+        assertNotNull(resources);
+        assertEquals(1, resources.size());
+        assertEquals("/rest/{version}/carts/{cartId}/cartactions/{actionId}", resources.get(0).getUri());
+
+        resources = authzClient.protection().resource().findByMatchingUri("/rest/{version}/carts/123/cartactions/123");
+
+        assertNotNull(resources);
+        assertEquals(1, resources.size());
+        assertEquals("/rest/{version}/carts/{cartId}/cartactions/{actionId}", resources.get(0).getUri());
+
+        resources = authzClient.protection().resource().findByMatchingUri("/rest/{version}/carts/{cartId}/cartactions/123");
+
+        assertNotNull(resources);
+        assertEquals(1, resources.size());
+        assertEquals("/rest/{version}/carts/{cartId}/cartactions/{actionId}", resources.get(0).getUri());
+
+        resources = authzClient.protection().resource().findByMatchingUri("/rest/v1/carts/123/cartactions/123");
+
+        assertNotNull(resources);
+        assertEquals(1, resources.size());
+        assertEquals("/rest/v1/carts/{cartId}/cartactions/123", resources.get(0).getUri());
+
+        resources = authzClient.protection().resource().findByMatchingUri("/rest/v1/carts/{cartId}/cartactions/123");
+
+        assertNotNull(resources);
+        assertEquals(1, resources.size());
+        assertEquals("/rest/v1/carts/{cartId}/cartactions/123", resources.get(0).getUri());
+
+        resources = authzClient.protection().resource().findByMatchingUri("/rest/v1/carts/345/cartactions/123");
+
+        assertNotNull(resources);
+        assertEquals(1, resources.size());
+        assertEquals("/rest/v1/carts/{cartId}/cartactions/123", resources.get(0).getUri());
+
+        resources = authzClient.protection().resource().findByMatchingUri("/rest/v2/carts/345/cartactions/123");
+
+        assertNotNull(resources);
+        assertEquals(1, resources.size());
+        assertEquals("/rest/{version}/carts/{cartId}/cartactions/{actionId}", resources.get(0).getUri());
     }
 
     @Test
