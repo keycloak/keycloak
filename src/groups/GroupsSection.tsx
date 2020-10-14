@@ -126,17 +126,20 @@ export const GroupsSection = () => {
                 </>
               }
             >
-            {rawData && (
-              <GroupsList list={filteredData ? filteredData : rawData} refresh={loader}/>
-            )}
-            {filteredData && filteredData.length === 0 && (
-              <ListEmptyState
-                hasIcon={true}
-                isSearchVariant={true}
-                message={t("noSearchResults")}
-                instructions={t("noSearchResultsInstructions")}
-              />
-            )}
+              {rawData && (
+                <GroupsList
+                  list={filteredData ? filteredData : rawData}
+                  refresh={loader}
+                />
+              )}
+              {filteredData && filteredData.length === 0 && (
+                <ListEmptyState
+                  hasIcon={true}
+                  isSearchVariant={true}
+                  message={t("noSearchResults")}
+                  instructions={t("noSearchResultsInstructions")}
+                />
+              )}
             </TableToolbar>
             <GroupsCreateModal
               isCreateModalOpen={isCreateModalOpen}
