@@ -47,7 +47,7 @@ export const ListEmptyState = ({
             {secondaryActions.map((action) => (
               <Button
                 key={action.text}
-                variant={action.type || ButtonVariant.primary}
+                variant={action.type || ButtonVariant.secondary}
                 onClick={action.onClick}
               >
                 {action.text}
