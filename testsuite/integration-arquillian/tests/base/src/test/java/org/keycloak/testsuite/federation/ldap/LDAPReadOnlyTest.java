@@ -48,6 +48,8 @@ import org.openqa.selenium.By;
 
 import javax.ws.rs.ClientErrorException;
 
+import java.util.Collections;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -132,6 +134,17 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
     public void testReadOnlyUserDoesNotThrowIfUnchanged() {
         UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
         UserRepresentation userRepresentation = user.toRepresentation();
+        userRepresentation.setRequiredActions(Collections.singletonList(UserModel.RequiredAction.CONFIGURE_TOTP.toString()));
+        user.update(userRepresentation);
+
+        // assert
+        user = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        userRepresentation = user.toRepresentation();
+        Assert.assertEquals(userRepresentation.getRequiredActions().size(), 1);
+        Assert.assertEquals(userRepresentation.getRequiredActions().get(0), UserModel.RequiredAction.CONFIGURE_TOTP.toString());
+
+        // reset
+        userRepresentation.setRequiredActions(Collections.emptyList());
         user.update(userRepresentation);
     }
 
