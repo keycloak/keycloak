@@ -38,3 +38,4 @@ org.keycloak.storage.UserStorageProviderSpi
 org.keycloak.theme.ThemeResourceSpi
 org.keycloak.theme.ThemeSelectorSpi
 org.keycloak.urls.HostnameSpi
+org.keycloak.events.user.UserEventListenerSpi

@@ -31,6 +31,7 @@ import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.user.UserEventListener;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -63,6 +64,9 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.components.TestProviderFactory;
 import org.keycloak.testsuite.events.EventsListenerProvider;
+import org.keycloak.testsuite.events.TestingUserEventListener;
+import org.keycloak.testsuite.rest.representation.TestUserEvent;
+import org.keycloak.testsuite.events.TestingUserEventsListenerFactory;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.forms.PassThroughAuthenticator;
 import org.keycloak.testsuite.forms.PassThroughClientAuthenticator;
@@ -114,6 +118,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
     private final KeycloakSession session;
     private final Map<String, TimerProvider.TimerTaskContext> suspendedTimerTasks;
+    private TestingUserEventListener testingUserEventListener;
 
     @Context
     private HttpRequest request;
@@ -247,6 +252,21 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     @POST
+    @Path("/poll-user-pre-event-queue")
+    @Produces(MediaType.APPLICATION_JSON)
+    public TestUserEvent getUserPreEvent() {
+        return getTestUserEventListener().pollPreEvent();
+    }
+
+    @POST
+    @Path("/poll-user-post-event-queue")
+    @Produces(MediaType.APPLICATION_JSON)
+    public TestUserEvent getUserPostEvent() {
+        return getTestUserEventListener().pollPostEvent();
+
+    }
+
+    @POST
     @Path("/clear-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearEventQueue() {
@@ -259,6 +279,14 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearAdminEventQueue() {
         EventsListenerProvider.clearAdminEvents();
+        return Response.noContent().build();
+    }
+
+    @POST
+    @Path("/clear-user-event-queue")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response clearUserEventQueue() {
+        getTestUserEventListener().clearEvents();
         return Response.noContent().build();
     }
 
@@ -359,6 +387,20 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
 
         return toEventListRep(query.getResultList());
+    }
+
+    @GET
+    @Path("/user-pre-events-count")
+    @Produces(MediaType.TEXT_PLAIN_UTF_8)
+    public int getUserPreEventCount() {
+        return getTestUserEventListener().getPreEventsCount();
+    }
+
+    @GET
+    @Path("/user-post-events-count")
+    @Produces(MediaType.TEXT_PLAIN_UTF_8)
+    public int getUserPostEventCount() {
+        return getTestUserEventListener().getPostEventsCount();
     }
 
     private List<EventRepresentation> toEventListRep(List<Event> events) {
@@ -1001,6 +1043,13 @@ public class TestingResourceProvider implements RealmResourceProvider {
             throw new NotFoundException("Realm not found");
         }
         return realm;
+    }
+
+    private TestingUserEventListener getTestUserEventListener() {
+        if (testingUserEventListener == null) {
+            testingUserEventListener = (TestingUserEventListener) session.getProvider(UserEventListener.class, TestingUserEventsListenerFactory.PROVIDER_ID);
+        }
+        return testingUserEventListener;
     }
 
 }
