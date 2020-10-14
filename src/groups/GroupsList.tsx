@@ -13,7 +13,7 @@ import { HttpClientContext } from "../context/http-service/HttpClientContext";
 import { RealmContext } from "../context/realm-context/RealmContext";
 import { useAlerts } from "../components/alert/Alerts";
 
-type GroupsListProps = {
+export type GroupsListProps = {
   list?: GroupRepresentation[];
   refresh: () => void;
 };
