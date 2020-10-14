@@ -796,12 +796,6 @@ public class UserStorageManager implements UserProvider, OnUserCache, OnCreateCo
         if (!(factory instanceof UserStorageProviderFactory)) return;
         UserStorageProviderModel old = new UserStorageProviderModel(oldModel);
         UserStorageProviderModel newP= new UserStorageProviderModel(newModel);
-        if (old.getChangedSyncPeriod() != newP.getChangedSyncPeriod() || old.getFullSyncPeriod() != newP.getFullSyncPeriod()
-                || old.isImportEnabled() != newP.isImportEnabled()) {
-            new UserStorageSyncManager().notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(newModel), false);
-        }
-
+        new UserStorageSyncManager().notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(newModel), false);
     }
-
-
 }
