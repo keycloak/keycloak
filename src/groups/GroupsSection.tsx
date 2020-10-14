@@ -10,6 +10,7 @@ import {
 } from "./models/server-info";
 import { TableToolbar } from "../components/table-toolbar/TableToolbar";
 import { ViewHeader } from "../components/view-header/ViewHeader";
+import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
   Button,
   Dropdown,
@@ -90,10 +91,10 @@ export const GroupsSection = () => {
   };
 
   return (
-    <React.Fragment>
+    <>
       <ViewHeader titleKey="groups:groups" subKey="groups:groupsDescription" />
       <PageSection variant={PageSectionVariants.light}>
-        {rawData ? (
+        {rawData && rawData.length > 0 ? (
           <>
             <TableToolbar
               inputGroupName="groupsToolbarTextInput"
@@ -125,7 +126,17 @@ export const GroupsSection = () => {
                 </>
               }
             >
-              <GroupsList list={filteredData || rawData} refresh={loader} />
+            {rawData && (
+              <GroupsList list={filteredData ? filteredData : rawData} refresh={loader}/>
+            )}
+            {filteredData && filteredData.length === 0 && (
+              <ListEmptyState
+                hasIcon={true}
+                isSearchVariant={true}
+                message={t("noSearchResults")}
+                instructions={t("noSearchResultsInstructions")}
+              />
+            )}
             </TableToolbar>
             <GroupsCreateModal
               isCreateModalOpen={isCreateModalOpen}
@@ -137,11 +148,14 @@ export const GroupsSection = () => {
             />
           </>
         ) : (
-          <div className="pf-u-text-align-center">
-            <Spinner />
-          </div>
+          <ListEmptyState
+            hasIcon={true}
+            message={t("noGroupsInThisRealm")}
+            instructions={t("noGroupsInThisRealmInstructions")}
+            primaryActionText={t("createGroup")}
+          />
         )}
       </PageSection>
-    </React.Fragment>
+    </>
   );
 };

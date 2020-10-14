@@ -11,11 +11,15 @@ import {
   StackItem,
   TextArea,
 } from "@patternfly/react-core";
+import FileSaver from "file-saver";
+
 import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
 import { HttpClientContext } from "../../context/http-service/HttpClientContext";
 import { RealmContext } from "../../context/realm-context/RealmContext";
 import { HelpItem } from "../help-enabler/HelpItem";
 import { useTranslation } from "react-i18next";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import { HelpContext } from "../help-enabler/HelpHeader";
 
 export type DownloadDialogProps = {
   id: string;
@@ -26,39 +30,6 @@ type DownloadDialogModalProps = DownloadDialogProps & {
   open: boolean;
   toggleDialog: () => void;
 };
-
-const serverInfo = [
-  {
-    id: "keycloak-oidc-jboss-subsystem-cli",
-    protocol: "openid-connect",
-    downloadOnly: false,
-    displayType: "Keycloak OIDC JBoss Subsystem CLI",
-    helpText:
-      "CLI script you must edit and apply to your client app server. This type of configuration is useful when you can't or don't want to crack open your WAR file.",
-    filename: "keycloak-oidc-subsystem.cli",
-    mediaType: "text/plain",
-  },
-  {
-    id: "keycloak-oidc-jboss-subsystem",
-    protocol: "openid-connect",
-    downloadOnly: false,
-    displayType: "Keycloak OIDC JBoss Subsystem XML",
-    helpText:
-      "XML snippet you must edit and add to the Keycloak OIDC subsystem on your client app server.  This type of configuration is useful when you can't or don't want to crack open your WAR file.",
-    filename: "keycloak-oidc-subsystem.xml",
-    mediaType: "application/xml",
-  },
-  {
-    id: "keycloak-oidc-keycloak-json",
-    protocol: "openid-connect",
-    downloadOnly: false,
-    displayType: "Keycloak OIDC JSON",
-    helpText:
-      "keycloak.json file used by the Keycloak OIDC client adapter to configure clients.  This must be saved to a keycloak.json file and put in your WEB-INF directory of your WAR file.  You may also want to tweak this file after you download it.",
-    filename: "keycloak.json",
-    mediaType: "application/json",
-  },
-];
 
 export const useDownloadDialog = (
   props: DownloadDialogProps
@@ -84,8 +55,10 @@ export const DownloadDialog = ({
   const httpClient = useContext(HttpClientContext)!;
   const { realm } = useContext(RealmContext);
   const { t } = useTranslation("common");
+  const { enabled } = useContext(HelpContext);
+  const serverInfo = useServerInfo();
 
-  const configFormats = serverInfo; //serverInfo.clientInstallations[protocol];
+  const configFormats = serverInfo.clientInstallations[protocol];
   const [selected, setSelected] = useState(
     configFormats[configFormats.length - 1].id
   );
@@ -95,35 +68,43 @@ export const DownloadDialog = ({
   useEffect(() => {
     (async () => {
       const response = await httpClient.doGet<string>(
-        `admin/${realm}/master/clients/${id}/installation/providers/${selected}`
+        `/admin/realms/${realm}/clients/${id}/installation/providers/${selected}`
       );
-      setSnippet(response.data!);
+      setSnippet(await response.text());
     })();
-  }, [selected]);
+  }, [selected, snippet]);
   return (
     <ConfirmDialogModal
       titleKey={t("clients:downloadAdaptorTitle")}
       continueButtonLabel={t("download")}
-      onConfirm={() => {}}
+      onConfirm={() => {
+        const config = configFormats.find((config) => config.id === selected)!;
+        FileSaver.saveAs(
+          new Blob([snippet], { type: config.mediaType }),
+          config.filename
+        );
+      }}
       open={open}
       toggleDialog={toggleDialog}
     >
       <Form>
         <Stack hasGutter>
-          <StackItem>
-            <Alert
-              id={id}
-              title={t("clients:description")}
-              variant={AlertVariant.info}
-              isInline
-            >
-              {
-                configFormats.find(
-                  (configFormat) => configFormat.id === selected
-                )?.helpText
-              }
-            </Alert>
-          </StackItem>
+          {enabled && (
+            <StackItem>
+              <Alert
+                id={id}
+                title={t("clients:description")}
+                variant={AlertVariant.info}
+                isInline
+              >
+                {
+                  configFormats.find(
+                    (configFormat) => configFormat.id === selected
+                  )?.helpText
+                }
+              </Alert>
+            </StackItem>
+          )}
           <StackItem>
             <FormGroup
               fieldId="type"
@@ -171,7 +152,7 @@ export const DownloadDialog = ({
                 <HelpItem
                   helpText={t("clients-help:details")}
                   forLabel={t("clients:details")}
-                  forID=""
+                  forID="details"
                 />
               }
             >

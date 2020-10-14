@@ -47,8 +47,8 @@ exports[`<ListEmptyState /> render 1`] = `
       >
         <button
           aria-disabled="false"
-          class="pf-c-button pf-m-primary"
-          data-ouia-component-id="OUIA-Generated-Button-primary-2"
+          class="pf-c-button pf-m-secondary"
+          data-ouia-component-id="OUIA-Generated-Button-secondary-1"
           data-ouia-component-type="PF4/Button"
           data-ouia-safe="true"
           type="button"

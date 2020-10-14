@@ -31,6 +31,7 @@ import { useAlerts } from "../components/alert/Alerts";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { exportClient } from "../util";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { useDownloadDialog } from "../components/download-dialog/DownloadDialog";
 
 export const ClientSettings = () => {
   const { t } = useTranslation("clients");
@@ -74,6 +75,11 @@ export const ClientSettings = () => {
     },
   });
 
+  const [toggleDownloadDialog, DownloadDialog] = useDownloadDialog({
+    id,
+    protocol: form.getValues("protocol"),
+  });
+
   const save = async () => {
     if (await form.trigger()) {
       const redirectUris = toValue(form.getValues()["redirectUris"]);
@@ -89,6 +95,7 @@ export const ClientSettings = () => {
   return (
     <>
       <DeleteConfirm />
+      <DownloadDialog />
       <Controller
         name="enabled"
         control={form.control}
@@ -110,6 +117,9 @@ export const ClientSettings = () => {
                 titleKey={name}
                 subKey="clients:clientsExplain"
                 selectItems={[
+                  <SelectOption key="download" value="download">
+                    {t("downloadAdapterConfig")}
+                  </SelectOption>,
                   <SelectOption key="export" value="export">
                     {t("common:export")}
                   </SelectOption>,
@@ -131,6 +141,8 @@ export const ClientSettings = () => {
                     exportClient(form.getValues());
                   } else if (value === "delete") {
                     toggleDeleteDialog();
+                  } else if (value === "download") {
+                    toggleDownloadDialog();
                   }
                 }}
               />

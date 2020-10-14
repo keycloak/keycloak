@@ -15,6 +15,10 @@
     "groupCreated": "Group created",
     "couldNotCreateGroup": "Could not create group",
     "createAGroup": "Create a group",
-    "create": "Create"
+    "create": "Create",
+    "noSearchResults": "No search results",
+    "noSearchResultsInstructions" : "Click on the search bar above to search for groups",
+    "noGroupsInThisRealm" : "No groups in this Realm",
+    "noGroupsInThisRealmInstructions" : "You haven't created any groups in this realm. Create a group to get started."
   }
 }

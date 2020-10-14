@@ -9,6 +9,7 @@ import {
   EmptyStateSecondaryActions,
 } from "@patternfly/react-core";
 import { PlusCircleIcon } from "@patternfly/react-icons";
+import { SearchIcon } from "@patternfly/react-icons";
 
 export type Action = {
   text: string;
@@ -19,8 +20,10 @@ export type Action = {
 export type ListEmptyStateProps = {
   message: string;
   instructions: string;
-  primaryActionText: string;
-  onPrimaryAction: MouseEventHandler<HTMLButtonElement>;
+  primaryActionText?: string;
+  onPrimaryAction?: MouseEventHandler<HTMLButtonElement>;
+  hasIcon?: boolean;
+  isSearchVariant?: boolean;
   secondaryActions?: Action[];
 };
 
@@ -28,26 +31,34 @@ export const ListEmptyState = ({
   message,
   instructions,
   onPrimaryAction,
+  hasIcon,
+  isSearchVariant,
   primaryActionText,
   secondaryActions,
 }: ListEmptyStateProps) => {
   return (
     <>
       <EmptyState variant="large">
-        <EmptyStateIcon icon={PlusCircleIcon} />
+        {hasIcon && isSearchVariant ? (
+          <EmptyStateIcon icon={SearchIcon} />
+        ) : (
+          <EmptyStateIcon icon={PlusCircleIcon} />
+        )}
         <Title headingLevel="h4" size="lg">
           {message}
         </Title>
         <EmptyStateBody>{instructions}</EmptyStateBody>
-        <Button variant="primary" onClick={onPrimaryAction}>
-          {primaryActionText}
-        </Button>
+        {primaryActionText && (
+          <Button variant="primary" onClick={onPrimaryAction}>
+            {primaryActionText}
+          </Button>
+        )}
         {secondaryActions && (
           <EmptyStateSecondaryActions>
             {secondaryActions.map((action) => (
               <Button
                 key={action.text}
-                variant={action.type || ButtonVariant.primary}
+                variant={action.type || ButtonVariant.secondary}
                 onClick={action.onClick}
               >
                 {action.text}
