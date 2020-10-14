@@ -94,6 +94,11 @@ export const GroupsSection = () => {
     <>
       <ViewHeader titleKey="groups:groups" subKey="groups:groupsDescription" />
       <PageSection variant={PageSectionVariants.light}>
+        {!rawData && (
+          <div className="pf-u-text-align-center">
+            <Spinner />
+          </div>
+        )}
         {rawData && rawData.length > 0 ? (
           <>
             <TableToolbar
