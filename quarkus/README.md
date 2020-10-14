@@ -2,6 +2,7 @@
 
 The module holds the codebase to run Keycloak on top of [Quarkus](https://quarkus.io/):
 
+```
 ├── deployment
 │   ├── Build-time codebase with all the necessary steps to build and configure the server
 │
@@ -10,7 +11,7 @@ The module holds the codebase to run Keycloak on top of [Quarkus](https://quarku
 │
 └── server
     ├── The server itself, only responsible for generating the server artifacts
-    
+``` 
 
 ## Activating the Module
 
