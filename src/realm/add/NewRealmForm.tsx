@@ -60,7 +60,7 @@ export const NewRealmForm = () => {
               type="text"
               id="kc-realm-name"
               name="realm"
-              ref={register()}
+              ref={register({ required: true })}
             />
           </FormGroup>
           <FormGroup label={t("enabled")} fieldId="kc-realm-enabled-switch">

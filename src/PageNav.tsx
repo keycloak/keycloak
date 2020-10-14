@@ -69,7 +69,7 @@ export const PageNav: React.FunctionComponent = () => {
               <NavGroup title={t("manage")}>
                 {makeNavItem("clients", "clients")}
                 {makeNavItem("clientScopes", "client-scopes")}
-                {makeNavItem("realmRoles", "realm-roles")}
+                {makeNavItem("realmRoles", "roles")}
                 {makeNavItem("users", "users")}
                 {makeNavItem("groups", "groups")}
                 {makeNavItem("sessions", "sessions")}

@@ -8,4 +8,6 @@ export default {
   component: RolesList,
 } as Meta;
 
-export const RolesListExample = () => <RolesList roles={rolesMock} />;
+export const RolesListExample = () => (
+  <RolesList roles={rolesMock} refresh={() => {}} />
+);

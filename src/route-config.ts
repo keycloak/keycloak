@@ -55,7 +55,7 @@ export const routes = (t: TFunction) => [
     breadcrumb: t("client-scopes:createClientScope"),
   },
   {
-    path: "/realm-roles",
+    path: "/roles",
     component: RealmRolesSection,
     breadcrumb: t("roles:roleList"),
   },

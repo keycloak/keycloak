@@ -18,7 +18,7 @@ import {
 import { RoleRepresentation } from "../../model/role-model";
 import { HttpClientContext } from "../../context/http-service/HttpClientContext";
 import { useAlerts } from "../../components/alert/Alerts";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, FieldErrors } from "react-hook-form";
 import { RealmContext } from "../../context/realm-context/RealmContext";
 
 export const NewRoleForm = () => {
@@ -40,6 +40,8 @@ export const NewRoleForm = () => {
     }
   };
 
+  console.log(errors);
+
   return (
     <>
       <PageSection variant="light">
@@ -56,16 +58,18 @@ export const NewRoleForm = () => {
               type="text"
               id="kc-role-name"
               name="name"
-              ref={register()}
+              ref={register({ required: true })}
             />
           </FormGroup>
           <FormGroup
             label={t("description")}
             fieldId="kc-role-description"
-            helperTextInvalid="Max length 255"
             validated={
-              errors ? ValidatedOptions.error : ValidatedOptions.default
+              Object.keys(errors).length != 0
+                ? ValidatedOptions.error
+                : ValidatedOptions.default
             }
+            helperTextInvalid={"Max length 255"}
           >
             <Controller
               name="description"
@@ -75,6 +79,12 @@ export const NewRoleForm = () => {
               render={({ onChange, value }) => (
                 <TextArea
                   type="text"
+                  validated={
+                    errors.description &&
+                    errors.description.type === "maxLength"
+                      ? "error"
+                      : "default"
+                  }
                   id="kc-role-description"
                   value={value}
                   onChange={onChange}
