@@ -2,6 +2,7 @@
   "client-scopes": {
     "createClientScope": "Create client scope",
     "clientScopeList": "List of client scopes",
+    "clientScopeDetails": "Client scope details",
     "clientScopeExplain": "Client scopes allow you to define a common set of protocol mappers and roles, which are shared between multiple clients",
     "searchFor": "Search for client scope",
     "name": "Name",
@@ -10,8 +11,11 @@
     "type": "Type",
     "priority": "Priority",
     "protocol": "Protocol",
-    "createClientScopeSuccess": "Client scope created",
-    "createClientScopeError": "Could not create client scope:",
+    "includeInTokenScope": "Include in token scope",
+    "createSuccess": "Client scope created",
+    "createError": "Could not create client scope: '{{error}}'",
+    "updateSuccess": "Client scope updated",
+    "updateError": "Could not update client scope: '{{error}}'",
     "settings": "Settings",
     "mappers": "Mappers",
     "mappersSearchFor": "Search for mapper",
@@ -26,6 +30,6 @@
     "mappingDeletedError": "Could not delete mapping: '{{error}}'",
     "displayOnConsentScreen": "Display on consent screen",
     "consentScreenText": "Consent screen text",
-    "guiOrder": "GUI Order"
+    "guiOrder": "Display Order"
   }
 }

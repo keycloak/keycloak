@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Table,
@@ -23,7 +24,20 @@ export const ClientScopeList = ({ clientScopes }: ClientScopeListProps) => {
   ];
 
   const data = clientScopes.map((c) => {
-    return { cells: columns.map((col) => c[col]) };
+    return {
+      cells: columns.map((col) => {
+        if (col === "name") {
+          return (
+            <>
+              <Link key={c.id} to={`/client-scopes/${c.id}`}>
+                {c[col]}
+              </Link>
+            </>
+          );
+        }
+        return c[col];
+      }),
+    };
   });
 
   return (

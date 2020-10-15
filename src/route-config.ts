@@ -1,6 +1,6 @@
 import { TFunction } from "i18next";
 import { AuthenticationSection } from "./authentication/AuthenticationSection";
-import { NewClientScopeForm } from "./client-scopes/add/NewClientScopeForm";
+import { ClientScopeForm } from "./client-scopes/form/ClientScopeForm";
 import { ClientScopesSection } from "./client-scopes/ClientScopesSection";
 import { NewClientForm } from "./clients/add/NewClientForm";
 import { ClientSettings } from "./clients/ClientSettings";
@@ -51,8 +51,13 @@ export const routes = (t: TFunction) => [
   },
   {
     path: "/client-scopes/add-client-scopes",
-    component: NewClientScopeForm,
+    component: ClientScopeForm,
     breadcrumb: t("client-scopes:createClientScope"),
+  },
+  {
+    path: "/client-scopes/:id",
+    component: ClientScopeForm,
+    breadcrumb: t("client-scopes:clientScopeDetails"),
   },
   {
     path: "/roles",
