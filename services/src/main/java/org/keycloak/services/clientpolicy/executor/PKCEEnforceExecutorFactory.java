@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.services.clientpolicy.executor;
+package org.keycloak.services.clientpolicy.executor;
 
 import java.util.List;
 
@@ -27,13 +27,13 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.clientpolicy.executor.AbstractAugumentingClientRegistrationPolicyExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 
-public class TestPKCEEnforceExecutorFactory extends AbstractAugumentingClientRegistrationPolicyExecutorFactory {
+public class PKCEEnforceExecutorFactory extends AbstractAugumentingClientRegistrationPolicyExecutorFactory {
 
-    public static final String PROVIDER_ID = "test-pkce-enforce-executor";
+    public static final String PROVIDER_ID = "pkce-enforce-executor";
 
     @Override
     public ClientPolicyExecutorProvider create(KeycloakSession session, ComponentModel model) {
-        return new TestPKCEEnforceExecutor(session, model);
+        return new PKCEEnforceExecutor(session, model);
     }
 
     @Override
@@ -55,7 +55,7 @@ public class TestPKCEEnforceExecutorFactory extends AbstractAugumentingClientReg
 
     @Override
     public String getHelpText() {
-        return null;
+        return "It makes the client enforce Proof Key for Code Exchange operation.";
     }
 
     @Override
