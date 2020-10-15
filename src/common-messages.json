@@ -17,7 +17,7 @@
     "resourceFile": "Resource file",
     "clearFile": "Clear this file",
     "on": "On",
-    "off":"Off",
+    "off": "Off",
     "enabled": "Enabled",
     "disabled": "Disabled",
     "disable": "Disable",
@@ -30,6 +30,7 @@
     "helpLabel": "More help for {{label}}",
     "documentation": "Documentation",
     "enableHelpMode": "Enable help mode",
+    "learnMore": "Learn more",
 
     "home": "Home",
     "manage": "Manage",

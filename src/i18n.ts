@@ -15,6 +15,7 @@ import users from "./user/messages.json";
 import sessions from "./sessions/messages.json";
 import events from "./events/messages.json";
 import storybook from "./stories/messages.json";
+import userFederation from "./user-federation/messages.json";
 
 const initOptions = {
   defaultNS: "common",
@@ -34,6 +35,7 @@ const initOptions = {
       ...sessions,
       ...events,
       ...storybook,
+      ...userFederation,
     },
   },
   lng: "en",
