@@ -1,6 +1,6 @@
 [[_user-registration]]
 
-== User Registration
+=== User Registration
 
 You can enable {project_name} to allow user self registration.  When enabled, the login page has a registration
 link the user can click on to create their new account.
