@@ -1,4 +1,6 @@
-embed-host-controller --domain-config=domain.xml
+set hostConfig=host.xml
+
+embed-host-controller --domain-config=domain.xml --host-config=$hostConfig
 
 # Early versions of keycloak used "default" for the standalone profile name.
 # Yours maybe be something completely different.
