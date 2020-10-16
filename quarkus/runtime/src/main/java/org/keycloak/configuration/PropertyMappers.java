@@ -22,13 +22,17 @@ import static org.keycloak.configuration.PropertyMapper.create;
 import static org.keycloak.configuration.PropertyMapper.createWithDefault;
 import static org.keycloak.configuration.PropertyMapper.forBuildTimeProperty;
 
+import java.io.File;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
+import org.keycloak.util.Environment;
 
 /**
  * Configures the {@link PropertyMapper} instances for all Keycloak configuration properties that should be mapped to their
@@ -57,7 +61,7 @@ public final class PropertyMappers {
                 ConfigValue proceed = context.proceed("kc.https.certificate.file");
                 
                 if (proceed == null || proceed.getValue() == null) {
-                    proceed = context.proceed("kc.https.certificate.key-store-file");
+                    proceed = getMapper("quarkus.http.ssl.certificate.key-store-file").getOrDefault(context, null);
                 }
                 
                 if (proceed == null || proceed.getValue() == null) {
@@ -73,7 +77,23 @@ public final class PropertyMappers {
         create("https.cipher-suites", "quarkus.http.ssl.cipher-suites", "The cipher suites to use. If none is given, a reasonable default is selected.");
         create("https.protocols", "quarkus.http.ssl.protocols", "The list of protocols to explicitly enable.");
         create("https.certificate.file", "quarkus.http.ssl.certificate.file", "The file path to a server certificate or certificate chain in PEM format.");
-        create("https.certificate.key-store-file", "quarkus.http.ssl.certificate.key-store-file", "An optional key store which holds the certificate information instead of specifying separate files.");
+        createWithDefault("https.certificate.key-store-file", "quarkus.http.ssl.certificate.key-store-file",
+                new Supplier<String>() {
+                    @Override
+                    public String get() {
+                        String homeDir = Environment.getHomeDir();
+
+                        if (homeDir != null) {
+                            File file = Paths.get(homeDir, "conf", "server.keystore").toFile();
+
+                            if (file.exists()) {
+                                return file.getAbsolutePath();
+                            }
+                        }
+                        
+                        return null;
+                    }
+                }, "An optional key store which holds the certificate information instead of specifying separate files.");
         create("https.certificate.key-store-password", "quarkus.http.ssl.certificate.key-store-password", "A parameter to specify the password of the key store file. If not given, the default (\"password\") is used.", true);
         create("https.certificate.key-store-file-type", "quarkus.http.ssl.certificate.key-store-file-type", "An optional parameter to specify type of the key store file. If not given, the type is automatically detected based on the file name.");
         create("https.certificate.trust-store-file", "quarkus.http.ssl.certificate.trust-store-file", "An optional trust store which holds the certificate information of the certificates to trust.");
