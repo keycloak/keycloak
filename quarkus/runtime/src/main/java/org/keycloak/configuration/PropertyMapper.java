@@ -23,10 +23,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
-import org.keycloak.quarkus.KeycloakRecorder;
 
 public class PropertyMapper {
 
@@ -36,6 +36,10 @@ public class PropertyMapper {
 
     static PropertyMapper createWithDefault(String fromProperty, String toProperty, String defaultValue, String description) {
         return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, defaultValue, null, description));
+    }
+
+    static PropertyMapper createWithDefault(String fromProperty, String toProperty, Supplier<String> defaultValue, String description) {
+        return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, defaultValue.get(), null, description));
     }
 
     static PropertyMapper createWithDefault(String fromProperty, String toProperty, String defaultValue, BiFunction<String, ConfigSourceInterceptorContext, String> transformer, String description) {
@@ -112,6 +116,10 @@ public class PropertyMapper {
         this.buildTime = buildTime;
         this.description = description;
         this.mask = mask;
+    }
+
+    ConfigValue getOrDefault(ConfigSourceInterceptorContext context, ConfigValue current) {
+        return getOrDefault(null, context, current);        
     }
 
     ConfigValue getOrDefault(String name, ConfigSourceInterceptorContext context, ConfigValue current) {
