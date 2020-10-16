@@ -82,6 +82,7 @@ import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvide
 import org.keycloak.services.clientpolicy.condition.ClientUpdateContextConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
+import org.keycloak.services.clientpolicy.executor.SecureClientAuthEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFactory;
@@ -93,7 +94,6 @@ import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject;
 import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExeptionConditionFactory;
-import org.keycloak.testsuite.services.clientpolicy.executor.TestClientAuthenticationExecutorFactory;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestPKCEEnforceExecutorFactory;
 import org.keycloak.testsuite.util.OAuthClient;
 
@@ -258,7 +258,7 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
     public void testAdminClientAugmentedAuthType() throws ClientPolicyException {
         setupPolicyAcceptableAuthType("MyPolicy");
 
-        updateExecutor("TestClientAuthenticationExecutor", (ComponentRepresentation provider) -> {
+        updateExecutor("SecureClientAuthEnforceExecutor", (ComponentRepresentation provider) -> {
             setExecutorAugmentActivate(provider);
             setExecutorAugmentedClientAuthMethod(provider, X509ClientAuthenticator.PROVIDER_ID);
         });
@@ -270,7 +270,7 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         try {
             assertEquals(X509ClientAuthenticator.PROVIDER_ID, getClientByAdmin(clientId).getClientAuthenticatorType());
 
-            updateExecutor("TestClientAuthenticationExecutor", (ComponentRepresentation provider) -> {
+            updateExecutor("SecureClientAuthEnforceExecutor", (ComponentRepresentation provider) -> {
                 setExecutorAugmentedClientAuthMethod(provider, JWTClientAuthenticator.PROVIDER_ID);
             });
 
@@ -529,13 +529,13 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         registerCondition(CLIENTUPDATECONTEXT_CONDITION_ALPHA_NAME, policyAlphaName);
         logger.info("... Registered Condition : " + CLIENTUPDATECONTEXT_CONDITION_ALPHA_NAME);
 
-        createExecutor("TestClientAuthenticationExecutor-alpha", TestClientAuthenticationExecutorFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+        createExecutor("SecureClientAuthEnforceExecutor-alpha", SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
             setExecutorAcceptedClientAuthMethods(provider, new ArrayList<>(Arrays.asList(ClientIdAndSecretAuthenticator.PROVIDER_ID)));
             setExecutorAugmentActivate(provider);
             setExecutorAugmentedClientAuthMethod(provider, ClientIdAndSecretAuthenticator.PROVIDER_ID);
         });
-        registerExecutor("TestClientAuthenticationExecutor-alpha", policyAlphaName);
-        logger.info("... Registered Executor : TestClientAuthenticationExecutor-alpha");
+        registerExecutor("SecureClientAuthEnforceExecutor-alpha", policyAlphaName);
+        logger.info("... Registered Executor : SecureClientAuthEnforceExecutor-alpha");
 
         String policyBetaName = "MyPolicy-beta";
         createPolicy(policyBetaName, DefaultClientPolicyProviderFactory.PROVIDER_ID, null, null, null);
@@ -836,12 +836,12 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         registerCondition(CLIENTUPDATECONTEXT_CONDITION_NAME, policyName);
         logger.info("... Registered Condition : " + CLIENTUPDATECONTEXT_CONDITION_NAME);
 
-        createExecutor("TestClientAuthenticationExecutor", TestClientAuthenticationExecutorFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+        createExecutor("SecureClientAuthEnforceExecutor", SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
             setExecutorAcceptedClientAuthMethods(provider, new ArrayList<>(Arrays.asList(
                     JWTClientAuthenticator.PROVIDER_ID, JWTClientSecretAuthenticator.PROVIDER_ID, X509ClientAuthenticator.PROVIDER_ID)));
         });
-        registerExecutor("TestClientAuthenticationExecutor", policyName);
-        logger.info("... Registered Executor : TestClientAuthenticationExecutor");
+        registerExecutor("SecureClientAuthEnforceExecutor", policyName);
+        logger.info("... Registered Executor : SecureClientAuthEnforceExecutor");
 
     }
 
@@ -864,13 +864,13 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         registerCondition(CLIENTROLES_CONDITION_NAME, policyName);
         logger.info("... Registered Condition : " + CLIENTROLES_CONDITION_NAME);
 
-        createExecutor("TestClientAuthenticationExecutor", TestClientAuthenticationExecutorFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+        createExecutor("SecureClientAuthEnforceExecutor", SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
             setExecutorAcceptedClientAuthMethods(provider, new ArrayList<>(Arrays.asList(ClientIdAndSecretAuthenticator.PROVIDER_ID, JWTClientAuthenticator.PROVIDER_ID)));
             setExecutorAugmentedClientAuthMethod(provider, ClientIdAndSecretAuthenticator.PROVIDER_ID);
             setExecutorAugmentActivate(provider);
         });
-        registerExecutor("TestClientAuthenticationExecutor", policyName);
-        logger.info("... Registered Executor : TestClientAuthenticationExecutor");
+        registerExecutor("SecureClientAuthEnforceExecutor", policyName);
+        logger.info("... Registered Executor : SecureClientAuthEnforceExecutor");
 
         createExecutor("TestPKCEEnforceExecutor", TestPKCEEnforceExecutorFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
             setExecutorAugmentActivate(provider);
@@ -1149,11 +1149,11 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
     }
 
     private void setExecutorAcceptedClientAuthMethods(ComponentRepresentation provider, List<String> acceptedClientAuthMethods) {
-        provider.getConfig().put(TestClientAuthenticationExecutorFactory.CLIENT_AUTHNS, acceptedClientAuthMethods);
+        provider.getConfig().put(SecureClientAuthEnforceExecutorFactory.CLIENT_AUTHNS, acceptedClientAuthMethods);
     }
 
     private void setExecutorAugmentedClientAuthMethod(ComponentRepresentation provider, String augmentedClientAuthMethod) {
-        provider.getConfig().putSingle(TestClientAuthenticationExecutorFactory.CLIENT_AUTHNS_AUGMENT, augmentedClientAuthMethod);
+        provider.getConfig().putSingle(SecureClientAuthEnforceExecutorFactory.CLIENT_AUTHNS_AUGMENT, augmentedClientAuthMethod);
     }
 
 }
