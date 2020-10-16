@@ -1,6 +1,6 @@
 [[_personal_data]]
 
-=== Personal data collected by {project_name}
+== Personal data collected by {project_name}
 
 By default, {project_name} collects the following:
 
