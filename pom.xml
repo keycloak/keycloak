@@ -286,6 +286,10 @@
                         <groupId>org.glassfish.jaxb</groupId>
                         <artifactId>txw2</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.glassfish.ha</groupId>
+                        <artifactId>ha-api</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
