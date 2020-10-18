@@ -2,6 +2,7 @@ package org.keycloak.services.resources.account;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.common.Version;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.models.AccountRoles;
@@ -9,7 +10,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.Urls;
@@ -46,7 +46,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.UriInfo;
 import org.keycloak.services.resources.RealmsResource;
-import org.keycloak.utils.UserHelper;
 
 /**
  * Created by st on 29/03/17.
@@ -128,12 +127,15 @@ public class AccountConsole {
             map.put("isAuthorizationEnabled", true);
             
             boolean isTotpConfigured = false;
+            boolean deleteAccountAllowed = false;
             if (user != null) {
                 isTotpConfigured = session.userCredentialManager().isConfiguredFor(realm, user, realm.getOTPPolicy().getType());
+                deleteAccountAllowed = user.hasRole(realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.DELETE_ACCOUNT)) && realm.getRequiredActionProviderByAlias(DeleteAccount.PROVIDER_ID).isEnabled();
             }
+
             map.put("isTotpConfigured", isTotpConfigured);
 
-            map.put("deleteAccountAllowed", UserHelper.isDeleteAccountAllowed(realm, user));
+            map.put("deleteAccountAllowed", deleteAccountAllowed);
 
             FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);

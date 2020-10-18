@@ -21,7 +21,9 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.events.EventType;
@@ -31,11 +33,11 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.ui.account2.page.AIALoginPage;
 import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
-import org.keycloak.testsuite.ui.account2.page.DeleteAccountActionConfirmPage;
-import org.keycloak.testsuite.ui.account2.page.DeleteAccountPage;
-import org.keycloak.testsuite.ui.account2.page.WelcomeScreen;
+import org.keycloak.testsuite.auth.page.login.DeleteAccountActionConfirmPage;
+import org.keycloak.testsuite.ui.account2.page.PersonalInfoPage;
+
+import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 
 /**
  * @author Zakaria Amine <zakaria.amine88@gmail.com>
@@ -43,13 +45,7 @@ import org.keycloak.testsuite.ui.account2.page.WelcomeScreen;
 public class DeleteAccountTest extends BaseAccountPageTest {
 
   @Page
-  private DeleteAccountPage deleteAccountPage;
-
-  @Page
-  private WelcomeScreen welcomeScreen;
-
-  @Page
-  private AIALoginPage aiaLoginPage;
+  private PersonalInfoPage personalInfoPage;
 
   @Page
   private DeleteAccountActionConfirmPage deleteAccountActionConfirmPage;
@@ -59,91 +55,72 @@ public class DeleteAccountTest extends BaseAccountPageTest {
 
   @Override
   protected AbstractLoggedInPage getAccountPage() {
-    return deleteAccountPage;
+    return personalInfoPage;
   }
 
-  @Override
-  public void navigateBeforeTest() {
-    getAccountPage().navigateTo();
-    loginToAccount();
-  }
-
-  @Override
-  @Test
-  public void navigationTest() {
+  @Before
+  public void setup() {
     enableDeleteAccountRequiredAction();
     addDeleteAccountRoleToUserClientRoles();
-    driver.navigate().refresh();
-    super.navigationTest();
-    disableDeleteAccountRequiredAction();
-    removeDeleteAccountRoleToUserClientRoles();
   }
 
-  @Test
-  public void deleteOwnAccountPageNotVisibleAndNotAccessibleWithoutUserRole() {
-    enableDeleteAccountRequiredAction();
-   Assert.assertFalse(welcomeScreen.isDeleteAccountLinkVisible());
-    deleteAccountPage.navigateTo();
-    pageNotFound.assertCurrent();
-    //reset role back since realm is shared among tests
+  @After
+  public void clean() {
     disableDeleteAccountRequiredAction();
   }
 
+  @Test
+  public void deleteOwnAccountSectionNotVisibleWithoutClientRole() {
+    removeDeleteAccountRoleToUserClientRoles();
+    refreshPageAndWaitForLoad();
+    personalInfoPage.assertDeleteAccountSectionVisible(false);
+  }
+
 
   @Test
-  public void deleteOwnAccountPageNotVisibleAndNotAccessibleWithoutDeleteAccountActionEnabled() {
-    addDeleteAccountRoleToUserClientRoles();
-    Assert.assertFalse(welcomeScreen.isDeleteAccountLinkVisible());
-    deleteAccountPage.navigateTo();
-    pageNotFound.assertCurrent();
-    removeDeleteAccountRoleToUserClientRoles();
+  public void deleteOwnAccountSectionNotVisibleWithoutDeleteAccountActionEnabled() {
+    disableDeleteAccountRequiredAction();
+    refreshPageAndWaitForLoad();
+    personalInfoPage.assertDeleteAccountSectionVisible(false);
   }
 
   @Test
   public void deleteOwnAccountAIACancellationSucceeds() {
-    enableDeleteAccountRequiredAction();
-    addDeleteAccountRoleToUserClientRoles();
-    driver.navigate().refresh();
-    deleteAccountPage.navigateTo();
-    deleteAccountPage.clickDeleteAccountButton();
-    aiaLoginPage.form().login(testUser);
+    refreshPageAndWaitForLoad();
+    personalInfoPage.assertDeleteAccountSectionVisible(true);
+    personalInfoPage.clickOpenDeleteExapandable();
+    personalInfoPage.clickDeleteAccountButton();
+    loginPage.form().login(testUser);
     Assert.assertTrue(deleteAccountActionConfirmPage.isCurrent());
     deleteAccountActionConfirmPage.clickCancelAIA();
-    Assert.assertTrue(deleteAccountPage.isCurrent());
-    disableDeleteAccountRequiredAction();
-    removeDeleteAccountRoleToUserClientRoles();
+    Assert.assertTrue(personalInfoPage.isCurrent());
   }
 
   @Test
-  public void deleteOwnAccountForbiddenWithoutDeleteAccountActionEnabled() {
-    enableDeleteAccountRequiredAction();
-    addDeleteAccountRoleToUserClientRoles();
-    deleteAccountPage.navigateTo();
-    deleteAccountPage.clickDeleteAccountButton();
-    aiaLoginPage.form().login(testUser);
+  public void deleteOwnAccountForbiddenWithoutClientRole() {
+    refreshPageAndWaitForLoad();
+    personalInfoPage.assertDeleteAccountSectionVisible(true);
+    personalInfoPage.clickOpenDeleteExapandable();
+    personalInfoPage.clickDeleteAccountButton();
+    loginPage.form().login(testUser);
     Assert.assertTrue(deleteAccountActionConfirmPage.isCurrent());
-    disableDeleteAccountRequiredAction();
+    removeDeleteAccountRoleToUserClientRoles();
     deleteAccountActionConfirmPage.clickConfirmAction();
     Assert.assertTrue(deleteAccountActionConfirmPage.isErrorMessageDisplayed());
     Assert.assertEquals(deleteAccountActionConfirmPage.getErrorMessageText(), "You do not have enough permissions to delete your own account, contact admin.");
-    removeDeleteAccountRoleToUserClientRoles();
   }
 
   @Test
   public void deleteOwnAccountSucceeds() {
-    enableDeleteAccountRequiredAction();
-    addDeleteAccountRoleToUserClientRoles();
-    deleteAccountPage.navigateTo();
-    Assert.assertTrue(deleteAccountPage.isCurrent());
-    deleteAccountPage.clickDeleteAccountButton();
-    Assert.assertTrue(aiaLoginPage.isCurrent());
-    aiaLoginPage.form().login(testUser);
+    personalInfoPage.navigateTo();
+    personalInfoPage.assertDeleteAccountSectionVisible(true);
+    personalInfoPage.clickOpenDeleteExapandable();
+    personalInfoPage.clickDeleteAccountButton();
+    loginPage.form().login(testUser);
     deleteAccountActionConfirmPage.isCurrent();
     deleteAccountActionConfirmPage.clickConfirmAction();
     events.expectAccount(EventType.DELETE_ACCOUNT);
     Assert.assertTrue(testRealmResource().users().search(testUser.getUsername()).isEmpty());
-    disableDeleteAccountRequiredAction();
-    //no need to clean account role, user is deleted
   }
 
   private void addDeleteAccountRoleToUserClientRoles() {

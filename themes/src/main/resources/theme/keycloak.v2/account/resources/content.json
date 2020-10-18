@@ -56,15 +56,5 @@
     "modulePath": "/content/my-resources-page/MyResourcesPage.js",
     "componentName": "MyResourcesPage",
     "hidden": "!features.isMyResourcesEnabled"
-  },
-  {
-    "id": "delete-account",
-    "icon": "pf-icon-disconnected",
-    "path": "delete-account",
-    "label": "deleteAccount",
-    "descriptionLabel": "deleteAccountSummary",
-    "modulePath": "/content/delete-account-page/DeleteAccountPage.js",
-    "componentName": "DeleteAccountPage",
-    "hidden": "!features.deleteAccountAllowed"
   }
 ]

@@ -1,5 +1,6 @@
-package org.keycloak.testsuite.ui.account2.page;
+package org.keycloak.testsuite.auth.page.login;
 
+import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
@@ -7,7 +8,7 @@ import org.openqa.selenium.support.FindBy;
 
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
 
-public class DeleteAccountActionConfirmPage extends AuthRealm {
+public class DeleteAccountActionConfirmPage extends RequiredActions {
 
   @FindBy(css = "button[name='cancel-aia']")
   WebElement cancelActionButton;
@@ -15,6 +16,10 @@ public class DeleteAccountActionConfirmPage extends AuthRealm {
   @FindBy(css = "input[type='submit']")
   WebElement confirmActionButton;
 
+  @Override
+  public String getActionId() {
+    return DeleteAccount.PROVIDER_ID;
+  }
 
   @Override
   public boolean isCurrent() {

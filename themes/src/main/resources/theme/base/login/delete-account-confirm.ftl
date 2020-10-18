@@ -13,6 +13,12 @@
            ${msg("irreversibleAction")}
        </div>
 
+       <p>${msg("deletingImplies")}</p>
+       <ul style="color: #72767b">
+         <li>${msg("loggingOutImmediately")}</li>
+         <li>${msg("errasingData")}</li>
+       </ul>
+
         <p class="delete-account-text">${msg("finalDeletionConfirmation")}</p>
 
       <div id="kc-form-buttons">

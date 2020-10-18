@@ -23,6 +23,7 @@
     isEventsEnabled: boolean;
     isMyResourcesEnabled: boolean;
     isTotpConfigured: boolean;
+    deleteAccountAllowed: boolean;
  }
 
 

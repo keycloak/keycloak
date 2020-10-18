@@ -36,7 +36,6 @@ import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticato
 import org.keycloak.authentication.authenticators.broker.util.PostBrokerLoginConstants;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
-import org.keycloak.authentication.requiredactions.DeleteAccount;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
@@ -103,7 +102,6 @@ import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Providers;
 import java.net.URI;
 import java.util.Map;
-import java.util.Objects;
 
 import static org.keycloak.authentication.actiontoken.DefaultActionToken.ACTION_TOKEN_BASIC_CHECKS;
 
@@ -1053,10 +1051,7 @@ public class LoginActionsService {
         } else if (context.getStatus() == RequiredActionContext.Status.FAILURE) {
             response = interruptionResponse(context, authSession, action, Error.CONSENT_DENIED);
         } else {
-            if (!Objects.equals(factory.getId(), DeleteAccount.PROVIDER_ID)) {
-                throw new RuntimeException("Unreachable");
-            }
-            response = Response.status(302).location(Urls.accountPage(session.getContext().getUri().getBaseUri(), realm.getName())).build();
+            throw new RuntimeException("Unreachable");
         }
 
         return BrowserHistoryHelper.getInstance().saveResponseAndRedirect(session, authSession, response, true, request);

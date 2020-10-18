@@ -17,11 +17,9 @@
 
 package org.keycloak.authentication.requiredactions;
 
-import java.io.IOException;
-import java.util.Objects;
-
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
@@ -30,9 +28,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.models.AccountRoles;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -41,9 +37,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.theme.Theme;
-import org.keycloak.utils.UserHelper;
 
 public class DeleteAccount implements RequiredActionProvider, RequiredActionFactory {
 
@@ -63,14 +58,11 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
 
   @Override
   public void requiredActionChallenge(RequiredActionContext context) {
-    UserModel user = context.getAuthenticationSession().getAuthenticatedUser();
-    RealmModel realm = context.getRealm();
+      if (!context.getUser().hasRole(context.getRealm().getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.DELETE_ACCOUNT))) {
+        throw new ForbiddenException();
+      }
 
-    if(!UserHelper.isDeleteAccountAllowed(realm, user)) {
-      throw new ForbiddenException();
-    }
-
-    context.challenge(context.form().createForm("delete-account-confirm.ftl"));
+      context.challenge(context.form().createForm("delete-account-confirm.ftl"));
   }
 
 
@@ -83,7 +75,7 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
     UserModel user = keycloakContext.getAuthenticationSession().getAuthenticatedUser();
 
     try {
-      if(!UserHelper.isDeleteAccountAllowed(realm, user)) {
+      if(!user.hasRole(realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.DELETE_ACCOUNT))) {
         throw new ForbiddenException();
       }
       boolean removed = new UserManager(session).removeUser(realm, user);
@@ -94,14 +86,24 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
             .user(user)
             .detail(Details.USERNAME, user.getUsername())
             .success();
+
+        cleanSession(context, RequiredActionContext.KcActionStatus.SUCCESS);
+
+        context.challenge(context.form()
+            .setAttribute("messageHeader", "")
+            .setInfo("userDeletedSuccessfully")
+            .createForm("info.ftl"));
       } else {
         eventBuilder.event(EventType.DELETE_ACCOUNT)
             .client(keycloakContext.getClient())
             .user(user)
             .detail(Details.USERNAME, user.getUsername())
             .error("User could not be deleted");
+
+        cleanSession(context, RequiredActionContext.KcActionStatus.ERROR);
         context.failure();
       }
+
     } catch (ForbiddenException forbidden) {
       logger.error("account client does not have the required roles for user deletion");
       eventBuilder.event(EventType.DELETE_ACCOUNT_ERROR)
@@ -122,7 +124,11 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
     }
   }
 
-
+  private void cleanSession(RequiredActionContext context, RequiredActionContext.KcActionStatus status) {
+    context.getAuthenticationSession().removeRequiredAction(PROVIDER_ID);
+    context.getAuthenticationSession().removeAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
+    AuthenticationManager.setKcActionStatus(PROVIDER_ID, status, context.getAuthenticationSession());
+  }
 
   @Override
   public RequiredActionProvider create(KeycloakSession session) {

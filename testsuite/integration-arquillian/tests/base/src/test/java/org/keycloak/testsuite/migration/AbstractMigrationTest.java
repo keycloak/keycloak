@@ -78,6 +78,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -287,6 +288,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigrationTo12_0_0() {
         testAccountConsoleClientHasDeleteUserRole(masterRealm);
+        testAccountConsoleClientHasDeleteUserRole(migrationRealm);
     }
 
     private void testAccountConsoleClientHasDeleteUserRole(RealmResource realm) {
