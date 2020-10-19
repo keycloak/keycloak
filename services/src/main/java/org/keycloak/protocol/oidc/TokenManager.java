@@ -55,6 +55,7 @@ import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenResponseMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
@@ -604,6 +605,20 @@ public class TokenManager {
         return token;
     }
 
+    public AccessTokenResponse transformAccessTokenResponse(KeycloakSession session, AccessTokenResponse accessTokenResponse,
+            UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+
+        for (Map.Entry<ProtocolMapperModel, ProtocolMapper> entry : ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)) {
+            ProtocolMapperModel mapping = entry.getKey();
+            ProtocolMapper mapper = entry.getValue();
+            if (mapper instanceof OIDCAccessTokenResponseMapper) {
+                accessTokenResponse = ((OIDCAccessTokenResponseMapper) mapper).transformAccessTokenResponse(accessTokenResponse, mapping, session, userSession, clientSessionCtx);
+            }
+        }
+
+        return accessTokenResponse;
+    }
+
     public AccessToken transformUserInfoAccessToken(KeycloakSession session, AccessToken token,
                                             UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
 
@@ -998,6 +1013,8 @@ public class TokenManager {
             int userNotBefore = session.users().getNotBeforeOfUser(realm, userSession.getUser());
             if (userNotBefore > notBefore) notBefore = userNotBefore;
             res.setNotBeforePolicy(notBefore);
+
+            transformAccessTokenResponse(session, res, userSession, clientSessionCtx);
 
             // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
             String responseScope = clientSessionCtx.getScopeString();
