@@ -98,9 +98,12 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setLogoutEndpoint(frontendUriBuilder.clone().path(OIDCLoginProtocolService.class, "logout").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
         URI jwksUri = backendUriBuilder.clone().path(OIDCLoginProtocolService.class, "certs").build(realm.getName(),
             OIDCLoginProtocol.LOGIN_PROTOCOL);
-        if (isHttps(jwksUri)) {
-            config.setJwksUri(jwksUri.toString());
-        }
+
+        // NOTE: Don't hardcode HTTPS checks here. JWKS URI is exposed just in the development/testing environment. For the production environment, the OIDCWellKnownProvider
+        // is not exposed over "http" at all.
+        //if (isHttps(jwksUri)) {
+        config.setJwksUri(jwksUri.toString());
+
         config.setCheckSessionIframe(frontendUriBuilder.clone().path(OIDCLoginProtocolService.class, "getLoginStatusIframe").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
         config.setRegistrationEndpoint(RealmsResource.clientRegistrationUrl(backendUriInfo).path(ClientRegistrationService.class, "provider").build(realm.getName(), OIDCClientRegistrationProviderFactory.ID).toString());
 
@@ -140,11 +143,13 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
         URI revocationEndpoint = frontendUriBuilder.clone().path(OIDCLoginProtocolService.class, "revoke")
             .build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL);
-        if (isHttps(revocationEndpoint)) {
-            config.setRevocationEndpoint(revocationEndpoint.toString());
-            config.setRevocationEndpointAuthMethodsSupported(getClientAuthMethodsSupported());
-            config.setRevocationEndpointAuthSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(false));
-        }
+
+        // NOTE: Don't hardcode HTTPS checks here. JWKS URI is exposed just in the development/testing environment. For the production environment, the OIDCWellKnownProvider
+        // is not exposed over "http" at all.
+        //if (isHttps(jwksUri)) {
+        config.setRevocationEndpoint(revocationEndpoint.toString());
+        config.setRevocationEndpointAuthMethodsSupported(getClientAuthMethodsSupported());
+        config.setRevocationEndpointAuthSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(false));
 
         config.setBackchannelLogoutSupported(true);
         config.setBackchannelLogoutSessionSupported(true);
@@ -214,9 +219,5 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
             result.add("none");
         }
         return result;
-    }
-
-    private boolean isHttps(URI uri) {
-        return uri.getScheme().equals("https");
     }
 }

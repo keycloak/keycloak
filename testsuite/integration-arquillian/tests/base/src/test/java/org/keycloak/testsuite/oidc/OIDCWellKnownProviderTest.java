@@ -183,12 +183,12 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
         try {
             OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryRepresentation(client, "http://localhost:8180/auth");
 
-            assertNull(oidcConfig.getJwksUri());
+            Assert.assertNotNull(oidcConfig.getJwksUri());
 
             // Token Revocation
-            assertNull(oidcConfig.getRevocationEndpoint());
-            Assert.assertNull(oidcConfig.getRevocationEndpointAuthMethodsSupported());
-            Assert.assertNull(oidcConfig.getRevocationEndpointAuthSigningAlgValuesSupported());
+            Assert.assertNotNull(oidcConfig.getRevocationEndpoint());
+            Assert.assertNotNull(oidcConfig.getRevocationEndpointAuthMethodsSupported());
+            Assert.assertNotNull(oidcConfig.getRevocationEndpointAuthSigningAlgValuesSupported());
         } finally {
             client.close();
         }
