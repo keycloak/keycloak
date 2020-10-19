@@ -88,6 +88,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
         try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
             ConfigurationBuilder builder = new ConfigurationBuilder();
             builder.setIncludeEmailEnabled(true);
+            Twitter twitter = new TwitterFactory(builder.build()).getInstance();
             twitter.setOAuthConsumer(getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
 
             URI uri = new URI(request.getRedirectUri() + "?state=" + request.getState().getEncoded());
