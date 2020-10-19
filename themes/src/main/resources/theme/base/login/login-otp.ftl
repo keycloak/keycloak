@@ -9,13 +9,13 @@
                         <div class="${properties.kcFormGroupClass!}">
                             <div class="${properties.kcInputWrapperClass!}">
                                 <#list otpLogin.userOtpCredentials as otpCredential>
-                                    <div class="${properties.kcSelectOTPListClass!}">
+                                    <div class="${properties.kcLoginOTPListClass!}" tabindex="${otpCredential?index}">
                                     <input type="hidden" value="${otpCredential.id}">
-                                        <div class="${properties.kcSelectOTPListItemClass!}">
-                                            <span class="${properties.kcAuthenticatorOtpCircleClass!}"></span>
-                                            <h2 class="${properties.kcSelectOTPItemHeadingClass!}">
-                                                ${otpCredential.userLabel}
-                                            </h2>
+                                        <div class="${properties.kcLoginOTPListItemHeaderClass!}">
+                                            <div class="${properties.kcLoginOTPListItemIconBodyClass!}">
+                                              <i class="${properties.kcLoginOTPListItemIconClass!}" aria-hidden="true"></i>
+                                            </div>
+                                            <div class="${properties.kcLoginOTPListItemTitleClass!}">${otpCredential.userLabel}</div>
                                         </div>
                                     </div>
                                 </#list>
@@ -58,16 +58,16 @@
             <script type="text/javascript">
             $(document).ready(function() {
                 // Card Single Select
-                $('.card-pf-view-single-select').click(function() {
-                  if ($(this).hasClass('active'))
-                  { $(this).removeClass('active'); $(this).children().removeAttr('name'); }
+                $('.otp-tile').click(function() {
+                  if ($(this).hasClass('pf-m-selected'))
+                  { $(this).removeClass('pf-m-selected'); $(this).children().removeAttr('name'); }
                   else
-                  { $('.card-pf-view-single-select').removeClass('active');
-                  $('.card-pf-view-single-select').children().removeAttr('name');
-                  $(this).addClass('active'); $(this).children().attr('name', 'selectedCredentialId'); }
+                  { $('.otp-tile').removeClass('pf-m-selected');
+                  $('.otp-tile').children().removeAttr('name');
+                  $(this).addClass('pf-m-selected'); $(this).children().attr('name', 'selectedCredentialId'); }
                 });
 
-                var defaultCred = $('.card-pf-view-single-select')[0];
+                var defaultCred = $('.otp-tile')[0];
                 if (defaultCred) {
                     defaultCred.click();
                 }
