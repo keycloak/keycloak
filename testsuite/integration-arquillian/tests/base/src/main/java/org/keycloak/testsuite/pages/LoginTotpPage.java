@@ -89,7 +89,7 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     // If false, we don't expect that credentials combobox is available. If true, we expect that it is available on the page
     public void assertOtpCredentialSelectorAvailability(boolean expectedAvailability) {
         try {
-            driver.findElement(By.className("card-pf-view-single-select"));
+            driver.findElement(By.className("otp-tile"));
             Assert.assertTrue(expectedAvailability);
         } catch (NoSuchElementException nse) {
             Assert.assertFalse(expectedAvailability);
@@ -114,15 +114,15 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     }
 
     private By getXPathForLookupAllCards() {
-        return By.xpath("//div[contains(@class, 'card-pf-view-single-select')]//h2");
+        return By.xpath("//div[contains(@class, 'pf-c-tile otp-tile')]");
     }
 
     private By getXPathForLookupActiveCard() {
-        return By.xpath("//div[contains(@class, 'card-pf-view-single-select active')]//h2");
+        return By.xpath("//div[contains(@class, 'otp-tile pf-m-selected')]");
     }
 
     private By getXPathForLookupCardWithName(String credentialName) {
-        return By.xpath("//div[contains(@class, 'card-pf-view-single-select')]//h2[normalize-space() = '"+ credentialName +"']");
+        return By.xpath("//div[contains(@class, 'otp-tile')][normalize-space() = '"+ credentialName +"']");
     }
 
 
