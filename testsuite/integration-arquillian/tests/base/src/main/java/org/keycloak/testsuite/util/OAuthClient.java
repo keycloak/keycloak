@@ -82,6 +82,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -1339,6 +1340,8 @@ public class OAuthClient {
 
         private Map<String, String> headers;
 
+        private Map<String, Object> otherClaims;
+
         public AccessTokenResponse(CloseableHttpResponse response) throws Exception {
             try {
                 statusCode = response.getStatusLine().getStatusCode();
@@ -1355,25 +1358,46 @@ public class OAuthClient {
                     Assert.fail("Invalid content type. Status: " + statusCode + ", contentType: " + contentType);
                 }
 
-                String s = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
-                Map responseJson = JsonSerialization.readValue(s, Map.class);
+                String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
+                @SuppressWarnings("unchecked")
+                Map<String, Object> responseJson = JsonSerialization.readValue(s, Map.class);
 
                 if (statusCode == 200) {
-                    idToken = (String) responseJson.get("id_token");
-                    accessToken = (String) responseJson.get("access_token");
-                    issuedTokenType = (String) responseJson.get("issued_token_type");
-                    tokenType = (String) responseJson.get("token_type");
-                    expiresIn = (Integer) responseJson.get("expires_in");
-                    refreshExpiresIn = (Integer) responseJson.get("refresh_expires_in");
-                    sessionState = (String) responseJson.get("session_state");
+                    otherClaims = new HashMap<>();
 
-                    // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
-                    if (responseJson.containsKey(OAuth2Constants.SCOPE)) {
-                        scope = (String) responseJson.get(OAuth2Constants.SCOPE);
-                    }
-
-                    if (responseJson.containsKey(OAuth2Constants.REFRESH_TOKEN)) {
-                        refreshToken = (String) responseJson.get(OAuth2Constants.REFRESH_TOKEN);
+                    for (Map.Entry<String, Object> entry : responseJson.entrySet()) {
+                        switch (entry.getKey()) {
+                            case OAuth2Constants.ID_TOKEN:
+                                idToken = (String) entry.getValue();
+                                break;
+                            case OAuth2Constants.ACCESS_TOKEN:
+                                accessToken = (String) entry.getValue();
+                                break;
+                            case OAuth2Constants.ISSUED_TOKEN_TYPE:
+                                issuedTokenType = (String) entry.getValue();
+                                break;
+                            case "token_type":
+                                tokenType = (String) entry.getValue();
+                                break;
+                            case "expires_in":
+                                expiresIn = (Integer) entry.getValue();
+                                break;
+                            case "refresh_expires_in":
+                                refreshExpiresIn = (Integer) entry.getValue();
+                                break;
+                            case OAuth2Constants.SESSION_STATE:
+                                sessionState = (String) entry.getValue();
+                                break;
+                            case OAuth2Constants.SCOPE:
+                                scope = (String) entry.getValue();
+                                break;
+                            case OAuth2Constants.REFRESH_TOKEN:
+                                refreshToken = (String) entry.getValue();
+                                break;
+                            default:
+                                otherClaims.put(entry.getKey(), entry.getValue());
+                                break;
+                        }
                     }
                 } else {
                     error = (String) responseJson.get(OAuth2Constants.ERROR);
@@ -1435,6 +1459,10 @@ public class OAuthClient {
 
         public Map<String, String> getHeaders() {
             return headers;
+        }
+
+        public Map<String, Object> getOtherClaims() {
+            return otherClaims;
         }
     }
 
