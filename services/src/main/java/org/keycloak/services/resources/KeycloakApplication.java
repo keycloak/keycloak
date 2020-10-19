@@ -18,7 +18,6 @@ package org.keycloak.services.resources;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.config.ConfigProviderFactory;
@@ -63,9 +62,12 @@ import javax.transaction.Transaction;
 import javax.ws.rs.core.Application;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -122,7 +124,7 @@ public class KeycloakApplication extends Application {
     }
 
     protected void startup() {
-        this.sessionFactory = createSessionFactory();
+    	KeycloakApplication.sessionFactory = createSessionFactory();
 
         ExportImportManager[] exportImportManager = new ExportImportManager[1];
 
@@ -291,18 +293,34 @@ public class KeycloakApplication extends Application {
     }
 
     public void importRealms() {
-        String files = System.getProperty("keycloak.import");
-        if (files != null) {
-            StringTokenizer tokenizer = new StringTokenizer(files, ",");
+        String locations = System.getProperty("keycloak.import");
+        if (locations != null) {
+            StringTokenizer tokenizer = new StringTokenizer(locations, ",");
             while (tokenizer.hasMoreTokens()) {
-                String file = tokenizer.nextToken().trim();
-                RealmRepresentation rep;
+                String location = tokenizer.nextToken().trim();
+                URL importURL = null;
                 try {
-                    rep = loadJson(new FileInputStream(file), RealmRepresentation.class);
-                } catch (FileNotFoundException e) {
+                    importURL = new URL(location);
+                } catch (MalformedURLException e) {
+                	// ignore
+                }
+                if (importURL == null) {
+                	Path importPath = Paths.get(location);
+                	if (!importPath.toFile().isFile())
+                		throw new IllegalArgumentException("File not found: " + importPath);
+                    try {
+                    	importURL = importPath.toUri().toURL();
+                    } catch (MalformedURLException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                RealmRepresentation rep;
+                try (InputStream input = importURL.openStream()) {
+                    rep = loadJson(input, RealmRepresentation.class);
+                } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-                importRealm(rep, "file " + file);
+                importRealm(rep, importURL.toExternalForm());
             }
         }
     }
