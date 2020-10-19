@@ -47,6 +47,7 @@ import twitter4j.Twitter;
 import twitter4j.TwitterFactory;
 import twitter4j.auth.AccessToken;
 import twitter4j.auth.RequestToken;
+import twitter4j.conf.ConfigurationBuilder;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.QueryParam;
@@ -85,7 +86,8 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     @Override
     public Response performLogin(AuthenticationRequest request) {
         try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
-            Twitter twitter = new TwitterFactory().getInstance();
+            ConfigurationBuilder builder = new ConfigurationBuilder();
+            builder.setIncludeEmailEnabled(true);
             twitter.setOAuthConsumer(getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
 
             URI uri = new URI(request.getRedirectUri() + "?state=" + request.getState().getEncoded());
@@ -218,6 +220,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
                 identity.setIdp(TwitterIdentityProvider.this);
 
                 identity.setUsername(twitterUser.getScreenName());
+                identity.setEmail(twitterUser.getEmail());
                 identity.setName(twitterUser.getName());
 
 
