@@ -10,8 +10,8 @@ import {
   ActionGroup,
   Button,
   AlertVariant,
-  SelectOption,
   ButtonVariant,
+  DropdownItem,
 } from "@patternfly/react-core";
 import { useParams } from "react-router-dom";
 import { Controller, useForm } from "react-hook-form";
@@ -116,16 +116,25 @@ export const ClientSettings = () => {
               <ViewHeader
                 titleKey={name}
                 subKey="clients:clientsExplain"
-                selectItems={[
-                  <SelectOption key="download" value="download">
+                dropdownItems={[
+                  <DropdownItem
+                    key="download"
+                    onClick={() => toggleDownloadDialog()}
+                  >
                     {t("downloadAdapterConfig")}
-                  </SelectOption>,
-                  <SelectOption key="export" value="export">
+                  </DropdownItem>,
+                  <DropdownItem
+                    key="export"
+                    onClick={() => exportClient(form.getValues())}
+                  >
                     {t("common:export")}
-                  </SelectOption>,
-                  <SelectOption key="delete" value="delete">
+                  </DropdownItem>,
+                  <DropdownItem
+                    key="delete"
+                    onClick={() => toggleDeleteDialog()}
+                  >
                     {t("common:delete")}
-                  </SelectOption>,
+                  </DropdownItem>,
                 ]}
                 isEnabled={value}
                 onToggle={(value) => {
@@ -134,15 +143,6 @@ export const ClientSettings = () => {
                   } else {
                     onChange(value);
                     save();
-                  }
-                }}
-                onSelect={(value) => {
-                  if (value === "export") {
-                    exportClient(form.getValues());
-                  } else if (value === "delete") {
-                    toggleDeleteDialog();
-                  } else if (value === "download") {
-                    toggleDownloadDialog();
                   }
                 }}
               />

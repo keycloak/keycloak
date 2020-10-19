@@ -1,6 +1,6 @@
 import React from "react";
 import { Meta, Story } from "@storybook/react";
-import { Page, SelectOption } from "@patternfly/react-core";
+import { DropdownItem, Page } from "@patternfly/react-core";
 import {
   ViewHeader,
   ViewHeaderProps,
@@ -26,13 +26,13 @@ Extended.args = {
     title: "More information",
     href: "http://google.com",
   },
-  selectItems: [
-    <SelectOption key="first" value="first-item">
+  dropdownItems: [
+    <DropdownItem key="first" value="first-item" onClick={() => {}}>
       First item
-    </SelectOption>,
-    <SelectOption key="second" value="second-item">
+    </DropdownItem>,
+    <DropdownItem key="second" value="second-item" onClick={() => {}}>
       Second item
-    </SelectOption>,
+    </DropdownItem>,
   ],
 };
 
