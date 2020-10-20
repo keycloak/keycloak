@@ -20,6 +20,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -28,7 +30,24 @@ import java.util.List;
 public interface UserConsentFederatedStorage {
     void addConsent(RealmModel realm, String userId, UserConsentModel consent);
     UserConsentModel getConsentByClient(RealmModel realm, String userId, String clientInternalId);
-    List<UserConsentModel> getConsents(RealmModel realm, String userId);
+
+    /**
+     * @deprecated Use {@link #getConsentsStream(RealmModel, String) getConsentsStream} instead.
+     */
+    @Deprecated
+    default List<UserConsentModel> getConsents(RealmModel realm, String userId) {
+        return this.getConsentsStream(realm, userId).collect(Collectors.toList());
+    }
+
+    /**
+     * Obtains the consents associated with the federated user identified by {@code userId}.
+     *
+     * @param realm a reference to the realm.
+     * @param userId the user identifier.
+     * @return a non-null {@code Stream} of consents associated with the user.
+     */
+    Stream<UserConsentModel> getConsentsStream(RealmModel realm, String userId);
+
     void updateConsent(RealmModel realm, String userId, UserConsentModel consent);
     boolean revokeConsentForClient(RealmModel realm, String userId, String clientInternalId);
 }

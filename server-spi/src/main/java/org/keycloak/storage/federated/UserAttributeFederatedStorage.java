@@ -20,6 +20,8 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.RealmModel;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -30,5 +32,22 @@ public interface UserAttributeFederatedStorage {
     void setAttribute(RealmModel realm, String userId, String name, List<String> values);
     void removeAttribute(RealmModel realm, String userId, String name);
     MultivaluedHashMap<String, String> getAttributes(RealmModel realm, String userId);
-    List<String> getUsersByUserAttribute(RealmModel realm, String name, String value);
+
+    /**
+     * @deprecated Use {@link #getUsersByUserAttributeStream(RealmModel, String, String) getUsersByUserAttributeStream} instead.
+     */
+    @Deprecated
+    default List<String> getUsersByUserAttribute(RealmModel realm, String name, String value) {
+        return this.getUsersByUserAttributeStream(realm, name, value).collect(Collectors.toList());
+    }
+
+    /**
+     * Searches for federated users that have an attribute with the specified {@code name} and {@code value}.
+     *
+     * @param realm a reference to the realm.
+     * @param name the attribute name.
+     * @param value the attribute value.
+     * @return a non-null {@code Stream} of users that match the search criteria.
+     */
+    Stream<String> getUsersByUserAttributeStream(RealmModel realm, String name, String value);
 }

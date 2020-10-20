@@ -38,6 +38,24 @@ public interface UserGroupMembershipFederatedStorage {
 
     void joinGroup(RealmModel realm, String userId, GroupModel group);
     void leaveGroup(RealmModel realm, String userId, GroupModel group);
-    List<String> getMembership(RealmModel realm, GroupModel group, int firstResult, int max);
+
+    /**
+     * @deprecated Use {@link #getMembershipStream(RealmModel, GroupModel, int, int) getMembershipStream} instead.
+     */
+    @Deprecated
+    default List<String> getMembership(RealmModel realm, GroupModel group, int firstResult, int max) {
+        return this.getMembershipStream(realm, group, firstResult, max).collect(Collectors.toList());
+    }
+
+    /**
+     * Obtains the federated users that are members of the given {@code group} in the specified {@code realm}.
+     *
+     * @param realm a reference to the realm.
+     * @param group a reference to the group whose federated members are being searched.
+     * @param firstResult first result to return. Ignored if negative.
+     * @param max maximum number of results to return. Ignored if negative.
+     * @return a non-null {@code Stream} of federated user ids that are members of the group in the realm.
+     */
+    Stream<String> getMembershipStream(RealmModel realm, GroupModel group, int firstResult, int max);
 
 }

@@ -37,12 +37,12 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -338,16 +338,16 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                 }
 
                 @Override
-                public List<String> getAttribute(String name) {
+                public Stream<String> getAttributeStream(String name) {
                     if (name.equalsIgnoreCase(userModelAttrName)) {
                         Collection<String> ldapAttrValue = ldapUser.getAttributeAsSet(ldapAttrName);
                         if (ldapAttrValue == null) {
-                            return Collections.emptyList();
+                            return Stream.empty();
                         } else {
-                            return new ArrayList<>(ldapAttrValue);
+                            return ldapAttrValue.stream();
                         }
                     } else {
-                        return super.getAttribute(name);
+                        return super.getAttributeStream(name);
                     }
                 }
 

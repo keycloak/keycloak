@@ -60,10 +60,12 @@ import org.keycloak.storage.client.ClientStorageProvider;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -452,26 +454,25 @@ public class UserCacheSession implements UserCache {
     }
 
     @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
-        return getDelegate().getGroupMembers(realm, group, firstResult, maxResults);
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+        return getDelegate().getGroupMembersStream(realm, group, firstResult, maxResults);
     }
 
     @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
-        return getDelegate().getGroupMembers(realm, group);
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group) {
+        return getDelegate().getGroupMembersStream(realm, group);
     }
 
     @Override
-    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
-        return getDelegate().getRoleMembers(realm, role, firstResult, maxResults);
+    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+        return getDelegate().getRoleMembersStream(realm, role, firstResult, maxResults);
     }
 
     @Override
-    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role) {
-        return getDelegate().getRoleMembers(realm, role);
+    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role) {
+        return getDelegate().getRoleMembersStream(realm, role);
     }    
     
-
     @Override
     public UserModel getServiceAccount(ClientModel client) {
         // Just an attempt to find the user from cache by default serviceAccount username
@@ -534,12 +535,9 @@ public class UserCacheSession implements UserCache {
         }
     }
 
-
-
-
     @Override
-    public List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts) {
-        return getDelegate().getUsers(realm, includeServiceAccounts);
+    public Stream<UserModel> getUsersStream(RealmModel realm, boolean includeServiceAccounts) {
+        return getDelegate().getUsersStream(realm, includeServiceAccounts);
     }
 
     @Override
@@ -578,64 +576,65 @@ public class UserCacheSession implements UserCache {
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts) {
-        return getDelegate().getUsers(realm, firstResult, maxResults, includeServiceAccounts);
+    public Stream<UserModel> getUsersStream(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts) {
+        return getDelegate().getUsersStream(realm, firstResult, maxResults, includeServiceAccounts);
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm) {
-        return getUsers(realm, false);
+    public Stream<UserModel> getUsersStream(RealmModel realm) {
+        return getUsersStream(realm, false);
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
-         return getUsers(realm, firstResult, maxResults, false);
+    public Stream<UserModel> getUsersStream(RealmModel realm, int firstResult, int maxResults) {
+         return getUsersStream(realm, firstResult, maxResults, false);
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return getDelegate().searchForUser(search, realm);
+    public Stream<UserModel> searchForUserStream(String search, RealmModel realm) {
+        return getDelegate().searchForUserStream(search, realm);
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
-        return getDelegate().searchForUser(search, realm, firstResult, maxResults);
+    public Stream<UserModel> searchForUserStream(String search, RealmModel realm, int firstResult, int maxResults) {
+        return getDelegate().searchForUserStream(search, realm, firstResult, maxResults);
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm) {
-        return getDelegate().searchForUser(attributes, realm);
+    public Stream<UserModel> searchForUserStream(Map<String, String> attributes, RealmModel realm) {
+        return getDelegate().searchForUserStream(attributes, realm);
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
-        return getDelegate().searchForUser(attributes, realm, firstResult, maxResults);
+    public Stream<UserModel> searchForUserStream(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
+        return getDelegate().searchForUserStream(attributes, realm, firstResult, maxResults);
     }
 
     @Override
-    public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
-        return getDelegate().searchForUserByUserAttribute(attrName, attrValue, realm);
+    public Stream<UserModel> searchForUserByUserAttributeStream(String attrName, String attrValue, RealmModel realm) {
+        return getDelegate().searchForUserByUserAttributeStream(attrName, attrValue, realm);
     }
 
     @Override
-    public Set<FederatedIdentityModel> getFederatedIdentities(UserModel user, RealmModel realm) {
+    public Stream<FederatedIdentityModel> getFederatedIdentitiesStream(UserModel user, RealmModel realm) {
         logger.tracev("getFederatedIdentities: {0}", user.getUsername());
 
         String cacheKey = getFederatedIdentityLinksCacheKey(user.getId());
         if (realmInvalidations.contains(realm.getId()) || invalidations.contains(user.getId()) || invalidations.contains(cacheKey)) {
-            return getDelegate().getFederatedIdentities(user, realm);
+            return getDelegate().getFederatedIdentitiesStream(user, realm);
         }
 
         CachedFederatedIdentityLinks cachedLinks = cache.get(cacheKey, CachedFederatedIdentityLinks.class);
 
         if (cachedLinks == null) {
             Long loaded = cache.getCurrentRevision(cacheKey);
-            Set<FederatedIdentityModel> federatedIdentities = getDelegate().getFederatedIdentities(user, realm);
+            Set<FederatedIdentityModel> federatedIdentities = getDelegate().getFederatedIdentitiesStream(user, realm)
+                    .collect(Collectors.toSet());
             cachedLinks = new CachedFederatedIdentityLinks(loaded, cacheKey, realm, federatedIdentities);
             cache.addRevisioned(cachedLinks, startupRevision);
-            return federatedIdentities;
+            return federatedIdentities.stream();
         } else {
-            return new HashSet<>(cachedLinks.getFederatedIdentities());
+            return cachedLinks.getFederatedIdentities().stream();
         }
     }
 
@@ -708,31 +707,25 @@ public class UserCacheSession implements UserCache {
     }
 
     @Override
-    public List<UserConsentModel> getConsents(RealmModel realm, String userId) {
+    public Stream<UserConsentModel> getConsentsStream(RealmModel realm, String userId) {
         logger.tracev("getConsents: {0}", userId);
 
         String cacheKey = getConsentCacheKey(userId);
         if (realmInvalidations.contains(realm.getId()) || invalidations.contains(userId) || invalidations.contains(cacheKey)) {
-            return getDelegate().getConsents(realm, userId);
+            return getDelegate().getConsentsStream(realm, userId);
         }
 
         CachedUserConsents cached = cache.get(cacheKey, CachedUserConsents.class);
 
         if (cached == null) {
             Long loaded = cache.getCurrentRevision(cacheKey);
-            List<UserConsentModel> consents = getDelegate().getConsents(realm, userId);
+            List<UserConsentModel> consents = getDelegate().getConsentsStream(realm, userId).collect(Collectors.toList());
             cached = new CachedUserConsents(loaded, cacheKey, realm, consents);
             cache.addRevisioned(cached, startupRevision);
-            return consents;
+            return consents.stream();
         } else {
-            List<UserConsentModel> result = new LinkedList<>();
-            for (CachedUserConsent cachedConsent : cached.getConsents().values()) {
-                UserConsentModel consent = toConsentModel(realm, cachedConsent);
-                if (consent != null) {
-                    result.add(consent);
-                }
-            }
-            return result;
+            return cached.getConsents().values().stream().map(cachedConsent -> toConsentModel(realm, cachedConsent))
+                    .filter(Objects::nonNull);
         }
     }
 

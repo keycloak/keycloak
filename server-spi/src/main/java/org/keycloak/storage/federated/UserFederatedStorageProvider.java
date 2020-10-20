@@ -28,6 +28,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -43,7 +45,24 @@ public interface UserFederatedStorageProvider extends Provider,
         UserRoleMappingsFederatedStorage,
         UserFederatedUserCredentialStore {
 
-    List<String> getStoredUsers(RealmModel realm, int first, int max);
+    /**
+     * @deprecated Use {@link #getStoredUsersStream(RealmModel, int, int) getStoredUsersStream} instead.
+     */
+    @Deprecated
+    default List<String> getStoredUsers(RealmModel realm, int first, int max) {
+        return getStoredUsersStream(realm, first, max).collect(Collectors.toList());
+    }
+
+    /**
+     * Obtains the ids of all federated users in the realm.
+     *
+     * @param realm a reference to the realm.
+     * @param first first result to return. Ignored if negative.
+     * @param max maximum number of results to return. Ignored if negative.
+     * @return a non-null {@code Stream} of federated user ids.
+     */
+    Stream<String> getStoredUsersStream(RealmModel realm, int first, int max);
+
     int getStoredUsersCount(RealmModel realm);
 
     void preRemove(RealmModel realm);
