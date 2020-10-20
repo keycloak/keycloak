@@ -253,9 +253,6 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                              <p>
                                 <Msg msgKey="deleteAccountWarning" />
                              </p>
-                             <p>
-                                <Msg msgKey="initialDeletionInstruction" />
-                             </p>
                         </GridItem>
                         <GridItem span={4}>
                             <KeycloakContext.Consumer>
