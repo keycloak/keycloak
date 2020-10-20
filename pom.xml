@@ -1693,6 +1693,8 @@
                 <product.name-html>\u003Cdiv class="kc-logo-text"\u003E\u003Cspan\u003EKeycloak\u003C\u002Fspan\u003E\u003C\u002Fdiv\u003E</product.name-html>
                 <product.version>${project.version}</product.version>
                 <product.default-profile>community</product.default-profile>
+                <apache.httpcomponents.fuse.version>4.5.2</apache.httpcomponents.fuse.version>
+                <apache.httpcomponents.httpcore.fuse.version>4.4.4</apache.httpcomponents.httpcore.fuse.version>
             </properties>
         </profile>
 
@@ -1710,6 +1712,8 @@
                 <product.wildfly.console.slot>eap</product.wildfly.console.slot>
                 <product.name-html>\u003Cstrong\u003ERed Hat\u003C\u002Fstrong\u003E\u003Csup\u003E\u00AE\u003C\u002Fsup\u003E Single Sign On</product.name-html>
                 <product.version>${product.rhsso.version}</product.version>
+                <apache.httpcomponents.fuse.version>4.5.2.redhat-2</apache.httpcomponents.fuse.version>
+                <apache.httpcomponents.httpcore.fuse.version>4.4.4.redhat-2</apache.httpcomponents.httpcore.fuse.version>
                 <product.default-profile>product</product.default-profile>
             </properties>
             <build>
