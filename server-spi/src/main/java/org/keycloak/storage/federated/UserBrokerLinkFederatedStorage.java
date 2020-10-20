@@ -21,6 +21,8 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -32,6 +34,23 @@ public interface UserBrokerLinkFederatedStorage {
     boolean removeFederatedIdentity(RealmModel realm, String userId, String socialProvider);
     void preRemove(RealmModel realm, IdentityProviderModel provider);
     void updateFederatedIdentity(RealmModel realm, String userId, FederatedIdentityModel federatedIdentityModel);
-    Set<FederatedIdentityModel> getFederatedIdentities(String userId, RealmModel realm);
+
+    /**
+     * @deprecated Use {@link #getFederatedIdentitiesStream(String, RealmModel) getFederatedIdentitiesStream} instead.
+     */
+    @Deprecated
+    default Set<FederatedIdentityModel> getFederatedIdentities(String userId, RealmModel realm) {
+        return this.getFederatedIdentitiesStream(userId, realm).collect(Collectors.toSet());
+    }
+
+    /**
+     * Obtains the identities of the federated user identified by {@code userId}.
+     *
+     * @param userId the user identifier.
+     * @param realm a reference to the realm.
+     * @return a non-null {@code Stream} of federated identities associated with the user.
+     */
+    Stream<FederatedIdentityModel> getFederatedIdentitiesStream(String userId, RealmModel realm);
+
     FederatedIdentityModel getFederatedIdentity(String userId, String socialProvider, RealmModel realm);
 }

@@ -30,11 +30,8 @@ import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -62,8 +59,8 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
     }
 
     @Override
-    public Set<String> getRequiredActions() {
-        return Collections.emptySet();
+    public Stream<String> getRequiredActionsStream() {
+        return Stream.empty();
     }
 
     @Override
@@ -303,11 +300,11 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
     }
 
     @Override
-    public List<String> getAttribute(String name) {
+    public Stream<String> getAttributeStream(String name) {
         if (name.equals(UserModel.USERNAME)) {
-            return Collections.singletonList(getUsername());
+            return Stream.of(getUsername());
         }
-        return Collections.emptyList();
+        return Stream.empty();
     }
 
     @Override

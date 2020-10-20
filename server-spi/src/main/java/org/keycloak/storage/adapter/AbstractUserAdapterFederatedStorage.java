@@ -30,11 +30,8 @@ import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -71,8 +68,8 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     }
 
     @Override
-    public Set<String> getRequiredActions() {
-        return getFederatedStorage().getRequiredActions(realm, this.getId());
+    public Stream<String> getRequiredActionsStream() {
+        return getFederatedStorage().getRequiredActionsStream(realm, this.getId());
     }
 
     @Override
@@ -360,12 +357,12 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     }
 
     @Override
-    public List<String> getAttribute(String name) {
+    public Stream<String> getAttributeStream(String name) {
         if (UserModel.USERNAME.equals(name)) {
-            return Collections.singletonList(getUsername());
+            return Stream.of(getUsername());
         }
         List<String> result = getFederatedStorage().getAttributes(realm, this.getId()).get(mapAttribute(name));
-        return (result == null) ? Collections.emptyList() : result;
+        return (result == null) ? Stream.empty() : result.stream();
     }
 
     private String mapAttribute(String attributeName) {

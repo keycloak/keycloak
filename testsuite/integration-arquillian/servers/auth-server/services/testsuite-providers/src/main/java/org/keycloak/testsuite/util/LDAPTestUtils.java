@@ -44,7 +44,13 @@ import org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleMapperConfig;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -101,21 +107,21 @@ public class LDAPTestUtils {
             }
 
             @Override
-            public List<String> getAttribute(String name) {
+            public Stream<String> getAttributeStream(String name) {
                 if (UserModel.LAST_NAME.equals(name)) {
-                    return Collections.singletonList(lastName);
+                    return Stream.of(lastName);
                 } else if (UserModel.FIRST_NAME.equals(name)) {
-                    return Collections.singletonList(firstName);
+                    return Stream.of(firstName);
                 } else if (UserModel.EMAIL.equals(name)) {
-                    return Collections.singletonList(email);
+                    return Stream.of(email);
                 } else if (UserModel.USERNAME.equals(name)) {
-                    return Collections.singletonList(username);
+                    return Stream.of(username);
                 } else if ("postal_code".equals(name) && postalCode != null && postalCode.length > 0) {
-                    return Arrays.asList(postalCode);
+                    return Stream.of(postalCode);
                 } else if ("street".equals(name) && street != null) {
-                    return Collections.singletonList(street);
+                    return Stream.of(street);
                 } else {
-                    return Collections.emptyList();
+                    return Stream.empty();
                 }
             }
         };

@@ -21,10 +21,11 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Optional capability interface implemented by UserStorageProviders.
@@ -56,8 +57,7 @@ public interface UserQueryProvider {
         if (groupIds == null || groupIds.isEmpty()) {
             return 0;
         }
-
-        return countUsersInGroups(getUsers(realm), groupIds);
+        return countUsersInGroups(getUsersStream(realm), groupIds);
     }
 
     /**
@@ -68,7 +68,7 @@ public interface UserQueryProvider {
      * @return number of users that match the search
      */
     default int getUsersCount(String search, RealmModel realm) {
-        return searchForUser(search, realm).size();
+        return (int) searchForUserStream(search, realm).count();
     }
 
     /**
@@ -84,9 +84,7 @@ public interface UserQueryProvider {
         if (groupIds == null || groupIds.isEmpty()) {
             return 0;
         }
-
-        List<UserModel> users = searchForUser(search, realm);
-        return countUsersInGroups(users, groupIds);
+        return countUsersInGroups(searchForUserStream(search, realm), groupIds);
     }
 
     /**
@@ -97,7 +95,7 @@ public interface UserQueryProvider {
      * @return number of users that match the given filters
      */
     default int getUsersCount(Map<String, String> params, RealmModel realm) {
-        return searchForUser(params, realm).size();
+        return (int) searchForUserStream(params, realm).count();
     }
 
     /**
@@ -113,9 +111,7 @@ public interface UserQueryProvider {
         if (groupIds == null || groupIds.isEmpty()) {
             return 0;
         }
-
-        List<UserModel> users = searchForUser(params, realm);
-        return countUsersInGroups(users, groupIds);
+        return countUsersInGroups(searchForUserStream(params, realm), groupIds);
     }
 
     /**
@@ -126,10 +122,8 @@ public interface UserQueryProvider {
      * @param groupIds id of groups that should be checked for
      * @return number of users that are in at least one of the groups
      */
-    static int countUsersInGroups(List<UserModel> users, Set<String> groupIds) {
-        return (int) users.stream()
-                .filter(u -> u.getGroupsStream().anyMatch(group -> groupIds.contains(group.getId())))
-                .count();
+    static int countUsersInGroups(Stream<UserModel> users, Set<String> groupIds) {
+        return (int) users.filter(u -> u.getGroupsStream().map(GroupModel::getId).anyMatch(groupIds::contains)).count();
     }
 
     /**
@@ -143,8 +137,39 @@ public interface UserQueryProvider {
         throw new RuntimeException("Not implemented");
     }
 
-    List<UserModel> getUsers(RealmModel realm);
-    List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults);
+    /**
+     * @deprecated Use {@link #getUsersStream(RealmModel) getUsersStream} instead.
+     */
+    @Deprecated
+    default List<UserModel> getUsers(RealmModel realm) {
+        return this.getUsersStream(realm).collect(Collectors.toList());
+    }
+
+    /**
+     * Searches all users in the realm.
+     *
+     * @param realm a reference to the realm.
+     * @return a non-null {@code Stream} of users.
+     */
+    Stream<UserModel> getUsersStream(RealmModel realm);
+
+    /**
+     * @deprecated Use {@link #getUsersStream(RealmModel, int, int) getUsersStream} instead.
+     */
+    @Deprecated
+    default List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
+        return this.getUsersStream(realm, firstResult, maxResults).collect(Collectors.toList());
+    }
+
+    /**
+     * Searches all users in the realm, starting from the {@code firstResult} and containing at most {@code maxResults}.
+     *
+     * @param realm a reference to the realm.
+     * @param firstResult first result to return. Ignored if negative.
+     * @param maxResults maximum number of results to return. Ignored if negative.
+     * @return a non-null {@code Stream} of users.
+     */
+    Stream<UserModel> getUsersStream(RealmModel realm, int firstResult, int maxResults);
 
     /**
      * Search for users with username, email or first + last name that is like search string.
@@ -156,8 +181,24 @@ public interface UserQueryProvider {
      * @param search
      * @param realm
      * @return
+     * @deprecated Use {@link #searchForUserStream(String, RealmModel) searchForUserStream} instead.
      */
-    List<UserModel> searchForUser(String search, RealmModel realm);
+    @Deprecated
+    default List<UserModel> searchForUser(String search, RealmModel realm) {
+        return this.searchForUserStream(search, realm).collect(Collectors.toList());
+    }
+
+    /**
+     * Searches for users with username, email or first + last name that is like search string.  If possible, implementations
+     * should treat the parameter values as partial match patterns (i.e. in RDMBS terms use LIKE).
+     * <p/>
+     * This method is used by the admin console search box
+     *
+     * @param search case sensitive search string.
+     * @param realm a reference to the realm.
+     * @return a non-null {@code Stream} of users that match the search string.
+     */
+    Stream<UserModel> searchForUserStream(String search, RealmModel realm);
 
     /**
      * Search for users with username, email or first + last name that is like search string.
@@ -171,8 +212,26 @@ public interface UserQueryProvider {
      * @param firstResult
      * @param maxResults
      * @return
+     * @deprecated Use {@link #searchForUserStream(String, RealmModel, int, int) searchForUserStream} instead.
      */
-    List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults);
+    @Deprecated
+    default List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
+        return this.searchForUserStream(search, realm, firstResult, maxResults).collect(Collectors.toList());
+    }
+
+    /**
+     * Searches for users with username, email or first + last name that is like search string. If possible, implementations
+     * should treat the parameter values as partial match patterns (i.e. in RDMBS terms use LIKE).
+     * <p/>
+     * This method is used by the admin console search box
+     *
+     * @param search case sensitive search string.
+     * @param realm a reference to the realm.
+     * @param firstResult first result to return. Ignored if negative.
+     * @param maxResults maximum number of results to return. Ignored if negative.
+     * @return a non-null {@code Stream} of users that match the search criteria.
+     */
+    Stream<UserModel> searchForUserStream(String search, RealmModel realm, int firstResult, int maxResults);
 
     /**
      * Search for user by parameter.  Valid parameters are:
@@ -189,8 +248,30 @@ public interface UserQueryProvider {
      * @param params
      * @param realm
      * @return
+     * @deprecated Use {@link #searchForUserStream(Map, RealmModel) searchForUserStream} instead.
      */
-    List<UserModel> searchForUser(Map<String, String> params, RealmModel realm);
+    @Deprecated
+    default List<UserModel> searchForUser(Map<String, String> params, RealmModel realm) {
+        return this.searchForUserStream(params, realm).collect(Collectors.toList());
+    }
+
+    /**
+     * Searches for user by parameter. If possible, implementations should treat the parameter values as partial match patterns
+     * (i.e. in RDMBS terms use LIKE). Valid parameters are:
+     * <ul>
+     *   <li><b>first</b> - first name</li>
+     *   <li><b>last</b> - last name</li>
+     *   <li><b>email</b> - email</li>
+     *   <li><b>username</b> - username</li>
+     *   <li><b>enabled</b> - if user is enabled (true/false)</li>
+     * </ul>
+     * This method is used by the REST API when querying users.
+     *
+     * @param params a map containing the search parameters.
+     * @param realm a reference to the realm.
+     * @return a non-null {@code Stream} of users that match the search parameters.
+     */
+    Stream<UserModel> searchForUserStream(Map<String, String> params, RealmModel realm);
 
     /**
      * Search for user by parameter.    Valid parameters are:
@@ -209,8 +290,60 @@ public interface UserQueryProvider {
      * @param firstResult
      * @param maxResults
      * @return
+     * @deprecated Use {@link #searchForUserStream(Map, RealmModel, int, int) searchForUserStream} instead.
      */
-    List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults);
+    @Deprecated
+    default List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
+        return this.searchForUserStream(params, realm, firstResult, maxResults).collect(Collectors.toList());
+    }
+
+    /**
+     * Searches for user by parameter. If possible, implementations should treat the parameter values as partial match patterns
+     * (i.e. in RDMBS terms use LIKE). Valid parameters are:
+     * <ul>
+     *   <li><b>first</b> - first name</li>
+     *   <li><b>last</b> - last name</li>
+     *   <li><b>email</b> - email</li>
+     *   <li><b>username</b> - username</li>
+     *   <li><b>enabled</b> - if user is enabled (true/false)</li>
+     * </ul>
+     * This method is used by the REST API when querying users.
+     *
+     * @param params a map containing the search parameters.
+     * @param realm a reference to the realm.
+     * @param firstResult first result to return. Ignored if negative.
+     * @param maxResults maximum number of results to return. Ignored if negative.
+     * @return a non-null {@code Stream} of users that match the search criteria.
+     */
+    Stream<UserModel> searchForUserStream(Map<String, String> params, RealmModel realm, int firstResult, int maxResults);
+
+    /**
+     * Get users that belong to a specific group. Implementations do not have to search in UserFederatedStorageProvider
+     * as this is done automatically.
+     *
+     * @see org.keycloak.storage.federated.UserFederatedStorageProvider
+     *
+     * @param realm
+     * @param group
+     * @return
+     * @deprecated Use {@link #getGroupMembersStream(RealmModel, GroupModel) getGroupMembersStream} instead.
+     */
+    @Deprecated
+    default List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
+        return this.getGroupMembersStream(realm, group).collect(Collectors.toList());
+    }
+
+    /**
+     * Obtains users that belong to a specific group. Implementations do not have to search in {@code UserFederatedStorageProvider}
+     * as this is done automatically.
+     *
+     * @see org.keycloak.storage.federated.UserFederatedStorageProvider
+     *
+     * @param realm a reference to the realm.
+     * @param group a reference to the group.
+     * @return a non-null {@code Stream} of users that belong to the group.
+     */
+    Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group);
 
     /**
      * Get users that belong to a specific group.  Implementations do not have to search in UserFederatedStorageProvider
@@ -223,51 +356,77 @@ public interface UserQueryProvider {
      * @param firstResult
      * @param maxResults
      * @return
+     * @deprecated Use {@link #getGroupMembersStream(RealmModel, GroupModel, int, int) getGroupMembersStream} instead.
      */
-    List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults);
+    @Deprecated
+    default List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+        return this.getGroupMembersStream(realm, group, firstResult, maxResults).collect(Collectors.toList());
+    }
+
+    /**
+     * Obtains users that belong to a specific group.  Implementations do not have to search in {@code UserFederatedStorageProvider}
+     * as this is done automatically.
+     *
+     * @see org.keycloak.storage.federated.UserFederatedStorageProvider
+     *
+     * @param realm a reference to the realm.
+     * @param group a reference to the group.
+     * @param firstResult first result to return. Ignored if negative.
+     * @param maxResults maximum number of results to return. Ignored if negative.
+     * @return a non-null {@code Stream} of users that belong to the group.
+     */
+    Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, int firstResult, int maxResults);
 
     /**
      * Get users that belong to a specific role.
      *
-     *
-     *
      * @param realm
      * @param role
      * @return
+     * @deprecated Use {@link #getRoleMembersStream(RealmModel, RoleModel) getRoleMembersStream} instead.
      */
-    default List<UserModel> getRoleMembers(RealmModel realm, RoleModel role)
-    {
-        return Collections.EMPTY_LIST;
+    @Deprecated
+    default List<UserModel> getRoleMembers(RealmModel realm, RoleModel role) {
+        return this.getRoleMembersStream(realm, role).collect(Collectors.toList());
+    }
+
+    /**
+     * Obtains users that have the specified role.
+     *
+     * @param realm a reference to the realm.
+     * @param role a reference to the role.
+     * @return a non-null {@code Stream} of users that have the specified role.
+     */
+    default Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role) {
+        return Stream.empty();
     }
 
     /**
      * Search for users that have a specific role with a specific roleId.
      *
-     *
-     *
      * @param firstResult
      * @param maxResults
      * @param role
      * @return
+     * @deprecated Use {@link #getRoleMembersStream(RealmModel, RoleModel, int, int) getRoleMembersStream} instead.
      */
-    default List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults)
-    {
-        return Collections.EMPTY_LIST;
+    @Deprecated
+    default List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+        return this.getRoleMembersStream(realm, role, firstResult, maxResults).collect(Collectors.toList());
     }
 
     /**
-     * Get users that belong to a specific group.  Implementations do not have to search in UserFederatedStorageProvider
-     * as this is done automatically.
+     * Searches for users that have the specified role.
      *
-     * @see org.keycloak.storage.federated.UserFederatedStorageProvider
-     *
-     *
-     *
-     * @param realm
-     * @param group
-     * @return
+     * @param realm a reference to the realm.
+     * @param role a reference to the role.
+     * @param firstResult first result to return. Ignored if negative.
+     * @param maxResults maximum number of results to return. Ignored if negative.
+     * @return a non-null {@code Stream} of users that have the specified role.
      */
-    List<UserModel> getGroupMembers(RealmModel realm, GroupModel group);
+    default Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+        return Stream.empty();
+    }
 
     /**
      * Search for users that have a specific attribute with a specific value.
@@ -276,12 +435,28 @@ public interface UserQueryProvider {
      *
      * @see org.keycloak.storage.federated.UserFederatedStorageProvider
      *
-
-     *
      * @param attrName
      * @param attrValue
      * @param realm
      * @return
+     * @deprecated Use {@link #searchForUserByUserAttributeStream(String, String, RealmModel) searchForUserByUserAttributeStream}
+     * instead.
      */
-    List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm);
+    @Deprecated
+    default List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
+        return this.searchForUserByUserAttributeStream(attrName, attrValue, realm).collect(Collectors.toList());
+    }
+
+    /**
+     * Searches for users that have a specific attribute with a specific value. Implementations do not have to search in
+     * {@code UserFederatedStorageProvider} as this is done automatically.
+     *
+     * @see org.keycloak.storage.federated.UserFederatedStorageProvider
+     *
+     * @param attrName the attribute name.
+     * @param attrValue the attribute value.
+     * @param realm a reference to the realm.
+     * @return a non-null {@code Stream} of users that match the search criteria.
+     */
+    Stream<UserModel> searchForUserByUserAttributeStream(String attrName, String attrValue, RealmModel realm);
 }

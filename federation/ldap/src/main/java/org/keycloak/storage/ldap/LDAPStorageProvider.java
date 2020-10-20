@@ -21,12 +21,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import javax.naming.AuthenticationException;
 
@@ -247,7 +247,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     @Override
-    public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
+    public Stream<UserModel> searchForUserByUserAttributeStream(String attrName, String attrValue, RealmModel realm) {
     	 try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
              LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
 
@@ -256,24 +256,15 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
              List<LDAPObject> ldapObjects = ldapQuery.getResultList();
 
-             if (ldapObjects == null || ldapObjects.isEmpty()) {
-                 return Collections.emptyList();
-             }
-
-             List<UserModel> searchResults = new LinkedList<>();
-
-             for (LDAPObject ldapUser : ldapObjects) {
+             return ldapObjects.stream().map(ldapUser -> {
                  String ldapUsername = LDAPUtils.getUsername(ldapUser, this.ldapIdentityStore.getConfig());
                  UserModel localUser = session.userLocalStorage().getUserByUsername(ldapUsername, realm);
                  if (localUser == null) {
-                     UserModel imported = importUserFromLDAP(session, realm, ldapUser);
-                     searchResults.add(imported);
+                     return importUserFromLDAP(session, realm, ldapUser);
                  } else {
-                     searchResults.add(proxy(realm, localUser, ldapUser, false));
+                     return proxy(realm, localUser, ldapUser, false);
                  }
-             }
-
-             return searchResults;
+             });
          }
     }
 
@@ -348,34 +339,34 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm) {
-        return Collections.EMPTY_LIST;
+    public Stream<UserModel> getUsersStream(RealmModel realm) {
+        return Stream.empty();
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
-        return Collections.EMPTY_LIST;
+    public Stream<UserModel> getUsersStream(RealmModel realm, int firstResult, int maxResults) {
+        return Stream.empty();
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return searchForUser(search, realm, 0, Integer.MAX_VALUE - 1);
+    public Stream<UserModel> searchForUserStream(String search, RealmModel realm) {
+        return searchForUserStream(search, realm, 0, Integer.MAX_VALUE - 1);
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> searchForUserStream(String search, RealmModel realm, int firstResult, int maxResults) {
         Map<String, String> attributes = new HashMap<String, String>();
         attributes.put(UserModel.SEARCH,search);
-        return searchForUser(attributes, realm, firstResult, maxResults);
+        return searchForUserStream(attributes, realm, firstResult, maxResults);
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm) {
-        return searchForUser(params, realm, 0, Integer.MAX_VALUE - 1);
+    public Stream<UserModel> searchForUserStream(Map<String, String> params, RealmModel realm) {
+        return searchForUserStream(params, realm, 0, Integer.MAX_VALUE - 1);
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> searchForUserStream(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
         String search = params.get(UserModel.SEARCH);
         if(search!=null) {
             int spaceIndex = search.lastIndexOf(' ');
@@ -393,65 +384,47 @@ public class LDAPStorageProvider implements UserStorageProvider,
             }
         }
 
-        List<UserModel> searchResults =new LinkedList<UserModel>();
-
-        List<LDAPObject> ldapUsers = searchLDAP(realm, params, maxResults + firstResult);
-        int counter = 0;
-        for (LDAPObject ldapUser : ldapUsers) {
-            if (counter++ < firstResult) continue;
-            String ldapUsername = LDAPUtils.getUsername(ldapUser, this.ldapIdentityStore.getConfig());
-            if (session.userLocalStorage().getUserByUsername(ldapUsername, realm) == null) {
-                UserModel imported = importUserFromLDAP(session, realm, ldapUser);
-                searchResults.add(imported);
-            }
-        }
-
-        return searchResults;
+        Stream<LDAPObject> stream = searchLDAP(realm, params).stream()
+            .filter(ldapObject -> {
+                String ldapUsername = LDAPUtils.getUsername(ldapObject, this.ldapIdentityStore.getConfig());
+                return (session.userLocalStorage().getUserByUsername(ldapUsername, realm) == null);
+            });
+        if (firstResult > 0)
+            stream = stream.skip(firstResult);
+        if (maxResults >= 0)
+            stream = stream.limit(maxResults);
+        return stream.map(ldapObject -> importUserFromLDAP(session, realm, ldapObject));
     }
 
     @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
-        return getGroupMembers(realm, group, 0, Integer.MAX_VALUE - 1);
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group) {
+        return getGroupMembersStream(realm, group, 0, Integer.MAX_VALUE - 1);
     }
 
     @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
-        List<ComponentModel> sortedMappers = realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+        return realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
+            .sorted(ldapMappersComparator.sortAsc())
+            .map(mapperModel ->
+                mapperManager.getMapper(mapperModel).getGroupMembers(realm, group, firstResult, maxResults))
+            .filter(((Predicate<List>) List::isEmpty).negate())
+            .map(List::stream)
+            .findFirst().orElse(Stream.empty());
+    }
+
+    @Override
+    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role) {
+        return getRoleMembersStream(realm, role, 0, Integer.MAX_VALUE - 1);
+    }
+
+    @Override
+    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+        return realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
                 .sorted(ldapMappersComparator.sortAsc())
-                .collect(Collectors.toList());
-
-        for (ComponentModel mapperModel : sortedMappers) {
-            LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
-            List<UserModel> users = ldapMapper.getGroupMembers(realm, group, firstResult, maxResults);
-
-            // Sufficient for now
-            if (users.size() > 0) {
-                return users;
-            }
-        }
-        return Collections.emptyList();
-    }
-
-    @Override
-    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role) {
-        return getRoleMembers(realm, role, 0, Integer.MAX_VALUE - 1);
-    }
-
-    @Override
-    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
-        List<ComponentModel> sortedMappers = realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
-                .sorted(ldapMappersComparator.sortAsc())
-                .collect(Collectors.toList());
-        for (ComponentModel mapperModel : sortedMappers) {
-            LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
-            List<UserModel> users = ldapMapper.getRoleMembers(realm, role, firstResult, maxResults);
-
-            // Sufficient for now
-            if (users.size() > 0) {
-                return users;
-            }
-        }
-        return Collections.emptyList();
+                .map(mapperModel -> mapperManager.getMapper(mapperModel).getRoleMembers(realm, role, firstResult, maxResults))
+                .filter(((Predicate<List>) List::isEmpty).negate())
+                .map(List::stream)
+                .findFirst().orElse(Stream.empty());
     }
 
     public List<UserModel> loadUsersByUsernames(List<String> usernames, RealmModel realm) {
@@ -469,7 +442,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         return result;
     }
 
-    protected List<LDAPObject> searchLDAP(RealmModel realm, Map<String, String> attributes, int maxResults) {
+    protected List<LDAPObject> searchLDAP(RealmModel realm, Map<String, String> attributes) {
 
         List<LDAPObject> results = new ArrayList<LDAPObject>();
         if (attributes.containsKey(UserModel.USERNAME)) {

@@ -152,12 +152,9 @@ public class InMemoryUserAdapter extends UserModelDefaultMethods {
     }
 
     @Override
-    public List<String> getAttribute(String name) {
-        List<String> value = attributes.get(name);
-        if (value == null) {
-            return new LinkedList<>();
-        }
-        return value;
+    public Stream<String> getAttributeStream(String name) {
+        List<String> value = this.attributes.get(name);
+        return value != null ? value.stream() : Stream.empty();
     }
 
     @Override
@@ -166,8 +163,8 @@ public class InMemoryUserAdapter extends UserModelDefaultMethods {
     }
 
     @Override
-    public Set<String> getRequiredActions() {
-        return requiredActions;
+    public Stream<String> getRequiredActionsStream() {
+        return this.requiredActions.stream();
     }
 
     @Override
