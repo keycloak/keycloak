@@ -267,7 +267,10 @@ export const ClientScopeForm = () => {
             <Button variant="primary" type="submit">
               {t("common:save")}
             </Button>
-            <Button variant="link" onClick={() => history.push("..")}>
+            <Button
+              variant="link"
+              onClick={() => history.push("/client-scopes/")}
+            >
               {t("common:cancel")}
             </Button>
           </ActionGroup>
