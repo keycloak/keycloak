@@ -463,7 +463,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         JSObjectBuilder initOptions = defaultArguments()
                 .loginRequiredOnLoad()
                 // phone is optional client scope
-                .add("scope", "profile email phone");
+                .add("scope", "openid profile email phone");
 
         try {
             testExecutor.init(initOptions);
@@ -476,7 +476,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         }
 
         testExecutor.loginForm(testUser, this::assertOnTestAppUrl)
-                    .init(initOptions, this::assertSuccessfullyLoggedIn)
+                    .init(initOptions, this::assertAdapterIsLoggedIn)
                     .executeScript("return window.keycloak.tokenParsed.scope", assertOutputContains("phone"));
     }
 

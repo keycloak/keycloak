@@ -192,7 +192,7 @@
                     kc.enableLogging = false;
                 }
 
-                if (typeof initOptions.scope === "string") {
+                if (typeof initOptions.scope === 'string') {
                     kc.scope = initOptions.scope;
                 }
             }
