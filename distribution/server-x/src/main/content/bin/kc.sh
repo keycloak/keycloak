@@ -46,7 +46,7 @@ do
           break
           ;;
       *)
-          if [[ $1 = -* || ! $1 =~ ^-.* ]]; then
+          if [[ $1 = --* || ! $1 =~ ^-.* ]]; then
             CONFIG_ARGS="$CONFIG_ARGS $1"
           else
             SERVER_OPTS="$SERVER_OPTS $1"
