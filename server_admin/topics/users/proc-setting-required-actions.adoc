@@ -1,5 +1,5 @@
 [id="proc-setting-required-actions_{context}"]
-== Setting required actions
+= Setting required actions
 
 You can add and remove the required actions for existing users in the admin console. 
 

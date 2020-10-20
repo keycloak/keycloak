@@ -1,5 +1,5 @@
 [id="proc-enabling-terms-conditions_{context}"]
-== Terms and conditions
+= Terms and conditions
 
 {project_name} requires new users to accept the terms and conditions before logging in for the first time.    
 

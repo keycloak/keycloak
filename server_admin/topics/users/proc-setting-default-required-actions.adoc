@@ -1,5 +1,5 @@
 [id="proc-setting-default-required-actions_{context}"]
-== Setting default required actions
+= Setting default required actions
 
 You can use the registration link or the *Required Actions* tab to specify the required actions that must be completed by a user before logging in.
 
