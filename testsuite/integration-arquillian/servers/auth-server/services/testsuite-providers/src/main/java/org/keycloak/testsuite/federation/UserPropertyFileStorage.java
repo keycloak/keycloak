@@ -33,13 +33,11 @@ import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -146,67 +144,59 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm) {
-        List<UserModel> users = new LinkedList<>();
-        for (Object username : userPasswords.keySet()) {
-            users.add(createUser(realm, (String)username));
-        }
-        return users;
+    public Stream<UserModel> getUsersStream(RealmModel realm) {
+        return userPasswords.keySet().stream().map(obj -> createUser(realm, (String) obj));
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm) {
-        return searchForUser(attributes, realm, 0, Integer.MAX_VALUE - 1);
+    public Stream<UserModel> searchForUserStream(Map<String, String> attributes, RealmModel realm) {
+        return searchForUserStream(attributes, realm, 0, Integer.MAX_VALUE - 1);
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
-        if (maxResults == 0) return Collections.EMPTY_LIST;
-        List<UserModel> users = new LinkedList<>();
-        int count = 0;
-        for (Object un : userPasswords.keySet()) {
-            if (count++ < firstResult) continue;
-            String username = (String)un;
-            users.add(createUser(realm, username));
-            if (users.size() + 1 > maxResults) break;
-        }
-        return users;
+    public Stream<UserModel> getUsersStream(RealmModel realm, int firstResult, int maxResults) {
+        Stream<Object> stream = userPasswords.keySet().stream();
+        if (firstResult > 0)
+            stream = stream.skip(firstResult);
+        if (maxResults >= 0)
+            stream = stream.limit(maxResults);
+        return stream.map(obj -> createUser(realm, (String) obj));
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
-        return searchForUser(search, realm, firstResult, maxResults, username -> username.contains(search));
+    public Stream<UserModel> searchForUserStream(String search, RealmModel realm, int firstResult, int maxResults) {
+        return searchForUserStream(search, realm, firstResult, maxResults, username -> username.contains(search));
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> searchForUserStream(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
         String search = Optional.ofNullable(attributes.get(UserModel.USERNAME))
                 .orElseGet(()-> attributes.get(UserModel.SEARCH));
-        if (search == null) return Collections.EMPTY_LIST;
+        if (search == null) return Stream.empty();
         Predicate<String> p = Boolean.valueOf(attributes.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()))
             ? username -> username.equals(search)
             : username -> username.contains(search);
-        return searchForUser(search, realm, firstResult, maxResults, p);
+        return searchForUserStream(search, realm, firstResult, maxResults, p);
     }
 
     @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
-        return Collections.EMPTY_LIST;
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+        return Stream.empty();
     }
 
     @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
-        return Collections.EMPTY_LIST;
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group) {
+        return Stream.empty();
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return searchForUser(search, realm, 0, Integer.MAX_VALUE - 1);
+    public Stream<UserModel> searchForUserStream(String search, RealmModel realm) {
+        return searchForUserStream(search, realm, 0, Integer.MAX_VALUE - 1);
     }
 
     @Override
-    public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
-        return Collections.EMPTY_LIST;
+    public Stream<UserModel> searchForUserByUserAttributeStream(String attrName, String attrValue, RealmModel realm) {
+        return Stream.empty();
     }
 
     @Override
@@ -214,20 +204,8 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
 
     }
 
-    private List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults, Predicate<String> matcher) {
-        if (maxResults == 0) return Collections.EMPTY_LIST;
-        List<UserModel> users = new LinkedList<>();
-        int count = 0;
-        for (Object un : userPasswords.keySet()) {
-            String username = (String)un;
-            if (matcher.test(username)) {
-                if (count++ < firstResult) {
-                    continue;
-                }
-                users.add(createUser(realm, username));
-                if (users.size() + 1 > maxResults) break;
-            }
-        }
-        return users;
+    private Stream<UserModel> searchForUserStream(String search, RealmModel realm, int firstResult, int maxResults, Predicate<String> matcher) {
+        return userPasswords.keySet().stream().filter(obj -> matcher.test((String) obj)).skip(firstResult < 0 ? 0 : firstResult)
+                .limit(maxResults < 0 ? 0 : maxResults).map(obj -> createUser(realm, (String) obj));
     }
 }

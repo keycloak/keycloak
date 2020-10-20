@@ -31,11 +31,21 @@ public interface UserRoleMappingsFederatedStorage {
 
     void grantRole(RealmModel realm, String userId, RoleModel role);
 
+    /**
+     * @deprecated Use {@link #getRoleMappingsStream(RealmModel, String) getRoleMappingsStream} instead.
+     */
     @Deprecated
     default Set<RoleModel> getRoleMappings(RealmModel realm,String userId) {
         return getRoleMappingsStream(realm, userId).collect(Collectors.toSet());
     }
 
+    /**
+     * Obtains the roles associated with the federated user identified by {@code userId}.
+     *
+     * @param realm a reference to the realm.
+     * @param userId the user identifier.
+     * @return a non-null {@code Stream} of roles.
+     */
     Stream<RoleModel> getRoleMappingsStream(RealmModel realm, String userId);
 
     void deleteRoleMapping(RealmModel realm, String userId, RoleModel role);

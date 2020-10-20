@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * Mapper specific to MSAD. It's able to read the userAccountControl and pwdLastSet attributes and set actions in Keycloak based on that.
@@ -299,18 +300,14 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
         }
 
         @Override
-        public Set<String> getRequiredActions() {
-            Set<String> requiredActions = super.getRequiredActions();
-
+        public Stream<String> getRequiredActionsStream() {
             if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE) {
                 if (getPwdLastSet() == 0 || getUserAccountControl(ldapUser).has(UserAccountControl.PASSWORD_EXPIRED)) {
-                    requiredActions = new HashSet<>(requiredActions);
-                    requiredActions.add(RequiredAction.UPDATE_PASSWORD.toString());
-                    return requiredActions;
+                    return Stream.concat(super.getRequiredActionsStream(), Stream.of(RequiredAction.UPDATE_PASSWORD.toString()))
+                            .distinct();
                 }
             }
-
-            return requiredActions;
+            return super.getRequiredActionsStream();
         }
 
         protected long getPwdLastSet() {

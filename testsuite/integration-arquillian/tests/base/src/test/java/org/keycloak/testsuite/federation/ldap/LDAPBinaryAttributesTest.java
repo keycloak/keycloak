@@ -45,6 +45,7 @@ import javax.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -227,19 +228,19 @@ public class LDAPBinaryAttributesTest extends AbstractLDAPTest {
             }
 
             @Override
-            public List<String> getAttribute(String name) {
+            public Stream<String> getAttributeStream(String name) {
                 if (UserModel.LAST_NAME.equals(name)) {
-                    return Collections.singletonList(lastName);
+                    return Stream.of(lastName);
                 } else if (UserModel.FIRST_NAME.equals(name)) {
-                    return Collections.singletonList(firstName);
+                    return Stream.of(firstName);
                 } else if (UserModel.EMAIL.equals(name)) {
-                    return Collections.singletonList(email);
+                    return Stream.of(email);
                 } else if (UserModel.USERNAME.equals(name)) {
-                    return Collections.singletonList(username);
+                    return Stream.of(username);
                 } else if (LDAPConstants.JPEG_PHOTO.equals(name)) {
-                    return Arrays.asList(jpegPhoto);
+                    return Stream.of(jpegPhoto);
                 } else {
-                    return Collections.emptyList();
+                    return Stream.empty();
                 }
             }
         };

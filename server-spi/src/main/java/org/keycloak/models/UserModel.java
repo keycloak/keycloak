@@ -91,12 +91,37 @@ public interface UserModel extends RoleMapperModel {
     /**
      * @param name
      * @return list of all attribute values or empty list if there are not any values. Never return null
+     * @deprecated Use {@link #getAttributeStream(String) getAttributeStream} instead.
      */
-    List<String> getAttribute(String name);
+    @Deprecated
+    default List<String> getAttribute(String name) {
+        return this.getAttributeStream(name).collect(Collectors.toList());
+    }
+
+    /**
+     * Obtains all values associated with the specified attribute name.
+     *
+     * @param name the name of the attribute.
+     * @return a non-null {@code Stream} of attribute values.
+     */
+    Stream<String> getAttributeStream(final String name);
 
     Map<String, List<String>> getAttributes();
 
-    Set<String> getRequiredActions();
+    /**
+     * @deprecated Use {@link #getRequiredActionsStream() getRequiredActionsStream} instead.
+     */
+    @Deprecated
+    default Set<String> getRequiredActions() {
+        return this.getRequiredActionsStream().collect(Collectors.toSet());
+    }
+
+    /**
+     * Obtains the names of required actions associated with the user.
+     *
+     * @return a non-null {@code Stream} of required action names.
+     */
+    Stream<String> getRequiredActionsStream();
 
     void addRequiredAction(String action);
 
@@ -122,18 +147,32 @@ public interface UserModel extends RoleMapperModel {
 
     void setEmailVerified(boolean verified);
 
+    /**
+     * @deprecated Use {@link #getGroupsStream() getGroupsStream} instead.
+     */
     @Deprecated
     default Set<GroupModel> getGroups() {
         return getGroupsStream().collect(Collectors.toSet());
     }
 
+    /**
+     * Obtains the groups associated with the user.
+     *
+     * @return a non-null {@code Stream} of groups.
+     */
     Stream<GroupModel> getGroupsStream();
 
+    /**
+     * @deprecated Use {@link #getGroupsStream(String, Integer, Integer) getGroupsStream} instead.
+     */
     @Deprecated
     default Set<GroupModel> getGroups(int first, int max) {
         return getGroupsStream(null, first, max).collect(Collectors.toSet());
     }
 
+    /**
+     * @deprecated Use {@link #getGroupsStream(String, Integer, Integer) getGroupsStream} instead.
+     */
     @Deprecated
     default Set<GroupModel> getGroups(String search, int first, int max) {
         return getGroupsStream(search, first, max)
@@ -141,7 +180,7 @@ public interface UserModel extends RoleMapperModel {
     }
 
     /**
-     * Returns a paginated stream of groups within this.realm with search in the name
+     * Returns a paginated stream of groups within this realm with search in the name
      *
      * @param search Case insensitive string which will be searched for. Ignored if null.
      * @param first Index of first group to return. Ignored if negative or {@code null}.

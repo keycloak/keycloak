@@ -17,6 +17,7 @@
 
 package org.keycloak.storage;
 
+import com.google.common.collect.Streams;
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
@@ -50,14 +51,12 @@ import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
@@ -130,19 +129,14 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (userCache != null) {
             userCache.evict(realm, user);
         }
-        runJobInTransaction(session.getKeycloakSessionFactory(), new KeycloakSessionTask() {
-
-            @Override
-            public void run(KeycloakSession session) {
-                RealmModel realmModel = session.realms().getRealm(realm.getId());
-                if (realmModel == null) return;
-                UserModel deletedUser = session.userLocalStorage().getUserById(userId, realmModel);
-                if (deletedUser != null) {
-                    new UserManager(session).removeUser(realmModel, deletedUser, session.userLocalStorage());
-                    logger.debugf("Removed invalid user '%s'", userName);
-                }
+        runJobInTransaction(session.getKeycloakSessionFactory(), session -> {
+            RealmModel realmModel = session.realms().getRealm(realm.getId());
+            if (realmModel == null) return;
+            UserModel deletedUser = session.userLocalStorage().getUserById(userId, realmModel);
+            if (deletedUser != null) {
+                new UserManager(session).removeUser(realmModel, deletedUser, session.userLocalStorage());
+                logger.debugf("Removed invalid user '%s'", userName);
             }
-
         });
     }
 
@@ -270,70 +264,70 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         {@link UserQueryProvider} methods implementation start here */
 
     @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
-        return getGroupMembers(realm, group, -1, -1);
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group) {
+        return getGroupMembersStream(realm, group, -1, -1);
     }
 
     @Override
-    public List<UserModel> getGroupMembers(final RealmModel realm, final GroupModel group, int firstResult, int maxResults) {
+    public Stream<UserModel> getGroupMembersStream(final RealmModel realm, final GroupModel group, int firstResult, int maxResults) {
         Stream<UserModel> results = query((provider) -> {
             if (provider instanceof UserQueryProvider) {
-                return ((UserQueryProvider)provider).getGroupMembers(realm, group).stream();
+                return ((UserQueryProvider)provider).getGroupMembersStream(realm, group);
 
             } else if (provider instanceof UserFederatedStorageProvider) {
-                Stream<String> ids = ((UserFederatedStorageProvider)provider).getMembership(realm, group, -1, -1).stream();
-                return ids.map(id -> getUserById(id, realm));
+                return ((UserFederatedStorageProvider)provider).getMembershipStream(realm, group, -1, -1).
+                        map(id -> getUserById(id, realm));
            }
             return Stream.empty();
         }, realm, firstResult, maxResults);
 
-        return importValidation(realm, results).collect(Collectors.toList());
+        return importValidation(realm, results);
     }
 
     @Override
-    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role) {
-        return getRoleMembers(realm, role, -1, -1);
+    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role) {
+        return getRoleMembersStream(realm, role, -1, -1);
     }
 
     @Override
-    public List<UserModel> getRoleMembers(final RealmModel realm, final RoleModel role, int firstResult, int maxResults) {
+    public Stream<UserModel> getRoleMembersStream(final RealmModel realm, final RoleModel role, int firstResult, int maxResults) {
         Stream<UserModel> results = query((provider) -> {
             if (provider instanceof UserQueryProvider) {
-                return ((UserQueryProvider)provider).getRoleMembers(realm, role).stream();
+                return ((UserQueryProvider)provider).getRoleMembersStream(realm, role);
             }
             return Stream.empty();
         }, realm, firstResult, maxResults);
-        return importValidation(realm, results).collect(Collectors.toList());
+        return importValidation(realm, results);
     }
 
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm) {
-        return getUsers(realm, false);
+    public Stream<UserModel> getUsersStream(RealmModel realm) {
+        return getUsersStream(realm, false);
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
-        return getUsers(realm, firstResult, maxResults, false);
+    public Stream<UserModel> getUsersStream(RealmModel realm, int firstResult, int maxResults) {
+        return getUsersStream(realm, firstResult, maxResults, false);
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts) {
-        return getUsers(realm, 0, Integer.MAX_VALUE - 1, includeServiceAccounts);
+    public Stream<UserModel> getUsersStream(RealmModel realm, boolean includeServiceAccounts) {
+        return getUsersStream(realm, 0, Integer.MAX_VALUE - 1, includeServiceAccounts);
     }
 
     @Override
-    public List<UserModel> getUsers(final RealmModel realm, int firstResult, int maxResults, final boolean includeServiceAccounts) {
+    public Stream<UserModel> getUsersStream(final RealmModel realm, int firstResult, int maxResults, final boolean includeServiceAccounts) {
         Stream<UserModel> results =  query((provider) -> {
-                    if (provider instanceof UserProvider) { // it is local storage
-                        return ((UserProvider) provider).getUsers(realm, includeServiceAccounts).stream();
-                    } else if (provider instanceof UserQueryProvider) {
-                        return ((UserQueryProvider)provider).getUsers(realm).stream();
-                    }
-                    return Stream.empty();
-                }
-                , realm, firstResult, maxResults);
-        return importValidation(realm, results).collect(Collectors.toList());
+            if (provider instanceof UserProvider) { // it is local storage
+                return ((UserProvider) provider).getUsersStream(realm, includeServiceAccounts);
+            } else if (provider instanceof UserQueryProvider) {
+                return ((UserQueryProvider)provider).getUsersStream(realm);
+            }
+            return Stream.empty();
+        }
+        , realm, firstResult, maxResults);
+        return importValidation(realm, results);
     }
 
     @Override
@@ -377,51 +371,49 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return searchForUser(search, realm, 0, Integer.MAX_VALUE - 1);
+    public Stream<UserModel> searchForUserStream(String search, RealmModel realm) {
+        return searchForUserStream(search, realm, 0, Integer.MAX_VALUE - 1);
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> searchForUserStream(String search, RealmModel realm, int firstResult, int maxResults) {
         Stream<UserModel> results = query((provider) -> {
             if (provider instanceof UserQueryProvider) {
-                return ((UserQueryProvider)provider).searchForUser(search, realm).stream();
-
+                return ((UserQueryProvider)provider).searchForUserStream(search, realm);
             }
             return Stream.empty();
         }, realm, firstResult, maxResults);
-        return importValidation(realm, results).collect(Collectors.toList());
+        return importValidation(realm, results);
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm) {
-        return searchForUser(attributes, realm, 0, Integer.MAX_VALUE - 1);
+    public Stream<UserModel> searchForUserStream(Map<String, String> attributes, RealmModel realm) {
+        return searchForUserStream(attributes, realm, 0, Integer.MAX_VALUE - 1);
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
-        Stream<UserModel> results = query((provider) -> {
-                    if (provider instanceof UserQueryProvider) {
-                        if (attributes.containsKey(UserModel.SEARCH)) {
-                            return ((UserQueryProvider)provider).searchForUser(attributes.get(UserModel.SEARCH), realm).stream();
-                        } else {
-                            return ((UserQueryProvider)provider).searchForUser(attributes, realm).stream();
-                        }
-                    }
-                    return Stream.empty();
-                }
-                , realm, firstResult, maxResults);
-        return importValidation(realm, results).collect(Collectors.toList());
-
-    }
-
-    @Override
-    public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
+    public Stream<UserModel> searchForUserStream(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
         Stream<UserModel> results = query((provider) -> {
             if (provider instanceof UserQueryProvider) {
-                return ((UserQueryProvider)provider).searchForUserByUserAttribute(attrName, attrValue, realm).stream();
+                if (attributes.containsKey(UserModel.SEARCH)) {
+                    return ((UserQueryProvider)provider).searchForUserStream(attributes.get(UserModel.SEARCH), realm);
+                } else {
+                    return ((UserQueryProvider)provider).searchForUserStream(attributes, realm);
+                }
+            }
+            return Stream.empty();
+        }
+        , realm, firstResult, maxResults);
+        return importValidation(realm, results);
+    }
+
+    @Override
+    public Stream<UserModel> searchForUserByUserAttributeStream(String attrName, String attrValue, RealmModel realm) {
+        Stream<UserModel> results = query((provider) -> {
+            if (provider instanceof UserQueryProvider) {
+                return ((UserQueryProvider)provider).searchForUserByUserAttributeStream(attrName, attrValue, realm);
             } else if (provider instanceof UserFederatedStorageProvider) {
-                return  ((UserFederatedStorageProvider)provider).getUsersByUserAttribute(realm, attrName, attrValue).stream()
+                return  ((UserFederatedStorageProvider)provider).getUsersByUserAttributeStream(realm, attrName, attrValue)
                         .map(id -> getUserById(id, realm))
                         .filter(Objects::nonNull);
 
@@ -432,7 +424,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         // removeDuplicates method may cause concurrent issues, it should not be used on parallel streams
         results = removeDuplicates(results);
 
-        return importValidation(realm, results).collect(Collectors.toList());
+        return importValidation(realm, results);
     }
 
     /** {@link UserQueryProvider} methods implementation end here
@@ -545,11 +537,11 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public List<UserConsentModel> getConsents(RealmModel realm, String userId) {
+    public Stream<UserConsentModel> getConsentsStream(RealmModel realm, String userId) {
         if (StorageId.isLocalStorage(userId)) {
-            return localStorage().getConsents(realm, userId);
+            return localStorage().getConsentsStream(realm, userId);
         } else {
-            return getFederatedStorage().getConsents(realm, userId);
+            return getFederatedStorage().getConsentsStream(realm, userId);
         }
     }
 
@@ -608,14 +600,13 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public Set<FederatedIdentityModel> getFederatedIdentities(UserModel user, RealmModel realm) {
+    public Stream<FederatedIdentityModel> getFederatedIdentitiesStream(UserModel user, RealmModel realm) {
         if (user == null) throw new IllegalStateException("Federated user no longer valid");
-        Set<FederatedIdentityModel> set = new HashSet<>();
-        if (StorageId.isLocalStorage(user)) {
-            set.addAll(localStorage().getFederatedIdentities(user, realm));
-        }
-        if (getFederatedStorage() != null) set.addAll(getFederatedStorage().getFederatedIdentities(user.getId(), realm));
-        return set;
+        Stream<FederatedIdentityModel> stream = StorageId.isLocalStorage(user) ?
+                localStorage().getFederatedIdentitiesStream(user, realm) : Stream.empty();
+        if (getFederatedStorage() != null)
+            stream = Streams.concat(stream, getFederatedStorage().getFederatedIdentitiesStream(user.getId(), realm));
+        return stream.distinct();
     }
 
     @Override

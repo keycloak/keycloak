@@ -86,8 +86,8 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public List<String> getAttribute(String name) {
-        return delegate.getAttribute(name);
+    public Stream<String> getAttributeStream(String name) {
+        return delegate.getAttributeStream(name);
     }
 
     @Override
@@ -96,8 +96,8 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
-    public Set<String> getRequiredActions() {
-        return delegate.getRequiredActions();
+    public Stream<String> getRequiredActionsStream() {
+        return delegate.getRequiredActionsStream();
     }
 
     @Override

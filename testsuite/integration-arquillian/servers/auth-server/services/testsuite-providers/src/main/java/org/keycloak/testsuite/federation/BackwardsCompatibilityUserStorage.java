@@ -18,13 +18,10 @@
 
 package org.keycloak.testsuite.federation;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
@@ -319,58 +316,57 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm) {
-        return getUsers(realm, -1, -1);
+    public Stream<UserModel> getUsersStream(RealmModel realm) {
+        return getUsersStream(realm, -1, -1);
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> getUsersStream(RealmModel realm, int firstResult, int maxResults) {
         return users.values()
                 .stream()
                 .skip(firstResult).limit(maxResults)
-                .map(myUser -> createUser(realm, myUser.username))
-                .collect(Collectors.toList());
+                .map(myUser -> createUser(realm, myUser.username));
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return searchForUser(search, realm, -1, -1);
+    public Stream<UserModel> searchForUserStream(String search, RealmModel realm) {
+        return searchForUserStream(search, realm, -1, -1);
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> searchForUserStream(String search, RealmModel realm, int firstResult, int maxResults) {
         UserModel user = getUserByUsername(search, realm);
-        return user == null ? Collections.emptyList() : Arrays.asList(user);
+        return user == null ? Stream.empty() : Stream.of(user);
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm) {
+    public Stream<UserModel> searchForUserStream(Map<String, String> params, RealmModel realm) {
         // Assume that this is not supported
-        return Collections.emptyList();
+        return Stream.empty();
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> searchForUserStream(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
         // Assume that this is not supported
-        return Collections.emptyList();
+        return Stream.empty();
     }
 
     @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
         // Assume that this is not supported
-        return Collections.emptyList();
+        return Stream.empty();
     }
 
     @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group) {
         // Assume that this is not supported
-        return Collections.emptyList();
+        return Stream.empty();
     }
 
     @Override
-    public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
+    public Stream<UserModel> searchForUserByUserAttributeStream(String attrName, String attrValue, RealmModel realm) {
         // Assume that this is not supported
-        return Collections.emptyList();
+        return Stream.empty();
     }
 
     @Override

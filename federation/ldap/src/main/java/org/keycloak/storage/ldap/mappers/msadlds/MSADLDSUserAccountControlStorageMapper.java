@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * Mapper specific to MSAD LDS. It's able to read the msDS-UserAccountDisabled, msDS-UserPasswordExpired and pwdLastSet attributes and set actions in Keycloak based on that.
@@ -257,17 +258,14 @@ public class MSADLDSUserAccountControlStorageMapper extends AbstractLDAPStorageM
         }
 
         @Override
-        public Set<String> getRequiredActions() {
-            Set<String> requiredActions = super.getRequiredActions();
+        public Stream<String> getRequiredActionsStream() {
+            Stream<String> requiredActions = super.getRequiredActionsStream();
 
             if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE) {
                 if (getPwdLastSet() == 0 || Boolean.parseBoolean(ldapUser.getAttributeAsString(LDAPConstants.MSDS_USER_PASSWORD_EXPIRED))) {
-                    requiredActions = new HashSet<>(requiredActions);
-                    requiredActions.add(RequiredAction.UPDATE_PASSWORD.toString());
-                    return requiredActions;
+                    return Stream.concat(requiredActions, Stream.of(RequiredAction.UPDATE_PASSWORD.toString())).distinct();
                 }
             }
-
             return requiredActions;
         }
 

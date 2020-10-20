@@ -46,6 +46,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -130,8 +131,8 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
             }
 
             @Override
-            public List<String> getAttribute(String name) {
-                return userCtx.getAttribute(name);
+            public Stream<String> getAttributeStream(String name) {
+                return userCtx.getAttribute(name).stream();
             }
 
             @Override

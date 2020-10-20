@@ -19,13 +19,31 @@ package org.keycloak.storage.federated;
 import org.keycloak.models.RealmModel;
 
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public interface UserRequiredActionsFederatedStorage {
-    Set<String> getRequiredActions(RealmModel realm, String userId);
+
+    /**
+     * @deprecated Use {@link #getRequiredActionsStream(RealmModel, String) getRequiredActionsStream} instead.
+     */
+    @Deprecated
+    default Set<String> getRequiredActions(RealmModel realm, String userId) {
+        return this.getRequiredActionsStream(realm, userId).collect(Collectors.toSet());
+    }
+    /**
+     * Obtains the names of required actions associated with the federated user identified by {@code userId}.
+     *
+     * @param realm a reference to the realm.
+     * @param userId the user identifier.
+     * @return a non-null {@code Stream} of required action names.
+     */
+    Stream<String> getRequiredActionsStream(RealmModel realm, String userId);
+
     void addRequiredAction(RealmModel realm, String userId, String action);
     void removeRequiredAction(RealmModel realm, String userId, String action);
 }

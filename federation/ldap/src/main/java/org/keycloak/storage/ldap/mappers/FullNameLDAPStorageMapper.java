@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Mapper useful for the LDAP deployments when some attribute (usually CN) is mapped to full name of user
@@ -108,13 +109,13 @@ public class FullNameLDAPStorageMapper extends AbstractLDAPStorageMapper {
                 }
 
                 @Override
-                public List<String> getAttribute(String name) {
+                public Stream<String> getAttributeStream(String name) {
                     if (UserModel.FIRST_NAME.equals(name)) {
-                        return firstName != null ? Collections.singletonList(firstName) : super.getAttribute(name);
+                        return firstName != null ? Stream.of(firstName) : super.getAttributeStream(name);
                     } else if (UserModel.LAST_NAME.equals(name)) {
-                        return lastName != null ? Collections.singletonList(lastName) : super.getAttribute(name);
+                        return lastName != null ? Stream.of(lastName) : super.getAttributeStream(name);
                     }
-                    return super.getAttribute(name);
+                    return super.getAttributeStream(name);
                 }
 
                 @Override
