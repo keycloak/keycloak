@@ -41,3 +41,22 @@ export const exportClient = (client: ClientRepresentation): void => {
     clientCopy.clientId + ".json"
   );
 };
+
+export const convertToFormValues = (
+  obj: any,
+  prefix: string,
+  setValue: (name: string, value: any) => void
+) => {
+  return Object.keys(obj).map((key) => {
+    const newKey = key.replace(/\./g, "_");
+    setValue(prefix + "." + newKey, obj[key]);
+  });
+};
+
+export const convertFormValuesToObject = (obj: any) => {
+  const keyValues = Object.keys(obj).map((key) => {
+    const newKey = key.replace(/_/g, ".");
+    return { [newKey]: obj[key] };
+  });
+  return Object.assign({}, ...keyValues);
+};

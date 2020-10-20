@@ -23,6 +23,7 @@ import { RealmContext } from "../../context/realm-context/RealmContext";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { convertFormValuesToObject, convertToFormValues } from "../../util";
 
 export const ClientScopeForm = () => {
   const { t } = useTranslation("client-scopes");
@@ -49,10 +50,7 @@ export const ClientScopeForm = () => {
         if (response.data) {
           Object.entries(response.data).map((entry) => {
             if (entry[0] === "attributes") {
-              Object.keys(entry[1]).map((key) => {
-                const newKey = key.replace(/\./g, "_");
-                setValue("attributes." + newKey, entry[1][key]);
-              });
+              convertToFormValues(entry[1], "attributes", setValue);
             }
             setValue(entry[0], entry[1]);
           });
@@ -63,11 +61,9 @@ export const ClientScopeForm = () => {
 
   const save = async (clientScopes: ClientScopeRepresentation) => {
     try {
-      const keyValues = Object.keys(clientScopes.attributes!).map((key) => {
-        const newKey = key.replace(/_/g, ".");
-        return { [newKey]: clientScopes.attributes![key] };
-      });
-      clientScopes.attributes = Object.assign({}, ...keyValues);
+      clientScopes.attributes = convertFormValuesToObject(
+        clientScopes.attributes!
+      );
 
       const url = `/admin/realms/${realm}/client-scopes/`;
       if (id) {
