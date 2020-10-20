@@ -55,10 +55,13 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.services.ErrorResponseException;
 
@@ -157,27 +160,35 @@ public class RoleContainerResource extends RoleResource {
 
                 Set<String> compositeRealmRoles = composites.getRealm();
                 if (compositeRealmRoles != null && !compositeRealmRoles.isEmpty()) {
-                    Set<RoleModel> realmRoles = compositeRealmRoles.stream()
-                            .map(realm::getRole)
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toSet());
+                    Set<RoleModel> realmRoles = new LinkedHashSet<>();
+                    for (String roleName : compositeRealmRoles) {
+                        RoleModel realmRole = realm.getRole(roleName);
+                        if (realmRole == null) {
+                            return ErrorResponse.error("Realm Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
+                        }
+                        realmRoles.add(realmRole);
+                    }
                     RoleUtils.expandCompositeRoles(realmRoles).forEach(role::addCompositeRole);
                 }
 
                 Map<String, List<String>> compositeClientRoles = composites.getClient();
                 if (compositeClientRoles != null && !compositeClientRoles.isEmpty()) {
                     Set<Map.Entry<String, List<String>>> entries = compositeClientRoles.entrySet();
-                    for (Map.Entry<String, List<String>> entry : entries) {
-                        String clientId = entry.getKey();
-                        List<String> clientRoleNames = entry.getValue();
+                    for (Map.Entry<String, List<String>> clientIdWithClientRoleNames : entries) {
+                        String clientId = clientIdWithClientRoleNames.getKey();
+                        List<String> clientRoleNames = clientIdWithClientRoleNames.getValue();
                         ClientModel client = realm.getClientByClientId(clientId);
                         if (client == null) {
                             continue;
                         }
-                        Set<RoleModel> clientRoles = clientRoleNames.stream()
-                                .map(client::getRole)
-                                .filter(Objects::nonNull)
-                                .collect(Collectors.toSet());
+                        Set<RoleModel> clientRoles = new LinkedHashSet<>();
+                        for (String roleName : clientRoleNames) {
+                            RoleModel clientRole = client.getRole(roleName);
+                            if (clientRole == null) {
+                                return ErrorResponse.error("Client Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
+                            }
+                            clientRoles.add(clientRole);
+                        }
                         RoleUtils.expandCompositeRoles(clientRoles).forEach(role::addCompositeRole);
                     }
                 }
