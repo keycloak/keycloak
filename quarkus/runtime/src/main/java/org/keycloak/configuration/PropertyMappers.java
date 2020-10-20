@@ -71,6 +71,7 @@ public final class PropertyMappers {
             
             return enabled ? "enabled" : "disabled";
         }, "Enables the HTTP listener.");
+        createWithDefault("http.host", "quarkus.http.host", "0.0.0.0", "The HTTP host.");
         createWithDefault("http.port", "quarkus.http.port", String.valueOf(8080), "The HTTP port.");
         createWithDefault("https.port", "quarkus.http.ssl-port", String.valueOf(8443), "The HTTPS port.");
         createWithDefault("https.client-auth", "quarkus.http.ssl.client-auth", "none", "Configures the server to require/request client authentication. none, request, required.");
