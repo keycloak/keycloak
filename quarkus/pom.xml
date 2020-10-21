@@ -36,6 +36,7 @@
         <jackson.version>2.11.2</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
         <hibernate.version>5.4.21.Final</hibernate.version>
+        <mysql-connector-java.version>8.0.21</mysql-connector-java.version>
         <picocli.version>4.5.1</picocli.version>
         <snakeyaml.version>1.20</snakeyaml.version>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
@@ -90,6 +91,11 @@
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
                 <version>${snakeyaml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${mysql-connector-java.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -124,6 +124,8 @@ public final class PropertyMappers {
                     return "io.quarkus.hibernate.orm.runtime.dialect.QuarkusH2Dialect";
                 case "mariadb":
                     return "org.hibernate.dialect.MariaDBDialect";
+                case "mysql":
+                    return "org.hibernate.dialect.MySQL8Dialect";
                 case "postgres-95":
                     return "io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL95Dialect";
                 case "postgres": // shorthand for the recommended postgres version
@@ -139,6 +141,8 @@ public final class PropertyMappers {
                     return "org.h2.jdbcx.JdbcDataSource";
                 case "mariadb":
                     return "org.mariadb.jdbc.MySQLDataSource";
+                case "mysql":
+                    return "com.mysql.cj.jdbc.MysqlXADataSource";
                 case "postgres-95":
                 case "postgres-10":
                     return "org.postgresql.xa.PGXADataSource";
@@ -152,12 +156,14 @@ public final class PropertyMappers {
                     return "h2";
                 case "mariadb":
                     return "mariadb";
+                case "mysql":
+                    return "mysql";
                 case "postgres-95":
                 case "postgres-10":
                     return "postgresql";
             }
-            throw invalidDatabaseVendor(db, "h2-file", "h2-mem", "mariadb", "postgres", "postgres-95", "postgres-10");
-        }, "The database vendor. Possible values are: h2-mem, h2-file, mariadb, postgres95, postgres10.");
+            throw invalidDatabaseVendor(db, "h2-file", "h2-mem", "mariadb", "mysql", "postgres", "postgres-95", "postgres-10");
+        }, "The database vendor. Possible values are: h2-mem, h2-file, mariadb, mysql, postgres95, postgres10.");
         create("db", "quarkus.datasource.jdbc.transactions", (db, context) -> "xa", null);
         create("db.url", "db", "quarkus.datasource.jdbc.url", (db, context) -> {
             switch (db.toLowerCase()) {
@@ -170,6 +176,8 @@ public final class PropertyMappers {
                 case "postgres-95":
                 case "postgres-10":
                     return "jdbc:postgresql://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}";
+                case "mysql":
+                    return "jdbc:mysql://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}";
             }
             return null;
         }, "The database JDBC URL. If not provided a default URL is set based on the selected database vendor. For instance, if using 'postgres-10', the JDBC URL would be 'jdbc:postgresql://localhost/keycloak'. The host, database and properties can be overridden by setting the following system properties, respectively: -Dkc.db.url.host, -Dkc.db.url.database, -Dkc.db.url.properties.");
