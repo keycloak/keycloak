@@ -16,7 +16,7 @@ export const HelpItem = ({ helpText, forLabel, forID }: HelpItemProps) => {
   return (
     <>
       {enabled && (
-        <Popover bodyContent={helpText}>
+        <Popover bodyContent={t(helpText)}>
           <button
             aria-label={t(`helpLabel`, { label: forLabel })}
             onClick={(e) => e.preventDefault()}

@@ -56,11 +56,7 @@ export const ClientScopesSection = () => {
             inputGroupPlaceholder={t("searchFor")}
             inputGroupOnChange={filterData}
             toolbarItem={
-              <Button
-                onClick={() =>
-                  history.push("/client-scopes/add-client-scopes/")
-                }
-              >
+              <Button onClick={() => history.push("/client-scopes/new")}>
                 {t("createClientScope")}
               </Button>
             }

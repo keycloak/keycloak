@@ -2,6 +2,7 @@ import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
+  ButtonVariant,
   Dropdown,
   DropdownItem,
   DropdownToggle,
@@ -24,13 +25,14 @@ import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState
 import { HttpClientContext } from "../../context/http-service/HttpClientContext";
 import { RealmContext } from "../../context/realm-context/RealmContext";
 import { useAlerts } from "../../components/alert/Alerts";
+import { Link } from "react-router-dom";
 
 type MapperListProps = {
   clientScope: ClientScopeRepresentation;
 };
 
 type Row = {
-  name: string;
+  name: JSX.Element;
   category: string;
   type: string;
   priority: number;
@@ -58,6 +60,13 @@ export const MapperList = ({ clientScope }: MapperListProps) => {
         instructions={t("emptyMappersInstructions")}
         primaryActionText={t("emptyPrimaryAction")}
         onPrimaryAction={() => {}}
+        secondaryActions={[
+          {
+            text: t("emptySecondaryAction"),
+            onClick: () => {},
+            type: ButtonVariant.secondary,
+          },
+        ]}
       />
     );
   }
@@ -70,7 +79,13 @@ export const MapperList = ({ clientScope }: MapperListProps) => {
       return {
         mapper,
         cells: {
-          name: mapper.name,
+          name: (
+            <>
+              <Link to={`/client-scopes/${clientScope.id}/${mapper.id}`}>
+                {mapper.name}
+              </Link>
+            </>
+          ),
           category: mapperType.category,
           type: mapperType.name,
           priority: mapperType.priority,
@@ -82,7 +97,7 @@ export const MapperList = ({ clientScope }: MapperListProps) => {
   const filterData = (search: string) => {
     setFilteredData(
       data.filter((column) =>
-        column.cells.name.toLowerCase().includes(search.toLowerCase())
+        column.mapper.name!.toLowerCase().includes(search.toLowerCase())
       )
     );
   };

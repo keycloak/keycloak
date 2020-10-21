@@ -18,7 +18,6 @@ import {
 } from "@patternfly/react-core";
 import { HelpContext } from "../help-enabler/HelpHeader";
 import { useTranslation } from "react-i18next";
-import { PageBreadCrumbs } from "../bread-crumb/PageBreadCrumbs";
 import { ExternalLink } from "../external-link/ExternalLink";
 import { isRowExpanded } from "@patternfly/react-table";
 
@@ -68,10 +67,10 @@ export const ViewHeader = ({
             </Level>
           </LevelItem>
           <LevelItem></LevelItem>
-          {dropdownItems && (
-            <LevelItem>
-              <Toolbar>
-                <ToolbarContent>
+          <LevelItem>
+            <Toolbar>
+              <ToolbarContent>
+                {onToggle && (
                   <ToolbarItem>
                     <Switch
                       id={`${titleKey}-switch`}
@@ -86,6 +85,8 @@ export const ViewHeader = ({
                       }}
                     />
                   </ToolbarItem>
+                )}
+                {dropdownItems && (
                   <ToolbarItem>
                     <Dropdown
                       position={DropdownPosition.right}
@@ -98,10 +99,10 @@ export const ViewHeader = ({
                       dropdownItems={dropdownItems}
                     />
                   </ToolbarItem>
-                </ToolbarContent>
-              </Toolbar>
-            </LevelItem>
-          )}
+                )}
+              </ToolbarContent>
+            </Toolbar>
+          </LevelItem>
         </Level>
         {enabled && (
           <TextContent>
