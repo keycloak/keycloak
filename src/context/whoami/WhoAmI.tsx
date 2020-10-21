@@ -1,7 +1,7 @@
 import React, { useContext } from "react";
 import i18n from "../../i18n";
 
-import WhoAmIRepresentation from "./who-am-i-model";
+import WhoAmIRepresentation, { AccessType } from "./who-am-i-model";
 
 import { HttpClientContext } from "../http-service/HttpClientContext";
 import { KeycloakContext } from "../auth/KeycloakContext";
@@ -40,7 +40,9 @@ export class WhoAmI {
     return this.me !== undefined && this.me.createRealm;
   }
 
-  public getRealmAccess(): Readonly<{ [key: string]: ReadonlyArray<string> }> {
+  public getRealmAccess(): Readonly<{
+    [key: string]: ReadonlyArray<AccessType>;
+  }> {
     if (this.me === undefined) return {};
 
     return this.me.realm_access;

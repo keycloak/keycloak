@@ -11,19 +11,35 @@ import { WhoAmIContextProvider } from "./context/whoami/WhoAmI";
 import { ServerInfoProvider } from "./context/server-info/ServerInfoProvider";
 import { AlertProvider } from "./components/alert/Alerts";
 
-import { routes } from "./route-config";
+import { AccessContextProvider, useAccess } from "./context/access/Access";
+import { routes, RouteDef } from "./route-config";
 import { PageBreadCrumbs } from "./components/bread-crumb/PageBreadCrumbs";
+import { ForbiddenSection } from "./ForbiddenSection";
+
 const AppContexts = ({ children }: { children: ReactNode }) => (
   <WhoAmIContextProvider>
     <RealmContextProvider>
-      <Help>
-        <AlertProvider>
-          <ServerInfoProvider>{children}</ServerInfoProvider>
-        </AlertProvider>
-      </Help>
+      <AccessContextProvider>
+        <Help>
+          <AlertProvider>
+            <ServerInfoProvider>{children}</ServerInfoProvider>
+          </AlertProvider>
+        </Help>
+      </AccessContextProvider>
     </RealmContextProvider>
   </WhoAmIContextProvider>
 );
+
+// If someone tries to go directly to a route they don't
+// have access to, show forbidden page.
+type SecuredRouteProps = { route: RouteDef };
+const SecuredRoute = ({ route }: SecuredRouteProps) => {
+  const { hasAccess } = useAccess();
+
+  if (hasAccess(route.access)) return <route.component />;
+
+  return <ForbiddenSection />;
+};
 
 export const App = () => {
   return (
@@ -37,7 +53,11 @@ export const App = () => {
         >
           <Switch>
             {routes(() => {}).map((route, i) => (
-              <Route key={i} {...route} exact />
+              <Route
+                key={i}
+                path={route.path}
+                component={() => <SecuredRoute route={route} />}
+              />
             ))}
           </Switch>
         </Page>
