@@ -531,6 +531,8 @@ public class TestingOIDCEndpointsApplicationResource {
             // optional
             entry.setDefaultClientScope(request.getFirst(DelegateDecoupledAuthenticationProvider.DECOUPLED_DEFAULT_CLIENT_SCOPE));
             entry.setBindingMessage(request.getFirst(CIBAConstants.BINDING_MESSAGE));
+            entry.setUserCode(request.getFirst(CIBAConstants.USER_CODE));
+
             // for testing purpose
             if (request.getFirst(CIBAConstants.BINDING_MESSAGE).equals("GODOWN")) throw new BadRequestException("intentional error : GODOWN");
 
@@ -541,6 +543,7 @@ public class TestingOIDCEndpointsApplicationResource {
             System.out.println("                    Scope = " + entry.getScope());
             System.out.println("     Default Client Scope = " + entry.getDefaultClientScope());
             System.out.println("           BindingMessage = " + entry.getBindingMessage());
+            System.out.println("                 UserCode = " + entry.getUserCode());
         try {
             decoupledAuthenticationRequests.put(entry);
         } catch (InterruptedException e) {

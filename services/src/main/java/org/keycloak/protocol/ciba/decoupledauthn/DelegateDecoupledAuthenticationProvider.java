@@ -1,13 +1,5 @@
 package org.keycloak.protocol.ciba.decoupledauthn;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.util.SimpleHttp;
@@ -17,16 +9,24 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.CodeToTokenStoreProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.CodeToTokenStoreProvider;
 import org.keycloak.protocol.ciba.CIBAConstants;
 import org.keycloak.protocol.ciba.endpoints.request.BackchannelAuthenticationRequest;
 import org.keycloak.protocol.ciba.resolvers.CIBALoginUserResolver;
+import org.keycloak.protocol.ciba.utils.DecoupledAuthStatus;
 import org.keycloak.protocol.ciba.utils.DecoupledAuthnResult;
 import org.keycloak.protocol.ciba.utils.DecoupledAuthnResultParser;
-import org.keycloak.protocol.ciba.utils.DecoupledAuthStatus;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.services.CorsErrorResponseException;
+
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class DelegateDecoupledAuthenticationProvider extends DecoupledAuthenticationProviderBase {
 
@@ -170,7 +170,12 @@ public class DelegateDecoupledAuthenticationProvider extends DecoupledAuthentica
                 userSessionIdWillBeCreated, userIdToBeAuthenticated, client.getClientId(), authResultId);
         String decoupledAuthId = persistDecoupledAuthId(session, decoupledAuthIdData, expiresIn);
 
+        OIDCAdvancedConfigWrapper configWrapper = OIDCAdvancedConfigWrapper.fromClientModel(client);
+        boolean userCodeSupported = configWrapper.getBackchannelUserCodeParameter();
+
         logger.info("  decoupledAuthnRequestUri = " + decoupledAuthenticationRequestUri);
+        logger.info("  userCode supported = " + userCodeSupported);
+
         try {
             int status = SimpleHttp.doPost(decoupledAuthenticationRequestUri, session)
                 .param(DECOUPLED_AUTHN_ID, decoupledAuthId)
@@ -179,6 +184,7 @@ public class DelegateDecoupledAuthenticationProvider extends DecoupledAuthentica
                 .param(CIBAConstants.SCOPE, request.getScope())
                 .param(DECOUPLED_DEFAULT_CLIENT_SCOPE, defaultClientScope)
                 .param(CIBAConstants.BINDING_MESSAGE, request.getBindingMessage())
+                .param(CIBAConstants.USER_CODE, userCodeSupported ? request.getUserCode() : null)
                 .asStatus();
             logger.info("  Decoupled Authn Request URI Access = " + status);
             if (status != 200) {
@@ -224,7 +230,7 @@ public class DelegateDecoupledAuthenticationProvider extends DecoupledAuthentica
             this.clientId = clientId;
             this.authResultId = authResultId;
         }
-     
+
         private DecoupledAuthId(Map<String, String> data) {
             expiration = Integer.parseInt(data.get(EXPIRATION_NOTE));
             scope = data.get(SCOPE_NOTE);

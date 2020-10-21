@@ -162,6 +162,10 @@ public class DescriptionConverter {
             configWrapper.setBackchannelTokenDeliveryMode(clientOIDC.getBackchannelTokenDeliveryMode());
         }
 
+        if (clientOIDC.getBackchannelUserCodeParameter() != null) {
+            configWrapper.setBackchannelUserCodeParameter(clientOIDC.getBackchannelUserCodeParameter());
+        }
+
         return client;
     }
 
@@ -268,6 +272,8 @@ public class DescriptionConverter {
         if (config.getBackchannelTokenDeliveryMode() != null) {
             response.setBackchannelTokenDeliveryMode(config.getBackchannelTokenDeliveryMode());
         }
+
+        response.setBackchannelUserCodeParameter(config.getBackchannelUserCodeParameter());
 
         List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(client);
         SubjectType subjectType = foundPairwiseMappers.isEmpty() ? SubjectType.PUBLIC : SubjectType.PAIRWISE;

@@ -8,6 +8,7 @@ public class DecoupledAuthenticationRequest {
     private String scope;
     private String defaultClientScope;
     private String bindingMessage;
+    private String userCode;
 
     public String getDecoupledAuthId() {
         return decoupledAuthId;
@@ -55,5 +56,13 @@ public class DecoupledAuthenticationRequest {
 
     public void setBindingMessage(String bindingMessage) {
         this.bindingMessage = bindingMessage;
+    }
+
+    public String getUserCode() {
+        return userCode;
+    }
+
+    public void setUserCode(String userCode) {
+        this.userCode = userCode;
     }
 }

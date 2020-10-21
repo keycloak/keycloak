@@ -178,6 +178,12 @@ public class BackchannelAuthenticationEndpoint {
             logger.info("  binding_message = " + request.getBindingMessage());
         }
 
+        String userCode = params.getFirst(CIBAConstants.USER_CODE);
+        if (userCode != null) {
+            request.setUserCode(userCode);
+            logger.debug("  user_code = " + request.getUserCode());
+        }
+
         return request;
     }
 

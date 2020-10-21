@@ -151,7 +151,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
         config.setBackchannelTokenDeliveryModesSupported(DEFAULT_BACKCHANNEL_TOKEN_DELIVERY_MODES_SUPPORTED);
         config.setBackchannelAuthenticationEndpoint(backendUriBuilder.clone().path(OIDCLoginProtocolService.class, "backchannelAuthn").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
-        config.setBackchannelUserCodeParameterSupported(false);
+        config.setBackchannelUserCodeParameterSupported(true);
 
         return config;
     }

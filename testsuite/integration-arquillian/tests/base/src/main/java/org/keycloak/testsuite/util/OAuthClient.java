@@ -25,7 +25,6 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.apache.commons.logging.Log;
 import org.apache.http.Header;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -694,10 +693,10 @@ public class OAuthClient {
     }
 
     public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientSecret, String userid, String bindingMessage) throws Exception {
-        return doBackchannelAuthenticationRequest(this.clientId, clientSecret, userid, bindingMessage);
+        return doBackchannelAuthenticationRequest(this.clientId, clientSecret, userid, bindingMessage, null);
     }
 
-    public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String userid, String bindingMessage) throws Exception {
+    public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String userid, String bindingMessage, String userCode) throws Exception {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             System.out.println("--- Backchannel Authentication Endpoint = " + getBackchannelAuthenticationUrl());
             HttpPost post = new HttpPost(getBackchannelAuthenticationUrl());
@@ -708,6 +707,11 @@ public class OAuthClient {
             List<NameValuePair> parameters = new LinkedList<>();
             if (userid != null) parameters.add(new BasicNameValuePair(CIBAConstants.LOGIN_HINT, userid));
             parameters.add(new BasicNameValuePair(CIBAConstants.BINDING_MESSAGE, bindingMessage));
+
+            if (userCode != null) {
+                parameters.add(new BasicNameValuePair(CIBAConstants.USER_CODE, userCode));
+            }
+
             if (scope != null) {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID + " " + scope));
             } else {

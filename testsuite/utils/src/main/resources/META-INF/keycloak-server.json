@@ -125,5 +125,12 @@
             "sslCertChainPrefix": "x-ssl-client-cert-chain",
             "certificateChainLength": 1
         }
+    },
+
+    "decoupled-authn": {
+        "provider": "${keycloak.decoupled.authn.provider:delegate-decoupled-authn}",
+        "delegate-decoupled-authn": {
+            "decoupledAuthnRequestUri": "${keycloak.decoupled.auth.request.uri:https://localhost:8543/auth/realms/master/app/oidc-client-endpoints/request-decoupled-authentication}"
+        }
     }
 }
