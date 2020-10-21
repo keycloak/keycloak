@@ -18,6 +18,7 @@
 package org.keycloak.configuration;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
@@ -68,5 +69,14 @@ public final class Configuration {
 
     public static Optional<String> getOptionalValue(String name) {
         return getConfig().getOptionalValue(name, String.class);
+    }
+
+    public static Optional<Boolean> getOptionalBooleanValue(String name) {
+        return getConfig().getOptionalValue(name, String.class).map(new Function<String, Boolean>() {
+            @Override
+            public Boolean apply(String s) {
+                return Boolean.parseBoolean(s);
+            }
+        });
     }
 }

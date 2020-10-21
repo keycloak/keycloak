@@ -26,6 +26,8 @@ import java.util.function.Predicate;
 import java.util.stream.StreamSupport;
 
 import io.smallrye.config.ConfigValue;
+import io.vertx.core.Handler;
+import io.vertx.ext.web.RoutingContext;
 import org.jboss.logging.Logger;
 import org.keycloak.QuarkusKeycloakSessionFactory;
 import org.keycloak.cli.ShowConfigCommand;
@@ -43,6 +45,7 @@ import org.keycloak.provider.Spi;
 import io.quarkus.runtime.annotations.Recorder;
 import liquibase.logging.LogFactory;
 import liquibase.servicelocator.ServiceLocator;
+import org.keycloak.provider.quarkus.QuarkusRequestFilter;
 import org.keycloak.util.Environment;
 
 @Recorder
@@ -209,5 +212,24 @@ public class KeycloakRecorder {
                 return Configuration.getRawValue(feature);
             }
         });
+    }
+
+    public Handler<RoutingContext> createFilter(boolean metricsEnabled) {
+        QuarkusRequestFilter handler = new QuarkusRequestFilter();
+
+        handler.setEnabledEndpoints(new Predicate<RoutingContext>() {
+            @Override
+            public boolean test(RoutingContext context) {
+
+                if (context.request().uri().startsWith("/metrics") ||
+                    context.request().uri().startsWith("/health")) {
+                    return metricsEnabled;
+                }
+
+                return true;
+            }
+        });
+
+        return handler;
     }
 }

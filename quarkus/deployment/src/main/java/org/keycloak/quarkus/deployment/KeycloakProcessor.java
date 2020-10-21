@@ -46,6 +46,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.configuration.Configuration;
 import org.keycloak.configuration.KeycloakConfigSourceProvider;
+import org.keycloak.configuration.MicroProfileConfigProvider;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProviderFactory;
 import org.keycloak.connections.jpa.updater.liquibase.conn.DefaultLiquibaseConnectionProvider;
@@ -194,9 +195,13 @@ class KeycloakProcessor {
         indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("org.keycloak", "keycloak-services"));
     }
 
+    @Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep
-    void initializeRouter(BuildProducer<FilterBuildItem> routes) {
-        routes.produce(new FilterBuildItem(new QuarkusRequestFilter(), FilterBuildItem.AUTHORIZATION - 10));
+    void initializeFilter(BuildProducer<FilterBuildItem> routes, KeycloakRecorder recorder) {
+        Optional<Boolean> metricsEnabled = Configuration.getOptionalBooleanValue(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat("metrics.enabled"));
+
+        routes.produce(new FilterBuildItem(recorder.createFilter(metricsEnabled.orElse(false)),
+                FilterBuildItem.AUTHORIZATION - 10));
     }
 
     @BuildStep(onlyIf = IsDevelopment.class)

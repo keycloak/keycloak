@@ -46,6 +46,7 @@ public final class PropertyMappers {
         configureProxyMappers();
         configureClustering();
         configureHostnameProviderMappers();
+        configureMetrics();
     }
 
     private static void configureHttpPropertyMappers() {
@@ -148,6 +149,10 @@ public final class PropertyMappers {
         create("hostname-frontend-url", "kc.spi.hostname.default.frontend-url", "The URL that should be used to serve frontend requests that are usually sent through the a public domain.");
         create("hostname-admin-url", "kc.spi.hostname.default.admin-url", "The URL that should be used to expose the admin endpoints and console.");
         create("hostname-force-backend-url-to-frontend-url ", "kc.spi.hostname.default.force-backend-url-to-frontend-url", "Forces backend requests to go through the URL defined as the frontend-url. Defaults to false. Possible values are true or false.");
+    }
+
+    private static void configureMetrics() {
+        createBuildTimeProperty("metrics.enabled", "quarkus.datasource.metrics.enabled", "If the server should expose metrics and healthcheck. If enabled, metrics are available at the '/metrics' endpoint and healthcheck at the '/health' endpoint.");
     }
 
     static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
