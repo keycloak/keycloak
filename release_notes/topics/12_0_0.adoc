@@ -5,3 +5,9 @@
 Support for specification of AuthnContext section in authentication requests issued by SAML identity provider has been added.
 
 Thanks to https://github.com/lscorcia[lscorcia]
+
+== FAPI RW support and initial support to Client policies
+
+There was lots of the work done to have support for Financial-grade API Read and Write API Security Profile (FAPI RW). This is available
+with the usage of Client policies and it is still in the preview state. You can expect more polishing in the next releases.
+Thanks to https://github.com/tnorimat[Takashi Norimatsu] and all the members of the https://github.com/keycloak/kc-sig-fapi[FAPI Special interest group].
