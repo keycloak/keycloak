@@ -43,7 +43,7 @@ public class PrivacyFilterSpi implements Spi {
     }
 
     @Override
-    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+    public Class<? extends ProviderFactory<PrivacyFilterProvider>> getProviderFactoryClass() {
         return PrivacyFilterProviderFactory.class;
     }
 }

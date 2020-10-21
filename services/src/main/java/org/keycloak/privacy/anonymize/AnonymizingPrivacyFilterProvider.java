@@ -19,29 +19,93 @@ package org.keycloak.privacy.anonymize;
 import org.keycloak.events.Event;
 import org.keycloak.privacy.PrivacyFilterProvider;
 
+import java.util.Map;
+import java.util.Set;
+
 /**
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
 public class AnonymizingPrivacyFilterProvider implements PrivacyFilterProvider {
 
+    /**
+     * Holds a set of type hints that should be considered during anonymization.
+     */
+    private final Set<String> typeHints;
+
+    /**
+     * Holds aliases for mapping new type hints to known type hints.
+     */
+    private final Map<String, String> typeAliases;
+
+    /**
+     * Holds a type hint that should be used if no type hint is provided.
+     */
+    private final String fallbackTypeHint;
+
+    /**
+     * Holds the {@link Anonymizer} to anonymize the given input.
+     */
     private final Anonymizer anonymizer;
 
-    public AnonymizingPrivacyFilterProvider(Anonymizer anonymizer) {
+    /**
+     * @param typeHints        set of type hints that should be considered during anonymization
+     * @param typeAliases      aliases for mapping new type hints to known type hints
+     * @param fallbackTypeHint type hint that should be used if no type hint is provided
+     * @param anonymizer       {@link Anonymizer} to anonymize the given input
+     */
+    public AnonymizingPrivacyFilterProvider(Set<String> typeHints, Map<String, String> typeAliases, String fallbackTypeHint, Anonymizer anonymizer) {
+        this.typeHints = typeHints;
+        this.typeAliases = typeAliases;
+        this.fallbackTypeHint = fallbackTypeHint;
         this.anonymizer = anonymizer;
     }
 
+    /**
+     * Anonymizes the given input by applying the configured {@link Anonymizer} according to the given type-hint.
+     * <p>
+     * Resolves the type-hint to use based on the given input and the provided type-hint.
+     *
+     * @param input
+     * @param type
+     * @param userEvent the keycloak event, may be null.
+     * @return
+     */
     @Override
-    public String filter(String field, String input) {
-        return anonymizer.anonymize(field, input);
+    public String filter(String input, String type, Event userEvent) {
+
+        String typeHint = resolveTypeHint(input, type);
+
+        if (input == null || typeHint == null || typeHint.isEmpty() || input.isEmpty()) {
+            return input;
+        }
+
+        if (!typeHints.contains(typeHint)) {
+            return input;
+        }
+
+        return anonymize(input, typeHint, userEvent);
     }
 
-    @Override
-    public String filter(String field, String input, Event event) {
-        return anonymizer.anonymize(field, input);
+    protected String anonymize(String input, String typeHint, Event userEvent) {
+        return anonymizer.anonymize(input, typeHint);
     }
 
-    @Override
-    public String filter(String input) {
-        return anonymizer.anonymize(Anonymizer.NULL, input);
+    protected String resolveTypeHint(String input, String typeHint) {
+
+        if (input == null) {
+            return null;
+        }
+
+        if (typeHint == null) {
+            typeHint = fallbackTypeHint;
+        }
+
+        String typeAlias = typeAliases.get(typeHint);
+        if (typeAlias != null) {
+            typeHint = typeAlias;
+        }
+
+        return typeHint;
     }
+
 }

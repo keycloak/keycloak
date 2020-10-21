@@ -24,9 +24,8 @@ import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.privacy.DefaultNoOpPrivacyFilterProviderFactory;
+import org.keycloak.privacy.DefaultEmptyPrivacyFilterProviderFactory;
 import org.keycloak.privacy.PrivacyFilterProvider;
-import org.keycloak.privacy.anonymize.Anonymizer;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.Cookie;
@@ -58,7 +57,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
      */
     @Deprecated // constructor for backwards compatibility
     public JBossLoggingEventListenerProvider(KeycloakSession session, Logger logger, Logger.Level successLevel, Logger.Level errorLevel) {
-        this(session, logger, successLevel, errorLevel, DefaultNoOpPrivacyFilterProviderFactory.INSTANCE);
+        this(session, logger, successLevel, errorLevel, DefaultEmptyPrivacyFilterProviderFactory.INSTANCE);
     }
 
     /**
@@ -182,7 +181,8 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
      * @return
      */
     protected String getEventDetailValue(Event event, String key, String value) {
-        return privacyFilter.filter(key, value, event);
+        // key is used as a privacy-filter type-hint
+        return privacyFilter.filter(value, key, event);
     }
 
     /**
@@ -191,7 +191,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
      * @return
      */
     protected String getIpAddress(Event event) {
-        return privacyFilter.filter(Anonymizer.IP_ADDRESS, event.getIpAddress(), event);
+        return privacyFilter.filter(event.getIpAddress(), PrivacyFilterProvider.IP_ADDRESS, event);
     }
 
     /**
@@ -200,7 +200,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
      * @return
      */
     protected String getUserId(Event event) {
-        return privacyFilter.filter(Anonymizer.USER_ID, event.getUserId(), event);
+        return privacyFilter.filter(event.getUserId(), PrivacyFilterProvider.USER_ID, event);
     }
 
     @Override

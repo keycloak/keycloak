@@ -19,13 +19,13 @@ package org.keycloak.privacy;
 import org.keycloak.models.KeycloakSession;
 
 /**
- * Manages the {@link DefaultNoOpPrivacyFilterProvider}.
+ * Manages the {@link DefaultEmptyPrivacyFilterProvider}.
  *
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
-public class DefaultNoOpPrivacyFilterProviderFactory implements PrivacyFilterProviderFactory {
+public class DefaultEmptyPrivacyFilterProviderFactory implements PrivacyFilterProviderFactory {
 
-    public static final DefaultNoOpPrivacyFilterProvider INSTANCE = new DefaultNoOpPrivacyFilterProvider();
+    public static final DefaultEmptyPrivacyFilterProvider INSTANCE = new DefaultEmptyPrivacyFilterProvider();
 
     @Override
     public PrivacyFilterProvider create(KeycloakSession session) {

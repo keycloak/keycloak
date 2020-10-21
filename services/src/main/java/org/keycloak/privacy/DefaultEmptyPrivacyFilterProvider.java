@@ -16,15 +16,17 @@
  */
 package org.keycloak.privacy;
 
+import org.keycloak.events.Event;
+
 /**
  * Default NO-OP {@link PrivacyFilterProvider} that returns the input as-is.
  *
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
-public class DefaultNoOpPrivacyFilterProvider implements PrivacyFilterProvider {
+public class DefaultEmptyPrivacyFilterProvider implements PrivacyFilterProvider {
 
     @Override
-    public String filter(String input) {
+    public String filter(String input, String typeHint, Event userEvent) {
         return input;
     }
 }

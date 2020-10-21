@@ -16,26 +16,24 @@
  */
 package org.keycloak.privacy.anonymize;
 
-import java.util.Set;
-
 /**
- * A configurable {@link Anonymizer} that allows to filter values according to configured anonymization policy.
+ * A configurable {@link Anonymizer} that obfuscates a given input according to the following rules:
  * <p>
- * An example for an anonymization policy is:
  * Take the first {@code prefixLength} characters of the {@code input} + '%' + last chars {@code suffixLength} of a given {@code input} string.
  * If the input string is smaller than {@code minLength} chars or {@literal null} or empty, the {@code input} is returned as is.
  * <p>
- * The anonymization could be applied if the supplied key is one of:
+ * The anonymization could be applied if the supplied type hint resolves to a type hint of:
  * <ul>
  *     <li>userId</li>
  *     <li>ipAddress</li>
  *     <li>username</li>
  *     <li>email</li>
  *     <li>phoneNumber</li>
- *     <li>mobile</li>
- *     <li>null</li>
+ *     <li>address</li>
+ *     <li>default</li>
  * </ul>
- *  Note that th fieldname {@code null} is used to control default handling for unknown fields.
+ *  Note that the type hint {@code default} is used to control default handling for unknown fields.
+ *
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
 public class DefaultAnonymizer implements Anonymizer {
@@ -48,55 +46,37 @@ public class DefaultAnonymizer implements Anonymizer {
 
     private final String placeHolder;
 
-    private final Set<String> fields;
-
-    private final String fallbackField;
-
     /**
      * Creates a new {@link DefaultAnonymizer}
      *
-     * @param minLength min length of input to be anonymized
-     * @param prefixLength prefix length to keep from input
-     * @param suffixLength suffix length to keep from input
-     * @param placeHolder placeholder to use between prefix and suffix
-     * @param fields set of fields that should be anonymized
-     * @param fallbackField field that should be used if no field is provided
+     * @param minLength    min length of input to be anonymized, shorter inputs are NOT anonymized
+     * @param prefixLength prefix length to retain from input
+     * @param suffixLength suffix length to retain from input
+     * @param placeHolder  placeholder to use between prefix and suffix
      */
     public DefaultAnonymizer(int minLength,
                              int prefixLength,
                              int suffixLength,
-                             String placeHolder,
-                             Set<String> fields,
-                             String fallbackField) {
+                             String placeHolder) {
         this.minLength = minLength;
         this.prefixLength = prefixLength;
         this.suffixLength = suffixLength;
         this.placeHolder = placeHolder;
-        this.fields = fields;
-        this.fallbackField = fallbackField;
     }
 
     /**
-     * @param field
      * @param input
+     * @param typeHint
      * @return
      */
-    public String anonymize(String field, String input) {
+    public String anonymize(String input, String typeHint) {
 
-        if (field == null) {
-            field = fallbackField;
-        }
-
-        if (field == null || field.isEmpty() || input == null || input.isEmpty()) {
-            return input;
+        if (input == null) {
+            return null;
         }
 
         int inputLen = input.length();
         if (inputLen < minLength) {
-            return input;
-        }
-
-        if (!fields.contains(field)) {
             return input;
         }
 

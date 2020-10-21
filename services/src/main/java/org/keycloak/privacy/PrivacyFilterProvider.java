@@ -26,27 +26,74 @@ import org.keycloak.provider.Provider;
  */
 public interface PrivacyFilterProvider extends Provider {
 
+    // Note: fields are defined as strings instead of an enum, to ease adding own fields in custom implementations.
+
+    // The following fields can be used by consumers to classify and filer their own PII values.
+
     /**
-     * Filter the given input value according to rules governed by the given type hint.
-     *
-     * @param field
-     * @param input
-     * @return the potentially filtered input value
+     * Denotes a USER_ID type
      */
-    default String filter(String field, String input) {
-        return filter(input);
-    }
+    String USER_ID = "userId";
+
+    /**
+     * Denotes an USERNAME type
+     */
+    String USERNAME = "username";
+
+    /**
+     * Denotes an NAME type, e.g. a given name, family name.
+     */
+    String NAME = "name";
+
+    /**
+     * Denotes an EMAIL address type
+     */
+    String EMAIL = "email";
+
+    /**
+     * Denotes an PHONE_NUMBER type, e.g. mobile, phone
+     */
+    String PHONE_NUMBER = "phoneNumber";
+
+    /**
+     * Denotes an ADDRESS type
+     */
+    String ADDRESS = "address";
+
+    /**
+     * Denotes an PII type for generic personally identifiable information.
+     */
+    String PII = "pii";
+
+    /**
+     * Denotes an IP_ADDRESS type
+     */
+    String IP_ADDRESS = "ipAddress";
+
+    /**
+     * Denotes an unspecified default type
+     */
+    String DEFAULT = "default";
 
     /**
      * Filter the given input value according to rules governed by the given type hint in the context of an {@link Event}.
      *
-     * @param field
      * @param input
-     * @param event the keycloak event
+     * @param typeHint
+     * @param userEvent the keycloak event, may be null.
      * @return the potentially filtered input value
      */
-    default String filter(String field, String input, Event event) {
-        return filter(input);
+    String filter(String input, String typeHint, Event userEvent);
+
+    /**
+     * Filter the given input value according to rules governed by the given type hint.
+     *
+     * @param input
+     * @param typeHint
+     * @return the potentially filtered input value
+     */
+    default String filter(String input, String typeHint) {
+        return filter(input, typeHint, null);
     }
 
     /**
@@ -55,7 +102,9 @@ public interface PrivacyFilterProvider extends Provider {
      * @param input
      * @return the potentially filtered input value
      */
-    String filter(String input);
+    default String filter(String input) {
+        return filter(input, DEFAULT, null);
+    }
 
     /**
      * Potentially releases resources held by this provider.

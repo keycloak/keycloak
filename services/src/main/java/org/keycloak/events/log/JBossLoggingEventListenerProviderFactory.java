@@ -23,7 +23,7 @@ import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.privacy.DefaultNoOpPrivacyFilterProviderFactory;
+import org.keycloak.privacy.DefaultEmptyPrivacyFilterProviderFactory;
 import org.keycloak.privacy.PrivacyFilterProvider;
 
 /**
@@ -38,19 +38,26 @@ public class JBossLoggingEventListenerProviderFactory implements EventListenerPr
     private Logger.Level successLevel;
     private Logger.Level errorLevel;
 
+    private volatile PrivacyFilterProvider privacyFilter;
+
     @Override
     public EventListenerProvider create(KeycloakSession session) {
-        return new JBossLoggingEventListenerProvider(session, logger, successLevel, errorLevel, getPrivacyFilter(session));
-    }
 
-    protected PrivacyFilterProvider getPrivacyFilter(KeycloakSession session) {
-
-        PrivacyFilterProvider privacyFilter = session.getProvider(PrivacyFilterProvider.class);
-        if (privacyFilter != null) {
-            return privacyFilter;
+        if (privacyFilter == null) {
+            privacyFilter = createPrivacyFilter(session);
         }
 
-        return DefaultNoOpPrivacyFilterProviderFactory.INSTANCE;
+        return new JBossLoggingEventListenerProvider(session, logger, successLevel, errorLevel, privacyFilter);
+    }
+
+    protected PrivacyFilterProvider createPrivacyFilter(KeycloakSession session) {
+
+        PrivacyFilterProvider filter = session.getProvider(PrivacyFilterProvider.class);
+        if (filter != null) {
+            return filter;
+        }
+
+        return DefaultEmptyPrivacyFilterProviderFactory.INSTANCE;
     }
 
     @Override
