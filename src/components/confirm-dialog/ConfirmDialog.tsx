@@ -38,6 +38,7 @@ export type ConfirmDialogProps = {
   cancelButtonLabel?: string;
   continueButtonLabel?: string;
   continueButtonVariant?: ButtonVariant;
+  variant?: ModalVariant;
   onConfirm: () => void;
   onCancel?: () => void;
   children?: ReactNode;
@@ -53,6 +54,7 @@ export const ConfirmDialogModal = ({
   onCancel,
   children,
   open = true,
+  variant = ModalVariant.default,
   toggleDialog,
 }: ConfirmDialogModalProps) => {
   const { t } = useTranslation();
@@ -61,7 +63,7 @@ export const ConfirmDialogModal = ({
       title={t(titleKey)}
       isOpen={open}
       onClose={toggleDialog}
-      variant={ModalVariant.small}
+      variant={variant}
       actions={[
         <Button
           id="modal-confirm"

@@ -3,6 +3,7 @@
     "fullName": "{{givenName}} {{familyName}}",
     "unknownUser": "Anonymous",
 
+    "add": "Add",
     "create": "Create",
     "save": "Save",
     "cancel": "Cancel",

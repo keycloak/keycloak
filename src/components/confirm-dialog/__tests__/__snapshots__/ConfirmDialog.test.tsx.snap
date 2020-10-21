@@ -48,7 +48,7 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
         ouiaSafe={true}
         showClose={true}
         title="Delete app02?"
-        variant="small"
+        variant="default"
       >
         <Portal
           containerInfo={
@@ -63,8 +63,8 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
                     aria-describedby="pf-modal-part-3"
                     aria-labelledby="pf-modal-part-2"
                     aria-modal="true"
-                    class="pf-c-modal-box pf-m-sm"
-                    data-ouia-component-id="OUIA-Generated-Modal-small-2"
+                    class="pf-c-modal-box"
+                    data-ouia-component-id="OUIA-Generated-Modal-default-2"
                     data-ouia-component-type="PF4/ModalContent"
                     data-ouia-safe="true"
                     id="pf-modal-part-1"
@@ -170,11 +170,11 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
             isOpen={true}
             labelId="pf-modal-part-2"
             onClose={[Function]}
-            ouiaId="OUIA-Generated-Modal-small-2"
+            ouiaId="OUIA-Generated-Modal-default-2"
             ouiaSafe={true}
             showClose={true}
             title="Delete app02?"
-            variant="small"
+            variant="default"
           >
             <Backdrop>
               <div
@@ -198,20 +198,20 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
                       aria-label=""
                       aria-labelledby="pf-modal-part-2"
                       className=""
-                      data-ouia-component-id="OUIA-Generated-Modal-small-2"
+                      data-ouia-component-id="OUIA-Generated-Modal-default-2"
                       data-ouia-component-type="PF4/ModalContent"
                       data-ouia-safe={true}
                       id="pf-modal-part-1"
                       style={Object {}}
-                      variant="small"
+                      variant="default"
                     >
                       <div
                         aria-describedby="pf-modal-part-3"
                         aria-label={null}
                         aria-labelledby="pf-modal-part-2"
                         aria-modal="true"
-                        className="pf-c-modal-box pf-m-sm"
-                        data-ouia-component-id="OUIA-Generated-Modal-small-2"
+                        className="pf-c-modal-box"
+                        data-ouia-component-id="OUIA-Generated-Modal-default-2"
                         data-ouia-component-type="PF4/ModalContent"
                         data-ouia-safe={true}
                         id="pf-modal-part-1"

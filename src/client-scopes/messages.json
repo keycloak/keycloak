@@ -30,6 +30,9 @@
     "mappingDeletedError": "Could not delete mapping: '{{error}}'",
     "displayOnConsentScreen": "Display on consent screen",
     "consentScreenText": "Consent screen text",
-    "guiOrder": "Display Order"
+    "guiOrder": "Display Order",
+    "chooseAMapperType": "Choose a mapper type",
+    "predefinedMappingDescription": "Choose one of the predefined mappings from this table",
+    "mappingTable": "Table with predefined mapping"
   }
 }
