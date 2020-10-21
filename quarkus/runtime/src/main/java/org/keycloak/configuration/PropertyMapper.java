@@ -60,6 +60,10 @@ public class PropertyMapper {
         return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, null, transformer, null, true, description, false));
     }
 
+    static PropertyMapper createBuildTimeProperty(String fromProperty, String toProperty, String description) {
+        return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, null, null, null, true, description, false));
+    }
+
     static Map<String, PropertyMapper> MAPPERS = new HashMap<>();
 
     static PropertyMapper IDENTITY = new PropertyMapper(null, null, null, null, null) {
