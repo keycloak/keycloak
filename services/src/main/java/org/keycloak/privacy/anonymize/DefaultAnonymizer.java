@@ -22,28 +22,29 @@ package org.keycloak.privacy.anonymize;
  * Take the first {@code prefixLength} characters of the {@code input} + '%' + last chars {@code suffixLength} of a given {@code input} string.
  * If the input string is smaller than {@code minLength} chars or {@literal null} or empty, the {@code input} is returned as is.
  * <p>
- * The anonymization could be applied if the supplied type hint resolves to a type hint of:
- * <ul>
- *     <li>userId</li>
- *     <li>ipAddress</li>
- *     <li>username</li>
- *     <li>email</li>
- *     <li>phoneNumber</li>
- *     <li>address</li>
- *     <li>default</li>
- * </ul>
- *  Note that the type hint {@code default} is used to control default handling for unknown fields.
  *
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
 public class DefaultAnonymizer implements Anonymizer {
 
+    /**
+     * Holds the min length of input to be anonymized, shorter inputs are NOT anonymized.
+     */
     private final int minLength;
 
+    /**
+     * Holds the prefix length to retain from input.
+     */
     private final int prefixLength;
 
+    /**
+     * Holds the suffix length to retain from input.
+     */
     private final int suffixLength;
 
+    /**
+     * Holds the placeholder to use between prefix and suffix.
+     */
     private final String placeHolder;
 
     /**

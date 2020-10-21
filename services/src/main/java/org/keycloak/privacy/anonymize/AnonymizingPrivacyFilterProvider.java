@@ -23,6 +23,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * A {@link PrivacyFilterProvider} that uses a configured {@link Anonymizer} to obfuscate given input strings.
+ * Type-hints can be used to adjust the anonymization process.
+ * <p>
+ *
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
 public class AnonymizingPrivacyFilterProvider implements PrivacyFilterProvider {
