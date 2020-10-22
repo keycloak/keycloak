@@ -56,22 +56,22 @@ if declare -f "should-tests-run-$1" > /dev/null && ! eval "should-tests-run-$1";
     exit 0
 fi
 
-travis_fold start compile_keycloak
-echo Compiling Keycloak
-( while : ; do echo "Compiling, please wait..." ; sleep 50 ; done ) &
-COMPILING_PID=$!
-TMPFILE=`mktemp`
-if ! mvn -s $TRAVIS_BUILD_DIR/maven-settings.xml install -B -nsu -Pdistribution -DskipTests -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn &> "$TMPFILE"; then
-    cat "$TMPFILE"
-    exit 1
-fi
-kill $COMPILING_PID
-travis_fold end compile_keycloak
-
 if [ $1 == "unit" ]; then
-    mvn -s $TRAVIS_BUILD_DIR/maven-settings.xml test -B -DskipTestsuite
+    mvn -s $TRAVIS_BUILD_DIR/maven-settings.xml install -B -DskipTestsuite
     # Generate documentation to catch potential issues earlier than during the release
-    mvn -s $TRAVIS_BUILD_DIR/maven-settings.xml test -B -nsu -f services -Pjboss-release
+    mvn -s $TRAVIS_BUILD_DIR/maven-settings.xml install -B -nsu -f services -Pjboss-release
+else
+  travis_fold start compile_keycloak
+  echo Compiling Keycloak
+  ( while : ; do echo "Compiling, please wait..." ; sleep 50 ; done ) &
+  COMPILING_PID=$!
+  TMPFILE=`mktemp`
+  if ! mvn -s $TRAVIS_BUILD_DIR/maven-settings.xml install -B -nsu -Pdistribution -DskipTests -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn &> "$TMPFILE"; then
+      cat "$TMPFILE"
+      exit 1
+  fi
+  kill $COMPILING_PID
+  travis_fold end compile_keycloak
 fi
 
 if [ $1 == "server-group1" ]; then
