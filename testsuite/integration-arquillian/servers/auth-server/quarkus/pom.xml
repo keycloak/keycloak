@@ -24,7 +24,7 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-x</artifactId>
+            <artifactId>keycloak-server-x-dist</artifactId>
             <type>zip</type>
         </dependency>
     </dependencies>
@@ -125,7 +125,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-server-x</artifactId>
+                                    <artifactId>keycloak-server-x-dist</artifactId>
                                     <version>${project.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}/unpacked</outputDirectory>

@@ -24,7 +24,7 @@
         <version>12.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>keycloak-server-x</artifactId>
+    <artifactId>keycloak-server-x-dist</artifactId>
     <packaging>pom</packaging>
     <name>Keycloak.X Server Distribution</name>
     <description/>

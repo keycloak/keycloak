@@ -1313,7 +1313,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-server-x</artifactId>
+                <artifactId>keycloak-server-x-dist</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
             </dependency>
@@ -1696,6 +1696,9 @@
                 <apache.httpcomponents.fuse.version>4.5.2</apache.httpcomponents.fuse.version>
                 <apache.httpcomponents.httpcore.fuse.version>4.4.4</apache.httpcomponents.httpcore.fuse.version>
             </properties>
+            <modules>
+                <module>quarkus</module>
+            </modules>
         </profile>
 
         <profile>
@@ -1812,13 +1815,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-
-        <profile>
-            <id>quarkus</id>
-            <modules>
-                <module>quarkus</module>
-            </modules>
         </profile>
 
     </profiles>
