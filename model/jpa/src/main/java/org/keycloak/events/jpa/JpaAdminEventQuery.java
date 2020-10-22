@@ -160,7 +160,7 @@ public class JpaAdminEventQuery implements AdminEventQuery {
             query.setMaxResults(maxResults);
         }
 
-        return closing(query.getResultStream().map(JpaEventStoreProvider::convertAdminEvent));
+        return closing(query.getResultList().stream().map(JpaEventStoreProvider::convertAdminEvent));
     }
     
 }

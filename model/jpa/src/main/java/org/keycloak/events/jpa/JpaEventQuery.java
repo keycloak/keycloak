@@ -134,7 +134,7 @@ public class JpaEventQuery implements EventQuery {
         }
 
 
-        return closing(query.getResultStream().map(JpaEventStoreProvider::convertEvent));
+        return closing(query.getResultList().stream().map(JpaEventStoreProvider::convertEvent));
     }
 
 }
