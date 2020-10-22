@@ -25,7 +25,9 @@ import org.keycloak.models.KeycloakSession;
  */
 public class DefaultEmptyPrivacyFilterProviderFactory implements PrivacyFilterProviderFactory {
 
-    public static final DefaultEmptyPrivacyFilterProvider INSTANCE = new DefaultEmptyPrivacyFilterProvider();
+    public static final String ID = "default";
+
+    public static final PrivacyFilterProvider INSTANCE = new DefaultEmptyPrivacyFilterProvider();
 
     @Override
     public PrivacyFilterProvider create(KeycloakSession session) {
@@ -34,6 +36,6 @@ public class DefaultEmptyPrivacyFilterProviderFactory implements PrivacyFilterPr
 
     @Override
     public String getId() {
-        return "default";
+        return ID;
     }
 }
