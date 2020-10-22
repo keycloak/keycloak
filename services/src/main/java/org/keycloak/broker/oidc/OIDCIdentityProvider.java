@@ -329,14 +329,26 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
                 // reconstruct the original code verifier that was used to generate the code challenge.
                 String stateParam = httpRequest.getUri().getQueryParameters().getFirst(OAuth2Constants.STATE);
-                // TODO handle state param missing
+                if (stateParam == null) {
+                    logger.warn("Cannot lookup PKCE code_verifier: state param is missing.");
+                    return simpleHttp;
+                }
 
                 IdentityBrokerState idpBrokerState = IdentityBrokerState.encoded(stateParam);
                 ClientModel client = realm.getClientByClientId(idpBrokerState.getClientId());
                 AuthenticationSessionModel authSession = ClientSessionCode.getClientSession(idpBrokerState.getEncoded(), idpBrokerState.getTabId(), session, realm, client, event, AuthenticationSessionModel.class);
-                // TODO handle authSession missing
+                if (authSession == null) {
+                    logger.warnf("Cannot lookup PKCE code_verifier: authSession not found. state=%s", stateParam);
+                    return simpleHttp;
+                }
 
-                simpleHttp.param(OAuth2Constants.CODE_VERIFIER, authSession.getClientNote(BROKER_CODE_CHALLENGE_PARAM));
+                String brokerCodeChallenge = authSession.getClientNote(BROKER_CODE_CHALLENGE_PARAM);
+                if (brokerCodeChallenge == null) {
+                    logger.warnf("Cannot lookup PKCE code_verifier: brokerCodeChallenge not found. state=%s", stateParam);
+                    return simpleHttp;
+                }
+
+                simpleHttp.param(OAuth2Constants.CODE_VERIFIER, brokerCodeChallenge);
                 simpleHttp.param(OAuth2Constants.CODE_CHALLENGE_METHOD, getConfig().getPkceMethod());
             }
 
