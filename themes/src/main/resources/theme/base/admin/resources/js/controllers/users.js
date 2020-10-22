@@ -1158,6 +1158,7 @@ module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, user, U
         }, function (failed) {
             Notifications.error(failed);
         });
+        return promiseGetCompleteUserGroupMembership.promise;
     };
 
     var refreshUserGroupMembership = function (search) {
@@ -1190,30 +1191,33 @@ module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, user, U
         }, function() {
             promiseGetUserGroupMembership.reject($translate.instant('user.groups.fetch.error', {params: queryParams}));
         });
+
+        var promiseMembershipCount = $q.defer();
+
         promiseGetUserGroupMembership.promise.then(function(groups) {
             $scope.groupMemberships = groups;
+            UserGroupMembershipCount.query(countParams, function(entry) {
+                promiseMembershipCount.resolve(entry);
+            }, function() {
+                promiseMembershipCount.reject($translate.instant('user.groups.fetch.error', {params: countParams}));
+            });
+            promiseMembershipCount.promise.then(function(membershipEntry) {
+                if(angular.isDefined(membershipEntry.count) && membershipEntry.count > $scope.pageSize) {
+                    $scope.numberOfMembershipPages = Math.ceil(membershipEntry.count/$scope.pageSize);
+                } else {
+                    $scope.numberOfMembershipPages = 1;
+                }
+                if (parseInt($scope.currentMembershipPage, 10) > $scope.numberOfMembershipPages) {
+                    $scope.currentMembershipPage = $scope.numberOfMembershipPages;
+                }
+            }, function (failed) {
+                Notifications.error(failed);
+            });
         }, function (failed) {
             Notifications.error(failed);
         });
 
-        var promiseMembershipCount = $q.defer();
-        UserGroupMembershipCount.query(countParams, function(entry) {
-            promiseMembershipCount.resolve(entry);
-        }, function() {
-            promiseMembershipCount.reject($translate.instant('user.groups.fetch.error', {params: countParams}));
-        });
-        promiseMembershipCount.promise.then(function(membershipEntry) {
-            if(angular.isDefined(membershipEntry.count) && membershipEntry.count > $scope.pageSize) {
-                $scope.numberOfMembershipPages = Math.ceil(membershipEntry.count/$scope.pageSize);
-            } else {
-                $scope.numberOfMembershipPages = 1;
-            }
-            if (parseInt($scope.currentMembershipPage, 10) > $scope.numberOfMembershipPages) {
-                $scope.currentMembershipPage = $scope.numberOfMembershipPages;
-            }
-        }, function (failed) {
-            Notifications.error(failed);
-        });
+        return promiseMembershipCount.promise;
     };
 
     var refreshAvailableGroups = function (search) {
@@ -1242,28 +1246,29 @@ module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, user, U
             promiseGetGroups.reject($translate.instant('user.groups.fetch.error', {params: queryParams}));
         });
 
+        var promiseCount = $q.defer();
+
         promiseGetGroups.promise.then(function(groups) {
             $scope.groupList = ComponentUtils.sortGroups('name', groups);
+            GroupsCount.query(countParams, function(entry) {
+                promiseCount.resolve(entry);
+            }, function() {
+                promiseCount.reject($translate.instant('user.groups.fetch.error', {params: countParams}));
+            });
+            promiseCount.promise.then(function(entry) {
+                if(angular.isDefined(entry.count) && entry.count > $scope.pageSize) {
+                    $scope.numberOfPages = Math.ceil(entry.count/$scope.pageSize);
+                } else {
+                    $scope.numberOfPages = 1;
+                }
+            }, function (failed) {
+                Notifications.error(failed);
+            });
         }, function (failed) {
             Notifications.error(failed);
         });
 
-        var promiseCount = $q.defer();
-        GroupsCount.query(countParams, function(entry) {
-            promiseCount.resolve(entry);
-        }, function() {
-            promiseCount.reject($translate.instant('user.groups.fetch.error', {params: countParams}));
-        });
-        promiseCount.promise.then(function(entry) {
-            if(angular.isDefined(entry.count) && entry.count > $scope.pageSize) {
-                $scope.numberOfPages = Math.ceil(entry.count/$scope.pageSize);
-            } else {
-                $scope.numberOfPages = 1;
-            }
-        }, function (failed) {
-            Notifications.error(failed);
-        });
-        return promiseGetGroups.promise;
+        return promiseCount.promise;
     };
 
     $scope.clearSearchMembership = function() {
@@ -1283,9 +1288,10 @@ module.controller('UserGroupMembershipCtrl', function($scope, $q, realm, user, U
         }
     };
 
-    refreshAvailableGroups();
-    refreshUserGroupMembership();
-    refreshCompleteUserGroupMembership();
+    refreshUserGroupMembership().then(function() {
+        refreshAvailableGroups();
+        refreshCompleteUserGroupMembership();
+    });
 
     $scope.$watch('currentPage', function(newValue, oldValue) {
         if(parseInt(newValue, 10) !== parseInt(oldValue, 10)) {
