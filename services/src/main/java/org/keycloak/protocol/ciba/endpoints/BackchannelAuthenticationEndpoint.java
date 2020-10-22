@@ -1,36 +1,19 @@
 package org.keycloak.protocol.ciba.endpoints;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import javax.ws.rs.POST;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.models.CIBAPolicy;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ciba.CIBAConstants;
 import org.keycloak.protocol.ciba.CIBAErrorCodes;
 import org.keycloak.protocol.ciba.decoupledauthn.DecoupledAuthenticationProvider;
-import org.keycloak.protocol.ciba.decoupledauthn.DelegateDecoupledAuthenticationProviderFactory;
 import org.keycloak.protocol.ciba.endpoints.request.BackchannelAuthenticationRequest;
 import org.keycloak.protocol.ciba.resolvers.CIBALoginUserResolver;
 import org.keycloak.protocol.ciba.utils.CIBAAuthReqId;
@@ -39,10 +22,16 @@ import org.keycloak.protocol.ciba.utils.EarlyAccessBlocker;
 import org.keycloak.protocol.ciba.utils.EarlyAccessBlockerParser;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.util.JsonSerialization;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import javax.ws.rs.POST;
+import javax.ws.rs.core.*;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 public class BackchannelAuthenticationEndpoint {
 
@@ -89,7 +78,7 @@ public class BackchannelAuthenticationEndpoint {
         checkSsl();
         checkRealm();
         checkClient();
-        checkUser(request.getLoginHint());
+        checkUser(request);
         logger.info(" client_id = " + client.getClientId());
         logger.info(" consent required = " + client.isConsentRequired());
 
@@ -122,7 +111,7 @@ public class BackchannelAuthenticationEndpoint {
         if (throttlingId != null) {
             logger.info("  Access throttling : next token request must be after " + interval + " sec.");
             EarlyAccessBlocker earlyAccessBlockerData = new EarlyAccessBlocker(Time.currentTime() + interval, interval);
-            EarlyAccessBlockerParser.persistEarlyAccessBlocker(session, throttlingId.toString(), earlyAccessBlockerData, interval);
+            EarlyAccessBlockerParser.persistEarlyAccessBlocker(session, throttlingId, earlyAccessBlockerData, interval);
         }
 
         DecoupledAuthenticationProvider provider = session.getProvider(DecoupledAuthenticationProvider.class);
@@ -140,14 +129,14 @@ public class BackchannelAuthenticationEndpoint {
         } catch (IOException e) {
             throw new RuntimeException("Error creating Backchannel Authentication response.", e);
         }
-
     }
 
     private BackchannelAuthenticationRequest parseRequest(MultivaluedMap<String, String> params) {
         BackchannelAuthenticationRequest request = new BackchannelAuthenticationRequest();
 
         String scope = params.getFirst(CIBAConstants.SCOPE);
-        if (scope == null) throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "missing parameter : scope", Response.Status.BAD_REQUEST);
+        if (scope == null)
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "missing parameter : scope", Response.Status.BAD_REQUEST);
         request.setScope(scope);
 
         logger.info("  scope = " + request.getScope());
@@ -157,19 +146,23 @@ public class BackchannelAuthenticationEndpoint {
         String userHint = null;
         if (authRequestedUserHint.equals(CIBAConstants.LOGIN_HINT)) {
             userHint = params.getFirst(CIBAConstants.LOGIN_HINT);
-            if (userHint == null) throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "missing parameter : login_hint", Response.Status.BAD_REQUEST);
+            if (userHint == null)
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "missing parameter : login_hint", Response.Status.BAD_REQUEST);
             request.setLoginHint(userHint);
             logger.info("  login_hint = " + request.getLoginHint());
         } else if (authRequestedUserHint.equals(CIBAConstants.ID_TOKEN_HINT)) {
             userHint = params.getFirst(CIBAConstants.ID_TOKEN_HINT);
-            if (userHint == null) throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "missing parameter : id_token_hint", Response.Status.BAD_REQUEST);
+            if (userHint == null)
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "missing parameter : id_token_hint", Response.Status.BAD_REQUEST);
             request.setIdTokenHint(userHint);
         } else if (authRequestedUserHint.equals(CIBAConstants.LOGIN_HINT_TOKEN)) {
             userHint = params.getFirst(CIBAConstants.LOGIN_HINT_TOKEN);
-            if (userHint == null) throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "missing parameter : login_hint_token", Response.Status.BAD_REQUEST);
-            request.setIdTokenHint(userHint);
+            if (userHint == null)
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "missing parameter : login_hint_token", Response.Status.BAD_REQUEST);
+            request.setLoginHintToken(userHint);
         } else {
-            throw new RuntimeException("CIBA invalid Authentication Requested User Hint.");
+            logger.error("CIBA invalid Authentication Requested User Hint.");
+            throw new ErrorResponseException(CIBAErrorCodes.UNKNOWN_USER_ID, "no user identifier in request", Response.Status.BAD_REQUEST);
         }
 
         String bindingMessage = params.getFirst(CIBAConstants.BINDING_MESSAGE);
@@ -215,7 +208,7 @@ public class BackchannelAuthenticationEndpoint {
         }
     }
 
-    private void checkUser(String loginHint) {
+    private void checkUser(BackchannelAuthenticationRequest request) {
         CIBALoginUserResolver resolver = session.getProvider(CIBALoginUserResolver.class);
         if (resolver == null) {
             throw new RuntimeException("CIBA Login User Resolver not setup properly.");
@@ -223,16 +216,18 @@ public class BackchannelAuthenticationEndpoint {
         String authRequestedUserHint = realm.getCIBAPolicy().getAuthRequestedUserHint();
         UserModel user = null;
         if (authRequestedUserHint.equals(CIBAConstants.LOGIN_HINT)) {
-            user = resolver.getUserFromLoginHint(loginHint);
+            user = resolver.getUserFromLoginHint(request.getLoginHint());
         } else if (authRequestedUserHint.equals(CIBAConstants.ID_TOKEN_HINT)) {
-            user = resolver.getUserFromLoginHint(loginHint);
+            user = resolver.getUserFromIdTokenHint(request.getIdTokenHint());
         } else if (authRequestedUserHint.equals(CIBAConstants.LOGIN_HINT_TOKEN)) {
-            user = resolver.getUserFromLoginHint(loginHint);
+            user = resolver.getUserFromLoginHintToken(request.getLoginHintToken());
         } else {
             throw new RuntimeException("CIBA invalid Authentication Requested User Hint.");
         }
-        if (user == null) throw new CorsErrorResponseException(cors, CIBAErrorCodes.UNKNOWN_USER_ID, "no user found", Response.Status.BAD_REQUEST);
-        if (!user.isEnabled()) throw new CorsErrorResponseException(cors, CIBAErrorCodes.UNKNOWN_USER_ID, "user deactivated", Response.Status.BAD_REQUEST);
+        if (user == null)
+            throw new CorsErrorResponseException(cors, CIBAErrorCodes.UNKNOWN_USER_ID, "no user found", Response.Status.BAD_REQUEST);
+        if (!user.isEnabled())
+            throw new CorsErrorResponseException(cors, CIBAErrorCodes.UNKNOWN_USER_ID, "user deactivated", Response.Status.BAD_REQUEST);
     }
 
     private void dumpMultivaluedMap(MultivaluedMap<String, String> params) {

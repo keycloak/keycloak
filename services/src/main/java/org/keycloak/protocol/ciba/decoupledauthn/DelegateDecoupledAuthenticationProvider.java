@@ -87,7 +87,7 @@ public class DelegateDecoupledAuthenticationProvider extends DecoupledAuthentica
         }
 
         DecoupledAuthId decoupledAuthIdData = parseResult.decoupledAuthIdData();
-        authResultId = decoupledAuthIdData.getAuthResultId().toString();
+        authResultId = decoupledAuthIdData.getAuthResultId();
         scope = decoupledAuthIdData.getScope();
         expiration = decoupledAuthIdData.getExpiration();
         userSessionIdWillBeCreated = decoupledAuthIdData.getUserSessionIdWillBeCreated();
@@ -151,9 +151,9 @@ public class DelegateDecoupledAuthenticationProvider extends DecoupledAuthentica
         if (authRequestedUserHint.equals(CIBAConstants.LOGIN_HINT)) {
             user = resolver.getUserFromLoginHint(request.getLoginHint());
         } else if (authRequestedUserHint.equals(CIBAConstants.ID_TOKEN_HINT)) {
-            user = resolver.getUserFromLoginHint(request.getIdTokenHint());
+            user = resolver.getUserFromIdTokenHint(request.getIdTokenHint());
         } else if (authRequestedUserHint.equals(CIBAConstants.LOGIN_HINT_TOKEN)) {
-            user = resolver.getUserFromLoginHint(request.getLoginHintToken());
+            user = resolver.getUserFromLoginHintToken(request.getLoginHintToken());
         } else {
             throw new RuntimeException("CIBA invalid Authentication Requested User Hint.");
         }
@@ -164,10 +164,8 @@ public class DelegateDecoupledAuthenticationProvider extends DecoupledAuthentica
         defaultScopesMap.forEach((key, value)->{if (value.isDisplayOnConsentScreen()) scopeBuilder.append(value.getName()).append(" ");});
         String defaultClientScope = scopeBuilder.toString();
 
-        String userIdToBeAuthenticated = session.users().getUserByUsername(request.getLoginHint(), realm).getId();
-
         DecoupledAuthId decoupledAuthIdData = new DecoupledAuthId(Time.currentTime() + expiresIn, request.getScope(),
-                userSessionIdWillBeCreated, userIdToBeAuthenticated, client.getClientId(), authResultId);
+                userSessionIdWillBeCreated, user.getId(), client.getClientId(), authResultId);
         String decoupledAuthId = persistDecoupledAuthId(session, decoupledAuthIdData, expiresIn);
 
         OIDCAdvancedConfigWrapper configWrapper = OIDCAdvancedConfigWrapper.fromClientModel(client);
@@ -190,7 +188,7 @@ public class DelegateDecoupledAuthenticationProvider extends DecoupledAuthentica
             if (status != 200) {
                 // To terminate CIBA flow, set Auth Result as unknown
                 DecoupledAuthnResult decoupledAuthnResult = new DecoupledAuthnResult(Time.currentTime() + expiresIn, DecoupledAuthStatus.UNKNOWN);
-                DecoupledAuthnResultParser.persistDecoupledAuthnResult(session, authResultId.toString(), decoupledAuthnResult, Time.currentTime() + expiresIn);
+                DecoupledAuthnResultParser.persistDecoupledAuthnResult(session, authResultId, decoupledAuthnResult, Time.currentTime() + expiresIn);
             }
         } catch (IOException ioe) {
             throw new RuntimeException("Decoupled Authn Request URI Access failed.", ioe);

@@ -1,18 +1,36 @@
 package org.keycloak.protocol.ciba.endpoints.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class BackchannelAuthenticationRequest {
 
     String invalidRequestMessage;
 
     String scope;
-    String client_notification_token;
-    String acr_values;
-    String login_hint_token;
-    String id_token_hint;
-    String login_hint;
-    String binding_message;
-    String user_code;
-    String requested_expiry;
+
+    @JsonProperty("client_notification_token")
+    String clientNotificationToken;
+
+    @JsonProperty("acr_values")
+    String acrValues;
+
+    @JsonProperty("login_hint_token")
+    String loginHintToken;
+
+    @JsonProperty("id_token_hint")
+    String idTokenHint;
+
+    @JsonProperty("login_hint")
+    String loginHint;
+
+    @JsonProperty("binding_message")
+    String bindingMessage;
+
+    @JsonProperty("user_code")
+    String userCode;
+
+    @JsonProperty("requested_expiry")
+    String requestedExpiry;
 
     public String getInvalidRequestMessage() {
         return invalidRequestMessage;
@@ -31,67 +49,67 @@ public class BackchannelAuthenticationRequest {
     }
 
     public String getClientNotificationToken() {
-        return client_notification_token;
+        return clientNotificationToken;
     }
 
-    public void setClientNotificationToken(String client_notification_token) {
-        this.client_notification_token = client_notification_token;
+    public void setClientNotificationToken(String clientNotificationToken) {
+        this.clientNotificationToken = clientNotificationToken;
     }
 
     public String getAcrValues() {
-        return acr_values;
+        return acrValues;
     }
 
-    public void setAcrValues(String acr_values) {
-        this.acr_values = acr_values;
+    public void setAcrValues(String acrValues) {
+        this.acrValues = acrValues;
     }
 
     public String getLoginHintToken() {
-        return login_hint_token;
+        return loginHintToken;
     }
 
-    public void setLoginHintToken(String login_hint_token) {
-        this.login_hint_token = login_hint_token;
+    public void setLoginHintToken(String loginHintToken) {
+        this.loginHintToken = loginHintToken;
     }
 
     public String getIdTokenHint() {
-        return id_token_hint;
+        return idTokenHint;
     }
 
-    public void setIdTokenHint(String id_token_hint) {
-        this.id_token_hint = id_token_hint;
+    public void setIdTokenHint(String idTokenHint) {
+        this.idTokenHint = idTokenHint;
     }
 
     public String getLoginHint() {
-        return login_hint;
+        return loginHint;
     }
 
-    public void setLoginHint(String login_hint) {
-        this.login_hint = login_hint;
+    public void setLoginHint(String loginHint) {
+        this.loginHint = loginHint;
     }
 
     public String getBindingMessage() {
-        return binding_message;
+        return bindingMessage;
     }
 
-    public void setBindingMessage(String binding_message) {
-        this.binding_message = binding_message;
+    public void setBindingMessage(String bindingMessage) {
+        this.bindingMessage = bindingMessage;
     }
 
     public String getUserCode() {
-        return user_code;
+        return userCode;
     }
 
-    public void setUserCode(String user_code) {
-        this.user_code = user_code;
+    public void setUserCode(String userCode) {
+        this.userCode = userCode;
     }
 
     public String getRequestedExpiry() {
-        return requested_expiry;
+        return requestedExpiry;
     }
 
-    public void setRequestedExpiry(String requested_expiry) {
-        this.requested_expiry = requested_expiry;
+    public void setRequestedExpiry(String requestedExpiry) {
+        this.requestedExpiry = requestedExpiry;
     }
 
 }

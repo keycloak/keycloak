@@ -17,12 +17,7 @@
 
 package org.keycloak.testsuite.util;
 
-import static org.keycloak.testsuite.admin.Users.getPasswordOf;
-import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
-import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
-import static org.keycloak.testsuite.util.UIUtils.clickLink;
-import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
-
+import com.google.common.base.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.http.Header;
@@ -79,8 +74,9 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
-import com.google.common.base.Charsets;
-
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -96,9 +92,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.UriBuilder;
+import static org.keycloak.testsuite.admin.Users.getPasswordOf;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
+import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.WaitUtils.log;
+import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -693,19 +692,34 @@ public class OAuthClient {
     }
 
     public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientSecret, String userid, String bindingMessage) throws Exception {
-        return doBackchannelAuthenticationRequest(this.clientId, clientSecret, userid, bindingMessage, null);
+        return doBackchannelAuthenticationRequest(this.clientId, clientSecret, userid, CIBAConstants.LOGIN_HINT, bindingMessage, null);
     }
 
     public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String userid, String bindingMessage, String userCode) throws Exception {
+        return doBackchannelAuthenticationRequest(clientId, clientSecret, userid, CIBAConstants.LOGIN_HINT, bindingMessage, userCode);
+    }
+
+    public AuthenticationRequestAcknowledgement doBackchannelAuthenticationRequest(String clientId, String clientSecret, String userid, String authRequestedUserHint, String bindingMessage, String userCode) throws Exception {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             System.out.println("--- Backchannel Authentication Endpoint = " + getBackchannelAuthenticationUrl());
+            System.out.println("--- Backchannel authRequestedUserHint = " + authRequestedUserHint);
             HttpPost post = new HttpPost(getBackchannelAuthenticationUrl());
 
             String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
             post.setHeader("Authorization", authorization);
 
             List<NameValuePair> parameters = new LinkedList<>();
-            if (userid != null) parameters.add(new BasicNameValuePair(CIBAConstants.LOGIN_HINT, userid));
+            if (userid != null) {
+                if (CIBAConstants.LOGIN_HINT.equals(authRequestedUserHint)) {
+                    parameters.add(new BasicNameValuePair(CIBAConstants.LOGIN_HINT, userid));
+                } else if (CIBAConstants.ID_TOKEN_HINT.equals(authRequestedUserHint)) {
+                    parameters.add(new BasicNameValuePair(CIBAConstants.ID_TOKEN_HINT, userid));
+                } else if (CIBAConstants.LOGIN_HINT_TOKEN.equals(authRequestedUserHint)) {
+                    parameters.add(new BasicNameValuePair(CIBAConstants.LOGIN_HINT_TOKEN, userid));
+                } else {
+                    parameters.add(new BasicNameValuePair(CIBAConstants.LOGIN_HINT, userid));
+                }
+            }
             parameters.add(new BasicNameValuePair(CIBAConstants.BINDING_MESSAGE, bindingMessage));
 
             if (userCode != null) {

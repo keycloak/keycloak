@@ -9,7 +9,7 @@ public interface CIBALoginUserResolver extends Provider {
 
     UserModel getUserFromLoginHintToken(String loginHintToken);
 
-    UserModel getUserFromIdTokenHint(String idToken);
+    UserModel getUserFromIdTokenHint(String idTokenHint);
 
     String getInfoUsedByAuthentication(UserModel user);
 
