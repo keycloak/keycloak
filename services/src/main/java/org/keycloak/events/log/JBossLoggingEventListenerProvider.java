@@ -53,7 +53,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
      * @param logger
      * @param successLevel
      * @param errorLevel
-     * @deprecated use {@link JBossLoggingEventListenerProvider#JBossLoggingEventListenerProvider(KeycloakSession, Logger, Logger.Level, Logger.Level, PrivacyFilterProvider)}
+     * @deprecated use {@link JBossLoggingEventListenerProvider#JBossLoggingEventListenerProvider(KeycloakSession, Logger, Logger.Level, Logger.Level, PrivacyFilterProvider)} instead
      */
     @Deprecated // constructor for backwards compatibility
     public JBossLoggingEventListenerProvider(KeycloakSession session, Logger logger, Logger.Level successLevel, Logger.Level errorLevel) {
@@ -67,7 +67,6 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
      * @param successLevel
      * @param errorLevel
      * @param privacyFilter
-     * @since 11.0
      */
     public JBossLoggingEventListenerProvider(KeycloakSession session, Logger logger, Logger.Level successLevel, Logger.Level errorLevel, PrivacyFilterProvider privacyFilter) {
         this.session = session;
