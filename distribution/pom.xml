@@ -68,9 +68,14 @@
             </modules>
         </profile>
         <profile>
-            <id>quarkus</id>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
             <modules>
-                <module>server-x</module>
+                <module>server-x-dist</module>
             </modules>
         </profile>
     </profiles>
