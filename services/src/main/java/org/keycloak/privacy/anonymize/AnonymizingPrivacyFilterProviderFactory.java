@@ -50,16 +50,16 @@ public class AnonymizingPrivacyFilterProviderFactory implements PrivacyFilterPro
 
     public static final String ID = "anonymize";
 
-    public static final List<String> DEFAULT_FILTERED_TYPES;
+    public static final List<String> DEFAULT_FILTERED_TYPE_HINTS;
 
-    public static final Map<String, String> DEFAULT_TYPE_ALIAS_MAPPING;
+    public static final Map<String, String> DEFAULT_TYPE_HINT_ALIAS_MAPPING;
 
     private static final Logger LOGGER = Logger.getLogger(AnonymizingPrivacyFilterProviderFactory.class);
 
-    private static final String DELIMITER = ";";
+    private static final String DELIMITER = ",";
 
     static {
-        List<String> filteredTypes = Arrays.asList(
+        List<String> filteredTypesHints = Arrays.asList(
                 PrivacyFilterProvider.USER_ID,
                 PrivacyFilterProvider.IP_ADDRESS,
                 PrivacyFilterProvider.USERNAME,
@@ -70,7 +70,7 @@ public class AnonymizingPrivacyFilterProviderFactory implements PrivacyFilterPro
                 PrivacyFilterProvider.PII,
                 PrivacyFilterProvider.DEFAULT);
 
-        DEFAULT_FILTERED_TYPES = Collections.unmodifiableList(filteredTypes);
+        DEFAULT_FILTERED_TYPE_HINTS = Collections.unmodifiableList(filteredTypesHints);
 
         Map<String, String> aliasMapping = new HashMap<>();
         aliasMapping.put("mobile", PrivacyFilterProvider.PHONE_NUMBER);
@@ -79,7 +79,7 @@ public class AnonymizingPrivacyFilterProviderFactory implements PrivacyFilterPro
         aliasMapping.put("firstName", PrivacyFilterProvider.NAME);
         aliasMapping.put("lastName", PrivacyFilterProvider.NAME);
 
-        DEFAULT_TYPE_ALIAS_MAPPING = Collections.unmodifiableMap(aliasMapping);
+        DEFAULT_TYPE_HINT_ALIAS_MAPPING = Collections.unmodifiableMap(aliasMapping);
     }
 
     protected volatile PrivacyFilterProvider provider;
@@ -101,22 +101,39 @@ public class AnonymizingPrivacyFilterProviderFactory implements PrivacyFilterPro
 
     protected AnonymizingPrivacyFilterProvider createProvider(Config.Scope config) {
 
-        // a list of supported type-hints
-        Set<String> filteredTypes = new HashSet<>(DEFAULT_FILTERED_TYPES);
-        filteredTypes.addAll(parseTypeHints(config.get("filteredTypes")));
+        // The list of supported type-hints that should be filtered
+        Set<String> filteredTypeHints = new HashSet<>();
+        // useDefaultFilteredTypeHints controls whether the default filtered type-hints should be used, defaults to true.
+        // if set to false, then only explicitly provided type-hints (e.g. via filteredTypes) are considered for filtering.
+        if (config.getBoolean("useDefaultFilteredTypeHints", true)) {
+            filteredTypeHints.addAll(DEFAULT_FILTERED_TYPE_HINTS);
+        }
+        // filteredTypeHints denotes a string of $DELIMITER separated type alias that should be filtered, e.g.:
+        // "pii,confidential"
+        Set<String> customFilteredTypeHints = parseTypeHints(config.get("filteredTypeHints"));
+        filteredTypeHints.addAll(customFilteredTypeHints);
 
-        //  can be used to map new type-hints to existing ones to reuse anonymization rules bound to a type-hint
-        Map<String, String> typeAliases = new HashMap<>(DEFAULT_TYPE_ALIAS_MAPPING);
-        typeAliases.putAll(parseTypeAliasMapping(config.get("typeAliasesMapping")));
+        // can be used to map new type-hints to existing ones to reuse anonymization rules bound to a type-hint
+        // typeHintAliasMapping denotes a string of alias:type-hint pairs separated by $DELIMITER, e.g.:
+        // "birthdate:pii,memberId:pii"
+        Map<String, String> typeHintAliases = new HashMap<>(DEFAULT_TYPE_HINT_ALIAS_MAPPING);
+        typeHintAliases.putAll(parseTypeHintAliasMapping(config.get("typeHintAliasMapping")));
 
-        //  type-hint that should be used if no type-hint could be resolved or no explicit type-hint is provided
-        String fallbackType = config.get("fallbackType", PrivacyFilterProvider.DEFAULT);
+        // fallbackTypeHint denotes the type-hint that should be used if no type-hint could be resolved or no explicit type-hint is provided
+        String fallbackTypeHint = config.get("fallbackTypeHint", PrivacyFilterProvider.DEFAULT);
 
-        return new AnonymizingPrivacyFilterProvider(filteredTypes, typeAliases, fallbackType, createAnonymizer(config));
+        Anonymizer anonymizer = createAnonymizer(config);
+        return createAnonymizingPrivacyFilterProvider(filteredTypeHints, typeHintAliases, fallbackTypeHint, anonymizer);
+    }
+
+    protected AnonymizingPrivacyFilterProvider createAnonymizingPrivacyFilterProvider(Set<String> filteredTypeHints, Map<String, String> typeHintAliases, String fallbackTypeHint, Anonymizer anonymizer) {
+        return new AnonymizingPrivacyFilterProvider(filteredTypeHints, typeHintAliases, fallbackTypeHint, anonymizer);
     }
 
     protected Anonymizer createAnonymizer(Config.Scope config) {
 
+        // Note: setting minLength=1, prefixLength=0, suffixLength=0 and placeHolder=%,
+        // will effectively replace the given input with '%'.
         int minLength = config.getInt("minLength", 6);
         int prefixLength = config.getInt("prefixLength", 2);
         int suffixLength = config.getInt("suffixLength", 3);
@@ -125,7 +142,7 @@ public class AnonymizingPrivacyFilterProviderFactory implements PrivacyFilterPro
         return new DefaultAnonymizer(minLength, prefixLength, suffixLength, placeHolder);
     }
 
-    protected Map<String, String> parseTypeAliasMapping(String typeAliasesMappingInput) {
+    protected Map<String, String> parseTypeHintAliasMapping(String typeAliasesMappingInput) {
 
         String typeAliasesMapping = typeAliasesMappingInput == null ? null : typeAliasesMappingInput.trim();
 

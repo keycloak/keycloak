@@ -19,6 +19,7 @@ package org.keycloak.privacy.anonymize;
 import org.keycloak.events.Event;
 import org.keycloak.privacy.PrivacyFilterProvider;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -58,8 +59,8 @@ public class AnonymizingPrivacyFilterProvider implements PrivacyFilterProvider {
      * @param anonymizer       {@link Anonymizer} to anonymize the given input
      */
     public AnonymizingPrivacyFilterProvider(Set<String> typeHints, Map<String, String> typeAliases, String fallbackTypeHint, Anonymizer anonymizer) {
-        this.typeHints = typeHints;
-        this.typeAliases = typeAliases;
+        this.typeHints = Collections.unmodifiableSet(typeHints);
+        this.typeAliases = Collections.unmodifiableMap(typeAliases);
         this.fallbackTypeHint = fallbackTypeHint;
         this.anonymizer = anonymizer;
     }
@@ -112,4 +113,19 @@ public class AnonymizingPrivacyFilterProvider implements PrivacyFilterProvider {
         return typeHint;
     }
 
+    public Set<String> getTypeHints() {
+        return typeHints;
+    }
+
+    public Map<String, String> getTypeAliases() {
+        return typeAliases;
+    }
+
+    public String getFallbackTypeHint() {
+        return fallbackTypeHint;
+    }
+
+    public Anonymizer getAnonymizer() {
+        return anonymizer;
+    }
 }

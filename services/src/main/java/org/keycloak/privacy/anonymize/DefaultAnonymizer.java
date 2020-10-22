@@ -90,4 +90,20 @@ public class DefaultAnonymizer implements Anonymizer {
         String suffix = input.substring(inputLen - suffixLength);
         return prefix + placeHolder + suffix;
     }
+
+    public int getMinLength() {
+        return minLength;
+    }
+
+    public int getPrefixLength() {
+        return prefixLength;
+    }
+
+    public int getSuffixLength() {
+        return suffixLength;
+    }
+
+    public String getPlaceHolder() {
+        return placeHolder;
+    }
 }
