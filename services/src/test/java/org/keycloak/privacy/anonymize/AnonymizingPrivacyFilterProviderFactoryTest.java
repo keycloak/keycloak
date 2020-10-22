@@ -34,9 +34,11 @@ public class AnonymizingPrivacyFilterProviderFactoryTest {
     @Test
     public void createProviderWithDefaults() {
 
-        AnonymizingPrivacyFilterProviderFactory factory = new AnonymizingPrivacyFilterProviderFactory();
         Config.SystemPropertiesScope scope = new Config.SystemPropertiesScope("");
-        PrivacyFilterProvider provider = factory.createProvider(scope);
+        AnonymizingPrivacyFilterProviderFactory factory = new AnonymizingPrivacyFilterProviderFactory();
+        factory.init(scope);
+
+        PrivacyFilterProvider provider = factory.create(null);
 
         String filtered = provider.filter("thomas.darimont@example.com", PrivacyFilterProvider.EMAIL);
 
@@ -48,8 +50,6 @@ public class AnonymizingPrivacyFilterProviderFactoryTest {
      */
     @Test
     public void createProviderWithConfig() {
-
-        AnonymizingPrivacyFilterProviderFactory factory = new AnonymizingPrivacyFilterProviderFactory();
 
         Map<String, String> config = new HashMap<>();
         config.put("minLength", "5");
@@ -69,7 +69,10 @@ public class AnonymizingPrivacyFilterProviderFactoryTest {
             }
         };
 
-        AnonymizingPrivacyFilterProvider provider = factory.createProvider(scope);
+        AnonymizingPrivacyFilterProviderFactory factory = new AnonymizingPrivacyFilterProviderFactory();
+        factory.init(scope);
+
+        AnonymizingPrivacyFilterProvider provider = (AnonymizingPrivacyFilterProvider) factory.create(null);
 
         DefaultAnonymizer anonymizer = (DefaultAnonymizer) provider.getAnonymizer();
         assertEquals(5, anonymizer.getMinLength());

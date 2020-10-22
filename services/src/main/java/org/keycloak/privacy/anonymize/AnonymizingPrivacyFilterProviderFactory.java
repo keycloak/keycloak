@@ -99,7 +99,7 @@ public class AnonymizingPrivacyFilterProviderFactory implements PrivacyFilterPro
         provider = createProvider(config);
     }
 
-    protected AnonymizingPrivacyFilterProvider createProvider(Config.Scope config) {
+    protected PrivacyFilterProvider createProvider(Config.Scope config) {
 
         // The list of supported type-hints that should be filtered
         Set<String> filteredTypeHints = new HashSet<>();
@@ -123,10 +123,7 @@ public class AnonymizingPrivacyFilterProviderFactory implements PrivacyFilterPro
         String fallbackTypeHint = config.get("fallbackTypeHint", PrivacyFilterProvider.DEFAULT);
 
         Anonymizer anonymizer = createAnonymizer(config);
-        return createAnonymizingPrivacyFilterProvider(filteredTypeHints, typeHintAliases, fallbackTypeHint, anonymizer);
-    }
 
-    protected AnonymizingPrivacyFilterProvider createAnonymizingPrivacyFilterProvider(Set<String> filteredTypeHints, Map<String, String> typeHintAliases, String fallbackTypeHint, Anonymizer anonymizer) {
         return new AnonymizingPrivacyFilterProvider(filteredTypeHints, typeHintAliases, fallbackTypeHint, anonymizer);
     }
 
