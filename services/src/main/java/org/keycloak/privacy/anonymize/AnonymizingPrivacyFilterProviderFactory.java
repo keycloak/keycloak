@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * {@link PrivacyFilterProviderFactory} for {@link AnonymizingPrivacyFilterProvider}.
@@ -150,13 +151,21 @@ public class AnonymizingPrivacyFilterProviderFactory implements PrivacyFilterPro
         Map<String, String> mapping = new HashMap<>();
         for (String entry : typeAliasesMapping.split(DELIMITER)) {
             String[] aliasToTypeHint = entry.split(":");
-            if (aliasToTypeHint.length == 2) {
-                String alias = aliasToTypeHint[0];
-                String typeHint = aliasToTypeHint[1];
-                mapping.put(alias, typeHint);
-            } else {
-                LOGGER.warnf("Skipping bad typeAliasMapping: " + entry);
+            if (aliasToTypeHint.length != 2) {
+                LOGGER.warnf("Skipping bad typeAliasMapping: wrong length. entry=%s", entry);
+                continue;
             }
+
+            String alias = aliasToTypeHint[0].trim();
+            String typeHint = aliasToTypeHint[1].trim();
+
+            if (alias.isEmpty() || typeHint.isEmpty()) {
+                // skip entry with bad formatting
+                LOGGER.warnf("Skipping bad typeAliasMapping: bad formatting. entry=%s", entry);
+                continue;
+            }
+
+            mapping.put(alias, typeHint);
         }
 
         return mapping;
@@ -169,7 +178,12 @@ public class AnonymizingPrivacyFilterProviderFactory implements PrivacyFilterPro
             return Collections.emptySet();
         }
 
-        return new HashSet<>(Arrays.asList(typeHintList.split(DELIMITER)));
+        Set<String> typeHints = Arrays.stream(typeHintList.split(DELIMITER))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
+
+        return typeHints;
     }
 
     @Override

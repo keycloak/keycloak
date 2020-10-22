@@ -58,8 +58,8 @@ public class AnonymizingPrivacyFilterProviderFactoryTest {
         config.put("placeHolder", "*");
 
         config.put("useDefaultFilteredTypeHints", "false");
-        config.put("filteredTypeHints", "confidential,birthdate,pii");
-        config.put("typeHintAliasMapping", "confidential:pii,birthdate:pii");
+        config.put("filteredTypeHints", "confidential,birthdate,pii,");
+        config.put("typeHintAliasMapping", "confidential:pii,birthdate:pii,:");
         config.put("fallbackTypeHint", PrivacyFilterProvider.PII);
 
         Config.SystemPropertiesScope scope = new Config.SystemPropertiesScope("") {
