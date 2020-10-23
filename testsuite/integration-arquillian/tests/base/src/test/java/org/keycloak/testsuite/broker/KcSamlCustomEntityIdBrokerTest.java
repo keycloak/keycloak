@@ -50,7 +50,7 @@ public final class KcSamlCustomEntityIdBrokerTest extends AbstractBrokerTest {
 
                         // Find the Issuer element
                         Element issuerElement = DocumentUtil.getDirectChildElement(document.getDocumentElement(), ASSERTION_NSURI.get(), "Issuer");
-                        Assert.assertEquals("Unexpected Issuer element value", "https://localhost:8543/auth/realms/consumer", issuerElement.getTextContent());
+                        Assert.assertEquals("Unexpected Issuer element value", getAuthServerRoot() + "realms/consumer", issuerElement.getTextContent());
                     }
                     catch (Exception ex)
                     {
