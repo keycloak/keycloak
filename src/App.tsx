@@ -54,6 +54,7 @@ export const App = () => {
           <Switch>
             {routes(() => {}).map((route, i) => (
               <Route
+                exact
                 key={i}
                 path={route.path}
                 component={() => <SecuredRoute route={route} />}
