@@ -56,8 +56,8 @@ public class MainCommand {
 
     @Option(names = "--profile", arity = "1", description = "Set the profile. Use 'dev' profile to enable development mode.", scope = CommandLine.ScopeType.INHERIT)
     public void setProfile(String profile) {
-        System.setProperty("kc.profile", "dev");
-        System.setProperty("quarkus.profile", "dev");
+        System.setProperty("kc.profile", profile);
+        System.setProperty("quarkus.profile", profile);
     }
 
     @Option(names = "--config-file", arity = "1", description = "Set the path to a configuration file.", paramLabel = "<path>", scope = CommandLine.ScopeType.INHERIT)
