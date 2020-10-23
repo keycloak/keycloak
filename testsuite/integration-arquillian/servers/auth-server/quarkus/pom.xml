@@ -18,7 +18,7 @@
         <session.cache.owners>2</session.cache.owners>
         <offline.session.cache.owners>2</offline.session.cache.owners>
         <login.failure.cache.owners>2</login.failure.cache.owners>
-        <auth.server.quarkus.config>local</auth.server.quarkus.config>
+        <auth.server.quarkus.cluster.config>local</auth.server.quarkus.cluster.config>
     </properties>
     
     <dependencies>
@@ -199,7 +199,7 @@
         <profile>
             <id>auth-server-cluster-quarkus</id>
             <properties>
-                <auth.server.quarkus.config>ha</auth.server.quarkus.config>
+                <auth.server.quarkus.cluster.config>ha</auth.server.quarkus.cluster.config>
             </properties>
         </profile>
     </profiles>
