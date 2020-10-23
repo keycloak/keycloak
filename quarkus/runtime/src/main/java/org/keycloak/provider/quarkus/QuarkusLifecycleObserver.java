@@ -38,7 +38,19 @@ public class QuarkusLifecycleObserver {
     private static final String KEYCLOAK_ADMIN_PASSWORD_ENV_VAR = "KEYCLOAK_ADMIN_PASSWORD";
 
     void onStartupEvent(@Observes StartupEvent event) {
-        Runnable startupHook = ((QuarkusPlatform) Platform.getPlatform()).startupHook;
+        QuarkusPlatform platform = (QuarkusPlatform) Platform.getPlatform();
+        platform.started();
+
+        // Check if we had any exceptions during configuration phase
+        if (!platform.getDeferredExceptions().isEmpty()) {
+            QuarkusConfigurationException quarkusException = new QuarkusConfigurationException();
+            for (Throwable inner : platform.getDeferredExceptions()) {
+                quarkusException.addSuppressed(inner);
+            }
+            throw quarkusException;
+        }
+
+        Runnable startupHook = platform.startupHook;
 
         if (startupHook != null) {
             startupHook.run();

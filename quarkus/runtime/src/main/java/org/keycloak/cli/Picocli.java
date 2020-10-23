@@ -23,14 +23,19 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.IntFunction;
 
-import io.quarkus.runtime.Quarkus;
+import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.configuration.PropertyMapper;
 import org.keycloak.configuration.PropertyMappers;
+import org.keycloak.platform.Platform;
+import org.keycloak.provider.quarkus.QuarkusConfigurationException;
+import org.keycloak.provider.quarkus.QuarkusPlatform;
 import org.keycloak.util.Environment;
 import picocli.CommandLine;
 
 final class Picocli {
+
+    private static final Logger logger = Logger.getLogger(Picocli.class);
 
     static CommandLine createCommandLine() {
         CommandLine.Model.CommandSpec spec = CommandLine.Model.CommandSpec.forAnnotatedObject(new MainCommand())
@@ -126,22 +131,30 @@ final class Picocli {
     static void error(CommandLine cmd, String message, Throwable throwable) {
         List<String> cliArgs = getCliArgs(cmd);
 
-        cmd.getErr().println("ERROR: " + message);
+        logError(cmd, "ERROR: " + message);
 
         if (throwable != null) {
-            Throwable cause = throwable;
+            boolean verbose = cliArgs.stream().anyMatch((arg) -> "--verbose".equals(arg));
 
-            do {
-                if (cause.getMessage() != null) {
-                    cmd.getErr().println(String.format("ERROR: %s", cause.getMessage()));
+            if (throwable instanceof QuarkusConfigurationException) {
+                QuarkusConfigurationException quarkusConfigException = (QuarkusConfigurationException) throwable;
+                if (quarkusConfigException.getSuppressed() == null || quarkusConfigException.getSuppressed().length == 0) {
+                    dumpException(cmd, quarkusConfigException, verbose);
+                } else if (quarkusConfigException.getSuppressed().length == 1) {
+                    dumpException(cmd, quarkusConfigException.getSuppressed()[0], verbose);
+                } else {
+                    logError(cmd, "ERROR: Multiple configuration errors during startup");
+                    int counter = 0;
+                    for (Throwable inner : quarkusConfigException.getSuppressed()) {
+                        counter++;
+                        logError(cmd, "ERROR " + counter);
+                        dumpException(cmd, inner, verbose);
+                    }
                 }
-            } while ((cause = cause.getCause())!= null);
+            }
 
-            if (cliArgs.stream().anyMatch((arg) -> "--verbose".equals(arg))) {
-                cmd.getErr().println("ERROR: Details:");
-                throwable.printStackTrace();
-            } else {
-                cmd.getErr().println("For more details run the same command passing the '--verbose' option.");
+            if (!verbose) {
+                logError(cmd, "For more details run the same command passing the '--verbose' option. Also you can use '--help' to see the details about the usage of the particular command.");
             }
         }
 
@@ -150,5 +163,41 @@ final class Picocli {
 
     static void println(CommandLine cmd, String message) {
         cmd.getOut().println(message);
+    }
+
+    private static void dumpException(CommandLine cmd, Throwable cause, boolean verbose) {
+        if (verbose) {
+            logError(cmd, "ERROR: Details:", cause);
+        } else {
+            do {
+                if (cause.getMessage() != null) {
+                    logError(cmd, String.format("ERROR: %s", cause.getMessage()));
+                }
+            } while ((cause = cause.getCause())!= null);
+        }
+    }
+
+    private static void logError(CommandLine cmd, String errorMessage) {
+        logError(cmd, errorMessage, null);
+    }
+
+    // The "cause" can be null
+    private static void logError(CommandLine cmd, String errorMessage, Throwable cause) {
+        QuarkusPlatform platform = (QuarkusPlatform) Platform.getPlatform();
+        if (platform.isStarted()) {
+            // Can delegate to proper logger once the platform is started
+            if (cause == null) {
+                logger.error(errorMessage);
+            } else {
+                logger.error(errorMessage, cause);
+            }
+        } else {
+            if (cause == null) {
+                cmd.getErr().println(errorMessage);
+            } else {
+                cmd.getErr().println(errorMessage);
+                cause.printStackTrace();
+            }
+        }
     }
 }
