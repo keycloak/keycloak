@@ -143,7 +143,7 @@ public final class PropertyMappers {
                     return "org.mariadb.jdbc.MySQLDataSource";
                 case "mysql":
                     return "com.mysql.cj.jdbc.MysqlXADataSource";
-                case "postgress":
+                case "postgres":
                 case "postgres-95":
                 case "postgres-10":
                     return "org.postgresql.xa.PGXADataSource";
