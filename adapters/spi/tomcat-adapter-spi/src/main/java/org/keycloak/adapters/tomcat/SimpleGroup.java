@@ -18,13 +18,12 @@
 package org.keycloak.adapters.tomcat;
 
 import java.security.Principal;
-import java.security.acl.Group;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
-public class SimpleGroup extends SimplePrincipal implements Group {
+public class SimpleGroup extends SimplePrincipal {
     private final Set<Principal> members = new HashSet<Principal>();
 
     /**

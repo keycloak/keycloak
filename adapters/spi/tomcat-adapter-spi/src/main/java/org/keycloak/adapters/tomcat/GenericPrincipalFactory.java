@@ -22,13 +22,7 @@ import org.apache.catalina.realm.GenericPrincipal;
 
 import javax.security.auth.Subject;
 import java.security.Principal;
-import java.security.acl.Group;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:ungarida@gmail.com">Davide Ungari</a>
@@ -40,24 +34,18 @@ public abstract class GenericPrincipalFactory {
         Subject subject = new Subject();
         Set<Principal> principals = subject.getPrincipals();
         principals.add(identity);
-        Group[] roleSets = getRoleSets(roleSet);
-        for (int g = 0; g < roleSets.length; g++) {
-            Group group = roleSets[g];
+        final SimpleGroup[] roleSets = getRoleSets(roleSet);
+        for (SimpleGroup group : roleSets) {
             String name = group.getName();
-            Group subjectGroup = createGroup(name, principals);
+            SimpleGroup subjectGroup = createGroup(name, principals);
             // Copy the group members to the Subject group
             Enumeration<? extends Principal> members = group.members();
             while (members.hasMoreElements()) {
-                Principal role = (Principal) members.nextElement();
+                Principal role =  members.nextElement();
                 subjectGroup.addMember(role);
             }
         }
-        
-        Principal userPrincipal = getPrincipal(subject);
-        List<String> rolesAsStringList = new ArrayList<String>();
-        rolesAsStringList.addAll(roleSet);
-        GenericPrincipal principal = createPrincipal(userPrincipal, rolesAsStringList);
-        return principal;
+        return createPrincipal(getPrincipal(subject), new ArrayList<>(roleSet));
     }
 
     protected abstract GenericPrincipal createPrincipal(Principal userPrincipal, List<String> roles);
@@ -71,36 +59,24 @@ public abstract class GenericPrincipalFactory {
      */
     protected Principal getPrincipal(Subject subject) {
         Principal principal = null;
-        Principal callerPrincipal = null;
         if (subject != null) {
             Set<Principal> principals = subject.getPrincipals();
             if (principals != null && !principals.isEmpty()) {
                 for (Principal p : principals) {
-                    if (!(p instanceof Group) && principal == null) {
+                    if (!(p instanceof SimpleGroup) && principal == null) {
                         principal = p;
                     }
-//                    if (p instanceof Group) {
-//                        Group g = Group.class.cast(p);
-//                        if (g.getName().equals(SecurityConstants.CALLER_PRINCIPAL_GROUP) && callerPrincipal == null) {
-//                            Enumeration<? extends Principal> e = g.members();
-//                            if (e.hasMoreElements())
-//                                callerPrincipal = e.nextElement();
-//                        }
-//                    }
                 }
             }
         }
-        return callerPrincipal == null ? principal : callerPrincipal;
+        return principal;
     }
 
-    protected Group createGroup(String name, Set<Principal> principals) {
-        Group roles = null;
-        Iterator<Principal> iter = principals.iterator();
-        while (iter.hasNext()) {
-            Object next = iter.next();
-            if (!(next instanceof Group))
-                continue;
-            Group grp = (Group) next;
+    protected SimpleGroup createGroup(String name, Set<Principal> principals) {
+        SimpleGroup roles = null;
+        for (final Object next : principals) {
+            if (!(next instanceof SimpleGroup)) continue;
+            SimpleGroup grp = (SimpleGroup) next;
             if (grp.getName().equals(name)) {
                 roles = grp;
                 break;
@@ -114,9 +90,9 @@ public abstract class GenericPrincipalFactory {
         return roles;
     }
 
-    protected Group[] getRoleSets(Collection<String> roleSet) {
+    protected SimpleGroup[] getRoleSets(Collection<String> roleSet) {
         SimpleGroup roles = new SimpleGroup("Roles");
-        Group[] roleSets = {roles};
+        SimpleGroup[] roleSets = {roles};
         for (String role : roleSet) {
             roles.addMember(new SimplePrincipal(role));
         }
