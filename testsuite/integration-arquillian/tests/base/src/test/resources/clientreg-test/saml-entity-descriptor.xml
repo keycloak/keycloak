@@ -107,5 +107,8 @@ x5Ql0ejivIJAYcMGUyA+/YwJg2FGoA==
             index="4"
             Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
             Location="https://LoadBalancer-9.siroe.com:3443/federation/Consumer/metaAlias/sp/redirect"/>
+        <AttributeConsumingService index="0">
+           <RequestedAttribute Name="urn:oid:2.5.4.42" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri" FriendlyName="givenName"/>
+        </AttributeConsumingService>
     </SPSSODescriptor>
 </EntityDescriptor>
