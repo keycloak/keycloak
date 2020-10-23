@@ -21,59 +21,11 @@ import org.keycloak.provider.Provider;
 
 /**
  * Allows to filter input values that might contain sensitive personally identifiable information (PII).
+ * Type-hints can be used to adjust the anonymization process, see {@link PrivacyTypeHints}.
  *
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
 public interface PrivacyFilterProvider extends Provider {
-
-    // Note: fields are defined as strings instead of an enum, to ease adding own fields in custom implementations.
-
-    // The following fields can be used by consumers to classify and filer their own PII values.
-
-    /**
-     * Denotes a USER_ID type
-     */
-    String USER_ID = "userId";
-
-    /**
-     * Denotes an USERNAME type
-     */
-    String USERNAME = "username";
-
-    /**
-     * Denotes an NAME type, e.g. a given name, family name.
-     */
-    String NAME = "name";
-
-    /**
-     * Denotes an EMAIL address type
-     */
-    String EMAIL = "email";
-
-    /**
-     * Denotes an PHONE_NUMBER type, e.g. mobile, phone
-     */
-    String PHONE_NUMBER = "phoneNumber";
-
-    /**
-     * Denotes an ADDRESS type
-     */
-    String ADDRESS = "address";
-
-    /**
-     * Denotes an PII type for generic personally identifiable information.
-     */
-    String PII = "pii";
-
-    /**
-     * Denotes an IP_ADDRESS type
-     */
-    String IP_ADDRESS = "ipAddress";
-
-    /**
-     * Denotes an unspecified default type
-     */
-    String DEFAULT = "default";
 
     /**
      * Filter the given input value according to rules governed by the given type hint in the context of an {@link Event}.
@@ -103,7 +55,7 @@ public interface PrivacyFilterProvider extends Provider {
      * @return the potentially filtered input value
      */
     default String filter(String input) {
-        return filter(input, DEFAULT, null);
+        return filter(input, PrivacyTypeHints.DEFAULT, null);
     }
 
     /**

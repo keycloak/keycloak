@@ -17,7 +17,7 @@
 package org.keycloak.privacy.anonymize;
 
 import org.junit.Test;
-import org.keycloak.privacy.PrivacyFilterProvider;
+import org.keycloak.privacy.PrivacyTypeHints;
 
 import static org.junit.Assert.assertEquals;
 
@@ -30,7 +30,7 @@ public class DefaultAnonymizerTest {
     public void anonymizeByReplacingValue() {
 
         Anonymizer anonymizer = new DefaultAnonymizer(0, 0, 0, "%");
-        String anonymized = anonymizer.anonymize("192.168.99.100", PrivacyFilterProvider.IP_ADDRESS);
+        String anonymized = anonymizer.anonymize("192.168.99.100", PrivacyTypeHints.IP_ADDRESS);
         assertEquals("%", anonymized);
     }
 
@@ -41,7 +41,7 @@ public class DefaultAnonymizerTest {
     public void anonymizeByShorteningValueIPAddress() {
 
         Anonymizer anonymizer = new DefaultAnonymizer(5, 2, 3, "%");
-        String anonymized = anonymizer.anonymize("192.168.99.100", PrivacyFilterProvider.IP_ADDRESS);
+        String anonymized = anonymizer.anonymize("192.168.99.100", PrivacyTypeHints.IP_ADDRESS);
         assertEquals("19%100", anonymized);
     }
 
@@ -52,7 +52,7 @@ public class DefaultAnonymizerTest {
     public void anonymizeByShorteningValueEmail() {
 
         Anonymizer anonymizer = new DefaultAnonymizer(5, 2, 3, "%");
-        String anonymized = anonymizer.anonymize("thomas.darimont@example.com", PrivacyFilterProvider.EMAIL);
+        String anonymized = anonymizer.anonymize("thomas.darimont@example.com", PrivacyTypeHints.EMAIL);
         assertEquals("th%com", anonymized);
     }
 }

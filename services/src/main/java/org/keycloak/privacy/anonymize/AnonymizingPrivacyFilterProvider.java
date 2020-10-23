@@ -18,6 +18,7 @@ package org.keycloak.privacy.anonymize;
 
 import org.keycloak.events.Event;
 import org.keycloak.privacy.PrivacyFilterProvider;
+import org.keycloak.privacy.PrivacyTypeHints;
 
 import java.util.Collections;
 import java.util.Map;
@@ -25,7 +26,7 @@ import java.util.Set;
 
 /**
  * A {@link PrivacyFilterProvider} that uses a configured {@link Anonymizer} to obfuscate given input strings.
- * Type-hints can be used to adjust the anonymization process.
+ * Type-hints can be used to adjust the anonymization process, see {@link PrivacyTypeHints}.
  * <p>
  *
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
@@ -68,27 +69,31 @@ public class AnonymizingPrivacyFilterProvider implements PrivacyFilterProvider {
     /**
      * Anonymizes the given input by applying the configured {@link Anonymizer} according to the given type-hint.
      * <p>
-     * Resolves the type-hint to use based on the given input and the provided type-hint.
+     * Resolves the type-hint to use based on the given input and the provided type-hint, see {@link PrivacyTypeHints}.
      *
      * @param input
-     * @param type
+     * @param typeHint
      * @param userEvent the keycloak event, may be null.
      * @return
      */
     @Override
-    public String filter(String input, String type, Event userEvent) {
+    public String filter(String input, String typeHint, Event userEvent) {
 
-        String typeHint = resolveTypeHint(input, type);
+        String resolvedTypeHint = resolveTypeHint(input, typeHint);
 
-        if (input == null || typeHint == null || typeHint.isEmpty() || input.isEmpty()) {
+        if (input == null || resolvedTypeHint == null || resolvedTypeHint.isEmpty() || input.isEmpty()) {
             return input;
         }
 
-        if (!typeHints.contains(typeHint)) {
+        if (PrivacyTypeHints.PLAIN.equals(resolvedTypeHint)) {
             return input;
         }
 
-        return anonymize(input, typeHint, userEvent);
+        if (!typeHints.contains(resolvedTypeHint)) {
+            return input;
+        }
+
+        return anonymize(input, resolvedTypeHint, userEvent);
     }
 
     protected String anonymize(String input, String typeHint, Event userEvent) {

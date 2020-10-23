@@ -21,6 +21,7 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.privacy.PrivacyFilterProvider;
 import org.keycloak.privacy.PrivacyFilterProviderFactory;
+import org.keycloak.privacy.PrivacyTypeHints;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -36,6 +37,8 @@ import java.util.stream.Collectors;
  * <p>
  * In order to use this PrivacyFilterProvider, you need to configure the privacyFilter SPI to use the {@code anonymize} provider
  * in {@code keycloak-server.json}, or the wildfly configuration.
+ * <p>
+ * An example configuration for `keycloak-server.json` looks like this:
  * <pre>{@code
  *  "privacy-filter":{
  *         "provider": "${keycloak.privacyFilter.provider:anonymize}",
@@ -43,6 +46,22 @@ import java.util.stream.Collectors;
  *              // your custom config here
  *         }
  *     },
+ * }</pre>
+ * <p>
+ * Users can implement their own Anonymization strategies by subclassing this class, e.g.:
+ * <pre>{@code
+ * class CustomAnonymizingPrivacyFilterProviderFactory extends AnonymizingPrivacyFilterProviderFactory {
+ *     @Override
+ *     public String getId() {
+ *         return "anonymize-custom";
+ *     }
+ *
+ *     @Override
+ *     protected Anonymizer createAnonymizer(Config.Scope config) {
+ *         Anonymizer custom = (input, typeHint) -> "*";
+ *         return custom;
+ *     }
+ * }
  * }</pre>
  *
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
@@ -61,24 +80,25 @@ public class AnonymizingPrivacyFilterProviderFactory implements PrivacyFilterPro
 
     static {
         List<String> filteredTypesHints = Arrays.asList(
-                PrivacyFilterProvider.USER_ID,
-                PrivacyFilterProvider.IP_ADDRESS,
-                PrivacyFilterProvider.USERNAME,
-                PrivacyFilterProvider.NAME,
-                PrivacyFilterProvider.EMAIL,
-                PrivacyFilterProvider.ADDRESS,
-                PrivacyFilterProvider.PHONE_NUMBER,
-                PrivacyFilterProvider.PII,
-                PrivacyFilterProvider.DEFAULT);
+                PrivacyTypeHints.USER_ID,
+                PrivacyTypeHints.IP_ADDRESS,
+                PrivacyTypeHints.USERNAME,
+                PrivacyTypeHints.NAME,
+                PrivacyTypeHints.EMAIL,
+                PrivacyTypeHints.ADDRESS,
+                PrivacyTypeHints.PHONE_NUMBER,
+                PrivacyTypeHints.PII,
+                PrivacyTypeHints.PERSONAL_DATA,
+                PrivacyTypeHints.DEFAULT);
 
         DEFAULT_FILTERED_TYPE_HINTS = Collections.unmodifiableList(filteredTypesHints);
 
         Map<String, String> aliasMapping = new HashMap<>();
-        aliasMapping.put("mobile", PrivacyFilterProvider.PHONE_NUMBER);
-        aliasMapping.put("phone", PrivacyFilterProvider.PHONE_NUMBER);
-        aliasMapping.put("address", PrivacyFilterProvider.ADDRESS);
-        aliasMapping.put("firstName", PrivacyFilterProvider.NAME);
-        aliasMapping.put("lastName", PrivacyFilterProvider.NAME);
+        aliasMapping.put("mobile", PrivacyTypeHints.PHONE_NUMBER);
+        aliasMapping.put("phone", PrivacyTypeHints.PHONE_NUMBER);
+        aliasMapping.put("address", PrivacyTypeHints.ADDRESS);
+        aliasMapping.put("firstName", PrivacyTypeHints.NAME);
+        aliasMapping.put("lastName", PrivacyTypeHints.NAME);
 
         DEFAULT_TYPE_HINT_ALIAS_MAPPING = Collections.unmodifiableMap(aliasMapping);
     }
@@ -121,13 +141,20 @@ public class AnonymizingPrivacyFilterProviderFactory implements PrivacyFilterPro
         typeHintAliases.putAll(parseTypeHintAliasMapping(config.get("typeHintAliasMapping")));
 
         // fallbackTypeHint denotes the type-hint that should be used if no type-hint could be resolved or no explicit type-hint is provided
-        String fallbackTypeHint = config.get("fallbackTypeHint", PrivacyFilterProvider.DEFAULT);
+        String fallbackTypeHint = config.get("fallbackTypeHint", PrivacyTypeHints.DEFAULT);
 
         Anonymizer anonymizer = createAnonymizer(config);
 
         return new AnonymizingPrivacyFilterProvider(filteredTypeHints, typeHintAliases, fallbackTypeHint, anonymizer);
     }
 
+    /**
+     * Creates a new {@link Anonymizer}. Sub-classes can override this method to return
+     * a custom {@link Anonymizer} implementation.
+     *
+     * @param config
+     * @return
+     */
     protected Anonymizer createAnonymizer(Config.Scope config) {
 
         // Note: setting minLength=1, prefixLength=0, suffixLength=0 and placeHolder=%,

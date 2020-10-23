@@ -26,6 +26,7 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.privacy.DefaultEmptyPrivacyFilterProviderFactory;
 import org.keycloak.privacy.PrivacyFilterProvider;
+import org.keycloak.privacy.PrivacyTypeHints;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.Cookie;
@@ -190,7 +191,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
      * @return
      */
     protected String getIpAddress(Event event) {
-        return privacyFilter.filter(event.getIpAddress(), PrivacyFilterProvider.IP_ADDRESS, event);
+        return privacyFilter.filter(event.getIpAddress(), PrivacyTypeHints.IP_ADDRESS, event);
     }
 
     /**
@@ -199,7 +200,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
      * @return
      */
     protected String getUserId(Event event) {
-        return privacyFilter.filter(event.getUserId(), PrivacyFilterProvider.USER_ID, event);
+        return privacyFilter.filter(event.getUserId(), PrivacyTypeHints.USER_ID, event);
     }
 
     @Override

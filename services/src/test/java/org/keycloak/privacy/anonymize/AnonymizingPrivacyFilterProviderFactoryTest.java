@@ -19,6 +19,7 @@ package org.keycloak.privacy.anonymize;
 import org.junit.Test;
 import org.keycloak.Config;
 import org.keycloak.privacy.PrivacyFilterProvider;
+import org.keycloak.privacy.PrivacyTypeHints;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,22 +35,19 @@ public class AnonymizingPrivacyFilterProviderFactoryTest {
     @Test
     public void createProviderWithDefaults() {
 
-        Config.SystemPropertiesScope scope = new Config.SystemPropertiesScope("");
-        AnonymizingPrivacyFilterProviderFactory factory = new AnonymizingPrivacyFilterProviderFactory();
-        factory.init(scope);
+        AnonymizingPrivacyFilterProvider provider = createProvider(null);
 
-        PrivacyFilterProvider provider = factory.create(null);
-
-        String filtered = provider.filter("thomas.darimont@example.com", PrivacyFilterProvider.EMAIL);
+        String filtered = provider.filter("thomas.darimont@example.com", PrivacyTypeHints.EMAIL);
 
         assertEquals("th%com", filtered);
+        assertEquals("7a%b5f", provider.filter("7adf8d60-8205-44d3-a191-6cd5e22d7b5f", PrivacyTypeHints.USER_ID));
     }
 
     /**
      * see KEYCLOAK-13160
      */
     @Test
-    public void createProviderWithConfig() {
+    public void createProviderWithCustomConfig() {
 
         Map<String, String> config = new HashMap<>();
         config.put("minLength", "5");
@@ -60,19 +58,9 @@ public class AnonymizingPrivacyFilterProviderFactoryTest {
         config.put("useDefaultFilteredTypeHints", "false");
         config.put("filteredTypeHints", "confidential,birthdate,pii,");
         config.put("typeHintAliasMapping", "confidential:pii,birthdate:pii,:");
-        config.put("fallbackTypeHint", PrivacyFilterProvider.PII);
+        config.put("fallbackTypeHint", PrivacyTypeHints.PII);
 
-        Config.SystemPropertiesScope scope = new Config.SystemPropertiesScope("") {
-            @Override
-            public String get(String key, String defaultValue) {
-                return config.getOrDefault(key, defaultValue);
-            }
-        };
-
-        AnonymizingPrivacyFilterProviderFactory factory = new AnonymizingPrivacyFilterProviderFactory();
-        factory.init(scope);
-
-        AnonymizingPrivacyFilterProvider provider = (AnonymizingPrivacyFilterProvider) factory.create(null);
+        AnonymizingPrivacyFilterProvider provider = createProvider(config);
 
         DefaultAnonymizer anonymizer = (DefaultAnonymizer) provider.getAnonymizer();
         assertEquals(5, anonymizer.getMinLength());
@@ -80,12 +68,34 @@ public class AnonymizingPrivacyFilterProviderFactoryTest {
         assertEquals(2, anonymizer.getSuffixLength());
         assertEquals("*", anonymizer.getPlaceHolder());
 
-        assertEquals(PrivacyFilterProvider.PII, provider.getFallbackTypeHint());
-        assertEquals(PrivacyFilterProvider.PII, provider.getTypeAliases().get("birthdate"));
+        assertEquals(PrivacyTypeHints.PII, provider.getFallbackTypeHint());
+        assertEquals(PrivacyTypeHints.PII, provider.getTypeAliases().get("birthdate"));
         assertTrue(provider.getTypeHints().contains("birthdate"));
         assertTrue(provider.getTypeHints().contains("pii"));
 
-        assertEquals("thomas.darimont@example.com", provider.filter("thomas.darimont@example.com", PrivacyFilterProvider.EMAIL));
+        assertEquals("thomas.darimont@example.com", provider.filter("thomas.darimont@example.com", PrivacyTypeHints.EMAIL));
         assertEquals("t*om", provider.filter("thomas.darimont@example.com", "confidential"));
     }
+
+    @SuppressWarnings("unchecked")
+    static <T extends PrivacyFilterProvider> T createProvider(Map<String, String> config) {
+
+        Map<String, String> combinedConfig = new HashMap<>();
+        if (config != null) {
+            combinedConfig.putAll(config);
+        }
+
+        Config.SystemPropertiesScope scope = new Config.SystemPropertiesScope("") {
+            @Override
+            public String get(String key, String defaultValue) {
+                return combinedConfig.getOrDefault(key, defaultValue);
+            }
+        };
+
+        AnonymizingPrivacyFilterProviderFactory factory = new AnonymizingPrivacyFilterProviderFactory();
+        factory.init(scope);
+
+        return (T) factory.create(null);
+    }
+
 }
