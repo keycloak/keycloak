@@ -17,12 +17,19 @@
 
 package org.keycloak.provider.quarkus;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.keycloak.platform.PlatformProvider;
 
 public class QuarkusPlatform implements PlatformProvider {
 
     Runnable startupHook;
     Runnable shutdownHook;
+
+    private AtomicBoolean started = new AtomicBoolean(false);
+    private List<Throwable> deferredExceptions = new CopyOnWriteArrayList<>();
 
     @Override
     public void onStartup(Runnable startupHook) {
@@ -37,6 +44,30 @@ public class QuarkusPlatform implements PlatformProvider {
     @Override
     public void exit(Throwable cause) {
         throw new RuntimeException(cause);
+    }
+
+    /**
+     * Called when Quarkus platform is started
+     */
+    public void started() {
+        this.started.set(true);
+    }
+
+    public boolean isStarted() {
+        return started.get();
+    }
+
+    /**
+     * Add the exception, which  won't be thrown right-away, but should be thrown later after QuarkusPlatform is initialized (including proper logging)
+     *
+     * @param t
+     */
+    public void addDeferredException(Throwable t) {
+        deferredExceptions.add(t);
+    }
+
+    public List<Throwable> getDeferredExceptions() {
+        return deferredExceptions;
     }
 
 }

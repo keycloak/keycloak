@@ -32,6 +32,8 @@ import java.util.stream.Collectors;
 import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
+import org.keycloak.platform.Platform;
+import org.keycloak.provider.quarkus.QuarkusPlatform;
 import org.keycloak.util.Environment;
 
 /**
@@ -65,7 +67,7 @@ public final class PropertyMappers {
                 }
                 
                 if (proceed == null || proceed.getValue() == null) {
-                    throw Messages.httpsConfigurationNotSet();
+                    addDeferredConfigurationException(Messages.httpsConfigurationNotSet());
                 }
             }
             
@@ -112,7 +114,8 @@ public final class PropertyMappers {
                 case "passthrough":
                     return "true";
             }
-            throw Messages.invalidProxyMode(mode);
+            addDeferredConfigurationException(Messages.invalidProxyMode(mode));
+            return "false";
         }, "The proxy mode if the server is behind a reverse proxy. Possible values are: none, edge, reencrypt, and passthrough.");
     }
 
@@ -164,7 +167,8 @@ public final class PropertyMappers {
                 case "postgres-10":
                     return "postgresql";
             }
-            throw invalidDatabaseVendor(db, "h2-file", "h2-mem", "mariadb", "mysql", "postgres", "postgres-95", "postgres-10");
+            addDeferredConfigurationException(invalidDatabaseVendor(db, "h2-file", "h2-mem", "mariadb", "mysql", "postgres", "postgres-95", "postgres-10"));
+            return "h2";
         }, "The database vendor. Possible values are: h2-mem, h2-file, mariadb, mysql, postgres95, postgres10.");
         create("db", "quarkus.datasource.jdbc.transactions", (db, context) -> "xa", null);
         create("db.url", "db", "quarkus.datasource.jdbc.url", (value, context) -> {
@@ -263,5 +267,11 @@ public final class PropertyMappers {
                 return property.equals(propertyMapper.getFrom()) || property.equals(propertyMapper.getTo());
             }
         }).findFirst().orElse(null);
+    }
+
+    // Exception to be thrown later, so that we can properly log it and collect all possible configuration issues (not just the first one)
+    private static void addDeferredConfigurationException(Exception e) {
+        QuarkusPlatform quarkusPlatform = (QuarkusPlatform) Platform.getPlatform();
+        quarkusPlatform.addDeferredException(e);
     }
 }

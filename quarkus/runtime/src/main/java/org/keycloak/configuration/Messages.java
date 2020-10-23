@@ -17,7 +17,7 @@
 
 package org.keycloak.configuration;
 
-import java.util.List;
+import org.keycloak.util.Environment;
 
 public final class Messages {
 
@@ -30,6 +30,11 @@ public final class Messages {
     }
 
     static IllegalStateException httpsConfigurationNotSet() {
-        return new IllegalStateException("Key material not provided to setup HTTPS. Please configure your keys/certificates or enable HTTP.");
+        StringBuilder builder = new StringBuilder("Key material not provided to setup HTTPS. Please configure your keys/certificates or enable HTTP");
+        if (!"dev".equals(Environment.getProfile())) {
+            builder.append(" or start the server using the 'dev' profile");
+        }
+        builder.append(".");
+        return new IllegalStateException(builder.toString());
     }
 }
