@@ -229,7 +229,7 @@
 
         <auth.server.ocsp.responder.enabled>false</auth.server.ocsp.responder.enabled>
         <keycloak.x509cert.lookup.provider>default</keycloak.x509cert.lookup.provider>
-        <auth.server.quarkus.config>local</auth.server.quarkus.config>
+        <auth.server.quarkus.cluster.config>local</auth.server.quarkus.cluster.config>
     </properties>
 
     <build>
@@ -621,7 +621,7 @@
                             <auth.server.jboss.cluster>${auth.server.jboss.cluster}</auth.server.jboss.cluster>
                             <auth.server.jboss.legacy>${auth.server.jboss.legacy}</auth.server.jboss.legacy>
                             <auth.server.quarkus.cluster>${auth.server.quarkus.cluster}</auth.server.quarkus.cluster>
-                            <auth.server.quarkus.config>${auth.server.quarkus.config}</auth.server.quarkus.config>
+                            <auth.server.quarkus.cluster.config>${auth.server.quarkus.cluster.config}</auth.server.quarkus.cluster.config>
 
                             <!--cache server properties-->
                             <auth.server.crossdc>${auth.server.crossdc}</auth.server.crossdc>
@@ -756,7 +756,7 @@
                 <exclude.cluster>-</exclude.cluster>
                 <auth.server.cluster>true</auth.server.cluster>
                 <auth.server.quarkus.cluster>true</auth.server.quarkus.cluster>
-                <auth.server.quarkus.config>ha</auth.server.quarkus.config>
+                <auth.server.quarkus.cluster.config>ha</auth.server.quarkus.cluster.config>
                 <auth.server>quarkus</auth.server>
                 <auth.server.quarkus>true</auth.server.quarkus>
                 <auth.server.jboss>false</auth.server.jboss>

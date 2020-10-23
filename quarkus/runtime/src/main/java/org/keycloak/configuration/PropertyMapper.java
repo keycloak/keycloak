@@ -127,6 +127,13 @@ public class PropertyMapper {
         ConfigValue config = context.proceed(from);
 
         if (config == null) {
+            // fist try runtime configuration
+            Optional<ConfigValue> buildConfig = getBuiltTimeConfig(from, context);
+
+            if (buildConfig.isPresent()) {
+                return buildConfig.get();
+            }
+
             if (mapFrom != null) {
                 // if the property we want to map depends on another one, we use the value from the other property to call the mapper
                 String parentKey = MicroProfileConfigProvider.NS_KEYCLOAK + "." + mapFrom;
@@ -145,12 +152,6 @@ public class PropertyMapper {
                 }
             }
 
-            Optional<ConfigValue> buildConfig = getBuiltTimeConfig(from, context);
-
-            if (buildConfig.isPresent()) {
-                return buildConfig.get();
-            }
-            
             // if not defined, return the current value from the property as a default if the property is not explicitly set
             if (defaultValue == null
                     || (current != null && !current.getConfigSourceName().equalsIgnoreCase("default values"))) {

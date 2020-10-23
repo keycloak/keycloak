@@ -143,6 +143,7 @@ public final class PropertyMappers {
                     return "org.mariadb.jdbc.MySQLDataSource";
                 case "mysql":
                     return "com.mysql.cj.jdbc.MysqlXADataSource";
+                case "postgress":
                 case "postgres-95":
                 case "postgres-10":
                     return "org.postgresql.xa.PGXADataSource";
@@ -158,6 +159,7 @@ public final class PropertyMappers {
                     return "mariadb";
                 case "mysql":
                     return "mysql";
+                case "postgres":
                 case "postgres-95":
                 case "postgres-10":
                     return "postgresql";
@@ -165,22 +167,23 @@ public final class PropertyMappers {
             throw invalidDatabaseVendor(db, "h2-file", "h2-mem", "mariadb", "mysql", "postgres", "postgres-95", "postgres-10");
         }, "The database vendor. Possible values are: h2-mem, h2-file, mariadb, mysql, postgres95, postgres10.");
         create("db", "quarkus.datasource.jdbc.transactions", (db, context) -> "xa", null);
-        create("db.url", "db", "quarkus.datasource.jdbc.url", (db, context) -> {
-            switch (db.toLowerCase()) {
+        create("db.url", "db", "quarkus.datasource.jdbc.url", (value, context) -> {
+            switch (value.toLowerCase()) {
                 case "h2-file":
                     return "jdbc:h2:file:${kc.home.dir:${kc.db.url.path:~}}/${kc.data.dir:data}/keycloakdb${kc.db.url.properties:;;AUTO_SERVER=TRUE}";
                 case "h2-mem":
                     return "jdbc:h2:mem:keycloakdb${kc.db.url.properties:}";
                 case "mariadb":
                     return "jdbc:mariadb://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}";
+                case "postgres":
                 case "postgres-95":
                 case "postgres-10":
                     return "jdbc:postgresql://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}";
                 case "mysql":
                     return "jdbc:mysql://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}";
             }
-            return null;
-        }, "The database JDBC URL. If not provided a default URL is set based on the selected database vendor. For instance, if using 'postgres-10', the JDBC URL would be 'jdbc:postgresql://localhost/keycloak'. The host, database and properties can be overridden by setting the following system properties, respectively: -Dkc.db.url.host, -Dkc.db.url.database, -Dkc.db.url.properties.");
+            return value;
+        }, "The database JDBC URL. If not provided a default URL is set based on the selected database vendor. For instance, if using 'postgres', the JDBC URL would be 'jdbc:postgresql://localhost/keycloak'. The host, database and properties can be overridden by setting the following system properties, respectively: -Dkc.db.url.host, -Dkc.db.url.database, -Dkc.db.url.properties.");
         create("db.username", "quarkus.datasource.username", "The database username.");
         create("db.password", "quarkus.datasource.password", "The database password", true);
         create("db.schema", "quarkus.datasource.schema", "The database schema.");
@@ -202,6 +205,7 @@ public final class PropertyMappers {
         }, "Specifies clustering configuration. The specified value points to the infinispan configuration file prefixed with the 'cluster-` "
                 + "inside the distribution configuration directory. Supported values out of the box are 'local' and 'cluster'. Value 'local' points to the file cluster-local.xml and " +
                 "effectively disables clustering and use infinispan caches in the local mode. Value 'default' points to the file cluster-default.xml, which has clustering enabled for infinispan caches.");
+        create("cluster-stack", "kc.spi.connections-infinispan.default.stack", "Specified the default stack to use for cluster communication and node  discovery. Possible values are: tcp, udp, kubernetes, ec2.");
     }
 
     static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
