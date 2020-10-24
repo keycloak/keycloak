@@ -1338,4 +1338,34 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals(sessionId, token.getSessionState());
     }
 
+    // KEYCLOAK-16009
+    @Test
+    public void tokenRequestParamsMoreThanOnce() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpPost post = new HttpPost(oauth.getAccessTokenUrl());
+
+            List<NameValuePair> parameters = new LinkedList<>();
+            parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, oauth.getClientId()));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "foo"));
+
+            String authorization = BasicAuthHelper.createHeader(OAuth2Constants.CLIENT_ID, "password");
+            post.setHeader("Authorization", authorization);
+
+            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            post.setEntity(formEntity);
+
+            OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(client.execute(post));
+            assertEquals(400, response.getStatusCode());
+            assertEquals("invalid_request", response.getError());
+            assertEquals("duplicated parameter", response.getErrorDescription());
+        }
+    }
+
 }
