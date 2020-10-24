@@ -212,6 +212,7 @@ public class TokenEndpoint {
 
         if (!action.equals(Action.PERMISSION)) {
             checkClient();
+            checkParameterDuplicated();
         }
 
         switch (action) {
@@ -304,6 +305,15 @@ public class TokenEndpoint {
         }
 
         event.detail(Details.GRANT_TYPE, grantType);
+    }
+
+    private void checkParameterDuplicated() {
+        for (String key : formParams.keySet()) {
+            if (formParams.get(key).size() != 1) {
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "duplicated parameter",
+                    Response.Status.BAD_REQUEST);
+            }
+        }
     }
 
     public Response codeToToken() {
