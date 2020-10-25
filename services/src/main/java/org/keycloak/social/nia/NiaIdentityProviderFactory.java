@@ -9,7 +9,7 @@ import org.keycloak.saml.validators.DestinationValidator;
 public class NiaIdentityProviderFactory extends AbstractIdentityProviderFactory<NiaIdentityProvider>
         implements SocialIdentityProviderFactory<NiaIdentityProvider> {
 
-    public static final String NIA_PROVIDER_ID = "saml";
+    public static final String NIA_PROVIDER_ID = "nia";
     public static final String NIA_PROVIDER_NAME = "NIA Identity Provider";
     public static final String[] COMPATIBLE_PROVIDER = new String[]{NIA_PROVIDER_ID};
     private DestinationValidator destinationValidator;
