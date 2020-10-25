@@ -16,7 +16,15 @@
  *
  */
 
-package org.keycloak.common.util;
+package org.keycloak.authentication.authenticators.x509;
+
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.util.EntityUtils;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -46,11 +54,13 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
 import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
 
-import java.io.*;
+import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.models.KeycloakSession;
+
+import java.io.IOException;
 import java.math.BigInteger;
-import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -99,7 +109,7 @@ public final class OCSPUtils {
      * @param responderCert a certificate that OCSP responder uses to sign OCSP responses
      * @return revocation status
      */
-    public static OCSPRevocationStatus check(X509Certificate cert, X509Certificate issuerCertificate, URI responderURI, X509Certificate responderCert, Date date) throws CertPathValidatorException {
+    public static OCSPRevocationStatus check(KeycloakSession session, X509Certificate cert, X509Certificate issuerCertificate, URI responderURI, X509Certificate responderCert, Date date) throws CertPathValidatorException {
         if (cert == null)
             throw new IllegalArgumentException("cert cannot be null");
         if (issuerCertificate == null)
@@ -107,7 +117,7 @@ public final class OCSPUtils {
         if (responderURI == null)
             throw new IllegalArgumentException("responderURI cannot be null");
 
-        return check(cert, issuerCertificate, Collections.singletonList(responderURI), responderCert, date);
+        return check(session, cert, issuerCertificate, Collections.singletonList(responderURI), responderCert, date);
     }
     /**
      * Requests certificate revocation status using OCSP. The OCSP responder URI
@@ -117,7 +127,7 @@ public final class OCSPUtils {
      * @param date
      * @return revocation status
      */
-    public static OCSPRevocationStatus check(X509Certificate cert, X509Certificate issuerCertificate, Date date, X509Certificate responderCert) throws CertPathValidatorException {
+    public static OCSPRevocationStatus check(KeycloakSession session, X509Certificate cert, X509Certificate issuerCertificate, Date date, X509Certificate responderCert) throws CertPathValidatorException {
         List<String> responderURIs = null;
         try {
             responderURIs = getResponderURIs(cert);
@@ -139,7 +149,7 @@ public final class OCSPUtils {
                 logger.log(Level.FINE, "Malformed responder URI {0}", value);
             }
         }
-        return check(cert, issuerCertificate, Collections.unmodifiableList(uris), responderCert, date);
+        return check(session, cert, issuerCertificate, Collections.unmodifiableList(uris), responderCert, date);
     }
     /**
      * Requests certificate revocation status using OCSP. The OCSP responder URI
@@ -148,59 +158,34 @@ public final class OCSPUtils {
      * @param issuerCertificate The issuer certificate
      * @return revocation status
      */
-    public static OCSPRevocationStatus check(X509Certificate cert, X509Certificate issuerCertificate) throws CertPathValidatorException {
-        return check(cert, issuerCertificate, null, null);
+    public static OCSPRevocationStatus check(KeycloakSession session, X509Certificate cert, X509Certificate issuerCertificate) throws CertPathValidatorException {
+        return check(session, cert, issuerCertificate, null, null);
     }
 
-    private static OCSPResp getResponse(OCSPReq ocspReq, URI responderUri) throws IOException {
-        DataOutputStream dataOut = null;
-        InputStream in = null;
-        try {
-            byte[] array = ocspReq.getEncoded();
-            URL urlt = responderUri.toURL();
-            HttpURLConnection con = (HttpURLConnection) urlt.openConnection();
-            con.setRequestMethod("POST");
-            con.setConnectTimeout(OCSP_CONNECT_TIMEOUT);
-            con.setReadTimeout(OCSP_CONNECT_TIMEOUT);
-            con.setRequestProperty("Content-type", "application/ocsp-request");
-            con.setRequestProperty("Content-length", String.valueOf(array.length));
-//        con.setRequestProperty("Accept", "application/ocsp-response");
+    private static OCSPResp getResponse(KeycloakSession session, OCSPReq ocspReq, URI responderUri) throws IOException {
+        HttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+        HttpPost post = new HttpPost(responderUri);
+        post.setHeader(HttpHeaders.CONTENT_TYPE, "application/ocsp-request");
 
-            con.setDoOutput(true);
-            con.setDoInput(true);
-            OutputStream out = con.getOutputStream();
-            dataOut = new DataOutputStream(new BufferedOutputStream(out));
-            dataOut.write(array);
-            dataOut.flush();
+        final RequestConfig params = RequestConfig.custom()
+           .setConnectTimeout(OCSP_CONNECT_TIMEOUT)
+           .setSocketTimeout(OCSP_CONNECT_TIMEOUT)
+           .build();
+        post.setConfig(params);
 
-            if (con.getResponseCode() / 100 != 2) {
-                String errorMessage = String.format("Connection error, unable to obtain certificate revocation status using OCSP responder \"%s\", code \"%d\"",
-                        responderUri.toString(), con.getResponseCode());
-                throw new IOException(errorMessage);
-            }
-            //Get Response
-            in = (InputStream) con.getInputStream();
-            int contentLen = con.getContentLength();
-            if (contentLen == -1) {
-                contentLen = Integer.MAX_VALUE;
-            }
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            int bytesRead = 0;
-            byte[] buffer = new byte[2048];
-            while ((bytesRead = in.read(buffer, 0, buffer.length)) >= 0) {
-                baos.write(buffer, 0, bytesRead);
-            }
-            baos.flush();
-            byte[] data = baos.toByteArray();
-            return new OCSPResp(data);
-        } finally {
-            if (dataOut != null) {
-                dataOut.close();
-            }
-            if (in != null) {
-                in.close();
-            }
+        post.setEntity(new ByteArrayEntity(ocspReq.getEncoded()));
+
+        //Get Response
+        HttpResponse response = httpClient.execute(post);
+
+        if (response.getStatusLine().getStatusCode() / 100 != 2) {
+            String errorMessage = String.format("Connection error, unable to obtain certificate revocation status using OCSP responder \"%s\", code \"%d\"",
+                responderUri.toString(), response.getStatusLine().getStatusCode());
+            throw new IOException(errorMessage);
         }
+
+        byte[] data = EntityUtils.toByteArray(response.getEntity());
+        return new OCSPResp(data);
     }
 
     /**
@@ -213,7 +198,7 @@ public final class OCSPUtils {
      * @return a revocation status
      * @throws CertPathValidatorException
      */
-    private static OCSPRevocationStatus check(X509Certificate cert, X509Certificate issuerCertificate, List<URI> responderURIs, X509Certificate responderCert, Date date) throws CertPathValidatorException {
+    private static OCSPRevocationStatus check(KeycloakSession session, X509Certificate cert, X509Certificate issuerCertificate, List<URI> responderURIs, X509Certificate responderCert, Date date) throws CertPathValidatorException {
         if (responderURIs == null || responderURIs.size() == 0)
             throw new IllegalArgumentException("Need at least one responder");
         try {
@@ -236,7 +221,7 @@ public final class OCSPUtils {
             logger.log(Level.INFO, "OCSP Responder {0}", responderURI);
 
             try {
-                OCSPResp resp = getResponse(ocspReq, responderURI);
+                OCSPResp resp = getResponse(session, ocspReq, responderURI);
                 logger.log(Level.FINE, "Received a response from OCSP responder {0}, the response status is {1}", new Object[]{responderURI, resp.getStatus()});
                 switch (resp.getStatus()) {
                     case OCSPResp.SUCCESSFUL:
