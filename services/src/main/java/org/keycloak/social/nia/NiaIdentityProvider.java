@@ -89,13 +89,13 @@ public class NiaIdentityProvider extends SAMLIdentityProvider
                             .format(nameIDPolicyFormat)
                             .setAllowCreate(Boolean.TRUE))
                     .requestedAuthnContext(requestedAuthnContext)
-                    .subject(loginHint)
-                    .addExtension(new CustomNiaAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName", "true"))
+                    .subject(loginHint);
+            /*   .addExtension(new CustomNiaAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName", "true"))
                     .addExtension(new CustomNiaAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName", "true"))
                     .addExtension(new CustomNiaAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName", "true"))
                     .addExtension(new CustomNiaAttribute("http://eidas.europa.eu/attributes/naturalperson/DateOfBirth", "true"))
                     .addExtension(new CustomNiaAttribute("http://eidas.europa.eu/attributes/naturalperson/PlaceOfBirth", "true"));
-
+             */
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                     .relayState(request.getState().getEncoded());
             boolean postBinding = getConfig().isPostBindingAuthnRequest();
