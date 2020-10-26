@@ -107,7 +107,7 @@ public class LDAPPasswordModifyExtensionTest extends AbstractLDAPTest  {
 
         loginPage.open();
         loginPage.login("johnkeycloak", "Bad-password1");
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         loginPage.open();
         loginPage.login("johnkeycloak", "New-password1");

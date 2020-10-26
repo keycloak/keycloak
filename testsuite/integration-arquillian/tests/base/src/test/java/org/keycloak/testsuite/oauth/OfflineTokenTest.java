@@ -136,6 +136,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
                 .redirectUris(offlineClientAppUri)
                 .directAccessGrants()
                 .serviceAccountsEnabled(true)
+                .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
                 .secret("secret1").build();
 
         realm.client(app);

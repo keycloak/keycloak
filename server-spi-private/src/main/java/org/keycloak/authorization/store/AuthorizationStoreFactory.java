@@ -28,7 +28,7 @@ import org.keycloak.authorization.store.syncronization.Synchronizer;
 import org.keycloak.authorization.store.syncronization.UserSynchronizer;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel.ClientRemovedEvent;
+import org.keycloak.models.ClientModel.ClientRemovedEvent;
 import org.keycloak.models.RealmModel.RealmRemovedEvent;
 import org.keycloak.models.UserModel.UserRemovedEvent;
 import org.keycloak.provider.ProviderEvent;

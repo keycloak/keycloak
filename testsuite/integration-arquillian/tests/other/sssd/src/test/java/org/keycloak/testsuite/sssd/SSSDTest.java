@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.sssd;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
@@ -16,7 +15,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.common.constants.GenericConstants;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -30,7 +28,6 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.LDAPTestConfiguration;
 
 public class SSSDTest extends AbstractKeycloakTest {
 
@@ -103,9 +100,9 @@ public class SSSDTest extends AbstractKeycloakTest {
         log.debug("Testing invalid password for user " + username);
 
         profilePage.open();
-        Assert.assertEquals("Browser should be on login page now", "Log in to " + REALM_NAME, driver.getTitle());
+        Assert.assertEquals("Browser should be on login page now", "Sign in to " + REALM_NAME, driver.getTitle());
         accountLoginPage.login(username, "invalid-password");
-        Assert.assertEquals("Invalid username or password.", accountLoginPage.getError());
+        Assert.assertEquals("Invalid username or password.", accountLoginPage.getInputError());
     }
 
     @Test
@@ -115,10 +112,10 @@ public class SSSDTest extends AbstractKeycloakTest {
         log.debug("Testing disabled user " + username);
 
         profilePage.open();
-        Assert.assertEquals("Browser should be on login page now", "Log in to " + REALM_NAME, driver.getTitle());
+        Assert.assertEquals("Browser should be on login page now", "Sign in to " + REALM_NAME, driver.getTitle());
         accountLoginPage.login(username, getPassword(username));
 
-        Assert.assertEquals("Invalid username or password.", accountLoginPage.getError());
+        Assert.assertEquals("Invalid username or password.", accountLoginPage.getInputError());
     }
 
     @Test
@@ -128,7 +125,7 @@ public class SSSDTest extends AbstractKeycloakTest {
         log.debug("Testing password for user " + username);
 
         profilePage.open();
-        Assert.assertEquals("Browser should be on login page now", "Log in to " + REALM_NAME, driver.getTitle());
+        Assert.assertEquals("Browser should be on login page now", "Sign in to " + REALM_NAME, driver.getTitle());
         accountLoginPage.login(username, getPassword(username));
         Assert.assertTrue(profilePage.isCurrent());
     }
@@ -139,7 +136,7 @@ public class SSSDTest extends AbstractKeycloakTest {
 
         for (String username : getUsernames()) {
             profilePage.open();
-            Assert.assertEquals("Browser should be on login page now", "Log in to " + REALM_NAME, driver.getTitle());
+            Assert.assertEquals("Browser should be on login page now", "Sign in to " + REALM_NAME, driver.getTitle());
             accountLoginPage.login(username, getPassword(username));
             Assert.assertTrue(profilePage.isCurrent());
             verifyUserGroups(username, getGroups(username));
@@ -152,7 +149,7 @@ public class SSSDTest extends AbstractKeycloakTest {
         log.debug("Testing correct password, but no e-mail provided");
         String username = getUser(NO_EMAIL_USER);
         profilePage.open();
-        Assert.assertEquals("Browser should be on login page now", "Log in to " + REALM_NAME, driver.getTitle());
+        Assert.assertEquals("Browser should be on login page now", "Sign in to " + REALM_NAME, driver.getTitle());
         accountLoginPage.login(username, getPassword(username));
         Assert.assertTrue(profilePage.isCurrent());
     }
@@ -163,7 +160,7 @@ public class SSSDTest extends AbstractKeycloakTest {
 
         profilePage.open();
         String username = getUsername();
-        Assert.assertEquals("Browser should be on login page now", "Log in to " + REALM_NAME, driver.getTitle());
+        Assert.assertEquals("Browser should be on login page now", "Sign in to " + REALM_NAME, driver.getTitle());
         accountLoginPage.login(username, getPassword(username));
         Assert.assertTrue(profilePage.isCurrent());
         verifyUserGroups(username, getGroups(username));

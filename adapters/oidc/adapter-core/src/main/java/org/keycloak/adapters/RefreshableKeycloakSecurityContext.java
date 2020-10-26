@@ -143,7 +143,8 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
                 log.error("Refresh token failure", e);
                 return false;
             } catch (ServerRequest.HttpFailure httpFailure) {
-                log.error("Refresh token failure status: " + httpFailure.getStatus() + " " + httpFailure.getError());
+                final Logger.Level logLevel = httpFailure.getError().contains("Refresh token expired") ? Logger.Level.WARN : Logger.Level.ERROR;
+                log.log(logLevel, "Refresh token failure status: " + httpFailure.getStatus() + " " + httpFailure.getError());
                 return false;
             }
             if (log.isTraceEnabled()) {

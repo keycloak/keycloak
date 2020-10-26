@@ -122,11 +122,11 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
         // Fail login with wildcard
         loginPage.open();
         loginPage.login("john*", "Password1");
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         // Fail login with wildcard
         loginPage.login("j*", "Password1");
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         // Success login as username exactly match
         loginPage.login("jamees,key*cložak)ppp", "Password1");

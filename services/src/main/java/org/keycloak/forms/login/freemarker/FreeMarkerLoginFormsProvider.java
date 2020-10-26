@@ -182,6 +182,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         Locale locale = session.getContext().resolveLocale(user);
         Properties messagesBundle = handleThemeResources(theme, locale);
+        Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag());
+        messagesBundle.putAll(localizationTexts);
 
         handleMessages(locale, messagesBundle);
 
@@ -248,6 +250,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         Locale locale = session.getContext().resolveLocale(user);
         Properties messagesBundle = handleThemeResources(theme, locale);
+        Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.getCountry());
+        messagesBundle.putAll(localizationTexts);
 
         handleMessages(locale, messagesBundle);
 
@@ -353,6 +357,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         Locale locale = session.getContext().resolveLocale(user);
         Properties messagesBundle = handleThemeResources(theme, locale);
+        Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.getCountry());
+        messagesBundle.putAll(localizationTexts);
         FormMessage msg = new FormMessage(null, message);
         return formatMessage(msg, messagesBundle, locale);
     }
@@ -369,6 +375,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         Locale locale = session.getContext().resolveLocale(user);
         Properties messagesBundle = handleThemeResources(theme, locale);
+        Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.getCountry());
+        messagesBundle.putAll(localizationTexts);
         FormMessage msg = new FormMessage(message, (Object[]) parameters);
         return formatMessage(msg, messagesBundle, locale);
     }

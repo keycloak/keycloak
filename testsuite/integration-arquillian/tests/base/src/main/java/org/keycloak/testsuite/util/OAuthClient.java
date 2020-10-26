@@ -1497,8 +1497,8 @@ public class OAuthClient {
         return driver;
     }
 
-    private WebElement findSocialButton(String providerId) {
-        String id = "zocial-" + providerId;
+    private WebElement findSocialButton(String alias) {
+        String id = "social-" + alias;
         return DroneUtils.getCurrentDriver().findElement(By.id(id));
     }
     

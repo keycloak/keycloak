@@ -30,6 +30,7 @@ import javax.ws.rs.core.Response;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -39,13 +40,14 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.TokenRevocationStoreProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
-import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.DefaultClientPolicyManager;
 import org.keycloak.services.clientpolicy.TokenRevokeContext;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
@@ -75,7 +77,7 @@ public class TokenRevocationEndpoint {
     private RealmModel realm;
     private EventBuilder event;
     private Cors cors;
-    private RefreshToken token;
+    private AccessToken token;
     private UserModel user;
 
     public TokenRevocationEndpoint(RealmModel realm, EventBuilder event) {
@@ -105,11 +107,17 @@ public class TokenRevocationEndpoint {
 
         checkToken();
         checkIssuedFor();
-
         checkUser();
-        revokeClient();
 
-        event.detail(Details.REVOKED_CLIENT, client.getClientId()).success();
+        if (TokenUtil.TOKEN_TYPE_REFRESH.equals(token.getType()) || TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType())) {
+            revokeClient();
+            event.detail(Details.REVOKED_CLIENT, client.getClientId());
+        } else {
+            revokeAccessToken();
+            event.detail(Details.TOKEN_ID, token.getId());
+        }
+
+        event.success();
 
         session.getProvider(SecurityHeadersProvider.class).options().allowEmptyContentType();
         return cors.builder(Response.ok()).build();
@@ -153,14 +161,14 @@ public class TokenRevocationEndpoint {
                 Response.Status.BAD_REQUEST);
         }
 
-        token = session.tokens().decode(encodedToken, RefreshToken.class);
+        token = session.tokens().decode(encodedToken, AccessToken.class);
 
         if (token == null) {
             event.error(Errors.INVALID_TOKEN);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.OK);
         }
 
-        if (!(TokenUtil.TOKEN_TYPE_REFRESH.equals(token.getType()) || TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType()))) {
+        if (!(TokenUtil.TOKEN_TYPE_REFRESH.equals(token.getType()) || TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType()) || TokenUtil.TOKEN_TYPE_BEARER.equals(token.getType()))) {
             event.error(Errors.INVALID_TOKEN_TYPE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.UNSUPPORTED_TOKEN_TYPE, "Unsupported token type",
                 Response.Status.BAD_REQUEST);
@@ -182,21 +190,25 @@ public class TokenRevocationEndpoint {
     }
 
     private void checkUser() {
-        UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm,
-            token.getSessionState(), false, client.getId());
-
-        if (userSession == null) {
-            userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true,
-                client.getId());
+        if (token.getSessionState() == null) {
+            user = TokenManager.lookupUserFromStatelessToken(session, realm, token);
+        } else {
+            UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm,
+                    token.getSessionState(), false, client.getId());
 
             if (userSession == null) {
-                event.error(Errors.USER_SESSION_NOT_FOUND);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_TOKEN, "Invalid token",
-                    Response.Status.OK);
-            }
-        }
+                userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true,
+                        client.getId());
 
-        user = userSession.getUser();
+                if (userSession == null) {
+                    event.error(Errors.USER_SESSION_NOT_FOUND);
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_TOKEN, "Invalid token",
+                            Response.Status.OK);
+                }
+            }
+
+            user = userSession.getUser();
+        }
 
         if (user == null) {
             event.error(Errors.USER_NOT_FOUND);
@@ -219,5 +231,12 @@ public class TokenRevocationEndpoint {
                 org.keycloak.protocol.oidc.TokenManager.dettachClientSession(session.sessions(), realm, clientSession);
             }
         }
+    }
+
+    private void revokeAccessToken() {
+        TokenRevocationStoreProvider revocationStore = session.getProvider(TokenRevocationStoreProvider.class);
+        int currentTime = Time.currentTime();
+        long lifespanInSecs = Math.max(token.getExp() - currentTime, 10);
+        revocationStore.putRevokedToken(token.getId(), lifespanInSecs);
     }
 }

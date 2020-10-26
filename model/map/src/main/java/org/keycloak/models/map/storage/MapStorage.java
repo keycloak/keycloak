@@ -16,7 +16,6 @@
  */
 package org.keycloak.models.map.storage;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -34,12 +33,6 @@ public interface MapStorage<K, V> {
 
     V remove(K key);
 
-    V replace(K key, V value);
-
-    Set<K> keySet();
-
     Set<Map.Entry<K,V>> entrySet();
-
-    Collection<V> values();
 
 }

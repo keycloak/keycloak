@@ -48,6 +48,8 @@ public class JpaEventQuery implements EventQuery {
     private Integer firstResult;
     private Integer maxResults;
 
+    public static final int DEFAULT_MAX_RESULTS = Integer.MAX_VALUE >> 1;
+
     public JpaEventQuery(EntityManager em) {
         this.em = em;
 
@@ -131,10 +133,12 @@ public class JpaEventQuery implements EventQuery {
 
         if (maxResults != null) {
             query.setMaxResults(maxResults);
+        } else {
+            // to workaround https://hibernate.atlassian.net/browse/HHH-14295
+            query.setMaxResults(DEFAULT_MAX_RESULTS);
         }
 
-
-        return closing(query.getResultList().stream().map(JpaEventStoreProvider::convertEvent));
+        return closing(query.getResultStream().map(JpaEventStoreProvider::convertEvent));
     }
 
 }

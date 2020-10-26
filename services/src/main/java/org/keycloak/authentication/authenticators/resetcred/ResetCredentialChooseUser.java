@@ -31,8 +31,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.validation.Validation;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -85,7 +87,7 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
         if (username == null || username.isEmpty()) {
             event.error(Errors.USERNAME_MISSING);
             Response challenge = context.form()
-                    .setError(Messages.MISSING_USERNAME)
+                    .addError(new FormMessage(Validation.FIELD_USERNAME, Messages.MISSING_USERNAME))
                     .createPasswordReset();
             context.failureChallenge(AuthenticationFlowError.INVALID_USER, challenge);
             return;

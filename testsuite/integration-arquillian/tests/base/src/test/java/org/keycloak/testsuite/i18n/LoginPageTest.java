@@ -129,7 +129,7 @@ public class LoginPageTest extends AbstractI18NTest {
         Assert.assertTrue(response.readEntity(String.class).contains("Anmeldung bei test"));
 
         response = client.target(driver.getCurrentUrl()).request().acceptLanguage("en").get();
-        Assert.assertTrue(response.readEntity(String.class).contains("Log in to test"));
+        Assert.assertTrue(response.readEntity(String.class).contains("Sign in to test"));
 
         client.close();
     }

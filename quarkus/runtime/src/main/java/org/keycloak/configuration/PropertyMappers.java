@@ -20,7 +20,7 @@ import static org.keycloak.configuration.Messages.invalidDatabaseVendor;
 import static org.keycloak.configuration.PropertyMapper.MAPPERS;
 import static org.keycloak.configuration.PropertyMapper.create;
 import static org.keycloak.configuration.PropertyMapper.createWithDefault;
-import static org.keycloak.configuration.PropertyMapper.forBuildTimeProperty;
+import static org.keycloak.configuration.PropertyMapper.createBuildTimeProperty;
 import static org.keycloak.provider.quarkus.QuarkusPlatform.addInitializationException;
 
 import java.io.File;
@@ -30,11 +30,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
-import org.keycloak.platform.Platform;
-import org.keycloak.provider.quarkus.QuarkusPlatform;
 import org.keycloak.util.Environment;
 
 /**
@@ -48,6 +45,7 @@ public final class PropertyMappers {
         configureHttpPropertyMappers();
         configureProxyMappers();
         configureClustering();
+        configureHostnameProviderMappers();
     }
 
     private static void configureHttpPropertyMappers() {
@@ -55,8 +53,7 @@ public final class PropertyMappers {
             Boolean enabled = Boolean.valueOf(value);
             ConfigValue proxy = context.proceed(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + "proxy");
 
-            if ("dev".equalsIgnoreCase(ProfileManager.getActiveProfile()) || 
-                    (proxy != null && "edge".equalsIgnoreCase(proxy.getValue()))) {
+            if (Environment.isDevMode() || (proxy != null && "edge".equalsIgnoreCase(proxy.getValue()))) {
                 enabled = true;
             }
             
@@ -121,76 +118,19 @@ public final class PropertyMappers {
     }
 
     private static void configureDatabasePropertyMappers() {
-        forBuildTimeProperty("db", "quarkus.hibernate-orm.dialect", (db, context) -> {
-            switch (db.toLowerCase()) {
-                case "h2-file":
-                case "h2-mem":
-                    return "io.quarkus.hibernate.orm.runtime.dialect.QuarkusH2Dialect";
-                case "mariadb":
-                    return "org.hibernate.dialect.MariaDBDialect";
-                case "mysql":
-                    return "org.hibernate.dialect.MySQL8Dialect";
-                case "postgres-95":
-                    return "io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL95Dialect";
-                case "postgres": // shorthand for the recommended postgres version
-                case "postgres-10":
-                    return "io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect";
-            }
-            return null;
-        }, null);
-        create("db", "quarkus.datasource.jdbc.driver", (db, context) -> {
-            switch (db.toLowerCase()) {
-                case "h2-file":
-                case "h2-mem":
-                    return "org.h2.jdbcx.JdbcDataSource";
-                case "mariadb":
-                    return "org.mariadb.jdbc.MySQLDataSource";
-                case "mysql":
-                    return "com.mysql.cj.jdbc.MysqlXADataSource";
-                case "postgres":
-                case "postgres-95":
-                case "postgres-10":
-                    return "org.postgresql.xa.PGXADataSource";
-            }
-            return null;
-        }, null);
-        create("db", "quarkus.datasource.db-kind", (db, context) -> {
-            switch (db.toLowerCase()) {
-                case "h2-file":
-                case "h2-mem":
-                    return "h2";
-                case "mariadb":
-                    return "mariadb";
-                case "mysql":
-                    return "mysql";
-                case "postgres":
-                case "postgres-95":
-                case "postgres-10":
-                    return "postgresql";
+        createBuildTimeProperty("db", "quarkus.hibernate-orm.dialect", (db, context) -> Database.getDialect(db).orElse(null), null);
+        create("db", "quarkus.datasource.jdbc.driver", (db, context) -> Database.getDriver(db).orElse(null), null);
+        createBuildTimeProperty("db", "quarkus.datasource.db-kind", (db, context) -> {
+            if (Database.isSupported(db)) {
+                return db;
             }
             addInitializationException(invalidDatabaseVendor(db, "h2-file", "h2-mem", "mariadb", "mysql", "postgres", "postgres-95", "postgres-10"));
             return "h2";
         }, "The database vendor. Possible values are: h2-mem, h2-file, mariadb, mysql, postgres95, postgres10.");
         create("db", "quarkus.datasource.jdbc.transactions", (db, context) -> "xa", null);
-        create("db.url", "db", "quarkus.datasource.jdbc.url", (value, context) -> {
-            switch (value.toLowerCase()) {
-                case "h2-file":
-                    return "jdbc:h2:file:${kc.home.dir:${kc.db.url.path:~}}/${kc.data.dir:data}/keycloakdb${kc.db.url.properties:;;AUTO_SERVER=TRUE}";
-                case "h2-mem":
-                    return "jdbc:h2:mem:keycloakdb${kc.db.url.properties:}";
-                case "mariadb":
-                    return "jdbc:mariadb://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}";
-                case "postgres":
-                case "postgres-95":
-                case "postgres-10":
-                    return "jdbc:postgresql://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}";
-                case "mysql":
-                    return "jdbc:mysql://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}";
-            }
-            return value;
-        }, "The database JDBC URL. If not provided a default URL is set based on the selected database vendor. For instance, if using 'postgres', the JDBC URL would be 'jdbc:postgresql://localhost/keycloak'. The host, database and properties can be overridden by setting the following system properties, respectively: -Dkc.db.url.host, -Dkc.db.url.database, -Dkc.db.url.properties.");
+        create("db.url", "db", "quarkus.datasource.jdbc.url", (value, context) -> Database.getDefaultUrl(value).orElse(value), "The database JDBC URL. If not provided a default URL is set based on the selected database vendor. For instance, if using 'postgres', the JDBC URL would be 'jdbc:postgresql://localhost/keycloak'. The host, database and properties can be overridden by setting the following system properties, respectively: -Dkc.db.url.host, -Dkc.db.url.database, -Dkc.db.url.properties.");
         create("db.username", "quarkus.datasource.username", "The database username.");
-        create("db.password", "quarkus.datasource.password", "The database password", true);
+        create("db.password", "quarkus.datasource.password", "The database password.", true);
         create("db.schema", "quarkus.datasource.schema", "The database schema.");
         create("db.pool.initial-size", "quarkus.datasource.jdbc.initial-size", "The initial size of the connection pool.");
         create("db.pool.min-size", "quarkus.datasource.jdbc.min-size", "The minimal size of the connection pool.");
@@ -204,6 +144,12 @@ public final class PropertyMappers {
         create("cluster-stack", "kc.spi.connections-infinispan.default.stack", "Specified the default stack to use for cluster communication and node  discovery. Possible values are: tcp, udp, kubernetes, ec2.");
     }
 
+    private static void configureHostnameProviderMappers() {
+        create("hostname-frontend-url", "kc.spi.hostname.default.frontend-url", "The URL that should be used to serve frontend requests that are usually sent through the a public domain.");
+        create("hostname-admin-url", "kc.spi.hostname.default.admin-url", "The URL that should be used to expose the admin endpoints and console.");
+        create("hostname-force-backend-url-to-frontend-url ", "kc.spi.hostname.default.force-backend-url-to-frontend-url", "Forces backend requests to go through the URL defined as the frontend-url. Defaults to false. Possible values are true or false.");
+    }
+
     static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
         return PropertyMapper.MAPPERS.getOrDefault(name, PropertyMapper.IDENTITY)
                 .getOrDefault(name, context, context.proceed(name));
@@ -212,11 +158,6 @@ public final class PropertyMappers {
     public static boolean isBuildTimeProperty(String name) {
         return PropertyMapper.MAPPERS.entrySet().stream()
                 .anyMatch(entry -> entry.getValue().getFrom().equals(name) && entry.getValue().isBuildTime());
-    }
-
-    public static boolean isSupported(String name) {
-        return PropertyMapper.MAPPERS.entrySet().stream()
-                .anyMatch(entry -> toCLIFormat(entry.getValue().getFrom()).equals(name));
     }
 
     public static String toCLIFormat(String name) {

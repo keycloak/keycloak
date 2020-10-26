@@ -1646,6 +1646,35 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public void patchRealmLocalizationTexts(String locale, Map<String, String> localizationTexts) {
+        getDelegateForUpdate();
+        updated.patchRealmLocalizationTexts(locale, localizationTexts);
+    }
+
+    @Override
+    public boolean removeRealmLocalizationTexts(String locale) {
+        getDelegateForUpdate();
+        return updated.removeRealmLocalizationTexts(locale);
+    }
+
+    @Override
+    public Map<String, Map<String, String>> getRealmLocalizationTexts() {
+        if (isUpdated()) return updated.getRealmLocalizationTexts();
+        return cached.getRealmLocalizationTexts();
+    }
+
+    @Override
+    public Map<String, String> getRealmLocalizationTextsByLocale(String locale) {
+        if (isUpdated()) return updated.getRealmLocalizationTextsByLocale(locale);
+
+        Map<String, String> localizationTexts = Collections.emptyMap();
+        if (cached.getRealmLocalizationTexts() != null && cached.getRealmLocalizationTexts().containsKey(locale)) {
+            localizationTexts = cached.getRealmLocalizationTexts().get(locale);
+        }
+        return Collections.unmodifiableMap(localizationTexts);
+    }
+
+    @Override
     public String toString() {
         return String.format("%s@%08x", getId(), hashCode());
     }

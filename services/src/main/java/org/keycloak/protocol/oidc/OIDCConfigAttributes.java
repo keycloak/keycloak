@@ -58,6 +58,8 @@ public final class OIDCConfigAttributes {
     
     public static final String BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_TOKENS = "backchannel.logout.revoke.offline.tokens";
 
+    public static final String USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT = "client_credentials.use_refresh_token";
+
     private OIDCConfigAttributes() {
     }
 

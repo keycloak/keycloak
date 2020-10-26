@@ -163,6 +163,9 @@ public class LinkedAccountsResource {
         if (errorMessage != null) {
             return ErrorResponse.error(errorMessage, Response.Status.BAD_REQUEST);
         }
+        if (auth.getSession() == null) {
+            return ErrorResponse.error(Messages.SESSION_NOT_ACTIVE, Response.Status.BAD_REQUEST);
+        }
         
         try {
             String nonce = UUID.randomUUID().toString();
