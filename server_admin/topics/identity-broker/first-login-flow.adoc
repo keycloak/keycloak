@@ -45,8 +45,10 @@ Create User If Unique::
   If it's not, then the authenticator just creates a new local {project_name} account and links it with the identity provider and the whole flow is finished.
   Otherwise it goes to the next `Handle Existing Account` subflow.
   If you always want to ensure that there is no duplicated account, you can mark this authenticator as `REQUIRED`. In this case, the user
-  will see the error page if there is an existing {project_name} account and the user will need to link his identity provider account through Account management.
+  will see the error page if there is an existing {project_name} account and the user will need to link the identity provider account through Account management.
 
+NOTE: If you want to skip the ability to create new users, but you want that users authenticated from identity provider must already exists in {project_name} with same username or email like the user from identity provider, you can create new flow and replace `Create User If Exists` authenticator with `Detect Existing Broker User` . More details in the <<Detect Existing User First Login Flow,examples below>>.
+  
 Confirm Link Existing Account::
   On the info page, the user will see that there is an existing {project_name} account with the same email.
   They can review their profile again and use different email or username (flow is restarted and goes back to `Review Profile` authenticator).
@@ -92,3 +94,22 @@ In this case, automatic user creation should be turned off. To disable user crea
 
 This configuration also implies that Keycloak itself won't be able to determine which internal account would correspond to the external identity.
 Therefore, the `Verify Existing Account By Re-authentication` authenticator will ask the user to provide both username and password.
+
+==== Detect Existing User First Login Flow
+In order to configure a first login flow in which:
+
+  - only users already registered in this realm can log in,
+  - users are automatically linked without being prompted,
+
+create a new flow with the following two authenticators:
+
+Detect Existing Broker User::
+This authenticator ensures that unique users are handled. Set the authenticator requirement to `Mandatory`.
+
+Automatically Set Existing User::
+Automatically sets an existing user to the authentication context without any verification. Set the authenticator requirement to `Mandatory`.
+
+You have to set the `First Login Flow` of the identity provider configuration to that flow.
+You could set the also set `Sync Mode` to `force` if you want to update the user profile (Last Name, First Name...) with the identity provider attributes.
+
+NOTE: This flow can be used if you want to delegate the identity to other identity providers (such as github, facebook ...) but you want to manage which users that can log in.
