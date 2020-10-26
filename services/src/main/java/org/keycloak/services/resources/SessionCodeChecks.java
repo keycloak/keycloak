@@ -397,8 +397,8 @@ public class SessionCodeChecks {
             return Response.status(Response.Status.FOUND).location(redirectUri).build();
         } else {
             // Finally need to show error as all the fallbacks failed
-            event.error(Errors.INVALID_CODE);
-            return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_CODE);
+            event.error(Errors.DISABLED_COOKIES);
+            return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.ERROR_MISSING_COOKIES);
         }
     }
 
