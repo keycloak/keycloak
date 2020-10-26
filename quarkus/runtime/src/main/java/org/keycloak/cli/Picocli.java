@@ -146,6 +146,8 @@ final class Picocli {
                         dumpException(errorWriter, inner, verbose);
                     }
                 }
+            } else {
+                dumpException(errorWriter, throwable, verbose);
             }
 
             if (!verbose) {
