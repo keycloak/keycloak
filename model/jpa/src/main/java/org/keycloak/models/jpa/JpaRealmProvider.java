@@ -624,6 +624,10 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
 
     @Override
     public ClientModel addClient(RealmModel realm, String id, String clientId) {
+        if (id == null) {
+            id = KeycloakModelUtils.generateId();
+        }
+
         if (clientId == null) {
             clientId = id;
         }
@@ -638,16 +642,10 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
         RealmEntity realmRef = em.getReference(RealmEntity.class, realm.getId());
         entity.setRealm(realmRef);
         em.persist(entity);
-        em.flush();
+
         final ClientModel resource = new ClientAdapter(realm, em, session, entity);
 
-        em.flush();
-        session.getKeycloakSessionFactory().publish(new RealmModel.ClientCreationEvent() {
-            @Override
-            public ClientModel getCreatedClient() {
-                return resource;
-            }
-        });
+        session.getKeycloakSessionFactory().publish((ClientModel.ClientCreationEvent) () -> resource);
         return resource;
     }
 
@@ -745,7 +743,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
 
         ClientEntity clientEntity = em.find(ClientEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
 
-        session.getKeycloakSessionFactory().publish(new RealmModel.ClientRemovedEvent() {
+        session.getKeycloakSessionFactory().publish(new ClientModel.ClientRemovedEvent() {
             @Override
             public ClientModel getClient() {
                 return client;

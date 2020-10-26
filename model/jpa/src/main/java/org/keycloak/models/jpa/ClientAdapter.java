@@ -513,8 +513,7 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public void updateClient() {
-        em.flush();
-        session.getKeycloakSessionFactory().publish(new RealmModel.ClientUpdatedEvent() {
+        session.getKeycloakSessionFactory().publish(new ClientModel.ClientUpdatedEvent() {
 
             @Override
             public ClientModel getUpdatedClient() {

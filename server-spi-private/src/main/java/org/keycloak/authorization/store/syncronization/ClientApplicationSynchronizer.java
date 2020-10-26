@@ -30,7 +30,7 @@ import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel.ClientRemovedEvent;
+import org.keycloak.models.ClientModel.ClientRemovedEvent;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 

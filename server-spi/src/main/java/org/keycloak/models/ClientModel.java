@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventManager;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -34,10 +36,35 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
     String PUBLIC_KEY = "publicKey";
     String X509CERTIFICATE = "X509Certificate";
 
+    interface ClientCreationEvent extends ProviderEvent {
+        ClientModel getCreatedClient();
+    }
+
+    // Called also during client creation after client is fully initialized (including all attributes etc)
+    interface ClientUpdatedEvent extends ProviderEvent {
+        ClientModel getUpdatedClient();
+        KeycloakSession getKeycloakSession();
+    }
+
+    interface ClientRemovedEvent extends ProviderEvent {
+        ClientModel getClient();
+        KeycloakSession getKeycloakSession();
+    }
+
     /**
-     * Stores the current state of the client immediately to the underlying store, similarly to a commit.
+     * Notifies other providers that this client has been updated.
+     * <p>
+     * After a client is updated, providers can register for {@link ClientUpdatedEvent}.
+     * The setters in this model do not send an update for individual updates of the model.
+     * This method is here to allow for sending this event for this client,
+     * allowsing for to group multiple changes of a client and signal that
+     * all the changes in this client have been performed.
      *
      * @deprecated Do not use, to be removed
+     *
+     * @see ProviderEvent
+     * @see ProviderEventManager
+     * @see ClientUpdatedEvent
      */
     void updateClient();
 
