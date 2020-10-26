@@ -1,8 +1,0 @@
-{
-  "realm": "master",
-  "auth-server-url": "http://localhost:8180/auth/",
-  "ssl-required": "external",
-  "resource": "security-admin-console-v2",
-  "public-client": true,
-  "confidential-port": 0
-}

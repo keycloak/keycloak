@@ -69,7 +69,7 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
 
   const dropdownItems = realmList.map((r) => (
     <DropdownItem
-      key={r.id}
+      key={`realm-dropdown-item-${r.realm}`}
       onClick={() => {
         setRealm(r.realm);
         setOpen(!open);
