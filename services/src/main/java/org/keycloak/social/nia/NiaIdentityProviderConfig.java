@@ -9,17 +9,17 @@ public class NiaIdentityProviderConfig extends SAMLIdentityProviderConfig {
 
     NiaIdentityProviderConfig(IdentityProviderModel identityProviderModel) {
         super(identityProviderModel);
-        //initialize();
+        initialize();
     }
 
     NiaIdentityProviderConfig() {
         super();
-        //  initialize();
+          initialize();
     }
-//
-//    private void initialize() {
-//        this.setValidateSignature(true);
-//    }
+
+    private void initialize() {
+        this.setValidateSignature(true);
+    }
 
     boolean isIgnoreAbsentStateParameterLogout() {
         return Boolean.parseBoolean(getConfig().get("ignoreAbsentParameterLogout"));
