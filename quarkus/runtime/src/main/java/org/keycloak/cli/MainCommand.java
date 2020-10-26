@@ -18,7 +18,6 @@
 package org.keycloak.cli;
 
 import static org.keycloak.cli.Picocli.error;
-import static org.keycloak.cli.Picocli.errorAndExit;
 import static org.keycloak.cli.Picocli.println;
 
 import org.keycloak.configuration.KeycloakConfigSourceProvider;
@@ -115,7 +114,7 @@ public class MainCommand {
             System.setProperty("keycloak.migration.provider", "singleFile");
             System.setProperty("keycloak.migration.file", toFile);
         } else {
-            errorAndExit(spec.commandLine(), "Must specify either --dir or --file options.");
+            error(spec.commandLine(), "Must specify either --dir or --file options.");
         }
 
         System.setProperty("keycloak.migration.usersExportStrategy", users.toUpperCase());
@@ -149,7 +148,7 @@ public class MainCommand {
             System.setProperty("keycloak.migration.provider", "singleFile");
             System.setProperty("keycloak.migration.file", toFile);
         } else {
-            errorAndExit(spec.commandLine(), "Must specify either --dir or --file options.");
+            error(spec.commandLine(), "Must specify either --dir or --file options.");
         }
 
         if (realm != null) {

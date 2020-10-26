@@ -19,10 +19,13 @@ package org.keycloak.cli;
 
 import static org.keycloak.cli.Picocli.createCommandLine;
 import static org.keycloak.cli.Picocli.error;
+import static org.keycloak.cli.Picocli.getCliArgs;
 import static org.keycloak.cli.Picocli.parseConfigArgs;
 import static org.keycloak.util.Environment.getProfileOrDefault;
 
+import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -35,33 +38,40 @@ import picocli.CommandLine;
 
 /**
  * <p>The main entry point, responsible for initialize and run the CLI as well as start the server.
+ * 
+ * <p>For optimal startup of the server, the server should be configured first by running the {@link MainCommand#reAugment(Boolean)} 
+ * command so that subsequent server starts, without any args, do not need to build the CLI, which is costly.
  */
 @QuarkusMain(name = "keycloak")
 public class KeycloakMain {
 
     public static void main(String cliArgs[]) {
         System.setProperty("kc.version", Version.VERSION_KEYCLOAK);
-        CommandLine cmd = createCommandLine();
 
         if (cliArgs.length == 0) {
             // no arguments, just start the server
-            start(cmd);
-            System.exit(cmd.getCommandSpec().exitCodeOnSuccess());
+            start(Collections.emptyList(), new PrintWriter(System.err));
+            System.exit(CommandLine.ExitCode.OK);
         }
 
         // parse arguments and execute any of the configured commands
-        parseAndRun(cmd, cliArgs);
+        parseAndRun(cliArgs);
     }
 
     static void start(CommandLine cmd) {
+        start(getCliArgs(cmd), cmd.getErr());
+    }
+
+    private static void start(List<String> cliArgs, PrintWriter errorWriter) {
         Quarkus.run(null, (integer, throwable) -> {
-            error(cmd, String.format("Failed to start server using profile (%s).", getProfileOrDefault("none")), throwable.getCause());
+            error(cliArgs, errorWriter, String.format("Failed to start server using profile (%s).", getProfileOrDefault("none")), throwable.getCause());
         });
         Quarkus.waitForExit();
     }
     
-    private static void parseAndRun(CommandLine cmd, String[] args) {
+    private static void parseAndRun(String[] args) {
         List<String> cliArgs = new LinkedList<>(Arrays.asList(args));
+        CommandLine cmd = createCommandLine();
 
         // set the arguments as a system property so that arguments can be mapped to their respective configuration options
         System.setProperty("kc.config.args", parseConfigArgs(cliArgs));
