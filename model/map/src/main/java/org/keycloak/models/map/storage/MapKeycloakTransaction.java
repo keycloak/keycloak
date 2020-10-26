@@ -65,17 +65,6 @@ public class MapKeycloakTransaction<K, V> implements KeycloakTransaction {
                 };
             }
         },
-        REPLACE {
-            @Override
-            protected <K, V> MapTaskWithValue<K, V> taskFor(K key, V value) {
-                return new MapTaskWithValue<K, V>(value) {
-                    @Override
-                    public void execute(MapStorage<K, V> map) {
-                        map.replace(key, getValue());
-                    }
-                };
-            }
-        },
         ;
 
         protected abstract <K, V> MapTaskWithValue<K, V> taskFor(K key, V value);
@@ -177,10 +166,6 @@ public class MapKeycloakTransaction<K, V> implements KeycloakTransaction {
             }
         };
         tasks.merge(taskKey, op, MapTaskCompose::new);
-    }
-
-    public void replace(K key, V value) {
-        addTask(MapOperation.REPLACE, key, value);
     }
 
     public void remove(K key) {

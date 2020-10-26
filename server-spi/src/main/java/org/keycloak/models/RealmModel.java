@@ -52,21 +52,6 @@ public interface RealmModel extends RoleContainerModel {
         KeycloakSession getKeycloakSession();
     }
 
-    interface ClientCreationEvent extends ProviderEvent {
-        ClientModel getCreatedClient();
-    }
-
-    // Called also during client creation after client is fully initialized (including all attributes etc)
-    interface ClientUpdatedEvent extends ProviderEvent {
-        ClientModel getUpdatedClient();
-        KeycloakSession getKeycloakSession();
-    }
-
-    interface ClientRemovedEvent extends ProviderEvent {
-        ClientModel getClient();
-        KeycloakSession getKeycloakSession();
-    }
-
     interface IdentityProviderUpdatedEvent extends ProviderEvent {
         RealmModel getRealm();
         IdentityProviderModel getUpdatedIdentityProvider();
