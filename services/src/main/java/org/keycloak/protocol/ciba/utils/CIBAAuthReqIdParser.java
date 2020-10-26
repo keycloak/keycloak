@@ -7,26 +7,72 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.CodeToTokenStoreProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ciba.CIBAAuthReqIdJwt;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 
 public class CIBAAuthReqIdParser {
 
     private static final Logger logger = Logger.getLogger(CIBAAuthReqIdParser.class);
 
-    public static String persistAuthReqId(KeycloakSession session, CIBAAuthReqId authReqIdData, int expires_in) {
+    public static String persistAuthReqId(KeycloakSession session, CIBAAuthReqId authReqIdData, int expires_in, UserModel user) {
         CodeToTokenStoreProvider codeStore = session.getProvider(CodeToTokenStoreProvider.class);
         UUID key = UUID.randomUUID();
+        String jwtFormattedAuthReqId = createJwtFormattedAuthReqId(session, authReqIdData, expires_in, user, key);
+        System.out.println("RRRRRRRRRR CIBAAuthReqIdParser.persistAuthReqId : jwtFormattedAuthReqId = " + jwtFormattedAuthReqId);
         Map<String, String> serialized = authReqIdData.serializeCode();
         codeStore.put(key, expires_in, serialized);
-        return key.toString();
+        //return key.toString();
+        return jwtFormattedAuthReqId;
     }
 
-    public static ParseResult parseAuthReqId(KeycloakSession session, String authReqId, RealmModel realm, EventBuilder event) {
+    private static String createJwtFormattedAuthReqId(KeycloakSession session, CIBAAuthReqId authReqIdData, int expires_in, UserModel user, UUID key) {
+        CIBAAuthReqIdJwt jwt = new CIBAAuthReqIdJwt();
+        jwt.id(KeycloakModelUtils.generateId());
+        jwt.issuedNow();
+        // TODO : check the way of generating issuer is appropriate or not
+        jwt.issuer(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), session.getContext().getRealm().getName()));
+        jwt.audience(jwt.getIssuer());
+        jwt.subject(user.getId());
+        jwt.setKey(key.toString());
+        jwt.exp(Long.valueOf(Time.currentTime() + expires_in));
+        jwt.issuedFor(authReqIdData.getClientId());
+        jwt.setScope(authReqIdData.getScope());
+        jwt.setSessionState(authReqIdData.getUserSessionId());
+        jwt.setAuthResultId(authReqIdData.getAuthResultId());
+        jwt.setThrottlingId(authReqIdData.getThrottlingId());
+        String encodedJwt = new JWSBuilder().type("JWT").jsonContent(jwt).none();
+        return encodedJwt;
+    }
+
+    private static String getAuthReqId(String encodedJwt) {
+        JWSInput jws = null;
+        CIBAAuthReqIdJwt decodedJwt = null;
+        try {
+            jws = new JWSInput(encodedJwt);
+            decodedJwt = jws.readJsonContent(CIBAAuthReqIdJwt.class);
+        } catch (JWSInputException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        System.out.println("EEEEEEEEEE CIBAAuthReqIdParser.parseAuthReqId : encodedJwt = " + encodedJwt);
+        System.out.println("EEEEEEEEEE CIBAAuthReqIdParser.parseAuthReqId : decodedJwt.getKey() = " + decodedJwt.getKey());
+        return decodedJwt.getKey();
+    }
+
+    //public static ParseResult parseAuthReqId(KeycloakSession session, String authReqId, RealmModel realm, EventBuilder event) {
+    public static ParseResult parseAuthReqId(KeycloakSession session, String encodedJwt, RealmModel realm, EventBuilder event) {
+        String authReqId = getAuthReqId(encodedJwt);
         ParseResult result = new ParseResult(authReqId);
 
         // Parse UUID

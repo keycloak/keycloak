@@ -78,7 +78,7 @@ public class BackchannelAuthenticationEndpoint {
         checkSsl();
         checkRealm();
         checkClient();
-        checkUser(request);
+        UserModel user = checkUser(request);
         logger.info(" client_id = " + client.getClientId());
         logger.info(" consent required = " + client.isConsentRequired());
 
@@ -105,7 +105,7 @@ public class BackchannelAuthenticationEndpoint {
                 client.getClientId(),
                 authResultId,
                 throttlingId);
-        String authReqId = CIBAAuthReqIdParser.persistAuthReqId(session, authReqIdData, policy.getExpiresIn());
+        String authReqId = CIBAAuthReqIdParser.persistAuthReqId(session, authReqIdData, policy.getExpiresIn(), user);
 
         // for access throttling
         if (throttlingId != null) {
@@ -208,7 +208,7 @@ public class BackchannelAuthenticationEndpoint {
         }
     }
 
-    private void checkUser(BackchannelAuthenticationRequest request) {
+    private UserModel checkUser(BackchannelAuthenticationRequest request) {
         CIBALoginUserResolver resolver = session.getProvider(CIBALoginUserResolver.class);
         if (resolver == null) {
             throw new RuntimeException("CIBA Login User Resolver not setup properly.");
@@ -228,6 +228,7 @@ public class BackchannelAuthenticationEndpoint {
             throw new CorsErrorResponseException(cors, CIBAErrorCodes.UNKNOWN_USER_ID, "no user found", Response.Status.BAD_REQUEST);
         if (!user.isEnabled())
             throw new CorsErrorResponseException(cors, CIBAErrorCodes.UNKNOWN_USER_ID, "user deactivated", Response.Status.BAD_REQUEST);
+        return user;
     }
 
     private void dumpMultivaluedMap(MultivaluedMap<String, String> params) {
