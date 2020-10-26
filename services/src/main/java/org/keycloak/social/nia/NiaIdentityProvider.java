@@ -42,7 +42,7 @@ public class NiaIdentityProvider extends SAMLIdentityProvider
 
     @Override
     public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
-        return new SAMLEndpoint(realm, this, getNiaConfig(), callback, destinationValidator);
+        return new SAMLEndpoint(realm, this, getConfig(), callback, destinationValidator);
     }
 
     @Override
@@ -163,7 +163,7 @@ public class NiaIdentityProvider extends SAMLIdentityProvider
         }
     }
 
-    public NiaIdentityProviderConfig getNiaConfig() {
-        return niaIdentityProviderConfig;
-    }
+//    public NiaIdentityProviderConfig getNiaConfig() {
+//        return niaIdentityProviderConfig;
+//    }
 }
