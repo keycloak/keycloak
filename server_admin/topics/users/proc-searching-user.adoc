@@ -15,7 +15,7 @@ NOTE: This action searches only the local {project_name} database and not the fe
 +
 .. To search users from a federated backend, the user list must be synced into the {project_name} database. Adjust the search criteria to sync the backend users to the {project_name} database.
 +
-.. Alternatively, click the *User Federation* tab.
+.. Alternatively, click the *User Federation* in the left menu.
 ... To apply changes to a selected user, click *Sync changed users* on the page with your federation provider.
 ... To apply changes to all users in the database, click *Sync all users* on the page with your federation provider.
 

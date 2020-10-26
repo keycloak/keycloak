@@ -183,7 +183,7 @@ After entering the username, the way this flow works is the following:
 It is important to note that since the WebAuthn Passwordless execution is set to _Alternative_ instead of _Required_, this flow will never ask the user to register a WebAuthn credential. For a user
 to have a Webauthn credential, that user must have a required action added by an administrator. This is done first by making sure that the `Webauthn Register Passwordless`
 required action is enabled in the realm (see the <<_webauthn,WebAuthn>> documentation), and then by setting the required action by using the `Credential Reset` part of a
-user's <<_user-credentials,Credentials>> management menu.
+user's xref:ref-user-credentials_{context}[Credentials] management menu.
 
 Creating a more advanced flow such as this one can have some subtle side effects. For example, if you were to enable the ability to reset the password
 for the user, then this would be accessible from the password form. In the default "Reset Credentials" flow, the user has to enter his username. Since

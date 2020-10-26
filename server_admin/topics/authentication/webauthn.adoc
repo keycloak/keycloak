@@ -86,7 +86,7 @@ assuming that authentication flow configuration above with the conditional subfl
 
 ===== Managing Credentials
 
-WebAuthn credentials are managed in a similar manner as other credentials, such as OTP, from the <<_user-credentials, User credential management>>:
+WebAuthn credentials are managed in a similar manner as other credentials, such as OTP, from the xref:ref-user-credentials_{context}[User credential management]:
 
 * Users can be assigned a required action to create a WebAuthn credential from the `Reset Actions` list, and selecting `Webauthn Register`
 * The administrator can delete a WebAuthn credential by pressing `Delete`.

@@ -7,7 +7,7 @@ To enable this you need to first go to link:https://developers.google.com/recapt
 and create an API key so that you can get your reCAPTCHA site key and secret.
 (FYI, localhost works by default so you don't have to specify a domain).
 
-Next, there are a few steps you need to perform in the {project_name} Admin Console.
+Next, there are a few steps you need to perform in the {project_name} admin console.
 Click the `Authentication` left menu item and go to the `Flows` tab.  Select the `Registration` flow from the drop down
 list on this page.
 
@@ -33,5 +33,5 @@ values of both the `X-Frame-Options` and `Content-Security-Policy` headers.
 image:{project_images}/security-headers.png[]
 
 Once you do this, reCAPTCHA should show up on your registration page.  You may want to edit _register.ftl_ in your login
-theme to muck around with the placement and styling of the reCAPTCHA button.  See the link:{developerguide_link}[{developerguide_name}]
+theme to experiment with the placement and styling of the reCAPTCHA button.  See the link:{developerguide_link}[{developerguide_name}]
 for more information on extending and creating themes.
