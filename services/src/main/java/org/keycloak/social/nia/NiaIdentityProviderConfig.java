@@ -9,12 +9,12 @@ public class NiaIdentityProviderConfig extends SAMLIdentityProviderConfig {
 
     NiaIdentityProviderConfig(IdentityProviderModel identityProviderModel) {
         super(identityProviderModel);
-        initialize();
+        //initialize();
     }
 
     NiaIdentityProviderConfig() {
         super();
-        initialize();
+        //  initialize();
     }
 
     private void initialize() {
