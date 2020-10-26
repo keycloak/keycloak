@@ -14,7 +14,7 @@ public class NiaIdentityProviderConfig extends SAMLIdentityProviderConfig {
 
     NiaIdentityProviderConfig() {
         super();
-          initialize();
+        initialize();
     }
 
     private void initialize() {

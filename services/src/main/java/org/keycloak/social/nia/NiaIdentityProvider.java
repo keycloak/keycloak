@@ -32,7 +32,7 @@ import org.keycloak.util.JsonSerialization;
 public class NiaIdentityProvider extends SAMLIdentityProvider
         implements SocialIdentityProvider<SAMLIdentityProviderConfig> {
 
-////    private NiaIdentityProviderConfig niaIdentityProviderConfig = new NiaIdentityProviderConfig();
+    private NiaIdentityProviderConfig niaIdentityProviderConfig = new NiaIdentityProviderConfig();
     private final DestinationValidator destinationValidator;
 
     public NiaIdentityProvider(KeycloakSession session, NiaIdentityProviderConfig config, DestinationValidator destinationValidator) {
@@ -164,6 +164,6 @@ public class NiaIdentityProvider extends SAMLIdentityProvider
     }
 
     public NiaIdentityProviderConfig getNiaConfig() {
-        return (NiaIdentityProviderConfig) super.getConfig();
+        return niaIdentityProviderConfig;
     }
 }
