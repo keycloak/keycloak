@@ -35,14 +35,14 @@ public class NiaIdentityProvider extends SAMLIdentityProvider
     private NiaIdentityProviderConfig niaIdentityProviderConfig = new NiaIdentityProviderConfig();
     private final DestinationValidator destinationValidator;
 
-    public NiaIdentityProvider(KeycloakSession session, NiaIdentityProviderConfig config, DestinationValidator destinationValidator) {
+    public NiaIdentityProvider(KeycloakSession session, SAMLIdentityProviderConfig config, DestinationValidator destinationValidator) {
         super(session, config, destinationValidator);
         this.destinationValidator = destinationValidator;
     }
 
     @Override
     public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
-        return new SAMLEndpoint(realm, this, getNiaConfig(), callback, destinationValidator);
+        return new SAMLEndpoint(realm, this, getConfig(), callback, destinationValidator);
     }
 
     @Override
@@ -163,7 +163,7 @@ public class NiaIdentityProvider extends SAMLIdentityProvider
         }
     }
 
-    public NiaIdentityProviderConfig getNiaConfig() {
-        return niaIdentityProviderConfig;
-    }
+//    public NiaIdentityProviderConfig getNiaConfig() {
+//        return niaIdentityProviderConfig;
+//    }
 }
