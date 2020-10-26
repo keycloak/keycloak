@@ -21,9 +21,47 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.keycloak.platform.Platform;
 import org.keycloak.platform.PlatformProvider;
 
 public class QuarkusPlatform implements PlatformProvider {
+
+    public static void addInitializationException(Throwable throwable) {
+        QuarkusPlatform platform = (QuarkusPlatform) Platform.getPlatform();
+        platform.addDeferredException(throwable);
+    }
+
+    /**
+     * <p>Throws a {@link InitializationException} exception to indicate errors during the startup.
+     * 
+     * <p>Calling this method after the server is started has no effect but just the exception being thrown.
+     * 
+     * @throws InitializationException the exception holding all errors during startup.
+     */
+    public static void exitOnError() throws InitializationException {
+        QuarkusPlatform platform = (QuarkusPlatform) Platform.getPlatform();
+        
+        // Check if we had any exceptions during initialization phase
+        if (!platform.getDeferredExceptions().isEmpty()) {
+            InitializationException quarkusException = new InitializationException();
+            for (Throwable inner : platform.getDeferredExceptions()) {
+                quarkusException.addSuppressed(inner);
+            }
+            throw quarkusException;
+        }
+    }
+
+    /**
+     * Similar behavior as per {@code #exitOnError} but convenient to throw a {@link InitializationException} with a single
+     * {@code cause}
+     * 
+     * @param cause the cause
+     * @throws InitializationException the initialization exception with the given {@code cause}.
+     */
+    public static void exitOnError(Throwable cause) throws InitializationException{
+        addInitializationException(cause);
+        exitOnError();
+    }
 
     Runnable startupHook;
     Runnable shutdownHook;
@@ -49,7 +87,7 @@ public class QuarkusPlatform implements PlatformProvider {
     /**
      * Called when Quarkus platform is started
      */
-    public void started() {
+    void started() {
         this.started.set(true);
     }
 
@@ -62,11 +100,11 @@ public class QuarkusPlatform implements PlatformProvider {
      *
      * @param t
      */
-    public void addDeferredException(Throwable t) {
+    private void addDeferredException(Throwable t) {
         deferredExceptions.add(t);
     }
 
-    public List<Throwable> getDeferredExceptions() {
+    List<Throwable> getDeferredExceptions() {
         return deferredExceptions;
     }
 

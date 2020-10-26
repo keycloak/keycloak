@@ -14,6 +14,7 @@ import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.models.utils.PostMigrationEvent;
+import org.keycloak.provider.quarkus.QuarkusPlatform;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resources.QuarkusWelcomeResource;
 import org.keycloak.services.resources.WelcomeResource;
@@ -26,9 +27,13 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     
     @Override
     protected void startup() {
-        forceEntityManagerInitialization();
-        initializeKeycloakSessionFactory();
-        setupScheduledTasks(sessionFactory);
+        try {
+            forceEntityManagerInitialization();
+            initializeKeycloakSessionFactory();
+            setupScheduledTasks(sessionFactory);
+        } catch (Throwable cause) {
+            QuarkusPlatform.exitOnError(cause);
+        }
     }
 
     @Override

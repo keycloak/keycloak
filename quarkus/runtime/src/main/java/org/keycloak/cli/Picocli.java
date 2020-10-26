@@ -28,7 +28,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.configuration.PropertyMapper;
 import org.keycloak.configuration.PropertyMappers;
 import org.keycloak.platform.Platform;
-import org.keycloak.provider.quarkus.QuarkusConfigurationException;
+import org.keycloak.provider.quarkus.InitializationException;
 import org.keycloak.provider.quarkus.QuarkusPlatform;
 import org.keycloak.util.Environment;
 import picocli.CommandLine;
@@ -136,16 +136,16 @@ final class Picocli {
         if (throwable != null) {
             boolean verbose = cliArgs.stream().anyMatch((arg) -> "--verbose".equals(arg));
 
-            if (throwable instanceof QuarkusConfigurationException) {
-                QuarkusConfigurationException quarkusConfigException = (QuarkusConfigurationException) throwable;
-                if (quarkusConfigException.getSuppressed() == null || quarkusConfigException.getSuppressed().length == 0) {
-                    dumpException(cmd, quarkusConfigException, verbose);
-                } else if (quarkusConfigException.getSuppressed().length == 1) {
-                    dumpException(cmd, quarkusConfigException.getSuppressed()[0], verbose);
+            if (throwable instanceof InitializationException) {
+                InitializationException initializationException = (InitializationException) throwable;
+                if (initializationException.getSuppressed() == null || initializationException.getSuppressed().length == 0) {
+                    dumpException(cmd, initializationException, verbose);
+                } else if (initializationException.getSuppressed().length == 1) {
+                    dumpException(cmd, initializationException.getSuppressed()[0], verbose);
                 } else {
                     logError(cmd, "ERROR: Multiple configuration errors during startup");
                     int counter = 0;
-                    for (Throwable inner : quarkusConfigException.getSuppressed()) {
+                    for (Throwable inner : initializationException.getSuppressed()) {
                         counter++;
                         logError(cmd, "ERROR " + counter);
                         dumpException(cmd, inner, verbose);

@@ -234,8 +234,6 @@ public class ConfigurationTest {
     public void testClusterConfig() {
         // Cluster enabled by default, but disabled for the "dev" profile
         Assert.assertEquals("cluster-default.xml", initConfig("connectionsInfinispan", "default").get("configFile"));
-        System.setProperty("kc.profile", "dev");
-        Assert.assertEquals("cluster-local.xml", initConfig("connectionsInfinispan", "default").get("configFile"));
 
         // If explicitly set, then it is always used regardless of the profile
         System.clearProperty("kc.profile");

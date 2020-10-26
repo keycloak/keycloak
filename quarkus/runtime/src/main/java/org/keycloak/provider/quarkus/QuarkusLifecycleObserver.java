@@ -40,16 +40,7 @@ public class QuarkusLifecycleObserver {
     void onStartupEvent(@Observes StartupEvent event) {
         QuarkusPlatform platform = (QuarkusPlatform) Platform.getPlatform();
         platform.started();
-
-        // Check if we had any exceptions during configuration phase
-        if (!platform.getDeferredExceptions().isEmpty()) {
-            QuarkusConfigurationException quarkusException = new QuarkusConfigurationException();
-            for (Throwable inner : platform.getDeferredExceptions()) {
-                quarkusException.addSuppressed(inner);
-            }
-            throw quarkusException;
-        }
-
+        QuarkusPlatform.exitOnError();
         Runnable startupHook = platform.startupHook;
 
         if (startupHook != null) {
