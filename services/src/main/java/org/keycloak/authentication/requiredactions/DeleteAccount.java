@@ -17,6 +17,8 @@
 
 package org.keycloak.authentication.requiredactions;
 
+import java.util.Objects;
+
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationProcessor;
@@ -44,6 +46,8 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
 
   public static final String PROVIDER_ID = "delete_account";
 
+  private static final String TRIGGERED_FROM_AIA = "triggered_from_aia";
+
   private static final Logger logger = Logger.getLogger(DeleteAccount.class);
 
   @Override
@@ -59,10 +63,13 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
   @Override
   public void requiredActionChallenge(RequiredActionContext context) {
       if (!context.getUser().hasRole(context.getRealm().getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.DELETE_ACCOUNT))) {
-        throw new ForbiddenException();
+        context.challenge(context.form().setError(Messages.DELETE_ACCOUNT_LACK_PRIVILEDGES).createForm("error.ftl"));
+        return;
       }
 
-      context.challenge(context.form().createForm("delete-account-confirm.ftl"));
+    String currentAction = context.getAuthenticationSession().getClientNote(Constants.KC_ACTION);
+
+      context.challenge(context.form().setAttribute(TRIGGERED_FROM_AIA, Objects.equals(currentAction, PROVIDER_ID)).createForm("delete-account-confirm.ftl"));
   }
 
 
