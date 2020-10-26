@@ -20,7 +20,7 @@ import static org.keycloak.configuration.Messages.invalidDatabaseVendor;
 import static org.keycloak.configuration.PropertyMapper.MAPPERS;
 import static org.keycloak.configuration.PropertyMapper.create;
 import static org.keycloak.configuration.PropertyMapper.createWithDefault;
-import static org.keycloak.configuration.PropertyMapper.forBuildTimeProperty;
+import static org.keycloak.configuration.PropertyMapper.createBuildTimeProperty;
 import static org.keycloak.provider.quarkus.QuarkusPlatform.addInitializationException;
 
 import java.io.File;
@@ -33,8 +33,6 @@ import java.util.stream.Collectors;
 import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
-import org.keycloak.platform.Platform;
-import org.keycloak.provider.quarkus.QuarkusPlatform;
 import org.keycloak.util.Environment;
 
 /**
@@ -121,7 +119,7 @@ public final class PropertyMappers {
     }
 
     private static void configureDatabasePropertyMappers() {
-        forBuildTimeProperty("db", "quarkus.hibernate-orm.dialect", (db, context) -> {
+        createBuildTimeProperty("db", "quarkus.hibernate-orm.dialect", (db, context) -> {
             switch (db.toLowerCase()) {
                 case "h2-file":
                 case "h2-mem":

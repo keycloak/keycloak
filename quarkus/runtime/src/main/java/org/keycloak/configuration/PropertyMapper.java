@@ -16,7 +16,6 @@
  */
 package org.keycloak.configuration;
 
-import static org.keycloak.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.util.Environment.getBuiltTimeProperty;
 
 import java.util.HashMap;
@@ -58,7 +57,7 @@ public class PropertyMapper {
         return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, null, transformer, mapFrom, description));
     }
 
-    static PropertyMapper forBuildTimeProperty(String fromProperty, String toProperty, BiFunction<String, ConfigSourceInterceptorContext, String> transformer, String description) {
+    static PropertyMapper createBuildTimeProperty(String fromProperty, String toProperty, BiFunction<String, ConfigSourceInterceptorContext, String> transformer, String description) {
         return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, null, transformer, null, true, description, false));
     }
 
@@ -95,10 +94,6 @@ public class PropertyMapper {
         this(from, to, defaultValue, mapper, null, description);
     }
 
-    PropertyMapper(String from, String to, String defaultValue, BiFunction<String, ConfigSourceInterceptorContext, String> mapper, String description, boolean mask) {
-        this(from, to, defaultValue, mapper, null, false, description, mask);
-    }
-
     PropertyMapper(String from, String to, String defaultValue, BiFunction<String, ConfigSourceInterceptorContext, String> mapper, String mapFrom, String description) {
         this(from, to, defaultValue, mapper, mapFrom, false, description, false);
     }
@@ -127,8 +122,7 @@ public class PropertyMapper {
         ConfigValue config = context.proceed(from);
 
         if (config == null) {
-            // fist try runtime configuration
-            Optional<ConfigValue> buildConfig = getBuiltTimeConfig(from, context);
+            Optional<ConfigValue> buildConfig = getBuiltTimeValue(from, context);
 
             if (buildConfig.isPresent()) {
                 return buildConfig.get();
@@ -137,7 +131,7 @@ public class PropertyMapper {
             if (mapFrom != null) {
                 // if the property we want to map depends on another one, we use the value from the other property to call the mapper
                 String parentKey = MicroProfileConfigProvider.NS_KEYCLOAK + "." + mapFrom;
-                ConfigValue parentValue = getBuiltTimeConfig(parentKey, context).orElseGet(() -> {
+                ConfigValue parentValue = getBuiltTimeValue(parentKey, context).orElseGet(() -> {
                     ConfigValue value = context.proceed(parentKey);
                     
                     if (value == null) {
@@ -179,9 +173,18 @@ public class PropertyMapper {
         return value;
     }
 
-    public Optional<ConfigValue> getBuiltTimeConfig(String name, ConfigSourceInterceptorContext context) {
+    public String getFrom() {
+        return from;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    private Optional<ConfigValue> getBuiltTimeValue(String name, ConfigSourceInterceptorContext context) {
         ConfigValue value = transformValue(getBuiltTimeProperty(name)
-                .orElseGet(() -> getBuiltTimeProperty(PropertyMappers.toCLIFormat(name)).orElse(null)), context);
+                                                   .orElseGet(() -> getBuiltTimeProperty(PropertyMappers.toCLIFormat(name))
+                                                                            .orElse(null)), context);
 
         if (value == null) {
             return Optional.empty();
@@ -208,23 +211,16 @@ public class PropertyMapper {
         return null;
     }
 
-    public boolean isBuildTime() {
+    boolean isBuildTime() {
         return buildTime;
     }
 
-    public String getFrom() {
-        return from;
-    }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public boolean isMask() {
+    boolean isMask() {
         return mask;
     }
 
-    public String getTo() {
+    String getTo() {
         return to;
     }
 }

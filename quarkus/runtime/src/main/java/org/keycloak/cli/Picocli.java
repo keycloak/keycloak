@@ -17,6 +17,7 @@
 
 package org.keycloak.cli;
 
+import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -124,14 +125,8 @@ final class Picocli {
         return parseResult.expandedArgs();
     }
 
-    static void errorAndExit(CommandLine cmd, String message) {
-        error(cmd, message, null);
-    }
-
-    static void error(CommandLine cmd, String message, Throwable throwable) {
-        List<String> cliArgs = getCliArgs(cmd);
-
-        logError(cmd, "ERROR: " + message);
+    static void error(List<String> cliArgs, PrintWriter errorWriter, String message, Throwable throwable) {
+        logError(errorWriter, "ERROR: " + message);
 
         if (throwable != null) {
             boolean verbose = cliArgs.stream().anyMatch((arg) -> "--verbose".equals(arg));
@@ -139,50 +134,58 @@ final class Picocli {
             if (throwable instanceof InitializationException) {
                 InitializationException initializationException = (InitializationException) throwable;
                 if (initializationException.getSuppressed() == null || initializationException.getSuppressed().length == 0) {
-                    dumpException(cmd, initializationException, verbose);
+                    dumpException(errorWriter, initializationException, verbose);
                 } else if (initializationException.getSuppressed().length == 1) {
-                    dumpException(cmd, initializationException.getSuppressed()[0], verbose);
+                    dumpException(errorWriter, initializationException.getSuppressed()[0], verbose);
                 } else {
-                    logError(cmd, "ERROR: Multiple configuration errors during startup");
+                    logError(errorWriter, "ERROR: Multiple configuration errors during startup");
                     int counter = 0;
                     for (Throwable inner : initializationException.getSuppressed()) {
                         counter++;
-                        logError(cmd, "ERROR " + counter);
-                        dumpException(cmd, inner, verbose);
+                        logError(errorWriter, "ERROR " + counter);
+                        dumpException(errorWriter, inner, verbose);
                     }
                 }
             }
 
             if (!verbose) {
-                logError(cmd, "For more details run the same command passing the '--verbose' option. Also you can use '--help' to see the details about the usage of the particular command.");
+                logError(errorWriter, "For more details run the same command passing the '--verbose' option. Also you can use '--help' to see the details about the usage of the particular command.");
             }
         }
 
-        System.exit(cmd.getCommandSpec().exitCodeOnExecutionException());
+        System.exit(1);
+    }
+
+    static void error(CommandLine cmd, String message, Throwable throwable) {
+        error(getCliArgs(cmd), cmd.getErr(), message, throwable);
+    }
+
+    static void error(CommandLine cmd, String message) {
+        error(getCliArgs(cmd), cmd.getErr(), message, null);
     }
 
     static void println(CommandLine cmd, String message) {
         cmd.getOut().println(message);
     }
 
-    private static void dumpException(CommandLine cmd, Throwable cause, boolean verbose) {
+    private static void dumpException(PrintWriter errorWriter, Throwable cause, boolean verbose) {
         if (verbose) {
-            logError(cmd, "ERROR: Details:", cause);
+            logError(errorWriter, "ERROR: Details:", cause);
         } else {
             do {
                 if (cause.getMessage() != null) {
-                    logError(cmd, String.format("ERROR: %s", cause.getMessage()));
+                    logError(errorWriter, String.format("ERROR: %s", cause.getMessage()));
                 }
             } while ((cause = cause.getCause())!= null);
         }
     }
 
-    private static void logError(CommandLine cmd, String errorMessage) {
-        logError(cmd, errorMessage, null);
+    private static void logError(PrintWriter errorWriter, String errorMessage) {
+        logError(errorWriter, errorMessage, null);
     }
 
     // The "cause" can be null
-    private static void logError(CommandLine cmd, String errorMessage, Throwable cause) {
+    private static void logError(PrintWriter errorWriter, String errorMessage, Throwable cause) {
         QuarkusPlatform platform = (QuarkusPlatform) Platform.getPlatform();
         if (platform.isStarted()) {
             // Can delegate to proper logger once the platform is started
@@ -193,9 +196,9 @@ final class Picocli {
             }
         } else {
             if (cause == null) {
-                cmd.getErr().println(errorMessage);
+                errorWriter.println(errorMessage);
             } else {
-                cmd.getErr().println(errorMessage);
+                errorWriter.println(errorMessage);
                 cause.printStackTrace();
             }
         }
