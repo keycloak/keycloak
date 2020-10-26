@@ -24,5 +24,5 @@ package org.keycloak.provider.quarkus;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class QuarkusConfigurationException extends RuntimeException {
+public class InitializationException extends RuntimeException {
 }

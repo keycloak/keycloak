@@ -21,6 +21,7 @@ import static org.keycloak.configuration.PropertyMapper.MAPPERS;
 import static org.keycloak.configuration.PropertyMapper.create;
 import static org.keycloak.configuration.PropertyMapper.createWithDefault;
 import static org.keycloak.configuration.PropertyMapper.forBuildTimeProperty;
+import static org.keycloak.provider.quarkus.QuarkusPlatform.addInitializationException;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -67,7 +68,7 @@ public final class PropertyMappers {
                 }
                 
                 if (proceed == null || proceed.getValue() == null) {
-                    addDeferredConfigurationException(Messages.httpsConfigurationNotSet());
+                    addInitializationException(Messages.httpsConfigurationNotSet());
                 }
             }
             
@@ -114,7 +115,7 @@ public final class PropertyMappers {
                 case "passthrough":
                     return "true";
             }
-            addDeferredConfigurationException(Messages.invalidProxyMode(mode));
+            addInitializationException(Messages.invalidProxyMode(mode));
             return "false";
         }, "The proxy mode if the server is behind a reverse proxy. Possible values are: none, edge, reencrypt, and passthrough.");
     }
@@ -167,7 +168,7 @@ public final class PropertyMappers {
                 case "postgres-10":
                     return "postgresql";
             }
-            addDeferredConfigurationException(invalidDatabaseVendor(db, "h2-file", "h2-mem", "mariadb", "mysql", "postgres", "postgres-95", "postgres-10"));
+            addInitializationException(invalidDatabaseVendor(db, "h2-file", "h2-mem", "mariadb", "mysql", "postgres", "postgres-95", "postgres-10"));
             return "h2";
         }, "The database vendor. Possible values are: h2-mem, h2-file, mariadb, mysql, postgres95, postgres10.");
         create("db", "quarkus.datasource.jdbc.transactions", (db, context) -> "xa", null);
@@ -197,16 +198,7 @@ public final class PropertyMappers {
     }
 
     private static void configureClustering() {
-        createWithDefault("cluster", "kc.spi.connections-infinispan.default.config-file", "placeholder", (value, context) -> {
-
-            if ("placeholder".equals(value)) {
-                // Clustering is disabled by default for the "dev" profile. Otherwise enabled
-                value = ("dev".equalsIgnoreCase(ProfileManager.getActiveProfile())) ? "local" : "default";
-            }
-
-            return "cluster-" + value + ".xml";
-
-        }, "Specifies clustering configuration. The specified value points to the infinispan configuration file prefixed with the 'cluster-` "
+        createWithDefault("cluster", "kc.spi.connections-infinispan.default.config-file", "default", (value, context) -> "cluster-" + value + ".xml", "Specifies clustering configuration. The specified value points to the infinispan configuration file prefixed with the 'cluster-` "
                 + "inside the distribution configuration directory. Supported values out of the box are 'local' and 'cluster'. Value 'local' points to the file cluster-local.xml and " +
                 "effectively disables clustering and use infinispan caches in the local mode. Value 'default' points to the file cluster-default.xml, which has clustering enabled for infinispan caches.");
         create("cluster-stack", "kc.spi.connections-infinispan.default.stack", "Specified the default stack to use for cluster communication and node  discovery. Possible values are: tcp, udp, kubernetes, ec2.");
@@ -267,11 +259,5 @@ public final class PropertyMappers {
                 return property.equals(propertyMapper.getFrom()) || property.equals(propertyMapper.getTo());
             }
         }).findFirst().orElse(null);
-    }
-
-    // Exception to be thrown later, so that we can properly log it and collect all possible configuration issues (not just the first one)
-    private static void addDeferredConfigurationException(Exception e) {
-        QuarkusPlatform quarkusPlatform = (QuarkusPlatform) Platform.getPlatform();
-        quarkusPlatform.addDeferredException(e);
     }
 }
