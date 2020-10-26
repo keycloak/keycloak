@@ -1,15 +1,10 @@
 [id="proc-creating-user_{context}"]
 = Creating a user
 
-Administrators can create users and applications that are owned by the users of a specified realm. In the console, you can add users and register applications to be secured by {project_name}. 
+You create users in the realm where you intend to have applications needed by those users. Avoid creating users in the master realm, which is only intended for creating other realms.
 
-A user can use the console to access applications in a realm, update profile information, and change credentials. 
-
-Create users in the same realm that contains the applications for the user. Every user in a realm has access to the console and the applications in that realm. 
-
-.Prerequisites
-* You are not in the master realm. Use the master realm only to create other realms.
-* You are in the realm that contains the applications for the user.
+.Prerequisite
+* You are in a realm other than the master realm.
 
 .Procedure
 . In the console, click *Users* in the left menu.

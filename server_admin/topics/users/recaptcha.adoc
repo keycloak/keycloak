@@ -1,6 +1,6 @@
 [[_recaptcha]]
 
-=== reCAPTCHA Support
+= reCAPTCHA Support
 
 To safeguard registration against bots, {project_name} has integration with Google reCAPTCHA.
 To enable this you need to first go to link:https://developers.google.com/recaptcha/[Google Recaptcha Website]

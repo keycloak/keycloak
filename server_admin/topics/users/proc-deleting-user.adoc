@@ -1,7 +1,7 @@
 [id="proc-deleting-user_{context}"]
 = Deleting a user
 
-You can delete a user, who no longer needs access to applications in the {project_name} console. If a user is deleted, the user profile and data is also deleted.
+You can delete a user, who no longer needs access to applications. If a user is deleted, the user profile and data is also deleted.
 
 .Prerequisite
 * You are in the realm where the user exists.

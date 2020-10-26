@@ -1,5 +1,5 @@
 [id="con-impersonating_{context}"]
-=== Impersonation
+= Impersonation
 
 It is often useful for an admin to impersonate a user.  For example, a user may be experiencing a bug in one of your applications and an admin may want to impersonate the user to see if they can duplicate the problem.  Admins with the appropriate permission can impersonate a user. 
 
