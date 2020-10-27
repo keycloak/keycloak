@@ -33,7 +33,6 @@ import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Objects.nonNull;
@@ -707,47 +706,35 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    @Deprecated
     public Stream<String> getDefaultRolesStream() {
-        return realm.getDefaultRolesIds().stream().map(this::getRoleNameById);
+        return getDefaultRole().getCompositesStream().filter(this::isRealmRole).map(RoleModel::getName);
     }
 
-    private String getRoleNameById(String id) {
-        return getRoleById(id).getName();
+    private boolean isRealmRole(RoleModel role) {
+        return ! role.isClientRole();
     }
 
     @Override
+    @Deprecated
     public void addDefaultRole(String name) {
-        if (realm.getDefaultRolesIds().add(getOrAddRoleId(name))) {
-            em.flush();
-        }
+        getDefaultRole().addCompositeRole(getOrAddRoleId(name));
     }
 
-    private String getOrAddRoleId(String name) {
+    private RoleModel getOrAddRoleId(String name) {
         RoleModel role = getRole(name);
         if (role == null) {
             role = addRole(name);
         }
-        return role.getId();
+        return role;
     }
 
     @Override
-    public void updateDefaultRoles(String[] defaultRoles) {
-        Set<String> newDefaultRolesIds = Arrays.stream(defaultRoles)
-                .map(this::getOrAddRoleId)
-                .collect(Collectors.toSet());
-        realm.getDefaultRolesIds().retainAll(newDefaultRolesIds);
-        realm.getDefaultRolesIds().addAll(newDefaultRolesIds);
-        em.flush();
-    }
-
-    @Override
+    @Deprecated
     public void removeDefaultRoles(String... defaultRoles) {
-        Arrays.stream(defaultRoles)
-                .map(this::getRole)
-                .filter(Objects::nonNull)
-                .map(RoleModel::getId)
-                .forEach(realm.getDefaultRolesIds()::remove);
-        em.flush();
+        for (String defaultRole : defaultRoles) {
+            getDefaultRole().removeCompositeRole(getRole(defaultRole));
+        }
     }
 
     @Override
@@ -1202,6 +1189,19 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         String appEntityId = client !=null ? em.getReference(ClientEntity.class, client.getId()).getId() : null;
         realm.setMasterAdminClient(appEntityId);
         em.flush();
+    }
+
+    @Override
+    public void setDefaultRole(RoleModel role) {
+        realm.setDefaultRoleId(role.getId());
+    }
+
+    @Override
+    public RoleModel getDefaultRole() {
+        if (realm.getDefaultRoleId() == null) {
+            return null;
+        }
+        return session.roles().getRoleById(this, realm.getDefaultRoleId());
     }
 
     @Override

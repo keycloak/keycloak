@@ -671,7 +671,7 @@ public class GroupTest extends AbstractGroupTest {
 
             // List realm roles
             assertNames(roles.realmLevel().listAll(), "realm-role", "realm-composite");
-            assertNames(roles.realmLevel().listAvailable(), "admin", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, "user", "customer-user-premium", "realm-composite-role", "sample-realm-role", "attribute-role");
+            assertNames(roles.realmLevel().listAvailable(), "admin", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, "user", "customer-user-premium", "realm-composite-role", "sample-realm-role", "attribute-role", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
             assertNames(roles.realmLevel().listEffective(), "realm-role", "realm-composite", "realm-child");
 
             // List client roles

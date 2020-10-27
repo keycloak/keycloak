@@ -40,6 +40,7 @@ public class ClientRepresentation {
     protected String clientAuthenticatorType;
     protected String secret;
     protected String registrationAccessToken;
+    @Deprecated
     protected String[] defaultRoles;
     protected List<String> redirectUris;
     protected List<String> webOrigins;
@@ -200,10 +201,12 @@ public class ClientRepresentation {
         this.webOrigins = webOrigins;
     }
 
+    @Deprecated
     public String[] getDefaultRoles() {
         return defaultRoles;
     }
 
+    @Deprecated
     public void setDefaultRoles(String[] defaultRoles) {
         this.defaultRoles = defaultRoles;
     }

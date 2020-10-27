@@ -401,10 +401,8 @@ public class ModelToRepresentation {
         if (realm.getClientAuthenticationFlow() != null) rep.setClientAuthenticationFlow(realm.getClientAuthenticationFlow().getAlias());
         if (realm.getDockerAuthenticationFlow() != null) rep.setDockerAuthenticationFlow(realm.getDockerAuthenticationFlow().getAlias());
 
-        List<String> defaultRoles = realm.getDefaultRolesStream().collect(Collectors.toList());
-        if (!defaultRoles.isEmpty()) {
-            rep.setDefaultRoles(defaultRoles);
-        }
+        rep.setDefaultRole(toBriefRepresentation(realm.getDefaultRole()));
+
         List<String> defaultGroups = realm.getDefaultGroupsStream()
                 .map(ModelToRepresentation::buildGroupPath).collect(Collectors.toList());
         if (!defaultGroups.isEmpty()) {
@@ -603,11 +601,6 @@ public class ModelToRepresentation {
         Set<String> webOrigins = clientModel.getWebOrigins();
         if (webOrigins != null) {
             rep.setWebOrigins(new LinkedList<>(webOrigins));
-        }
-
-        String[] defaultRoles = clientModel.getDefaultRolesStream().toArray(String[]::new);
-        if (defaultRoles.length > 0) {
-            rep.setDefaultRoles(defaultRoles);
         }
 
         if (!clientModel.getRegisteredNodes().isEmpty()) {

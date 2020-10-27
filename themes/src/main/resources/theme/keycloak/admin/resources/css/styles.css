@@ -355,6 +355,13 @@ h1 i {
     background-image: none;
 }
 
+.kc-action-cell-disabled {
+    background-color: #fafafa;
+    color: #8b8d8f;
+    background-image: none;
+    cursor: not-allowed;
+}
+
 .kc-sorter span {
     margin-left: 10px;
 }

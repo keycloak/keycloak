@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import org.keycloak.models.Constants;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
@@ -228,6 +229,7 @@ public class UserSessionPersisterProviderTest extends AbstractTestRealmKeycloakT
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionRR1) -> {
             KeycloakSession currentSession = sessionRR1;
             RealmModel fooRealm = currentSession.realms().createRealm("foo", "foo");
+            fooRealm.setDefaultRole(currentSession.roles().addRealmRole(fooRealm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + fooRealm.getName()));
 
             fooRealm.addClient("foo-app");
             currentSession.users().addUser(fooRealm, "user3");
@@ -275,6 +277,7 @@ public class UserSessionPersisterProviderTest extends AbstractTestRealmKeycloakT
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCR1) -> {
             KeycloakSession currentSession = sessionCR1;
             RealmModel fooRealm = currentSession.realms().createRealm("foo", "foo");
+            fooRealm.setDefaultRole(currentSession.roles().addRealmRole(fooRealm, Constants.DEFAULT_ROLES_ROLE_PREFIX));
 
             fooRealm.addClient("foo-app");
             fooRealm.addClient("bar-app");

@@ -52,7 +52,6 @@ import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
-import org.keycloak.models.utils.DefaultRoles;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
@@ -291,7 +290,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
         // Add the user to the default groups and add default required actions
         UserModel proxy = proxy(realm, user, ldapUser, true);
-        DefaultRoles.addDefaultRoles(realm, proxy);
+        proxy.grantRole(realm.getDefaultRole());
 
         realm.getDefaultGroupsStream().forEach(proxy::joinGroup);
 

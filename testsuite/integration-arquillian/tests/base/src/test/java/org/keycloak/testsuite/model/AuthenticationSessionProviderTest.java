@@ -44,6 +44,8 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
+import org.keycloak.models.Constants;
+import org.keycloak.models.RoleModel;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
@@ -248,6 +250,7 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
             KeycloakSession currentSession = sesRealmRemoved1;
             RealmModel realm = currentSession.realms().getRealm("test");
             RealmModel fooRealm = currentSession.realms().createRealm("foo-realm");
+            fooRealm.setDefaultRole(currentSession.roles().addRealmRole(fooRealm, Constants.DEFAULT_ROLES_ROLE_PREFIX  + "-" + fooRealm.getName()));
 
             fooRealm.addClient("foo-client");
 

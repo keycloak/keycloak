@@ -668,6 +668,18 @@ public interface RealmModel extends RoleContainerModel {
 
     void setMasterAdminClient(ClientModel client);
 
+    /**
+     * Returns default realm role. All both realm and client default roles are assigned as composite of this role.
+     * @return Default role of this realm
+     */
+    RoleModel getDefaultRole();
+
+    /**
+     * Sets default role for this realm
+     * @param role to be set
+     */
+    void setDefaultRole(RoleModel role);
+
     boolean isIdentityFederationEnabled();
 
     boolean isInternationalizationEnabled();
@@ -788,4 +800,12 @@ public interface RealmModel extends RoleContainerModel {
     }
 
     Stream<ClientScopeModel> getDefaultClientScopesStream(boolean defaultScope);
+
+    /**
+     * Adds a role as a composite to default role of this realm. 
+     * @param role to be added
+     */ 
+    default void addToDefaultRoles(RoleModel role) {
+        getDefaultRole().addCompositeRole(role);
+    }
 }

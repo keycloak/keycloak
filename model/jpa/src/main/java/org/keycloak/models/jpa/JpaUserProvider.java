@@ -43,7 +43,6 @@ import org.keycloak.models.jpa.entities.UserConsentClientScopeEntity;
 import org.keycloak.models.jpa.entities.UserConsentEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
-import org.keycloak.models.utils.DefaultRoles;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
@@ -126,7 +125,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
         UserAdapter userModel = new UserAdapter(session, realm, em, entity);
 
         if (addDefaultRoles) {
-            DefaultRoles.addDefaultRoles(realm, userModel);
+            userModel.grantRole(realm.getDefaultRole());
 
             // No need to check if user has group as it's new user
             realm.getDefaultGroupsStream().forEach(userModel::joinGroupImpl);

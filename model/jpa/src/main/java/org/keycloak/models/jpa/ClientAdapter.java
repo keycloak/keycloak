@@ -36,7 +36,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 
 import java.security.MessageDigest;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -44,7 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -681,50 +679,35 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     }
 
     @Override
+    @Deprecated
     public Stream<String> getDefaultRolesStream() {
-        return entity.getDefaultRolesIds().stream().map(this::getRoleNameById);
+        return realm.getDefaultRole().getCompositesStream().filter(this::isClientRole).map(RoleModel::getName);
     }
 
-    private String getRoleNameById(String id) {
-        RoleModel roleById = session.roles().getRoleById(realm, id);
-        if (roleById == null) {
-            return null;
-        }
-        return roleById.getName();
+    private boolean isClientRole(RoleModel role) {
+        return role.isClientRole() && Objects.equals(role.getContainerId(), this.getId());
     }
 
     @Override
+    @Deprecated
     public void addDefaultRole(String name) {
-        if (entity.getDefaultRolesIds().add(getOrAddRoleId(name))) {
-            em.flush();
-        }
+        realm.getDefaultRole().addCompositeRole(getOrAddRoleId(name));
     }
 
-    private String getOrAddRoleId(String name) {
+    private RoleModel getOrAddRoleId(String name) {
         RoleModel role = getRole(name);
         if (role == null) {
             role = addRole(name);
         }
-        return role.getId();
+        return role;
     }
 
     @Override
-    public void updateDefaultRoles(String... defaultRoles) {
-        Set<String> newDefaultRolesIds = Arrays.stream(defaultRoles)
-                .map(this::getOrAddRoleId)
-                .collect(Collectors.toSet());
-        entity.getDefaultRolesIds().retainAll(newDefaultRolesIds);
-        entity.getDefaultRolesIds().addAll(newDefaultRolesIds);
-        em.flush();
-    }
-
-    @Override
+    @Deprecated
     public void removeDefaultRoles(String... defaultRoles) {
-        Arrays.stream(defaultRoles)
-                .map(this::getRole)
-                .filter(Objects::nonNull)
-                .forEach(role -> entity.getDefaultRolesIds().remove(role.getId()));
-        em.flush();
+        for (String defaultRole : defaultRoles) {
+            realm.getDefaultRole().removeCompositeRole(getRole(defaultRole));
+        }
     }
 
     @Override

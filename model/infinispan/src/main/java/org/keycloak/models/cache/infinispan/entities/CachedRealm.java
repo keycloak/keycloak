@@ -142,7 +142,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean adminEventsEnabled;
     protected Set<String> adminEnabledEventOperations = new HashSet<>();
     protected boolean adminEventsDetailsEnabled;
-    protected List<String> defaultRoles;
+    protected String defaultRoleId;
     private boolean allowUserManagedAccess;
 
     public Set<IdentityProviderMapperModel> getIdentityProviderMapperSet() {
@@ -251,7 +251,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         adminEventsEnabled = model.isAdminEventsEnabled();
         adminEventsDetailsEnabled = model.isAdminEventsDetailsEnabled();
 
-        defaultRoles = model.getDefaultRolesStream().collect(Collectors.toList());
+        defaultRoleId = model.getDefaultRole().getId();
         ClientModel masterAdminClient = model.getMasterAdminClient();
         this.masterAdminClient = (masterAdminClient != null) ? masterAdminClient.getId() : null;
 
@@ -318,6 +318,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return masterAdminClient;
     }
 
+    public String getDefaultRoleId() {
+        return defaultRoleId;
+    }
+
     public String getName() {
         return name;
     }
@@ -328,10 +332,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public String getDisplayNameHtml() {
         return displayNameHtml;
-    }
-
-    public List<String> getDefaultRoles() {
-        return defaultRoles;
     }
 
     public boolean isEnabled() {

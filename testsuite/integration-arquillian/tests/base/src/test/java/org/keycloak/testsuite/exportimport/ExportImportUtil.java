@@ -101,10 +101,6 @@ public class ExportImportUtil {
         Assert.assertEquals(1, creds.size());
         String cred = (String)creds.iterator().next();
         Assert.assertEquals("password", cred);
-        Assert.assertEquals(4, realm.getDefaultRoles().size());
-
-        Assert.assertNotNull(RealmRepUtil.findDefaultRole(realm, "foo"));
-        Assert.assertNotNull(RealmRepUtil.findDefaultRole(realm, "bar"));
 
         RealmResource realmRsc = adminClient.realm(realm.getRealm());
 

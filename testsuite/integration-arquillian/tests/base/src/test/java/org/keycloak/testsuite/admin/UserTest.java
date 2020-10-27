@@ -2009,7 +2009,8 @@ public class UserTest extends AbstractAdminTest {
         assertAdminEvents.clear();
 
         RoleMappingResource roles = realm.users().get(userId).roles();
-        assertNames(roles.realmLevel().listAll(), "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
+        assertNames(roles.realmLevel().listAll(), Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+        assertNames(roles.realmLevel().listEffective(), "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
 
         // Add realm roles
         List<RoleRepresentation> l = new LinkedList<>();
@@ -2028,9 +2029,9 @@ public class UserTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), ResourceType.CLIENT_ROLE_MAPPING);
 
         // List realm roles
-        assertNames(roles.realmLevel().listAll(), "realm-role", "realm-composite", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
+        assertNames(roles.realmLevel().listAll(), "realm-role", "realm-composite", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
         assertNames(roles.realmLevel().listAvailable(), "admin", "customer-user-premium", "realm-composite-role", "sample-realm-role", "attribute-role");
-        assertNames(roles.realmLevel().listEffective(), "realm-role", "realm-composite", "realm-child", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
+        assertNames(roles.realmLevel().listEffective(), "realm-role", "realm-composite", "realm-child", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
 
         // List realm effective role with full representation
         List<RoleRepresentation> realmRolesFullRepresentations = roles.realmLevel().listEffective(false);
@@ -2051,17 +2052,16 @@ public class UserTest extends AbstractAdminTest {
 
         // Get mapping representation
         MappingsRepresentation all = roles.getAll();
-        assertNames(all.getRealmMappings(), "realm-role", "realm-composite", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
-        assertEquals(2, all.getClientMappings().size());
+        assertNames(all.getRealmMappings(), "realm-role", "realm-composite", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
+        assertEquals(1, all.getClientMappings().size());
         assertNames(all.getClientMappings().get("myclient").getMappings(), "client-role", "client-composite");
-        assertNames(all.getClientMappings().get("account").getMappings(), "manage-account", "view-profile");
 
         // Remove realm role
         RoleRepresentation realmRoleRep = realm.roles().get("realm-role").toRepresentation();
         roles.realmLevel().remove(Collections.singletonList(realmRoleRep));
         assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.userRealmRoleMappingsPath(userId), Collections.singletonList(realmRoleRep), ResourceType.REALM_ROLE_MAPPING);
 
-        assertNames(roles.realmLevel().listAll(), "realm-composite", "user", "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
+        assertNames(roles.realmLevel().listAll(), "realm-composite", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
 
         // Remove client role
         RoleRepresentation clientRoleRep = realm.clients().get(clientUuid).roles().get("client-role").toRepresentation();

@@ -25,7 +25,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModelDefaultMethods;
-import org.keycloak.models.utils.DefaultRoles;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
@@ -216,7 +215,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     @Override
     public Set<RoleModel> getRoleMappings() {
         Set<RoleModel> set = new HashSet<>(getFederatedRoleMappings());
-        if (appendDefaultRolesToRoleMappings()) set.addAll(DefaultRoles.getDefaultRoles(realm).collect(Collectors.toSet()));
+        if (appendDefaultRolesToRoleMappings()) set.addAll(realm.getDefaultRole().getCompositesStream().collect(Collectors.toSet()));
         set.addAll(getRoleMappingsInternal());
         return set;
     }
@@ -503,7 +502,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
         @Override
         public Stream<RoleModel> getRoleMappingsStream() {
             Stream<RoleModel> roleMappings = getFederatedRoleMappings().stream();
-            if (appendDefaultRolesToRoleMappings()) roleMappings = Stream.concat(roleMappings, DefaultRoles.getDefaultRoles(realm));
+            if (appendDefaultRolesToRoleMappings()) roleMappings = Stream.concat(roleMappings, realm.getDefaultRole().getCompositesStream());
             return Stream.concat(roleMappings, getRoleMappingsInternal().stream());
         }
 

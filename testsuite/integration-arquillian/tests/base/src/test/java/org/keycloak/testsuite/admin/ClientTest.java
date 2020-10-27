@@ -64,6 +64,8 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.*;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -331,19 +333,21 @@ public class ClientTest extends AbstractAdminTest {
 
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(id, "test"), role, ResourceType.CLIENT_ROLE);
 
-        ClientRepresentation foundClientRep = realm.clients().get(id).toRepresentation();
-        foundClientRep.setDefaultRoles(new String[]{"test"});
-        realm.clients().get(id).update(foundClientRep);
+        role = realm.clients().get(id).roles().get("test").toRepresentation();
 
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, AdminEventPaths.clientResourcePath(id), rep, ResourceType.CLIENT);
+        realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).addComposites(Collections.singletonList(role));
 
-        assertArrayEquals(new String[]{"test"}, realm.clients().get(id).toRepresentation().getDefaultRoles());
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME), Collections.singletonList(role), ResourceType.REALM_ROLE);
+
+        assertThat(realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).getRoleComposites().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()), 
+                hasItem(role.getName()));
 
         realm.clients().get(id).roles().deleteRole("test");
 
         assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientRoleResourcePath(id, "test"), ResourceType.CLIENT_ROLE);
 
-        assertNull(realm.clients().get(id).toRepresentation().getDefaultRoles());
+        assertThat(realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).getRoleComposites().stream().map(RoleRepresentation::getName).collect(Collectors.toSet()), 
+                not(hasItem(role)));
     }
 
     @Test
@@ -555,7 +559,7 @@ public class ClientTest extends AbstractAdminTest {
 
         Assert.assertNames(scopesResource.realmLevel().listAll(), "role1");
         Assert.assertNames(scopesResource.realmLevel().listEffective(), "role1", "role2");
-        Assert.assertNames(scopesResource.realmLevel().listAvailable(), "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION);
+        Assert.assertNames(scopesResource.realmLevel().listAvailable(), "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME);
 
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAll(), AccountRoles.VIEW_PROFILE);
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listEffective(), AccountRoles.VIEW_PROFILE);
@@ -573,7 +577,7 @@ public class ClientTest extends AbstractAdminTest {
 
         Assert.assertNames(scopesResource.realmLevel().listAll());
         Assert.assertNames(scopesResource.realmLevel().listEffective());
-        Assert.assertNames(scopesResource.realmLevel().listAvailable(), "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, "role1", "role2");
+        Assert.assertNames(scopesResource.realmLevel().listAvailable(), "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, "role1", "role2", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME);
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAll());
 
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAvailable(), AccountRoles.VIEW_PROFILE, AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS, AccountRoles.VIEW_APPLICATIONS, AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT, AccountRoles.DELETE_ACCOUNT);

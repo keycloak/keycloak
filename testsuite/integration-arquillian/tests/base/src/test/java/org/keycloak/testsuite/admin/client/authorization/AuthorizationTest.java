@@ -52,7 +52,7 @@ public class AuthorizationTest extends AbstractAuthorizationTest {
 
         UserRepresentation serviceAccount = realm.users().search(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + resourceServer.getClientId()).get(0);
         Assert.assertNotNull(serviceAccount);
-        List<RoleRepresentation> serviceAccountRoles = realm.users().get(serviceAccount.getId()).roles().clientLevel(resourceServer.getId()).listAll();
+        List<RoleRepresentation> serviceAccountRoles = realm.users().get(serviceAccount.getId()).roles().clientLevel(resourceServer.getId()).listEffective();
         Assert.assertTrue(serviceAccountRoles.stream().anyMatch(roleRepresentation -> "uma_protection".equals(roleRepresentation.getName())));
 
         enableAuthorizationServices(false);
@@ -61,7 +61,7 @@ public class AuthorizationTest extends AbstractAuthorizationTest {
         serviceAccount = clientResource.getServiceAccountUser();
         Assert.assertNotNull(serviceAccount);
         realm = realmsResouce().realm(getRealmId());
-        serviceAccountRoles = realm.users().get(serviceAccount.getId()).roles().clientLevel(resourceServer.getId()).listAll();
+        serviceAccountRoles = realm.users().get(serviceAccount.getId()).roles().clientLevel(resourceServer.getId()).listEffective();
         Assert.assertTrue(serviceAccountRoles.stream().anyMatch(roleRepresentation -> "uma_protection".equals(roleRepresentation.getName())));
 
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
@@ -97,7 +97,7 @@ public class AuthorizationTest extends AbstractAuthorizationTest {
 
         serviceAccount = clientResource.getServiceAccountUser();
         Assert.assertNotNull(serviceAccount);
-        serviceAccountRoles = realm.users().get(serviceAccount.getId()).roles().clientLevel(resourceServer.getId()).listAll();
+        serviceAccountRoles = realm.users().get(serviceAccount.getId()).roles().clientLevel(resourceServer.getId()).listEffective();
         Assert.assertTrue(serviceAccountRoles.stream().anyMatch(roleRepresentation -> "uma_protection".equals(roleRepresentation.getName())));
     }
 

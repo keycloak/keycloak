@@ -176,7 +176,7 @@ public class ClientsResource {
         }
 
         try {
-            ClientModel clientModel = ClientManager.createClient(session, realm, rep, true);
+            ClientModel clientModel = ClientManager.createClient(session, realm, rep);
 
             if (TRUE.equals(rep.isServiceAccountsEnabled())) {
                 UserModel serviceAccount = session.users().getServiceAccount(clientModel);

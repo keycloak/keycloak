@@ -373,7 +373,6 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm1) -> {
 
                     RoleModel role = session.getProvider(RoleProvider.class).addRealmRole(realm1, "foo");
-                    realm1.addDefaultRole("foo");
                     return role.getId();
 
                 }),

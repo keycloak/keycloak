@@ -155,11 +155,6 @@ public class ClientEntity {
 
     @ElementCollection
     @Column(name="ROLE_ID")
-    @CollectionTable(name="CLIENT_DEFAULT_ROLES", joinColumns = { @JoinColumn(name="CLIENT_ID")})
-    private Set<String> defaultRolesIds;
-
-    @ElementCollection
-    @Column(name="ROLE_ID")
     @CollectionTable(name="SCOPE_MAPPING", joinColumns = { @JoinColumn(name="CLIENT_ID")})
     private Set<String> scopeMappingIds;
 
@@ -374,17 +369,6 @@ public class ClientEntity {
 
     public void setManagementUrl(String managementUrl) {
         this.managementUrl = managementUrl;
-    }
-
-    public Set<String> getDefaultRolesIds() {
-        if (defaultRolesIds == null) {
-            defaultRolesIds = new HashSet<>();
-        }
-        return defaultRolesIds;
-    }
-
-    public void setDefaultRolesIds(Set<String> defaultRolesIds) {
-        this.defaultRolesIds = defaultRolesIds;
     }
 
     public boolean isBearerOnly() {

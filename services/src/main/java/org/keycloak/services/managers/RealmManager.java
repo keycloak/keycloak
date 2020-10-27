@@ -110,6 +110,7 @@ public class RealmManager {
         // setup defaults
         setupRealmDefaults(realm);
 
+        KeycloakModelUtils.setupDefaultRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + name.toLowerCase());
         setupMasterAdminManagement(realm);
         setupRealmAdminManagement(realm);
         setupAccountManagement(realm);
@@ -427,10 +428,10 @@ public class RealmManager {
 
             accountClient.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
-            for (String role : AccountRoles.ALL) {
-                accountClient.addDefaultRole(role);
-                RoleModel roleModel = accountClient.getRole(role);
+            for (String role : AccountRoles.DEFAULT) {
+                RoleModel roleModel = accountClient.addRole(role);
                 roleModel.setDescription("${role_" + role + "}");
+                realm.addToDefaultRoles(roleModel);
             }
             RoleModel manageAccountLinks = accountClient.addRole(AccountRoles.MANAGE_ACCOUNT_LINKS);
             manageAccountLinks.setDescription("${role_" + AccountRoles.MANAGE_ACCOUNT_LINKS + "}");
@@ -521,6 +522,12 @@ public class RealmManager {
 
         setupRealmDefaults(realm);
 
+        if (rep.getDefaultRole() == null) {
+            KeycloakModelUtils.setupDefaultRole(realm, determineDefaultRoleName(rep));
+        } else {
+            realm.setDefaultRole(RepresentationToModel.createRole(realm, rep.getDefaultRole()));
+        }
+
         boolean postponeMasterClientSetup = postponeMasterClientSetup(rep);
         if (!postponeMasterClientSetup) {
             setupMasterAdminManagement(realm);
@@ -603,6 +610,21 @@ public class RealmManager {
         fireRealmPostCreate(realm);
 
         return realm;
+    }
+
+    private String determineDefaultRoleName(RealmRepresentation rep) {
+        String defaultRoleName = Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + rep.getRealm().toLowerCase(); 
+        if (! hasRealmRole(rep, defaultRoleName)) {
+            return defaultRoleName;
+        } else {
+            for (int i = 1; i < Integer.MAX_VALUE; i++) {
+                defaultRoleName = Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + rep.getRealm().toLowerCase() + "-" + i;
+                if (! hasRealmRole(rep, defaultRoleName)) {
+                    return defaultRoleName;
+                }
+            }
+        }
+        return null;
     }
 
     private boolean postponeMasterClientSetup(RealmRepresentation rep) {
