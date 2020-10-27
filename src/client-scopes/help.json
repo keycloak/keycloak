@@ -10,6 +10,10 @@
     "prefix": "A prefix for each Realm Role (optional).",
     "multiValued": "Indicates if attribute supports multiple values. If true, the list of all values of this attribute will be set as claim. If false, just first value will be set as claim",
     "tokenClaimName": "Name of the claim to insert into the token. This can be a fully qualified name like 'address.street'. In this case, a nested json object will be created. To prevent nesting and use dot literally, escape the dot with backslash (\\.).",
-    "claimJsonType": "JSON type that should be used to populate the json claim in the token. long, int, boolean, String and JSON are valid values."
+    "claimJsonType": "JSON type that should be used to populate the json claim in the token. long, int, boolean, String and JSON are valid values.",
+    "protocolMapper": "Protocol...",
+    "mapperName": "Name of the mapper",
+    "role": "Role name you want changed. Click 'Select Role' button to browse roles, or just type it in the textbox. To reference an application role the syntax is appname.approle, i.e. myapp.myrole",
+    "newRoleName": "The new role name.  The new name format corresponds to where in the access token the role will be mapped to.  So, a new name of 'myapp.newname' will map the role to that position in the access token.  A new name of 'newname' will map the role to the realm roles in the token."
   }
 }

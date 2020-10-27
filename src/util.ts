@@ -8,7 +8,7 @@ export const sortProvider = (
   b: [string, ProviderRepresentation]
 ) => {
   let s1, s2;
-  if (a[1].order != b[1].order) {
+  if (a[1].order !== b[1].order) {
     s1 = b[1].order;
     s2 = a[1].order;
   } else {
