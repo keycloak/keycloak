@@ -21,17 +21,32 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.provider.Provider;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public interface KeyProvider extends Provider {
 
+
     /**
-     * Returns the key
-     * @return
+     * Returns the {@code KeyWrapper} for a {@code KeyProvider}.
+     *
+     * @return Returns the {@code KeyWrapper} for a {@code KeyProvider}.
+     * @deprecated Use {@link #getKeysStream() getKeysStream} instead.
      */
-    List<KeyWrapper> getKeys();
+    @Deprecated
+    default List<KeyWrapper> getKeys() {
+        return getKeysStream().collect(Collectors.toList());
+    }
+
+    /**
+     * Returns the {@code KeyWrapper} for a {@code KeyProvider}.
+     *
+     * @return Returns the {@code KeyWrapper} for a {@code KeyProvider}.
+     */
+    Stream<KeyWrapper> getKeysStream();
 
     default void close() {
     }

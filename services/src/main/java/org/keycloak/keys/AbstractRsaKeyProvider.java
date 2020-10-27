@@ -30,6 +30,7 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -60,8 +61,8 @@ public abstract class AbstractRsaKeyProvider implements KeyProvider {
     protected abstract KeyWrapper loadKey(RealmModel realm, ComponentModel model);
 
     @Override
-    public List<KeyWrapper> getKeys() {
-        return Collections.singletonList(key);
+    public Stream<KeyWrapper> getKeysStream() {
+        return Stream.of(key);
     }
 
     protected KeyWrapper createKeyWrapper(KeyPair keyPair, X509Certificate certificate) {
