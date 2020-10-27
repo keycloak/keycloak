@@ -11,6 +11,8 @@ import {
 import { TableToolbar } from "../components/table-toolbar/TableToolbar";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { RealmContext } from "../context/realm-context/RealmContext";
+import { useAlerts } from "../components/alert/Alerts";
 import {
   Button,
   Dropdown,
@@ -20,6 +22,7 @@ import {
   PageSectionVariants,
   Spinner,
   ToolbarItem,
+  AlertVariant,
 } from "@patternfly/react-core";
 import "./GroupsSection.css";
 
@@ -27,24 +30,28 @@ export const GroupsSection = () => {
   const { t } = useTranslation("groups");
   const httpClient = useContext(HttpClientContext)!;
   const [rawData, setRawData] = useState<{ [key: string]: any }[]>();
-  const [filteredData, setFilteredData] = useState<object[]>();
+  const [filteredData, setFilteredData] = useState<{ [key: string]: any }[]>();
   const [isKebabOpen, setIsKebabOpen] = useState(false);
   const [createGroupName, setCreateGroupName] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [tableRowSelectedArray, setTableRowSelectedArray] = useState<
+    Array<number>
+  >([]);
   const columnID: keyof GroupRepresentation = "id";
   const membersLength: keyof GroupRepresentation = "membersLength";
   const columnGroupName: keyof GroupRepresentation = "name";
+  const { addAlert } = useAlerts();
+  const { realm } = useContext(RealmContext);
 
   const loader = async () => {
     const groups = await httpClient.doGet<ServerGroupsArrayRepresentation[]>(
-      "/admin/realms/master/groups"
+      `/admin/realms/${realm}/groups`
     );
     const groupsData = groups.data!;
-
     const getMembers = async (id: number) => {
       const response = await httpClient.doGet<
         ServerGroupMembersRepresentation[]
-      >(`/admin/realms/master/groups/${id}/members`);
+      >(`/admin/realms/${realm}/groups/${id}/members`);
       const responseData = response.data!;
       return responseData.length;
     };
@@ -60,7 +67,7 @@ export const GroupsSection = () => {
         return object;
       }
     );
-
+    setFilteredData(updatedObject);
     setRawData(updatedObject);
   };
 
@@ -88,6 +95,31 @@ export const GroupsSection = () => {
 
   const handleModalToggle = () => {
     setIsCreateModalOpen(!isCreateModalOpen);
+  };
+
+  const multiDelete = async () => {
+    if (tableRowSelectedArray.length !== 0) {
+      const deleteGroup = async (rowId: number) => {
+        try {
+          await httpClient.doDelete(
+            `/admin/realms/${realm}/groups/${
+              filteredData ? filteredData![rowId].id : rawData![rowId].id
+            }`
+          );
+          loader();
+        } catch (error) {
+          addAlert(`${t("groupDeleteError")} ${error}`, AlertVariant.danger);
+        }
+      };
+
+      const chainedPromises = tableRowSelectedArray.map((rowId: number) => {
+        deleteGroup(rowId);
+      });
+
+      await Promise.all(chainedPromises)
+        .then(() => addAlert(t("groupsDeleted"), AlertVariant.success))
+        .then(() => setTableRowSelectedArray([]));
+    }
   };
 
   return (
@@ -122,8 +154,12 @@ export const GroupsSection = () => {
                       isOpen={isKebabOpen}
                       isPlain
                       dropdownItems={[
-                        <DropdownItem key="action" component="button">
-                          {t("delete")}
+                        <DropdownItem
+                          key="action"
+                          component="button"
+                          onClick={() => multiDelete()}
+                        >
+                          {t("common:Delete")}
                         </DropdownItem>,
                       ]}
                     />
@@ -135,6 +171,8 @@ export const GroupsSection = () => {
                 <GroupsList
                   list={filteredData ? filteredData : rawData}
                   refresh={loader}
+                  tableRowSelectedArray={tableRowSelectedArray}
+                  setTableRowSelectedArray={setTableRowSelectedArray}
                 />
               )}
               {filteredData && filteredData.length === 0 && (
@@ -146,14 +184,6 @@ export const GroupsSection = () => {
                 />
               )}
             </TableToolbar>
-            <GroupsCreateModal
-              isCreateModalOpen={isCreateModalOpen}
-              handleModalToggle={handleModalToggle}
-              setIsCreateModalOpen={setIsCreateModalOpen}
-              createGroupName={createGroupName}
-              setCreateGroupName={setCreateGroupName}
-              refresh={loader}
-            />
           </>
         ) : (
           <ListEmptyState
@@ -161,8 +191,17 @@ export const GroupsSection = () => {
             message={t("noGroupsInThisRealm")}
             instructions={t("noGroupsInThisRealmInstructions")}
             primaryActionText={t("createGroup")}
+            onPrimaryAction={() => handleModalToggle()}
           />
         )}
+        <GroupsCreateModal
+          isCreateModalOpen={isCreateModalOpen}
+          handleModalToggle={handleModalToggle}
+          setIsCreateModalOpen={setIsCreateModalOpen}
+          createGroupName={createGroupName}
+          setCreateGroupName={setCreateGroupName}
+          refresh={loader}
+        />
       </PageSection>
     </>
   );

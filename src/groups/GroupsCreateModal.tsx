@@ -48,9 +48,9 @@ export const GroupsCreateModal = ({
         await httpClient.doPost(`/admin/realms/${realm}/groups`, {
           name: createGroupName,
         });
+        refresh();
         setIsCreateModalOpen(false);
         setCreateGroupName("");
-        refresh();
         addAlert(t("groupCreated"), AlertVariant.success);
       } catch (error) {
         addAlert(

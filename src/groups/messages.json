@@ -8,7 +8,6 @@
     "search": "Search",
     "members": "Members",
     "moveTo": "Move to",
-    "delete": "Delete",
     "tableOfGroups": "Table of groups",
     "name": "Name",
     "groupsDescription": "Description goes here",
@@ -17,8 +16,10 @@
     "createAGroup": "Create a group",
     "create": "Create",
     "noSearchResults": "No search results",
-    "noSearchResultsInstructions" : "Click on the search bar above to search for groups",
-    "noGroupsInThisRealm" : "No groups in this Realm",
-    "noGroupsInThisRealmInstructions" : "You haven't created any groups in this realm. Create a group to get started."
+    "noSearchResultsInstructions": "Click on the search bar above to search for groups",
+    "noGroupsInThisRealm": "No groups in this realm",
+    "noGroupsInThisRealmInstructions": "You haven't created any groups in this realm. Create a group to get started.",
+    "groupsDeleted": "Groups deleted",
+    "groupDeleteError": "Error deleting group"
   }
 }

@@ -16,6 +16,8 @@ import { useAlerts } from "../components/alert/Alerts";
 export type GroupsListProps = {
   list?: GroupRepresentation[];
   refresh: () => void;
+  tableRowSelectedArray: number[];
+  setTableRowSelectedArray: (tableRowSelectedArray: number[]) => void;
 };
 
 type FormattedData = {
@@ -23,7 +25,12 @@ type FormattedData = {
   selected: boolean;
 };
 
-export const GroupsList = ({ list, refresh }: GroupsListProps) => {
+export const GroupsList = ({
+  list,
+  refresh,
+  tableRowSelectedArray,
+  setTableRowSelectedArray,
+}: GroupsListProps) => {
   const { t } = useTranslation("groups");
   const httpClient = useContext(HttpClientContext)!;
   const columnGroupName: keyof GroupRepresentation = "name";
@@ -67,7 +74,22 @@ export const GroupsList = ({ list, refresh }: GroupsListProps) => {
       });
     } else {
       localRow = [...formattedData];
-      localRow[rowId].selected = isSelected;
+      const localTableRow = [...tableRowSelectedArray];
+      if (localRow[rowId].selected !== isSelected) {
+        localRow[rowId].selected = isSelected;
+      }
+
+      if (localTableRow.includes(rowId)) {
+        const index = localTableRow.indexOf(rowId);
+        if (index === 0) {
+          localTableRow.shift();
+        } else {
+          localTableRow.splice(index, 1);
+        }
+        setTableRowSelectedArray(localTableRow);
+      } else {
+        setTableRowSelectedArray([rowId, ...tableRowSelectedArray]);
+      }
       setFormattedData(localRow);
     }
   }
@@ -89,6 +111,7 @@ export const GroupsList = ({ list, refresh }: GroupsListProps) => {
             `/admin/realms/${realm}/groups/${list![rowId].id}`
           );
           refresh();
+          setTableRowSelectedArray([]);
           addAlert(t("Group deleted"), AlertVariant.success);
         } catch (error) {
           addAlert(`${t("clientDeleteError")} ${error}`, AlertVariant.danger);
