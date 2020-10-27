@@ -20,10 +20,7 @@ package org.keycloak.services.resources.admin;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.jose.jws.AlgorithmType;
-import org.keycloak.keys.SecretKeyMetadata;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeyManager;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
@@ -32,9 +29,8 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @resource Key
@@ -59,29 +55,33 @@ public class KeyResource {
         auth.realm().requireViewRealm();
 
         KeysMetadataRepresentation keys = new KeysMetadataRepresentation();
-        keys.setKeys(new LinkedList<>());
         keys.setActive(new HashMap<>());
 
-        for (KeyWrapper key : session.keys().getKeys(realm)) {
-            KeysMetadataRepresentation.KeyMetadataRepresentation r = new KeysMetadataRepresentation.KeyMetadataRepresentation();
-            r.setProviderId(key.getProviderId());
-            r.setProviderPriority(key.getProviderPriority());
-            r.setKid(key.getKid());
-            r.setStatus(key.getStatus() != null ? key.getStatus().name() : null);
-            r.setType(key.getType());
-            r.setAlgorithm(key.getAlgorithm());
-            r.setPublicKey(key.getPublicKey() != null ? PemUtils.encodeKey(key.getPublicKey()) : null);
-            r.setCertificate(key.getCertificate() != null ? PemUtils.encodeCertificate(key.getCertificate()) : null);
-            keys.getKeys().add(r);
-
-            if (key.getStatus().isActive()) {
-                if (!keys.getActive().containsKey(key.getAlgorithm())) {
-                    keys.getActive().put(key.getAlgorithm(), key.getKid());
-                }
-            }
-        }
+        List<KeysMetadataRepresentation.KeyMetadataRepresentation> realmKeys = session.keys().getKeysStream(realm)
+                .map(key -> {
+                    if (key.getStatus().isActive()) {
+                        if (!keys.getActive().containsKey(key.getAlgorithm())) {
+                            keys.getActive().put(key.getAlgorithm(), key.getKid());
+                        }
+                    }
+                    return toKeyMetadataRepresentation(key);
+                })
+                .collect(Collectors.toList());
+        keys.setKeys(realmKeys);
 
         return keys;
     }
 
+    private KeysMetadataRepresentation.KeyMetadataRepresentation toKeyMetadataRepresentation(KeyWrapper key) {
+        KeysMetadataRepresentation.KeyMetadataRepresentation r = new KeysMetadataRepresentation.KeyMetadataRepresentation();
+        r.setProviderId(key.getProviderId());
+        r.setProviderPriority(key.getProviderPriority());
+        r.setKid(key.getKid());
+        r.setStatus(key.getStatus() != null ? key.getStatus().name() : null);
+        r.setType(key.getType());
+        r.setAlgorithm(key.getAlgorithm());
+        r.setPublicKey(key.getPublicKey() != null ? PemUtils.encodeKey(key.getPublicKey()) : null);
+        r.setCertificate(key.getCertificate() != null ? PemUtils.encodeCertificate(key.getCertificate()) : null);
+        return r;
+    }
 }

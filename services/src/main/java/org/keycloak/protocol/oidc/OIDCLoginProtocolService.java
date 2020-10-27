@@ -25,7 +25,6 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -49,8 +48,7 @@ import org.keycloak.services.resources.Cors;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.CacheControlUtil;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Objects;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
@@ -219,23 +217,22 @@ public class OIDCLoginProtocolService {
     public Response certs() {
         checkSsl();
 
-        List<JWK> keys = new LinkedList<>();
-        for (KeyWrapper k : session.keys().getKeys(realm)) {
-            if (k.getStatus().isEnabled() && k.getUse().equals(KeyUse.SIG) && k.getPublicKey() != null) {
-                JWKBuilder b = JWKBuilder.create().kid(k.getKid()).algorithm(k.getAlgorithm());
-                if (k.getType().equals(KeyType.RSA)) {
-                    keys.add(b.rsa(k.getPublicKey(), k.getCertificate()));
-                } else if (k.getType().equals(KeyType.EC)) {
-                    keys.add(b.ec(k.getPublicKey()));
-                }
-            }
-        }
+        JWK[] jwks = session.keys().getKeysStream(realm)
+                .filter(k -> k.getStatus().isEnabled() && Objects.equals(k.getUse(), KeyUse.SIG) && k.getPublicKey() != null)
+                .map(k -> {
+                    JWKBuilder b = JWKBuilder.create().kid(k.getKid()).algorithm(k.getAlgorithm());
+                    if (k.getType().equals(KeyType.RSA)) {
+                        return b.rsa(k.getPublicKey(), k.getCertificate());
+                    } else if (k.getType().equals(KeyType.EC)) {
+                        return b.ec(k.getPublicKey());
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .toArray(JWK[]::new);
 
         JSONWebKeySet keySet = new JSONWebKeySet();
-
-        JWK[] k = new JWK[keys.size()];
-        k = keys.toArray(k);
-        keySet.setKeys(k);
+        keySet.setKeys(jwks);
 
         Response.ResponseBuilder responseBuilder = Response.ok(keySet).cacheControl(CacheControlUtil.getDefaultCacheControl());
         return Cors.add(request, responseBuilder).allowedOrigins("*").auth().build();
