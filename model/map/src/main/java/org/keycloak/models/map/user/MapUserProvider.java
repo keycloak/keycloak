@@ -43,7 +43,6 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.utils.DefaultRoles;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
@@ -352,7 +351,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         final UserModel userModel = entityToAdapterFunc(realm).apply(entity);
 
         if (addDefaultRoles) {
-            DefaultRoles.addDefaultRoles(realm, userModel);
+            userModel.grantRole(realm.getDefaultRole());
 
             // No need to check if user has group as it's new user
             realm.getDefaultGroupsStream().forEach(userModel::joinGroup);

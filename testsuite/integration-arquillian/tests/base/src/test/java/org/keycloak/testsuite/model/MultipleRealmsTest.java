@@ -33,6 +33,7 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 
 import java.util.concurrent.atomic.AtomicReference;
+import org.keycloak.models.Constants;
 
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
@@ -69,6 +70,9 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
 
             RealmModel realm1 = currentSession.realms().createRealm("id1", "realm1");
             RealmModel realm2 = currentSession.realms().createRealm("id2", "realm2");
+
+            realm1.setDefaultRole(currentSession.roles().addRealmRole(realm1, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm1.getName()));
+            realm2.setDefaultRole(currentSession.roles().addRealmRole(realm2, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm2.getName()));
 
             createObjects(currentSession, realm1);
             createObjects(currentSession, realm2);
@@ -136,6 +140,9 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
 
             RealmModel realm1 = currentSession.realms().createRealm("id1", "realm1");
             RealmModel realm2 = currentSession.realms().createRealm("id2", "realm2");
+
+            realm1.setDefaultRole(currentSession.roles().addRealmRole(realm1, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm1.getName()));
+            realm2.setDefaultRole(currentSession.roles().addRealmRole(realm2, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm2.getName()));
 
             createObjects(currentSession, realm1);
             createObjects(currentSession, realm2);

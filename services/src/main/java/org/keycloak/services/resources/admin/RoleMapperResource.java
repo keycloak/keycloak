@@ -180,7 +180,9 @@ public class RoleMapperResource {
 
         Function<RoleModel, RoleRepresentation> toBriefRepresentation = briefRepresentation ?
                 ModelToRepresentation::toBriefRepresentation : ModelToRepresentation::toRepresentation;
-        return realm.getRolesStream().filter(roleMapper::hasRole).map(toBriefRepresentation);
+        return realm.getRolesStream()
+                .filter(roleMapper::hasRole)
+                .map(toBriefRepresentation);
     }
 
     /**

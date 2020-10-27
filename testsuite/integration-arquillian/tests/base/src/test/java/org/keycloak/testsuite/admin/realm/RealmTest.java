@@ -240,12 +240,15 @@ public class RealmTest extends AbstractAdminTest {
     @Test
     public void createRealmFromJson() {
         RealmRepresentation rep = loadJson(getClass().getResourceAsStream("/admin-test/testrealm.json"), RealmRepresentation.class);
-        adminClient.realms().create(rep);
+        try {
+            adminClient.realms().create(rep);
 
-        RealmRepresentation created = adminClient.realms().realm("admin-test-1").toRepresentation();
-        assertRealm(rep, created);
+            RealmRepresentation created = adminClient.realms().realm("admin-test-1").toRepresentation();
+            assertRealm(rep, created);
 
-        adminClient.realms().realm("admin-test-1").remove();
+        } finally {
+            adminClient.realms().realm("admin-test-1").remove();
+        }
     }
 
     //KEYCLOAK-6146
@@ -531,14 +534,12 @@ public class RealmTest extends AbstractAdminTest {
         realm.roles().create(role);
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("test"), role, ResourceType.REALM_ROLE);
 
-        assertNotNull(realm.roles().get("test").toRepresentation());
+        role = realm.roles().get("test").toRepresentation();
+        assertNotNull(role);
 
-        RealmRepresentation rep = realm.toRepresentation();
-        rep.setDefaultRoles(new LinkedList<String>());
-        rep.getDefaultRoles().add("test");
+        realm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME).addComposites(Collections.singletonList(role));
 
-        realm.update(rep);
-        assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME), Collections.singletonList(role), ResourceType.REALM_ROLE);
 
         realm.roles().deleteRole("test");
         assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleResourcePath("test"), ResourceType.REALM_ROLE);
@@ -641,13 +642,6 @@ public class RealmTest extends AbstractAdminTest {
         if (realm.getEmailTheme() != null) assertEquals(realm.getEmailTheme(), storedRealm.getEmailTheme());
 
         if (realm.getPasswordPolicy() != null) assertEquals(realm.getPasswordPolicy(), storedRealm.getPasswordPolicy());
-
-        if (realm.getDefaultRoles() != null) {
-            assertNotNull(storedRealm.getDefaultRoles());
-            for (String role : realm.getDefaultRoles()) {
-                assertTrue(storedRealm.getDefaultRoles().contains(role));
-            }
-        }
 
         if (realm.getSmtpServer() != null) {
             assertEquals(realm.getSmtpServer(), storedRealm.getSmtpServer());

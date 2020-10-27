@@ -22,8 +22,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -62,7 +60,6 @@ public abstract class AbstractClientEntity<K> implements AbstractEntity<K> {
     private Map<String, ProtocolMapperModel> protocolMappers = new HashMap<>();
     private Map<String, Boolean> clientScopes = new HashMap<>();
     private Set<String> scopeMappings = new LinkedHashSet<>();
-    private List<String> defaultRoles = new LinkedList<>();
     private boolean surrogateAuthRequired;
     private String managementUrl;
     private String rootUrl;
@@ -331,29 +328,6 @@ public abstract class AbstractClientEntity<K> implements AbstractEntity<K> {
     public void setBaseUrl(String baseUrl) {
         this.updated |= ! Objects.equals(this.baseUrl, baseUrl);
         this.baseUrl = baseUrl;
-    }
-
-    public List<String> getDefaultRoles() {
-        return defaultRoles;
-    }
-
-    public void setDefaultRoles(Collection<String> defaultRoles) {
-        this.updated |= ! Objects.equals(this.defaultRoles, defaultRoles);
-        this.defaultRoles.clear();
-        this.defaultRoles.addAll(defaultRoles);
-    }
-
-    public void addDefaultRole(String name) {
-        updated = true;
-        if (name != null) {
-            defaultRoles.add(name);
-        }
-    }
-
-    public void removeDefaultRoles(String... defaultRoles) {
-        for (String defaultRole : defaultRoles) {
-            updated |= this.defaultRoles.remove(defaultRole);
-        }
     }
 
     public boolean isBearerOnly() {

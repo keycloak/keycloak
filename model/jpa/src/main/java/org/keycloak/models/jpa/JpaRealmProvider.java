@@ -337,10 +337,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
             throw new IllegalStateException("RoleModel's container isn not instance of either RealmModel or ClientModel");
         }
         session.users().preRemove(realm, role);
-        RoleContainerModel container = role.getContainer();
-        if (container.getDefaultRolesStream().anyMatch(r -> Objects.equals(r, role.getName()))) {
-            container.removeDefaultRoles(role.getName());
-        }
         RoleEntity roleEntity = em.getReference(RoleEntity.class, role.getId());
         if (roleEntity == null || !roleEntity.getRealmId().equals(realm.getId())) {
             // Throw model exception to ensure transaction rollback and revert previous operations (removing default roles) as well

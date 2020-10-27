@@ -28,6 +28,8 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
@@ -42,8 +44,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -104,6 +106,13 @@ public class RoleByIdResource extends RoleResource {
     @DELETE
     @NoCache
     public void deleteRole(final @PathParam("role-id") String id) {
+        if (realm.getDefaultRole() == null) {
+            logger.warnf("Default role for realm with id '%s' doesn't exist.", realm.getId());
+        } else if (realm.getDefaultRole().getId().equals(id)) {
+            throw new ErrorResponseException(ErrorResponse.error(realm.getDefaultRole().getName() + " is default role of the realm and cannot be removed.", 
+                    Response.Status.BAD_REQUEST));
+        }
+
         RoleModel role = getRoleModel(id);
         auth.roles().requireManage(role);
         deleteRole(role);

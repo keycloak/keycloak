@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.model;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -67,6 +68,7 @@ public class UserModelTest extends KeycloakModelTest {
     @Override
     public void createEnvironment(KeycloakSession s) {
         RealmModel realm = s.realms().createRealm("realm");
+        realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         this.realmId = realm.getId();
 
         IntStream.range(0, NUM_GROUPS).forEach(i -> {

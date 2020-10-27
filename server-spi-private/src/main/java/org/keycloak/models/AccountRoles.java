@@ -30,6 +30,6 @@ public interface AccountRoles {
     String MANAGE_CONSENT = "manage-consent";
     String DELETE_ACCOUNT = "delete-account";
 
-    String[] ALL = {VIEW_PROFILE, MANAGE_ACCOUNT};
+    String[] DEFAULT = {VIEW_PROFILE, MANAGE_ACCOUNT};
 
 }

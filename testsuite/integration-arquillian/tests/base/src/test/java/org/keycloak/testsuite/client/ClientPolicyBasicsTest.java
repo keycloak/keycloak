@@ -147,6 +147,8 @@ import org.keycloak.testsuite.util.OAuthClient;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.keycloak.admin.client.resource.RolesResource;
+import org.keycloak.testsuite.util.RoleBuilder;
 
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.util.JsonSerialization;
@@ -396,9 +398,7 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, response.getTokenEndpointAuthMethod());
         events.expect(EventType.CLIENT_INFO).client(clientId).user(Matchers.isEmptyOrNullString()).assertEvent();
 
-        updateClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
-            clientRep.setDefaultRoles(Arrays.asList("sample-client-role").toArray(new String[1]));
-        });
+        adminClient.realm(REALM_NAME).clients().get(clientId).roles().create(RoleBuilder.create().name("sample-client-role").build());
 
         successfulLoginAndLogoutWithPKCE(response.getClientId(), clientSecret, userName, userPassword);
     }
@@ -411,9 +411,7 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
             assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, clientRep.getTokenEndpointAuthMethod());
             events.expect(EventType.CLIENT_REGISTER).client(clientId).user(Matchers.isEmptyOrNullString()).assertEvent();
             events.expect(EventType.CLIENT_INFO).client(clientId).user(Matchers.isEmptyOrNullString()).assertEvent();
-            updateClientByAdmin(clientId, (ClientRepresentation cr) -> {
-                cr.setDefaultRoles((String[]) Arrays.asList("sample-client-role").toArray(new String[1]));
-            });
+            adminClient.realm(REALM_NAME).clients().get(clientId).roles().create(RoleBuilder.create().name("sample-client-role").build());
 
             successfulLoginAndLogout(clientId, clientRep.getClientSecret());
 
@@ -446,9 +444,9 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         String clientId = "Zahlungs-App";
         String clientSecret = "secret";
         String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
-            clientRep.setDefaultRoles((String[]) Arrays.asList("sample-client-role").toArray(new String[1]));
             clientRep.setSecret(clientSecret);
         });
+        adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name("sample-client-role").build());
 
         try {
             successfulLoginAndLogout(clientId, clientSecret);
@@ -497,10 +495,9 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         String clientId = "Zahlungs-App";
         String clientSecret = "secret";
         String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
-            String[] defaultRoles = {"sample-client-role"};
-            clientRep.setDefaultRoles(defaultRoles);
             clientRep.setSecret(clientSecret);
         });
+        adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name("sample-client-role").build());
 
         try {
             successfulLoginAndLogout(clientId, clientSecret);
@@ -584,17 +581,21 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         String clientAlphaId = "Alpha-App";
         String clientAlphaSecret = "secretAlpha";
         String cAlphaId = createClientByAdmin(clientAlphaId, (ClientRepresentation clientRep) -> {
-            clientRep.setDefaultRoles((String[]) Arrays.asList("sample-client-role-alpha", "sample-client-role-common").toArray(new String[2]));
             clientRep.setSecret(clientAlphaSecret);
             clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
         });
+        RolesResource rolesResourceAlpha = adminClient.realm(REALM_NAME).clients().get(cAlphaId).roles();
+        rolesResourceAlpha.create(RoleBuilder.create().name("sample-client-role-alpha").build());
+        rolesResourceAlpha.create(RoleBuilder.create().name("sample-client-role-common").build());
 
         String clientBetaId = "Beta-App";
         String clientBetaSecret = "secretBeta";
         String cBetaId = createClientByAdmin(clientBetaId, (ClientRepresentation clientRep) -> {
-            clientRep.setDefaultRoles((String[]) Arrays.asList("sample-client-role-beta", "sample-client-role-common").toArray(new String[2]));
             clientRep.setSecret(clientBetaSecret);
         });
+        RolesResource rolesResourceBeta = adminClient.realm(REALM_NAME).clients().get(cBetaId).roles();
+        rolesResourceBeta.create(RoleBuilder.create().name("sample-client-role-beta").build());
+        rolesResourceBeta.create(RoleBuilder.create().name("sample-client-role-common").build());
 
         try {
             assertEquals(ClientIdAndSecretAuthenticator.PROVIDER_ID, getClientByAdmin(cAlphaId).getClientAuthenticatorType());
@@ -649,13 +650,12 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         String clientId = "Zahlungs-App";
         String clientSecret = "secret";
         String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
-            String[] defaultRoles = {"sample-client-role"};
-            clientRep.setDefaultRoles(defaultRoles);
             clientRep.setSecret(clientSecret);
             clientRep.setStandardFlowEnabled(Boolean.TRUE);
             clientRep.setImplicitFlowEnabled(Boolean.TRUE);
             clientRep.setPublicClient(Boolean.FALSE);
         });
+        adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name("sample-client-role").build());
 
         try {
             oauth.clientId(clientId);
@@ -717,10 +717,9 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         String clientId = "Zahlungs-App";
         String clientSecret = "secret";
         String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
-            String[] defaultRoles = {"sample-client-role"};
-            clientRep.setDefaultRoles(defaultRoles);
             clientRep.setSecret(clientSecret);
         });
+        adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name("sample-client-role").build());
 
         try {
             oauth.clientId(clientId);
@@ -822,16 +821,16 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         String clientAlphaId = "Alpha-App";
         String clientAlphaSecret = "secretAlpha";
         String cAlphaId = createClientByAdmin(clientAlphaId, (ClientRepresentation clientRep) -> {
-            clientRep.setDefaultRoles((String[]) Arrays.asList("sample-client-role-alpha").toArray(new String[1]));
             clientRep.setSecret(clientAlphaSecret);
         });
+        adminClient.realm(REALM_NAME).clients().get(cAlphaId).roles().create(RoleBuilder.create().name("sample-client-role-alpha").build());
 
         String clientBetaId = "Beta-App";
         String clientBetaSecret = "secretBeta";
         String cBetaId = createClientByAdmin(clientBetaId, (ClientRepresentation clientRep) -> {
-            clientRep.setDefaultRoles((String[]) Arrays.asList("sample-client-role-beta").toArray(new String[1]));
             clientRep.setSecret(clientBetaSecret);
         });
+        adminClient.realm(REALM_NAME).clients().get(cBetaId).roles().create(RoleBuilder.create().name("sample-client-role-beta").build());
 
         try {
             successfulLoginAndLogout(clientAlphaId, clientAlphaSecret);
@@ -923,7 +922,6 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
             // create by Admin REST API - fail
             try {
                 createClientByAdmin("App-by-Admin", (ClientRepresentation clientRep) -> {
-                    clientRep.setDefaultRoles((String[]) Arrays.asList("sample-client-role-beta").toArray(new String[1]));
                     clientRep.setSecret("secretBeta");
                     clientRep.setAttributes(new HashMap<>());
                     clientRep.getAttributes().put(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG, Algorithm.none.name());
@@ -966,7 +964,6 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
             // create dynamically - fail
             try {
                 createClientByAdmin("App-in-Dynamic", (ClientRepresentation clientRep) -> {
-                    clientRep.setDefaultRoles((String[]) Arrays.asList("sample-client-role-beta").toArray(new String[1]));
                     clientRep.setSecret("secretBeta");
                     clientRep.setAttributes(new HashMap<>());
                     clientRep.getAttributes().put(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG, Algorithm.RS384.name());

@@ -46,4 +46,11 @@ public abstract class AbstractJsonFileImportMigrationTest extends AbstractMigrat
         Assert.assertThat(migrationRealm.toRepresentation().getRealm(), is(equalTo("Migration")));
         Assert.assertThat(migrationRealm2.toRepresentation().getRealm(), is(equalTo("Migration2")));
     }
+
+    @Override
+    protected void testMigrationTo13_0_0() {
+        testDefaultRoles(migrationRealm);
+
+        testDefaultRolesNameWhenTaken();
+    }
 }

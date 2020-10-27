@@ -339,13 +339,24 @@ public final class KeycloakModelUtils {
         return str==null ? null : str.toLowerCase();
     }
 
+    /**
+     * Creates default role for particular realm with the given name.
+     * @param realm Realm
+     * @param defaultRoleName Name of the newly created defaultRole
+     */
+    public static void setupDefaultRole(RealmModel realm, String defaultRoleName) {
+        RoleModel defaultRole = realm.addRole(defaultRoleName);
+        defaultRole.setDescription("${role_default-roles}");
+        realm.setDefaultRole(defaultRole);
+    }
+
     public static RoleModel setupOfflineRole(RealmModel realm) {
         RoleModel offlineRole = realm.getRole(Constants.OFFLINE_ACCESS_ROLE);
 
         if (offlineRole == null) {
             offlineRole = realm.addRole(Constants.OFFLINE_ACCESS_ROLE);
             offlineRole.setDescription("${role_offline-access}");
-            realm.addDefaultRole(Constants.OFFLINE_ACCESS_ROLE);
+            realm.addToDefaultRoles(offlineRole);
         }
 
         return offlineRole;
@@ -633,7 +644,7 @@ public final class KeycloakModelUtils {
             if (realm.getRole(roleName) == null) {
                 RoleModel role = realm.addRole(roleName);
                 role.setDescription("${role_" + roleName + "}");
-                realm.addDefaultRole(roleName);
+                realm.addToDefaultRoles(role);
             }
         }
     }

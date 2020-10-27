@@ -75,8 +75,8 @@ public class ClientManager {
      * @param addDefaultRoles
      * @return
      */
-    public static ClientModel createClient(KeycloakSession session, RealmModel realm, ClientRepresentation rep, boolean addDefaultRoles) {
-        ClientModel client = RepresentationToModel.createClient(session, realm, rep, addDefaultRoles);
+    public static ClientModel createClient(KeycloakSession session, RealmModel realm, ClientRepresentation rep) {
+        ClientModel client = RepresentationToModel.createClient(session, realm, rep);
 
         if (rep.getProtocol() != null) {
             LoginProtocolFactory providerFactory = (LoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, rep.getProtocol());

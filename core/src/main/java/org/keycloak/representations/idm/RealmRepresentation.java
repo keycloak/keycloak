@@ -98,7 +98,9 @@ public class RealmRepresentation {
     protected String codeSecret;
     protected RolesRepresentation roles;
     protected List<GroupRepresentation> groups;
+    @Deprecated
     protected List<String> defaultRoles;
+    protected RoleRepresentation defaultRole;
     protected List<String> defaultGroups;
     @Deprecated
     protected Set<String> requiredCredentials;
@@ -482,12 +484,22 @@ public class RealmRepresentation {
         this.actionTokenGeneratedByUserLifespan = actionTokenGeneratedByUserLifespan;
     }
 
+    @Deprecated
     public List<String> getDefaultRoles() {
         return defaultRoles;
     }
 
+    @Deprecated
     public void setDefaultRoles(List<String> defaultRoles) {
         this.defaultRoles = defaultRoles;
+    }
+
+    public RoleRepresentation getDefaultRole() {
+        return defaultRole;
+    }
+
+    public void setDefaultRole(RoleRepresentation defaultRole) {
+        this.defaultRole = defaultRole;
     }
 
     public List<String> getDefaultGroups() {

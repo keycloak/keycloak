@@ -25,7 +25,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModelDefaultMethods;
-import org.keycloak.models.utils.DefaultRoles;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
@@ -175,7 +174,7 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
     @Override
     public Set<RoleModel> getRoleMappings() {
         Set<RoleModel> set = new HashSet<>();
-        if (appendDefaultRolesToRoleMappings()) set.addAll(DefaultRoles.getDefaultRoles(realm).collect(Collectors.toSet()));
+        if (appendDefaultRolesToRoleMappings()) set.addAll(realm.getDefaultRole().getCompositesStream().collect(Collectors.toSet()));
         set.addAll(getRoleMappingsInternal());
         return set;
     }
@@ -457,7 +456,7 @@ public abstract class AbstractUserAdapter extends UserModelDefaultMethods {
         @Override
         public Stream<RoleModel> getRoleMappingsStream() {
             Stream<RoleModel> roleMappings = getRoleMappingsInternal().stream();
-            if (appendDefaultRolesToRoleMappings()) return Stream.concat(roleMappings, DefaultRoles.getDefaultRoles(realm));
+            if (appendDefaultRolesToRoleMappings()) return Stream.concat(roleMappings, realm.getDefaultRole().getCompositesStream());
             return roleMappings;
         }
 

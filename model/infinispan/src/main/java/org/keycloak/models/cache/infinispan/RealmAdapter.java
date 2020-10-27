@@ -725,28 +725,35 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    @Deprecated
     public Stream<String> getDefaultRolesStream() {
         if (isUpdated()) return updated.getDefaultRolesStream();
-        return cached.getDefaultRoles().stream();
+        return getDefaultRole().getCompositesStream().filter(this::isRealmRole).map(RoleModel::getName);
+    }
+
+    private boolean isRealmRole(RoleModel role) {
+        return ! role.isClientRole();
     }
 
     @Override
+    @Deprecated
     public void addDefaultRole(String name) {
         getDelegateForUpdate();
         updated.addDefaultRole(name);
     }
 
     @Override
-    public void updateDefaultRoles(String... defaultRoles) {
-        getDelegateForUpdate();
-        updated.updateDefaultRoles(defaultRoles);
-    }
-
-    @Override
+    @Deprecated
     public void removeDefaultRoles(String... defaultRoles) {
         getDelegateForUpdate();
         updated.removeDefaultRoles(defaultRoles);
 
+    }
+
+    @Override
+    public void addToDefaultRoles(RoleModel role) {
+        getDelegateForUpdate();
+        updated.addToDefaultRoles(role);
     }
 
     @Override
@@ -1006,6 +1013,17 @@ public class RealmAdapter implements CachedRealmModel {
     public void setMasterAdminClient(ClientModel client) {
         getDelegateForUpdate();
         updated.setMasterAdminClient(client);
+    }
+
+    @Override
+    public void setDefaultRole(RoleModel role) {
+        getDelegateForUpdate();
+        updated.setDefaultRole(role);
+    }
+
+    @Override
+    public RoleModel getDefaultRole() {
+        return cached.getDefaultRoleId() == null ? null : cacheSession.getRoleById(this, cached.getDefaultRoleId());
     }
 
     @Override

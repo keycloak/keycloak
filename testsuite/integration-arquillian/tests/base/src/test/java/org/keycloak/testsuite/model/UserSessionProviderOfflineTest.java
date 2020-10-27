@@ -53,6 +53,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import org.keycloak.models.Constants;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
@@ -226,6 +227,7 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
             currentSession = sessionRR1;
             persister = currentSession.getProvider(UserSessionPersisterProvider.class);
             RealmModel fooRealm = currentSession.realms().createRealm("foo", "foo");
+            fooRealm.setDefaultRole(currentSession.roles().addRealmRole(fooRealm, Constants.DEFAULT_ROLES_ROLE_PREFIX  + "-" + fooRealm.getName()));
             fooRealm.addClient("foo-app");
             currentSession.users().addUser(fooRealm, "user3");
 
@@ -258,6 +260,7 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionRR3) -> {
             currentSession = sessionRR3;
             RealmModel fooRealm = currentSession.realms().createRealm("foo", "foo");
+            fooRealm.setDefaultRole(currentSession.roles().addRealmRole(fooRealm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + fooRealm.getName()));
 
             fooRealm.addClient("foo-app");
             currentSession.users().addUser(fooRealm, "user3");
@@ -289,6 +292,7 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
                     sessionManager = new UserSessionManager(currentSession);
                     persister = currentSession.getProvider(UserSessionPersisterProvider.class);
                     RealmModel fooRealm = currentSession.realms().createRealm("foo", "foo");
+                    fooRealm.setDefaultRole(currentSession.roles().addRealmRole(fooRealm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + fooRealm.getName()));
 
                     fooRealm.addClient("foo-app");
                     fooRealm.addClient("bar-app");
@@ -381,6 +385,7 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
                 KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionUR1) -> {
                     currentSession = sessionUR1;
                     RealmModel fooRealm = currentSession.realms().createRealm("foo", "foo");
+                    fooRealm.setDefaultRole(currentSession.roles().addRealmRole(fooRealm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + fooRealm.getName()));
                     fooRealm.addClient("foo-app");
                     currentSession.users().addUser(fooRealm, "user3");
 

@@ -196,11 +196,6 @@ public class MapRoleProvider implements RoleProvider {
 
         session.users().preRemove(realm, role);
 
-        RoleContainerModel container = role.getContainer();
-        if (container.getDefaultRolesStream().anyMatch(r -> Objects.equals(r, role.getName()))) {
-            container.removeDefaultRoles(role.getName());
-        }
-
         //remove role from realm-roles composites
         try (Stream<MapRoleEntity> baseStream = getNotRemovedUpdatedRolesStream(realm)
                 .filter(this::isRealmRole)

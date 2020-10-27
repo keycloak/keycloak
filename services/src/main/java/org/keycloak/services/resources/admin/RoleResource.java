@@ -73,6 +73,7 @@ public abstract class RoleResource {
 
     protected void addComposites(AdminPermissionEvaluator auth, AdminEventBuilder adminEvent, UriInfo uriInfo, List<RoleRepresentation> roles, RoleModel role) {
         for (RoleRepresentation rep : roles) {
+            if (rep.getId() == null) throw new NotFoundException("Could not find composite role");
             RoleModel composite = realm.getRoleById(rep.getId());
             if (composite == null) {
                 throw new NotFoundException("Could not find composite role");
