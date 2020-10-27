@@ -41,10 +41,10 @@ public class NiaIdentityProvider extends SAMLIdentityProvider
         this.destinationValidator = destinationValidator;
     }
 
-    @Override
-    public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
-        return new SAMLEndpoint(realm, this, getConfig(), callback, destinationValidator);
-    }
+//    @Override
+//    public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
+//        return new SAMLEndpoint(realm, this, getConfig(), callback, destinationValidator);
+//    }
 
     @Override
     public Response performLogin(AuthenticationRequest request) {
