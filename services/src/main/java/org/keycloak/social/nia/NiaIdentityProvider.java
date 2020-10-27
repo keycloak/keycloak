@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.IdentityBrokerException;
@@ -32,10 +33,10 @@ import org.keycloak.util.JsonSerialization;
 public class NiaIdentityProvider extends SAMLIdentityProvider
         implements SocialIdentityProvider<SAMLIdentityProviderConfig> {
 
-    private NiaIdentityProviderConfig niaIdentityProviderConfig = new NiaIdentityProviderConfig();
     private final DestinationValidator destinationValidator;
 
-    public NiaIdentityProvider(KeycloakSession session, NiaIdentityProviderConfig config, DestinationValidator destinationValidator) {
+    public NiaIdentityProvider(KeycloakSession session,
+            NiaIdentityProviderConfig config, DestinationValidator destinationValidator) {
         super(session, config, destinationValidator);
         this.destinationValidator = destinationValidator;
     }
@@ -90,11 +91,11 @@ public class NiaIdentityProvider extends SAMLIdentityProvider
                             .setAllowCreate(Boolean.TRUE))
                     .requestedAuthnContext(requestedAuthnContext)
                     .subject(loginHint)
-                    .addExtension(new CustomNiaAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName", "true"))
-                    .addExtension(new CustomNiaAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName", "true"))
-                    .addExtension(new CustomNiaAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName", "true"))
-                    .addExtension(new CustomNiaAttribute("http://eidas.europa.eu/attributes/naturalperson/DateOfBirth", "true"))
-                    .addExtension(new CustomNiaAttribute("http://eidas.europa.eu/attributes/naturalperson/PlaceOfBirth", "true"));
+                    .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName", "true"))
+                    .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName", "true"))
+                    .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName", "true"))
+                    .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/DateOfBirth", "true"))
+                    .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/PlaceOfBirth", "true"));
 
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                     .relayState(request.getState().getEncoded());
@@ -132,7 +133,7 @@ public class NiaIdentityProvider extends SAMLIdentityProvider
     }
 
     private String getEntityId(UriInfo uriInfo, RealmModel realm) {
-        return realm.getName();
+        return UriBuilder.fromUri(uriInfo.getBaseUri()).path("realms").path(realm.getName()).build().toString();
     }
 
     private List<String> getAuthnContextClassRefUris() {
@@ -163,7 +164,4 @@ public class NiaIdentityProvider extends SAMLIdentityProvider
         }
     }
 
-//    public NiaIdentityProviderConfig getNiaConfig() {
-//        return niaIdentityProviderConfig;
-//    }
 }
