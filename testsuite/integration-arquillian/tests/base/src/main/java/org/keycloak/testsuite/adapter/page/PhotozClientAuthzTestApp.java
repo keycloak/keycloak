@@ -178,6 +178,15 @@ public class PhotozClientAuthzTestApp extends AbstractPageWithInjectedUrl {
         pause(WAIT_AFTER_OPERATION);
     }
 
+    public void viewProfile(ResponseValidator validator) {
+        testExecutor.sendXMLHttpRequest(
+                XMLHttpRequest.create()
+                        .method("GET")
+                        .addHeader("Accept", "application/json")
+                        .url(apiUrl + "/profile")
+                , validator);
+    }
+
     public void viewAlbum(String name, ResponseValidator validator) {
         testExecutor.sendXMLHttpRequest(
                 XMLHttpRequest.create()

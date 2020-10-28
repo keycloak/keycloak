@@ -18,13 +18,12 @@ package org.keycloak.testsuite.adapter.example.authorization;
 
 import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 
-import java.io.IOException;
+import java.io.File;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 /**
@@ -40,10 +39,14 @@ import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
 @EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
-public class ServletPolicyEnforcerTest extends AbstractServletPolicyEnforcerTest {
+public class ServletPolicyEnforcerLifespanTest extends AbstractServletPolicyEnforcerTest {
 
     @Deployment(name = RESOURCE_SERVER_ID, managed = false)
     public static WebArchive deployment() {
-        return exampleDeployment(RESOURCE_SERVER_ID);
+        return exampleDeployment(RESOURCE_SERVER_ID,
+                webArchive -> webArchive.addAsWebInfResource(
+                        new File(TEST_APPS_HOME_DIR
+                                + "/servlet-policy-enforcer/servlet-policy-enforcer-lifespan-authz-service.json"),
+                        "keycloak.json"));
     }
 }
