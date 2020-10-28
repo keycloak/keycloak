@@ -8,8 +8,8 @@ You can enable {project_name} to allow user self-registration. When enabled, the
 
 A user must add profile information to the registration form to complete registration. The registration form can be customized by removing or adding additional fields that must be completed by a user. A user can detect a valid username and email by using the registration form. 
 
-include::proc-enabling-user-registration.adoc[leveloffset=+2]
-include::proc-registering-new-user.adoc[leveloffset=+2]
+include::proc-enabling-user-registration.adoc[leveloffset=3]
+include::proc-registering-new-user.adoc[leveloffset=3]
 
 [role="_additional-resources"]
 .Additional resources
