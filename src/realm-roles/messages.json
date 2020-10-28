@@ -21,6 +21,8 @@
     "roleDeleteConfirmDialog": "This action will permanently delete the role {{selectedRoleName}} and cannot be undone.",
     "roleDeletedSuccess": "The role has been deleted",
     "roleDeleteError": "Could not delete role:",
+    "noRolesInThisRealm": "No roles in this realm",
+    "noRolesInThisRealmInstructions": "You haven't created any roles in this realm. Create a role to get started.",
     "roleAuthentication": "Role authentication"
   }
 }
