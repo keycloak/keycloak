@@ -1,5 +1,6 @@
 [id="con-advanced-settings_{context}"]
 ==== Advanced Settings
+[role="_abstract"]
 When you click _Advanced Settings_, additional fields are displayed.
 
 [[_mtls-client-certificate-bound-tokens]]

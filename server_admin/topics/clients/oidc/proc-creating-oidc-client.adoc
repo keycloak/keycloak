@@ -1,5 +1,6 @@
 [id="proc-creating-oidc-client_{context}"]
 ==== Creating an Open ID Connect Client
+[role="_abstract"]
 To use xref:_oidc[OpenID Connect], an existing application must be secured as an Open ID connect client.
 
 .Procedure
