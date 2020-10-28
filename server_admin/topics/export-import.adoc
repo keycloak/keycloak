@@ -1,5 +1,4 @@
-[[_export_import]]
-
+[id=assembly-exporting-importing_{context}]
 == Export and Import
 
 {project_name} has the ability to export and import the entire database.

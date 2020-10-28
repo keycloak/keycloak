@@ -7,6 +7,10 @@
 :project_versionNpm: 16.0.0
 :project_versionDoc: 16.0
 
+:standalone:
+:api-management!:
+:on-prem:
+
 ifeval::["{project_buildType}" == "latest"]
 :project_versionLinks: latest
 endif::[]

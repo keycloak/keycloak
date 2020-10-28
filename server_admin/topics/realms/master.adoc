@@ -1,6 +1,5 @@
 
-=== The Master Realm
-
+= The Master Realm
 When you boot {project_name} for the first time {project_name} creates a
 pre-defined realm for you. This initial realm is the _master_ realm. It is the
 highest level in the hierarchy of realms. Admin accounts in this realm have

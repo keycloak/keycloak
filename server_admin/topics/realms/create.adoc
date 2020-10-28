@@ -1,24 +1,28 @@
-[[_create-realm]]
 
-=== Create a New Realm
+[id=proc-creating-a-realm_{context}]
+= Creating a realm
 
-Creating a new realm is very simple.
-Mouse over the top left corner drop down menu that is titled with `Master`.  If you are logged in the master realm
-this drop down menu lists all the realms created.  The last entry of this drop down menu is always `Add Realm`.  Click
-this to add a realm.
+You create a realm as a management space where you can create clients, which are applications or services, and create users who need those clients.
 
+.Procedure
+
+. Point to the top of the left pane
+
+. Click *Add Realm*.
++
 .Add Realm Menu
 image:{project_images}/add-realm-menu.png[]
 
-This menu option will bring you to the `Add Realm` page.  Specify the realm name you want to define and click the `Create` button.
-Alternatively you can import a JSON document that defines your new realm.  We'll go over this in more detail in the
-<<_export_import, Export and Import>> chapter.
+. Enter a name for the realm.
 
-.Create Realm
-image:{project_images}/create-realm.png[]
+. Click *Create*.
 
-After creating the realm you are brought back to the main Admin Console page. The current realm will now be set to
-the realm you just created.  You can switch between managing different realms by doing a mouse over on the
-top left corner drop down menu.
+The current realm is now set to the realm you just created.  You can switch between managing different realms by doing a mouse over on the top left corner drop down menu.
+
+ifdef::standalone[]
+Alternatively you can import a JSON document that defines your new realm.  We'll go over this in more detail in the xref:assembly-exporting-importing_{context}[Export and Import] chapter.
+endif::[]
+
+
 
 

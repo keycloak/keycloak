@@ -1,6 +1,6 @@
 [[_email]]
 
-=== Email Settings
+= Email Settings
 
 {project_name} sends emails to users to verify their email address, when they forget their passwords, or when an admin needs to
 receive notifications about a server event.
