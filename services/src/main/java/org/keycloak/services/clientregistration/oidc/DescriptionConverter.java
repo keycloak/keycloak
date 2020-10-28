@@ -166,6 +166,10 @@ public class DescriptionConverter {
             configWrapper.setBackchannelUserCodeParameter(clientOIDC.getBackchannelUserCodeParameter());
         }
 
+        if (clientOIDC.getLoginHintEncodingEnabled() != null){
+            configWrapper.setLoginHintEncodingEnabledParameter(clientOIDC.getLoginHintEncodingEnabled());
+        }
+
         return client;
     }
 
@@ -283,6 +287,8 @@ public class DescriptionConverter {
             String sectorIdentifierUri = PairwiseSubMapperHelper.getSectorIdentifierUri(foundPairwiseMappers.get(0));
             response.setSectorIdentifierUri(sectorIdentifierUri);
         }
+
+        response.setLoginHintEncodingEnabled(config.getLoginHintEncodingEnabledParameter());
 
         return response;
     }

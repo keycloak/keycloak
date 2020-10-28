@@ -232,9 +232,9 @@ public class BackchannelAuthenticationEndpoint {
 
     private void dumpMultivaluedMap(MultivaluedMap<String, String> params) {
         Set<String> keys = params.keySet();
-        keys.stream().forEach(i -> {
+        keys.forEach(i -> {
             logger.info("key = " + i);
-            params.get(i).stream().forEach(j -> logger.info("value = " + j));
+            params.get(i).forEach(j -> logger.info("value = " + j));
         });
     }
 

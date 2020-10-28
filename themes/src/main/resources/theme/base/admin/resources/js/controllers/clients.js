@@ -1314,6 +1314,10 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
                 $scope.backchannelLogoutRevokeOfflineSessions = false;
             }
         }
+
+        if ($scope.client.attributes["login.hint.encoding.enabled"]) {
+            $scope.loginHintEncodingEnabled = $scope.client.attributes["login.hint.encoding.enabled"] == "true";
+        }
     }
 
     if (!$scope.create) {
@@ -1659,6 +1663,8 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         } else {
             $scope.clientEdit.attributes["backchannel.logout.revoke.offline.tokens"] = "false";
         }
+
+        $scope.clientEdit.attributes["login.hint.encoding.enabled"] = $scope.loginHintEncodingEnabled == true ? "true": "false";
 
         $scope.clientEdit.protocol = $scope.protocol;
         $scope.clientEdit.attributes['saml.signature.algorithm'] = $scope.signatureAlgorithm;

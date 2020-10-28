@@ -130,6 +130,16 @@ public class OIDCClientRepresentation {
 
     private Boolean backchannel_user_code_parameter;
 
+    private Boolean login_hint_encoding_enabled;
+
+    public Boolean getLoginHintEncodingEnabled() {
+        return this.login_hint_encoding_enabled;
+    }
+
+    public void setLoginHintEncodingEnabled(Boolean loginHintEncodingEnabled) {
+        this.login_hint_encoding_enabled = loginHintEncodingEnabled;
+    }
+
     public List<String> getRedirectUris() {
         return redirect_uris;
     }

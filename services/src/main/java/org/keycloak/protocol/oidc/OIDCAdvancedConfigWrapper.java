@@ -240,4 +240,14 @@ public class OIDCAdvancedConfigWrapper {
             }
         }
     }
+
+    public boolean getLoginHintEncodingEnabledParameter() {
+        String loginHintEncodingEnabled = getAttribute(OIDCConfigAttributes.CIBA_LOGIN_HINT_ENCODING_ENABLED);
+        return Boolean.parseBoolean(loginHintEncodingEnabled);
+    }
+
+    public void setLoginHintEncodingEnabledParameter(boolean loginHintEncodingEnabled) {
+        String val = String.valueOf(loginHintEncodingEnabled);
+        setAttribute(OIDCConfigAttributes.CIBA_LOGIN_HINT_ENCODING_ENABLED, val);
+    }
 }

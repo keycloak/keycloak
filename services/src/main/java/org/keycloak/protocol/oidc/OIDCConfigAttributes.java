@@ -62,6 +62,8 @@ public final class OIDCConfigAttributes {
 
     public static final String BACKCHANNEL_USER_CODE_PARAMETER = "backchannel.user.code.parameter";
 
+    public static final String CIBA_LOGIN_HINT_ENCODING_ENABLED = "login.hint.encoding.enabled";
+
     private OIDCConfigAttributes() {
     }
 

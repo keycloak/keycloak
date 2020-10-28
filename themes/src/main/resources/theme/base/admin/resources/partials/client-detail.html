@@ -366,6 +366,15 @@
                 </div>
                 <kc-tooltip>{{:: 'backchannel-logout-url.tooltip' | translate}}</kc-tooltip>
             </div>
+
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="loginHintEncodingEnabled">{{:: 'loginHintEncodingEnabled' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="loginHintEncodingEnabled" name="loginHintEncodingEnabled" id="loginHintEncodingEnabled" onoffswitch ng-click="switchChange()" on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'loginHintEncodingEnabled.tooltip' | translate}}</kc-tooltip>
+            </div>
+
             <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="backchannelLogoutSessionRequired">{{:: 'backchannel-logout-session-required' | translate}}</label>
                 <div class="col-sm-6">

@@ -12,6 +12,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.crypto.CibaLoginHintEncryptor;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -62,7 +63,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
- 
+
         UserRepresentation user = UserBuilder.create()
                 .username("nutzername-schwarz")
                 .email("schwarz@test.example.com")
@@ -1398,5 +1399,92 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
                        .kid(kid)
                        .jsonContent(token)
                        .rsa256(PemUtils.decodePrivateKey(testRealmRepresentation.get().getPrivateKey()));
+    }
+
+    @Test
+    public void testBackchannelAuthenticationFlowLoginHintEncoded() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            final String testClientName = "ciba-login-hint-encypted";
+            final String testClientPassword = "201ee451-32f6-4fb1-82ee-a2f31f31ea70";
+            final String username = "nutzername-rot";
+            String loginHint = CibaLoginHintEncryptor.encodeLoginHint(testClientPassword, username);
+
+            // prepare CIBA settings
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), testClientName);
+            clientRep = clientResource.toRepresentation();
+            prepareCIBASettings(clientResource, clientRep);
+            updateLoginHintEncodingParamInClientRep(clientResource,clientRep,true);
+            RealmRepresentation rep = backupCIBAPolicy();
+            rep.setCibaExpiresIn(60);
+            rep.setCibaAuthRequestedUserHint(CIBAConstants.LOGIN_HINT);
+            testRealm().update(rep);
+
+            // user Backchannel Authentication Request
+            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(testClientName, testClientPassword, loginHint, CIBAConstants.LOGIN_HINT, null, null);
+            Assert.assertThat(response.getStatusCode(), is(equalTo(200)));
+            Assert.assertThat(response.getAuthReqId(), notNullValue());
+
+            // user Decoupled Authentication Request
+            DecoupledAuthenticationRequest decoupledAuthnReq = doDecoupledAuthenticationRequest();
+
+            // user Decoupled Authentication completed
+            doDecoupledAuthnCallback(testClientName, decoupledAuthnReq, DecoupledAuthStatus.SUCCEEDED, username);
+
+            // user Token Request
+            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(testClientName, testClientPassword, response.getAuthReqId());
+            Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(200)));
+
+            IDToken idToken = oauth.verifyIDToken(tokenRes.getIdToken());
+            Assert.assertThat(idToken.getPreferredUsername(), is(equalTo(username)));
+
+            oauth.verifyToken(tokenRes.getAccessToken());
+
+            System.out.println("---------- Token Response ");
+            System.out.println("----------  ACCESS TOKEN = " + tokenRes.getAccessToken());
+            System.out.println("----------  REFRESH TOKEN = " + tokenRes.getRefreshToken());
+            System.out.println("----------  ID TOKEN = " + tokenRes.getIdToken());
+        } finally {
+            revertCIBASettings(clientResource, clientRep);
+            restoreCIBAPolicy();
+            updateLoginHintEncodingParamInClientRep(clientResource, clientRep, false);
+        }
+    }
+
+    @Test
+    public void testBackchannelAuthenticationFlowLoginHintEncoded_decoding_error() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            final String testClientName = "ciba-login-hint-encypted";
+            final String testClientPassword = "201ee451-32f6-4fb1-82ee-a2f31f31ea70";
+            final String username = "nutzername-rot";
+           // String loginHint = CibaLoginHintEncryptor.encodeLoginHint(testClientPassword, username);
+
+            // prepare CIBA settings
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), testClientName);
+            clientRep = clientResource.toRepresentation();
+            prepareCIBASettings(clientResource, clientRep);
+            updateLoginHintEncodingParamInClientRep(clientResource,clientRep,true);
+            RealmRepresentation rep = backupCIBAPolicy();
+            rep.setCibaExpiresIn(60);
+            rep.setCibaAuthRequestedUserHint(CIBAConstants.LOGIN_HINT);
+            testRealm().update(rep);
+
+            // user Backchannel Authentication Request
+            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(testClientName, testClientPassword, username, CIBAConstants.LOGIN_HINT, null, null);
+            Assert.assertThat(response.getStatusCode(), is(equalTo(400)));
+            Assert.assertTrue(response.getErrorDescription().contains("Decoding login_hint Error"));
+        } finally {
+            revertCIBASettings(clientResource, clientRep);
+            restoreCIBAPolicy();
+            updateLoginHintEncodingParamInClientRep(clientResource, clientRep, false);
+        }
+    }
+
+    private void updateLoginHintEncodingParamInClientRep(ClientResource clientResource, ClientRepresentation clientRep, boolean loginHintEncodingEnabled) {
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setLoginHintEncodingEnabledParameter(loginHintEncodingEnabled);
+        clientResource.update(clientRep);
     }
 }
