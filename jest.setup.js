@@ -7,6 +7,8 @@ import "@testing-library/jest-dom/extend-expect";
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
+import 'mutationobserver-shim';
+
 i18n.use(initReactI18next).init({
   lng: 'en',
   fallbackLng: 'en',
@@ -22,3 +24,6 @@ import { configure } from 'enzyme';
 import Adapter from 'enzyme-adapter-react-16';
 
 configure({ adapter: new Adapter() });
+
+// eslint-disable-next-line no-undef
+global.MutationObserver = window.MutationObserver;

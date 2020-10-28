@@ -2,6 +2,7 @@ import React from "react";
 import { FormGroup, TextInput } from "@patternfly/react-core";
 import { UseFormMethods } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { FormAccess } from "../components/form-access/FormAccess";
 
 type ClientDescriptionProps = {
   form: UseFormMethods;
@@ -11,7 +12,7 @@ export const ClientDescription = ({ form }: ClientDescriptionProps) => {
   const { t } = useTranslation("clients");
   const { register, errors } = form;
   return (
-    <>
+    <FormAccess role="manage-clients" unWrap>
       <FormGroup
         label={t("clientID")}
         fieldId="kc-client-id"
@@ -37,6 +38,6 @@ export const ClientDescription = ({ form }: ClientDescriptionProps) => {
           name="description"
         />
       </FormGroup>
-    </>
+    </FormAccess>
   );
 };

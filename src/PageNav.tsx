@@ -67,6 +67,7 @@ export const PageNav: React.FunctionComponent = () => {
     "view-realm",
     "query-groups",
     "query-users",
+    "query-clients",
     "view-events"
   );
 

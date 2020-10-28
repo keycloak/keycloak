@@ -5,6 +5,10 @@
   "locale": "en",
   "createRealm": false,
   "realm_access": {
+    "test": [
+      "query-clients",
+      "view-clients"
+    ],
     "aaa": [
       "view-identity-providers",
       "view-realm",

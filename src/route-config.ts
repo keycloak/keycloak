@@ -38,16 +38,16 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "manage-realm",
   },
   {
-    path: "/clients",
-    component: ClientsSection,
-    breadcrumb: t("clients:clientList"),
-    access: "query-clients",
-  },
-  {
     path: "/clients/:id",
     component: ClientSettings,
     breadcrumb: t("clients:clientSettings"),
     access: "view-clients",
+  },
+  {
+    path: "/clients",
+    component: ClientsSection,
+    breadcrumb: t("clients:clientList"),
+    access: "query-clients",
   },
   {
     path: "/add-client",
@@ -60,12 +60,6 @@ export const routes: RoutesFn = (t: TFunction) => [
     component: ImportForm,
     breadcrumb: t("clients:importClient"),
     access: "manage-clients",
-  },
-  {
-    path: "/client-scopes",
-    component: ClientScopesSection,
-    breadcrumb: t("client-scopes:clientScopeList"),
-    access: "view-clients",
   },
   {
     path: "/client-scopes/new",
@@ -89,6 +83,12 @@ export const routes: RoutesFn = (t: TFunction) => [
     path: "/client-scopes/:id",
     component: ClientScopeForm,
     breadcrumb: t("client-scopes:clientScopeDetails"),
+    access: "view-clients",
+  },
+  {
+    path: "/client-scopes",
+    component: ClientScopesSection,
+    breadcrumb: t("client-scopes:clientScopeList"),
     access: "view-clients",
   },
   {

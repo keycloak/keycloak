@@ -68,6 +68,7 @@
     "grunt": "^1.2.1",
     "grunt-contrib-copy": "^1.0.0",
     "jest": "^25.4.0",
+    "mutationobserver-shim": "^0.3.7",
     "postcss": "^7.0.32",
     "postcss-cli": "^7.1.1",
     "postcss-import": "^12.0.1",

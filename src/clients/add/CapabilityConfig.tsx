@@ -6,9 +6,10 @@ import {
   Checkbox,
   Grid,
   GridItem,
-  Form,
 } from "@patternfly/react-core";
 import { UseFormMethods, Controller } from "react-hook-form";
+
+import { FormAccess } from "../../components/form-access/FormAccess";
 
 type CapabilityConfigProps = {
   form: UseFormMethods;
@@ -17,7 +18,7 @@ type CapabilityConfigProps = {
 export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
   const { t } = useTranslation("clients");
   return (
-    <Form isHorizontal>
+    <FormAccess isHorizontal role="manage-clients">
       <FormGroup
         hasNoPaddingTop
         label={t("clientAuthentication")}
@@ -132,6 +133,6 @@ export const CapabilityConfig = ({ form }: CapabilityConfigProps) => {
           </GridItem>
         </Grid>
       </FormGroup>
-    </Form>
+    </FormAccess>
   );
 };

@@ -1,0 +1,242 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<FormAccess /> render normal form 1`] = `
+<Form
+  realm="master"
+>
+  <AccessContextProvider>
+    <FormAccess
+      role="manage-clients"
+    >
+      <Form>
+        <form
+          className="pf-c-form"
+          noValidate={true}
+        >
+          <FormGroup
+            fieldId="field"
+            key=".0"
+            label="test"
+          >
+            <div
+              className="pf-c-form__group"
+            >
+              <div
+                className="pf-c-form__group-label"
+              >
+                <label
+                  className="pf-c-form__label"
+                  htmlFor="field"
+                >
+                  <span
+                    className="pf-c-form__label-text"
+                  >
+                    test
+                  </span>
+                </label>
+                 
+              </div>
+              <div
+                className="pf-c-form__group-control"
+              >
+                <ForwardRef
+                  id="field"
+                  isDisabled={false}
+                  key=".0"
+                  name="fieldName"
+                  type="text"
+                >
+                  <TextInputBase
+                    aria-label={null}
+                    className=""
+                    id="field"
+                    innerRef={[Function]}
+                    isDisabled={false}
+                    isLeftTruncated={false}
+                    isReadOnly={false}
+                    isRequired={false}
+                    name="fieldName"
+                    onChange={[Function]}
+                    type="text"
+                    validated="default"
+                  >
+                    <input
+                      aria-invalid={false}
+                      aria-label={null}
+                      className="pf-c-form-control"
+                      disabled={false}
+                      id="field"
+                      name="fieldName"
+                      onBlur={[Function]}
+                      onChange={[Function]}
+                      onFocus={[Function]}
+                      readOnly={false}
+                      required={false}
+                      type="text"
+                    />
+                  </TextInputBase>
+                </ForwardRef>
+              </div>
+            </div>
+          </FormGroup>
+          <Controller
+            control={
+              Object {
+                "defaultValuesRef": Object {
+                  "current": Object {},
+                },
+                "fieldArrayDefaultValuesRef": Object {
+                  "current": Object {},
+                },
+                "fieldArrayNamesRef": Object {
+                  "current": Set {},
+                },
+                "fieldsRef": Object {
+                  "current": Object {
+                    "consentRequired": Object {
+                      "ref": Object {
+                        "focus": undefined,
+                        "name": "consentRequired",
+                      },
+                    },
+                    "fieldName": Object {
+                      "ref": <input
+                        aria-invalid="false"
+                        class="pf-c-form-control"
+                        id="field"
+                        name="fieldName"
+                        type="text"
+                        value=""
+                      />,
+                    },
+                  },
+                },
+                "fieldsWithValidationRef": Object {
+                  "current": Object {},
+                },
+                "formStateRef": Object {
+                  "current": Object {
+                    "dirtyFields": Object {},
+                    "errors": Object {},
+                    "isDirty": false,
+                    "isSubmitSuccessful": false,
+                    "isSubmitted": false,
+                    "isSubmitting": false,
+                    "isValid": false,
+                    "submitCount": 0,
+                    "touched": Object {},
+                  },
+                },
+                "getValues": [Function],
+                "isWatchAllRef": Object {
+                  "current": false,
+                },
+                "mode": Object {
+                  "isOnAll": false,
+                  "isOnBlur": false,
+                  "isOnChange": false,
+                  "isOnSubmit": true,
+                  "isOnTouch": false,
+                },
+                "reValidateMode": Object {
+                  "isReValidateOnBlur": false,
+                  "isReValidateOnChange": true,
+                },
+                "readFormStateRef": Object {
+                  "current": Object {
+                    "dirtyFields": false,
+                    "isDirty": false,
+                    "isSubmitting": false,
+                    "isValid": false,
+                    "touched": false,
+                  },
+                },
+                "register": [Function],
+                "removeFieldEventListener": [Function],
+                "renderWatchedInputs": [Function],
+                "resetFieldArrayFunctionRef": Object {
+                  "current": Object {},
+                },
+                "setValue": [Function],
+                "shallowFieldsStateRef": Object {
+                  "current": Object {},
+                },
+                "shouldUnregister": true,
+                "trigger": [Function],
+                "unregister": [Function],
+                "updateFormState": [Function],
+                "useWatchFieldsRef": Object {
+                  "current": Object {},
+                },
+                "useWatchRenderFunctionsRef": Object {
+                  "current": Object {},
+                },
+                "validFieldsRef": Object {
+                  "current": Object {},
+                },
+                "validateResolver": undefined,
+                "watchFieldsRef": Object {
+                  "current": Set {},
+                },
+                "watchInternal": [Function],
+              }
+            }
+            defaultValue={false}
+            key=".1"
+            name="consentRequired"
+            render={[Function]}
+          >
+            <Switch
+              aria-label=""
+              id="kc-consent"
+              isChecked={false}
+              isDisabled={false}
+              label="on"
+              labelOff="off"
+              onChange={[Function]}
+              value={false}
+            >
+              <label
+                className="pf-c-switch"
+                data-ouia-component-id="OUIA-Generated-Switch-1"
+                data-ouia-component-type="PF4/Switch"
+                data-ouia-safe={true}
+                htmlFor="kc-consent"
+              >
+                <input
+                  aria-label=""
+                  aria-labelledby="kc-consent-on"
+                  checked={false}
+                  className="pf-c-switch__input"
+                  disabled={false}
+                  id="kc-consent"
+                  onChange={[Function]}
+                  type="checkbox"
+                  value={false}
+                />
+                <span
+                  className="pf-c-switch__toggle"
+                />
+                <span
+                  aria-hidden="true"
+                  className="pf-c-switch__label pf-m-on"
+                  id="kc-consent-on"
+                >
+                  on
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="pf-c-switch__label pf-m-off"
+                  id="kc-consent-off"
+                >
+                  off
+                </span>
+              </label>
+            </Switch>
+          </Controller>
+        </form>
+      </Form>
+    </FormAccess>
+  </AccessContextProvider>
+</Form>
+`;
