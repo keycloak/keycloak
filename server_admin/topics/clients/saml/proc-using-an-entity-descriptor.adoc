@@ -1,0 +1,23 @@
+[id="proc-using-an-entity-descriptors_{context}"]
+
+==== Using an entity descriptor to create a client
+
+Instead of registering a SAML 2.0 client manually, you can import the client using a standard SAML Entity Descriptor XML file.
+
+The Add Client page includes an `Import` option.
+
+.Add Client
+image:{project_images}/add-client-saml.png[]
+
+.Procedure
+. Click the `Select File` button.
+. Load the file that contains the XML entity descriptor information.  
+. Review the information to ensure everything is set up correctly.
+
+Some SAML client adapters, such as _mod-auth-mellon_, need the XML Entity Descriptor for the IDP.  You can find this descriptor by going to this URL:
+
+[source, subs="attributes"]
+----
+root/auth/realms/{realm}/protocol/saml/descriptor
+----
+where _realm_ is the realm of your client.
