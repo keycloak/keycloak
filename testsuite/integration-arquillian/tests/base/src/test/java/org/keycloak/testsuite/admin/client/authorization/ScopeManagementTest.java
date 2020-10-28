@@ -23,13 +23,19 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.ResourceScopeResource;
 import org.keycloak.admin.client.resource.ResourcesResource;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -104,5 +110,29 @@ public class ScopeManagementTest extends AbstractAuthorizationTest {
         scopeResource.remove();
 
         scopeResource.toRepresentation();
+    }
+
+    @Test(expected = NotFoundException.class)
+    public void testDeleteAndPolicyUpdate() {
+        ResourceScopeResource scopeResource = createDefaultScope();
+
+        ScopeRepresentation scopeRepresentation = scopeResource.toRepresentation();
+        ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
+
+        representation.setName(scopeRepresentation.getName());
+        representation.addScope(scopeRepresentation.getId());
+        
+        getClientResource().authorization().permissions().scope().create(representation);
+
+        ScopePermissionRepresentation permissionRepresentation = getClientResource().authorization().permissions().scope()
+                .findByName(scopeRepresentation.getName());
+        List<ScopeRepresentation> scopes = getClientResource().authorization().policies()
+                .policy(permissionRepresentation.getId()).scopes();
+        
+        assertEquals(1, scopes.size());
+        
+        scopeResource.remove();
+
+        assertTrue(getClientResource().authorization().policies().policy(permissionRepresentation.getId()).scopes().isEmpty());
     }
 }
