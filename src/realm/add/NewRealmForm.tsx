@@ -82,7 +82,7 @@ export const NewRealmForm = () => {
           </FormGroup>
           <ActionGroup>
             <Button variant="primary" type="submit">
-              {t("create")}
+              {t("common:create")}
             </Button>
             <Button variant="link">{t("common:cancel")}</Button>
           </ActionGroup>

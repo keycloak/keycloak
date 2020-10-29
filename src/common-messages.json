@@ -49,6 +49,8 @@
     "identityProviders": "Identity providers",
     "userFederation": "User federation",
 
-    "required": "Required field"
+    "required": "Required field",
+
+    "createRealm": "Create Realm"
   }
 }
