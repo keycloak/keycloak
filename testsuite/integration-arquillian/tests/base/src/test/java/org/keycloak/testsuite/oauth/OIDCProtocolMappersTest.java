@@ -141,6 +141,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
             app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper1","computed-via-script", "computed-via-script", "String", true, true, "'hello_' + user.username", false)).close();
             app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper2","multiValued-via-script", "multiValued-via-script", "String", true, true, "new java.util.ArrayList(['A','B'])", true)).close();
+            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper3","computed-json-via-script", "computed-json-via-script", "JSON", true, true, "var x = {'int':42, 'bool': true, 'string': 'test'}; x", false)).close();
 
             Response response = app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper3", "syntax-error-script", "syntax-error-script", "String", true, true, "func_tion foo(){ return 'fail';} foo()", false));
             assertThat(response.getStatusInfo().getFamily(), is(Response.Status.Family.CLIENT_ERROR));
@@ -152,6 +153,12 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
             assertEquals("hello_test-user@localhost", accessToken.getOtherClaims().get("computed-via-script"));
             assertEquals(Arrays.asList("A","B"), accessToken.getOtherClaims().get("multiValued-via-script"));
+            Object o = accessToken.getOtherClaims().get("computed-json-via-script");
+            assertTrue("Computed json object should be a map", o instanceof Map);
+            Map<String,Object> map = (Map<String,Object>)o;
+            assertEquals(map.get("int"), 42);
+            assertEquals(map.get("bool"), true);
+            assertEquals(map.get("string"), "test");
         }
     }
 
