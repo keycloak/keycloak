@@ -1,0 +1,20 @@
+[id="proc_creating_client_scopes_{context}"]
+
+[role="_abstract"]
+{project_name} allows you to define a shared client configuration in an entity called a _client scope_. This entity allows you to configure <<_protocol-mappers, protocol mappers>> and <<_role_scope_mappings, role scope mappings>> for multiple clients.
+
+Client scopes also support the OAuth 2 `scope` parameter. This parameter allows client applications to request more or fewer claims or roles in the access token, depending on the requirement of the application.
+
+To create a client scope, follow these steps:
+
+. Click `Client Scopes` in the left toolbar. 
++
+.Client Scopes List
+image:{project_images}/client-scopes-list.png[]
++
+. Click `Create`. 
+. Name your client scope.
+. Click `Save`. 
+
+A _client scope_ has similar tabs to regular clients. You can
+define <<_protocol-mappers, protocol mappers>> and <<_role_scope_mappings, role scope mappings>>. These mappings can be inherited by other clients and are configured to inherit from this client scope.
