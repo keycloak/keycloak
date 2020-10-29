@@ -12,4 +12,8 @@
         <a href="#/realms/{{realm.realm}}/authentication/webauthn-policy-passwordless">{{:: 'webauthn-policy-passwordless' | translate}}</a>
         <kc-tooltip>{{:: 'webauthn-policy-passwordless.tooltip' | translate}}</kc-tooltip>
     </li>
+    <li ng-class="{active: path[3] == 'webauthn-policy-usernameless'}" data-ng-show="access.viewRealm && serverInfo.featureEnabled('WEB_AUTHN')">
+        <a href="#/realms/{{realm.realm}}/authentication/webauthn-policy-usernameless">{{:: 'webauthn-policy-usernameless' | translate}}</a>
+        <kc-tooltip>{{:: 'webauthn-policy-usernameless.tooltip' | translate}}</kc-tooltip>
+    </li>
 </ul>

@@ -962,6 +962,17 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         setWebAuthnPolicy(policy, Constants.WEBAUTHN_PASSWORDLESS_PREFIX);
     }
 
+    @Override
+    public WebAuthnPolicy getWebAuthnPolicyUsernameless() {
+        // We will use some prefix for attributes related to usernameless WebAuthn policy
+        return getWebAuthnPolicy(Constants.WEBAUTHN_USERNAMELESS_PREFIX);
+    }
+
+    @Override
+    public void setWebAuthnPolicyUsernameless(WebAuthnPolicy policy) {
+        // We will use some prefix for attributes related to usernameless WebAuthn policy
+        setWebAuthnPolicy(policy, Constants.WEBAUTHN_USERNAMELESS_PREFIX);
+    }
 
     private WebAuthnPolicy getWebAuthnPolicy(String attributePrefix) {
         WebAuthnPolicy policy = new WebAuthnPolicy();

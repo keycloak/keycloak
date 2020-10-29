@@ -103,6 +103,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected OTPPolicy otpPolicy;
     protected WebAuthnPolicy webAuthnPolicy;
     protected WebAuthnPolicy webAuthnPasswordlessPolicy;
+    protected WebAuthnPolicy webAuthnUsernamelessPolicy;
 
     protected String loginTheme;
     protected String accountTheme;
@@ -220,6 +221,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         otpPolicy = model.getOTPPolicy();
         webAuthnPolicy = model.getWebAuthnPolicy();
         webAuthnPasswordlessPolicy = model.getWebAuthnPolicyPasswordless();
+        webAuthnUsernamelessPolicy = model.getWebAuthnPolicyUsernameless();
 
         loginTheme = model.getLoginTheme();
         accountTheme = model.getAccountTheme();
@@ -633,6 +635,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public WebAuthnPolicy getWebAuthnPasswordlessPolicy() {
         return webAuthnPasswordlessPolicy;
+    }
+
+    public WebAuthnPolicy getWebAuthnUsernamelessPolicy() {
+        return webAuthnUsernamelessPolicy;
     }
 
     public AuthenticationFlowModel getBrowserFlow() {

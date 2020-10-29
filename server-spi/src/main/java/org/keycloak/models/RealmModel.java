@@ -274,6 +274,18 @@ public interface RealmModel extends RoleContainerModel {
      */
     void setWebAuthnPolicyPasswordless(WebAuthnPolicy policy);
 
+    /**
+     *
+     * @return WebAuthn usernameless policy below. This is temporary and will be removed later.
+     */
+    WebAuthnPolicy getWebAuthnPolicyUsernameless();
+
+    /**
+     * Set WebAuthn usernameless policy below. This is temporary and will be removed later.
+     * @param policy
+     */
+    void setWebAuthnPolicyUsernameless(WebAuthnPolicy policy);
+
     RoleModel getRoleById(String id);
 
     @Deprecated

@@ -35,6 +35,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -84,10 +85,17 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
 
         // Dummy RequiredAction is not registered in the realm and WebAuthn actions
         List<RequiredActionProviderSimpleRepresentation> result = authMgmtResource.getUnregisteredRequiredActions();
-        Assert.assertEquals(3, result.size());
-        RequiredActionProviderSimpleRepresentation action = result.get(0);
-        Assert.assertEquals(DummyRequiredActionFactory.PROVIDER_ID, action.getProviderId());
-        Assert.assertEquals("Dummy Action", action.getName());
+        // 1 Dummy + 3 Webauthn = 4
+        Assert.assertEquals(4, result.size());
+        // Why Dummy Action should be at index 0 ? (legacy check when webauthn wasn't included in Keycloak ?)
+        // RequiredActionProviderSimpleRepresentation action = result.get(0);
+        // Assert.assertEquals(DummyRequiredActionFactory.PROVIDER_ID, action.getProviderId());
+        // Assert.assertEquals("Dummy Action", action.getName());
+        List<RequiredActionProviderSimpleRepresentation> filteredResult =
+                result.stream().filter(ra -> ra.getProviderId().equals("dummy-action")).collect(Collectors.toList());
+        Assert.assertTrue("Dummy Action should be part of the unregistered required actions",
+                filteredResult.size() == 1);
+        RequiredActionProviderSimpleRepresentation action = filteredResult.get(0);
 
         // Register it
         authMgmtResource.registerRequiredAction(action);

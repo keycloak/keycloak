@@ -69,6 +69,7 @@ public final class Constants {
 
     // Prefix used for the realm attributes and other places
     public static final String WEBAUTHN_PASSWORDLESS_PREFIX = "Passwordless";
+    public static final String WEBAUTHN_USERNAMELESS_PREFIX = "Usernameless";
 
     public static final String VERIFY_EMAIL_KEY = "VERIFY_EMAIL_KEY";
     public static final String VERIFY_EMAIL_CODE = "VERIFY_EMAIL_CODE";
