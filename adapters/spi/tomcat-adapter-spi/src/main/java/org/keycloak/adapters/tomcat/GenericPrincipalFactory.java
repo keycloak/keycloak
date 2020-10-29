@@ -22,7 +22,11 @@ import org.apache.catalina.realm.GenericPrincipal;
 
 import javax.security.auth.Subject;
 import java.security.Principal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Collection;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:ungarida@gmail.com">Davide Ungari</a>
