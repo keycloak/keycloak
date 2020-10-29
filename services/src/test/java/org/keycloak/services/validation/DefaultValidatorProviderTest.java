@@ -23,7 +23,10 @@ import org.keycloak.validation.ValidatorProvider;
 
 import java.net.URI;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -487,6 +490,55 @@ public class DefaultValidatorProviderTest {
         ValidationProblem problem = result.getWarnings(CustomValidations.CLIENT_REDIRECT_URI).get(0);
         assertEquals(CustomValidations.WARNING_SECURITY_HTTPS_RECOMMENDED, problem.getMessage());
         assertEquals(ValidationProblem.Severity.WARNING, problem.getSeverity());
+    }
+
+    @Test
+    public void validateWithConfigurableValidation() {
+
+        ValidationKey customRegex = ValidationKey.getOrCreate("custom_regex");
+
+        registry.addValidation("custom_regex_validation", customRegex,
+                // a dummy validation which can pull configuration from the given ValidationContext
+                (ValidationKey key, Object value, NestedValidationContext context) -> {
+
+                    String input = value instanceof String ? (String) value : null;
+
+                    // TODO make extraction of validation configuration from ValidationContext more convenient
+                    //  e.g.:
+                    // T value = context.getConfig(key, "attribute", DEFAULT_T)
+                    // Pattern regex = context.getConfig(key,"regex", DEFAULT)
+                    Pattern regex = (Pattern) context.getAttribute(key.getName() + ".regex");
+
+                    if (input == null ||
+                            !regex.matcher(input).matches()) {
+
+                        String message = (String)context.getAttribute(key.getName() + ".error_message");
+                        context.addError(key, message);
+                        return false;
+                    }
+
+                    return true;
+                },
+                CustomValidations.USER_CUSTOM_CONTEXT_KEY);
+
+        // this config object can be created from a realm scoped validation configuration
+        // configuration aware validations can be parameterized with values from a validationConfig map
+        Map<String, Object> validationConfig = new HashMap<>();
+        validationConfig.put("custom_regex.regex", Pattern.compile("^bubu.*$"));
+        validationConfig.put("custom_regex.error_message", "custom_error");
+
+        ValidationContext context = new ValidationContext(CustomValidations.USER_CUSTOM_CONTEXT_KEY)
+                .withAttributes(validationConfig);
+
+        ValidationResult result;
+        result = validator.validate(context, "bubu123", customRegex);
+        assertTrue("A matching string should be valid", result.isValid());
+        assertFalse("A matching string should not cause problems", result.hasProblems());
+
+        result = validator.validate(context, "gugu123", customRegex);
+        assertFalse("A non matching string should be invalid", result.isValid());
+        assertTrue("A non matching string should cause problems", result.hasProblems());
+        assertEquals("custom_error", result.getProblems().get(0).getMessage());
     }
 
     @Test
