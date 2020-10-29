@@ -18,4 +18,9 @@ If you are curious about a certain feature, button, or field within the Admin Co
 over any question mark `?` icon.  This will pop up tooltip text to describe the area of the console you are interested in.
 The image above shows the tooltip in action.
 
-
+include::realms/master.adoc[leveloffset=2]
+include::realms/create.adoc[leveloffset=2]
+include::realms/ssl.adoc[leveloffset=2][]
+include::realms/cache.adoc[leveloffset=2][]
+include::realms/email.adoc[leveloffset=2]
+include::realms/themes.adoc[leveloffset=2]

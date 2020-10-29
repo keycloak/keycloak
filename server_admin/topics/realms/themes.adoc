@@ -23,7 +23,7 @@ Email Theme::
 
 The link:{developerguide_link}[{developerguide_name}] goes into how to create a new themes or modify existing ones.
 
-==== Internationalization
+== Internationalization
 
 Every UI screen is internationalized in {project_name}.  The default language is English, but if you turn on the
 `Internationalization` switch on the `Theme` tab you can choose which locales you want to support and what the default locale
@@ -34,7 +34,7 @@ by realm-specific texts on the `Localization` tab.
 
 
 [[_user_locale_selection]]
-===== User Locale selection
+== User Locale selection
 
 In order to select the best possible locale for a user there is a locale selector provider that handles deciding what
 is the best locale on the information available. One thing to note here is that it is not always known who the user is.
