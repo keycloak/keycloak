@@ -35,6 +35,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static org.keycloak.events.jpa.JpaEventQuery.DEFAULT_MAX_RESULTS;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
@@ -158,9 +159,12 @@ public class JpaAdminEventQuery implements AdminEventQuery {
 
         if (maxResults != null) {
             query.setMaxResults(maxResults);
+        } else {
+            // to workaround https://hibernate.atlassian.net/browse/HHH-14295
+            query.setMaxResults(DEFAULT_MAX_RESULTS);
         }
 
-        return closing(query.getResultList().stream().map(JpaEventStoreProvider::convertAdminEvent));
+        return closing(query.getResultStream().map(JpaEventStoreProvider::convertAdminEvent));
     }
     
 }
