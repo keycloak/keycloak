@@ -211,4 +211,42 @@ public class TokenUtil {
         jwe.verifyAndDecodeJwe(encodedContent, algorithmProvider, encryptionProvider);
         return jwe.getContent();
     }
+
+    public static String jweDirectEncode(Key aesKey, Key hmacKey, byte[] contentBytes) throws JWEException {
+        int keyLength = aesKey.getEncoded().length;
+        String encAlgorithm;
+        switch (keyLength) {
+            case 16: encAlgorithm = JWEConstants.A128CBC_HS256;
+                break;
+            case 24: encAlgorithm = JWEConstants.A192CBC_HS384;
+                break;
+            case 32: encAlgorithm = JWEConstants.A256CBC_HS512;
+                break;
+            default: throw new IllegalArgumentException("Bad size for Encryption key: " + aesKey + ". Valid sizes are 16, 24, 32.");
+        }
+
+        JWEHeader jweHeader = new JWEHeader(JWEConstants.DIR, encAlgorithm, null);
+        JWE jwe = new JWE()
+                .header(jweHeader)
+                .content(contentBytes);
+
+        jwe.getKeyStorage()
+                .setCEKKey(aesKey, JWEKeyStorage.KeyUse.ENCRYPTION)
+                .setCEKKey(hmacKey, JWEKeyStorage.KeyUse.SIGNATURE);
+
+        return jwe.encodeJwe();
+
+    }
+
+    public static byte[] jweDirectVerifyAndDecode(Key aesKey, Key hmacKey, String jweStr) throws JWEException {
+        JWE jwe = new JWE();
+        jwe.getKeyStorage()
+                .setCEKKey(aesKey, JWEKeyStorage.KeyUse.ENCRYPTION)
+                .setCEKKey(hmacKey, JWEKeyStorage.KeyUse.SIGNATURE);
+
+        jwe.verifyAndDecodeJwe(jweStr);
+
+        return jwe.getContent();
+
+    }
 }

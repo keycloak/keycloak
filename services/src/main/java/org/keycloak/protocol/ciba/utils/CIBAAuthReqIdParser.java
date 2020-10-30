@@ -1,18 +1,21 @@
 package org.keycloak.protocol.ciba.utils;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.UUID;
+
+import javax.crypto.SecretKey;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.CodeToTokenStoreProvider;
 import org.keycloak.models.KeycloakSession;
@@ -21,9 +24,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ciba.CIBAAuthReqIdJwt;
-import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
+import org.keycloak.util.TokenUtil;
 
 public class CIBAAuthReqIdParser {
 
@@ -33,7 +36,6 @@ public class CIBAAuthReqIdParser {
         CodeToTokenStoreProvider codeStore = session.getProvider(CodeToTokenStoreProvider.class);
         UUID key = UUID.randomUUID();
         String jwtFormattedAuthReqId = createJwtFormattedAuthReqId(session, authReqIdData, expires_in, user, key);
-        System.out.println("RRRRRRRRRR CIBAAuthReqIdParser.persistAuthReqId : jwtFormattedAuthReqId = " + jwtFormattedAuthReqId);
         Map<String, String> serialized = authReqIdData.serializeCode();
         codeStore.put(key, expires_in, serialized);
         //return key.toString();
@@ -58,30 +60,40 @@ public class CIBAAuthReqIdParser {
         SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, Algorithm.HS256);
         SignatureSignerContext signer = signatureProvider.signer();
         String encodedJwt = new JWSBuilder().type("JWT").jsonContent(jwt).sign(signer);
-        //String encodedJwt = new JWSBuilder().type("JWT").jsonContent(jwt).none();
+        System.out.println("RRRRRRRRRR CIBAAuthReqIdParser.persistAuthReqId : JWS encodedJwt = " + encodedJwt);
+        SecretKey aesKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, Algorithm.AES).getSecretKey();
+        SecretKey hmacKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, Algorithm.HS256).getSecretKey();
+        byte[] contentBytes = null;
+        try {
+            contentBytes = encodedJwt.getBytes("UTF-8");
+            encodedJwt = TokenUtil.jweDirectEncode(aesKey, hmacKey, contentBytes);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (JWEException e) {
+            e.printStackTrace();
+        }
+        System.out.println("RRRRRRRRRR CIBAAuthReqIdParser.persistAuthReqId : JWE encodedJwt = " + encodedJwt);
         return encodedJwt;
     }
 
     private static String getAuthReqId(KeycloakSession session, String encodedJwt) {
-        CIBAAuthReqIdJwt decodedJwt = session.tokens().decode(encodedJwt, CIBAAuthReqIdJwt.class);
-        /*
-        JWSInput jws = null;
-        CIBAAuthReqIdJwt decodedJwt = null;
+        System.out.println("EEEEEEEEEE CIBAAuthReqIdParser.parseAuthReqId : JWE encodedJwt = " + encodedJwt);
+        SecretKey aesKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, Algorithm.AES).getSecretKey();
+        SecretKey hmacKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, Algorithm.HS256).getSecretKey();
         try {
-            //jws = new JWSInput(encodedJwt);
-            decodedJwt = session.tokens().decode(encodedJwt, CIBAAuthReqIdJwt.class);
-            //decodedJwt = jws.readJsonContent(CIBAAuthReqIdJwt.class);
-        } catch (JWSInputException e) {
-            // TODO Auto-generated catch block
+            byte[] contentBytes = TokenUtil.jweDirectVerifyAndDecode(aesKey, hmacKey, encodedJwt);
+            encodedJwt = new String(contentBytes, "UTF-8");
+        } catch (JWEException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
-        */
-        System.out.println("EEEEEEEEEE CIBAAuthReqIdParser.parseAuthReqId : encodedJwt = " + encodedJwt);
+        System.out.println("EEEEEEEEEE CIBAAuthReqIdParser.parseAuthReqId : JWS encodedJwt = " + encodedJwt);
+        CIBAAuthReqIdJwt decodedJwt = session.tokens().decode(encodedJwt, CIBAAuthReqIdJwt.class);
         System.out.println("EEEEEEEEEE CIBAAuthReqIdParser.parseAuthReqId : decodedJwt.getKey() = " + decodedJwt.getKey());
         return decodedJwt.getKey();
     }
 
-    //public static ParseResult parseAuthReqId(KeycloakSession session, String authReqId, RealmModel realm, EventBuilder event) {
     public static ParseResult parseAuthReqId(KeycloakSession session, String encodedJwt, RealmModel realm, EventBuilder event) {
         String authReqId = getAuthReqId(session, encodedJwt);
         ParseResult result = new ParseResult(authReqId);
