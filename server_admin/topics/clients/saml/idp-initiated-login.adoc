@@ -1,6 +1,6 @@
 
 ==== IDP Initiated Login
-
+[role="_abstract"]
 IDP Initiated Login is a feature that allows you to set up an endpoint on the {project_name} server that will log you into a specific application/client.
 In the `Settings` tab for your client, you need to specify the `IDP Initiated SSO URL Name`.
 This is a simple string with no whitespace in it.

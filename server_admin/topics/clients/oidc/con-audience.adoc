@@ -3,7 +3,7 @@
 [[_audience]]
 
 ==== Audience Support
-
+[role="_abstract"]
 Typically, the environment where {project_name} is deployed consists of a set of _confidential_ or _public_ client applications that use {project_name} for authentication.
 
 There are also _services_ (_Resource Servers_ in the https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-4.2[OAuth 2 specification]) that serve requests from client applications and provide resources to these applications. These services require an _Access token_ (Bearer token) to be sent to them to authenticate a request. This token is obtained by the frontend application upon login to {project_name}.

@@ -1,7 +1,7 @@
 [id="proc-using-an-entity-descriptors_{context}"]
 
 ==== Using an entity descriptor to create a client
-
+[role="_abstract"]
 Instead of registering a SAML 2.0 client manually, you can import the client using a standard SAML Entity Descriptor XML file.
 
 The Add Client page includes an `Import` option.
