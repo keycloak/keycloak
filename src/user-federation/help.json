@@ -1,0 +1,43 @@
+{
+  "user-federation-help": {
+    "generalOptions": "General options",
+    "consoleDisplayNameHelp": "Display name of provider when linked in admin console",
+    "vendorHelp": "LDAP vendor (provider)",
+
+    "consoleDisplayConnectionUrlHelp": "Connection URL to your LDAP server",
+    "enableStarttlsHelp": "Encrypts the connection to LDAP using STARTTLS, which will disable connection pooling",
+    "useTruststoreSpiHelp": "Specifies whether LDAP connection will use the Truststore SPI with the truststore configured in standalone.xml/domain.sml. 'Always' means that it will always use it. 'Never' means that it will not use it. 'Only for ldaps' means that it will use it if your connection URL use ldaps. Note even if standalone.xml/domain.xml is not configured, the default java cacerts or certificate specified by 'javax.net.ssl.trustStore' property will be used.",
+    "connectionPoolingHelp": "Determines if Keycloak should use connection pooling for accessing LDAP server",
+    "connectionTimeoutHelp": "LDAP connection timeout in milliseconds",
+    "bindTypeHelp": "Type of the authentication method used during LDAP bind operation. It is used in most of the requests sent to the LDAP server. Currently only 'none' (anonymous LDAP authentication) or 'simple' (bind credential + bind password authentication) mechanisms are available.",
+    "bindDnHelp": "DN of the LDAP admin, which will be used by Keycloak to access LDAP server",
+    "bindCredentialsHelp": "Password of LDAP admin. This field is able to obtain its value from vault, use ${vault.ID} format.",
+
+    "editModeHelp": "READ_ONLY is a read-only LDAP store. WRITABLE means data will be synced back to LDAP on demand. UNSYNCED means user data will be imported, but not synced back to LDAP.",
+    "usersDNHelp": "Full DN of LDAP tree where your users are. This DN is the parent of LDAP users. It could be for example 'ou=users,dc=example,dc=com' assuming that your typical user will have DN like 'uid='john',ou=users,dc=example,dc=com'",
+    "usernameLdapAttributeHelp": "Name of LDAP attribute, which is mapped as Keycloak username. For many LDAP server vendors it can be 'uid'. For Active directory it can be 'sAMAccountName' or 'cn'. The attribute should be filled for all LDAP user records you want to import from LDAP to Keycloak.",
+    "rdnLdapAttributeHelp": "Name of LDAP attribute, which is used as RDN (top attribute) of typical user DN. Usually it's the same as Username LDAP attribute, however it is not required. For example for Active directory, it is common to use 'cn' as RDN attribute when username attribute might be 'sAMAccountName'.",
+    "uuidLdapAttributeHelp": "Name of LDAP attribute, which is used as unique object identifier (UUID) for objects in LDAP. For many LDAP server vendors, is is 'entryUUID'; however some are different. For example for Active directory it should be 'objectGUID'. If your LDAP server does not support the notion of UUID, you can use any other attribute that is supposed to be unique among LDAP users in tree. For example 'uid' or 'entryDN'.",
+    "userObjectClassesHelp": "All values of LDAP objectClass attribute for users in LDAP divided by comma. For example: 'inetOrgPerson, organizationalPerson'. Newly created Keycloak users will be written to LDAP with all those object classes and existing LDAP user records are found just if they contain all those object classes.",
+    "userLdapFilterHelp": "Additional LDAP filter for filtering searched users. Leave this empty if you don't need additional filter. Make sure that it starts with '(' and ends with ')'",
+    "searchScopeHelp": "For one level, the search applies only for users in the DNs specified by User DNs. For subtree, the search applies to the whole subtree. See LDAP documentation for more details.",
+    "readTimeoutHelp": "LDAP read timeout in milliseconds. This timeout applies for LDAP read operations.",
+    "paginationHelp": "Does the LDAP server support pagination",
+
+    "importUsersHelp": "Import users",
+    "batchSizeHelp": "Count of LDAP users to be imported from LDAP to Keycloak within a single transaction",
+    "periodicFullSyncHelp": "Whether periodic full synchronization of LDAP users to Keycloak should be enabled or not",
+    "periodicChangedUsersSyncHelp": "Whether periodic synchronization of changed or newly created LDAP users to Keycloak should be enabled or not",
+
+    "allowKerberosAuthenticationHelp": "Enable/disable HTTP authentication of users with SPNEGO/Kerberos tokens. The data about authenticated users will be provisioned from this LDAP server",
+    "useKerberosForPasswordAuthenticationHelp": "User Kerberos login module for authenticate username/password against Kerberos server instead of authenticating against LDAP server with Directory Service API",
+
+    "cachePolicyHelp": "Cache Policy for this storage provider. 'DEFAULT' is whatever the default settings are for the global cache. 'EVICT_DAILY' is a time of day every day that the cache will be invalidated. 'EVICT_WEEKLY' is a day of the week and time the cache will be invalidated. 'MAX_LIFESPAN' is the time in milliseconds that will be the lifespan of a cache entry.",
+
+    "enableLdapv3PasswordHelp": "Use the LDAPv3 Password Modify Extended Operation (RFC-3062). The password modify extended operation usually requires that LDAP user already has password in the LDAP server. So when this is used with 'Sync Registrations', it can be good to add also 'Hardcoded LDAP attribute mapper' with randomly generated initial password.",
+    "validatePasswordPolicyHelp": "Determines if Keycloak should validate the password with the realm password policy before updating it",
+    "trustEmailHelp": "If enabled, email provided by this provider is not verified even if verification is enabled for the realm.",
+
+    "IDK-periodicChangedUsersSyncHelp": "Should newly created users be created within LDAP store? Priority affects which provider is chosen to sync the new user."
+  }
+}
