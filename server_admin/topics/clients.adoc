@@ -2,7 +2,7 @@
 
 == Managing Clients
 
-role="_abstract"]
+[role="_abstract"]
 Clients are entities that can request authentication of a user.  Clients come in two forms.
 The first type of client is an application that wants
 to participate in single-sign-on.  These clients just want {project_name} to provide security for them.  The other type
