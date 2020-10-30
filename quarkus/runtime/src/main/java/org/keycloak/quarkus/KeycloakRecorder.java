@@ -204,6 +204,7 @@ public class KeycloakRecorder {
                 && !"kc.profile".equals(name)
                 && !"kc.show.config".equals(name)
                 && !"kc.show.config.runtime".equals(name)
+                && !"kc.runtime.mode".equals(name)
                 && !PropertyMappers.toCLIFormat("kc.config.file").equals(name));
     }
 

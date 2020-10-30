@@ -53,13 +53,16 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
         CONFIG_SOURCES.add(new ConfigArgsConfigSource());
         CONFIG_SOURCES.add(new SysPropConfigSource());
 
-        Path configFile = getConfigurationFile();
+        // In the "runtime", we will skip loading the keycloak.properties file. We don't want it to override the properties specified by "config" command
+        if (!Environment.isRuntimeMode()) {
+            Path configFile = getConfigurationFile();
 
-        if (configFile != null) {
-            CONFIG_SOURCES.add(new KeycloakPropertiesConfigSource.InFileSystem(configFile));
-        } else {
-            log.debug("Loading the default server configuration");
-            CONFIG_SOURCES.add(new KeycloakPropertiesConfigSource.InJar());
+            if (configFile != null) {
+                CONFIG_SOURCES.add(new KeycloakPropertiesConfigSource.InFileSystem(configFile));
+            } else {
+                log.debug("Loading the default server configuration");
+                CONFIG_SOURCES.add(new KeycloakPropertiesConfigSource.InJar());
+            }
         }
     }
 

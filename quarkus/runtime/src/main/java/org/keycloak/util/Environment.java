@@ -83,4 +83,15 @@ public final class Environment {
     public static boolean isDevMode() {
         return "dev".equalsIgnoreCase(getProfile());
     }
+
+    /**
+     * Triggered as an indication that we have in quarkus runtime mode. Not the build mode
+     */
+    public static void setRuntimeMode() {
+        System.setProperty("kc.runtime.mode", "true");
+    }
+
+    public static boolean isRuntimeMode() {
+        return Boolean.getBoolean("kc.runtime.mode");
+    }
 }

@@ -63,6 +63,8 @@ public class KeycloakMain {
     }
 
     private static void start(List<String> cliArgs, PrintWriter errorWriter) {
+        Environment.setRuntimeMode();
+
         Quarkus.run(null, (integer, throwable) -> {
             error(cliArgs, errorWriter, String.format("Failed to start server using profile (%s).", getProfileOrDefault("none")), throwable.getCause());
         });
