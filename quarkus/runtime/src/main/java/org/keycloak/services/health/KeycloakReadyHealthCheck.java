@@ -17,26 +17,63 @@
 package org.keycloak.services.health;
 
 import io.agroal.api.AgroalDataSource;
-import org.eclipse.microprofile.health.HealthCheck;
+import io.quarkus.agroal.runtime.health.DataSourceHealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
+import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Readiness;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Keycloak Healthcheck Readiness Probe.
+ *
+ * Performs a hybrid between the passive and the active mode. If there are no healthy connections in the pool,
+ * it invokes the standard <code>DataSourceHealthCheck</code> that creates a new connection and checks if its valid.
+ *
+ * @see <a href="https://github.com/keycloak/keycloak-community/pull/55">Healthcheck API Design</a>
+ */
 @Readiness
 @ApplicationScoped
-public class KeycloakReadyHealthCheck implements HealthCheck {
+public class KeycloakReadyHealthCheck extends DataSourceHealthCheck {
+
+    /**
+     * Date formatter, the same as used by Quarkus. This enables users to quickly compare the date printed
+     * by the probe with the logs.
+     */
+    static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS").withZone(ZoneId.systemDefault());
 
     @Inject
-    private AgroalDataSource agroalDataSource;
+    AgroalDataSource agroalDataSource;
+
+    AtomicReference<Instant> failingSince = new AtomicReference<>();
 
     @Override
     public HealthCheckResponse call() {
-        long creationCount = agroalDataSource.getMetrics().creationCount();
-        if (creationCount < 1) {
-            return HealthCheckResponse.down("No connections were created");
+        HealthCheckResponseBuilder builder = HealthCheckResponse.named("Keycloak database connections health check").up();
+        long activeCount = agroalDataSource.getMetrics().activeCount();
+        long invalidCount = agroalDataSource.getMetrics().invalidCount();
+        if (activeCount < 1 || invalidCount > 0) {
+            HealthCheckResponse activeCheckResult = super.call();
+            if (activeCheckResult.getState() == HealthCheckResponse.State.DOWN) {
+                builder.down();
+                Instant failingTime = failingSince.updateAndGet(this::createInstanceIfNeeded);
+                builder.withData("Failing since", DATE_FORMATTER.format(failingTime));
+            }
+        } else {
+            failingSince.set(null);
         }
-        return HealthCheckResponse.up("Keycloak database is ready");
+        return builder.build();
+    }
+
+    Instant createInstanceIfNeeded(Instant instant) {
+        if (instant == null) {
+            return Instant.now();
+        }
+        return instant;
     }
 }
