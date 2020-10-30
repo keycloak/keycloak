@@ -73,13 +73,13 @@ class KeycloakProcessor {
 
     /**
      * <p>Configures the persistence unit for Quarkus.
-     * 
-     * <p>The main reason we have this build step is because we re-use the same persistence unit from {@code keycloak-model-jpa} 
+     *
+     * <p>The main reason we have this build step is because we re-use the same persistence unit from {@code keycloak-model-jpa}
      * module, the same used by the Wildfly distribution. The {@code hibernate-orm} extension expects that the dialect is statically
      * set to the persistence unit if there is any from the classpath and we use this method to obtain the dialect from the configuration
      * file so that we can build the application with whatever dialect we want. In addition to the dialect, we should also be 
      * allowed to set any additional defaults that we think that makes sense.
-     * 
+     *
      * @param recorder
      * @param config
      * @param descriptors
@@ -88,7 +88,7 @@ class KeycloakProcessor {
     @BuildStep
     void configureHibernate(KeycloakRecorder recorder, HibernateOrmConfig config, List<PersistenceUnitDescriptorBuildItem> descriptors) {
         PersistenceUnitDescriptor unit = descriptors.get(0).asOutputPersistenceUnitDefinition().getActualHibernateDescriptor();
-        
+
         unit.getProperties().setProperty(AvailableSettings.DIALECT, config.defaultPersistenceUnit.dialect.dialect.orElse(null));
         unit.getProperties().setProperty(AvailableSettings.JPA_TRANSACTION_TYPE, PersistenceUnitTransactionType.JTA.name());
         unit.getProperties().setProperty(AvailableSettings.QUERY_STARTUP_CHECKING, Boolean.FALSE.toString());
@@ -97,9 +97,9 @@ class KeycloakProcessor {
     /**
      * <p>Load the built-in provider factories during build time so we don't spend time looking up them at runtime. By loading
      * providers at this stage we are also able to perform a more dynamic configuration based on the default providers.
-     * 
+     *
      * <p>User-defined providers are going to be loaded at startup</p>
-     * 
+     *
      * @param recorder
      */
     @Record(ExecutionTime.RUNTIME_INIT)
@@ -119,19 +119,19 @@ class KeycloakProcessor {
                             key -> new HashMap<>())
                             .computeIfAbsent(entry.getKey().getProviderClass(), aClass -> new HashMap<>()).put(factory.getId(),factory.getClass());
                 }
-            }    
+            }
         }
-        
+
         recorder.configSessionFactory(factories, defaultProviders, Environment.isRebuild());
     }
 
     /**
      * <p>Make the build time configuration available at runtime so that the server can run without having to specify some of
      * the properties again.
-     * 
+     *
      * <p>This build step also adds a static call to {@link org.keycloak.cli.ShowConfigCommand#run(Map)} via the recorder
      * so that the configuration can be shown when requested.
-     * 
+     *
      * @param recorder the recorder
      */
     @Record(ExecutionTime.STATIC_INIT)
@@ -217,7 +217,7 @@ class KeycloakProcessor {
 
             factories.put(spi, providers);
         }
-        
+
         return factories;
     }
 
@@ -237,8 +237,8 @@ class KeycloakProcessor {
     }
 
     private void checkProviders(Spi spi,
-            Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoriesMap,
-            Map<Class<? extends Provider>, String> defaultProviders) {
+                                Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoriesMap,
+                                Map<Class<? extends Provider>, String> defaultProviders) {
         String defaultProvider = Config.getProvider(spi.getName());
 
         if (defaultProvider != null) {

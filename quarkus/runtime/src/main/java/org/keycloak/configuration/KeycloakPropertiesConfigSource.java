@@ -18,7 +18,6 @@
 package org.keycloak.configuration;
 
 import java.io.Closeable;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOError;
 import java.io.IOException;
@@ -78,7 +77,7 @@ public abstract class KeycloakPropertiesConfigSource extends PropertiesConfigSou
                 cl = KeycloakPropertiesConfigSource.class.getClassLoader();
             }
             InputStream is;
-            String fileName = "META-INF" + File.separator + KEYCLOAK_PROPERTIES;
+            String fileName = "META-INF/" + KEYCLOAK_PROPERTIES;
             if (cl == null) {
                 is = ClassLoader.getSystemResourceAsStream(fileName);
             } else {
