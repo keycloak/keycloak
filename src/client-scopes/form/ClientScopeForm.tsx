@@ -161,21 +161,20 @@ export const ClientScopeForm = () => {
                 >
                   <Controller
                     name="protocol"
-                    defaultValue=""
+                    defaultValue={providers[0]}
                     control={control}
                     render={({ onChange, value }) => (
                       <Select
                         toggleId="kc-protocol"
                         required
                         onToggle={() => isOpen(!open)}
-                        onSelect={(_, value, isPlaceholder) => {
-                          onChange(isPlaceholder ? "" : (value as string));
+                        onSelect={(_, value) => {
+                          onChange(value as string);
                           isOpen(false);
                         }}
                         selections={value}
                         variant={SelectVariant.single}
                         aria-label={t("selectEncryptionType")}
-                        placeholderText={t("common:selectOne")}
                         isOpen={open}
                       >
                         {providers.map((option) => (
