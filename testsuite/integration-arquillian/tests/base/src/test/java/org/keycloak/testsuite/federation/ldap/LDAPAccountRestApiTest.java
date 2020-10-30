@@ -118,6 +118,32 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
         Assert.assertNull(userPassword.getSecretData());
     }
 
+
+    @Test
+    public void testUpdateProfile() throws IOException {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            appRealm.setEditUsernameAllowed(false);
+        });
+        UserRepresentation user = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        user.setEmail("john-alias@email.org");
+        SimpleHttp.doPost(getAccountUrl(null), httpClient).json(user).auth(tokenUtil.getToken()).asStatus();
+
+        UserRepresentation usernew = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
+        assertEquals("johnkeycloak", usernew.getUsername());
+        assertEquals("John", usernew.getFirstName());
+        assertEquals("Doe", usernew.getLastName());
+        assertEquals("john-alias@email.org", usernew.getEmail());
+        assertFalse(usernew.isEmailVerified());
+
+        //clean up
+        usernew.setEmail("john@email.org");
+        SimpleHttp.doPost(getAccountUrl(null), httpClient).json(usernew).auth(tokenUtil.getToken()).asStatus();
+
+    }
+
+
     private String getAccountUrl(String resource) {
         return suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/test/account" + (resource != null ? "/" + resource : "");
     }
