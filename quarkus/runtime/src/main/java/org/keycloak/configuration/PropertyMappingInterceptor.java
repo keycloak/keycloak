@@ -21,6 +21,8 @@ import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import org.keycloak.common.util.StringPropertyReplacer;
 
+import static org.keycloak.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+
 /**
  * <p>This interceptor is responsible for mapping Keycloak properties to their corresponding properties in Quarkus.
  * 
@@ -35,6 +37,13 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
     @Override
     public ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
+        if (name.startsWith(NS_KEYCLOAK_PREFIX)) {
+            name = PropertyMappers.canonicalFormat(name);
+        }
+        if (name.startsWith("%") && (name.contains("." + NS_KEYCLOAK_PREFIX))) {
+            int index = name.indexOf(NS_KEYCLOAK_PREFIX);
+            name = name.substring(0, index) + PropertyMappers.canonicalFormat(name.substring(index));
+        }
         ConfigValue value = PropertyMappers.getValue(context, name);
         
         if (value == null) {

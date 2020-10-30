@@ -17,8 +17,10 @@
 
 package org.keycloak.configuration;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -28,19 +30,34 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  */
 public class SysPropConfigSource implements ConfigSource {
 
+    // Key is name of the property converted to the internal (dot) format like "kc.foo.bar.baz". Value is the real name of the corresponding system property
+    // like for example "kc.foo-bar-baz" .
+    private static Map<String, String> CANONICAL_FORMAT_TO_SYSPROP = new ConcurrentHashMap<>();
+    static {
+        // Pre-initialize the map now.
+        getPropertiesInternal();
+    }
+
     public Map<String, String> getProperties() {
+        return getPropertiesInternal();
+    }
+
+    private static Map<String, String> getPropertiesInternal() {
         Map<String, String> output = new TreeMap<>();
         for (Map.Entry<Object, Object> entry : System.getProperties().entrySet()) {
             String key = (String) entry.getKey();
             if (key.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
-                output.put(key, entry.getValue().toString());
+                String keyInInternalFormat = PropertyMappers.canonicalFormat(key);
+                CANONICAL_FORMAT_TO_SYSPROP.putIfAbsent(keyInInternalFormat, key);
+                output.put(keyInInternalFormat, entry.getValue().toString());
             }
         }
         return output;
     }
 
     public String getValue(final String propertyName) {
-        return System.getProperty(propertyName);
+        String sysPropertyName = CANONICAL_FORMAT_TO_SYSPROP.getOrDefault(propertyName, propertyName);
+        return System.getProperty(sysPropertyName);
     }
 
     public String getName() {

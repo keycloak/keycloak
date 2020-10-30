@@ -35,7 +35,7 @@ import org.keycloak.util.Environment;
  * when building and running the server.
  * 
  * <p>The mapping is based on the system property {@code kc.config.args}, where the value is a comma-separated list of
- * the arguments passed during build or runtime. E.g: "--http-enabled=true,--http-port=8180,--database-vendor=postgres".
+ * the arguments passed during build or runtime. E.g: "--http-enabled=true,--http-port=8180,--db=postgres".
  * 
  * <p>Each argument is going to be mapped to its corresponding configuration property by prefixing the key with the {@link MicroProfileConfigProvider#NS_KEYCLOAK} namespace. 
  */
@@ -55,23 +55,12 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
 
     @Override
     public String getValue(String propertyName) {
-        String prefix = null;
-        
         // we only care about runtime args passed when executing the CLI, no need to check if the property is prefixed with a profile
-        if (propertyName.startsWith(NS_KEYCLOAK_PREFIX)) {
-            prefix = NS_KEYCLOAK_PREFIX;
-        } else if (propertyName.startsWith(NS_QUARKUS_PREFIX)) {
-            prefix = NS_QUARKUS_PREFIX;
-        }
-        
-        // we only recognize properties within keycloak and quarkus namespaces
-        if (prefix == null) {
+        if (!propertyName.startsWith(NS_KEYCLOAK_PREFIX)) {
             return null;
         }
         
-        String[] parts = DOT_SPLIT.split(propertyName.substring(propertyName.indexOf(prefix) + prefix.length()));
-
-        return super.getValue(prefix + String.join("-", parts));
+        return super.getValue(propertyName);
     }
 
     private static Map<String, String> parseArgument() {
@@ -105,7 +94,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
                 continue;
             }
             
-            key = NS_KEYCLOAK_PREFIX + key.substring(2);
+            key = PropertyMappers.canonicalFormat(NS_KEYCLOAK_PREFIX + key.substring(2));
             
             log.tracef("Adding property [%s=%s] from command-line", key, value);
             

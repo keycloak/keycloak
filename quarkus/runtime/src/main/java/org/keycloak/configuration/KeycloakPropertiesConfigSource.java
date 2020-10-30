@@ -144,7 +144,7 @@ public abstract class KeycloakPropertiesConfigSource extends PropertiesConfigSou
             namespace = NS_KEYCLOAK;
         }
 
-        return profile + namespace + "." + transformed;
+        return profile + namespace + "." + PropertyMappers.canonicalFormat(transformed);
 
     }
 }

@@ -195,7 +195,7 @@ public class KeycloakRecorder {
     }
 
     private boolean shouldValidate(String name, boolean rebuild) {
-        return rebuild && name.contains(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX) 
+        return rebuild && name.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)
                 && (!PropertyMappers.isBuildTimeProperty(name)
                 && !"kc.version".equals(name) 
                 && !"kc.config.args".equals(name) 

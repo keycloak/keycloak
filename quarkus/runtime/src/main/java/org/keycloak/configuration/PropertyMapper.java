@@ -16,6 +16,7 @@
  */
 package org.keycloak.configuration;
 
+import static org.keycloak.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.util.Environment.getBuiltTimeProperty;
 
 import java.util.HashMap;
@@ -30,35 +31,47 @@ import io.smallrye.config.ConfigValue;
 public class PropertyMapper {
 
     static PropertyMapper create(String fromProperty, String toProperty, String description) {
+        toProperty = toCanonicalFormatIfKeycloakPrefix(toProperty);
         return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, null, null, description));
     }
 
     static PropertyMapper createWithDefault(String fromProperty, String toProperty, String defaultValue, String description) {
+        toProperty = toCanonicalFormatIfKeycloakPrefix(toProperty);
         return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, defaultValue, null, description));
     }
 
     static PropertyMapper createWithDefault(String fromProperty, String toProperty, Supplier<String> defaultValue, String description) {
+        toProperty = toCanonicalFormatIfKeycloakPrefix(toProperty);
         return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, defaultValue.get(), null, description));
     }
 
     static PropertyMapper createWithDefault(String fromProperty, String toProperty, String defaultValue, BiFunction<String, ConfigSourceInterceptorContext, String> transformer, String description) {
+        toProperty = toCanonicalFormatIfKeycloakPrefix(toProperty);
         return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, defaultValue, transformer, description));
     }
 
     static PropertyMapper create(String fromProperty, String toProperty, BiFunction<String, ConfigSourceInterceptorContext, String> transformer, String description) {
+        toProperty = toCanonicalFormatIfKeycloakPrefix(toProperty);
         return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, null, transformer, null, description));
     }
 
     static PropertyMapper create(String fromProperty, String toProperty, String description, boolean mask) {
+        toProperty = toCanonicalFormatIfKeycloakPrefix(toProperty);
         return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, null, null, null, false, description, mask));
     }
 
     static PropertyMapper create(String fromProperty, String mapFrom, String toProperty, BiFunction<String, ConfigSourceInterceptorContext, String> transformer, String description) {
+        toProperty = toCanonicalFormatIfKeycloakPrefix(toProperty);
         return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, null, transformer, mapFrom, description));
     }
 
     static PropertyMapper createBuildTimeProperty(String fromProperty, String toProperty, BiFunction<String, ConfigSourceInterceptorContext, String> transformer, String description) {
+        toProperty = toCanonicalFormatIfKeycloakPrefix(toProperty);
         return MAPPERS.computeIfAbsent(toProperty, s -> new PropertyMapper(fromProperty, s, null, transformer, null, true, description, false));
+    }
+
+    private static String toCanonicalFormatIfKeycloakPrefix(String name) {
+        return name.startsWith(NS_KEYCLOAK_PREFIX) ? PropertyMappers.canonicalFormat(name) : name;
     }
 
     static Map<String, PropertyMapper> MAPPERS = new HashMap<>();
@@ -99,7 +112,7 @@ public class PropertyMapper {
     }
     
     PropertyMapper(String from, String to, String defaultValue, BiFunction<String, ConfigSourceInterceptorContext, String> mapper, String mapFrom, boolean buildTime, String description, boolean mask) {
-        this.from = MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + from;
+        this.from = NS_KEYCLOAK_PREFIX + from;
         this.to = to;
         this.defaultValue = defaultValue;
         if (mapper == null) {
