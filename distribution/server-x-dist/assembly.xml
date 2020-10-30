@@ -97,6 +97,10 @@
             <filtered>true</filtered>
         </file>
         <file>
+            <source>target/keycloak-quarkus-server-app/META-INF/keycloak.properties</source>
+            <outputDirectory>conf</outputDirectory>
+        </file>
+        <file>
             <source>target/keycloak-quarkus-server/cluster-local.xml</source>
             <outputDirectory>conf</outputDirectory>
         </file>
