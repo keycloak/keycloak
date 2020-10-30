@@ -868,14 +868,14 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             }
         ];
         if (instance && instance.alias) {
-
+        	
         } else {
             $scope.identityProvider.config.nameIDPolicyFormat = $scope.nameIdFormats[0].format;
             $scope.identityProvider.config.principalType = $scope.principalTypes[0].type;
             $scope.identityProvider.config.signatureAlgorithm = $scope.signatureAlgorithms[1];
             $scope.identityProvider.config.xmlSigKeyInfoKeyNameTransformer = $scope.xmlKeyNameTranformers[1];
         }
-        $scope.identityProvider.config.entityId = $scope.identityProvider.config.entityId || (authUrl + '/realms/' + realm.realm);
+        $scope.identityProvider.config.entityId = $scope.identityProvider.config.entityId || (authUrl + '/realms/' + realm.realm);    
     }
 
     $scope.hidePassword = true;
@@ -972,7 +972,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         for (var key in data) {
             $scope.identityProvider.config[key] = data[key];
         }
-       
+        
     }
 
     $scope.uploadFile = function() {
@@ -1732,6 +1732,98 @@ module.controller('RealmSMTPSettingsCtrl', function($scope, Current, Realm, real
 
         return obj;
     }
+});
+
+module.controller('RealmMetadataSettingsCtrl', function($scope, Current, Realm, realm, $http, $location, Dialog, Notifications, RealmSMTPConnectionTester) {
+    $scope.realm = realm;
+
+    if ($scope.realm.attributes) {
+        $scope.realm.attributes = typeInt($scope.realm.attributes);        
+        if ($scope.realm.attributes.samlAttributes === undefined) {
+        	$scope.samlAttributes =  {};
+        } else {
+        	$scope.samlAttributes =  angular.fromJson($scope.realm.attributes.samlAttributes);
+        }
+    };
+
+    var oldCopy = angular.copy($scope.realm);
+    $scope.changed = false;
+
+    $scope.$watch('realm', function() {
+        if (!angular.equals($scope.realm, oldCopy)) {
+            $scope.changed = true;
+        }
+    }, true);
+
+    $scope.save = function() {
+    	$scope.realm.attributes.samlAttributes = angular.toJson($scope.samlAttributes);
+        var realmCopy = angular.copy($scope.realm);
+        realmCopy['attributes'] = detypeInt(realmCopy.attributes);
+        $scope.changed = false;
+        Realm.update(realmCopy, function () {
+            $location.url("/realms/" + realm.realm + "/metadata-settings");
+            Notifications.success("Your changes have been saved to the realm.");
+        });
+    };
+
+    $scope.reset = function() {
+        $scope.realm = angular.copy(oldCopy);
+        $scope.changed = false;
+    };
+    
+    $scope.addSamlAttribute = function() {
+        $scope.samlAttributes[$scope.newSamlAttribute.name] = $scope.newSamlAttribute.value;
+        delete $scope.newSamlAttribute;
+    }
+
+    $scope.removeSamlAttribute = function(name) {
+        delete $scope.samlAttributes[name];
+    }
+    
+    $scope.contactTypes = [
+        {
+            type: "TECHNICAL",
+            name: "technical"
+
+        },
+        {
+            type: "SUPPORT",
+            name: "support"
+
+        },
+        {
+            type: "ADMINISTRATIVE",
+            name: "administrative"
+
+        },
+        {
+            type: "BILLING",
+            name: "billing"
+
+        },
+        {
+            type: "OTHER",
+            name: "other"
+
+        }
+    ];
+
+    /*  convert  integer string to integer. */
+    function typeInt(obj){
+        obj['mduiLogoWidth'] = parseInt(obj['mduiLogoWidth']);
+        obj['mduiLogoHeight'] = parseInt(obj['mduiLogoHeight']);
+        return obj;
+    }
+
+    /* Convert all int values to strings */
+    function detypeInt(obj){
+        obj['mduiLogoWidth'] = obj['mduiLogoWidth'] && obj['mduiLogoWidth'].toString();
+        obj['mduiLogoHeight'] = obj['mduiLogoHeight'] && obj['mduiLogoHeight'].toString();
+
+        return obj;
+    }
+    
+    
 });
 
 module.controller('RealmEventsConfigCtrl', function($scope, eventsConfig, RealmEventsConfig, RealmEvents, RealmAdminEvents, realm, serverInfo, $location, Notifications, TimeUnit, Dialog) {

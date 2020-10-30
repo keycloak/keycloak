@@ -548,6 +548,15 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'RealmSMTPSettingsCtrl'
         })
+        .when('/realms/:realm/metadata-settings', {
+            templateUrl : resourceUrl + '/partials/realm-metadata.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'RealmMetadataSettingsCtrl'
+        })
         .when('/realms/:realm/events', {
             templateUrl : resourceUrl + '/partials/realm-events.html',
             resolve : {

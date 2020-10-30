@@ -1,0 +1,167 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+    <kc-tabs-realm></kc-tabs-realm>
+
+    <form class="form-horizontal" name="realmForm" novalidate kc-read-only="!access.manageRealm">
+        <fieldset class="border-top">
+            <div class="form-group">
+                <label class="col-md-2 control-label" >{{:: 'saml.attributes' | translate}}</label>
+                <kc-tooltip>{{:: 'saml.attributes.tooltip' | translate}}</kc-tooltip>
+                <table class="table table-striped table-bordered" id ="samlAttributes">
+                <thead>
+                     <tr>
+                         <th>{{:: 'saml.attribute.name' | translate}}</th>
+                         <th>{{:: 'saml.attribute.values' | translate}}</th>
+                         <th>{{:: 'actions' | translate}}</th>
+                     </tr>
+                 </thead>
+                 <tbody>
+                     <tr ng-repeat="(name, value) in samlAttributes">
+                         <td>{{name}}</td>
+                         <td><input ng-model="samlAttributes[name]" class="form-control" type="text"   /></td>
+                         <td class="kc-action-cell" data-ng-click="removeSamlAttribute(name)">{{:: 'delete' | translate}}</td>
+
+                     </tr>
+                     <tr>
+                          <td><input ng-model="newSamlAttribute.name" class="form-control" type="text" id="newSamlAttributeName" /></td>
+                          <td><input ng-model="newSamlAttribute.value" class="form-control" type="text" id="newSamlAttributeValue" /></td>
+                          <td class="kc-action-cell" data-ng-click="addSamlAttribute()" data-ng-disabled="!newSamlAttribute.name.length && !newSamlAttribute.value.length">{{:: 'add' | translate}}</td>
+                      </tr>
+                </tbody>
+                </table>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="mdrpiRegistrationAuthority">{{:: 'mdrpiRegistrationAuthority' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mdrpiRegistrationAuthority" type="text" ng-model="realm.attributes.mdrpiRegistrationAuthority">
+                </div>
+                <kc-tooltip>{{:: 'saml.mdrpiRegistrationAuthority.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group"  data-ng-show="realm.attributes.mdrpiRegistrationAuthority">
+                <label class="col-md-2 control-label" for="mdrpiRegistrationPolicy">{{:: 'mdrpiRegistrationPolicy' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mdrpiRegistrationPolicy" type="text" ng-model="realm.attributes.mdrpiRegistrationPolicy">
+                </div>
+                <kc-tooltip>{{:: 'saml.mdrpiRegistrationPolicy.tooltip' | translate}}</kc-tooltip>
+            </div>
+			<div class="form-group">
+                <label class="col-md-2 control-label" for="mduiDescription"> {{:: 'description' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mduiDescription" type="text" ng-model="realm.attributes.mduiDescription">
+                </div>
+                <kc-tooltip>{{:: 'identity-provider.mduiDescription.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="mduiInformationUrl">{{:: 'mduiInformationUrl' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mduiInformationUrl" type="text" ng-model="realm.attributes.mduiInformationURL">
+                </div>
+                <kc-tooltip>{{:: 'saml.mduiInformationUrl.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="mduiPrivacyStatementUrl">{{:: 'mduiPrivacyStatementUrl' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mduiPrivacyStatementUrl" type="text" ng-model="realm.attributes.mduiPrivacyStatementURL">
+                </div>
+                <kc-tooltip>{{:: 'saml.mduiPrivacyStatementUrl.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="mduiLogo">{{:: 'mduiLogo' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mduiogo" type="text" ng-model="realm.attributes.mduiLogo">
+                </div>
+                <kc-tooltip>{{:: 'saml.mduiLogo.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="realm.attributes.mduiLogo">
+                <label class="col-md-2 control-label" for="mduiLogoWidth">{{:: 'mduiLogoWidth' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mduiLogoWidth" string-to-number type="number" min="0" step="1" type="number" ng-model="realm.attributes.mduiLogoWidth">
+                </div>
+                <kc-tooltip>{{:: 'saml.mduiLogoWidth.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="realm.attributes.mduiLogo">
+                <label class="col-md-2 control-label" for="mduiLogoHeight">{{:: 'mduiLogoHeight' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mduiLogoHeight" string-to-number type="number" min="0" step="1" type="number" ng-model="realm.attributes.mduiLogoHeight">
+                </div>
+                <kc-tooltip>{{:: 'saml.mduiLogoHeight.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" >
+                <label class="col-md-2 control-label" for="mdOrganizationName">{{:: 'mdOrganizationName' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mdOrganizationName" s type="text" ng-model="realm.attributes.mdOrganizationName">
+                </div>
+                <kc-tooltip>{{:: 'saml.mdOrganizationName.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" >
+                <label class="col-md-2 control-label" for="mdOrganizationDisplayName">{{:: 'mdOrganizationDisplayName' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mdOrganizationDisplayName"  type="text" ng-model="realm.attributes.mdOrganizationDisplayName">
+                </div>
+                <kc-tooltip>{{:: 'saml.mdOrganizationDisplayName.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" >
+                <label class="col-md-2 control-label" for="mdOrganizationURL">{{:: 'mdOrganizationURL' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mdOrganizationURL"  type="text" ng-model="realm.attributes.mdOrganizationURL">
+                </div>
+                <kc-tooltip>{{:: 'saml.mdOrganizationURL.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" >
+                <label class="col-md-2 control-label" for="mdContactType">{{:: 'mdContactType' | translate}}</label>
+                <div class="col-md-6">
+                  <select id="mdContactType" ng-model="realm.attributes.mdContactType">
+						  <option value="">-- No contact person --</option>
+						  <option ng-repeat="ctype in contactTypes" value="{{ctype.type}}" >{{ctype.type}}</option>
+                   </select>
+                </div>
+                <kc-tooltip>{{:: 'saml.mdContactType.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="realm.attributes.mdContactType">
+                <label class="col-md-2 control-label" for="mdContactCompany">{{:: 'mdContactCompany' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mdContactCompany"  type="text" ng-model="realm.attributes.mdContactCompany">
+                </div>
+                <kc-tooltip>{{:: 'saml.mdContactCompany.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="realm.attributes.mdContactType">
+                <label class="col-md-2 control-label" for="mdContactGivenName">{{:: 'mdContactGivenName' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mdContactGivenName"  type="text" ng-model="realm.attributes.mdContactGivenName">
+                </div>
+                <kc-tooltip>{{:: 'saml.mdContactGivenName.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="realm.attributes.mdContactType">
+                <label class="col-md-2 control-label" for="mdContactSurname">{{:: 'mdContactSurname' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mdContactSurname"  type="text" ng-model="realm.attributes.mdContactSurname">
+                </div>
+                <kc-tooltip>{{:: 'saml.mdContactSurname.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="realm.attributes.mdContactType">
+                <label class="col-md-2 control-label" for="mdContactEmailAddress">{{:: 'mdContactEmailAddress' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mdContactEmailAddress"  type="text" ng-model="realm.attributes.mdContactEmailAddress">
+                </div>
+                <kc-tooltip>{{:: 'saml.mdContactEmailAddress.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group" data-ng-show="realm.attributes.mdContactType">
+                <label class="col-md-2 control-label" for="mdContactTelephoneNumber">{{:: 'mdContactTelephoneNumber' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" id="mdContactTelephoneNumber"  type="text" ng-model="realm.attributes.mdContactTelephoneNumber">
+                </div>
+                <kc-tooltip>{{:: 'saml.mdContactTelephoneNumber.tooltip' | translate}}</kc-tooltip>
+            </div>
+        
+        </fieldset>
+
+        <div class="form-group" data-ng-show="access.manageRealm">
+            <div class="col-md-10 col-md-offset-2">
+                <button kc-save  data-ng-disabled="!changed">{{:: 'save' | translate}}</button>
+                <button kc-reset data-ng-disabled="!changed">{{:: 'cancel' | translate}}</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+
+<kc-menu></kc-menu>

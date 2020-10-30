@@ -152,6 +152,21 @@ public enum JBossSAMLConstants {
     RSA_KEY_VALUE(XMLDSIG_NSURI, "RSAKeyValue"),
     X509_CERT(XMLDSIG_NSURI, "X509Certificate"),
     X509_DATA(XMLDSIG_NSURI, "X509Data"),
+    
+    // sstc-saml-metadata-ui-v1.0.xsd
+    UIINFO(METADATA_UI, "UIInfo"),
+    DESCRIPTION(METADATA_UI, "Description"),
+    DISPLAY_NAME(METADATA_UI, "DisplayName"),
+    INFORMATION_URL(METADATA_UI, "InformationURL"),
+    KEYWORDS(METADATA_UI, "Keywords"),
+    LOGO(METADATA_UI, "Logo"),
+    PRIVACY_STATEMENT_URL(METADATA_UI, "PrivacyStatementURL"),
+    // mdrpi elemetns METADATA_RPI
+    REGISTRATION_INFO(METADATA_RPI, "RegistrationInfo"),
+    REGISTRATION_POLICY(METADATA_RPI, "RegistrationPolicy"),
+    //entity attributes
+    ENTITY_ATTRIBUTES(METADATA_ENTITY_ATTRIBUTES_NSURI, "EntityAttributes"),
+    
 
     // Attribute names and other constants
     ADDRESS("Address"),
@@ -218,6 +233,9 @@ public enum JBossSAMLConstants {
 
     LANG("lang"),
     LANG_EN("en"),
+    WIDTH( "width"),
+    HEIGHT( "height"),
+    REGISTRATION_AUTHORITY("registrationAuthority"),
     METADATA_MIME("application/samlmetadata+xml"),
     SIGNATURE_SHA1_WITH_DSA("http://www.w3.org/2000/09/xmldsig#dsa-sha1"),
     SIGNATURE_SHA1_WITH_RSA("http://www.w3.org/2000/09/xmldsig#rsa-sha1"),

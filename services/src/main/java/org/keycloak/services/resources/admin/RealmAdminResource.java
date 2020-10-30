@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import static org.keycloak.common.util.UriUtils.checkUrl;
 import static org.keycloak.models.utils.StripSecretsUtils.stripForExport;
 import static org.keycloak.util.JsonSerialization.readValue;
 
@@ -57,6 +58,7 @@ import org.keycloak.authentication.CredentialRegistrator;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.EventQuery;
@@ -420,6 +422,14 @@ public class RealmAdminResource {
                     return ErrorResponse.error("Failed to decode certificate", Status.BAD_REQUEST);
                 }
             }
+            
+            if (rep.getAttributes() != null && !rep.getAttributes().isEmpty()) {
+                checkUrl(SslRequired.NONE, rep.getAttributes().get("mdrpiRegistrationAuthority"), "mdrpiRegistrationAuthority");
+                checkUrl(SslRequired.NONE, rep.getAttributes().get("mdrpiRegistrationPolicy"), "mdrpiRegistrationPolicy");
+                checkUrl(SslRequired.NONE, rep.getAttributes().get("mduiInformationURL"), "mduiInformationURL");
+                checkUrl(SslRequired.NONE, rep.getAttributes().get("mduiPrivacyStatementURL"), "mduiPrivacyStatementURL");
+                checkUrl(SslRequired.NONE, rep.getAttributes().get("mdOrganizationURL"), "mdOrganizationURL");
+            }
 
             boolean wasDuplicateEmailsAllowed = realm.isDuplicateEmailsAllowed();
             RepresentationToModel.updateRealm(rep, realm, session);
@@ -439,7 +449,7 @@ public class RealmAdminResource {
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Realm with same name exists");
-        } catch (ModelException e) {
+        } catch (ModelException | IllegalArgumentException e) {
             return ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
