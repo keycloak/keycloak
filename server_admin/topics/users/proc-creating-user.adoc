@@ -8,7 +8,7 @@ You create users in the realm where you intend to have applications needed by th
 * You are in a realm other than the master realm.
 
 .Procedure
-. In the console, click *Users* in the left menu.
+. In the admin console, click *Users* in the left menu.
 . Click *Add User*, located on the right side of the empty user list.
 . Enter the details for the new user. 
 +

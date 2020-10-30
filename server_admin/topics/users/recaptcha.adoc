@@ -15,7 +15,7 @@ list on this page.
 image:{project_images}/registration-flow.png[]
 
 
-Set the 'reCAPTCHA' requirement to `Required` by clicking the appropriate radio button.  This will enable
+Set the `reCAPTCHA` requirement to `Required` by clicking the appropriate radio button.  This will enable
 reCAPTCHA on the screen.  Next, you have to enter in the reCAPTCHA site key and secret that you generated at the Google reCAPTCHA Website.
 Click on the 'Actions' button that is to the right of the reCAPTCHA flow entry, then "Config" link, and enter in the reCAPTCHA site key and secret on this config page.
 

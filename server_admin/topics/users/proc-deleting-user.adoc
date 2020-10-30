@@ -7,7 +7,7 @@ You can delete a user, who no longer needs access to applications. If a user is 
 * You are in the realm where the user exists.
 
 .Procedure
-. Click on *Users* in the left menu. This opens the user list page.  
+. Click on *Users* in the left menu. This action opens the user list page.  
 . Click *View all users* to find the user to delete.
 +
 NOTE: Alternatively, you can use the search bar to find a user.

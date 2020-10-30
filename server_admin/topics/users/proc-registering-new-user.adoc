@@ -2,16 +2,16 @@
 = Registering as a new user
 
 [role="_abstract"]
-As a new user, you must complete a registration form to log in for the first time. A user must add profile information and a password to the registration form to complete registration.    
-
-.Registration Form
-image:{project_images}/registration-form.png[]
+As a new user, you must complete a registration form to log in for the first time. You add profile information and a password to register.
 
 .Prerequisite
 * User registration is enabled.
 
 .Procedure
 . Click the *Register* link on the login page. You are directed to the registration page.
++
+.Registration Form
+image:{project_images}/registration-form.png[]
 . Enter the user profile information.
 . Enter the new password.
 . Click *Save*.

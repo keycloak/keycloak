@@ -4,9 +4,6 @@
 [role="_abstract"]
 Enable users to self-register. After you enable this setting, a *Register* link is displayed on the login page of the admin console.
 
-.Registration Link
-image:{project_images}/registration-link.png[]
-
 .Procedure
 . Click *Realm Settings* in the left menu.  
 . Click the *Login* tab.  

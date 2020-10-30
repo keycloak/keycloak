@@ -1,7 +1,7 @@
 [id="proc-searching-user_{context}"]
 = Searching for a user
 
-Search for a user to view detailed information about the user's groups and roles. 
+Search for a user to view detailed information about the user, such as the user's groups and roles. 
 
 .Prerequisite
 * You are in the realm where the user exists.

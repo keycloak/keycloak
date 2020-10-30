@@ -1,8 +1,7 @@
 [id="proc-setting-default-required-actions_{context}"]
 = Setting default required actions
 
-You can use the registration link or the *Required Actions* tab to specify the required actions that must be completed by a user before logging in.
-
+You can determine what actions are required before the first login for any new user created. Once the user is created, these default required actions can be modified for that user.
 
 .Procedure
 

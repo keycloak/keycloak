@@ -1,7 +1,7 @@
 [id="proc-configuring-user-attributes_{context}"]
 = Configuring user attributes
 
-User attributes provide a customized experience for each user. Using user attributes, you can can create a personalized identity for each user in the console.
+User attributes provide a customized experience for each user. With user attributes, you can can create a personalized identity for each user in the console.
 
 .Prerequisite
 * You are in the realm where the user exists.
