@@ -213,8 +213,11 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
                 @Override
                 public void removeAttribute(String name) {
-                    if (setLDAPAttribute(name, null)) {
-                        super.removeAttribute(name);
+                    if(!UserModel.USERNAME.equals(name)){
+                        //do not remove username
+                        if (setLDAPAttribute(name, null)) {
+                            super.removeAttribute(name);
+                        }
                     }
                 }
 
