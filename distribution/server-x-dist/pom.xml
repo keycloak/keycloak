@@ -70,6 +70,12 @@
                                     <type>jar</type>
                                     <outputDirectory>target/keycloak-quarkus-server</outputDirectory>
                                 </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-quarkus-server-app</artifactId>
+                                    <type>jar</type>
+                                    <outputDirectory>target/keycloak-quarkus-server-app</outputDirectory>
+                                </artifactItem>
                             </artifactItems>
                         </configuration>
                     </execution>

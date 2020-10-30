@@ -17,15 +17,12 @@
 
 package org.keycloak.configuration;
 
-import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -62,13 +59,9 @@ public abstract class KeycloakPropertiesConfigSource extends PropertiesConfigSou
             return Collections.emptyMap();
         }
         try (Closeable ignored = is) {
-            try (InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8)) {
-                try (BufferedReader br = new BufferedReader(isr)) {
-                    final Properties properties = new Properties();
-                    properties.load(br);
-                    return transform((Map<String, String>) (Map) properties);
-                }
-            }
+            Properties properties = new Properties();
+            properties.load(is);
+            return transform((Map<String, String>) (Map) properties);
         } catch (IOException e) {
             throw new IOError(e);
         }

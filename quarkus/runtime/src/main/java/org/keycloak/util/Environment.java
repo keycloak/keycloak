@@ -79,4 +79,8 @@ public final class Environment {
     public static SmallRyeConfig getConfig() {
         return KeycloakRecorder.getConfig();
     }
+
+    public static boolean isDevMode() {
+        return "dev".equalsIgnoreCase(getProfile());
+    }
 }
