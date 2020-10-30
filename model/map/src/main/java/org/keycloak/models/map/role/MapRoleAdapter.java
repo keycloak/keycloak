@@ -133,4 +133,9 @@ public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements 
         return getAttributes().getOrDefault(name, Collections.EMPTY_LIST).stream();
     }
 
+    @Override
+    public String toString() {
+        return "MapRoleAdapter{" + getId() + '}';
+    }
+
 }

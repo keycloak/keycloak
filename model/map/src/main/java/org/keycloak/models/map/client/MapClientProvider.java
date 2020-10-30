@@ -85,7 +85,7 @@ public class MapClientProvider implements ClientProvider {
     }
 
     private MapClientEntity registerEntityForChanges(MapClientEntity origEntity) {
-        final MapClientEntity res = Serialization.from(origEntity);
+        final MapClientEntity res = tx.get(origEntity.getId(), id -> Serialization.from(origEntity));
         tx.putIfChanged(origEntity.getId(), res, MapClientEntity::isUpdated);
         return res;
     }
@@ -96,6 +96,7 @@ public class MapClientProvider implements ClientProvider {
         return origEntity -> new MapClientAdapter(session, realm, registerEntityForChanges(origEntity)) {
             @Override
             public void updateClient() {
+                LOG.tracef("updateClient(%s)%s", realm, origEntity.getId(), getShortStackTrace());
                 session.getKeycloakSessionFactory().publish(clientUpdatedEvent(this));
             }
 
@@ -143,7 +144,7 @@ public class MapClientProvider implements ClientProvider {
         Stream<MapClientEntity> updatedAndNotRemovedClientsStream = clientStore.entrySet().stream()
           .map(tx::getUpdated)    // If the client has been removed, tx.get will return null, otherwise it will return me.getValue()
           .filter(Objects::nonNull);
-        return Stream.concat(tx.createdValuesStream(clientStore.keySet()), updatedAndNotRemovedClientsStream);
+        return Stream.concat(tx.createdValuesStream(), updatedAndNotRemovedClientsStream);
     }
 
     @Override

@@ -100,7 +100,7 @@ public class MapRoleProvider implements RoleProvider {
         Stream<MapRoleEntity> updatedAndNotRemovedRolesStream = roleStore.entrySet().stream()
           .map(tx::getUpdated)    // If the role has been removed, tx.get will return null, otherwise it will return me.getValue()
           .filter(Objects::nonNull);
-        return Stream.concat(tx.createdValuesStream(roleStore.keySet()), updatedAndNotRemovedRolesStream)
+        return Stream.concat(tx.createdValuesStream(), updatedAndNotRemovedRolesStream)
                 .filter(entityRealmFilter(realm));
     }
 
