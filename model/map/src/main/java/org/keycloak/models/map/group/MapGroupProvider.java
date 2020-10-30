@@ -97,7 +97,7 @@ public class MapGroupProvider implements GroupProvider {
         Stream<MapGroupEntity> updatedAndNotRemovedGroupsStream = groupStore.entrySet().stream()
                 .map(tx::getUpdated)    // If the group has been removed, tx.get will return null, otherwise it will return me.getValue()
                 .filter(Objects::nonNull);
-        return Stream.concat(tx.createdValuesStream(groupStore.keySet()), updatedAndNotRemovedGroupsStream);
+        return Stream.concat(tx.createdValuesStream(), updatedAndNotRemovedGroupsStream);
     }
 
     private Stream<MapGroupEntity> getUnsortedGroupEntitiesStream(RealmModel realm) {
