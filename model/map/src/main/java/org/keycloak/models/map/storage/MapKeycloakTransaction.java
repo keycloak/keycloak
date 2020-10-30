@@ -18,7 +18,6 @@ package org.keycloak.models.map.storage;
 
 import org.keycloak.models.KeycloakTransaction;
 
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -32,36 +31,30 @@ public class MapKeycloakTransaction<K, V> implements KeycloakTransaction {
     private final static Logger log = Logger.getLogger(MapKeycloakTransaction.class);
 
     private enum MapOperation {
-        PUT {
+        CREATE {
             @Override
             protected <K, V> MapTaskWithValue<K, V> taskFor(K key, V value) {
                 return new MapTaskWithValue<K, V>(value) {
-                    @Override
-                    public void execute(MapStorage<K, V> map) {
-                        map.put(key, getValue());
-                    }
+                    @Override public void execute(MapStorage<K, V> map) { map.putIfAbsent(key, getValue()); }
+                    @Override public MapOperation getOperation() { return CREATE; }
                 };
             }
         },
-        PUT_IF_ABSENT {
+        UPDATE {
             @Override
             protected <K, V> MapTaskWithValue<K, V> taskFor(K key, V value) {
                 return new MapTaskWithValue<K, V>(value) {
-                    @Override
-                    public void execute(MapStorage<K, V> map) {
-                        map.putIfAbsent(key, getValue());
-                    }
+                    @Override public void execute(MapStorage<K, V> map) { map.put(key, getValue()); }
+                    @Override public MapOperation getOperation() { return UPDATE; }
                 };
             }
         },
-        REMOVE {
+        DELETE {
             @Override
             protected <K, V> MapTaskWithValue<K, V> taskFor(K key, V value) {
                 return new MapTaskWithValue<K, V>(null) {
-                    @Override
-                    public void execute(MapStorage<K, V> map) {
-                        map.remove(key);
-                    }
+                    @Override public void execute(MapStorage<K, V> map) { map.remove(key); }
+                    @Override public MapOperation getOperation() { return DELETE; }
                 };
             }
         },
@@ -87,6 +80,8 @@ public class MapKeycloakTransaction<K, V> implements KeycloakTransaction {
 
     @Override
     public void commit() {
+        log.trace("Commit");
+
         if (rollback) {
             throw new RuntimeException("Rollback only!");
         }
@@ -146,15 +141,15 @@ public class MapKeycloakTransaction<K, V> implements KeycloakTransaction {
     }
 
     public void put(K key, V value) {
-        addTask(MapOperation.PUT, key, value);
+        addTask(MapOperation.UPDATE, key, value);
     }
 
     public void putIfAbsent(K key, V value) {
-        addTask(MapOperation.PUT_IF_ABSENT, key, value);
+        addTask(MapOperation.CREATE, key, value);
     }
 
     public void putIfChanged(K key, V value, Predicate<V> shouldPut) {
-        log.tracev("Adding operation PUT_IF_CHANGED for {0}", key);
+        log.tracev("Adding operation UPDATE_IF_CHANGED for {0}", key);
 
         K taskKey = key;
         MapTaskWithValue<K, V> op = new MapTaskWithValue<K, V>(value) {
@@ -164,12 +159,13 @@ public class MapKeycloakTransaction<K, V> implements KeycloakTransaction {
                     map.put(key, getValue());
                 }
             }
+            @Override public MapOperation getOperation() { return MapOperation.UPDATE; }
         };
-        tasks.merge(taskKey, op, MapTaskCompose::new);
+        tasks.merge(taskKey, op, MapKeycloakTransaction::merge);
     }
 
     public void remove(K key) {
-        addTask(MapOperation.REMOVE, key, null);
+        addTask(MapOperation.DELETE, key, null);
     }
 
     public Stream<V> valuesStream() {
@@ -178,12 +174,20 @@ public class MapKeycloakTransaction<K, V> implements KeycloakTransaction {
           .filter(Objects::nonNull);
     }
 
-    public Stream<V> createdValuesStream(Collection<K> existingKeys) {
-        return this.tasks.entrySet().stream()
-          .filter(me -> ! existingKeys.contains(me.getKey()))
-          .map(Map.Entry::getValue)
+    public Stream<V> createdValuesStream() {
+        return this.tasks.values().stream()
+          .filter(v -> v.containsCreate() && ! v.isReplace())
           .map(MapTaskWithValue<K,V>::getValue)
           .filter(Objects::nonNull);
+    }
+
+    private static <K, V> MapTaskWithValue<K, V> merge(MapTaskWithValue<K, V> oldValue, MapTaskWithValue<K, V> newValue) {
+        switch (newValue.getOperation()) {
+            case DELETE:
+                return oldValue.containsCreate() ? null : newValue;
+            default:
+                return new MapTaskCompose<>(oldValue, newValue);
+        }
     }
 
     private static abstract class MapTaskWithValue<K, V> {
@@ -197,6 +201,19 @@ public class MapKeycloakTransaction<K, V> implements KeycloakTransaction {
             return value;
         }
 
+        public boolean containsCreate() {
+            return MapOperation.CREATE == getOperation();
+        }
+
+        public boolean containsRemove() {
+            return MapOperation.DELETE == getOperation();
+        }
+
+        public boolean isReplace() {
+            return false;
+        }
+
+        public abstract MapOperation getOperation();
         public abstract void execute(MapStorage<K,V> map);
    }
 
@@ -222,5 +239,25 @@ public class MapKeycloakTransaction<K, V> implements KeycloakTransaction {
             return newValue.getValue();
         }
 
+        @Override
+        public MapOperation getOperation() {
+            return null;
+        }
+
+        @Override
+        public boolean containsCreate() {
+            return oldValue.containsCreate() || newValue.containsCreate();
+        }
+
+        @Override
+        public boolean containsRemove() {
+            return oldValue.containsRemove() || newValue.containsRemove();
+        }
+
+        @Override
+        public boolean isReplace() {
+            return (newValue.getOperation() == MapOperation.CREATE && oldValue.containsRemove()) ||
+              (oldValue instanceof MapTaskCompose && ((MapTaskCompose) oldValue).isReplace());
+        }
     }
 }
