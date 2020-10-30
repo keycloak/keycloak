@@ -1,0 +1,30 @@
+
+[id=proc-creating-a-realm_{context}]
+= Creating a realm
+
+[role="_abstract"]
+You create a realm to provide a management space where you can create users and give them permissions to use applications. At first login, you are typically in the _master_ realm, the top-level realm from which you create other realms.
+
+.Procedure
+
+. Point to the top of the left pane.
+
+. Click *Add Realm*.
++
+.Add Realm Menu
+image:{project_images}/add-realm-menu.png[]
+
+. Enter a name for the realm.
+
+. Click *Create*.
++
+.Create Realm
+image:{project_images}/create-realm.png[]
+
+The current realm is now set to the realm you just created.  You can switch between managing different realms by pointing to the top left corner to click *Select Realm*.
+
+ifdef::standalone[]
+[role="_additional-resources"]
+.Additional resources
+Alternatively you can import a JSON document that defines your new realm. For more detail, see the xref:assembly-exporting-importing_{context}[Export and Import] chapter.
+endif::[]

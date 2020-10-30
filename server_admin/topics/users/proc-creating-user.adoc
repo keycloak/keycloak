@@ -1,6 +1,7 @@
 [id="proc-creating-user_{context}"]
 = Creating a user
 
+[role="_abstract"]
 You create users in the realm where you intend to have applications needed by those users. Avoid creating users in the master realm, which is only intended for creating other realms.
 
 .Prerequisite

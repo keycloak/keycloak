@@ -2,8 +2,7 @@
 [[_oidc_clients]]
 === OIDC Clients
 [role="_abstract"]
-<<_oidc,OpenID Connect>> is the preferred protocol to secure applications.  It was designed from the ground up to be web friendly
-and work best with HTML5/JavaScript applications.
+xref:con-oidc_{context}[OpenID Connect] is the recommended protocol to secure applications.  It was designed from the ground up to be web friendly and it works best with HTML5/JavaScript applications.
 
 include::proc-creating-oidc-client.adoc[]
 include::con-basic-settings.adoc[]

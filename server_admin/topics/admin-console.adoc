@@ -19,7 +19,7 @@ over any question mark `?` icon.  This will pop up tooltip text to describe the 
 The image above shows the tooltip in action.
 
 include::realms/master.adoc[leveloffset=2]
-include::realms/create.adoc[leveloffset=2]
+include::realms/proc-creating-a-realm.adoc[leveloffset=2]
 include::realms/ssl.adoc[leveloffset=2][]
 include::realms/cache.adoc[leveloffset=2][]
 include::realms/email.adoc[leveloffset=2]
