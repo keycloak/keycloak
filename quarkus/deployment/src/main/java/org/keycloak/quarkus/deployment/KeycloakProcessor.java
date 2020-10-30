@@ -102,7 +102,7 @@ class KeycloakProcessor {
      * 
      * @param recorder
      */
-    @Record(ExecutionTime.STATIC_INIT)
+    @Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep
     void configureProviders(KeycloakRecorder recorder) {
         Profile.setInstance(recorder.createProfile());
