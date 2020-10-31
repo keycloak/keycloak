@@ -17,6 +17,10 @@
 
 package org.keycloak.broker.provider.util;
 
+import com.google.common.primitives.Bytes;
+import org.keycloak.common.util.Base64Url;
+
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
 /**
@@ -27,24 +31,32 @@ import java.util.regex.Pattern;
  */
 public class IdentityBrokerState {
 
-    private static final Pattern DOT = Pattern.compile("\\.");
-
-
     public static IdentityBrokerState decoded(String state, String clientId, String tabId) {
-        String encodedState = state + "." + tabId + "." + clientId;
+        byte[] stateBytes = Base64Url.decode(state);
+        byte[] tabIdBytes = Base64Url.decode(tabId);
+        byte[] clientIdBytes = clientId.getBytes();
+        byte[] indexBytes = new byte[2];
+        indexBytes[0] = (byte) stateBytes.length;
+        indexBytes[1] = (byte) tabIdBytes.length;
+
+        String encodedState = Base64Url.encode(Bytes.concat(indexBytes, stateBytes, tabIdBytes, clientIdBytes));
 
         return new IdentityBrokerState(state, clientId, tabId, encodedState);
     }
 
 
     public static IdentityBrokerState encoded(String encodedState) {
-        String[] decoded = DOT.split(encodedState, 3);
+        byte[] decoded = Base64Url.decode(encodedState);
 
-        String state =(decoded.length > 0) ? decoded[0] : null;
-        String tabId = (decoded.length > 1) ? decoded[1] : null;
-        String clientId = (decoded.length > 2) ? decoded[2] : null;
+        int stateStart = 2;
+        int tabIdStart = 2 + decoded[0];
+        int clientIdStart = 2 + decoded[0] + decoded[1];
 
-        return new IdentityBrokerState(state, clientId, tabId, encodedState);
+        byte[] stateBytes = Arrays.copyOfRange(decoded, stateStart, tabIdStart);
+        byte[] tabIdBytes = Arrays.copyOfRange(decoded, tabIdStart, clientIdStart);
+        byte[] clientIdBytes = Arrays.copyOfRange(decoded, clientIdStart, decoded.length);
+
+        return new IdentityBrokerState(Base64Url.encode(stateBytes), new String(clientIdBytes), Base64Url.encode(tabIdBytes), encodedState);
     }
 
 
