@@ -1,8 +1,6 @@
 package org.keycloak.protocol.ciba.utils;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Map;
-import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
@@ -17,13 +15,12 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.CodeToTokenStoreProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.ciba.CIBAAuthReqIdJwt;
+import org.keycloak.protocol.ciba.CIBAAuthReqId;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.util.TokenUtil;
@@ -32,34 +29,10 @@ public class CIBAAuthReqIdParser {
 
     private static final Logger logger = Logger.getLogger(CIBAAuthReqIdParser.class);
 
-    public static String persistAuthReqId(KeycloakSession session, CIBAAuthReqId authReqIdData, int expires_in, UserModel user) {
-        CodeToTokenStoreProvider codeStore = session.getProvider(CodeToTokenStoreProvider.class);
-        UUID key = UUID.randomUUID();
-        String jwtFormattedAuthReqId = createJwtFormattedAuthReqId(session, authReqIdData, expires_in, user, key);
-        Map<String, String> serialized = authReqIdData.serializeCode();
-        codeStore.put(key, expires_in, serialized);
-        //return key.toString();
-        return jwtFormattedAuthReqId;
-    }
-
-    private static String createJwtFormattedAuthReqId(KeycloakSession session, CIBAAuthReqId authReqIdData, int expires_in, UserModel user, UUID key) {
-        CIBAAuthReqIdJwt jwt = new CIBAAuthReqIdJwt();
-        jwt.id(KeycloakModelUtils.generateId());
-        jwt.issuedNow();
-        // TODO : check the way of generating issuer is appropriate or not
-        jwt.issuer(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), session.getContext().getRealm().getName()));
-        jwt.audience(jwt.getIssuer());
-        jwt.subject(user.getId());
-        jwt.setKey(key.toString());
-        jwt.exp(Long.valueOf(Time.currentTime() + expires_in));
-        jwt.issuedFor(authReqIdData.getClientId());
-        jwt.setScope(authReqIdData.getScope());
-        jwt.setSessionState(authReqIdData.getUserSessionId());
-        jwt.setAuthResultId(authReqIdData.getAuthResultId());
-        jwt.setThrottlingId(authReqIdData.getThrottlingId());
+    public static String persistAuthReqId(KeycloakSession session, CIBAAuthReqId authReqIdJwt) {
         SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, Algorithm.HS256);
         SignatureSignerContext signer = signatureProvider.signer();
-        String encodedJwt = new JWSBuilder().type("JWT").jsonContent(jwt).sign(signer);
+        String encodedJwt = new JWSBuilder().type("JWT").jsonContent(authReqIdJwt).sign(signer);
         System.out.println("RRRRRRRRRR CIBAAuthReqIdParser.persistAuthReqId : JWS encodedJwt = " + encodedJwt);
         SecretKey aesKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, Algorithm.AES).getSecretKey();
         SecretKey hmacKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, Algorithm.HS256).getSecretKey();
@@ -67,68 +40,46 @@ public class CIBAAuthReqIdParser {
         try {
             contentBytes = encodedJwt.getBytes("UTF-8");
             encodedJwt = TokenUtil.jweDirectEncode(aesKey, hmacKey, contentBytes);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (JWEException e) {
+        } catch (JWEException | UnsupportedEncodingException e) {
             e.printStackTrace();
         }
         System.out.println("RRRRRRRRRR CIBAAuthReqIdParser.persistAuthReqId : JWE encodedJwt = " + encodedJwt);
         return encodedJwt;
     }
 
-    private static String getAuthReqId(KeycloakSession session, String encodedJwt) {
+    private static CIBAAuthReqId getAuthReqIdJwt(KeycloakSession session, String encodedJwt) throws Exception {
         System.out.println("EEEEEEEEEE CIBAAuthReqIdParser.parseAuthReqId : JWE encodedJwt = " + encodedJwt);
         SecretKey aesKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, Algorithm.AES).getSecretKey();
         SecretKey hmacKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, Algorithm.HS256).getSecretKey();
         try {
             byte[] contentBytes = TokenUtil.jweDirectVerifyAndDecode(aesKey, hmacKey, encodedJwt);
             encodedJwt = new String(contentBytes, "UTF-8");
-        } catch (JWEException e) {
+        } catch (JWEException | UnsupportedEncodingException e) {
             e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            throw e;
         }
         System.out.println("EEEEEEEEEE CIBAAuthReqIdParser.parseAuthReqId : JWS encodedJwt = " + encodedJwt);
-        CIBAAuthReqIdJwt decodedJwt = session.tokens().decode(encodedJwt, CIBAAuthReqIdJwt.class);
-        System.out.println("EEEEEEEEEE CIBAAuthReqIdParser.parseAuthReqId : decodedJwt.getKey() = " + decodedJwt.getKey());
-        return decodedJwt.getKey();
+        CIBAAuthReqId decodedJwt = session.tokens().decode(encodedJwt, CIBAAuthReqId.class);
+        System.out.println("EEEEEEEEEE CIBAAuthReqIdParser.parseAuthReqId : decodedJwt.getExp() = " + decodedJwt.getExp());
+        return decodedJwt;
     }
 
     public static ParseResult parseAuthReqId(KeycloakSession session, String encodedJwt, RealmModel realm, EventBuilder event) {
-        String authReqId = getAuthReqId(session, encodedJwt);
-        ParseResult result = new ParseResult(authReqId);
-
-        // Parse UUID
-        UUID storeKeyUUID;
+        CIBAAuthReqId authReqIdJwt = null;
         try {
-            storeKeyUUID = UUID.fromString(authReqId);
-        } catch (IllegalArgumentException re) {
-            logger.warn("Invalid format of the UUID in the code");
-            return result.illegalAuthReqId();
+            authReqIdJwt = getAuthReqIdJwt(session, encodedJwt);
+        } catch (Exception e) {
+            logger.info("illegal format of auth_req_id : e.getMessage() = " + e.getMessage());
+            e.printStackTrace();
+            return (new ParseResult(null)).illegalAuthReqId();
         }
-
-        // get Auth Req ID entry
-        CodeToTokenStoreProvider authReqIdStore = session.getProvider(CodeToTokenStoreProvider.class);
-        Map<String, String> authReqIdData = authReqIdStore.get(storeKeyUUID);
-
-        // Either Auth Req ID not available or was already used
-        if (authReqIdData == null) {
-            logger.warnf("Auth Req Id '%s' has already been used.", storeKeyUUID);
-            return result.illegalAuthReqId();
-        }
-
-        result.authReqIdData = CIBAAuthReqId.deserializeCode(authReqIdData);
+        ParseResult result = new ParseResult(authReqIdJwt);
 
         // Auth Req ID expiration check
-        int currentTime = Time.currentTime();
-        if (currentTime > result.authReqIdData.getExpiration()) {
-            // remove Auth Req ID entry from store
-            authReqIdStore.remove(storeKeyUUID);
-            return result.expiredAuthReqId();
-        }
+        if (Time.currentTime() > result.authReqIdJwt.getExp()) return result.expiredAuthReqId();
 
         // too early access before interval
-        String throttlingId = result.authReqIdData.getThrottlingId();
+        String throttlingId = result.authReqIdJwt.getThrottlingId();
         if (throttlingId != null) {
             EarlyAccessBlockerParser.ParseResult blocker = EarlyAccessBlockerParser.parseEarlyAccessBlocker(session, throttlingId);
             if (blocker != null) {
@@ -143,10 +94,10 @@ public class CIBAAuthReqIdParser {
         }
 
         // get corresponding Decoupled Authentication Result entry
-        DecoupledAuthnResultParser.ParseResult parseAuthResult =  DecoupledAuthnResultParser.parseDecoupledAuthnResult(session, result.authReqIdData.getAuthResultId());
+        DecoupledAuthnResultParser.ParseResult parseAuthResult =  DecoupledAuthnResultParser.parseDecoupledAuthnResult(session, result.authReqIdJwt.getAuthResultId());
         if (parseAuthResult.isNotYetDecoupledAuthnResult()) {
-            logger.info("not yet authenticated by Authentication Device");
-            return result.userNotyetAuthenticated();
+            logger.info("not yet authenticated by Authentication Device or auth_req_id has already been used to get tokens");
+            return result.userNotyetAuthenticatedOrAuthReqIdDuplicatedUse();
         }
 
         if (parseAuthResult.isExpiredDecoupledAuthnResult()) {
@@ -174,8 +125,8 @@ public class CIBAAuthReqIdParser {
             return result.unknownEventHappendAuthentication();
         }
 
-        String userSessionId = result.authReqIdData.getUserSessionId();
-        String clientUUID = realm.getClientByClientId(result.authReqIdData.getClientId()).getId();
+        String userSessionId = result.authReqIdJwt.getSessionState();
+        String clientUUID = realm.getClientByClientId(result.authReqIdJwt.getIssuedFor()).getId();
         UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, userSessionId, clientUUID);
         if (userSession == null) {
             // Needed to track if code is invalid or was already used.
@@ -187,45 +138,25 @@ public class CIBAAuthReqIdParser {
         }
 
         result.clientSession = userSession.getAuthenticatedClientSessionByClient(clientUUID);
-        result.clientId = result.authReqIdData.getClientId();
+        result.clientId = result.authReqIdJwt.getIssuedFor();
 
-        logger.tracef("Successfully verified Authe Req Id '%s'. User session: '%s', client: '%s'", storeKeyUUID, userSessionId, clientUUID);
+        logger.tracef("Successfully verified Authe Req Id '%s'. User session: '%s', client: '%s'", encodedJwt, userSessionId, clientUUID);
         event.detail(Details.CODE_ID, userSessionId);
         event.session(userSessionId);
-
-        // remove Auth Req ID entry from store
-        authReqIdStore.remove(storeKeyUUID);
 
         return result;
     }
 
-    public static boolean removeAuthReqId(KeycloakSession session, String authReqId, EventBuilder event) {
-        // Parse UUID
-        UUID codeUUID;
-        try {
-            codeUUID = UUID.fromString(authReqId);
-        } catch (IllegalArgumentException re) {
-            logger.warn("Invalid format of the UUID in the code");
-            return false;
-        }
-
-        CodeToTokenStoreProvider authReqIdStore = session.getProvider(CodeToTokenStoreProvider.class);
-        authReqIdStore.remove(codeUUID);
-
-        return true;
-    }
-
     public static class ParseResult {
 
-        private final String authReqId;
-        private CIBAAuthReqId authReqIdData;
+        private final CIBAAuthReqId authReqIdJwt;
         private String clientId;
         private AuthenticatedClientSessionModel clientSession;
         private String throttlingId;
 
         private boolean isIllegalAuthReqId = false;
         private boolean isExpiredAuthReqId = false;
-        private boolean isUserNotyetAuthenticated = false;
+        private boolean isUserNotyetAuthenticatedOrAuthReqIdDuplicatedUse = false;
         private boolean isExpiredAuthentication = false;
         private boolean isFailedAuthentication = false;
         private boolean isCancelledAuthentication = false;
@@ -235,16 +166,12 @@ public class CIBAAuthReqIdParser {
         private boolean isDifferentUserAuthenticated = false;
         private boolean isTooEarlyAccess = false;
 
-        private ParseResult(String authReqId) {
-            this.authReqId = authReqId;
-        }
-
-        public String getAuthReqId() {
-            return authReqId;
+        private ParseResult(CIBAAuthReqId authReqIdJwt) {
+            this.authReqIdJwt = authReqIdJwt;
         }
 
         public CIBAAuthReqId getAuthReqIdData() {
-            return authReqIdData;
+            return authReqIdJwt;
         }
 
         public String getClientId() {
@@ -268,7 +195,7 @@ public class CIBAAuthReqIdParser {
         }
 
         public boolean isUserNotyetAuthenticated() {
-            return isUserNotyetAuthenticated;
+            return isUserNotyetAuthenticatedOrAuthReqIdDuplicatedUse;
         }
 
         public boolean isExpiredAuthentication() {
@@ -313,8 +240,8 @@ public class CIBAAuthReqIdParser {
             return this;
         }
 
-        private ParseResult userNotyetAuthenticated() {
-            this.isUserNotyetAuthenticated = true;
+        private ParseResult userNotyetAuthenticatedOrAuthReqIdDuplicatedUse() {
+            this.isUserNotyetAuthenticatedOrAuthReqIdDuplicatedUse = true;
             return this;
         }
 

@@ -1,12 +1,14 @@
 package org.keycloak.protocol.ciba;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class CIBAAuthReqIdJwt extends JsonWebToken {
+public class CIBAAuthReqId extends JsonWebToken {
+
     public static final String SCOPE = OAuth2Constants.SCOPE;
     public static final String SESSION_STATE = IDToken.SESSION_STATE;
     public static final String AUTH_RESULT_ID = "auth_result_id";
@@ -23,9 +25,6 @@ public class CIBAAuthReqIdJwt extends JsonWebToken {
 
     @JsonProperty(THROTTLING_ID)
     protected String throttlingId;
-
-    @JsonProperty("key")
-    protected String key;
 
     public String getScope() {
         return scope;
@@ -57,14 +56,6 @@ public class CIBAAuthReqIdJwt extends JsonWebToken {
 
     public void setThrottlingId(String throttlingId) {
         this.throttlingId = throttlingId;
-    }
-
-    public String getKey() {
-        return key;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
     }
 
 }

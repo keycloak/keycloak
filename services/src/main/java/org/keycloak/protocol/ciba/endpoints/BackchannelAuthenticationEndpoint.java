@@ -11,18 +11,19 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ciba.CIBAAuthReqId;
 import org.keycloak.protocol.ciba.CIBAConstants;
 import org.keycloak.protocol.ciba.CIBAErrorCodes;
 import org.keycloak.protocol.ciba.decoupledauthn.DecoupledAuthenticationProvider;
 import org.keycloak.protocol.ciba.endpoints.request.BackchannelAuthenticationRequest;
 import org.keycloak.protocol.ciba.resolvers.CIBALoginUserResolver;
-import org.keycloak.protocol.ciba.utils.CIBAAuthReqId;
 import org.keycloak.protocol.ciba.utils.CIBAAuthReqIdParser;
 import org.keycloak.protocol.ciba.utils.EarlyAccessBlocker;
 import org.keycloak.protocol.ciba.utils.EarlyAccessBlockerParser;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.Urls;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.util.JsonSerialization;
 
@@ -98,14 +99,19 @@ public class BackchannelAuthenticationEndpoint {
         int interval = policy.getInterval();
         String throttlingId = null;
         if (interval > 0) throttlingId = UUID.randomUUID().toString();
-        CIBAAuthReqId authReqIdData = new CIBAAuthReqId(
-                Time.currentTime() + policy.getExpiresIn(),
-                request.getScope(),
-                userSessionIdWillBeCreated,
-                client.getClientId(),
-                authResultId,
-                throttlingId);
-        String authReqId = CIBAAuthReqIdParser.persistAuthReqId(session, authReqIdData, policy.getExpiresIn(), user);
+        CIBAAuthReqId authReqIdJwt = new CIBAAuthReqId();
+        authReqIdJwt.id(KeycloakModelUtils.generateId());
+        authReqIdJwt.setScope(request.getScope());
+        authReqIdJwt.setSessionState(userSessionIdWillBeCreated);
+        authReqIdJwt.setAuthResultId(authResultId);
+        if (throttlingId != null) authReqIdJwt.setThrottlingId(throttlingId);
+        authReqIdJwt.issuedNow();
+        authReqIdJwt.issuer(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+        authReqIdJwt.audience(authReqIdJwt.getIssuer());
+        authReqIdJwt.subject(user.getId());
+        authReqIdJwt.exp(Long.valueOf(Time.currentTime() + policy.getExpiresIn()));
+        authReqIdJwt.issuedFor(client.getClientId());
+        String authReqId = CIBAAuthReqIdParser.persistAuthReqId(session, authReqIdJwt);
 
         // for access throttling
         if (throttlingId != null) {

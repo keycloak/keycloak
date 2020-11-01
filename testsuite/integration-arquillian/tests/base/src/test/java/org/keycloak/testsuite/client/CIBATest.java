@@ -1148,7 +1148,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             // duplicate user Token Request
             tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_PASSWORD, response.getAuthReqId());
             Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
-            Assert.assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
+            Assert.assertThat(tokenRes.getError(), is(CIBAErrorCodes.AUTHORIZATION_PENDING));
 
         } finally {
             revertCIBASettings(clientResource, clientRep);
