@@ -191,17 +191,6 @@
       "secret": "password"
     },
     {
-      "clientId": "ciba-login-hint-encypted",
-      "enabled": true,
-      "baseUrl": "http://localhost:8180/auth/realms/master/app/auth",
-      "redirectUris": [
-        "http://localhost:8180/auth/realms/master/app/auth/*",
-        "https://localhost:8543/auth/realms/master/app/auth/*"
-      ],
-      "adminUrl": "http://localhost:8180/auth/realms/master/app/admin",
-      "secret": "201ee451-32f6-4fb1-82ee-a2f31f31ea70"
-    },
-    {
       "clientId": "root-url-client",
       "enabled": true,
       "rootUrl": "http://localhost:8180/foo/bar",

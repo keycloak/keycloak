@@ -57,7 +57,8 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
 
     private final String DECOUPLED_AUTHN_SERVER_NAME = "decoupled-authn-server";
     private final String DECOUPLED_AUTHN_SERVER_PASSWORD = "passwort-decoupled-authn-server";
-
+	private static final String TEST_CLIENT_CIBA_LOGIN_HINT_ENCRYPTED_NAME = "ciba-login-hint-encrypted";
+	private static final String TEST_CLIENT_CIBA_LOGIN_HINT_ENCRYPTED_PASSWORD = "201ee451-32f6-4fb1-82ee-a2f31f31ea70";
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
@@ -103,6 +104,9 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
         ClientRepresentation confApp = KeycloakModelUtils.createClient(testRealm, DECOUPLED_AUTHN_SERVER_NAME);
         confApp.setSecret(DECOUPLED_AUTHN_SERVER_PASSWORD);
         confApp.setServiceAccountsEnabled(Boolean.TRUE);
+
+        confApp = KeycloakModelUtils.createClient(testRealm, TEST_CLIENT_CIBA_LOGIN_HINT_ENCRYPTED_NAME);
+        confApp.setSecret(TEST_CLIENT_CIBA_LOGIN_HINT_ENCRYPTED_PASSWORD);
     }
 
     @BeforeClass
@@ -1406,13 +1410,11 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
         try {
-            final String testClientName = "ciba-login-hint-encypted";
-            final String testClientPassword = "201ee451-32f6-4fb1-82ee-a2f31f31ea70";
             final String username = "nutzername-rot";
-            String loginHint = CibaLoginHintEncryptor.encodeLoginHint(testClientPassword, username);
+            String loginHint = CibaLoginHintEncryptor.encodeLoginHint(TEST_CLIENT_CIBA_LOGIN_HINT_ENCRYPTED_PASSWORD, username);
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), testClientName);
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_CIBA_LOGIN_HINT_ENCRYPTED_NAME);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
             updateLoginHintEncodingParamInClientRep(clientResource,clientRep,true);
@@ -1422,7 +1424,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             testRealm().update(rep);
 
             // user Backchannel Authentication Request
-            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(testClientName, testClientPassword, loginHint, CIBAConstants.LOGIN_HINT, null, null);
+            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_CIBA_LOGIN_HINT_ENCRYPTED_NAME, TEST_CLIENT_CIBA_LOGIN_HINT_ENCRYPTED_PASSWORD, loginHint, CIBAConstants.LOGIN_HINT, null, null);
             Assert.assertThat(response.getStatusCode(), is(equalTo(200)));
             Assert.assertThat(response.getAuthReqId(), notNullValue());
 
@@ -1430,10 +1432,10 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             DecoupledAuthenticationRequest decoupledAuthnReq = doDecoupledAuthenticationRequest();
 
             // user Decoupled Authentication completed
-            doDecoupledAuthnCallback(testClientName, decoupledAuthnReq, DecoupledAuthStatus.SUCCEEDED, username);
+            doDecoupledAuthnCallback(TEST_CLIENT_CIBA_LOGIN_HINT_ENCRYPTED_NAME, decoupledAuthnReq, DecoupledAuthStatus.SUCCEEDED, username);
 
             // user Token Request
-            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(testClientName, testClientPassword, response.getAuthReqId());
+            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(TEST_CLIENT_CIBA_LOGIN_HINT_ENCRYPTED_NAME, TEST_CLIENT_CIBA_LOGIN_HINT_ENCRYPTED_PASSWORD, response.getAuthReqId());
             Assert.assertThat(tokenRes.getStatusCode(), is(equalTo(200)));
 
             IDToken idToken = oauth.verifyIDToken(tokenRes.getIdToken());
@@ -1457,13 +1459,10 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
         try {
-            final String testClientName = "ciba-login-hint-encypted";
-            final String testClientPassword = "201ee451-32f6-4fb1-82ee-a2f31f31ea70";
             final String username = "nutzername-rot";
-           // String loginHint = CibaLoginHintEncryptor.encodeLoginHint(testClientPassword, username);
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), testClientName);
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_CIBA_LOGIN_HINT_ENCRYPTED_NAME);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
             updateLoginHintEncodingParamInClientRep(clientResource,clientRep,true);
@@ -1473,7 +1472,7 @@ public class CIBATest extends AbstractTestRealmKeycloakTest {
             testRealm().update(rep);
 
             // user Backchannel Authentication Request
-            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(testClientName, testClientPassword, username, CIBAConstants.LOGIN_HINT, null, null);
+            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_CIBA_LOGIN_HINT_ENCRYPTED_NAME, TEST_CLIENT_CIBA_LOGIN_HINT_ENCRYPTED_PASSWORD, username, CIBAConstants.LOGIN_HINT, null, null);
             Assert.assertThat(response.getStatusCode(), is(equalTo(400)));
             Assert.assertTrue(response.getErrorDescription().contains("Decoding login_hint Error"));
         } finally {
