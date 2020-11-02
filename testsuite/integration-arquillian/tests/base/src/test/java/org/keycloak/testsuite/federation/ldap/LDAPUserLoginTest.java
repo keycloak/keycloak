@@ -29,6 +29,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.models.ModelException;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -37,6 +38,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPRule.LDAPConnectionParameters;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
@@ -46,6 +48,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 
+import java.util.Objects;
+import org.junit.Assume;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -108,26 +112,34 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
 
     @Override
     protected void afterImportTestRealm() {
-        getTestingClient().server().run(session -> {
-            LDAPTestContext ctx = LDAPTestContext.init(session);
-            RealmModel appRealm = ctx.getRealm();
+        try {
+            getTestingClient().server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel appRealm = ctx.getRealm();
 
-            // Delete all LDAP users
-            LDAPTestUtils.removeAllLDAPUsers(ctx.getLdapProvider(), appRealm);
-            // Add some new LDAP users for testing
-            LDAPObject john = LDAPTestUtils.addLDAPUser
-            (
-                ctx.getLdapProvider(),
-                appRealm,
-                DEFAULT_TEST_USERS.get("VALID_USER_NAME"),
-                DEFAULT_TEST_USERS.get("VALID_USER_FIRST_NAME"),
-                DEFAULT_TEST_USERS.get("VALID_USER_LAST_NAME"),
-                DEFAULT_TEST_USERS.get("VALID_USER_EMAIL"),
-                DEFAULT_TEST_USERS.get("VALID_USER_STREET"),
-                DEFAULT_TEST_USERS.get("VALID_USER_POSTAL_CODE")
-            );
-            LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), john, DEFAULT_TEST_USERS.get("VALID_USER_PASSWORD"));
-        });
+                // Delete all LDAP users
+                LDAPTestUtils.removeAllLDAPUsers(ctx.getLdapProvider(), appRealm);
+                // Add some new LDAP users for testing
+                LDAPObject john = LDAPTestUtils.addLDAPUser
+                (
+                    ctx.getLdapProvider(),
+                    appRealm,
+                    DEFAULT_TEST_USERS.get("VALID_USER_NAME"),
+                    DEFAULT_TEST_USERS.get("VALID_USER_FIRST_NAME"),
+                    DEFAULT_TEST_USERS.get("VALID_USER_LAST_NAME"),
+                    DEFAULT_TEST_USERS.get("VALID_USER_EMAIL"),
+                    DEFAULT_TEST_USERS.get("VALID_USER_STREET"),
+                    DEFAULT_TEST_USERS.get("VALID_USER_POSTAL_CODE")
+                );
+                LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), john, DEFAULT_TEST_USERS.get("VALID_USER_PASSWORD"));
+            });
+        } catch (RunOnServerException ex) {
+            Assume.assumeFalse("Work around JDK-8214440",
+                 ex.getCause() instanceof ModelException
+              && ex.getCause().getCause() instanceof ModelException
+              && ex.getCause().getCause().getCause() instanceof javax.naming.AuthenticationException
+              && Objects.equals(ex.getCause().getCause().getCause().getMessage(), "Could not negotiate TLS"));
+        }
     }
 
     @Page
