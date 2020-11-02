@@ -67,6 +67,10 @@ public class KeycloakRecorder {
             value = BUILD_TIME_PROPERTIES.get("%" + profile + "." + name);
         }
         
+        if (value == null) {
+            value = BUILD_TIME_PROPERTIES.get(PropertyMappers.toCLIFormat(name));
+        }
+        
         return value;
     }
 
