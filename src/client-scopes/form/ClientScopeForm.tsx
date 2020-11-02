@@ -107,7 +107,11 @@ export const ClientScopeForm = () => {
             eventKey={0}
             title={<TabTitleText>{t("settings")}</TabTitleText>}
           >
-            <Form isHorizontal onSubmit={handleSubmit(save)}>
+            <Form
+              isHorizontal
+              onSubmit={handleSubmit(save)}
+              className="pf-u-mt-md"
+            >
               <FormGroup
                 label={t("name")}
                 labelIcon={
