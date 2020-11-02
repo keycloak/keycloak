@@ -1,7 +1,7 @@
 import React, { createContext, ReactNode, useContext } from "react";
 import { ServerInfoRepresentation } from "./server-info";
 import { HttpClientContext } from "../http-service/HttpClientContext";
-import { sortProvider } from "../../util";
+import { sortProviders } from "../../util";
 import { DataLoader } from "../../components/data-loader/DataLoader";
 
 export const ServerInfoContext = createContext<ServerInfoRepresentation>(
@@ -11,10 +11,7 @@ export const ServerInfoContext = createContext<ServerInfoRepresentation>(
 export const useServerInfo = () => useContext(ServerInfoContext);
 
 export const useLoginProviders = () => {
-  const serverInfo = Object.entries(
-    useServerInfo().providers["login-protocol"].providers
-  );
-  return [...new Map(serverInfo.sort(sortProvider)).keys()];
+  return sortProviders(useServerInfo().providers["login-protocol"].providers);
 };
 
 export const ServerInfoProvider = ({ children }: { children: ReactNode }) => {

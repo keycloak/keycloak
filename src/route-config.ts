@@ -3,7 +3,6 @@ import { AuthenticationSection } from "./authentication/AuthenticationSection";
 import { ClientScopeForm } from "./client-scopes/form/ClientScopeForm";
 import { ClientScopesSection } from "./client-scopes/ClientScopesSection";
 import { NewClientForm } from "./clients/add/NewClientForm";
-import { ClientSettings } from "./clients/ClientSettings";
 import { ClientsSection } from "./clients/ClientsSection";
 import { ImportForm } from "./clients/import/ImportForm";
 import { EventsSection } from "./events/EventsSection";
@@ -20,6 +19,7 @@ import { UsersSection } from "./user/UsersSection";
 import { MappingDetails } from "./client-scopes/details/MappingDetails";
 
 import { AccessType } from "./context/whoami/who-am-i-model";
+import { ClientDetails } from "./clients/ClientDetails";
 
 export type RouteDef = {
   path: string;
@@ -39,7 +39,7 @@ export const routes: RoutesFn = (t: TFunction) => [
   },
   {
     path: "/clients/:id",
-    component: ClientSettings,
+    component: ClientDetails,
     breadcrumb: t("clients:clientSettings"),
     access: "view-clients",
   },

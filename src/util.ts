@@ -3,7 +3,13 @@ import FileSaver from "file-saver";
 import { ClientRepresentation } from "./clients/models/client-model";
 import { ProviderRepresentation } from "./context/server-info/server-info";
 
-export const sortProvider = (
+export const sortProviders = (providers: {
+  [index: string]: ProviderRepresentation;
+}) => {
+  return [...new Map(Object.entries(providers).sort(sortProvider)).keys()];
+};
+
+const sortProvider = (
   a: [string, ProviderRepresentation],
   b: [string, ProviderRepresentation]
 ) => {

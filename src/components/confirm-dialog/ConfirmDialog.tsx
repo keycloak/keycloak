@@ -54,7 +54,7 @@ export const ConfirmDialogModal = ({
   onCancel,
   children,
   open = true,
-  variant = ModalVariant.default,
+  variant = ModalVariant.small,
   toggleDialog,
 }: ConfirmDialogModalProps) => {
   const { t } = useTranslation();

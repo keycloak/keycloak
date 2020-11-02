@@ -15,7 +15,7 @@ type MultiLine = {
 };
 
 export function convertToMultiline(fields: string[]): MultiLine[] {
-  return fields.map((field) => {
+  return (fields && fields.length > 0 ? fields : [""]).map((field) => {
     return { value: field };
   });
 }
