@@ -47,7 +47,7 @@ public class CIBAAuthReqIdParser {
         return encodedJwt;
     }
 
-    private static CIBAAuthReqId getAuthReqIdJwt(KeycloakSession session, String encodedJwt) throws Exception {
+    public static CIBAAuthReqId getAuthReqIdJwt(KeycloakSession session, String encodedJwt) throws Exception {
         System.out.println("EEEEEEEEEE CIBAAuthReqIdParser.parseAuthReqId : JWE encodedJwt = " + encodedJwt);
         SecretKey aesKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, Algorithm.AES).getSecretKey();
         SecretKey hmacKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, Algorithm.HS256).getSecretKey();
@@ -60,7 +60,6 @@ public class CIBAAuthReqIdParser {
         }
         System.out.println("EEEEEEEEEE CIBAAuthReqIdParser.parseAuthReqId : JWS encodedJwt = " + encodedJwt);
         CIBAAuthReqId decodedJwt = session.tokens().decode(encodedJwt, CIBAAuthReqId.class);
-        System.out.println("EEEEEEEEEE CIBAAuthReqIdParser.parseAuthReqId : decodedJwt.getExp() = " + decodedJwt.getExp());
         return decodedJwt;
     }
 

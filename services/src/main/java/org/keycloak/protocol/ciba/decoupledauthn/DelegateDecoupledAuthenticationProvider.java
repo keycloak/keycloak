@@ -4,29 +4,36 @@ import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.CodeToTokenStoreProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ciba.CIBAAuthReqId;
 import org.keycloak.protocol.ciba.CIBAConstants;
 import org.keycloak.protocol.ciba.endpoints.request.BackchannelAuthenticationRequest;
 import org.keycloak.protocol.ciba.resolvers.CIBALoginUserResolver;
+import org.keycloak.protocol.ciba.utils.CIBAAuthReqIdParser;
 import org.keycloak.protocol.ciba.utils.DecoupledAuthStatus;
 import org.keycloak.protocol.ciba.utils.DecoupledAuthnResult;
 import org.keycloak.protocol.ciba.utils.DecoupledAuthnResultParser;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.services.Urls;
+import org.keycloak.util.TokenUtil;
 
+import javax.crypto.SecretKey;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.HashMap;
+import java.io.UnsupportedEncodingException;
 import java.util.Map;
-import java.util.UUID;
 
 public class DelegateDecoupledAuthenticationProvider extends DecoupledAuthenticationProviderBase {
 
@@ -86,14 +93,14 @@ public class DelegateDecoupledAuthenticationProvider extends DecoupledAuthentica
             return cors.builder(Response.ok("", MediaType.APPLICATION_JSON_TYPE)).build();
         }
 
-        DecoupledAuthId decoupledAuthIdData = parseResult.decoupledAuthIdData();
-        authResultId = decoupledAuthIdData.getAuthResultId();
-        scope = decoupledAuthIdData.getScope();
-        expiration = decoupledAuthIdData.getExpiration();
-        userSessionIdWillBeCreated = decoupledAuthIdData.getUserSessionIdWillBeCreated();
-        userIdToBeAuthenticated = decoupledAuthIdData.getUserIdToBeAuthenticated();
+        CIBAAuthReqId decoupledAuthIdJwt = parseResult.decoupledAuthIdJwt();
+        authResultId = decoupledAuthIdJwt.getAuthResultId();
+        scope = decoupledAuthIdJwt.getScope();
+        expiration = decoupledAuthIdJwt.getExp().intValue();
+        userSessionIdWillBeCreated = decoupledAuthIdJwt.getSessionState();
+        userIdToBeAuthenticated = decoupledAuthIdJwt.getSubject();
         // to bind Client Session of CD(Consumer Device) with User Session, set CD's Client Model to this class member "client".
-        client = realm.getClientByClientId(decoupledAuthIdData.getClientId());
+        client = realm.getClientByClientId(decoupledAuthIdJwt.getIssuedFor());
 
         CIBALoginUserResolver resolver = session.getProvider(CIBALoginUserResolver.class);
         if (resolver == null) {
@@ -131,7 +138,7 @@ public class DelegateDecoupledAuthenticationProvider extends DecoupledAuthentica
 
     @Override
     public void doBackchannelAuthentication(ClientModel client, BackchannelAuthenticationRequest request, int expiresIn, String authResultId, String userSessionIdWillBeCreated) {
-        // create Decoupled Auth ID
+        // create JWT formatted/JWS signed/JWE encrypted Decoupled Auth ID by the same manner in creating auth_req_id
         // Decoupled Auth ID binds Backchannel Authentication Request with Authentication by AD(Authentication Device).
         // By including userSessionIdWillBeCreated. keycloak can create UserSession whose ID is userSessionIdWillBeCreated on Decoupled Authentication Callback Endpoint,
         // which can bind userSessionIdWillBeCreated (namely, Backchannel Authentication Request) with authenticated UserSession.
@@ -164,9 +171,19 @@ public class DelegateDecoupledAuthenticationProvider extends DecoupledAuthentica
         defaultScopesMap.forEach((key, value)->{if (value.isDisplayOnConsentScreen()) scopeBuilder.append(value.getName()).append(" ");});
         String defaultClientScope = scopeBuilder.toString();
 
-        DecoupledAuthId decoupledAuthIdData = new DecoupledAuthId(Time.currentTime() + expiresIn, request.getScope(),
-                userSessionIdWillBeCreated, user.getId(), client.getClientId(), authResultId);
-        String decoupledAuthId = persistDecoupledAuthId(session, decoupledAuthIdData, expiresIn);
+        CIBAAuthReqId decoupledAuthIdJwt = new CIBAAuthReqId();
+        decoupledAuthIdJwt.id(KeycloakModelUtils.generateId());
+        decoupledAuthIdJwt.setScope(request.getScope());
+        decoupledAuthIdJwt.setSessionState(userSessionIdWillBeCreated);
+        decoupledAuthIdJwt.setAuthResultId(authResultId);
+        decoupledAuthIdJwt.issuedNow();
+        decoupledAuthIdJwt.issuer(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+        decoupledAuthIdJwt.audience(decoupledAuthIdJwt.getIssuer());
+        decoupledAuthIdJwt.subject(user.getId());
+        decoupledAuthIdJwt.exp(Long.valueOf(Time.currentTime() + expiresIn));
+        //decoupledAuthIdJwt.issuedFor(Decoupled Auth Server's client_id); TODO
+        decoupledAuthIdJwt.issuedFor(client.getClientId()); // TODO : set CD's client_id intentionally, not Decoupled Auth Server. It is not good idea so that client_id field should be added.
+        String decoupledAuthId = CIBAAuthReqIdParser.persistAuthReqId(session, decoupledAuthIdJwt);
 
         OIDCAdvancedConfigWrapper configWrapper = OIDCAdvancedConfigWrapper.fromClientModel(client);
         boolean userCodeSupported = configWrapper.getBackchannelUserCodeParameter();
@@ -201,119 +218,23 @@ public class DelegateDecoupledAuthenticationProvider extends DecoupledAuthentica
     public static final String DECOUPLED_AUTHN_IS_CONSENT_REQUIRED = "is_consent_required";
     public static final String DECOUPLED_DEFAULT_CLIENT_SCOPE = "default_client_scope";
 
-    public DecoupledAuthId deserializeCode(Map<String, String> data) {
-        return new DecoupledAuthId(data);
-    }
-
-    public class DecoupledAuthId {
-        private static final String EXPIRATION_NOTE = "exp";
-        private static final String SCOPE_NOTE = "scope";
-        private static final String USER_SESSION_ID_NOTE = "user_session_id";
-        private static final String USER_ID_NOTE = "user_id";
-        private static final String CLIENT_ID_NOTE = "client_id";
-        private static final String AUTH_RESULT_ID_NOTE = "auth_result_id";
-
-        private final int expiration;
-        private final String scope;
-        private final String userSessionIdWillBeCreated;
-        private final String userIdToBeAuthenticated;
-        private final String clientId;
-        private final String authResultId;
-
-        public DecoupledAuthId(int expiration, String scope, String userSessionIdWillBeCreated, String userIdToBeAuthenticated, String clientId, String authResultId) {
-            this.expiration = expiration;
-            this.scope = scope;
-            this.userSessionIdWillBeCreated = userSessionIdWillBeCreated;
-            this.userIdToBeAuthenticated = userIdToBeAuthenticated;
-            this.clientId = clientId;
-            this.authResultId = authResultId;
-        }
-
-        private DecoupledAuthId(Map<String, String> data) {
-            expiration = Integer.parseInt(data.get(EXPIRATION_NOTE));
-            scope = data.get(SCOPE_NOTE);
-            userSessionIdWillBeCreated = data.get(USER_SESSION_ID_NOTE);
-            userIdToBeAuthenticated = data.get(USER_ID_NOTE);
-            clientId = data.get(CLIENT_ID_NOTE);
-            authResultId = data.get(AUTH_RESULT_ID_NOTE);
-        }
-
-        public Map<String, String> serializeCode() {
-            Map<String, String> result = new HashMap<>();
-            result.put(EXPIRATION_NOTE, String.valueOf(expiration));
-            result.put(SCOPE_NOTE, scope);
-            result.put(USER_SESSION_ID_NOTE, userSessionIdWillBeCreated);
-            result.put(USER_ID_NOTE, userIdToBeAuthenticated);
-            result.put(CLIENT_ID_NOTE, clientId);
-            result.put(AUTH_RESULT_ID_NOTE, authResultId);
-            return result;
-        }
-
-        public int getExpiration() {
-            return expiration;
-        }
-
-        public String getScope() {
-            return scope;
-        }
-
-        public String getUserSessionIdWillBeCreated() {
-            return userSessionIdWillBeCreated;
-        }
-
-        public String getUserIdToBeAuthenticated() {
-            return userIdToBeAuthenticated;
-        }
-
-        public String getClientId() {
-            return clientId;
-        }
-
-        public String getAuthResultId() {
-            return authResultId;
-        }
-    }
-
-    public String persistDecoupledAuthId(KeycloakSession session, DecoupledAuthId decoupledAuthIdData, int expires_in) {
-        CodeToTokenStoreProvider codeStore = session.getProvider(CodeToTokenStoreProvider.class);
-        UUID key = UUID.randomUUID();
-        Map<String, String> serialized = decoupledAuthIdData.serializeCode();
-        codeStore.put(key, expires_in, serialized);
-        return key.toString();
-    }
-
-    public ParseResult parseDecoupledAuthId(KeycloakSession session, String decoupledAuthId, EventBuilder event) {
-        ParseResult result = new ParseResult(decoupledAuthId);
-
-        // Parse UUID
-        UUID codeUUID;
+    public ParseResult parseDecoupledAuthId(KeycloakSession session, String encodedJwt, EventBuilder event) {
+        CIBAAuthReqId decoupledAuthIdJwt = null;
         try {
-            codeUUID = UUID.fromString(decoupledAuthId);
-        } catch (IllegalArgumentException re) {
-            logger.warn("Invalid format of the UUID in Decoupled Auth Id");
-            return result.illegalDecoupledAuthId();
+            decoupledAuthIdJwt = CIBAAuthReqIdParser.getAuthReqIdJwt(session, encodedJwt);
+        } catch (Exception e) {
+            logger.info("illegal format of decoupled_auth_id : e.getMessage() = " + e.getMessage());
+            e.printStackTrace();
+            return (new ParseResult(null)).illegalDecoupledAuthId();
         }
+        ParseResult result = new ParseResult(decoupledAuthIdJwt);
 
-        CodeToTokenStoreProvider decoupledAuthIdStore = session.getProvider(CodeToTokenStoreProvider.class);
-        Map<String, String> decoupledAuthIdData = decoupledAuthIdStore.remove(codeUUID);
-
-        // Either code not available or was already used
-        if (decoupledAuthIdData == null) {
-            logger.warnf("Decoupled Auth Id '%s' has already been used.", decoupledAuthId);
-            return result.illegalDecoupledAuthId();
-        }
-
-
-        logger.tracef("Successfully verified Decoupled Auth Id '%s'", decoupledAuthId);
-
-        result.decoupledAuthIdData = deserializeCode(decoupledAuthIdData);
-
-        event.detail(Details.CODE_ID, result.decoupledAuthIdData.getUserSessionIdWillBeCreated());
-        event.session(result.decoupledAuthIdData.getUserSessionIdWillBeCreated());
+        event.detail(Details.CODE_ID, result.decoupledAuthIdJwt.getSessionState());
+        event.session(result.decoupledAuthIdJwt.getSessionState());
 
         // Finally doublecheck if code is not expired
         int currentTime = Time.currentTime();
-        if (currentTime > result.decoupledAuthIdData.getExpiration()) {
+        if (currentTime > result.decoupledAuthIdJwt.getExp().intValue()) {
             return result.expiredDecoupledAuthId();
         }
 
@@ -322,22 +243,17 @@ public class DelegateDecoupledAuthenticationProvider extends DecoupledAuthentica
 
     public class ParseResult {
 
-        private final String decoupledAuthId;
-        private DecoupledAuthId decoupledAuthIdData;
+        private final CIBAAuthReqId decoupledAuthIdJwt;
 
         private boolean isIllegalDecoupledAuthId= false;
         private boolean isExpiredDecoupledAuthId = false;
 
-        private ParseResult(String decoupledAuthId) {
-            this.decoupledAuthId = decoupledAuthId;
+        private ParseResult(CIBAAuthReqId decoupledAuthIdJwt) {
+            this.decoupledAuthIdJwt = decoupledAuthIdJwt;
         }
 
-        public String getDecoupledAuthId() {
-            return decoupledAuthId;
-        }
-
-        public DecoupledAuthId decoupledAuthIdData() {
-            return decoupledAuthIdData;
+        public CIBAAuthReqId decoupledAuthIdJwt() {
+            return decoupledAuthIdJwt;
         }
 
         public boolean isIllegalDecoupledAuthId() {
