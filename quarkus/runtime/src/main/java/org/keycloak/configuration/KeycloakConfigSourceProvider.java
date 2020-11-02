@@ -51,6 +51,7 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
         }
 
         CONFIG_SOURCES.add(new ConfigArgsConfigSource());
+        CONFIG_SOURCES.add(new PersistedConfigSource());
         CONFIG_SOURCES.add(new SysPropConfigSource());
 
         Path configFile = getConfigurationFile();

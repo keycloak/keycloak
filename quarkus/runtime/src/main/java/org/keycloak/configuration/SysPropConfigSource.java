@@ -44,7 +44,7 @@ public class SysPropConfigSource implements ConfigSource {
     }
 
     public String getName() {
-        return "System properties";
+        return "KcSysPropConfigSource";
     }
 
     public int getOrdinal() {

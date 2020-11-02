@@ -140,7 +140,7 @@ class KeycloakProcessor {
         Map<String, String> properties = new HashMap<>();
 
         for (String name : KeycloakRecorder.getConfig().getPropertyNames()) {
-            if (isRuntimeProperty(name)) {
+            if (isNotPersistentProperty(name)) {
                 continue;
             }
 
@@ -156,9 +156,9 @@ class KeycloakProcessor {
         recorder.showConfig();
     }
 
-    private boolean isRuntimeProperty(String name) {
+    private boolean isNotPersistentProperty(String name) {
         // these properties are ignored from the build time properties as they are runtime-specific
-        return "kc.home.dir".equals(name) || "kc.config.args".equals(name);
+        return !name.startsWith("kc") || "kc.home.dir".equals(name) || "kc.config.args".equals(name);
     }
 
     /**
