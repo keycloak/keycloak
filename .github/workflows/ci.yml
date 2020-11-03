@@ -72,6 +72,9 @@ jobs:
         run: mvn clean install -B -nsu -Pauth-server-wildfly -DskipTests -f testsuite/integration-arquillian/pom.xml
       - name: Run adapter tests
         run: mvn clean install -B -nsu -Pauth-server-wildfly -f testsuite/integration-arquillian/tests/base/pom.xml "-Dtest=org.keycloak.testsuite.adapter.**.*Test,!org.keycloak.testsuite.adapter.**.authorization**.*Test" | misc/log/trimmer.sh; exit ${PIPESTATUS[0]}
+      - name: Run adapter authz tests
+        if: ${{ github.event_name == 'pull_request' }}
+        run: echo ${GITHUB_REF}; git diff --name-only HEAD origin/${GITHUB_REF} | egrep -i 'authz|authorization' && mvn clean install -B -nsu -Pauth-server-wildfly -f testsuite/integration-arquillian/tests/base/pom.xml "-Dtest=org.keycloak.testsuite.adapter.**.authorization**.*Test" | misc/log/trimmer.sh; exit ${PIPESTATUS[0]}
   test-undertow-map:
     name: Test undertow - map provider
     needs: build
