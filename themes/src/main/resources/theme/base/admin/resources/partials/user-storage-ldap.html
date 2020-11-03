@@ -151,7 +151,7 @@
                 <label class="col-md-2 control-label" for="authType"><span class="required">*</span> {{:: 'authentication-type' | translate}}</label>
                 <div class="col-md-6">
                     <div>
-                        <select class="form-control" id="authType"
+                        <select class="form-control" id="authType" name="authType"
                                 ng-model="instance.config['authType'][0]"
                                 ng-options="authType.id as authType.name for authType in authTypes"
                                 required>
@@ -159,23 +159,23 @@
                     </div>
                 </div>
                 <kc-tooltip>{{:: 'ldap.authentication-type.tooltip' | translate}}</kc-tooltip>
+                <div class="col-sm-4" data-ng-show="access.manageRealm">
+                    <button class="btn btn-primary" data-ng-click="testAuthentication()" data-ng-disabled="instance.config['authType'][0] == 'none'">{{:: 'test-authentication' | translate}}</button>
+                </div>
             </div>
-            <div class="form-group clearfix" data-ng-hide="instance.config['authType'][0] == 'none'">
+            <div class="form-group clearfix" data-ng-show="instance.config['authType'][0] == 'simple'">
                 <label class="col-md-2 control-label" for="ldapBindDn"><span class="required">*</span> {{:: 'bind-dn' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="ldapBindDn" type="text" ng-model="instance.config['bindDn'][0]" placeholder="{{:: 'ldap-bind-dn' | translate}}" data-ng-required="instance.config['authType'][0] != 'none'">
                 </div>
                 <kc-tooltip>{{:: 'ldap.bind-dn.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group clearfix" data-ng-hide="instance.config['authType'][0] == 'none'">
+            <div class="form-group clearfix" data-ng-show="instance.config['authType'][0] == 'simple'">
                 <label class="col-md-2 control-label" for="ldapBindCred"><span class="required">*</span> {{:: 'bind-credential' | translate}}</label>
                 <div class="col-md-6">
                     <input class="form-control" id="ldapBindCred" kc-password ng-model="instance.config['bindCredential'][0]" placeholder="{{:: 'ldap-bind-credentials' | translate}}" data-ng-required="instance.config['authType'][0] != 'none'">
                 </div>
                 <kc-tooltip>{{:: 'ldap.bind-credential.tooltip' | translate}}</kc-tooltip>
-                <div class="col-sm-4" data-ng-show="access.manageRealm">
-                    <a class="btn btn-primary" data-ng-click="testAuthentication()">{{:: 'test-authentication' | translate}}</a>
-                </div>
             </div>
         </fieldset>
 

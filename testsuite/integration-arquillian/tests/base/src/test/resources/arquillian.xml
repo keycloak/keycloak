@@ -21,7 +21,7 @@
         http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
 
     <defaultProtocol type="Servlet 3.0" />
-	
+
     <extension qualifier="webdriver">
         <property name="browser">${browser}</property>
         <property name="downloadBinaries">${webdriverDownloadBinaries}</property>
@@ -63,7 +63,7 @@
     <extension qualifier="drone">
        <property name="instantiationTimeoutInSeconds">${droneInstantiationTimeoutInSeconds}</property>
     </extension>
-    
+
     <extension qualifier="graphene">
         <property name="waitGuiInterval">5</property>
         <property name="waitAjaxInterval">5</property>
@@ -120,6 +120,8 @@
             <property name="bindHttpPort">${auth.server.http.port}</property>
             <property name="bindHttpsPort">${auth.server.https.port}</property>
             <property name="remoteMode">${undertow.remote}</property>
+            <property name="keyStore">${auth.server.keystore}</property>
+            <property name="keyStorePassword">${auth.server.keystore.password}</property>
         </configuration>
     </container>
 
@@ -154,6 +156,8 @@
                 ${auth.server.memory.settings}
                 -Djava.net.preferIPv4Stack=true
                 ${auth.server.jvm.args.extra}
+                -Djavax.net.ssl.keyStore=${auth.server.keystore}
+                -Djavax.net.ssl.keyStorePassword=${auth.server.keystore.password}
             </property>
             <property name="managementPort">${auth.server.management.port}</property>
             <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
@@ -625,7 +629,10 @@
             <property name="enabled">${auth.server.quarkus}</property>
             <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer</property>
             <property name="bindHttpPortOffset">${auth.server.port.offset}</property>
-            <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m -Djava.net.preferIPv4Stack=true</property>
+            <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m -Djava.net.preferIPv4Stack=true
+                -Djavax.net.ssl.keyStore=${auth.server.keystore}
+                -Djavax.net.ssl.keyStorePassword=${auth.server.keystore.password}
+            </property>
         </configuration>
     </container>
 
@@ -695,5 +702,5 @@
             <property name="startupTimeoutInSeconds">${auth.server.jboss.startup.timeout}</property>
         </configuration>
     </container>
-            
+
 </arquillian>

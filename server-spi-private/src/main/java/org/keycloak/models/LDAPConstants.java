@@ -52,6 +52,7 @@ public class LDAPConstants {
     public static final String AUTH_TYPE = "authType";
     public static final String AUTH_TYPE_NONE = "none";
     public static final String AUTH_TYPE_SIMPLE = "simple";
+    public static final String AUTH_TYPE_EXTERNAL = "EXTERNAL";
 
     public static final String USE_TRUSTSTORE_SPI = "useTruststoreSpi";
     public static final String USE_TRUSTSTORE_ALWAYS = "always";

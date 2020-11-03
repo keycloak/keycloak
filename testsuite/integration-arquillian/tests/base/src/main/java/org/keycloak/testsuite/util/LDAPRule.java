@@ -31,6 +31,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -66,8 +67,9 @@ public class LDAPRule extends ExternalResource {
     LDAPTestConfiguration ldapTestConfiguration;
     private LDAPEmbeddedServer ldapEmbeddedServer;
     private LDAPAssume assume;
+    Map<String, String> clientConfigOverrides = new HashMap<String, String>();
 
-    protected Properties defaultProperties = new Properties();
+    protected Properties serverProperties = new Properties();
 
     public LDAPRule assumeTrue(LDAPAssume assume) {
         this.assume = assume;
@@ -86,76 +88,105 @@ public class LDAPRule extends ExternalResource {
             ldapEmbeddedServer.init();
             ldapEmbeddedServer.start();
         }
-    }
+      }
 
     @Override
     public Statement apply(Statement base, Description description) {
         // Default bind credential value
-        defaultProperties.setProperty(LDAPConstants.BIND_CREDENTIAL, "secret");
+        serverProperties.setProperty(LDAPConstants.BIND_CREDENTIAL, "secret");
         // Default values of the authentication / access control method and connection encryption to use on the embedded
         // LDAP server upon start if not (re)set later via the LDAPConnectionParameters annotation directly on the test
-        defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_ACCESS_CONTROL, "true");
-        defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_ANONYMOUS_ACCESS, "false");
-        defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_SSL, "true");
-        defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_STARTTLS, "false");
+        serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_ACCESS_CONTROL, "true");
+        serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_ANONYMOUS_ACCESS, "false");
+        serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_SSL, "true");
+        serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_STARTTLS, "false");
         // Default LDAP server confidentiality required value
-        defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_SET_CONFIDENTIALITY_REQUIRED, "false");
+        serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_SET_CONFIDENTIALITY_REQUIRED, "false");
+
+        // default configuration for LDAP client
+        clientConfigOverrides.clear();
+        clientConfigOverrides.put(LDAPConstants.BIND_CREDENTIAL, "secret");
+        clientConfigOverrides.put(LDAPConstants.AUTH_TYPE, LDAPConstants.AUTH_TYPE_SIMPLE);
+        clientConfigOverrides.put(LDAPConstants.START_TLS, "false");
+        clientConfigOverrides.put(LDAPConstants.USE_TRUSTSTORE_SPI, LDAPConstants.USE_TRUSTSTORE_NEVER);
 
         // Don't auto-update LDAP connection URL read from properties file for LDAP over SSL case even if it's wrong
         // (AKA don't try to guess, let the user to get it corrected in the properties file first)
-        defaultProperties.setProperty("AUTO_UPDATE_LDAP_CONNECTION_URL", "false");
+        serverProperties.setProperty("AUTO_UPDATE_LDAP_CONNECTION_URL", "false");
 
         Annotation ldapConnectionAnnotation = description.getAnnotation(LDAPConnectionParameters.class);
         if (ldapConnectionAnnotation != null) {
             // Mark the LDAP connection URL as auto-adjustable to correspond to specific annotation as necessary
-            defaultProperties.setProperty("AUTO_UPDATE_LDAP_CONNECTION_URL", "true");
+            serverProperties.setProperty("AUTO_UPDATE_LDAP_CONNECTION_URL", "true");
+
             LDAPConnectionParameters connectionParameters = (LDAPConnectionParameters) ldapConnectionAnnotation;
             // Configure the bind credential type of the LDAP rule depending on the provided annotation arguments
             switch (connectionParameters.bindCredential()) {
                 case SECRET:
                     log.debug("Setting bind credential to secret.");
-                    defaultProperties.setProperty(LDAPConstants.BIND_CREDENTIAL, "secret");
+                    serverProperties.setProperty(LDAPConstants.BIND_CREDENTIAL, "secret");
+                    clientConfigOverrides.put(LDAPConstants.BIND_CREDENTIAL, "secret");
                     break;
                 case VAULT:
                     log.debug("Setting bind credential to vault.");
-                    defaultProperties.setProperty(LDAPConstants.BIND_CREDENTIAL, VAULT_EXPRESSION);
+                    serverProperties.setProperty(LDAPConstants.BIND_CREDENTIAL, VAULT_EXPRESSION);
+                    clientConfigOverrides.put(LDAPConstants.BIND_CREDENTIAL, VAULT_EXPRESSION);
                     break;
             }
             // Configure the authentication method of the LDAP rule depending on the provided annotation arguments
             switch (connectionParameters.bindType()) {
                 case NONE:
-                    log.debug("Enabling anonymous authentication method on the LDAP server.");
-                    defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_ANONYMOUS_ACCESS, "true");
-                    defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_ACCESS_CONTROL, "false");
+                    log.debug("Enabling anonymous authentication method.");
+                    serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_ANONYMOUS_ACCESS, "true");
+                    serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_ACCESS_CONTROL, "false");
+                    clientConfigOverrides.put(LDAPConstants.AUTH_TYPE, LDAPConstants.AUTH_TYPE_NONE);
                     break;
                 case SIMPLE:
-                    log.debug("Disabling anonymous authentication method on the LDAP server.");
-                    defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_ANONYMOUS_ACCESS, "false");
-                    defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_ACCESS_CONTROL, "true");
+                    log.debug("Disabling anonymous authentication method.");
+                    serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_ANONYMOUS_ACCESS, "false");
+                    serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_ACCESS_CONTROL, "true");
+                    clientConfigOverrides.put(LDAPConstants.AUTH_TYPE, LDAPConstants.AUTH_TYPE_SIMPLE);
+                    break;
+                case EXTERNAL:
+                    log.debug("Enabling SASL EXTERNAL authentication method.");
+                    serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_ANONYMOUS_ACCESS, "false");
+                    serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_ACCESS_CONTROL, "true");
+                    serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ADMIN_CERTIFICATE_KEYSTORE, new File(PROJECT_BUILD_DIRECTORY, PRIVATE_KEY).getAbsolutePath());
+                    serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ADMIN_CERTIFICATE_KEYSTORE_PASSWORD, "secret");
+                    clientConfigOverrides.put(LDAPConstants.AUTH_TYPE, LDAPConstants.AUTH_TYPE_EXTERNAL);
                     break;
             }
             // Configure the connection encryption of the LDAP rule depending on the provided annotation arguments
             switch (connectionParameters.encryption()) {
                 case NONE:
                     log.debug("Disabling connection encryption on the LDAP server.");
-                    defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_SSL, "false");
-                    defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_STARTTLS, "false");
+                    serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_SSL, "false");
+                    serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_STARTTLS, "false");
+                    // Configure the LDAP server to accept not secured connections from clients
+                    serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_SET_CONFIDENTIALITY_REQUIRED, "false");
+                    clientConfigOverrides.put(LDAPConstants.START_TLS, "false");
+                    clientConfigOverrides.put(LDAPConstants.USE_TRUSTSTORE_SPI, LDAPConstants.USE_TRUSTSTORE_NEVER);
                     break;
                 case SSL:
                     log.debug("Enabling SSL connection encryption on the LDAP server.");
-                    defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_SSL, "true");
+                    serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_SSL, "true");
                     // Require the LDAP server to accept only secured connections with SSL enabled
                     log.debug("Configuring the LDAP server to accepts only requests with a secured connection.");
-                    defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_SET_CONFIDENTIALITY_REQUIRED, "true");
-                    defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_STARTTLS, "false");
+                    serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_SET_CONFIDENTIALITY_REQUIRED, "true");
+                    serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_STARTTLS, "false");
+                    // Use truststore from TruststoreSPI for LDAPS connections
+                    clientConfigOverrides.put(LDAPConstants.USE_TRUSTSTORE_SPI, LDAPConstants.USE_TRUSTSTORE_LDAPS_ONLY);
                     break;
                 case STARTTLS:
                     log.debug("Enabling StartTLS connection encryption on the LDAP server.");
-                    defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_STARTTLS, "true");
+                    serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_STARTTLS, "true");
                     // Require the LDAP server to accept only secured connections with StartTLS enabled
                     log.debug("Configuring the LDAP server to accepts only requests with a secured connection.");
-                    defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_SET_CONFIDENTIALITY_REQUIRED, "true");
-                    defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_SSL, "false");
+                    serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_SET_CONFIDENTIALITY_REQUIRED, "true");
+                    serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_SSL, "false");
+                    clientConfigOverrides.put(LDAPConstants.START_TLS, "true");
+                    // Use truststore from TruststoreSPI for STARTTLS connections
+                    clientConfigOverrides.put(LDAPConstants.USE_TRUSTSTORE_SPI, LDAPConstants.USE_TRUSTSTORE_ALWAYS);
                     break;
             }
         }
@@ -180,21 +211,24 @@ public class LDAPRule extends ExternalResource {
     }
 
     protected LDAPEmbeddedServer createServer() {
-        defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_DSF, LDAPEmbeddedServer.DSF_INMEMORY);
-        defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_LDIF_FILE, "classpath:ldap/users.ldif");
-        defaultProperties.setProperty(PROPERTY_CERTIFICATE_PASSWORD, "secret");
-        defaultProperties.setProperty(PROPERTY_KEYSTORE_FILE, new File(PROJECT_BUILD_DIRECTORY, PRIVATE_KEY).getAbsolutePath());
+        serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_DSF, LDAPEmbeddedServer.DSF_INMEMORY);
+        serverProperties.setProperty(LDAPEmbeddedServer.PROPERTY_LDIF_FILE, "classpath:ldap/users.ldif");
+        serverProperties.setProperty(PROPERTY_CERTIFICATE_PASSWORD, "secret");
+        serverProperties.setProperty(PROPERTY_KEYSTORE_FILE, new File(PROJECT_BUILD_DIRECTORY, PRIVATE_KEY).getAbsolutePath());
 
-        return new LDAPEmbeddedServer(defaultProperties);
+        return new LDAPEmbeddedServer(serverProperties);
     }
 
     public Map<String, String> getConfig() {
+        // default LDAP client configuration
         Map<String, String> config = ldapTestConfiguration.getLDAPConfig();
+        config.putAll(clientConfigOverrides);
+
         String ldapConnectionUrl = config.get(LDAPConstants.CONNECTION_URL);
-        if (ldapConnectionUrl != null && defaultProperties.getProperty("AUTO_UPDATE_LDAP_CONNECTION_URL").equals("true")) {
+        if (ldapConnectionUrl != null && serverProperties.getProperty("AUTO_UPDATE_LDAP_CONNECTION_URL").equals("true")) {
             if (
                 ldapConnectionUrl.startsWith("ldap://") &&
-                defaultProperties.getProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_SSL).equals("true")
+                serverProperties.getProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_SSL).equals("true")
                )
             {
                 // Switch protocol prefix to "ldaps://" in connection URL if LDAP over SSL is requested
@@ -209,7 +243,7 @@ public class LDAPRule extends ExternalResource {
             }
             if (
                 ldapConnectionUrl.startsWith("ldaps://") &&
-                !defaultProperties.getProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_SSL).equals("true")
+                !serverProperties.getProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_SSL).equals("true")
                )
             {
                 // Switch protocol prefix back to "ldap://" in connection URL if LDAP over SSL flag is not set
@@ -222,42 +256,6 @@ public class LDAPRule extends ExternalResource {
                 config.put(LDAPConstants.CONNECTION_URL, updatedUrl);
                 log.debugf("Using plaintext / startTLS \"%s\" connection URL form over: \"%s\" since plaintext / startTLS connection was requested.", updatedUrl, ldapConnectionUrl);
             }
-        }
-        switch (defaultProperties.getProperty(LDAPConstants.BIND_CREDENTIAL)) {
-            case VAULT_EXPRESSION:
-                config.put(LDAPConstants.BIND_CREDENTIAL, VAULT_EXPRESSION);
-                break;
-            default:
-                // Default to secret as the bind credential
-                config.put(LDAPConstants.BIND_CREDENTIAL, "secret");
-        }
-        switch (defaultProperties.getProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_ANONYMOUS_ACCESS)) {
-            case "true":
-                config.put(LDAPConstants.AUTH_TYPE, LDAPConstants.AUTH_TYPE_NONE);
-                break;
-            default:
-                // Default to username + password LDAP authentication method
-                config.put(LDAPConstants.AUTH_TYPE, LDAPConstants.AUTH_TYPE_SIMPLE);
-        }
-        switch (defaultProperties.getProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_STARTTLS)) {
-            case "true":
-                config.put(LDAPConstants.START_TLS, "true");
-                // Use truststore from TruststoreSPI also for StartTLS connections
-                config.put(LDAPConstants.USE_TRUSTSTORE_SPI, LDAPConstants.USE_TRUSTSTORE_ALWAYS);
-                break;
-            default:
-                // Default to startTLS disabled
-                config.put(LDAPConstants.START_TLS, "false");
-                // By default use truststore from TruststoreSPI only for LDAP over SSL connections
-                config.put(LDAPConstants.USE_TRUSTSTORE_SPI, LDAPConstants.USE_TRUSTSTORE_LDAPS_ONLY);
-        }
-        switch (defaultProperties.getProperty(LDAPEmbeddedServer.PROPERTY_SET_CONFIDENTIALITY_REQUIRED)) {
-            case "true":
-                System.setProperty("PROPERTY_SET_CONFIDENTIALITY_REQUIRED", "true");
-                break;
-            default:
-                // Configure the LDAP server to accept not secured connections from clients by default
-                System.setProperty("PROPERTY_SET_CONFIDENTIALITY_REQUIRED", "false");
         }
         return config;
     }
@@ -290,7 +288,8 @@ public class LDAPRule extends ExternalResource {
 
         public enum BindType {
             NONE,
-            SIMPLE
+            SIMPLE,
+            EXTERNAL
         }
 
         public enum Encryption {

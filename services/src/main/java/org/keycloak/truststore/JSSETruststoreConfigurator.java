@@ -22,7 +22,12 @@ import org.apache.http.conn.ssl.StrictHostnameVerifier;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import java.io.FileInputStream;
+import java.security.KeyStore;
+
 import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
@@ -61,7 +66,10 @@ public class JSSETruststoreConfigurator {
                 if (sslFactory == null) {
                     try {
                         SSLContext sslctx = SSLContext.getInstance("TLS");
-                        sslctx.init(null, getTrustManagers(), null);
+                        // Construct default keyManager explicitely, since passing null as keyManager to SSLSocketFactory results in no
+                        // keymanager at all in Oracle JDK (unlike IBM JDK).  If not doing this, it would be impossible to use client
+                        // certificate based authentication for LDAP when TrustStore SPI is enabled.
+                        sslctx.init(getDefaultKeyManager(), getTrustManagers(), null);
                         sslFactory = sslctx.getSocketFactory();
                     } catch (Exception e) {
                         throw new RuntimeException("Failed to initialize SSLContext: ", e);
@@ -119,5 +127,31 @@ public class JSSETruststoreConfigurator {
 
     public TruststoreProvider getProvider() {
         return provider;
+    }
+
+    private KeyManager[] getDefaultKeyManager() throws Exception {
+        String keyStore = System.getProperty("javax.net.ssl.keyStore");
+        String keyStoreType = System.getProperty("javax.net.ssl.keyStoreType", KeyStore.getDefaultType());
+        String keyStoreProvider = System.getProperty("javax.net.ssl.keyStoreProvider");
+        String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword");
+
+        KeyStore ks = null;
+        if (keyStoreProvider == null) {
+            ks = KeyStore.getInstance(keyStoreType);
+        } else {
+            ks = KeyStore.getInstance(keyStoreType, keyStoreProvider);
+        }
+
+        if (keyStore != null) {
+            try (FileInputStream fs = new FileInputStream(keyStore)) {
+                ks.load(fs, keyStorePassword.toCharArray());
+            }
+
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            kmf.init(ks, keyStorePassword.toCharArray());
+
+            return kmf.getKeyManagers();
+        }
+        return null;
     }
 }

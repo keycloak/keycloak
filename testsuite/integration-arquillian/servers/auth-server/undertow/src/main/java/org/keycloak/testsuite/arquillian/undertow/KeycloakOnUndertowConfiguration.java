@@ -111,6 +111,14 @@ public class KeycloakOnUndertowConfiguration extends UndertowContainerConfigurat
         return keycloakConfigPropertyOverridesMap;
     }
 
+    public void setKeyStore(String keyStore) {
+        System.setProperty("javax.net.ssl.keyStore", keyStore);
+    }
+
+    public void setKeyStorePassword(String keyStorePassword) {
+        System.setProperty("javax.net.ssl.keyStorePassword", keyStorePassword);
+    }
+
     @Override
     public void validate() throws ConfigurationException {
         super.validate();
@@ -124,7 +132,7 @@ public class KeycloakOnUndertowConfiguration extends UndertowContainerConfigurat
         setBindHttpsPort(newHttpsPort);
 
         log.info("KeycloakOnUndertow will listen for http on port: " + newPort + " and for https on port: " + newHttpsPort);
-        
+
         if (this.keycloakConfigPropertyOverrides != null) {
             try {
                 TypeReference<HashMap<String,Object>> typeRef = new TypeReference<HashMap<String,Object>>() {};
@@ -135,7 +143,7 @@ public class KeycloakOnUndertowConfiguration extends UndertowContainerConfigurat
         }
 
         // TODO validate workerThreads
-        
+
     }
-    
+
 }
