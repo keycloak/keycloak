@@ -17,7 +17,12 @@
 
 package org.keycloak.quarkus.deployment;
 
+import static org.keycloak.configuration.Configuration.getPropertyNames;
+import static org.keycloak.configuration.Configuration.getRawValue;
+
 import javax.persistence.spi.PersistenceUnitTransactionType;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -25,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.ServiceLoader;
 
 import io.quarkus.deployment.IsDevelopment;
@@ -38,6 +44,8 @@ import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.config.ConfigProviderFactory;
+import org.keycloak.configuration.Configuration;
+import org.keycloak.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProviderFactory;
 import org.keycloak.connections.jpa.updater.liquibase.conn.DefaultLiquibaseConnectionProvider;
@@ -129,7 +137,7 @@ class KeycloakProcessor {
      * <p>Make the build time configuration available at runtime so that the server can run without having to specify some of
      * the properties again.
      *
-     * <p>This build step also adds a static call to {@link org.keycloak.cli.ShowConfigCommand#run(Map)} via the recorder
+     * <p>This build step also adds a static call to {@link org.keycloak.cli.ShowConfigCommand#run} via the recorder
      * so that the configuration can be shown when requested.
      *
      * @param recorder the recorder
@@ -137,21 +145,33 @@ class KeycloakProcessor {
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
     void setBuildTimeProperties(KeycloakRecorder recorder) {
-        Map<String, String> properties = new HashMap<>();
+        Properties properties = new Properties();
 
-        for (String name : KeycloakRecorder.getConfig().getPropertyNames()) {
+        for (String name : getPropertyNames()) {
             if (isNotPersistentProperty(name)) {
                 continue;
             }
 
-            Optional<String> value = KeycloakRecorder.getConfig().getOptionalValue(name, String.class);
+            Optional<String> value = Configuration.getOptionalValue(name);
 
             if (value.isPresent()) {
                 properties.put(name, value.get());
             }
         }
 
-        recorder.validateAndSetBuildTimeProperties(properties, Environment.isRebuild(), KeycloakRecorder.getConfig().getRawValue("kc.config.args"));
+        File file = KeycloakConfigSourceProvider.getPersistedConfigFile().toFile();
+
+        if (file.exists()) {
+            file.delete();
+        }
+
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            properties.store(fos, " Auto-generated, DO NOT change this file");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to generate persisted.properties file", e);
+        }
+
+        recorder.validateAndSetBuildTimeProperties(Environment.isRebuild(), getRawValue("kc.config.args"));
 
         recorder.showConfig();
     }

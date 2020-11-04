@@ -20,7 +20,6 @@ import static org.keycloak.util.Environment.getBuiltTimeProperty;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
@@ -66,13 +65,6 @@ public class PropertyMapper {
     static PropertyMapper IDENTITY = new PropertyMapper(null, null, null, null, null) {
         @Override
         public ConfigValue getOrDefault(String name, ConfigSourceInterceptorContext context, ConfigValue current) {
-            if (current == null) {
-                ConfigValue.builder().withName(name)
-                        .withValue(getBuiltTimeProperty(PropertyMappers.toCLIFormat(name))
-                                .orElseGet(() -> getBuiltTimeProperty(name)
-                                        .orElse(null))).build();
-            }
-
             return current;
         }
     };
@@ -122,27 +114,17 @@ public class PropertyMapper {
         ConfigValue config = context.proceed(from);
 
         if (config == null) {
-            Optional<ConfigValue> buildConfig = getBuiltTimeValue(from, context);
-
-            if (buildConfig.isPresent()) {
-                return buildConfig.get();
-            }
-
             if (mapFrom != null) {
                 // if the property we want to map depends on another one, we use the value from the other property to call the mapper
                 String parentKey = MicroProfileConfigProvider.NS_KEYCLOAK + "." + mapFrom;
-                ConfigValue parentValue = getBuiltTimeValue(parentKey, context).orElseGet(() -> {
-                    ConfigValue value = context.proceed(parentKey);
-                    
-                    if (value == null) {
-                        return null;
-                    }
-                    
-                    return transformValue(value.getValue(), context);
-                });
+                ConfigValue parentValue = context.proceed(parentKey);
 
                 if (parentValue != null) {
-                    return parentValue;
+                    ConfigValue value = transformValue(parentValue.getValue(), context);
+
+                    if (value != null) {
+                        return value;
+                    }
                 }
             }
 
@@ -181,18 +163,6 @@ public class PropertyMapper {
         return description;
     }
 
-    private Optional<ConfigValue> getBuiltTimeValue(String name, ConfigSourceInterceptorContext context) {
-        ConfigValue value = transformValue(getBuiltTimeProperty(name)
-                                                   .orElseGet(() -> getBuiltTimeProperty(PropertyMappers.toCLIFormat(name))
-                                                                            .orElse(null)), context);
-
-        if (value == null) {
-            return Optional.empty();
-        }
-
-        return Optional.of(value);
-    }
-    
     private ConfigValue transformValue(String value, ConfigSourceInterceptorContext context) {
         if (value == null) {
             return null;

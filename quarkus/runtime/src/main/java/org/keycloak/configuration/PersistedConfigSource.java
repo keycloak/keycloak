@@ -17,20 +17,32 @@
 
 package org.keycloak.configuration;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
 
-import io.smallrye.config.common.AbstractConfigSource;
-import org.keycloak.quarkus.KeycloakRecorder;
+import io.smallrye.config.PropertiesConfigSource;
+import io.smallrye.config.common.utils.ConfigSourceUtil;
+import org.keycloak.util.Environment;
 
 /**
  * A {@link org.eclipse.microprofile.config.spi.ConfigSource} based on the configuration properties persisted into the server
  * image.
  */
-public class PersistedConfigSource extends AbstractConfigSource {
+public class PersistedConfigSource extends PropertiesConfigSource {
 
-    public PersistedConfigSource() {
-        super("PersistedConfigSource", 300);
+    public static final String NAME = "PersistedConfigSource";
+    static final String KEYCLOAK_PROPERTIES = "persisted.properties";
+
+    public PersistedConfigSource(Path file) {
+        super(readProperties(file), "", 300);
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
     }
 
     @Override
@@ -40,13 +52,32 @@ public class PersistedConfigSource extends AbstractConfigSource {
 
     @Override
     public String getValue(String propertyName) {
-        String canonicalFormat = PropertyMappers.canonicalFormat(propertyName);
-        String value = KeycloakRecorder.getBuiltTimeProperty(canonicalFormat);
+        String value = super.getValue(propertyName);
 
         if (value != null) {
             return value;
         }
-        
-        return KeycloakRecorder.getBuiltTimeProperty(propertyName);
+
+        if (propertyName.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
+            return super.getValue(PropertyMappers.toCLIFormat(propertyName));
+        }
+
+        return null;
+    }
+
+    private static Map<String, String> readProperties(Path path) {
+        if (!Environment.isRebuild()) {
+            File file = path.toFile();
+
+            if (file.exists()) {
+                try {
+                    return ConfigSourceUtil.urlToMap(file.toURL());
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to load persisted properties from [" + file.getAbsolutePath() + ".", e);
+                }
+            }
+        }
+
+        return Collections.emptyMap();
     }
 }
