@@ -2,6 +2,20 @@
 
 === Migrating to 12.0.0
 
+==== Upgrade to Wildfly 21
+
+The {project_name} server was upgraded to use Wildfly 21 as the underlying container. This does not directly involve any
+specific {project_name} server functionality, but a few changes related to the migration, which are worth mentioning.
+
+Dependency updates::
+  The dependencies were updated to the versions used by Wildfly 21 server. For example, Infinispan is now 11.0.4.Final.
+
+Configuration changes::
+  A few configuration changes exist in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
+  section to handle the migration of configuration files automatically. If more detail is needed, because, for example, you did some
+  configuration changes on your own, the list of the most important changes follows:
+  * The `object-memory` element of Infinispan caches is now deprecated (unused) and was replaced with the `heap-memory` element.
+
 ==== Skip creation of user session for the Docker protocol authentication
 
 No user session is created after successful authentication with the Docker protocol. For details, please refer to the link:{adminguide_link}#_docker[{adminguide_name}].
@@ -10,20 +24,20 @@ No user session is created after successful authentication with the Docker proto
 
 The {project_name} login theme components have been upgraded to PatternFly 4.
 The old PatternFly 3 runs simultaneously with the new one, so it's possible to keep PF3 components.
-However, there are some changes in login theme design, so please upgrade your custom login theme despite these changes.
-There is an example with the changes in `keycloak/examples/themes/theme/sunrise` folder.
+However, some changes to the design of the login theme were performed. Please upgrade your custom login theme due them.
+An example with the necessary changes can be found in the `keycloak/examples/themes/theme/sunrise` directory.
 No additional setup is required.
 
 ==== Client Credentials Grant without refresh token by default
 
 From this {project_name} version, the OAuth2 Client Credentials Grant endpoint does not issue refresh tokens by default. This behavior is aligned with the OAuth2 specification.
-As a side-effect of this change, there is no user session created on the {project_name} server side after successful Client Credentials authentication, which results
+As a side-effect of this change, no user session is created on the {project_name} server side after successful Client Credentials authentication, which results
 in improved performance and memory consumption. Clients that use Client Credentials Grant are encouraged to stop using
 refresh tokens and instead always authenticate at every request with `grant_type=client_credentials` instead of using `refresh_token` as grant type.
 In relation to this, {project_name} has support for revocation of access tokens in the OAuth2 Revocation Endpoint, hence clients are allowed
 to revoke individual access tokens if needed.
 
-For the backwards compatibility, there is a possibility to stick to the behavior of old versions. When this is used, the refresh token will be still issued after
+For backwards compatibility, a possibility to stick to the behavior of old versions exists. When this is used, the refresh token will be still issued after
 a successful authentication with the Client Credentials Grant and also the user session will be created. This can be enabled for the particular client in
 the {project_name} admin console, in client details in the section with `OpenID Connect Compatibility Modes` with the switch `Use Refresh Tokens For Client Credentials Grant`.
 
@@ -32,13 +46,13 @@ the {project_name} admin console, in client details in the section with `OpenID 
 ==== Upgrade to Wildfly 20
 
 The {project_name} server was upgraded to use Wildfly 20 as the underlying container. This does not directly involve any
-specific {project_name} server functionality, but there are few changes related to the migration, which are worth mentioning.
+specific {project_name} server functionality, but a few changes related to the migration, which are worth mentioning.
 
 Dependency updates::
   The dependencies were updated to the versions used by Wildfly 20 server. For example, Infinispan is now 10.1.8.Final.
 
 Configuration changes::
-  There are few configuration changes in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
+  A few configuration changes exist in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
   section to handle the migration of configuration files automatically.
 
 Cross-Datacenter Replication changes::
@@ -69,8 +83,8 @@ This situation implies that the `username` can now also be accessed and set via 
 Implementors of SPIs subclassing the `UserModel` directly or indirectly should ensure that the behavior between `setUsername` and `setSingleAttribute(UserModel.USERNAME, ...)` (and similar for the other fields) is consistent.
 Users of the policy evaluation feature have to adapt their policies if they use the number of attributes in their evaluations since every user will now have four new attributes by default.
 
-The public API of `UserModel` has not changed, so no changes to frontend resources or SPIs accessing user data should be necessary.
-The database has also not changed, yet.
+The public API of `UserModel` did not change. No changes to frontend resources or SPIs accessing user data are necessary.
+Also, the database did not change yet.
 
 ==== Instagram IdP migrated to new the API
 
@@ -125,8 +139,8 @@ See the link:{adminguide_link}#_user_locale_selection[{adminguide_name}] for mor
 ==== Deprecated methods in token representation Java classes
 
 In the year 2038 an `int` is no longer able to hold the value of seconds since 1970, as such we are working on updating these to
-`long` values. In token representation there is a further issue, which is an `int` will by default result in `0` in the
-JSON representation, while it should not be included.
+`long` values. Moreover, another issue related with processing of `int` values exists in token representation. An `int` will by
+default result into `0` in the JSON representation, while it should not be included.
 
 See JavaDocs for further details on exact methods that have been deprecated and replacement methods.
 
@@ -155,13 +169,13 @@ soon as possible.
 ==== Upgrade to Wildfly 18
 
 The {project_name} server was upgraded to use Wildfly 18 as the underlying container. This does not directly involve any
-specific {project_name} server functionality, but there are a few changes related to the migration, which are worth mentioning.
+specific {project_name} server functionality, but a few changes related to the migration, which are worth mentioning.
 
 Dependency updates::
   The dependencies were updated to the versions used by Wildfly 18 server. For example, Infinispan is now 9.4.16.Final.
 
 Configuration changes::
-  There are few configuration changes in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
+  A few configuration changes exist in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
   section to handle the migration of configuration files automatically.
 
 Cross-Datacenter Replication changes::
@@ -191,21 +205,21 @@ OPTIONAL execution requirement removed::
     From the user's point of view, the behavior during authentication should be same as in the previous version.
 
 Changes in the Java SPI::
-    There are some changes in the Java Authentication SPI and Credential Provider SPI. The interface `Authenticator` is not changed,
+    Some changes exist in the Java Authentication SPI and Credential Provider SPI. The interface `Authenticator` is not changed,
     but you may be affected if you're developing more advanced authenticators, which introduce some new credential types (subclasses of `CredentialModel`).
     There are changes on the `CredentialProvider` interface and introduction of some new interfaces like `CredentialValidator`. Also you
     may be affected if your authenticator supported the OPTIONAL execution requirement. It is recommended to double check the latest authentication
     examples in the server development guide for more details.
 
 Freemarker template changes::
-   There are also some changes in the freemarker templates. You may be affected if you have your own theme with custom freemarker
+   Some changes in the freemarker templates exist. You may be affected if you have your own theme with custom freemarker
    templates for login forms or some account forms, especially for the forms related to OTP. It is recommended to double check changes in
    the Freemarker templates in the latest {project_name} and align your templates according to it.
 
 ==== User credentials changes
 
 We added more flexibility around storing of user credentials. Among other things, every user can have multiple credentials of the same
-type, for example multiple OTP credentials. There are some changes in the database schema in relation to that, however the credentials from
+type, for example multiple OTP credentials. As a result, some changes to the database schema were performed. However the credentials from
 the previous version should be automatically updated to the new format and users should be still able to login with their passwords or OTP
 credentials set in the previous version.
 
@@ -214,13 +228,13 @@ credentials set in the previous version.
 ==== Upgrade to Wildfly 17
 
 The {project_name} server was upgraded to use Wildfly 17 as the underlying container. This does not directly involve any
-specific {project_name} server functionality, but there are a few changes related to the migration, which are worth mentioning.
+specific {project_name} server functionality, but a few changes related to the migration, which are worth mentioning.
 
 Dependency updates::
   The dependencies were updated to the versions used by Wildfly 17 server. For example, Infinispan is now 9.4.14.Final.
 
 Configuration changes::
-  There are few configuration changes in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
+  A few configuration changes exist in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
   section to handle the migration of configuration files automatically.
 
 Cross-Datacenter Replication changes::
@@ -232,13 +246,13 @@ Cross-Datacenter Replication changes::
 ==== Upgrade to Wildfly 16
 
 The {project_name} server was upgraded to use Wildfly 16 as the underlying container. This does not directly involve any
-specific {project_name} server functionality, but there are few changes related to the migration, which are worth mentioning.
+specific {project_name} server functionality, but a few changes related to the migration, which are worth mentioning.
 
 Dependency updates::
   The dependencies were updated to the versions used by Wildfly 16 server. For example, Infinispan is now 9.4.8.Final.
 
 Configuration changes::
-  There are few configuration changes in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
+  A few configuration changes exist in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
   section to handle the migration of configuration files automatically.
 
 Cross-Datacenter Replication changes::
@@ -270,13 +284,13 @@ we cannot assume which one will be used to fulfill the auth request so the reque
 ==== Upgrade to Wildfly 15
 
 The {project_name} server was upgraded to use Wildfly 15 as the underlying container. This does not directly involve any
-specific {project_name} server functionality, but there are few changes related to the migration, which worth mentioning.
+specific {project_name} server functionality, but a few changes related to the migration, which are worth mentioning.
 
 Dependency updates::
   The dependencies were updated to the versions used by Wildfly 15 server. For example, Infinispan is now 9.4.3.Final.
 
 Configuration changes::
-  There are few configuration changes in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
+  A few configuration changes exist in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
   section to handle the migration of configuration files automatically.
 
 Cross-Datacenter Replication changes::
@@ -326,8 +340,8 @@ automatically added to all the OpenID Connect clients as default client scopes. 
 migration is finished.
 
 ===== Protocol mapper SPI addition
-Related to this, there is a small addition in the (unsupported) Protocol Mappers SPI. You can be affected only if you
-implemented a custom ProtocolMapper. There is a new `getPriority()` method on the ProtocolMapper interface. The method has the
+Related to this, a small addition to the (unsupported) Protocol Mappers SPI exists. You can be affected only if you
+implemented a custom ProtocolMapper. A new `getPriority()` method on the ProtocolMapper interface got introduced. The method has the
 default implementation set to return 0. If your protocol mapper implementation relies on the roles in the access token `realmAccess`
 or `resourceAccess` properties, you may need to increase the priority of your mapper.
 
@@ -361,22 +375,21 @@ https://account.live.com/developers/applications/create[Microsoft Application Re
 ==== Upgrade to Wildfly 14
 
 The {project_name} server was upgraded to use Wildfly 14 as the underlying container. This does not directly involve any
-specific {project_name} server functionality, but there are few changes related to the migration, which worth mentioning.
+specific {project_name} server functionality, but a few changes related to the migration, which are worth mentioning.
 
 Dependency updates::
   The dependencies were updated to the versions used by Wildfly 14 server. For example, Infinispan is now 9.3.1.Final.
 
 Configuration changes::
-  There are few configuration changes in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
+  A few configuration changes exist in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
   section to handle the migration of configuration files automatically.
 
 Cross-Datacenter Replication changes::
   * You will need to upgrade {jdgserver_name} server to version {jdgserver_version}. The older version may still work, but it is
   not guaranteed as we don't test it anymore.
 ifeval::[{project_product}==true]
-  * There is a need to add `protocolVersion` property with the value `2.6` to the configuration of the `remote-store` element in the
-  {project_name} configuration. This is required as there is a need to downgrade the version of HotRod protocol to be compatible
-  with the version used by {jdgserver_name} {jdgserver_version}.
+  * The `protocolVersion` property of the `remote-store` element in the {project_name} configuration must be set to the value `2.6`.
+  This is required so the version of HotRod protocol is downgraded to be compatible with the version used by {jdgserver_name} {jdgserver_version}.
 endif::[]
 
 === Migrating to 4.4.0
@@ -384,24 +397,24 @@ endif::[]
 ==== Upgrade to Wildfly 13
 
 The {project_name} server was upgraded to use Wildfly 13 as the underlying container. This does not directly involve any
-specific {project_name} server functionality, but there are few changes related to the migration, which worth mentioning.
+specific {project_name} server functionality, but a few changes related to the migration, which are worth mentioning.
 
 Dependency updates::
   The dependencies were updated to the versions used by Wildfly 13 server. For example, Infinispan is now 9.2.4.Final and Undertow is 2.0.9.Final
 
 Configuration changes::
-  There are few configuration changes in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
+  A few configuration changes exist in the `standalone(-ha).xml` and `domain.xml` files. You should follow the <<_install_new_version>>
   section to handle the migration of configuration files automatically. If more detail is needed, because, for example, you did some configuration
   changes on your own, here is a list of the most important changes:
   * Element `eviction` on infinispan caches is now deprecated (unused) and was replaced by element `object-memory`
-  * There is no `jndi-attribute` on `cache-container` element in infinispan subsystem.
+  * The `cache-container` element in Infinispan subsystem does not recognize the `jndi-attribute` anymore.
 
 Cross-Datacenter Replication changes::
   * You will need to upgrade {jdgserver_name} server to version {jdgserver_version}. The older version may still work, but it is
   not guaranteed as we don't test it anymore.
   * You don't need to configure security anymore in the {jdgserver_name} server configuration file.
 ifeval::[{project_community}==true]
-  * There is a need to remove `transaction` element from the configuration of replicated caches in the {jdgserver_name} server
+  * The `transaction` element needs to be removed from the configuration of replicated caches in the {jdgserver_name} server
   configuration file. This is needed because of the infinispan bug https://issues.redhat.com/browse/ISPN-9323.
 endif::[]
 
@@ -497,7 +510,7 @@ However, some OpenID Connect / OAuth2 adapters, and especially older {project_na
 For example, the parameter will be always present in the browser URL after successful authentication to the client application.
 In these cases, it may be useful to disable adding the `session_state` parameter to the authentication response. This can be done
 for the particular client in the {project_name} admin console, in client details in the section with `OpenID Connect Compatibility Modes`,
-described in <<_compatibility_with_older_adapters>>. There is the `Exclude Session State From Authentication Response` switch,
+described in <<_compatibility_with_older_adapters>>. Dedicated `Exclude Session State From Authentication Response` switch exists,
 which can be turned on to prevent adding the `session_state` parameter to the Authentication Response.
 
 NOTE: The parameter `session_state` was added in 3.4.2, however the switch `Exclude Session State From Authentication Response` was added
@@ -562,7 +575,7 @@ For the offline tokens without KID, {project_name} 2.5.1 will always use the act
 offline tokens will work. So for example, your user requested offline token in 1.9.8, then you migrate from 1.9.8 to 2.5.1 and then your user will be
 still able to refresh his old offline token in 2.5.1 version.
 
-But there is limitation, that once you change the realm active key, the users won't be able to refresh old offline tokens
+But a limitation exists. Once you change the realm active key, the users won't be able to refresh old offline tokens
 anymore. So you shouldn't change the active realm key until all your users with offline tokens refreshed their tokens. Obviously newly
 refreshed tokens will have KID in the header, so after all users exchange their old offline tokens, you are free to change the active realm key.
 
@@ -595,7 +608,7 @@ can be made to use legacy RSA-v1.5 encryption scheme when started with system pr
 ==== Infinispan caches realms and users are always local
 
 Even if you use {project_name} in cluster, the caches `realms` and `users` defined in infinispan subsystem in `standalone-ha.xml` are
-always local caches now. There is separate cache `work`, which handles sending invalidation messages between cluster nodes and informing whole cluster
+always local caches now. A separate cache `work` exists, which handles sending invalidation messages between cluster nodes and informing whole cluster
 what records in underlying `realms` and `users` caches should be invalidated.
 
 === Migrating to 2.3.0
@@ -671,7 +684,7 @@ The script to add admin users to Keycloak has been renamed to `add-user-keycloak
 
 ==== Adapter option auth-server-url-for-backend-requests removed
 
-We've removed the option auth-server-url-for-backend-requests as there were issues in some scenarios when it was used. In more details,
+We've removed the option auth-server-url-for-backend-requests due to issues in some scenarios when it was used. In more details,
 it was possible to access the Keycloak server from 2 different contexts (internal and external), which was causing issues in token validations etc.
 
 If you still want to use the optimization of network, which this option provided (avoid the application to send backchannel requests
@@ -758,7 +771,7 @@ So if you're using Admin REST API or Keycloak admin-client, you should update yo
 
 ==== Option 'Update Profile On First Login' moved from Identity provider to Review Profile authenticator
 
-In this version, we added `First Broker Login`, which allows you to specify what exactly should be done when new user is logged through Identity provider (or Social provider), but there is no existing Keycloak user yet linked to the social account.
+In this version, we added `First Broker Login`, which allows you to specify what exactly should be done when new user is logged through Identity provider (or Social provider), but no Keycloak user linked to the social account exists yet.
 As part of this work, we added option `First Login Flow` to identity providers where you can specify the flow and then you can configure this flow under `Authentication` tab in admin console.
 
 We also removed the option `Update Profile On First Login` from the Identity provider settings and moved it to the configuration of `Review Profile` authenticator.
@@ -772,8 +785,7 @@ See documentation for more details if you want to catch and handle adapter error
 
 ==== IdentityProviderMapper changes
 
-There is no change in the interface itself or method signatures.
-However there is some change in behavior.
+The interface itself and method signatures did not change. However some changes in the behavior exist.
 We added `First Broker Login` flow in this release and the method `IdentityProviderMapper.importNewUser` is now called after `First Broker Login` flow is finished.
 So if you want to have any attribute available in `Review Profile` page, you would need to use the method `preprocessFederatedIdentity` instead of `importNewUser` . You can set any attribute by invoke `BrokeredIdentityContext.setUserAttribute` and that will be available on `Review profile` page.
 
@@ -793,7 +805,7 @@ It won't be possible to reuse old refresh token multiple times.
 We did a bit of restructure and renamed some packages.
 It is mainly about renaming internal packages of util classes.
 The most important classes used in your application ( for example AccessToken or KeycloakSecurityContext ) as well as the SPI are still unchanged.
-However there is slight chance that you will be affected and will need to update imports of your classes.
+However, a slight chance exists that you will be affected and will need to update imports of your classes.
 For example if you are using multitenancy and KeycloakConfigResolver, you will be affected as for example class HttpFacade was moved to different package - it is `org.keycloak.adapters.spi.HttpFacade` now.
 
 ==== Persisting user sessions
@@ -818,7 +830,7 @@ Infinispan is now the default and only realm and user cache providers.
 In non-clustered mode a local Infinispan cache is used.
 We've also removed our custom in-memory cache and the no cache providers.
 If you have realmCache or userCache set in keycloak-server.json to mem or none please remove these.
-As Infinispan is the only provider there's no longer any need for the realmCache and userCache objects so these can be removed.
+As Infinispan is the only provider the realmCache and userCache objects are no longer needed and can be removed.
 
 ==== Uses Session providers
 
@@ -826,7 +838,7 @@ Infinispan is now the default and only user session provider.
 In non-clustered mode a local Infinispan cache is used.
 We've also removed the JPA and Mongo user session providers.
 If you have userSession set in keycloak-server.json to mem, jpa or mongo please remove it.
-As Infinispan is the only provider there's no longer any need for the userSession object so it can be removed.
+As Infinispan is the only provider the userSession object is no longer needed and can be removed.
 
 For anyone that wants to achieve increased durability of user sessions this can be achieved by configuring the user session cache with more than one owner or use a replicated cache.
 It's also possible to configure Infinispan to persist caches, although that would have impacts on performance.
@@ -842,7 +854,7 @@ If you want to add contact details, please refer to the address theme included i
 
 ==== Direct Grant API always enabled
 
-In the past Direct Grant API (or Resource Owner Password Credentials) was disabled by default and there was an option on a realm to enable it.
+In the past Direct Grant API (or Resource Owner Password Credentials) was disabled by default and an option to enable it on a realm existed.
 The Direct Grant API is now always enabled and the option to enable/disable for a realm is removed.
 
 ==== Database changed
@@ -911,7 +923,7 @@ Remember to backup your database prior to upgrading.
 
 The value of `iss` claim in access and id tokens have changed from `realm name` to `realm url`.
 This is required by OpenID Connect specification.
-If you're using our adapters there's no change required, other than if you've been using bearer-only without specifying `auth-server-url` you have to add it now.
+If you're using our adapters no change is required, except if you've been using bearer-only without specifying the `auth-server-url`, you have to add it now.
 If you're using another library (or RSATokenVerifier) you need to make the corresponding changes when verifying `iss`.
 
 ==== OpenID Connect endpoints
@@ -932,7 +944,7 @@ This has been simplified to only requiring a plain text file (`META-INF/keycloak
 
 ==== Claims changes
 
-Previously there was `Claims` tab in admin console for application and OAuth clients.
+Previously a dedicated `Claims` tab existed in the admin console for application and OAuth clients.
 This was used to configure which attributes should go into access token for particular application/client.
 This was removed and replaced with protocol mappers which are more flexible.
 
@@ -1030,9 +1042,9 @@ Facebook admin console).
 * DB Schema has changed.  We don't have any data migration utilities yet as of Alpha 2.
 * JBoss and WildFly adapters are now installed via a {appserver_name} subsystem.  Please review the adapter
   installation documentation.  Edits to standalone.xml are now required.
-* There is a new credential type "secret".  Unlike other credential types, it is stored in plain text in
+* A new credential type "secret" got introduced. Unlike other credential types, it is stored in plain text in
   the database and can be viewed in the admin console.
-* There is no longer required Application or OAuth Client credentials.  These client types are now
+* Application and OAuth Client credentials are no longer required. These client types are now
   hard coded to use the "secret" credential type.
 * Because of the "secret" credential change to Application and OAuth Client, you'll have to update
   your keycloak.json configuration files and regenerate a secret within the Application or OAuth Client
