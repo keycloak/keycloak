@@ -91,6 +91,7 @@ public class NiaIdentityProvider extends SAMLIdentityProvider
                             .setAllowCreate(Boolean.TRUE))
                     .requestedAuthnContext(requestedAuthnContext)
                     .subject(loginHint)
+                    .addExtension(new NiaSPType("public"))
                     .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName", "true"))
                     .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName", "true"))
                     .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName", "true"))

@@ -53,7 +53,7 @@ public class NiaIdentityProviderConfig extends SAMLIdentityProviderConfig {
         this.setPostBindingAuthnRequest(true);
         this.setPostBindingResponse(true);
         this.setSingleSignOnServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
-       //this.setWantAuthnRequestsSigned(true);
+        //this.setWantAuthnRequestsSigned(true);
 //        configureUrls(this);
     }
 

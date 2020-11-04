@@ -113,9 +113,10 @@ public class SAML2AuthnRequestBuilder implements SamlProtocolExtensionsAwareBuil
         RequestedAuthnContextType requestedAuthnContext = requestedAuthnContextBuilder.build();
 
         // Only emit the RequestedAuthnContext element if at least a ClassRef or a DeclRef is present
-        if (!requestedAuthnContext.getAuthnContextClassRef().isEmpty() ||
-            !requestedAuthnContext.getAuthnContextDeclRef().isEmpty())
+        if (!requestedAuthnContext.getAuthnContextClassRef().isEmpty()
+                || !requestedAuthnContext.getAuthnContextDeclRef().isEmpty()) {
             this.authnRequestType.setRequestedAuthnContext(requestedAuthnContext);
+        }
 
         return this;
     }
@@ -139,7 +140,7 @@ public class SAML2AuthnRequestBuilder implements SamlProtocolExtensionsAwareBuil
 
         res.setDestination(URI.create(this.destination));
 
-        if (! this.extensions.isEmpty()) {
+        if (!this.extensions.isEmpty()) {
             ExtensionsType extensionsType = new ExtensionsType();
             for (NodeGenerator extension : this.extensions) {
                 extensionsType.addExtension(extension);
