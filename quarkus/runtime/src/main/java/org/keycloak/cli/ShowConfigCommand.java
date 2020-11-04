@@ -18,32 +18,34 @@
 package org.keycloak.cli;
 
 import static java.lang.Boolean.parseBoolean;
+import static org.keycloak.configuration.Configuration.getConfigValue;
+import static org.keycloak.configuration.Configuration.getPropertyNames;
 import static org.keycloak.configuration.PropertyMappers.canonicalFormat;
 import static org.keycloak.configuration.PropertyMappers.formatValue;
 import static org.keycloak.util.Environment.getBuiltTimeProperty;
-import static org.keycloak.util.Environment.getConfig;
 
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.keycloak.configuration.MicroProfileConfigProvider;
+import org.keycloak.configuration.PersistedConfigSource;
 import org.keycloak.configuration.PropertyMappers;
-import org.keycloak.quarkus.KeycloakRecorder;
 import org.keycloak.util.Environment;
 
 import io.smallrye.config.ConfigValue;
 
 public final class ShowConfigCommand {
 
-    public static void run(Map<String, String> buildTimeProperties) {
+    public static void run() {
         String configArgs = System.getProperty("kc.show.config");
 
         if (configArgs != null) {
-            Map<String, Set<String>> properties = getPropertiesByGroup(buildTimeProperties);
+            Map<String, Set<String>> properties = getPropertiesByGroup();
             Set<String> uniqueNames = new HashSet<>();
             String profile = getProfile();
 
@@ -101,13 +103,20 @@ public final class ShowConfigCommand {
         return profile;
     }
 
-    private static Map<String, Set<String>> getPropertiesByGroup(Map<String, String> buildTimeProperties) {
+    private static Map<String, Set<String>> getPropertiesByGroup() {
         Map<String, Set<String>> properties = StreamSupport
-                .stream(getConfig().getPropertyNames().spliterator(), false)
+                .stream(getPropertyNames().spliterator(), false)
                 .filter(ShowConfigCommand::filterByGroup)
                 .collect(Collectors.groupingBy(ShowConfigCommand::groupProperties, Collectors.toSet()));
 
-        buildTimeProperties.keySet().stream()
+        StreamSupport.stream(getPropertyNames().spliterator(), false)
+                .filter(new Predicate<String>() {
+                    @Override
+                    public boolean test(String s) {
+                        ConfigValue configValue = getConfigValue(s);
+                        return configValue.getConfigSourceName().equals(PersistedConfigSource.NAME);
+                    }
+                })
                 .filter(property -> filterByGroup(property))
                 .collect(Collectors.groupingBy(ShowConfigCommand::groupProperties, Collectors.toSet()))
                 .forEach(new BiConsumer<String, Set<String>>() {
@@ -122,10 +131,10 @@ public final class ShowConfigCommand {
 
     private static void printProperty(String property) {
         String canonicalFormat = PropertyMappers.canonicalFormat(property);
-        ConfigValue configValue = KeycloakRecorder.getConfig().getConfigValue(canonicalFormat);
+        ConfigValue configValue = getConfigValue(canonicalFormat);
 
         if (configValue.getValue() == null) {
-            configValue = getConfig().getConfigValue(property);
+            configValue = getConfigValue(property);
         }
         
         

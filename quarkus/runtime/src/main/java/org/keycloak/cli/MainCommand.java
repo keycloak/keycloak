@@ -167,8 +167,9 @@ public class MainCommand {
             optionListHeading = "%nOptions%n",
             parameterListHeading = "Available Commands%n")
     public void start(
-            @CommandLine.Parameters(paramLabel = "show-config", arity = "0..1", 
-                    description = "Print out the configuration options when starting the server.") String showConfig,
+            @Option(names = "--show-config", arity = "0..1", 
+                    description = "Print out the configuration options when starting the server.",
+                    fallbackValue = "show-config") String showConfig,
             @Option(names = "--verbose", description = "Print out more details when running this command.", required = false) Boolean verbose) {
         if ("show-config".equals(showConfig)) {
             System.setProperty("kc.show.config.runtime", Boolean.TRUE.toString());
