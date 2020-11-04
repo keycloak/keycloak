@@ -91,7 +91,9 @@ jobs:
       - name: Build testsuite
         run: mvn clean install -B -nsu -Pauth-server-wildfly -DskipTests -f testsuite/integration-arquillian/pom.xml
       - name: Run git diff
-        run: echo "GIT_DIFF=$( git diff --name-only HEAD^ | egrep -ic 'authz|authorization' )" >> $GITHUB_ENV; echo "$GIT_DIFF"; if [ "$GIT_DIFF" != 0 ]; then echo "not 0"; else echo "0"; fi; echo "GIT_DIFF2=$( git diff --name-only HEAD^ | egrep -ic 'workflows' )" >> $GITHUB_ENV; if [ "$GIT_DIFF2" != 0 ]; then echo "not 0 but $GIT_DIFF2"; else echo "0"; fi;
+        run: echo "GIT_DIFF=$( git diff --name-only HEAD^ | egrep -ic 'authz|authorization' )" >> $GITHUB_ENV;
+      - name: Run git diff2 ${{ env.GIT_DIFF }}
+        run: echo "$GIT_DIFF"; if [ "$GIT_DIFF" != 0 ]; then echo "not 0"; else echo "0"; fi;
       - name: Run adapter authz tests
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
         run: mvn clean install -B -nsu -Pauth-server-wildfly -f testsuite/integration-arquillian/tests/base/pom.xml "-Dtest=org.keycloak.testsuite.adapter.**.authorization**.*Test" | misc/log/trimmer.sh; exit ${PIPESTATUS[0]}
