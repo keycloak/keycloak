@@ -51,7 +51,6 @@ import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@EnableFeature(value = ACCOUNT_API, skipRestart = true)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LDAPAccountRestApiTest extends AbstractLDAPTest {
 
