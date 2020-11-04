@@ -85,7 +85,6 @@ import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
  */
 @AuthServerContainerExclude(AuthServer.REMOTE)
 @EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
-@EnableFeature(value = ACCOUNT_API, skipRestart = true)
 public class AccountRestServiceTest extends AbstractRestServiceTest {
 
     @Test
