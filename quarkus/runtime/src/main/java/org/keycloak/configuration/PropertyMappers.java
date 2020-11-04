@@ -30,7 +30,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import org.keycloak.util.Environment;
@@ -46,6 +45,7 @@ public final class PropertyMappers {
         configureHttpPropertyMappers();
         configureProxyMappers();
         configureClustering();
+        configureHostnameProviderMappers();
     }
 
     private static void configureHttpPropertyMappers() {
@@ -130,7 +130,7 @@ public final class PropertyMappers {
         create("db", "quarkus.datasource.jdbc.transactions", (db, context) -> "xa", null);
         create("db.url", "db", "quarkus.datasource.jdbc.url", (value, context) -> Database.getDefaultUrl(value).orElse(value), "The database JDBC URL. If not provided a default URL is set based on the selected database vendor. For instance, if using 'postgres', the JDBC URL would be 'jdbc:postgresql://localhost/keycloak'. The host, database and properties can be overridden by setting the following system properties, respectively: -Dkc.db.url.host, -Dkc.db.url.database, -Dkc.db.url.properties.");
         create("db.username", "quarkus.datasource.username", "The database username.");
-        create("db.password", "quarkus.datasource.password", "The database password", true);
+        create("db.password", "quarkus.datasource.password", "The database password.", true);
         create("db.schema", "quarkus.datasource.schema", "The database schema.");
         create("db.pool.initial-size", "quarkus.datasource.jdbc.initial-size", "The initial size of the connection pool.");
         create("db.pool.min-size", "quarkus.datasource.jdbc.min-size", "The minimal size of the connection pool.");
@@ -142,6 +142,12 @@ public final class PropertyMappers {
                 + "inside the distribution configuration directory. Supported values out of the box are 'local' and 'cluster'. Value 'local' points to the file cluster-local.xml and " +
                 "effectively disables clustering and use infinispan caches in the local mode. Value 'default' points to the file cluster-default.xml, which has clustering enabled for infinispan caches.");
         create("cluster-stack", "kc.spi.connections-infinispan.default.stack", "Specified the default stack to use for cluster communication and node  discovery. Possible values are: tcp, udp, kubernetes, ec2.");
+    }
+
+    private static void configureHostnameProviderMappers() {
+        create("hostname-frontend-url", "kc.spi.hostname.default.frontend-url", "The URL that should be used to serve frontend requests that are usually sent through the a public domain.");
+        create("hostname-admin-url", "kc.spi.hostname.default.admin-url", "The URL that should be used to expose the admin endpoints and console.");
+        create("hostname-force-backend-url-to-frontend-url ", "kc.spi.hostname.default.force-backend-url-to-frontend-url", "Forces backend requests to go through the URL defined as the frontend-url. Defaults to false. Possible values are true or false.");
     }
 
     static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
