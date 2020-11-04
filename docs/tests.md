@@ -173,7 +173,34 @@ Simple loadbalancer
 
 You can run class `SimpleUndertowLoadBalancer` from IDE. By default, it executes the embedded undertow loadbalancer running on `http://localhost:8180`, which communicates with 2 backend Keycloak nodes 
 running on `http://localhost:8181` and `http://localhost:8182` . See javadoc for more details.
- 
+
+
+Testing Kerberos SSO under Windows
+----------------------------------
+
+Under Windows, the approach above with Chrome, IE and Edge problably won't work, even when adding localhost or http://localhost to the Local intranet zone as described e.g. [here](https://active-directory-wp.com/docs/Networking/Single_Sign_On/Configure_browsers_to_use_Kerberos.html). Reason being that Chrome/IE will still use the SSPI default implementation. But you can install a local Kerberos client and configure Firefox to use its GSSAPI as follows, described in detail [in this article](https://medium.com/adaltas/kerberos-and-spnego-authentication-on-windows-with-firefox-15600e10d98c). The steps are
+- Download and install [MIT Kerberos Client for Windows](https://web.mit.edu/kerberos/dist/) with defaults, restart your computer
+  - Navigate to file `C:\ProgramData\MIT\Kerberos5\krb5.ini` and make it editable (Properties > Security > Permissions > Add full permissions for 'Users')
+  - Paste the content of `test-krb5.conf` from the link above 
+  - in the [libdefaults] section, add `default_ccache_name=C:\Users\{username}\AppData\Local\Temp\krb5cache`, replacing {username} with your windows username
+  - Note that krb5cache will be the file where the tickets are cached; MIT Kerberos client will create it
+  - save krb5.ini
+- Start MIT Kerberos Ticket Manager and create a ticket for `hnelson@KEYCLOAK.ORG`
+  - you can also use `kinit` as above, this comes with MIT Kerberos Client. Note that the `klist` Windows tool won't list this ticket though (as we're not using SSPI)
+  - all this should only work if Kerberos is running and the settings in `krb5.ini` are correct 
+- Configure Firefox as follows by writing `about:config` in the address bar
+  - network.auth.use-sspi: false
+    - this will disable SSPI for Firefox. SSPI is a Windows-specific proprietary variant of the IETF standard GSSAPI. GSSAPI is used by the MIT Kerberos client 
+  - network.negotiate-auth.trusted-uris:localhost
+  - network.negotiate-auth.delegation-uris:localhost
+  - network.negotiate-auth.allow-non-fqdn: true
+    - this will enable SPNEGO for all URLs on localhost. The last two options might be optional.
+  - network.negotiate-auth.using-native-gsslib: false
+  - network.negotiate-auth.gsslib: C:\Program Files\MIT\Kerberos\bin\gssapi64.dll
+    - these two settings above will force Firefox to use the GGSAPI with the MIT Kerberos client
+- Now when you access `http://localhost:8081/auth/realms/master/account` you should be logged in automatically as user `hnelson` .
+- Note: Make sure to turn back these settings if you want Firefox to use proper Windows Active Directory-based SSO again
+
 
 Create many users or offline sessions
 -------------------------------------
