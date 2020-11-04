@@ -67,6 +67,35 @@ jobs:
       - name: Run base tests
         run: mvn install -B -Pauth-server-wildfly -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh; exit ${PIPESTATUS[0]}
 
+  test-crossdc:
+    name: CrossDC Tests
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      MAVEN_OPTS: -Xmx1024m
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+      - name: Download Maven Repo
+        uses: actions/download-artifact@v1
+        with:
+          name: maven-repo
+          path: .
+      - name: Extract Maven Repo
+        shell: bash
+        run: tar -xzvf maven-repo.tgz -C ~
+      - name: Build testsuite
+        run: mvn clean install -B -nsu -Pauth-servers-crossdc-jboss,auth-server-wildfly,cache-server-infinispan,app-server-wildfly -DskipTests
+      - name: Run git diff
+        run: echo "GIT_DIFF=$( git diff --name-only HEAD^ | egrep -ic 'crossdc|infinispan' )" >> $GITHUB_ENV;
+      - name: Run crossdc-server and crossdc-adapter tests
+        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
+        run: mvn clean install -B -nsu -f testsuite/integration-arquillian/tests/base/pom.xml -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly "-Dtest=org.keycloak.testsuite.crossdc.**.*,org.keycloak.testsuite.adapter.**.crossdc.**.*" | misc/log/trimmer.sh; exit ${PIPESTATUS[0]}
+
   test-undertow-map:
     name: Test undertow - map provider
     needs: build
