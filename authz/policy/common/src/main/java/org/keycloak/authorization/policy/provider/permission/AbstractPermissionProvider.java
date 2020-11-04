@@ -25,6 +25,7 @@ import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
