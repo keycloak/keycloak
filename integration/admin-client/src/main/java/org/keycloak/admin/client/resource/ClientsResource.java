@@ -38,6 +38,11 @@ public interface ClientsResource {
     @Path("{id}")
     ClientResource get(@PathParam("id") String id);
 
+    @GET
+    @Path("/clientId/{clientId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    ClientResource findOneByClientId(@PathParam("clientId") String clientId);
+
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     Response create(ClientRepresentation clientRepresentation);
