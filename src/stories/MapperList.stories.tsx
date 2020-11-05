@@ -13,6 +13,6 @@ export default {
 
 export const MapperListExample = () => (
   <ServerInfoContext.Provider value={serverInfo}>
-    <MapperList clientScope={clientScopeMock} />
+    <MapperList clientScope={clientScopeMock} refresh={() => {}} />
   </ServerInfoContext.Provider>
 );

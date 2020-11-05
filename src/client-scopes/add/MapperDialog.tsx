@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from "react";
+import React, { useState } from "react";
 import {
   Button,
   ButtonVariant,
@@ -8,6 +8,7 @@ import {
   DataListItemCells,
   DataListItemRow,
   Modal,
+  ModalVariant,
   Text,
   TextContent,
 } from "@patternfly/react-core";
@@ -24,75 +25,67 @@ import {
   ProtocolMapperRepresentation,
   ProtocolMapperTypeRepresentation,
 } from "../../context/server-info/server-info";
+import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 
-export type AddMapperDialogProps = {
+export type AddMapperDialogModalProps = {
   protocol: string;
-  buildIn: boolean;
+  filter?: ProtocolMapperRepresentation[];
   onConfirm: (
     value: ProtocolMapperTypeRepresentation | ProtocolMapperRepresentation[]
-  ) => {};
+  ) => void;
 };
 
-type AddMapperDialogModalProps = AddMapperDialogProps & {
+export type AddMapperDialogProps = AddMapperDialogModalProps & {
   open: boolean;
   toggleDialog: () => void;
 };
 
-export const useAddMapperDialog = (
-  props: AddMapperDialogProps
-): [() => void, () => ReactElement] => {
-  const [show, setShow] = useState(false);
+export const AddMapperDialog = (props: AddMapperDialogProps) => {
+  const { t } = useTranslation("client-scopes");
 
-  function toggleDialog() {
-    setShow((show) => !show);
+  const serverInfo = useServerInfo();
+  const protocol = props.protocol;
+  const protocolMappers = serverInfo.protocolMapperTypes[protocol];
+  const builtInMappers = serverInfo.builtinProtocolMappers[protocol];
+  const [filter, setFilter] = useState<ProtocolMapperRepresentation[]>([]);
+
+  const allRows = builtInMappers.map((mapper) => {
+    const mapperType = protocolMappers.filter(
+      (type) => type.id === mapper.protocolMapper
+    )[0];
+    return {
+      item: mapper,
+      selected: false,
+      cells: [mapper.name, mapperType.helpText],
+    };
+  });
+  const [rows, setRows] = useState(allRows);
+
+  if (props.filter && props.filter.length !== filter.length) {
+    setFilter(props.filter);
+    const nameFilter = props.filter.map((f) => f.name);
+    setRows([...allRows.filter((row) => !nameFilter.includes(row.item.name))]);
   }
 
-  const Dialog = () => (
-    <AddMapperDialog {...props} open={show} toggleDialog={toggleDialog} />
-  );
-  return [toggleDialog, Dialog];
-};
-
-export const AddMapperDialog = ({
-  protocol,
-  buildIn,
-  open,
-  toggleDialog,
-  onConfirm,
-}: AddMapperDialogModalProps) => {
-  const serverInfo = useServerInfo();
-  const protocolMappers = serverInfo.protocolMapperTypes[protocol];
-  const buildInMappers = serverInfo.builtinProtocolMappers[protocol];
-  const { t } = useTranslation("client-scopes");
-  const [rows, setRows] = useState(
-    buildInMappers.map((mapper) => {
-      const mapperType = protocolMappers.filter(
-        (type) => type.id === mapper.protocolMapper
-      )[0];
-      return {
-        item: mapper,
-        selected: false,
-        cells: [mapper.name, mapperType.helpText],
-      };
-    })
-  );
+  const isBuiltIn = !!props.filter;
 
   return (
     <Modal
+      variant={ModalVariant.medium}
       title={t("chooseAMapperType")}
-      isOpen={open}
-      onClose={toggleDialog}
+      isOpen={props.open}
       actions={
-        buildIn
+        isBuiltIn
           ? [
               <Button
                 id="modal-confirm"
                 key="confirm"
+                isDisabled={rows.length === 0}
                 onClick={() => {
-                  onConfirm(
+                  props.onConfirm(
                     rows.filter((row) => row.selected).map((row) => row.item)
                   );
-                  toggleDialog();
+                  props.toggleDialog();
                 }}
               >
                 {t("common:add")}
@@ -102,7 +95,7 @@ export const AddMapperDialog = ({
                 key="cancel"
                 variant={ButtonVariant.secondary}
                 onClick={() => {
-                  toggleDialog();
+                  props.toggleDialog();
                 }}
               >
                 {t("common:cancel")}
@@ -114,12 +107,12 @@ export const AddMapperDialog = ({
       <TextContent>
         <Text>{t("predefinedMappingDescription")}</Text>
       </TextContent>
-      {!buildIn && (
+      {!isBuiltIn && (
         <DataList
           onSelectDataListItem={(id) => {
             const mapper = protocolMappers.find((mapper) => mapper.id === id);
-            onConfirm(mapper!);
-            toggleDialog();
+            props.onConfirm(mapper!);
+            props.toggleDialog();
           }}
           aria-label={t("chooseAMapperType")}
           isCompact
@@ -146,7 +139,7 @@ export const AddMapperDialog = ({
           ))}
         </DataList>
       )}
-      {buildIn && (
+      {isBuiltIn && rows.length > 0 && (
         <Table
           variant={TableVariant.compact}
           cells={[t("name"), t("description")]}
@@ -161,6 +154,12 @@ export const AddMapperDialog = ({
           <TableHeader />
           <TableBody />
         </Table>
+      )}
+      {isBuiltIn && rows.length === 0 && (
+        <ListEmptyState
+          message={t("emptyMappers")}
+          instructions={t("emptyBuiltInMappersInstructions")}
+        />
       )}
     </Modal>
   );

@@ -1,18 +1,22 @@
-import React from "react";
+import React, { useState } from "react";
 import { mount } from "enzyme";
 import { Button } from "@patternfly/react-core";
 
 import serverInfo from "../../../context/server-info/__tests__/mock.json";
 import { ServerInfoContext } from "../../../context/server-info/ServerInfoProvider";
-import { AddMapperDialogProps, useAddMapperDialog } from "../MapperDialog";
+import { AddMapperDialogModalProps, AddMapperDialog } from "../MapperDialog";
 
 describe("<MapperDialog/>", () => {
-  const Test = (args: AddMapperDialogProps) => {
-    const [toggle, Dialog] = useAddMapperDialog(args);
+  const Test = (args: AddMapperDialogModalProps) => {
+    const [open, setOpen] = useState(false);
     return (
       <ServerInfoContext.Provider value={serverInfo}>
-        <Dialog />
-        <Button id="open" onClick={toggle}>
+        <AddMapperDialog
+          {...args}
+          open={open}
+          toggleDialog={() => setOpen(!open)}
+        />
+        <Button id="open" onClick={() => setOpen(true)}>
           Show
         </Button>
       </ServerInfoContext.Provider>
@@ -22,7 +26,7 @@ describe("<MapperDialog/>", () => {
   it("should return empty array when selecting nothing", () => {
     const onConfirm = jest.fn();
     const container = mount(
-      <Test buildIn={true} protocol="openid-connect" onConfirm={onConfirm} />
+      <Test filter={[]} protocol="openid-connect" onConfirm={onConfirm} />
     );
 
     container.find("button#open").simulate("click");
@@ -36,7 +40,7 @@ describe("<MapperDialog/>", () => {
     const onConfirm = jest.fn();
     const protocol = "openid-connect";
     const container = mount(
-      <Test buildIn={true} protocol={protocol} onConfirm={onConfirm} />
+      <Test filter={[]} protocol={protocol} onConfirm={onConfirm} />
     );
 
     container.find("button#open").simulate("click");
@@ -57,9 +61,7 @@ describe("<MapperDialog/>", () => {
   it("should return selected protocol mapping type on click", () => {
     const onConfirm = jest.fn();
     const protocol = "openid-connect";
-    const container = mount(
-      <Test buildIn={false} protocol={protocol} onConfirm={onConfirm} />
-    );
+    const container = mount(<Test protocol={protocol} onConfirm={onConfirm} />);
 
     container.find("button#open").simulate("click");
     expect(container).toMatchSnapshot();

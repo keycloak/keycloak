@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@patternfly/react-core";
 import { Meta, Story } from "@storybook/react";
 
@@ -7,7 +7,6 @@ import { ServerInfoContext } from "../context/server-info/ServerInfoProvider";
 import {
   AddMapperDialog,
   AddMapperDialogProps,
-  useAddMapperDialog,
 } from "../client-scopes/add/MapperDialog";
 
 export default {
@@ -16,11 +15,15 @@ export default {
 } as Meta;
 
 const Template: Story<AddMapperDialogProps> = (args) => {
-  const [toggle, Dialog] = useAddMapperDialog(args);
+  const [open, setOpen] = useState(false);
   return (
     <ServerInfoContext.Provider value={serverInfo}>
-      <Dialog />
-      <Button onClick={toggle}>Show</Button>
+      <AddMapperDialog
+        {...args}
+        open={open}
+        toggleDialog={() => setOpen(!open)}
+      />
+      <Button onClick={() => setOpen(true)}>Show</Button>
     </ServerInfoContext.Provider>
   );
 };
@@ -28,11 +31,10 @@ const Template: Story<AddMapperDialogProps> = (args) => {
 export const BuildInDialog = Template.bind({});
 BuildInDialog.args = {
   protocol: "openid-connect",
-  buildIn: true,
+  filter: [],
 };
 
 export const ProtocolMapperDialog = Template.bind({});
 ProtocolMapperDialog.args = {
   protocol: "openid-connect",
-  buildIn: false,
 };

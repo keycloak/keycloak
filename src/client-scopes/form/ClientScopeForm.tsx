@@ -46,24 +46,26 @@ export const ClientScopeForm = () => {
   const [open, isOpen] = useState(false);
   const { addAlert } = useAlerts();
 
-  useEffect(() => {
-    (async () => {
-      if (id) {
-        const response = await httpClient.doGet<ClientScopeRepresentation>(
-          `/admin/realms/${realm}/client-scopes/${id}`
-        );
-        if (response.data) {
-          Object.entries(response.data).map((entry) => {
-            if (entry[0] === "attributes") {
-              convertToFormValues(entry[1], "attributes", setValue);
-            }
-            setValue(entry[0], entry[1]);
-          });
-        }
-
-        setClientScope(response.data);
+  const load = async () => {
+    if (id) {
+      const response = await httpClient.doGet<ClientScopeRepresentation>(
+        `/admin/realms/${realm}/client-scopes/${id}`
+      );
+      if (response.data) {
+        Object.entries(response.data).map((entry) => {
+          if (entry[0] === "attributes") {
+            convertToFormValues(entry[1], "attributes", setValue);
+          }
+          setValue(entry[0], entry[1]);
+        });
       }
-    })();
+
+      setClientScope(response.data);
+    }
+  };
+
+  useEffect(() => {
+    load();
   }, []);
 
   const save = async (clientScopes: ClientScopeRepresentation) => {
@@ -297,7 +299,9 @@ export const ClientScopeForm = () => {
             </Form>
           </Tab>
           <Tab eventKey={1} title={<TabTitleText>{t("mappers")}</TabTitleText>}>
-            {clientScope && <MapperList clientScope={clientScope} />}
+            {clientScope && (
+              <MapperList clientScope={clientScope} refresh={load} />
+            )}
           </Tab>
         </Tabs>
       </PageSection>
