@@ -89,6 +89,7 @@ This is also used by REST clients, but instead of obtaining a token that works o
 of an external user, a token is created based on the metadata and permissions of a service account that is associated with the client.
 More info together with example is in <<_service_accounts,Service Accounts>> chapter.
 
+[[_oidc-endpoints]]
 ====  {project_name} Server OIDC URI Endpoints
 
 Here's a list of OIDC endpoints that the {project_name} publishes.  These URLs are useful if you are using a non-{project_name} client adapter to

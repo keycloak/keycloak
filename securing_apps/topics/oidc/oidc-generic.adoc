@@ -90,7 +90,7 @@ https://openid.net/specs/openid-connect-registration-1_0.html[OpenID Connect Dyn
 /realms/{realm-name}/protocol/openid-connect/revoke
 ....
 
-The token revocation endpoint is used to revoke tokens.
+The token revocation endpoint is used to revoke tokens. Both refresh tokens and access tokens are supported by this endpoint.
 
 For more details on how to invoke on this endpoint, see https://tools.ietf.org/html/rfc7009[OAuth 2.0 Token Revocation specification].
 

@@ -20,3 +20,8 @@ The old PatternFly 3 runs simultaneously with the new one, so it's possible to h
 There are also design changes in login theme for better user experience.
 You can even define an icon for your custom Identity providers.
 For details, please refer to the link:{developerguide_link}#custom-identity-providers-icons[docs].
+
+== Other improvements
+
+* Support for OAuth2 Client Credentials grant without refresh token and without user session. Thanks to https://github.com/thomasdarimont[Thomas Darimont]
+* Support for send access tokens to the OAuth2 Revocation endpoint
