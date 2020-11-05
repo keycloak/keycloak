@@ -1,3 +1,7 @@
+// Module included in the following assemblies:
+//
+// server_admin/topics/users.adoc
+
 [id="proc-deleting-user_{context}"]
 = Deleting a user
 

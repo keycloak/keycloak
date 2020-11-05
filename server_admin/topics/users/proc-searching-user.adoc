@@ -1,3 +1,7 @@
+// Module included in the following assemblies:
+//
+// server_admin/topics/users.adoc
+
 [id="proc-searching-user_{context}"]
 = Searching for a user
 

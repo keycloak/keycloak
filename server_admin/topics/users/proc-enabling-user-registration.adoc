@@ -1,3 +1,7 @@
+// Module included in the following assemblies:
+//
+// con-user-registration.adoc
+
 [id="proc-enabling-user-registration_{context}"]
 = Enabling user registration
 

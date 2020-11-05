@@ -1,18 +1,18 @@
 
 ==  Managing Users
 
-From the admin console, you have a wide range actions you can perform to manage users.
+From the admin console, you have a wide range of actions you can perform to manage users.
 
 include::users/proc-searching-user.adoc[leveloffset=2]
 include::users/proc-creating-user.adoc[leveloffset=2]
 include::users/proc-deleting-user.adoc[leveloffset=2]
 include::users/proc-configuring-user-attributes.adoc[leveloffset=2]
-include::users/credentials.adoc[leveloffset=2]
+include::users/ref-user-credentials.adoc[leveloffset=2]
 include::users/proc-setting-password-user.adoc[leveloffset=3]
 include::users/proc-creating-otp.adoc[leveloffset=3]
 include::users/con-required-actions.adoc[leveloffset=2]
-include::users/impersonation.adoc[leveloffset=2]
-include::users/user-registration.adoc[leveloffset=2]
-include::users/recaptcha.adoc[leveloffset=2]
-include::users/personal_data.adoc[leveloffset=2]
+include::users/con-user-impersonation.adoc[leveloffset=2]
+include::users/con-user-registration.adoc[leveloffset=2]
+include::users/proc-enabling-recaptcha-support.adoc[leveloffset=2]
+include::users/ref-personal-data-collected.adoc[leveloffset=2]
 

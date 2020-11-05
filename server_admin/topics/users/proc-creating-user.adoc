@@ -1,3 +1,7 @@
+// Module included in the following assemblies:
+//
+// server_admin/topics/users.adoc
+
 [id="proc-creating-user_{context}"]
 = Creating a user
 
@@ -11,20 +15,14 @@ You create users in the realm where you intend to have applications needed by th
 . In the admin console, click *Users* in the left menu.
 . Click *Add User* on the right side of the empty user list.
 . Enter the details for the new user.
-ifdef::standalone[]
 +
 NOTE: *Username* is the only required field.
 +   
-. Click *Save*. After saving the details, the *management page* for the new user is displayed.  
-endif::[]
-
-ifdef::api-management[]
-. Set `Email Verified` *ON* and click Save.
-. On the Credentials tab
-.. Set the password in both fields.
-.. Set `Temporary` *OFF* to avoid a password reset at the next login
+. Click *Save*. After saving the details, the *Management* page for the new user is displayed.  
+. Set *Email Verified* to *ON*.
+. Click *Save*.
+. In the *Credentials* tab, set the password in both fields.
+.. Set *Temporary* to *OFF* to avoid resetting the password during the next log in.
 .. Click *Reset Password*.
-.. When the pop-up window displays, click *Change password*.
+.. Click *Change Password*.
 .. Click *Save*.
-endif::[]
-

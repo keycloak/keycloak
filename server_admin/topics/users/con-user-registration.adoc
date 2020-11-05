@@ -1,4 +1,8 @@
-[id="assembly-user-registration_{context}"]
+// Module included in the following assemblies:
+//
+// server_admin/topics/users.adoc
+
+[id="con-user-registration_{context}"]
 = User Registration
 
 [role="_abstract"]

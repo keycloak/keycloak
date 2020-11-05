@@ -1,7 +1,11 @@
+// Module included in the following assemblies:
+//
+// server_admin/topics/users.adoc
+
 [id="proc-configuring-user-attributes_{context}"]
 = Configuring user attributes
 
-User attributes provide a customized experience for each user. With user attributes, you can can create a personalized identity for each user in the console.
+User attributes provide a customized experience for each user. You can create a personalized identity for each user in the console by configuring user attributes.
 
 .Prerequisite
 * You are in the realm where the user exists.
