@@ -22,20 +22,20 @@ exports[`BreadCrumbs tests couple of crumbs 1`] = `
             className="pf-c-breadcrumb__item"
           >
             <Link
-              to="/"
+              to="/clients"
             >
               <LinkAnchor
-                href="/"
+                href="/clients"
                 navigate={[Function]}
               >
                 <a
-                  href="/"
+                  href="/clients"
                   onClick={[Function]}
                 >
                   <span
-                    key="/"
+                    key="/clients"
                   >
-                    Home
+                    Clients
                   </span>
                 </a>
               </LinkAnchor>
@@ -79,9 +79,9 @@ exports[`BreadCrumbs tests couple of crumbs 1`] = `
               </AngleRightIcon>
             </span>
             <span
-              key="/add-client"
+              key="/clients/1234"
             >
-              Create client
+              Client details
             </span>
           </li>
         </BreadcrumbItem>

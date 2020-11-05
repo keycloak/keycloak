@@ -6,7 +6,7 @@ Object {
   "baseElement": <body>
     <div>
       <table
-        aria-label="Client list"
+        aria-label="Clients"
         class="pf-c-table pf-m-grid-md pf-m-compact"
         data-ouia-component-id="OUIA-Generated-Table-1"
         data-ouia-component-type="PF4/Table"
@@ -749,7 +749,7 @@ Object {
   </body>,
   "container": <div>
     <table
-      aria-label="Client list"
+      aria-label="Clients"
       class="pf-c-table pf-m-grid-md pf-m-compact"
       data-ouia-component-id="OUIA-Generated-Table-1"
       data-ouia-component-type="PF4/Table"

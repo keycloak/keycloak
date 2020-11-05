@@ -1,7 +1,7 @@
 {
   "client-scopes": {
     "createClientScope": "Create client scope",
-    "clientScopeList": "List of client scopes",
+    "clientScopeList": "Client scopes",
     "clientScopeDetails": "Client scope details",
     "clientScopeExplain": "Client scopes allow you to define a common set of protocol mappers and roles, which are shared between multiple clients",
     "searchFor": "Search for client scope",

@@ -6,7 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 describe("BreadCrumbs tests", () => {
   it("couple of crumbs", () => {
     const crumbs = mount(
-      <MemoryRouter initialEntries={["/add-client"]}>
+      <MemoryRouter initialEntries={["/clients/1234"]}>
         <PageBreadCrumbs />
       </MemoryRouter>
     );
