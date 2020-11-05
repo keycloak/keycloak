@@ -38,7 +38,7 @@ endif::[]
 ifdef::standalone[]
 This action creates the client and bring you to the `Settings`
 tab.
-+
+
 .Client Settings
 image:{project_images}/client-settings-oidc.png[Client Settings]
 
@@ -47,3 +47,4 @@ image:{project_images}/client-settings-oidc.png[Client Settings]
 * For more information about fields on the `Settings` tab, see xref:con-basic-settings_{context}[Basic Settings].
 * For more information about the OIDC protocol, see xref:con-oidc_{context}[OpenID Connect].
 endif::[]
+
