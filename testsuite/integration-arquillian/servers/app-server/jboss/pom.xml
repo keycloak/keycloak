@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server</artifactId>
-        <version>11.0.2</version>
+        <version>11.0.3</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 

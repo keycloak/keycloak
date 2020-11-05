@@ -22,7 +22,7 @@
     <parent>
         <artifactId>keycloak-examples-saml-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>11.0.2</version>
+        <version>11.0.3</version>
     </parent>
 
     <artifactId>saml-post-encryption</artifactId>

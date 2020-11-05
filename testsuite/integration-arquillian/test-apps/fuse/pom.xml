@@ -20,7 +20,7 @@
     <parent>
         <artifactId>integration-arquillian-test-apps</artifactId>
         <groupId>org.keycloak.testsuite</groupId>
-        <version>11.0.2</version>
+        <version>11.0.3</version>
     </parent>
 
     <name>Fuse Test Applications</name>
