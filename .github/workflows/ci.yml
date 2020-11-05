@@ -69,6 +69,31 @@ jobs:
           mvn install -nsu -B -Pauth-server-wildfly -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
           exit ${PIPESTATUS[0]}
 
+  test-cluster:
+    name: Test Clustering
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/org/keycloak
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+
+      - name: Run cluster tests
+        run: |
+          mvn clean install -B -Pauth-server-wildfly,auth-server-cluster,db-mysql,jpa -Dsession.cache.owners=2 -Dbackends.console.output=true -Dauth.server.log.check=false -Dfrontend.console.output=true -Dtest=org.keycloak.testsuite.cluster.**.*Test -f testsuite/integration-arquillian/pom.xml | misc/log/trimmer.sh
+          exit ${PIPESTATUS[0]}
+
   test-crossdc:
     name: CrossDC Tests
     needs: build
