@@ -28,6 +28,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
+import org.jboss.logging.Logger;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.email.EmailException;
@@ -64,6 +65,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
     protected RealmModel realm;
     protected UserModel user;
     protected final Map<String, Object> attributes = new HashMap<>();
+    protected static final Logger logger = Logger.getLogger(FreeMarkerEmailTemplateProvider.class);
 
     public FreeMarkerEmailTemplateProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
         this.session = session;
@@ -130,8 +132,10 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         Map<String, Object> attributes = new HashMap<>(this.attributes);
         attributes.put("user", new ProfileBean(user));
         attributes.put("realmName", realm.getName());
+        attributes.put("legacySubjectKey", "emailTestSubject");
+        attributes.put("legacySubjectAttributes", Collections.emptyList());
 
-        EmailTemplate email = processTemplate("emailTestSubject", Collections.emptyList(), "email-test.ftl", attributes);
+        EmailTemplate email = processTemplate("email-test-subject.ftl", "email-test.ftl", attributes);
         send(config, email.getSubject(), email.getTextBody(), email.getHtmlBody());
     }
 
@@ -178,7 +182,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
     /**
      * Add link info into template attributes.
-     * 
+     *
      * @param link to add
      * @param expirationInMinutes to add
      * @param attributes to add link info into
@@ -202,9 +206,10 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         send(subjectFormatKey, Collections.emptyList(), bodyTemplate, bodyAttributes);
     }
 
-    protected EmailTemplate processTemplate(String subjectKey, List<Object> subjectAttributes, String template, Map<String, Object> attributes) throws EmailException {
+    protected EmailTemplate processTemplate(String subjectTemplate, String bodyTemplate, Map<String, Object> attributes) throws EmailException {
         try {
             Theme theme = getTheme();
+            logger.infof("Current email theme is [%s]", theme.getName());
             Locale locale = session.getContext().resolveLocale(user);
             attributes.put("locale", locale);
             Properties rb = theme.getMessages(locale);
@@ -212,18 +217,29 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             rb.putAll(localizationTexts);
             attributes.put("msg", new MessageFormatterMethod(locale, rb));
             attributes.put("properties", theme.getProperties());
-            String subject = new MessageFormat(rb.getProperty(subjectKey, subjectKey), locale).format(subjectAttributes.toArray());
-            String textTemplate = String.format("text/%s", template);
+            String subjectTemplatePath = String.format("text/%s", subjectTemplate);
+            String subject;
+            try {
+                subject = freeMarker.processTemplate(attributes, subjectTemplatePath, theme);
+            } catch (final FreeMarkerException e) {
+                // Subject template doesn't exist, falling back to legacy subject construction
+                logger.warnf("Failed to template mail subject using [%s], falling back to message file", subjectTemplatePath);
+                e.printStackTrace();
+                String subjectKey = attributes.get("legacySubjectKey").toString();
+                List<String> legacySubjectAttributes = (List<String>) attributes.get("legacySubjectAttributes");
+                subject = new MessageFormat(rb.getProperty(subjectKey, subjectKey), locale).format(legacySubjectAttributes.toArray());
+            }
+            String textBodyTemplatePath = String.format("text/%s", bodyTemplate);
             String textBody;
             try {
-                textBody = freeMarker.processTemplate(attributes, textTemplate, theme);
+                textBody = freeMarker.processTemplate(attributes, textBodyTemplatePath, theme);
             } catch (final FreeMarkerException e) {
-                throw new EmailException("Failed to template plain text email.", e);
+                throw new EmailException("Failed to template plain text body email.", e);
             }
-            String htmlTemplate = String.format("html/%s", template);
+            String htmlBodyTemplatePath = String.format("html/%s", bodyTemplate);
             String htmlBody;
             try {
-                htmlBody = freeMarker.processTemplate(attributes, htmlTemplate, theme);
+                htmlBody = freeMarker.processTemplate(attributes, htmlBodyTemplatePath, theme);
             } catch (final FreeMarkerException e) {
                 throw new EmailException("Failed to template html email.", e);
             }
@@ -239,9 +255,12 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
     }
 
     @Override
-    public void send(String subjectFormatKey, List<Object> subjectAttributes, String bodyTemplate, Map<String, Object> bodyAttributes) throws EmailException {
+    public void send(String subjectFormatKey, List<Object> subjectAttributes, String bodyTemplate, Map<String, Object> emailAttributes) throws EmailException {
         try {
-            EmailTemplate email = processTemplate(subjectFormatKey, subjectAttributes, bodyTemplate, bodyAttributes);
+            String subjectTemplate = bodyTemplate.replace(".ftl","-subject.ftl");
+            emailAttributes.put("legacySubjectKey", subjectFormatKey);
+            emailAttributes.put("legacySubjectAttributes", subjectAttributes);
+            EmailTemplate email = processTemplate(subjectTemplate, bodyTemplate, emailAttributes);
             send(email.getSubject(), email.getTextBody(), email.getHtmlBody());
         } catch (EmailException e) {
             throw e;

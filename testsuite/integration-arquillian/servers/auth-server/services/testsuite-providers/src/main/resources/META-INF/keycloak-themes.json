@@ -2,5 +2,9 @@
   "themes": [{
     "name" : "address",
     "types": [ "admin", "account", "login" ]
+  },
+  {
+    "name" : "test",
+    "types": [ "email" ]
   }]
 }
