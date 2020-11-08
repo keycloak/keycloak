@@ -9,7 +9,6 @@ public class NiaCustomAttribute implements SamlProtocolExtensionsAwareBuilder.No
 
     public static final String NS_PREFIX = "eidas";
     public static final String KEY_INFO_ELEMENT_NAME = "RequestedAttribute";
-    public static final String KEY_INFO_ELEMENTS_NAME = "RequestedAttributes";
     public static final String KEY_ID_ATTRIBUTE_NAME = "Name";
     public static final String NS_URI = "urn:oasis:names:tc:SAML:2.0:attrname-format:uri";
     public static final String KEY_REQUIRED = "isRequired";

@@ -13,9 +13,6 @@ public class NiaSPType implements SamlProtocolExtensionsAwareBuilder.NodeGenerat
     public static final String URI = "urn:oasis:names:tc:SAML:2.0:protocol";
     public static final String NS_PREFIX = "eidas";
     public static final String SAML_EXTENSIONS = "http://eidas.europa.eu/saml-extensions";
-    public static final String KEY_INFO_ELEMENT_NAME = "SPType";
-    public static final String KEY_ID_ATTRIBUTE_NAME = "Name";
-    public static final String NS_URI = "SPType";
     public static final NameIDType nameidtype = new NameIDType();
 
     private final String sptype;
@@ -26,15 +23,10 @@ public class NiaSPType implements SamlProtocolExtensionsAwareBuilder.NodeGenerat
 
     @Override
     public void write(XMLStreamWriter writer) throws ProcessingException {
-        NiaWriter niaWriter = new NiaWriter(writer);
         StaxUtil.writeNameSpace(writer, PREFIX, URI);
         StaxUtil.writeNameSpace(writer, NS_PREFIX, SAML_EXTENSIONS);
-        niaWriter.writeSptype(nameidtype, new QName("G"), true);
-        StaxUtil.writeStartElement(writer, NS_PREFIX, NS_URI, NS_URI);
-        if (this.sptype != null) {
-            StaxUtil.writeAttribute(writer, KEY_INFO_ELEMENT_NAME, this.sptype);
-        }
-        StaxUtil.writeEndElement(writer);
+        NiaWriter niaWriter = new NiaWriter(writer);
+        niaWriter.writeSptype(nameidtype, new QName(""), true);
         StaxUtil.flush(writer);
     }
 
