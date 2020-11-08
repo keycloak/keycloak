@@ -94,7 +94,6 @@ public class NiaIdentityProvider extends SAMLIdentityProvider
                     .subject(loginHint)
                     .addExtension(new NiaSPType("public"))
                     .addExtension(new NiaCustomAttributes());
-
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                     .relayState(request.getState().getEncoded());
             boolean postBinding = getConfig().isPostBindingAuthnRequest();

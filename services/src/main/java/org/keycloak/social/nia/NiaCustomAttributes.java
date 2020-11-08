@@ -15,6 +15,14 @@ public class NiaCustomAttributes implements SamlProtocolExtensionsAwareBuilder.N
         StaxUtil.writeStartElement(writer, "eidas", "RequestedAttributes", "");
         NiaCustomAttribute nia = new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName", "true");
         nia.write(writer);
+        nia = new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName", "true");
+        nia.write(writer);
+        nia = new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName", "true");
+        nia.write(writer);
+        nia = new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/DateOfBirth", "true");
+        nia.write(writer);
+        nia = new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/PlaceOfBirth", "true");
+        nia.write(writer);
         StaxUtil.writeEndElement(writer);
         StaxUtil.flush(writer);
     }
