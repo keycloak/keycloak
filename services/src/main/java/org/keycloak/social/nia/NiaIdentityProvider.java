@@ -25,10 +25,12 @@ import org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessor;
 import org.keycloak.saml.SAML2AuthnRequestBuilder;
 import org.keycloak.saml.SAML2NameIDPolicyBuilder;
 import org.keycloak.saml.SAML2RequestedAuthnContextBuilder;
+import org.keycloak.saml.SamlProtocolExtensionsAwareBuilder;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.util.JsonSerialization;
+import org.w3c.dom.Node;
 
 public class NiaIdentityProvider extends SAMLIdentityProvider
         implements SocialIdentityProvider<SAMLIdentityProviderConfig> {
@@ -78,7 +80,6 @@ public class NiaIdentityProvider extends SAMLIdentityProvider
             for (String authnContextDeclRef : getAuthnContextDeclRefUris()) {
                 requestedAuthnContext.addAuthnContextDeclRef(authnContextDeclRef);
             }
-
             String loginHint = getConfig().isLoginHint() ? request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM) : null;
             SAML2AuthnRequestBuilder authnRequestBuilder = new SAML2AuthnRequestBuilder()
                     .assertionConsumerUrl(assertionConsumerServiceUrl)
@@ -98,7 +99,6 @@ public class NiaIdentityProvider extends SAMLIdentityProvider
                     .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName", "true"))
                     .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/DateOfBirth", "true"))
                     .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/PlaceOfBirth", "true"));
-
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                     .relayState(request.getState().getEncoded());
             boolean postBinding = getConfig().isPostBindingAuthnRequest();

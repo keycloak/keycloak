@@ -4,6 +4,7 @@ import javax.xml.stream.XMLStreamWriter;
 import org.keycloak.saml.SamlProtocolExtensionsAwareBuilder;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.StaxUtil;
+import org.w3c.dom.Node;
 
 public class NiaCustomAttribute implements SamlProtocolExtensionsAwareBuilder.NodeGenerator {
 
@@ -32,7 +33,7 @@ public class NiaCustomAttribute implements SamlProtocolExtensionsAwareBuilder.No
             StaxUtil.writeAttribute(writer, KEY_REQUIRED, this.required);
         }
         StaxUtil.writeEndElement(writer);
+
         StaxUtil.flush(writer);
     }
-
 }

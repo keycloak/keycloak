@@ -28,7 +28,6 @@ public class NiaWriter extends BaseWriter {
     public void writeStartingTag() throws ProcessingException {
         NameIDType nameIDType = new NameIDType();
         nameIDType.setValue("KAREL");
-        NiaCustomAttribute nia = new NiaCustomAttribute("CAJK", "CAJK");
         write(nameIDType, new QName("eidas:RequestedAttributes"), false);
         StaxUtil.flush(writer);
 
