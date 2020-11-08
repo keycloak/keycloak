@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.social.nia;
 
 import org.keycloak.broker.saml.*;
@@ -108,6 +107,7 @@ import org.w3c.dom.NodeList;
  * @version $Revision: 1 $
  */
 public class NiaSAMLEndpoint {
+
     protected static final Logger logger = Logger.getLogger(NiaSAMLEndpoint.class);
     public static final String SAML_FEDERATED_SESSION_INDEX = "SAML_FEDERATED_SESSION_INDEX";
     @Deprecated // in favor of SAML_FEDERATED_SUBJECT_NAMEID
@@ -135,7 +135,6 @@ public class NiaSAMLEndpoint {
     @Context
     private HttpHeaders headers;
 
-
     public NiaSAMLEndpoint(RealmModel realm, SAMLIdentityProvider provider, SAMLIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback, DestinationValidator destinationValidator) {
         this.realm = realm;
         this.config = config;
@@ -153,31 +152,29 @@ public class NiaSAMLEndpoint {
 
     @GET
     public Response redirectBinding(@QueryParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
-                                    @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
-                                    @QueryParam(GeneralConstants.RELAY_STATE) String relayState)  {
+            @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
+            @QueryParam(GeneralConstants.RELAY_STATE) String relayState) {
         return new RedirectBinding().execute(samlRequest, samlResponse, relayState, null);
     }
-
 
     /**
      */
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response postBinding(@FormParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
-                                @FormParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
-                                @FormParam(GeneralConstants.RELAY_STATE) String relayState) {
+            @FormParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
+            @FormParam(GeneralConstants.RELAY_STATE) String relayState) {
         return new PostBinding().execute(samlRequest, samlResponse, relayState, null);
     }
 
     @Path("clients/{client_id}")
     @GET
     public Response redirectBinding(@QueryParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
-                                    @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
-                                    @QueryParam(GeneralConstants.RELAY_STATE) String relayState,
-                                    @PathParam("client_id") String clientId)  {
+            @QueryParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
+            @QueryParam(GeneralConstants.RELAY_STATE) String relayState,
+            @PathParam("client_id") String clientId) {
         return new RedirectBinding().execute(samlRequest, samlResponse, relayState, clientId);
     }
-
 
     /**
      */
@@ -185,13 +182,14 @@ public class NiaSAMLEndpoint {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response postBinding(@FormParam(GeneralConstants.SAML_REQUEST_KEY) String samlRequest,
-                                @FormParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
-                                @FormParam(GeneralConstants.RELAY_STATE) String relayState,
-                                @PathParam("client_id") String clientId) {
+            @FormParam(GeneralConstants.SAML_RESPONSE_KEY) String samlResponse,
+            @FormParam(GeneralConstants.RELAY_STATE) String relayState,
+            @PathParam("client_id") String clientId) {
         return new PostBinding().execute(samlRequest, samlResponse, relayState, clientId);
     }
 
     protected abstract class Binding {
+
         private boolean checkSsl() {
             if (session.getContext().getUri().getBaseUri().getScheme().equals("https")) {
                 return true;
@@ -222,9 +220,13 @@ public class NiaSAMLEndpoint {
         }
 
         protected abstract String getBindingType();
+
         protected abstract boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder);
+
         protected abstract void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException;
+
         protected abstract SAMLDocumentHolder extractRequestDocument(String samlRequest);
+
         protected abstract SAMLDocumentHolder extractResponseDocument(String response);
 
         protected KeyLocator getIDPKeyLocator() {
@@ -249,9 +251,14 @@ public class NiaSAMLEndpoint {
         public Response execute(String samlRequest, String samlResponse, String relayState, String clientId) {
             event = new EventBuilder(realm, session, clientConnection);
             Response response = basicChecks(samlRequest, samlResponse);
-            if (response != null) return response;
-            if (samlRequest != null) return handleSamlRequest(samlRequest, relayState);
-            else return handleSamlResponse(samlResponse, relayState, clientId);
+            if (response != null) {
+                return response;
+            }
+            if (samlRequest != null) {
+                return handleSamlRequest(samlRequest, relayState);
+            } else {
+                return handleSamlResponse(samlResponse, relayState, clientId);
+            }
         }
 
         protected Response handleSamlRequest(String samlRequest, String relayState) {
@@ -264,7 +271,7 @@ public class NiaSAMLEndpoint {
                 event.error(Errors.INVALID_REQUEST);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
-            if (! destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), requestAbstractType.getDestination())) {
+            if (!destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), requestAbstractType.getDestination())) {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_RESPONSE);
@@ -303,7 +310,7 @@ public class NiaSAMLEndpoint {
                         continue;
                     }
 
-                    for(Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext();) {
+                    for (Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext();) {
                         request = it.next().beforeProcessingLogoutRequest(request, userSession, null);
                     }
 
@@ -314,7 +321,7 @@ public class NiaSAMLEndpoint {
                     }
                 }
 
-            }  else {
+            } else {
                 for (String sessionIndex : request.getSessionIndex()) {
                     String brokerSessionId = brokerUserId + "." + sessionIndex;
                     UserSessionModel userSession = session.sessions().getUserSessionByBrokerSessionId(realm, brokerSessionId);
@@ -323,7 +330,7 @@ public class NiaSAMLEndpoint {
                             continue;
                         }
 
-                        for(Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext();) {
+                        for (Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext();) {
                             request = it.next().beforeProcessingLogoutRequest(request, userSession, null);
                         }
 
@@ -342,7 +349,7 @@ public class NiaSAMLEndpoint {
             builder.destination(config.getSingleLogoutServiceUrl());
             builder.issuer(issuerURL);
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
-                        .relayState(relayState);
+                    .relayState(relayState);
             boolean postBinding = config.isPostBindingLogout();
             if (config.isWantAuthnRequestsSigned()) {
                 KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
@@ -350,7 +357,7 @@ public class NiaSAMLEndpoint {
                 binding.signWith(keyName, keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
                         .signatureAlgorithm(provider.getSignatureAlgorithm())
                         .signDocument();
-                if (! postBinding && config.isAddExtensionsElementWithKeyInfo()) {    // Only include extension if REDIRECT binding and signing whole SAML protocol message
+                if (!postBinding && config.isAddExtensionsElementWithKeyInfo()) {    // Only include extension if REDIRECT binding and signing whole SAML protocol message
                     builder.addExtension(new KeycloakKeySamlExtensionGenerator(keyName));
                 }
             }
@@ -373,17 +380,18 @@ public class NiaSAMLEndpoint {
         private String getEntityId(UriInfo uriInfo, RealmModel realm) {
             String configEntityId = config.getEntityId();
 
-            if (configEntityId == null || configEntityId.isEmpty())
+            if (configEntityId == null || configEntityId.isEmpty()) {
                 return UriBuilder.fromUri(uriInfo.getBaseUri()).path("realms").path(realm.getName()).build().toString();
-            else
+            } else {
                 return configEntityId;
+            }
         }
 
         protected Response handleLoginResponse(String samlResponse, SAMLDocumentHolder holder, ResponseType responseType, String relayState, String clientId) {
 
             try {
                 KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
-                if (! isSuccessfulSamlResponse(responseType)) {
+                if (!isSuccessfulSamlResponse(responseType)) {
                     String statusMessage = responseType.getStatus() == null ? Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR : responseType.getStatus().getStatusMessage();
                     return callback.error(relayState, statusMessage);
                 }
@@ -414,7 +422,7 @@ public class NiaSAMLEndpoint {
                 boolean signed = AssertionUtil.isSignedElement(assertionElement);
                 final boolean assertionSignatureNotExistsWhenRequired = config.isWantAssertionsSigned() && !signed;
                 final boolean signatureNotValid = signed && config.isValidateSignature() && !AssertionUtil.isSignatureValid(assertionElement, getIDPKeyLocator());
-                final boolean hasNoSignatureWhenRequired = ! signed && config.isValidateSignature() && ! containsUnencryptedSignature(holder);
+                final boolean hasNoSignatureWhenRequired = !signed && config.isValidateSignature() && !containsUnencryptedSignature(holder);
 
                 if (assertionSignatureNotExistsWhenRequired || signatureNotValid || hasNoSignatureWhenRequired) {
                     logger.error("validation failed");
@@ -438,7 +446,7 @@ public class NiaSAMLEndpoint {
                 BrokeredIdentityContext identity = new BrokeredIdentityContext(principal);
                 identity.getContextData().put(SAML_LOGIN_RESPONSE, responseType);
                 identity.getContextData().put(SAML_ASSERTION, assertion);
-                if (clientId != null && ! clientId.trim().isEmpty()) {
+                if (clientId != null && !clientId.trim().isEmpty()) {
                     identity.getContextData().put(SAML_IDP_INITIATED_CLIENT_ID, clientId);
                 }
 
@@ -465,7 +473,7 @@ public class NiaSAMLEndpoint {
                 } catch (IllegalArgumentException ex) {
                     // warning has been already emitted in DeploymentBuilder
                 }
-                if (! cvb.build().isValid()) {
+                if (!cvb.build().isValid()) {
                     logger.error("Assertion expired.");
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                     event.error(Errors.INVALID_SAML_RESPONSE);
@@ -475,15 +483,16 @@ public class NiaSAMLEndpoint {
                 AuthnStatementType authn = null;
                 for (Object statement : assertion.getStatements()) {
                     if (statement instanceof AuthnStatementType) {
-                        authn = (AuthnStatementType)statement;
+                        authn = (AuthnStatementType) statement;
                         identity.getContextData().put(SAML_AUTHN_STATEMENT, authn);
                         break;
                     }
                 }
-                if (assertion.getAttributeStatements() != null ) {
+                if (assertion.getAttributeStatements() != null) {
                     String email = getX500Attribute(assertion, X500SAMLProfileConstants.EMAIL);
-                    if (email != null)
+                    if (email != null) {
                         identity.setEmail(email);
+                    }
                 }
 
                 String brokerUserId = config.getAlias() + "." + principal;
@@ -492,9 +501,8 @@ public class NiaSAMLEndpoint {
                 identity.setIdp(provider);
                 if (authn != null && authn.getSessionIndex() != null) {
                     identity.setBrokerSessionId(identity.getBrokerUserId() + "." + authn.getSessionIndex());
-                 }
+                }
                 identity.setCode(relayState);
-
 
                 return callback.authenticated(identity);
             } catch (WebApplicationException e) {
@@ -504,15 +512,13 @@ public class NiaSAMLEndpoint {
             }
         }
 
-
         private boolean isSuccessfulSamlResponse(ResponseType responseType) {
             return responseType != null
-              && responseType.getStatus() != null
-              && responseType.getStatus().getStatusCode() != null
-              && responseType.getStatus().getStatusCode().getValue() != null
-              && Objects.equals(responseType.getStatus().getStatusCode().getValue().toString(), JBossSAMLURIConstants.STATUS_SUCCESS.get());
+                    && responseType.getStatus() != null
+                    && responseType.getStatus().getStatusCode() != null
+                    && responseType.getStatus().getStatusCode().getValue() != null
+                    && Objects.equals(responseType.getStatus().getStatusCode().getValue().toString(), JBossSAMLURIConstants.STATUS_SUCCESS.get());
         }
-
 
         public Response handleSamlResponse(String samlResponse, String relayState, String clientId) {
             SAMLDocumentHolder holder = extractResponseDocument(samlResponse);
@@ -522,7 +528,7 @@ public class NiaSAMLEndpoint {
                 event.error(Errors.INVALID_SAML_RESPONSE);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_FEDERATED_IDENTITY_ACTION);
             }
-            StatusResponseType statusResponse = (StatusResponseType)holder.getSamlObject();
+            StatusResponseType statusResponse = (StatusResponseType) holder.getSamlObject();
             // validate destination
             if (statusResponse.getDestination() == null && containsUnencryptedSignature(holder)) {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
@@ -530,7 +536,7 @@ public class NiaSAMLEndpoint {
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
-            if (! destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), statusResponse.getDestination())) {
+            if (!destinationValidator.validate(session.getContext().getUri().getAbsolutePath(), statusResponse.getDestination())) {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, "invalid_destination");
                 event.error(Errors.INVALID_SAML_RESPONSE);
@@ -547,7 +553,7 @@ public class NiaSAMLEndpoint {
                 }
             }
             if (statusResponse instanceof ResponseType) {
-                return handleLoginResponse(samlResponse, holder, (ResponseType)statusResponse, relayState, clientId);
+                return handleLoginResponse(samlResponse, holder, (ResponseType) statusResponse, relayState, clientId);
 
             } else {
                 // todo need to check that it is actually a LogoutResponse
@@ -580,13 +586,10 @@ public class NiaSAMLEndpoint {
             return AuthenticationManager.finishBrowserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
         }
 
-
-
-
-
     }
 
     protected class PostBinding extends Binding {
+
         @Override
         protected boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder) {
             NodeList nl = documentHolder.getSamlDocument().getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
@@ -595,10 +598,10 @@ public class NiaSAMLEndpoint {
 
         @Override
         protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
-            if ((! containsUnencryptedSignature(documentHolder)) && (documentHolder.getSamlObject() instanceof ResponseType)) {
+            if ((!containsUnencryptedSignature(documentHolder)) && (documentHolder.getSamlObject() instanceof ResponseType)) {
                 ResponseType responseType = (ResponseType) documentHolder.getSamlObject();
                 List<ResponseType.RTChoiceType> assertions = responseType.getAssertions();
-                if (! assertions.isEmpty() ) {
+                if (!assertions.isEmpty()) {
                     // Only relax verification if the response is an authnresponse and contains (encrypted/plaintext) assertion.
                     // In that case, signature is validated on assertion element
                     return;
@@ -611,6 +614,7 @@ public class NiaSAMLEndpoint {
         protected SAMLDocumentHolder extractRequestDocument(String samlRequest) {
             return SAMLRequestParser.parseRequestPostBinding(samlRequest);
         }
+
         @Override
         protected SAMLDocumentHolder extractResponseDocument(String response) {
             byte[] samlBytes = PostBindingUtil.base64Decode(response);
@@ -624,6 +628,7 @@ public class NiaSAMLEndpoint {
     }
 
     protected class RedirectBinding extends Binding {
+
         @Override
         protected boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder) {
             MultivaluedMap<String, String> encodedParams = session.getContext().getUri().getQueryParameters(false);
@@ -637,8 +642,6 @@ public class NiaSAMLEndpoint {
             KeyLocator locator = getIDPKeyLocator();
             SamlProtocolUtils.verifyRedirectSignature(documentHolder, locator, session.getContext().getUri(), key);
         }
-
-
 
         @Override
         protected SAMLDocumentHolder extractRequestDocument(String samlRequest) {
