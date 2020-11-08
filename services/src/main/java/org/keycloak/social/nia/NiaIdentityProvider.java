@@ -94,11 +94,12 @@ public class NiaIdentityProvider extends SAMLIdentityProvider
                     .subject(loginHint)
                     .addExtension(new NiaSPType("public"))
                     .addExtension(new NiaElements())
-                    .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName", "true"))
-                    .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName", "true"))
-                    .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName", "true"))
-                    .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/DateOfBirth", "true"))
-                    .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/PlaceOfBirth", "true"));
+                    .addExtension(new NiaCustomAttributes());
+//                    .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName", "true"))
+//                    .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName", "true"))
+//                    .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName", "true"))
+//                    .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/DateOfBirth", "true"))
+//                    .addExtension(new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/PlaceOfBirth", "true"));
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                     .relayState(request.getState().getEncoded());
             boolean postBinding = getConfig().isPostBindingAuthnRequest();
