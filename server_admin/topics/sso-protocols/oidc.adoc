@@ -94,7 +94,9 @@ More info together with example is in <<_service_accounts,Service Accounts>> cha
 
 Here's a list of OIDC endpoints that the {project_name} publishes.  These URLs are useful if you are using a non-{project_name} client adapter to
 talk OIDC with the auth server.  These are all relative URLs and the root of the URL being the HTTP(S) protocol, hostname, and usually path prefixed with
-_/auth_:  i.e. $$https://localhost:8080/auth$$
+_/auth_:  i.e. $$https://localhost:8080/auth$$. 
+
+You can also find these endpoints under "OpenID Endpoint Configuration" in your realm settings.
 
 /realms/{realm-name}/protocol/openid-connect/auth::
   This is the URL endpoint for obtaining a temporary code in the Authorization Code Flow or for obtaining tokens via the
@@ -107,5 +109,7 @@ _/auth_:  i.e. $$https://localhost:8080/auth$$
   This is the URL endpoint for the User Info service described in the OIDC specification.
 /realms/{realm-name}/protocol/openid-connect/revoke::
   This is the URL endpoint for OAuth 2.0 Token Revocation described in https://tools.ietf.org/html/rfc7009[RFC7009].
+/realms/{realm-name}/protocol/openid-connect/certs::
+  This is the URL endpoint for the JSON Web Key Set (JWKS) containing the public keys used to verify any JSON Web Token (jwks_uri)
 
 In all of these replace _{realm-name}_ with the name of the realm.
