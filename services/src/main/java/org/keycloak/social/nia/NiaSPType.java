@@ -6,7 +6,6 @@ import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.saml.SamlProtocolExtensionsAwareBuilder;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.StaxUtil;
-import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 
 public class NiaSPType implements SamlProtocolExtensionsAwareBuilder.NodeGenerator {
 

@@ -9,7 +9,6 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.broker.saml.SAMLIdentityProvider;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.social.SocialIdentityProvider;
@@ -25,12 +24,10 @@ import org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessor;
 import org.keycloak.saml.SAML2AuthnRequestBuilder;
 import org.keycloak.saml.SAML2NameIDPolicyBuilder;
 import org.keycloak.saml.SAML2RequestedAuthnContextBuilder;
-import org.keycloak.saml.SamlProtocolExtensionsAwareBuilder;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.util.JsonSerialization;
-import org.w3c.dom.Node;
 
 public class NiaIdentityProvider extends SAMLIdentityProvider
         implements SocialIdentityProvider<SAMLIdentityProviderConfig> {
@@ -94,6 +91,7 @@ public class NiaIdentityProvider extends SAMLIdentityProvider
                     .subject(loginHint)
                     .addExtension(new NiaSPType("public"))
                     .addExtension(new NiaCustomAttributes());
+
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                     .relayState(request.getState().getEncoded());
             boolean postBinding = getConfig().isPostBindingAuthnRequest();
