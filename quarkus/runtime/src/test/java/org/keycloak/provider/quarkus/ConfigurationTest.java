@@ -19,6 +19,7 @@ package org.keycloak.provider.quarkus;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
@@ -198,7 +199,7 @@ public class ConfigurationTest {
         System.setProperty("kc.config.args", "--db=h2-file");
         SmallRyeConfig config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
-        assertEquals("jdbc:h2:file:test-dir/data/keycloakdb;;test=test;test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("jdbc:h2:file:test-dir" + File.separator + "data" + File.separator + "keycloakdb;;test=test;test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         System.setProperty("kc.db.url.properties", "?test=test&test1=test1");
         System.setProperty("kc.config.args", "--db=mariadb");

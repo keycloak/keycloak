@@ -20,6 +20,9 @@ package org.keycloak.cli;
 import static org.keycloak.cli.Picocli.error;
 import static org.keycloak.cli.Picocli.println;
 
+import io.quarkus.bootstrap.runner.ClassLoadingResource;
+import io.quarkus.bootstrap.runner.JarResource;
+import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import org.keycloak.configuration.KeycloakConfigSourceProvider;
 
 import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
@@ -29,6 +32,10 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
+
+import java.lang.reflect.Field;
+import java.nio.file.Path;
+import java.util.Map;
 
 @Command(name = "keycloak", 
         usageHelpWidth = 150, 
@@ -73,12 +80,62 @@ public class MainCommand {
     public void reAugment(@Option(names = "--verbose", description = "Print out more details when running this command.", required = false) Boolean verbose) {
         System.setProperty("quarkus.launch.rebuild", "true");
         println(spec.commandLine(), "Updating the configuration and installing your custom providers, if any. Please wait.");
+
         try {
+            beforeReaugmentationOnWindows();
             QuarkusEntryPoint.main();
             println(spec.commandLine(), "Server configuration updated and persisted. Run the following command to review the configuration:\n");
             println(spec.commandLine(), "\t" + Environment.getCommand() + " show-config\n");
         } catch (Throwable throwable) {
             error(spec.commandLine(), "Failed to update server configuration.", throwable);
+        }
+    }
+
+    private void beforeReaugmentationOnWindows() throws Exception {
+        // On Windows, files generated during re-augmentation are locked and can't be re-created.
+        // To workaround this behavior, we close these files as they are not needed during re-augmentation,
+        // but when actually running the application.
+        // See KEYCLOAK-16218
+        if (Environment.isWindows()) {
+            Field resourcesMapField = null;
+
+            try {
+                RunnerClassLoader cl = (RunnerClassLoader) Thread.currentThread().getContextClassLoader();
+
+                resourcesMapField = cl.getClass().getDeclaredField("resourceDirectoryMap");
+                resourcesMapField.setAccessible(true);
+
+                Map<String, ClassLoadingResource[]> resourcesMap = (Map<String, ClassLoadingResource[]>) resourcesMapField.get(cl);
+
+                for (ClassLoadingResource[] resources : resourcesMap.values()) {
+                    for (ClassLoadingResource resource : resources) {
+                        if (resource instanceof JarResource) {
+                            Field jarPath = null;
+
+                            try {
+                                JarResource jr = (JarResource) resource;
+
+                                jarPath = jr.getClass().getDeclaredField("jarPath");
+                                jarPath.setAccessible(true);
+
+                                Path path = (Path) jarPath.get(jr);
+
+                                if (path.getFileName().endsWith("generated-bytecode.jar")) {
+                                    jr.close();
+                                }
+                            } finally {
+                                if (jarPath != null) {
+                                    jarPath.setAccessible(false);
+                                }
+                            }
+                        }
+                    }
+                }
+            } finally {
+                if (resourcesMapField != null) {
+                    resourcesMapField.setAccessible(false);
+                }
+            }
         }
     }
 
