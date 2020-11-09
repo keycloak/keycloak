@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useHistory, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   ActionGroup,
@@ -30,6 +30,7 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { ConfigPropertyRepresentation } from "../../context/server-info/server-info";
+import { convertFormValuesToObject, convertToFormValues } from "../../util";
 
 export const MappingDetails = () => {
   const { t } = useTranslation("client-scopes");
@@ -47,6 +48,7 @@ export const MappingDetails = () => {
 
   const serverInfo = useServerInfo();
   const url = `/admin/realms/${realm}/client-scopes/${scopeId}/protocol-mappers/models/${id}`;
+  const history = useHistory();
 
   useEffect(() => {
     (async () => {
@@ -56,10 +58,7 @@ export const MappingDetails = () => {
       if (response.data) {
         Object.entries(response.data).map((entry) => {
           if (entry[0] === "config") {
-            Object.keys(entry[1]).map((key) => {
-              const newKey = key.replace(/\./g, "_");
-              setValue("config." + newKey, entry[1][key]);
-            });
+            convertToFormValues(entry[1], "config", setValue);
           }
           setValue(entry[0], entry[1]);
         });
@@ -68,7 +67,7 @@ export const MappingDetails = () => {
       const mapperTypes =
         serverInfo.protocolMapperTypes[response.data!.protocol!];
       const properties = mapperTypes.find(
-        (type) => type.id === mapping?.protocolMapper
+        (type) => type.id === response.data!.protocolMapper
       )?.properties;
       setConfigProperties(properties);
     })();
@@ -83,6 +82,7 @@ export const MappingDetails = () => {
       try {
         httpClient.doDelete(url);
         addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
+        history.push(`/client-scopes/${scopeId}`);
       } catch (error) {
         addAlert(t("mappingDeletedError", { error }), AlertVariant.danger);
       }
@@ -90,12 +90,8 @@ export const MappingDetails = () => {
   });
 
   const save = async (formMapping: ProtocolMapperRepresentation) => {
-    const keyValues = Object.keys(formMapping.config!).map((key) => {
-      const newKey = key.replace(/_/g, ".");
-      return { [newKey]: formMapping.config![key] };
-    });
-
-    const map = { ...mapping, config: Object.assign({}, ...keyValues) };
+    const config = convertFormValuesToObject(formMapping.config);
+    const map = { ...mapping, config };
     try {
       await httpClient.doPut(url, map);
       addAlert(t("mappingUpdatedSuccess"), AlertVariant.success);
@@ -236,14 +232,14 @@ export const MappingDetails = () => {
               <FlexItem>
                 <Controller
                   name="config.id_token_claim"
-                  defaultValue={false}
+                  defaultValue="false"
                   control={control}
                   render={({ onChange, value }) => (
                     <Checkbox
                       label={t("idToken")}
                       id="idToken"
-                      isChecked={value}
-                      onChange={onChange}
+                      isChecked={value === "true"}
+                      onChange={(value) => onChange("" + value)}
                     />
                   )}
                 />
@@ -251,14 +247,14 @@ export const MappingDetails = () => {
               <FlexItem>
                 <Controller
                   name="config.access_token_claim"
-                  defaultValue={false}
+                  defaultValue="false"
                   control={control}
                   render={({ onChange, value }) => (
                     <Checkbox
                       label={t("accessToken")}
                       id="accessToken"
-                      isChecked={value}
-                      onChange={onChange}
+                      isChecked={value === "true"}
+                      onChange={(value) => onChange("" + value)}
                     />
                   )}
                 />
@@ -266,14 +262,14 @@ export const MappingDetails = () => {
               <FlexItem>
                 <Controller
                   name="config.userinfo_token_claim"
-                  defaultValue={false}
+                  defaultValue="false"
                   control={control}
                   render={({ onChange, value }) => (
                     <Checkbox
                       label={t("userInfo")}
                       id="userInfo"
-                      isChecked={value}
-                      onChange={onChange}
+                      isChecked={value === "true"}
+                      onChange={(value) => onChange("" + value)}
                     />
                   )}
                 />
