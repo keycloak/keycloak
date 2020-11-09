@@ -17,6 +17,7 @@
 
 package org.keycloak.configuration;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -76,7 +77,7 @@ class Database {
                     @Override
                     public String apply(String alias) {
                         if ("h2-file".equalsIgnoreCase(alias)) {
-                            return "jdbc:h2:file:${kc.home.dir:${kc.db.url.path:~}}/${kc.data.dir:data}/keycloakdb${kc.db.url.properties:;;AUTO_SERVER=TRUE}";
+                            return "jdbc:h2:file:${kc.home.dir:${kc.db.url.path:~}}" + File.separator + "${kc.data.dir:data}" + File.separator + "keycloakdb${kc.db.url.properties:;;AUTO_SERVER=TRUE}";
                         }
                         return "jdbc:h2:mem:keycloakdb${kc.db.url.properties:}";
                     }
