@@ -18,7 +18,7 @@ import {
 import { RoleRepresentation } from "../../model/role-model";
 import { HttpClientContext } from "../../context/http-service/HttpClientContext";
 import { useAlerts } from "../../components/alert/Alerts";
-import { Controller, useForm, FieldErrors } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { RealmContext } from "../../context/realm-context/RealmContext";
 
 export const NewRoleForm = () => {
@@ -40,8 +40,6 @@ export const NewRoleForm = () => {
     }
   };
 
-  console.log(errors);
-
   return (
     <>
       <PageSection variant="light">
@@ -52,24 +50,35 @@ export const NewRoleForm = () => {
       <Divider />
       <PageSection variant="light">
         <Form isHorizontal onSubmit={handleSubmit(save)}>
-          <FormGroup label={t("roleName")} isRequired fieldId="kc-role-name">
+          <FormGroup
+            label={t("roleName")}
+            isRequired
+            fieldId="kc-role-name"
+            validated={
+              errors.name ? ValidatedOptions.error : ValidatedOptions.default
+            }
+            helperTextInvalid={t("common:required")}
+          >
             <TextInput
               isRequired
               type="text"
               id="kc-role-name"
               name="name"
               ref={register({ required: true })}
+              validated={
+                errors.name ? ValidatedOptions.error : ValidatedOptions.default
+              }
             />
           </FormGroup>
           <FormGroup
             label={t("description")}
             fieldId="kc-role-description"
             validated={
-              Object.keys(errors).length != 0
+              errors.description
                 ? ValidatedOptions.error
                 : ValidatedOptions.default
             }
-            helperTextInvalid={"Max length 255"}
+            helperTextInvalid={t("common:maxLength", { length: 255 })}
           >
             <Controller
               name="description"
@@ -80,10 +89,9 @@ export const NewRoleForm = () => {
                 <TextArea
                   type="text"
                   validated={
-                    errors.description &&
-                    errors.description.type === "maxLength"
-                      ? "error"
-                      : "default"
+                    errors.description
+                      ? ValidatedOptions.error
+                      : ValidatedOptions.default
                   }
                   id="kc-role-description"
                   value={value}

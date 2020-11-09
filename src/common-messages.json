@@ -52,6 +52,7 @@
     "userFederation": "User federation",
 
     "required": "Required field",
+    "maxLength": "Max length {{length}}",
 
     "createRealm": "Create Realm"
   }

@@ -16,6 +16,7 @@ import {
   Split,
   SplitItem,
   Divider,
+  ValidatedOptions,
 } from "@patternfly/react-core";
 
 import { useAlerts } from "../../components/alert/Alerts";
@@ -173,7 +174,9 @@ export const RoleMappingForm = ({ clientScopeId }: RoleMappingFormProps) => {
             }
             fieldId="name"
             isRequired
-            validated={errors.name ? "error" : "default"}
+            validated={
+              errors.name ? ValidatedOptions.error : ValidatedOptions.default
+            }
             helperTextInvalid={t("common:required")}
           >
             <TextInput
@@ -181,6 +184,9 @@ export const RoleMappingForm = ({ clientScopeId }: RoleMappingFormProps) => {
               type="text"
               id="name"
               name="name"
+              validated={
+                errors.name ? ValidatedOptions.error : ValidatedOptions.default
+              }
             />
           </FormGroup>
           <FormGroup

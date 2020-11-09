@@ -1,5 +1,5 @@
 import React from "react";
-import { FormGroup, TextInput } from "@patternfly/react-core";
+import { FormGroup, TextInput, ValidatedOptions } from "@patternfly/react-core";
 import { UseFormMethods } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormAccess } from "../components/form-access/FormAccess";
@@ -17,7 +17,9 @@ export const ClientDescription = ({ form }: ClientDescriptionProps) => {
         label={t("clientID")}
         fieldId="kc-client-id"
         helperTextInvalid={t("common:required")}
-        validated={errors.clientId ? "error" : "default"}
+        validated={
+          errors.clientId ? ValidatedOptions.error : ValidatedOptions.default
+        }
         isRequired
       >
         <TextInput
@@ -25,6 +27,9 @@ export const ClientDescription = ({ form }: ClientDescriptionProps) => {
           type="text"
           id="kc-client-id"
           name="clientId"
+          validated={
+            errors.clientId ? ValidatedOptions.error : ValidatedOptions.default
+          }
         />
       </FormGroup>
       <FormGroup label={t("name")} fieldId="kc-name">

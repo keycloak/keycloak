@@ -49,7 +49,6 @@ export const PageNav: React.FunctionComponent = () => {
   type LeftNavProps = { title: string; path: string };
   const LeftNav = ({ title, path }: LeftNavProps) => {
     const route = routes(() => {}).find((route) => route.path === path);
-    console.log(`hasAccess(${route!.access})=` + hasAccess(route!.access));
     if (!route || !hasAccess(route.access)) return <></>;
 
     return (

@@ -7,6 +7,7 @@ import {
   Modal,
   ModalVariant,
   TextInput,
+  ValidatedOptions,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { HttpClientContext } from "../context/http-service/HttpClientContext";
@@ -80,7 +81,9 @@ export const GroupsCreateModal = ({
             label={t("name")}
             fieldId="group-id"
             helperTextInvalid={t("common:required")}
-            validated={errors.name ? "error" : "default"}
+            validated={
+              errors.name ? ValidatedOptions.error : ValidatedOptions.default
+            }
             isRequired
           >
             <TextInput
@@ -90,6 +93,9 @@ export const GroupsCreateModal = ({
               name="name"
               value={createGroupName}
               onChange={valueChange}
+              validated={
+                errors.name ? ValidatedOptions.error : ValidatedOptions.default
+              }
             />
           </FormGroup>
         </Form>

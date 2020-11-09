@@ -14,7 +14,7 @@ export class WhoAmI {
   ) {
     if (this.me !== undefined && this.me.locale) {
       i18n.changeLanguage(this.me.locale, (error) => {
-        if (error) console.log("Unable to set locale to " + this.me?.locale);
+        if (error) console.error("Unable to set locale to", this.me?.locale);
       });
     }
   }
