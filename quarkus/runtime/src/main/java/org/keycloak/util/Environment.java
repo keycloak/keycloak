@@ -19,6 +19,7 @@ package org.keycloak.util;
 
 import java.util.Optional;
 
+import org.apache.commons.lang3.SystemUtils;
 import org.keycloak.configuration.Configuration;
 
 public final class Environment {
@@ -38,6 +39,9 @@ public final class Environment {
             return "java -jar $KEYCLOAK_HOME/lib/quarkus-run.jar";
         }
 
+        if (isWindows()) {
+            return "kc.bat";
+        }
         return "kc.sh";
     }
     
@@ -77,5 +81,9 @@ public final class Environment {
 
     public static boolean isDevMode() {
         return "dev".equalsIgnoreCase(getProfile());
+    }
+
+    public static boolean isWindows() {
+        return SystemUtils.IS_OS_WINDOWS;
     }
 }
