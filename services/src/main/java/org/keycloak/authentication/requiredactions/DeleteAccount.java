@@ -36,6 +36,7 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ForbiddenException;
@@ -62,14 +63,12 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
 
   @Override
   public void requiredActionChallenge(RequiredActionContext context) {
-      if (!context.getUser().hasRole(context.getRealm().getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.DELETE_ACCOUNT))) {
+      if (!clientHasDeleteAccountRole(context)) {
         context.challenge(context.form().setError(Messages.DELETE_ACCOUNT_LACK_PRIVILEDGES).createForm("error.ftl"));
         return;
       }
 
-    String currentAction = context.getAuthenticationSession().getClientNote(Constants.KC_ACTION);
-
-      context.challenge(context.form().setAttribute(TRIGGERED_FROM_AIA, Objects.equals(currentAction, PROVIDER_ID)).createForm("delete-account-confirm.ftl"));
+      context.challenge(context.form().setAttribute(TRIGGERED_FROM_AIA, isCurrentActionTriggeredFromAIA(context)).createForm("delete-account-confirm.ftl"));
   }
 
 
@@ -82,7 +81,7 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
     UserModel user = keycloakContext.getAuthenticationSession().getAuthenticatedUser();
 
     try {
-      if(!user.hasRole(realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.DELETE_ACCOUNT))) {
+      if(!clientHasDeleteAccountRole(context)) {
         throw new ForbiddenException();
       }
       boolean removed = new UserManager(session).removeUser(realm, user);
@@ -119,7 +118,7 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
           .detail(Details.REASON, "does not have the required roles for user deletion")
           .error(Errors.USER_DELETE_ERROR);
       //deletingAccountForbidden
-      context.challenge(context.form().setError(Messages.DELETE_ACCOUNT_LACK_PRIVILEDGES).createForm("delete-account-confirm.ftl"));
+      context.challenge(context.form().setAttribute(TRIGGERED_FROM_AIA, isCurrentActionTriggeredFromAIA(context)).setError(Messages.DELETE_ACCOUNT_LACK_PRIVILEDGES).createForm("delete-account-confirm.ftl"));
     } catch (Exception exception) {
       logger.error("unexpected error happened during account deletion", exception);
       eventBuilder.event(EventType.DELETE_ACCOUNT_ERROR)
@@ -135,6 +134,15 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
     context.getAuthenticationSession().removeRequiredAction(PROVIDER_ID);
     context.getAuthenticationSession().removeAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
     AuthenticationManager.setKcActionStatus(PROVIDER_ID, status, context.getAuthenticationSession());
+  }
+
+  private boolean clientHasDeleteAccountRole(RequiredActionContext context) {
+    RoleModel deleteAccountRole = context.getRealm().getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.DELETE_ACCOUNT);
+    return deleteAccountRole != null && context.getUser().hasRole(deleteAccountRole);
+  }
+
+  private boolean isCurrentActionTriggeredFromAIA(RequiredActionContext context) {
+    return Objects.equals(context.getAuthenticationSession().getClientNote(Constants.KC_ACTION), PROVIDER_ID);
   }
 
   @Override

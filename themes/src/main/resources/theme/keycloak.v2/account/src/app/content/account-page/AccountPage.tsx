@@ -248,7 +248,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
            { this.isDeleteAccountAllowed && 
             <div id="delete-account" style={{marginTop:"30px"}}>
              <Expandable toggleText="Delete Account">
-                 <Grid >
+                 <Grid gutter={"sm"}>
                         <GridItem span={6}>
                              <p>
                                 <Msg msgKey="deleteAccountWarning" />
@@ -257,7 +257,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                         <GridItem span={4}>
                             <KeycloakContext.Consumer>
                                 { (keycloak: KeycloakService) => (
-                                        <Button id="delete-account-btn" variant="danger" onClick={() => this.handleDelete(keycloak)} style={{width:"150px", height: "50px"}}><Msg msgKey="doDelete" /></Button>
+                                        <Button id="delete-account-btn" variant="danger" onClick={() => this.handleDelete(keycloak)} className="delete-button"><Msg msgKey="doDelete" /></Button>
                                 )}
                             </KeycloakContext.Consumer>
                         </GridItem>

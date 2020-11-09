@@ -71,7 +71,7 @@ public class DeleteAccountTest extends BaseAccountPageTest {
 
   @Test
   public void deleteOwnAccountSectionNotVisibleWithoutClientRole() {
-    removeDeleteAccountRoleToUserClientRoles();
+    removeDeleteAccountRoleFromUserClientRoles();
     refreshPageAndWaitForLoad();
     personalInfoPage.assertDeleteAccountSectionVisible(false);
   }
@@ -104,7 +104,7 @@ public class DeleteAccountTest extends BaseAccountPageTest {
     personalInfoPage.clickDeleteAccountButton();
     loginPage.form().login(testUser);
     Assert.assertTrue(deleteAccountActionConfirmPage.isCurrent());
-    removeDeleteAccountRoleToUserClientRoles();
+    removeDeleteAccountRoleFromUserClientRoles();
     deleteAccountActionConfirmPage.clickConfirmAction();
     Assert.assertTrue(deleteAccountActionConfirmPage.isErrorMessageDisplayed());
     Assert.assertEquals(deleteAccountActionConfirmPage.getErrorMessageText(), "You do not have enough permissions to delete your own account, contact admin.");
@@ -151,7 +151,7 @@ public class DeleteAccountTest extends BaseAccountPageTest {
     testRealmResource().flows().updateRequiredAction("delete_account", deleteAccount);
   }
 
-  private void removeDeleteAccountRoleToUserClientRoles() {
+  private void removeDeleteAccountRoleFromUserClientRoles() {
     ClientRepresentation clientRepresentation = testRealmResource().clients().findByClientId("account").get(0);
     String deleteRoleId = testUserResource().roles().clientLevel(clientRepresentation.getId()).listAll().stream().filter(role -> Objects.equals(role.getName(), "delete-account")).findFirst().get().getId();
     RoleRepresentation deleteRole = new RoleRepresentation();
