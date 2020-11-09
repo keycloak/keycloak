@@ -7,21 +7,25 @@ import org.keycloak.saml.common.util.StaxUtil;
 
 public class NiaCustomAttributes implements SamlProtocolExtensionsAwareBuilder.NodeGenerator {
 
+    public static final String ELEMENT = "eidas";
+    public static final String REQUESTED = "RequestedAttributes";
+    public static final String TRUE = "true";
+
     public NiaCustomAttributes() {
     }
 
     @Override
     public void write(XMLStreamWriter writer) throws ProcessingException {
-        StaxUtil.writeStartElement(writer, "eidas", "RequestedAttributes", "");
-        NiaCustomAttribute nia = new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName", "true");
+        StaxUtil.writeStartElement(writer, ELEMENT, REQUESTED, "");
+        NiaCustomAttribute nia = new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName", TRUE);
         nia.write(writer);
-        nia = new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName", "true");
+        nia = new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName", TRUE);
         nia.write(writer);
-        nia = new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName", "true");
+        nia = new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName", TRUE);
         nia.write(writer);
-        nia = new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/DateOfBirth", "true");
+        nia = new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/DateOfBirth", TRUE);
         nia.write(writer);
-        nia = new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/PlaceOfBirth", "true");
+        nia = new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/PlaceOfBirth", TRUE);
         nia.write(writer);
         StaxUtil.writeEndElement(writer);
         StaxUtil.flush(writer);
