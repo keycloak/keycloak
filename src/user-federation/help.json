@@ -38,6 +38,14 @@
     "validatePasswordPolicyHelp": "Determines if Keycloak should validate the password with the realm password policy before updating it",
     "trustEmailHelp": "If enabled, email provided by this provider is not verified even if verification is enabled for the realm.",
 
-    "IDK-periodicChangedUsersSyncHelp": "Should newly created users be created within LDAP store? Priority affects which provider is chosen to sync the new user."
+    "IDK-periodicChangedUsersSyncHelp": "Should newly created users be created within LDAP store? Priority affects which provider is chosen to sync the new user.",
+
+    "requiredSettingsHelp": "Required Settings",
+    "kerberosRealmHelp": "Name of kerberos realm. For example, FOO.ORG",
+    "serverPrincipalHelp": "Full name of server principal for HTTP service including server and domain name. For example, HTTP/host.foo.org@FOO.ORG",
+    "keyTabHelp": "Location of Kerberos KeyTab file containing the credentials of server principal. For example, /etc/krb5.keytab",
+    "debugHelp": "Enable/disable debug logging to standard output for Krb5LoginModule",
+    "allowPasswordAuthenticationHelp": "Enable/disable possibility of username/password authentication against Kerberos database",
+    "updateFirstLoginHelp": "Update profile on first login"
   }
 }

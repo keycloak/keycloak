@@ -56,6 +56,14 @@
     "advancedSettings": "Advanced settings",
     "enableLdapv3Password": "Enable the LDAPv3 password modify extended operation",
     "validatePasswordPolicy": "Validate password policy",
-    "trustEmail": "Trust email"
+    "trustEmail": "Trust email",
+
+    "requiredSettings": "Required Settings",
+    "kerberosRealm": "Kerberos realm",
+    "serverPrincipal": "Server principal",
+    "keyTab": "Key tab",
+    "debug": "Debug",
+    "allowPasswordAuthentication": "Allow password authentication",
+    "updateFirstLogin": "Update first login"
   }
 }
