@@ -54,42 +54,9 @@ public class NiaIdentityProviderConfig extends SAMLIdentityProviderConfig {
         this.setPostBindingAuthnRequest(true);
         this.setPostBindingResponse(true);
         this.setSingleSignOnServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
-        //this.setWantAuthnRequestsSigned(true);
-//        configureUrls(this);
+
     }
 
-//    void configureUrls(SAMLIdentityProviderConfig config) {
-//        config.setSingleSignOnServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
-//    }
-//    boolean isIgnoreAbsentStateParameterLogout() {
-//        return Boolean.parseBoolean(getConfig().get("ignoreAbsentParameterLogout"));
-//    }
-//
-//    EidasLevel getEidasLevel() {
-//        return EidasLevel.getOrDefault(getConfig().get(
-//                EidasLevel.EIDAS_LEVEL_PROPERTY_NAME),
-//                DEFAULT_EIDAS_LEVEL);
-//    }
-//
-//    enum EidasLevel {
-//        EIDAS1, EIDAS2, EIDAS3;
-//
-//        static final String EIDAS_LEVEL_PROPERTY_NAME = "eidas_values";
-//
-//        @Override
-//        public String toString() {
-//            return name().toLowerCase();
-//        }
-//
-//        static EidasLevel getOrDefault(String eidasLevelName, EidasLevel defaultEidasLevel) {
-//            for (EidasLevel eidasLevel : EidasLevel.values()) {
-//                if (eidasLevel.name().equalsIgnoreCase(eidasLevelName)) {
-//                    return eidasLevel;
-//                }
-//            }
-//            return defaultEidasLevel;
-//        }
-//    }
     public String getEntityId() {
         return getConfig().get(ENTITY_ID);
     }
