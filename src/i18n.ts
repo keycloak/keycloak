@@ -34,6 +34,7 @@ const initOptions = {
       ...groups,
       ...users,
       ...sessions,
+      ...userFederation,
       ...events,
       ...storybook,
       ...userFederation,

@@ -10,6 +10,7 @@ export const ExternalLink = ({ title, href, ...rest }: ButtonProps) => {
       iconPosition="right"
       component="a"
       href={href}
+      target="_blank"
       {...rest}
     >
       {title ? title : href}

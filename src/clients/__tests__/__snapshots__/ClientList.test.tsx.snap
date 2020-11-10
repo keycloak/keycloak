@@ -102,6 +102,7 @@ Object {
                 data-ouia-component-type="PF4/Button"
                 data-ouia-safe="true"
                 href="http://blog.nerdin.chrealms/master/account/"
+                target="_blank"
               >
                 http://blog.nerdin.chrealms/master/account/
                 <span
@@ -201,6 +202,7 @@ Object {
                 data-ouia-component-type="PF4/Button"
                 data-ouia-safe="true"
                 href="http://blog.nerdin.chrealms/master/account/"
+                target="_blank"
               >
                 http://blog.nerdin.chrealms/master/account/
                 <span
@@ -517,6 +519,7 @@ Object {
                 data-ouia-component-type="PF4/Button"
                 data-ouia-safe="true"
                 href="http://localhost:8080/"
+                target="_blank"
               >
                 http://localhost:8080/
                 <span
@@ -687,6 +690,7 @@ Object {
                 data-ouia-component-type="PF4/Button"
                 data-ouia-safe="true"
                 href="http://blog.nerdin.chadmin/master/console/"
+                target="_blank"
               >
                 http://blog.nerdin.chadmin/master/console/
                 <span
@@ -845,6 +849,7 @@ Object {
               data-ouia-component-type="PF4/Button"
               data-ouia-safe="true"
               href="http://blog.nerdin.chrealms/master/account/"
+              target="_blank"
             >
               http://blog.nerdin.chrealms/master/account/
               <span
@@ -944,6 +949,7 @@ Object {
               data-ouia-component-type="PF4/Button"
               data-ouia-safe="true"
               href="http://blog.nerdin.chrealms/master/account/"
+              target="_blank"
             >
               http://blog.nerdin.chrealms/master/account/
               <span
@@ -1260,6 +1266,7 @@ Object {
               data-ouia-component-type="PF4/Button"
               data-ouia-safe="true"
               href="http://localhost:8080/"
+              target="_blank"
             >
               http://localhost:8080/
               <span
@@ -1430,6 +1437,7 @@ Object {
               data-ouia-component-type="PF4/Button"
               data-ouia-safe="true"
               href="http://blog.nerdin.chadmin/master/console/"
+              target="_blank"
             >
               http://blog.nerdin.chadmin/master/console/
               <span

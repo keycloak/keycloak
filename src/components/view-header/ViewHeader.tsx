@@ -19,7 +19,6 @@ import {
 import { HelpContext } from "../help-enabler/HelpHeader";
 import { useTranslation } from "react-i18next";
 import { ExternalLink } from "../external-link/ExternalLink";
-import { isRowExpanded } from "@patternfly/react-table";
 
 export type ViewHeaderProps = {
   titleKey: string;
@@ -27,6 +26,8 @@ export type ViewHeaderProps = {
   subKey: string;
   subKeyLinkProps?: ButtonProps;
   dropdownItems?: ReactElement[];
+  lowerDropdownItems?: any;
+  lowerDropdownMenuTitle?: any;
   isEnabled?: boolean;
   onToggle?: (value: boolean) => void;
 };
@@ -37,15 +38,22 @@ export const ViewHeader = ({
   subKey,
   subKeyLinkProps,
   dropdownItems,
+  lowerDropdownMenuTitle,
+  lowerDropdownItems,
   isEnabled = true,
   onToggle,
 }: ViewHeaderProps) => {
   const { t } = useTranslation();
   const { enabled } = useContext(HelpContext);
   const [isDropdownOpen, setDropdownOpen] = useState(false);
+  const [isLowerDropdownOpen, setIsLowerDropdownOpen] = useState(false);
 
   const onDropdownToggle = () => {
     setDropdownOpen(!isDropdownOpen);
+  };
+
+  const onLowerDropdownToggle = () => {
+    setIsLowerDropdownOpen(!isLowerDropdownOpen);
   };
 
   return (
@@ -117,6 +125,22 @@ export const ViewHeader = ({
               )}
             </Text>
           </TextContent>
+        )}
+        {lowerDropdownItems && (
+          <Dropdown
+            className="keycloak__user-federation__dropdown"
+            toggle={
+              <DropdownToggle
+                onToggle={() => onLowerDropdownToggle()}
+                isPrimary
+                id="ufToggleId"
+              >
+                {t(lowerDropdownMenuTitle)}
+              </DropdownToggle>
+            }
+            isOpen={isLowerDropdownOpen}
+            dropdownItems={lowerDropdownItems}
+          />
         )}
       </PageSection>
       <Divider />

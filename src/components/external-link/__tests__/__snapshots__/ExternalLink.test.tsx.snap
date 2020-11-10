@@ -9,6 +9,7 @@ exports[`<ExternalLink /> render as application 1`] = `
     data-ouia-component-type="PF4/Button"
     data-ouia-safe="true"
     href="/application/main"
+    target="_blank"
   >
     Application link
   </a>
@@ -24,6 +25,7 @@ exports[`<ExternalLink /> render with internal url 1`] = `
     data-ouia-component-type="PF4/Button"
     data-ouia-safe="true"
     href="/application/home/"
+    target="_blank"
   >
     Application page
   </a>
@@ -39,6 +41,7 @@ exports[`<ExternalLink /> render with link 1`] = `
     data-ouia-component-type="PF4/Button"
     data-ouia-safe="true"
     href="http://hello.nl/"
+    target="_blank"
   >
     http://hello.nl/
     <span
@@ -71,6 +74,7 @@ exports[`<ExternalLink /> render with link and title 1`] = `
     data-ouia-component-type="PF4/Button"
     data-ouia-safe="true"
     href="http://hello.nl/"
+    target="_blank"
   >
     Link to Hello
     <span
