@@ -1,2 +1,3 @@
 org.keycloak.services.clientpolicy.condition.ClientUpdateContextConditionFactory
 org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory
+org.keycloak.services.clientpolicy.condition.ClientIpAddressConditionFactory
