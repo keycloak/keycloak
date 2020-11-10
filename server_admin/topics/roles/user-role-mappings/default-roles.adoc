@@ -10,10 +10,4 @@ role cannot be removed because it serves as a container for both realm and clien
 .Default Roles
 image:{project_images}/default-roles.png[]
 
-As you can see from the screenshot, there are already a number of _default roles_ set up by default.
-
-
-
-
-
-
+This screenshot shows that some _default roles_ already exist.

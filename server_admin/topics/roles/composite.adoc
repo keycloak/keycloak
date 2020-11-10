@@ -2,20 +2,22 @@
 
 === Composite Roles
 
-Any realm or client level role can be turned into a _composite role_.
-A _composite role_ is a role that has one or more additional roles associated with it.
-When a composite role is mapped to the user, the user also gains the roles associated with that composite.  This inheritance
-is recursive so any composite of composites also gets inherited.
+Any realm or client level role can be a _composite role_. A _composite role_ is a role that has one or more additional roles associated with it. When a composite role is mapped to a user, the user also gains the roles associated with that composite.  This inheritance is recursive so users also inherit any composite of composites. However, we recommend that composite roles are not overused.
 
-To turn a regular role into a composite role, go to the role detail page and flip the `Composite Role` switch on.
+To convert a role to a composite role:
+
+. Click `Roles` in the left menu.
+. Click the role to access the roles detail page.
+. Set `Composite Roles` to ON.
 
 .Composite Role
 image:{project_images}/composite-role.png[]
 
-Once you flip this switch the role selection UI will be displayed lower on the page and you'll be able to associate
-realm level and client level roles to the composite you are creating.  In this example, the `employee` realm-level
-role was associated with the `developer` composite role.  Any user with the `developer` role will now also inherit
-the `employee` role too.
+The role selection UI is displayed on the page and you can associate realm level and client level roles to the composite role you are creating.
 
-NOTE: When tokens and SAML assertions are created, any composite will also have its associated roles added to the claims and
-      assertions of the authentication response sent back to the client.
+In this example, the `employee` realm-level role is associated with the `developer` composite role.  Any user with the `developer` role also inherits the `employee` role.
+
+[NOTE]
+====
+When creating tokens and SAML assertions, any composite also has its associated roles added to the claims and assertions of the authentication response sent back to the client.
+====  

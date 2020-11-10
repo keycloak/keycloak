@@ -1,38 +1,50 @@
+
 == Groups
 
-Groups in {project_name} allow you to manage a common set of attributes and role mappings for a set of users.
-Users can be members of zero or more groups.
-Users inherit the attributes and role mappings assigned to each group.  To manage groups go to the `Groups` left menu
-item.
+Groups in {project_name} manage a common set of attributes and role mappings for each user. Users can be members of any number of groups and inherit the attributes and role mappings assigned to each group.
+
+To manage groups, click `Groups` in the left menu.
 
 .Groups
 image:{project_images}/groups.png[]
 
-Groups are hierarchical.
-A group can have many subgroups, but a group can only have one parent.
-Subgroups inherit the attributes and role mappings from the parent.
-This applies to the user as well.
-So, if you have a parent group and a child group and a user that only belongs to the child group, the user inherits the attributes and role mappings of both the parent and child.
-In this example, we have a top level `Sales` group and a child `North America` subgroup.  To add a group, click on the
-parent you want to add a new child to and click `New` button.  Select the `Groups` icon in the tree to make a top-level group.
-Entering in a group name in the `Create Group` screen and hitting `Save` will bring you to the individual group management page.
+Groups are hierarchical. A group can have multiple subgroups but a group can have only one parent. Subgroups inherit the attributes and role mappings from their parent. Users inherit the attributes and role mappings from their parent as well.
 
+If you have a parent group and a child group, and a user that belongs only to the child group, the user in the child group inherits the attributes and role mappings of both the parent group and the child group.
+
+The following example includes a top-level `Sales` group and a child `North America` subgroup.  
+
+To add a group:
+
+. Click the group.
+. Click `New`.
+. Select the `Groups` icon in the tree to make a top-level group.
+. Enter a group name in the `Create Group` screen.
+. Click `Save`. The group management page displays.
++
 .Group
 image:{project_images}/group.png[]
 
-The `Attributes` and `Role Mappings` tab work exactly as the tabs with similar names under a user.  Any attributes and role mappings
-you define will be inherited by the groups and users that are members of this group.
+Attributes and role mappings you define are inherited by the groups and users that are members of the group.
 
-To add a user to a group you need to go all the way back to the user detail page and click on the `Groups` tab there.
+To add a user to a group:
 
+. Click `Users` in the left menu.
+. Click the user that you want to perform a role mapping on. If the user is not displayed, click `View all users`.
+. Click `Groups`.
++
 .User Groups
 image:{project_images}/user-groups.png[]
++
+. Select a group from the `Available Groups` tree.
+. Click `Join`.
 
-Select a group from the `Available Groups` tree and hit the `join` button to add the user to a group.  Vice versa to remove a group.
-Here we've added the user _Jim_ to the _North America_ sales group.  If you go back to the detail page for that group and
-select the `Membership` tab, _Jim_ is now displayed there.
+To remove a group from a user:
+
+. Select the group from the `Group Membership` tree.
+. Click `Leave`.
+
+In this example, the user _jimlincoln_ is in the _North America_ group.  You can see _jimlincoln_ displayed under the `Members` tab for the group.
 
 .Group Membership
 image:{project_images}/group-membership.png[]
-
-

@@ -1,12 +1,12 @@
 
 === Default Groups
 
-Default groups allow you to automatically assign group membership whenever any new user is created or imported through
-<<_identity_broker, Identity Brokering>>.
-To specify default groups go to the `Groups` left menu item, and click the `Default Groups` tab.
+To automatically assign group membership to new users, that are created or imported through <<_identity_broker, Identity Brokering>>, you use default groups.
+
+To specify default groups:
+
+. Click `Groups` in the left menu.
+. Click the `Default Groups` tab.
 
 .Default Groups
 image:{project_images}/default-groups.png[]
-
-
-

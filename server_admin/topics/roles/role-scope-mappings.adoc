@@ -2,30 +2,16 @@
 
 === Role Scope Mappings
 
-When an OIDC access token or SAML assertion is created, all the user role mappings of the user are, by default, added as claims
-within the token or assertion.  Applications use this information to make access decisions on the resources controlled by that
-application.  In {project_name}, access tokens are digitally signed and can actually be re-used by the application
-to invoke on other remotely secured REST services.  This means that if an application gets compromised or there is a rogue
-client registered with the realm, attackers can get access tokens that have a broad range of permissions and your whole
-network is compromised.  This is where _role scope mappings_ becomes important.
+On creation of an OIDC access token or SAML assertion, the user role mappings become claims within the token or assertion.  Applications use these claims to make access decisions on the resources controlled by the application.  {project_name} digitally signs access tokens and applications re-use them to invoke remotely secured REST services.  However, these tokens have an associated risk. An attacker can obtain these tokens and use their permissions to compromise your networks. To prevent this situation, use _Role Scope Mappings_.
 
-_Role Scope Mappings_ is a way to limit the roles that get declared inside an access token.  When a client requests that a user
-be authenticated, the access token they receive back will only contain the role mappings you've explicitly specified
-for the client's scope.  This allows you to limit the permissions each individual access token has rather than giving the
-client access to all of the user's permissions.  By default, each client gets all the role mappings of the user.
-You can view this in the `Scope` tab of each client.
+_Role Scope Mappings_ limit the roles declared inside an access token.  When a client requests a user authentication, the access token they receive contains only the role mappings that are explicitly specified for the client's scope.  The result is that you limit the permissions of each individual access token instead of giving the client access to all the users permissions.  
+
+By default, each client gets all the role mappings of the user. You can view the role mappings in the `Scope` tab of each client.
 
 .Full Scope
 image:{project_images}/full-client-scope.png[]
 
-You can see from the picture that the effective roles of the scope are every declared role in the realm.
-To change this default behavior, you must explicitly turn off the `Full Scope Allowed` switch and declare the specific roles you want in each individual
-client.  Alternatively, you can also use <<_client_scopes, client scopes>>
-to define the same role scope mappings for a whole set of clients.
+By default, the effective roles of scopes are every declared role in the realm. To change this default behavior, set the `Full Scope Allowed` switch to ON and declare the specific roles you want in each client.  You can also use <<_client_scopes, client scopes>> to define the same role scope mappings for a set of clients.
 
 .Partial Scope
 image:{project_images}/client-scope.png[]
-
-
-
-

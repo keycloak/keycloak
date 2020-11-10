@@ -1,5 +1,3 @@
 === Client Roles
 
-Client roles are basically a namespace dedicated to a client. Each client gets its own namespace. Client roles are managed under the `Roles` tab under each individual client. You interact with this UI the same way you do for realm-level roles.
-
-
+Client roles are namespaces dedicated to clients. Each client gets its own namespace. Client roles are managed under the `Roles` tab for each client. You interact with this UI the same way you do for realm-level roles.

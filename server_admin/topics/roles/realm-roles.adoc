@@ -1,17 +1,18 @@
 
 === Realm Roles
-
-Realm-level roles are a global namespace to define your roles. You can see the list of built-in and created roles by clicking the `Roles` left menu item.
+Realm-level roles are a namespace for defining your roles. To see the list of roles, click `Roles` in the left menu.
 
 image:{project_images}/roles.png[]
 
-To create a role, click *Add Role* on this page, enter in the name and description of the role, and click *Save*.
+To create a role:
+
+.Procedure
+. Click *Add Role*.
+. Enter a `Role Name`.
+. Enter a `Description`.
+. Click *Save*.
 
 .Add Role
 image:{project_images}/role.png[]
 
-The value for the `description` field is localizable by specifying a substitution variable with `$\{var-name}` strings. The localized
-value is then configured within property files in your theme. See the link:{developerguide_link}[{developerguide_name}] for more information
-on localization.
-
-
+The `description` field can be localizable by specifying a substitution variable with `$\{var-name}` strings. The localized value is configured to your theme within the themes property files. See the vlink:{developerguide_link}[{developerguide_name}] for more details.
