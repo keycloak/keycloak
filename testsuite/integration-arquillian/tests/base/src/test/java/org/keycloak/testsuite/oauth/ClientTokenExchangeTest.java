@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.oauth;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -49,6 +51,7 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
+import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -231,10 +234,16 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
             AccessToken exchangedToken = verifier.parse().getToken();
             Assert.assertEquals("client-exchanger", exchangedToken.getIssuedFor());
-            Assert.assertEquals("target", exchangedToken.getAudience()[0]);
+            Assert.assertThat(exchangedToken.getAudience(), Matchers.hasItemInArray(Matchers.equalTo("target")));
             Assert.assertEquals(exchangedToken.getPreferredUsername(), "user");
             Assert.assertTrue(exchangedToken.getRealmAccess().isUserInRole("example"));
         }
+
+        String introspection = oauth
+                .introspectAccessTokenWithClientCredential("client-exchanger", "secret", response.getAccessToken());
+        
+        JsonNode jsonNode = JsonSerialization.readValue(introspection, JsonNode.class);
+        Assert.assertEquals(true, jsonNode.get("active").asBoolean());
 
         {
             response = oauth.doTokenExchange(TEST, accessToken, "target", "legal", "secret");
@@ -251,6 +260,42 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
             response = oauth.doTokenExchange(TEST, accessToken, "target", "illegal", "secret");
             Assert.assertEquals(403, response.getStatusCode());
         }
+    }
+
+    @Test
+    @UncaughtServerErrorExpected
+    public void testExchangeFromDifferentClient() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+
+        oauth.realm(TEST);
+        oauth.clientId("legal");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "user", "password");
+        String accessToken = response.getAccessToken();
+        TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(accessToken, AccessToken.class);
+        AccessToken token = accessTokenVerifier.parse().getToken();
+        Assert.assertEquals(token.getPreferredUsername(), "user");
+
+        {
+            response = oauth.doTokenExchange(TEST, accessToken, "target", "client-exchanger", "secret");
+            String exchangedTokenString = response.getAccessToken();
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
+            AccessToken exchangedToken = verifier.parse().getToken();
+            Assert.assertEquals("client-exchanger", exchangedToken.getIssuedFor());
+            Assert.assertThat(exchangedToken.getAudience(), Matchers.hasItemInArray(Matchers.equalTo("target")));
+            Assert.assertEquals(exchangedToken.getPreferredUsername(), "user");
+            Assert.assertTrue(exchangedToken.getRealmAccess().isUserInRole("example"));
+        }
+
+        String introspection = oauth
+                .introspectAccessTokenWithClientCredential("target", "secret", response.getAccessToken());
+        JsonNode jsonNode = JsonSerialization.readValue(introspection, JsonNode.class);
+        Assert.assertEquals(true, jsonNode.get("active").asBoolean());
+
+        introspection = oauth
+                .introspectAccessTokenWithClientCredential("client-exchanger", "secret", response.getAccessToken());
+        
+        jsonNode = JsonSerialization.readValue(introspection, JsonNode.class);
+        Assert.assertEquals(true, jsonNode.get("active").asBoolean());
     }
 
     @Test

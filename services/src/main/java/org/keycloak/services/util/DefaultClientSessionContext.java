@@ -53,6 +53,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
     private final AuthenticatedClientSessionModel clientSession;
     private final Set<String> clientScopeIds;
     private final KeycloakSession session;
+    private final ClientModel resource;
 
     private Set<ClientScopeModel> clientScopes;
 
@@ -66,11 +67,15 @@ public class DefaultClientSessionContext implements ClientSessionContext {
     private Map<String, Object> attributes = new HashMap<>();
 
     private DefaultClientSessionContext(AuthenticatedClientSessionModel clientSession, Set<String> clientScopeIds, KeycloakSession session) {
+        this(clientSession, clientScopeIds, session, null);
+    }
+
+    private DefaultClientSessionContext(AuthenticatedClientSessionModel clientSession, Set<String> clientScopeIds, KeycloakSession session, ClientModel resource) {
         this.clientSession = clientSession;
         this.clientScopeIds = clientScopeIds;
         this.session = session;
+        this.resource = resource;
     }
-
 
     /**
      * Useful if we want to "re-compute" client scopes based on the scope parameter
@@ -88,6 +93,10 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     public static DefaultClientSessionContext fromClientSessionAndClientScopeIds(AuthenticatedClientSessionModel clientSession, Set<String> clientScopeIds, KeycloakSession session) {
         return new DefaultClientSessionContext(clientSession, clientScopeIds, session);
+    }
+
+    public static DefaultClientSessionContext fromClientSessionAndClientScopeIds(AuthenticatedClientSessionModel clientSession, Set<String> clientScopeIds, KeycloakSession session, ClientModel resource) {
+        return new DefaultClientSessionContext(clientSession, clientScopeIds, session, resource);
     }
 
 
@@ -205,7 +214,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
     private Set<ClientScopeModel> loadClientScopes() {
         Set<ClientScopeModel> clientScopes = new HashSet<>();
         for (String scopeId : clientScopeIds) {
-            ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(clientSession.getClient().getRealm(), getClientSession().getClient(), scopeId);
+            ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(getClient().getRealm(), getClientSession().getClient(), scopeId);
             if (clientScope != null) {
                 if (isClientScopePermittedForUser(clientScope)) {
                     clientScopes.add(clientScope);
@@ -220,6 +229,12 @@ public class DefaultClientSessionContext implements ClientSessionContext {
         return clientScopes;
     }
 
+    private ClientModel getClient() {
+        if (resource != null) {
+            return resource;
+        }
+        return clientSession.getClient();
+    }
 
     // Return true if clientScope can be used by the user.
     private boolean isClientScopePermittedForUser(ClientScopeModel clientScope) {
@@ -245,7 +260,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     private Set<RoleModel> loadRoles() {
         UserModel user = clientSession.getUserSession().getUser();
-        ClientModel client = clientSession.getClient();
+        ClientModel client = getClient();
 
         Set<ClientScopeModel> clientScopes = getClientScopes();
 
@@ -255,11 +270,12 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     private Set<ProtocolMapperModel> loadProtocolMappers() {
         Set<ClientScopeModel> clientScopes = getClientScopes();
-        String protocol = clientSession.getClient().getProtocol();
+        String protocol = getClient().getProtocol();
 
         // Being rather defensive. But protocol should normally always be there
         if (protocol == null) {
-            logger.warnf("Client '%s' doesn't have protocol set. Fallback to openid-connect. Please fix client configuration", clientSession.getClient().getClientId());
+            logger.warnf("Client '%s' doesn't have protocol set. Fallback to openid-connect. Please fix client configuration", getClient()
+                    .getClientId());
             protocol = OIDCLoginProtocol.LOGIN_PROTOCOL;
         }
 

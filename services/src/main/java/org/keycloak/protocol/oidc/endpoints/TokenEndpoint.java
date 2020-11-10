@@ -975,7 +975,7 @@ public class TokenEndpoint {
     protected Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
                                                   ClientModel targetClient, String audience, String scope) {
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
-        AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(targetClient);
+        AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
 
         authSession.setAuthenticatedUser(targetUser);
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
@@ -984,12 +984,12 @@ public class TokenEndpoint {
 
         event.session(targetUserSession);
 
-        AuthenticationManager.setClientScopesInSession(authSession);
-        ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession);
+        AuthenticationManager.setClientScopesInSession(authSession, targetClient);
+        ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(this.session, targetUserSession, authSession, targetClient);
 
         updateUserSessionFromClientAuth(targetUserSession);
 
-        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, targetClient, event, this.session, targetUserSession, clientSessionCtx)
+        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, this.session, targetUserSession, clientSessionCtx)
                 .generateAccessToken();
         responseBuilder.getAccessToken().issuedFor(client.getClientId());
 
