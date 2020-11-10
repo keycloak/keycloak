@@ -9,16 +9,13 @@ import org.keycloak.saml.common.util.StaxUtil;
 
 public class NiaSPType implements SamlProtocolExtensionsAwareBuilder.NodeGenerator {
 
-    public static final String PREFIX = "saml2p";
+    public static final String PREFIX = "samlp";
     public static final String URI = "urn:oasis:names:tc:SAML:2.0:protocol";
     public static final String NS_PREFIX = "eidas";
     public static final String SAML_EXTENSIONS = "http://eidas.europa.eu/saml-extensions";
     public static final NameIDType nameidtype = new NameIDType();
 
-    private final String sptype;
-
-    public NiaSPType(String sptype) {
-        this.sptype = sptype;
+    public NiaSPType() {
     }
 
     @Override

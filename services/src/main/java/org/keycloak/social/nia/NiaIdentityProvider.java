@@ -89,7 +89,7 @@ public class NiaIdentityProvider extends SAMLIdentityProvider
                             .setAllowCreate(Boolean.TRUE))
                     .requestedAuthnContext(requestedAuthnContext)
                     .subject(loginHint)
-                    .addExtension(new NiaSPType("public"))
+                    .addExtension(new NiaSPType())
                     .addExtension(new NiaCustomAttributes());
 
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
