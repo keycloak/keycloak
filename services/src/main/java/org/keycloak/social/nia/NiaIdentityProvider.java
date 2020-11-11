@@ -37,7 +37,7 @@ import org.keycloak.util.JsonSerialization;
 public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityProviderConfig>
         implements SocialIdentityProvider<NiaIdentityProviderConfig> {
 
-    protected static final Logger logger = Logger.getLogger(SAMLIdentityProvider.class);
+    protected static final Logger logger = Logger.getLogger(NiaIdentityProvider.class);
 
     private final DestinationValidator destinationValidator;
 
