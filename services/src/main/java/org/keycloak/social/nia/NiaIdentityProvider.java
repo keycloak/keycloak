@@ -7,13 +7,17 @@ import java.util.List;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
+import org.jboss.logging.Logger;
+import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.broker.saml.SAMLIdentityProvider;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -24,19 +28,22 @@ import org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessor;
 import org.keycloak.saml.SAML2AuthnRequestBuilder;
 import org.keycloak.saml.SAML2NameIDPolicyBuilder;
 import org.keycloak.saml.SAML2RequestedAuthnContextBuilder;
+import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.util.JsonSerialization;
 
-public class NiaIdentityProvider extends SAMLIdentityProvider
-        implements SocialIdentityProvider<SAMLIdentityProviderConfig> {
+public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityProviderConfig>
+        implements SocialIdentityProvider<NiaIdentityProviderConfig> {
+
+    protected static final Logger logger = Logger.getLogger(SAMLIdentityProvider.class);
 
     private final DestinationValidator destinationValidator;
 
     public NiaIdentityProvider(KeycloakSession session,
             NiaIdentityProviderConfig config, DestinationValidator destinationValidator) {
-        super(session, config, destinationValidator);
+        super(session, config);
         this.destinationValidator = destinationValidator;
     }
 
@@ -157,6 +164,22 @@ public class NiaIdentityProvider extends SAMLIdentityProvider
             logger.warn("Could not json-deserialize AuthContextDeclRefs config entry: " + authnContextDeclRefs, e);
             return new LinkedList<String>();
         }
+    }
+
+    public SignatureAlgorithm getSignatureAlgorithm() {
+        String alg = getConfig().getSignatureAlgorithm();
+        if (alg != null) {
+            SignatureAlgorithm algorithm = SignatureAlgorithm.valueOf(alg);
+            if (algorithm != null) {
+                return algorithm;
+            }
+        }
+        return SignatureAlgorithm.RSA_SHA256;
+    }
+
+    @Override
+    public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
+        return Response.ok(identity.getToken()).build();
     }
 
     public NiaIdentityProviderConfig getNiaConfig() {

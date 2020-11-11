@@ -123,7 +123,7 @@ public class NiaSAMLEndpoint {
     protected EventBuilder event;
     protected SAMLIdentityProviderConfig config;
     protected IdentityProvider.AuthenticationCallback callback;
-    protected SAMLIdentityProvider provider;
+    protected NiaIdentityProvider provider;
     private final DestinationValidator destinationValidator;
 
     @Context
@@ -135,7 +135,7 @@ public class NiaSAMLEndpoint {
     @Context
     private HttpHeaders headers;
 
-    public NiaSAMLEndpoint(RealmModel realm, SAMLIdentityProvider provider, SAMLIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback, DestinationValidator destinationValidator) {
+    public NiaSAMLEndpoint(RealmModel realm, NiaIdentityProvider provider, SAMLIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback, DestinationValidator destinationValidator) {
         this.realm = realm;
         this.config = config;
         this.callback = callback;
