@@ -4,39 +4,39 @@
 To protect an application that uses the OpenID connect protocol, you create a client.
 
 .Procedure
-. Click `Clients` in the left navigation pane.  
+. Click *Clients* in the left navigation pane.  
 
-. Click *Create* to go to the `Add Client` page.
+. Click *Create* to go to the *Add Client* page.
 +
 .Add Client
 image:{project_images}/add-client-oidc.png[Add Client]
 
-. Enter any name for `Client ID.`
+. Enter any name for *Client ID.*
 
-. Select `openid-connect` in the `Client Protocol` drop down box.
+. Select *openid-connect* in the *Client Protocol* drop down box.
 
-. Enter the base URL of your application in the `Root URL` field.
+. Enter the base URL of your application in the *Root URL* field.
 
 . Click *Save*.
 ifdef::api-management[]
 . Configure the client permissions
-.. Set `Access Type` to *confidential*.                                     
-.. Set `Standard Flow Enabled` to *OFF*.                                     
-.. Set `Direct Access Grants Enabled` to *OFF*.                                     
-.. set `Service Accounts Enabled` to *ON*.                                     
+.. Set *Access Type* to *confidential*.                                     
+.. Set *Standard Flow Enabled* to *OFF*.                                     
+.. Set *Direct Access Grants Enabled* to *OFF*.                                     
+.. set *Service Accounts Enabled* to *ON*.                                     
 . Set the service account roles for the client:                             
 .. Click the *Service Account Roles* tab.
 .. Click *Client Roles* and enter *realm-management*.
-.. Under `Available Roles`, select *manage-clients*.
-.. Click *Add selected >>* to move *manage-clients* under `Assigned Roles`.
+.. Under *Available Roles*, select *manage-clients*.
+.. Click *Add selected >>* to move *manage-clients* under *Assigned Roles*.
 . Note the client credentials
 .. On the Credentials tab, make a note of the Secret field
-.. On the `Settings` tab, make note the client ID that you assigned.
+.. On the *Settings* tab, make note the client ID that you assigned.
 . Click *Save*.
 endif::[]
 
 ifdef::standalone[]
-This action creates the client and bring you to the `Settings`
+This action creates the client and bring you to the *Settings*
 tab.
 
 .Client Settings
@@ -44,7 +44,7 @@ image:{project_images}/client-settings-oidc.png[Client Settings]
 
 [role="_additional-resources"]
 .Additional resources
-* For more information about fields on the `Settings` tab, see xref:con-basic-settings_{context}[Basic Settings].
+* For more information about fields on the *Settings* tab, see xref:con-basic-settings_{context}[Basic Settings].
 * For more information about the OIDC protocol, see xref:con-oidc_{context}[OpenID Connect].
 endif::[]
 

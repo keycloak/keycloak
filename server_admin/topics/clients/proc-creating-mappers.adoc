@@ -4,10 +4,10 @@
 You can add mapper types as follows:
 
 .Procedure
-. Go to the `Mappers` tab.
-. Click the `Create` button.
+. Go to the *Mappers* tab.
+. Click the *Create* button.
 +
 .Add Mapper
 image:{project_images}/add-mapper.png[]
 +
-. Select a `Mapper Type` from the list box.
+. Select a *Mapper Type* from the list box.

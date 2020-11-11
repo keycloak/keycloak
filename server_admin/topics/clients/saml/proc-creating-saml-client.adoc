@@ -6,90 +6,90 @@
 POST and Redirect bindings are supported. You can choose to require client signature validation. You can have the server sign and/or encrypt responses as well.
 
 .Procedure
-. Click `Clients` in the left navigation pane.  
+. Click *Clients* in the left navigation pane.  
 
-. Click *Create* to go to the `Add Client` page.
+. Click *Create* to go to the *Add Client* page.
 +
 .Add Client
 image:{project_images}/add-client-saml.png[]
 
-. Enter the `Client ID` of the client. This is often a URL and is the expected `issuer` value in SAML requests sent by the application.
+. Enter the *Client ID* of the client. This is often a URL and is the expected *issuer* value in SAML requests sent by the application.
 
-. Select `saml` in the `Client Protocol` drop down box.
+. Select *saml* in the *Client Protocol* drop down box.
 
-. Enter the `Client SAML Endpoint` URL. This URL is where you want the {project_name} server to send SAML requests and responses. Generally, applications have one URL for processing SAML requests. Multiple URLs can be set in the `Settings` tab of the client.
+. Enter the *Client SAML Endpoint* URL. This URL is where you want the {project_name} server to send SAML requests and responses. Generally, applications have one URL for processing SAML requests. Multiple URLs can be set in the *Settings* tab of the client.
 
-. Click *Save*.  This action creates the client and brings you to the `Settings` tab.
+. Click *Save*.  This action creates the client and brings you to the *Settings* tab.
 +
 .Client Settings
 image:{project_images}/client-settings-saml.png[]
 +
 The following list describes each setting:
 +
-`Client ID`:: The alpha-numeric ID string that is used in OIDC requests and in the {project_name} database to identify the client. This value must match the issuer value sent with AuthNRequests. {project_name} pulls the issuer from the Authn SAML request and match it to a client by this value.
+*Client ID*:: The alpha-numeric ID string that is used in OIDC requests and in the {project_name} database to identify the client. This value must match the issuer value sent with AuthNRequests. {project_name} pulls the issuer from the Authn SAML request and match it to a client by this value.
 
-`Name`:: The name for the client in a {project_name} UI screen. To localize
+*Name*:: The name for the client in a {project_name} UI screen. To localize
 the name, set up a replacement string value. For example, a string value such as $\{myapp}.  See the link:{developerguide_link}[{developerguide_name}] for more information.
 
-`Description`:: The description of the client.  This setting can also be localized.
+*Description*:: The description of the client.  This setting can also be localized.
 
-`Enabled`:: When set to OFF, the client cannot request authentication.
+*Enabled*:: When set to OFF, the client cannot request authentication.
 
-`Consent Required`:: When set to ON, users see a consent page that grants access to that application.  The page also displays the metadata of the information that the client can access. If you have ever done a social login to Facebook, you often see a similar page. Red Hat Single Sign-On provides the same functionality.
+*Consent Required*:: When set to ON, users see a consent page that grants access to that application.  The page also displays the metadata of the information that the client can access. If you have ever done a social login to Facebook, you often see a similar page. Red Hat Single Sign-On provides the same functionality.
 
-`Include AuthnStatement`:: SAML login responses may specify the  authentication method used, such as password, as well as timestamps of the login and the session expiration.
-This switch is enabled by default, so that the `AuthnStatement` element will be included in login responses. Setting this to OFF prevents clients from determining the maximum session length, which can create client sessions that do not expire.
+*Include AuthnStatement*:: SAML login responses may specify the  authentication method used, such as password, as well as timestamps of the login and the session expiration.
+This switch is enabled by default, so that the *AuthnStatement* element will be included in login responses. Setting this to OFF prevents clients from determining the maximum session length, which can create client sessions that do not expire.
 
-`Sign Documents`:: When set to ON, {project_name} signs the document using the realms private key.
+*Sign Documents*:: When set to ON, {project_name} signs the document using the realms private key.
 
-`Optimize REDIRECT signing key lookup`:: When set to ON, the SP messages include the {project_name} native extension. This extension contains a hint with the signing key ID. The SP uses the extension for signature validation instead of attempting to validate the signature using keys. 
+*Optimize REDIRECT signing key lookup*:: When set to ON, the SP messages include the {project_name} native extension. This extension contains a hint with the signing key ID. The SP uses the extension for signature validation instead of attempting to validate the signature using keys. 
 +
 This option applies to REDIRECT bindings where the signature is transferred in query parameters and this information is not found in the signature information. This is contrary to POST binding messages where key ID is always included in document signature. 
 +
-This option is used when {project_name} server and adapter provide the IDP and SP. This option is only relevant when `Sign Documents` is set to ON.
+This option is used when {project_name} server and adapter provide the IDP and SP. This option is only relevant when *Sign Documents* is set to ON.
 
-`Sign Assertions`:: The assertion is signed and embedded in the SAML XML Auth response.
+*Sign Assertions*:: The assertion is signed and embedded in the SAML XML Auth response.
 
-`Signature Algorithm`:: The algorithm used in signing SAML documents.
+*Signature Algorithm*:: The algorithm used in signing SAML documents.
 
-`SAML Signature Key Name`:: Signed SAML documents sent using POST binding contain the identification of the signing key in the `KeyName` element. This action can be controlled by the `SAML Signature Key Name` option. This option controls the contents of the `Keyname`.
+*SAML Signature Key Name*:: Signed SAML documents sent using POST binding contain the identification of the signing key in the *KeyName* element. This action can be controlled by the *SAML Signature Key Name* option. This option controls the contents of the *Keyname*.
 +
 --
-* _KEY_ID_:: The `KeyName` contains the key ID. This option is the default option.
-* _CERT_SUBJECT_:: The `KeyName` contains the subject from the certificate corresponding to the realm key. This option is expected by Microsoft Active Directory Federation Services.
-* _NONE_:: The `KeyName` hint is completely omitted from the SAML message.
+* _KEY_ID_:: The *KeyName* contains the key ID. This option is the default option.
+* _CERT_SUBJECT_:: The *KeyName* contains the subject from the certificate corresponding to the realm key. This option is expected by Microsoft Active Directory Federation Services.
+* _NONE_:: The *KeyName* hint is completely omitted from the SAML message.
 --
 +
-`Canonicalization Method`:: The canonicalization method for XML signatures.
+*Canonicalization Method*:: The canonicalization method for XML signatures.
 
-`Encrypt Assertions`:: Encrypts the assertions in SAML documents with the realms private key. The AES algorithm uses a key size of 128 bits. 
+*Encrypt Assertions*:: Encrypts the assertions in SAML documents with the realms private key. The AES algorithm uses a key size of 128 bits. 
 
-`Client Signature Required`:: If this switch is set to ON, documents coming from a client are expected to be signed. {project_name} validates this signature using the client public key or certificate set up in the `SAML Keys` tab.
+*Client Signature Required*:: If this switch is set to ON, documents coming from a client are expected to be signed. {project_name} validates this signature using the client public key or certificate set up in the *SAML Keys* tab.
 
-`Force POST Binding`:: By default, {project_name} responds using the initial SAML binding of the original request. By setting this switch to ON, {project_name} responds using the SAML POST binding even if the original request used the redirect binding.
+*Force POST Binding*:: By default, {project_name} responds using the initial SAML binding of the original request. By setting this switch to ON, {project_name} responds using the SAML POST binding even if the original request used the redirect binding.
 
-`Front Channel Logout`:: If this switch is set to ON, the application requires a browser redirect to perform a logout. For example, the application may require a cookie to be reset which could only be done via a redirect. If this switch is set to OFF, {project_name} invokes a background SAML request to log out of the application.
+*Front Channel Logout*:: If this switch is set to ON, the application requires a browser redirect to perform a logout. For example, the application may require a cookie to be reset which could only be done via a redirect. If this switch is set to OFF, {project_name} invokes a background SAML request to log out of the application.
 
-`Force Name ID Format`:: If a request has a name ID policy, ignore it and use the value configured in the admin console under `Name ID Format`.
+*Force Name ID Format*:: If a request has a name ID policy, ignore it and use the value configured in the admin console under *Name ID Format*.
 
-`Name ID Format`:: The Name ID Format for the subject. This format is used if no name ID policy is specified in a request, or if the Force Name ID Format attribute is set to ON.
+*Name ID Format*:: The Name ID Format for the subject. This format is used if no name ID policy is specified in a request, or if the Force Name ID Format attribute is set to ON.
 
-`Root URL`:: When {project_name} uses a configured relative URL, this value is prepended to the URL.
+*Root URL*:: When {project_name} uses a configured relative URL, this value is prepended to the URL.
 
-`Valid Redirect URIs`:: Enter a URL pattern and click the + sign to add.  Click the - sign to remove. Click the `Save` button to save these changes.
+*Valid Redirect URIs*:: Enter a URL pattern and click the + sign to add.  Click the - sign to remove. Click the *Save* button to save these changes.
 Wildcards values are allowed only at the end of a URL. For example, http://host.com/*$$.
 This field is used when the exact SAML endpoints are not registered and {project_name} pulls the Assertion Consumer URL from a request.
 
-`Base URL`:: If {project_name} needs to link to a client, this URL is used.
+*Base URL*:: If {project_name} needs to link to a client, this URL is used.
 
-`Master SAML Processing URL`:: This URL is used for all SAML requests and the response is directed to the SP. It is used as the Assertion Consumer Service URL and the Single Logout Service URL. 
+*Master SAML Processing URL*:: This URL is used for all SAML requests and the response is directed to the SP. It is used as the Assertion Consumer Service URL and the Single Logout Service URL. 
 +
 If login requests contain the Assertion Consumer Service URL then those login requests will take precedence. This URL must be validated by a registered Valid Redirect URI pattern.
 
-`Assertion Consumer Service POST Binding URL`:: POST Binding URL for the Assertion Consumer Service.
+*Assertion Consumer Service POST Binding URL*:: POST Binding URL for the Assertion Consumer Service.
 
-`Assertion Consumer Service Redirect Binding URL`:: Redirect Binding URL for the Assertion Consumer Service. 
+*Assertion Consumer Service Redirect Binding URL*:: Redirect Binding URL for the Assertion Consumer Service. 
 
-`Logout Service POST Binding URL`:: POST Binding URL for the Logout Service.
+*Logout Service POST Binding URL*:: POST Binding URL for the Logout Service.
 
-`Logout Service Redirect Binding URL`:: Redirect Binding URL for the Logout Service.     
+*Logout Service Redirect Binding URL*:: Redirect Binding URL for the Logout Service.     

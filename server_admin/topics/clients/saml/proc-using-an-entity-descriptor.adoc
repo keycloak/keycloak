@@ -4,13 +4,13 @@
 [role="_abstract"]
 Instead of registering a SAML 2.0 client manually, you can import the client using a standard SAML Entity Descriptor XML file.
 
-The Add Client page includes an `Import` option.
+The Add Client page includes an *Import* option.
 
 .Add Client
 image:{project_images}/add-client-saml.png[]
 
 .Procedure
-. Click the `Select File` button.
+. Click the *Select File* button.
 . Load the file that contains the XML entity descriptor information.  
 . Review the information to ensure everything is set up correctly.
 

@@ -44,9 +44,9 @@ If an attacker steals an authorization code of a legitimate client, Proof Key fo
 
 An administrator can select one of these options:
 
-`(blank)`:: {project_name} does not apply PKCE unless the client sends appropriate PKCE parameters to {project_name}s authorization endpoint.
-`S256`:: {project_name} applies to the client PKCE whose code challenge method is S256.
-`plain`:: {project_name} applies to the client PKCE whose code challenge method is plain.
+*(blank)*:: {project_name} does not apply PKCE unless the client sends appropriate PKCE parameters to {project_name}s authorization endpoint.
+*S256*:: {project_name} applies to the client PKCE whose code challenge method is S256.
+*plain*:: {project_name} applies to the client PKCE whose code challenge method is plain.
 
 See https://tools.ietf.org/html/rfc7636[RFC 7636 Proof Key for Code Exchange by OAuth Public Clients] for more details.
 
@@ -73,10 +73,10 @@ The client must pass its public key for encrypting CEK to {project_name}. {proje
 
 The procedure is:
 
-. Open the client's `Credentials` tab.
-. Select `Signed Jwt` from the `Client Authenticator` menu.
-. Set the `JWKS URL` switch to ON.
-. Input the client's public key URL in the `JWKS URL` textbox.
+. Open the client's *Credentials* tab.
+. Select *Signed Jwt* from the *Client Authenticator* menu.
+. Set the *JWKS URL* switch to ON.
+. Input the client's public key URL in the *JWKS URL* textbox.
 
 Key Encryption's algorithms are defined in the https://tools.ietf.org/html/rfc7518#section-4.1[Json Web Algorithm (JWA)] specification. {project_name} supports:
 
@@ -86,6 +86,6 @@ Key Encryption's algorithms are defined in the https://tools.ietf.org/html/rfc75
 
 The procedure to select the algorithm is:
 
-. Open the client's `Settings` tab.
-. Open `Fine Grain OpenID Connect Configuration`.
-. Select the algorithm from `ID Token Encryption Content Encryption Algorithm` pulldown menu.
+. Open the client's *Settings* tab.
+. Open *Fine Grain OpenID Connect Configuration*.
+. Select the algorithm from *ID Token Encryption Content Encryption Algorithm* pulldown menu.
