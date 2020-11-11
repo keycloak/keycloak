@@ -183,6 +183,8 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
     }
 
     public NiaIdentityProviderConfig getNiaConfig() {
-        return (NiaIdentityProviderConfig) super.getConfig();
+        NiaIdentityProviderConfig niaIdentityProviderConfig = new NiaIdentityProviderConfig();
+        return niaIdentityProviderConfig;
+        //(NiaIdentityProviderConfig) 
     }
 }
