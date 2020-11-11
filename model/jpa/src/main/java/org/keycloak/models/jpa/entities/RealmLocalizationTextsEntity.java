@@ -18,6 +18,7 @@
 package org.keycloak.models.jpa.entities;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import javax.persistence.Column;
@@ -32,6 +33,11 @@ import org.keycloak.models.jpa.converter.MapStringConverter;
 @IdClass(RealmLocalizationTextsEntity.RealmLocalizationTextEntityKey.class)
 @Table(name = "REALM_LOCALIZATIONS")
 public class RealmLocalizationTextsEntity {
+
+    // TODO: Remove this constant once the quarkus issue is fixed and use the @Convert annotation in the proper JPA way. Ideally see the github history and revert whole commit,
+    // which adds this "TODO" once the quarkus issue is fixed
+    private static final MapStringConverter MAP_STRING_CONVERTER = new MapStringConverter();
+
     static public class RealmLocalizationTextEntityKey implements Serializable {
         private String realmId;
         private String locale;
@@ -76,15 +82,25 @@ public class RealmLocalizationTextsEntity {
     private String locale;
 
     @Column(name = "TEXTS")
-    @Convert(converter = MapStringConverter.class)
-    private Map<String,String> texts;
+    private String texts;
+    // TODO: The @Convert does not work as expected on quarkus. It doesn't update the "texts" in case that updated map has same keys (but different values) as old map had
+//    @Convert(converter = MapStringConverter.class)
+//    private Map<String,String> texts;
 
     public Map<String,String> getTexts() {
-        return texts;
+        if (texts == null) {
+            return Collections.emptyMap();
+        } else {
+            return Collections.unmodifiableMap(MAP_STRING_CONVERTER.convertToEntityAttribute(texts));
+        }
     }
 
     public void setTexts(Map<String,String> texts) {
-        this.texts = texts;
+        if (texts == null) {
+            this.texts = null;
+        } else {
+            this.texts = MAP_STRING_CONVERTER.convertToDatabaseColumn(texts);
+        }
     }
 
     public String getLocale() {
