@@ -8,16 +8,16 @@ Any realm or client level role can be a _composite role_. A _composite role_ is 
 
 To convert a role to a composite role:
 
-. Click `Roles` in the left menu.
+. Click *Roles* in the left menu.
 . Click the role to access the roles detail page.
-. Set `Composite Roles` to ON.
+. Set *Composite Roles* to ON.
 
 .Composite Role
 image:{project_images}/composite-role.png[]
 
 The role selection UI is displayed on the page and you can associate realm level and client level roles to the composite role you are creating.
 
-In this example, the `employee` realm-level role is associated with the `developer` composite role.  Any user with the `developer` role also inherits the `employee` role.
+In this example, the *employee* realm-level role is associated with the *developer* composite role.  Any user with the *developer* role also inherits the *employee* role.
 
 [NOTE]
 ====

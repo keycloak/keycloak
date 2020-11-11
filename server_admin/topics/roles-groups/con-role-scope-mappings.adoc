@@ -8,12 +8,12 @@ On creation of an OIDC access token or SAML assertion, the user role mappings be
 
 _Role Scope Mappings_ limit the roles declared inside an access token.  When a client requests a user authentication, the access token they receive contains only the role mappings that are explicitly specified for the client's scope.  The result is that you limit the permissions of each individual access token instead of giving the client access to all the users permissions.  
 
-By default, each client gets all the role mappings of the user. You can view the role mappings in the `Scope` tab of each client.
+By default, each client gets all the role mappings of the user. You can view the role mappings in the *Scope* tab of each client.
 
 .Full Scope
 image:{project_images}/full-client-scope.png[]
 
-By default, the effective roles of scopes are every declared role in the realm. To change this default behavior, set the `Full Scope Allowed` switch to ON and declare the specific roles you want in each client.  You can also use <<_client_scopes, client scopes>> to define the same role scope mappings for a set of clients.
+By default, the effective roles of scopes are every declared role in the realm. To change this default behavior, set the *Full Scope Allowed* switch to ON and declare the specific roles you want in each client.  You can also use <<_client_scopes, client scopes>> to define the same role scope mappings for a set of clients.
 
 .Partial Scope
 image:{project_images}/client-scope.png[]

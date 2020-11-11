@@ -5,9 +5,7 @@
 [role="_abstract"]
 Default roles allow you to automatically assign user role mappings when any user is newly created or imported through
 <<_identity_broker, Identity Brokering>>.
-To specify default roles go to the `Roles` left menu item, and click the `Default Roles` tab or alternatively you can 
-search for `default-roles-${realmName}` role in the `Realm Roles` tab and then click Edit. Please note the `default-roles-${realmName}` 
-role cannot be removed because it serves as a container for both realm and client default roles.
+To specify default roles go to the *Roles* left menu item, and click the *Default Roles* tab.
 
 .Default Roles
 image:{project_images}/default-roles.png[]

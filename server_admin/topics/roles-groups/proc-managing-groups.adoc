@@ -3,7 +3,7 @@
 [role="_abstract"]
 Groups in {project_name} manage a common set of attributes and role mappings for each user. Users can be members of any number of groups and inherit the attributes and role mappings assigned to each group.
 
-To manage groups, click `Groups` in the left menu.
+To manage groups, click *Groups* in the left menu.
 
 .Groups
 image:{project_images}/groups.png[]
@@ -12,15 +12,15 @@ Groups are hierarchical. A group can have multiple subgroups but a group can hav
 
 If you have a parent group and a child group, and a user that belongs only to the child group, the user in the child group inherits the attributes and role mappings of both the parent group and the child group.
 
-The following example includes a top-level `Sales` group and a child `North America` subgroup.  
+The following example includes a top-level *Sales* group and a child *North America* subgroup.  
 
 To add a group:
 
 . Click the group.
-. Click `New`.
-. Select the `Groups` icon in the tree to make a top-level group.
-. Enter a group name in the `Create Group` screen.
-. Click `Save`. The group management page displays.
+. Click *New*.
+. Select the *Groups* icon in the tree to make a top-level group.
+. Enter a group name in the *Create Group* screen.
+. Click *Save*. The group management page displays.
 +
 .Group
 image:{project_images}/group.png[]
@@ -29,22 +29,22 @@ Attributes and role mappings you define are inherited by the groups and users th
 
 To add a user to a group:
 
-. Click `Users` in the left menu.
-. Click the user that you want to perform a role mapping on. If the user is not displayed, click `View all users`.
-. Click `Groups`.
+. Click *Users* in the left menu.
+. Click the user that you want to perform a role mapping on. If the user is not displayed, click *View all users*.
+. Click *Groups*.
 +
 .User Groups
 image:{project_images}/user-groups.png[]
 +
-. Select a group from the `Available Groups` tree.
-. Click `Join`.
+. Select a group from the *Available Groups* tree.
+. Click *Join*.
 
 To remove a group from a user:
 
-. Select the group from the `Group Membership` tree.
-. Click `Leave`.
+. Select the group from the *Group Membership* tree.
+. Click *Leave*.
 
-In this example, the user _jimlincoln_ is in the _North America_ group.  You can see _jimlincoln_ displayed under the `Members` tab for the group.
+In this example, the user _jimlincoln_ is in the _North America_ group.  You can see _jimlincoln_ displayed under the *Members* tab for the group.
 
 .Group Membership
 image:{project_images}/group-membership.png[]
