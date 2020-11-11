@@ -70,15 +70,36 @@ public interface RoleContainerModel {
 
     Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max);
 
+    /**
+     * Returns all the default role names of this object.
+     * @return List of the default role names of this object. Never returns {@code null}.
+     * @deprecated use the stream variant instead
+     */
     @Deprecated
     default List<String> getDefaultRoles() {
         return getDefaultRolesStream().collect(Collectors.toList());
     }
 
+    /**
+     * Returns all default role names of this object as a stream.
+     * @return stream of default role names of this object. Never returns {@code null}.
+     */
     Stream<String> getDefaultRolesStream();
 
+    /**
+     * Adds a role with given name to default roles of this object. If the role
+     * doesn't exist a new role is created.
+     * @param name of the role to be (created and ) added
+     */
     void addDefaultRole(String name);
 
+    /**
+     * Updates default roles of this object. It removes all default roles which
+     * are not specified by {@code defaultRoles} and adds all which weren't
+     * present in original default roles. In other words it's the same as calling 
+     * {@code Set.retainAll} and {@code Set.addAll}.
+     * @param defaultRoles Array of realm roles to be updated
+     */
     default void updateDefaultRoles(String... defaultRoles) {
         List<String> defaultRolesArray = Arrays.asList(defaultRoles);
         Collection<String> entities = getDefaultRolesStream().collect(Collectors.toList());
@@ -100,6 +121,10 @@ public interface RoleContainerModel {
         }
     }
 
+    /**
+     * Removes default roles from this object according to {@code defaultRoles}.
+     * @param defaultRoles Role names to be removed from default roles of this object.
+     */
     void removeDefaultRoles(String... defaultRoles);
 
 }

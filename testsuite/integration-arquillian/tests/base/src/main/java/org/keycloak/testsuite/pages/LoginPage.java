@@ -21,10 +21,12 @@ import org.jboss.arquillian.test.api.ArquillianResource;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -39,6 +41,9 @@ public class LoginPage extends LanguageComboboxAwarePage {
 
     @FindBy(id = "password")
     private WebElement passwordInput;
+
+    @FindBy(id = "input-error")
+    private WebElement inputError;
 
     @FindBy(id = "totp")
     private WebElement totp;
@@ -124,8 +129,20 @@ public class LoginPage extends LanguageComboboxAwarePage {
         cancelButton.click();
     }
 
+    public String getInputError() {
+        try {
+            return getTextFromElement(inputError);
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
     public String getError() {
-        return loginErrorMessage != null ? loginErrorMessage.getText() : null;
+        try {
+            return getTextFromElement(loginErrorMessage);
+        } catch (NoSuchElementException e) {
+            return null;
+        }
     }
 
     public String getInstruction() {
@@ -146,20 +163,20 @@ public class LoginPage extends LanguageComboboxAwarePage {
     }
 
     public boolean isCurrent(String realm) {
-        return DroneUtils.getCurrentDriver().getTitle().equals("Log in to " + realm) || DroneUtils.getCurrentDriver().getTitle().equals("Anmeldung bei " + realm);
+        return DroneUtils.getCurrentDriver().getTitle().equals("Sign in to " + realm) || DroneUtils.getCurrentDriver().getTitle().equals("Anmeldung bei " + realm);
     }
 
     public void clickRegister() {
         registerLink.click();
     }
 
-    public void clickSocial(String providerId) {
-        WebElement socialButton = findSocialButton(providerId);
+    public void clickSocial(String alias) {
+        WebElement socialButton = findSocialButton(alias);
         clickLink(socialButton);
     }
 
-    public WebElement findSocialButton(String providerId) {
-        String id = "zocial-" + providerId;
+    public WebElement findSocialButton(String alias) {
+        String id = "social-" + alias;
         return DroneUtils.getCurrentDriver().findElement(By.id(id));
     }
 

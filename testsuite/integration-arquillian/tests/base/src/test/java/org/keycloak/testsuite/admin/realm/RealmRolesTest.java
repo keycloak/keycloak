@@ -19,7 +19,6 @@ package org.keycloak.testsuite.admin.realm;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -47,6 +46,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.ws.rs.ClientErrorException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -55,11 +55,8 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -151,6 +148,11 @@ public class RealmRolesTest extends AbstractAdminTest {
         assertEquals("role-a", role.getName());
         assertEquals("Role A", role.getDescription());
         assertFalse(role.isComposite());
+    }
+
+    @Test(expected = ClientErrorException.class)
+    public void createRoleWithSameName() {
+        resource.create(RoleBuilder.create().name("role-a").build());
     }
 
     @Test

@@ -24,5 +24,12 @@ import org.keycloak.models.RoleModel;
  * @version $Revision: 1 $
  */
 public interface UserBulkUpdateProvider {
+    
+    /**
+     * Grants the given role to all users from particular realm. The role has to
+     * belong to the realm. 
+     * @param realm Realm
+     * @param role Role to be granted
+     */
     void grantToAllUsers(RealmModel realm, RoleModel role);
 }

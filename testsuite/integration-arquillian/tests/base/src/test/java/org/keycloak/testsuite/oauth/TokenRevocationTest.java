@@ -17,8 +17,12 @@
 
 package org.keycloak.testsuite.oauth;
 
-import static org.junit.Assert.*;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
 import java.io.IOException;
 import java.util.List;
@@ -120,9 +124,9 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
         isTokenEnabled(tokenResponse, "test-app");
 
         CloseableHttpResponse response = oauth.doTokenRevoke(tokenResponse.getAccessToken(), "access_token", "password");
-        assertThat(response, Matchers.statusCodeIsHC(Status.BAD_REQUEST));
+        assertThat(response, Matchers.statusCodeIsHC(Status.OK));
 
-        isTokenEnabled(tokenResponse, "test-app");
+        isAccessTokenDisabled(tokenResponse.getAccessToken(), "test-app");
     }
 
     @Test
@@ -222,14 +226,18 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     }
 
     private void isTokenDisabled(AccessTokenResponse tokenResponse, String clientId) throws IOException {
-        String introspectionResponse = oauth.introspectAccessTokenWithClientCredential(clientId, "password",
-            tokenResponse.getAccessToken());
-        TokenMetadataRepresentation rep = JsonSerialization.readValue(introspectionResponse, TokenMetadataRepresentation.class);
-        assertFalse(rep.isActive());
+        isAccessTokenDisabled(tokenResponse.getAccessToken(), clientId);
 
         oauth.clientId(clientId);
         OAuthClient.AccessTokenResponse tokenRefreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(),
             "password");
         assertEquals(Status.BAD_REQUEST.getStatusCode(), tokenRefreshResponse.getStatusCode());
+    }
+
+    private void isAccessTokenDisabled(String accessTokenString, String clientId) throws IOException {
+        String introspectionResponse = oauth.introspectAccessTokenWithClientCredential(clientId, "password",
+                accessTokenString);
+        TokenMetadataRepresentation rep = JsonSerialization.readValue(introspectionResponse, TokenMetadataRepresentation.class);
+        assertFalse(rep.isActive());
     }
 }

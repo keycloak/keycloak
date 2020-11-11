@@ -27,12 +27,10 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -269,7 +267,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         assertFalse(pageSource.contains("Unable to scan?"));
         assertTrue(pageSource.contains("Scan barcode?"));
 
-        assertEquals("Please specify authenticator code.", totpPage.getError());
+        assertEquals("Please specify authenticator code.", totpPage.getInputCodeError());
     }
 
     // KEYCLOAK-7081
@@ -293,7 +291,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         assertTrue(pageSource.contains("Unable to scan?"));
         assertFalse(pageSource.contains("Scan barcode?"));
 
-        assertEquals("Please specify authenticator code.", totpPage.getError());
+        assertEquals("Please specify authenticator code.", totpPage.getInputCodeError());
 
         totpPage.clickManual();
 

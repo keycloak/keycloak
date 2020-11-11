@@ -95,7 +95,7 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
             String context = spnegoResponse.readEntity(String.class);
             spnegoResponse.close();
 
-            org.junit.Assert.assertTrue(context.contains("Log in to test"));
+            org.junit.Assert.assertTrue(context.contains("Sign in to test"));
 
             events.clear();
         } finally {

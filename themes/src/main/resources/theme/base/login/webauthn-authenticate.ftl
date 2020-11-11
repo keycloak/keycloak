@@ -62,6 +62,14 @@
 
 
     function doAuthenticate(allowCredentials) {
+
+        // Check if WebAuthn is supported by this browser
+        if (!window.PublicKeyCredential) {
+            $("#error").val("${msg("webauthn-unsupported-browser-text")?no_esc}");
+            $("#webauth").submit();
+            return;
+        }
+
         let challenge = "${challenge}";
         let userVerification = "${userVerification}";
         let rpId = "${rpId}";

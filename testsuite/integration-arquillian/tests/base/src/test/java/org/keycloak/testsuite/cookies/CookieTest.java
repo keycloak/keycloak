@@ -118,7 +118,7 @@ public class CookieTest extends AbstractKeycloakTest {
                 assertThat(pageContent, not(containsString("Last name")));
 
                 // ... but were redirected to login page
-                assertThat(pageContent, containsString("Log In"));
+                assertThat(pageContent, containsString("Sign In"));
                 assertThat(pageContent, containsString("Forgot Password?"));
             }
         }
@@ -156,7 +156,7 @@ public class CookieTest extends AbstractKeycloakTest {
                 assertThat(pageContent, not(containsString("Last name")));
 
                 // ... but were redirected to login page
-                assertThat(pageContent, containsString("Log In"));
+                assertThat(pageContent, containsString("Sign In"));
                 assertThat(pageContent, containsString("Forgot Password?"));
             }
         }

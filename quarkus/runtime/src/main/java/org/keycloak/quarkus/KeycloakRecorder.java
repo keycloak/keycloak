@@ -17,11 +17,12 @@
 
 package org.keycloak.quarkus;
 
-import java.util.Collections;
+import static org.keycloak.configuration.Configuration.getBuiltTimeProperty;
+import static org.keycloak.configuration.Configuration.getConfig;
+
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.StreamSupport;
 
 import io.smallrye.config.ConfigValue;
@@ -29,8 +30,9 @@ import org.jboss.logging.Logger;
 import org.keycloak.QuarkusKeycloakSessionFactory;
 import org.keycloak.cli.ShowConfigCommand;
 import org.keycloak.common.Profile;
+import org.keycloak.configuration.Configuration;
 import org.keycloak.configuration.MicroProfileConfigProvider;
-import org.keycloak.configuration.PropertyMapper;
+import org.keycloak.configuration.PersistedConfigSource;
 import org.keycloak.configuration.PropertyMappers;
 import org.keycloak.connections.liquibase.FastServiceLocator;
 import org.keycloak.connections.liquibase.KeycloakLogger;
@@ -39,8 +41,6 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
 import io.quarkus.runtime.annotations.Recorder;
-import io.smallrye.config.SmallRyeConfig;
-import io.smallrye.config.SmallRyeConfigProviderResolver;
 import liquibase.logging.LogFactory;
 import liquibase.servicelocator.ServiceLocator;
 import org.keycloak.util.Environment;
@@ -49,33 +49,6 @@ import org.keycloak.util.Environment;
 public class KeycloakRecorder {
 
     private static final Logger LOGGER = Logger.getLogger(KeycloakRecorder.class);
-    
-    private static SmallRyeConfig CONFIG = null;
-    
-    private static Map<String, String> BUILD_TIME_PROPERTIES = Collections.emptyMap();
-    
-    public static String getBuiltTimeProperty(String name) {
-        String value = BUILD_TIME_PROPERTIES.get(name);
-
-        if (value == null) {
-            String profile = Environment.getProfile();
-
-            if (profile == null) {
-                profile = BUILD_TIME_PROPERTIES.get("kc.profile");
-            }
-
-            value = BUILD_TIME_PROPERTIES.get("%" + profile + "." + name);
-        }
-        
-        return value;
-    }
-
-    public static SmallRyeConfig getConfig() {
-        if (CONFIG == null) {
-            CONFIG = (SmallRyeConfig) SmallRyeConfigProviderResolver.instance().getConfig();
-        }
-        return CONFIG;
-    }
 
     public void configureLiquibase(Map<String, List<String>> services) {
         LogFactory.setInstance(new LogFactory() {
@@ -120,8 +93,7 @@ public class KeycloakRecorder {
      * @param rebuild indicates whether or not the server was re-augmented
      * @param configArgs the configuration args if provided when the server was re-augmented
      */
-    public void validateAndSetBuildTimeProperties(Map<String, String> buildTimeProperties, Boolean rebuild, String configArgs) {
-        BUILD_TIME_PROPERTIES = buildTimeProperties;
+    public void validateAndSetBuildTimeProperties(Boolean rebuild, String configArgs) {
         String configHelpText = configArgs;
 
         for (String propertyName : getConfig().getPropertyNames()) {
@@ -135,54 +107,53 @@ public class KeycloakRecorder {
                 propertyName = propertyName.substring(propertyName.indexOf('.') + 1);
             }
 
-            String finalPropertyName = propertyName;
-            String buildValue = Environment.getBuiltTimeProperty(PropertyMappers.toCLIFormat(finalPropertyName))
-                    .orElseGet(new Supplier<String>() {
-                        @Override 
-                        public String get() {
-                            return Environment.getBuiltTimeProperty(finalPropertyName).orElse(null);
-                        }
-            });
-
+            String buildValue = Environment.getBuiltTimeProperty(propertyName).orElse(null);
             ConfigValue value = getConfig().getConfigValue(propertyName);
-            
-            // if no value found we try to resolve using the CLI format
-            if (value == null || value.getValue() == null) {
-                value = getConfig().getConfigValue(PropertyMappers.toCLIFormat(propertyName));
-            }
 
             if (value.getValue() != null && !value.getValue().equalsIgnoreCase(buildValue)) {
                 if (configHelpText != null) {
+                    String cliNameFormat = PropertyMappers.toCLIFormat(propertyName);
+
                     if (buildValue != null) {
-                        String currentProp =
-                                "--" + PropertyMappers.toCLIFormat(propertyName).substring(3) + "=" + buildValue;
-                        String newProp =
-                                "--" + PropertyMappers.toCLIFormat(propertyName).substring(3) + "=" + value.getValue();
+                        String currentProp = "--" + cliNameFormat.substring(3) + "=" + buildValue;
+                        String newProp = "--" + cliNameFormat.substring(3) + "=" + value.getValue();
 
                         if (configHelpText.contains(currentProp)) {
                             LOGGER.warnf("The new value [%s] of the property [%s] in [%s] differs from the value [%s] set into the server image. The new value will override the value set into the server image.",
                                     value.getValue(), propertyName, value.getConfigSourceName(), buildValue);
                             configHelpText = configHelpText.replaceAll(currentProp, newProp);
                         } else if (!configHelpText
-                                .contains("--" + PropertyMappers.toCLIFormat(propertyName).substring(3))) {
+                                .contains("--" + cliNameFormat.substring(3))) {
                             LOGGER.warnf("The new value [%s] of the property [%s] in [%s] differs from the value [%s] set into the server image. The new value will override the value set into the server image.",
                                     value.getValue(), propertyName, value.getConfigSourceName(), buildValue);
                             configHelpText += " " + newProp;
                         }
-                    } else if (!BUILD_TIME_PROPERTIES.keySet().stream()
-                            .anyMatch(new Predicate<String>() {
-                                @Override
-                                public boolean test(String s) {
-                                    return PropertyMappers.canonicalFormat(finalPropertyName)
-                                            .equalsIgnoreCase(PropertyMappers.canonicalFormat(s));
-                                }
-                            })) {
-                        String prop = "--" + PropertyMappers.toCLIFormat(propertyName).substring(3) + "=" + value.getValue();
+                    } else {
+                        String finalPropertyName = propertyName;
 
-                        if (!configHelpText.contains(prop)) {
-                            LOGGER.warnf("New property [%s] set with value [%s] in [%s]. This property is not persisted into the server image.",
-                                    propertyName, value.getValue(), value.getConfigSourceName(), buildValue);
-                            configHelpText += " " + prop;
+                        if (!StreamSupport.stream(getConfig().getPropertyNames().spliterator(), false)
+                                .filter(new Predicate<String>() {
+                                    @Override
+                                    public boolean test(String s) {
+                                        ConfigValue configValue = getConfig().getConfigValue(s);
+
+                                        return configValue.getConfigSourceName().equals(PersistedConfigSource.NAME);
+                                    }
+                                })
+                                .anyMatch(new Predicate<String>() {
+                                    @Override
+                                    public boolean test(String s) {
+                                        return PropertyMappers.canonicalFormat(finalPropertyName)
+                                                .equalsIgnoreCase(PropertyMappers.canonicalFormat(s));
+                                    }
+                                })) {
+                            String prop = "--" + cliNameFormat.substring(3) + "=" + value.getValue();
+
+                            if (!configHelpText.contains(prop)) {
+                                LOGGER.warnf("New property [%s] set with value [%s] in [%s]. This property is not persisted into the server image.",
+                                        propertyName, value.getValue(), value.getConfigSourceName(), buildValue);
+                                configHelpText += " " + prop;
+                            }
                         }
                     }
                 }
@@ -212,7 +183,7 @@ public class KeycloakRecorder {
      * set from the previous reaugmentation
      */
     public void showConfig() {
-        ShowConfigCommand.run(BUILD_TIME_PROPERTIES);
+        ShowConfigCommand.run();
     }
 
     public static Profile createProfile() {
@@ -235,7 +206,7 @@ public class KeycloakRecorder {
                     return value;
                 }
 
-                return KeycloakRecorder.getConfig().getRawValue(feature);
+                return Configuration.getRawValue(feature);
             }
         });
     }

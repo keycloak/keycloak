@@ -52,7 +52,7 @@ public class TokenCallable implements Callable<String> {
 
     @Override
     public String call() {
-        if (clientToken == null) {
+        if (clientToken == null || clientToken.getRefreshToken() == null) {
             if (userName == null || password == null) {
                 clientToken = obtainAccessToken();
             } else {

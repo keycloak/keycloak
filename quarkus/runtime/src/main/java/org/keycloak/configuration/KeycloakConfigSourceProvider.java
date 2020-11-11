@@ -37,7 +37,8 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
     public static final String KEYCLOAK_CONFIG_FILE_ENV = "KC_CONFIG_FILE";
     public static final String KEYCLOAK_CONFIG_FILE_PROP = NS_KEYCLOAK_PREFIX + "config.file";
     private static final List<ConfigSource> CONFIG_SOURCES = new ArrayList<>();
-    
+    public static PersistedConfigSource PERSISTED_CONFIG_SOURCE;
+
     // we initialize in a static block to avoid discovering the config sources multiple times when starting the application
     static {
         initializeSources();
@@ -51,6 +52,8 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
         }
 
         CONFIG_SOURCES.add(new ConfigArgsConfigSource());
+        PERSISTED_CONFIG_SOURCE = new PersistedConfigSource(getPersistedConfigFile());
+        CONFIG_SOURCES.add(PERSISTED_CONFIG_SOURCE);
         CONFIG_SOURCES.add(new SysPropConfigSource());
 
         Path configFile = getConfigurationFile();
@@ -95,6 +98,16 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
         }
         
         return Paths.get(filePath);
+    }
+
+    public static Path getPersistedConfigFile() {
+        String homeDir = Environment.getHomeDir();
+
+        if (homeDir == null) {
+            return Paths.get(System.getProperty("java.io.tmpdir"), PersistedConfigSource.KEYCLOAK_PROPERTIES);
+        }
+
+        return Paths.get(homeDir, "conf", PersistedConfigSource.KEYCLOAK_PROPERTIES);
     }
 
     @Override

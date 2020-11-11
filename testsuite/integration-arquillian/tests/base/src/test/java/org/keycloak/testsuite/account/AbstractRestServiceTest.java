@@ -48,7 +48,6 @@ import javax.ws.rs.core.UriBuilder;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-@EnableFeature(value = ACCOUNT_API, skipRestart = true)
 public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakTest {
 
     @Rule

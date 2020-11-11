@@ -94,7 +94,7 @@ public class DefaultKeyManager implements KeyManager {
     @Override
     public KeyWrapper getKey(RealmModel realm, String kid, KeyUse use, String algorithm) {
         if (kid == null) {
-            logger.warnv("kid is null, can't find public key", realm.getName(), kid);
+            logger.warnv("kid is null, can't find public key: realm={0}", realm.getName());
             return null;
         }
 

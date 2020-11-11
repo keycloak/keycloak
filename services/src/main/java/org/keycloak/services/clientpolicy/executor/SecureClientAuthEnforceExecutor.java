@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.services.clientpolicy.executor;
+package org.keycloak.services.clientpolicy.executor;
 
 import java.util.List;
 
@@ -25,13 +25,12 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.executor.AbstractAugumentingClientRegistrationPolicyExecutor;
 
-public class TestClientAuthenticationExecutor extends AbstractAugumentingClientRegistrationPolicyExecutor {
+public class SecureClientAuthEnforceExecutor extends AbstractAugumentingClientRegistrationPolicyExecutor {
 
-    private static final Logger logger = Logger.getLogger(TestClientAuthenticationExecutor.class);
+    private static final Logger logger = Logger.getLogger(SecureClientAuthEnforceExecutor.class);
 
-    public TestClientAuthenticationExecutor(KeycloakSession session, ComponentModel componentModel) {
+    public SecureClientAuthEnforceExecutor(KeycloakSession session, ComponentModel componentModel) {
         super(session, componentModel);
     }
 
@@ -45,11 +44,11 @@ public class TestClientAuthenticationExecutor extends AbstractAugumentingClientR
     }
 
     private String enforcedClientAuthenticatorType() {
-        return componentModel.getConfig().getFirst(TestClientAuthenticationExecutorFactory.CLIENT_AUTHNS_AUGMENT);
+        return componentModel.getConfig().getFirst(SecureClientAuthEnforceExecutorFactory.CLIENT_AUTHNS_AUGMENT);
     }
 
     private void verifyClientAuthenticationMethod(String clientAuthenticatorType) throws ClientPolicyException {
-        List<String> acceptableClientAuthn = componentModel.getConfig().getList(TestClientAuthenticationExecutorFactory.CLIENT_AUTHNS);
+        List<String> acceptableClientAuthn = componentModel.getConfig().getList(SecureClientAuthEnforceExecutorFactory.CLIENT_AUTHNS);
         if (acceptableClientAuthn != null && acceptableClientAuthn.stream().anyMatch(i->i.equals(clientAuthenticatorType))) return;
         throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid client metadata: token_endpoint_auth_method");
     }

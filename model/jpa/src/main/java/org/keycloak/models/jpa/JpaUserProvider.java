@@ -368,10 +368,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public void grantToAllUsers(RealmModel realm, RoleModel role) {
-        int num = em.createNamedQuery("grantRoleToAllUsers")
+        if (realm.equals(role.isClientRole() ? ((ClientModel)role.getContainer()).getRealm() : (RealmModel)role.getContainer())) {
+            int num = em.createNamedQuery("grantRoleToAllUsers")
                 .setParameter("realmId", realm.getId())
                 .setParameter("roleId", role.getId())
                 .executeUpdate();
+        }
     }
 
     @Override

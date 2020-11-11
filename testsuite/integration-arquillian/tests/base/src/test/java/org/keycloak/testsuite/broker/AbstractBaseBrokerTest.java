@@ -228,10 +228,10 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     }
 
     protected void logInWithIdp(String idpAlias, String username, String password) {
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         log.debug("Clicking social " + idpAlias);
         loginPage.clickSocial(idpAlias);
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         log.debug("Logging in");
         loginPage.login(username, password);
     }
@@ -300,7 +300,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         try {
             Retry.execute(() -> {
                 try {
-                    waitForPage(driver, "log in to " + realm, true);
+                    waitForPage(driver, "sign in to " + realm, true);
                 } catch (TimeoutException ex) {
                     driver.navigate().refresh();
                     log.debug("[Retriable] Timed out waiting for login page");

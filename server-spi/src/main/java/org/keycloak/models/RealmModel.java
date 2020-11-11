@@ -52,21 +52,6 @@ public interface RealmModel extends RoleContainerModel {
         KeycloakSession getKeycloakSession();
     }
 
-    interface ClientCreationEvent extends ProviderEvent {
-        ClientModel getCreatedClient();
-    }
-
-    // Called also during client creation after client is fully initialized (including all attributes etc)
-    interface ClientUpdatedEvent extends ProviderEvent {
-        ClientModel getUpdatedClient();
-        KeycloakSession getKeycloakSession();
-    }
-
-    interface ClientRemovedEvent extends ProviderEvent {
-        ClientModel getClient();
-        KeycloakSession getKeycloakSession();
-    }
-
     interface IdentityProviderUpdatedEvent extends ProviderEvent {
         RealmModel getRealm();
         IdentityProviderModel getUpdatedIdentityProvider();
@@ -784,6 +769,15 @@ public interface RealmModel extends RoleContainerModel {
 
     void addDefaultClientScope(ClientScopeModel clientScope, boolean defaultScope);
     void removeDefaultClientScope(ClientScopeModel clientScope);
+
+    /**
+     * Patches the realm-specific localization texts. This method will not delete any text.
+     * It updates texts, which are already stored or create new ones if the key does not exist yet.
+     */
+    void patchRealmLocalizationTexts(String locale, Map<String, String> localizationTexts);
+    boolean removeRealmLocalizationTexts(String locale);
+    Map<String, Map<String, String>> getRealmLocalizationTexts();
+    Map<String, String> getRealmLocalizationTextsByLocale(String locale);
 
     /**
      * @deprecated Use {@link #getDefaultClientScopesStream(boolean) getDefaultClientScopesStream} instead.

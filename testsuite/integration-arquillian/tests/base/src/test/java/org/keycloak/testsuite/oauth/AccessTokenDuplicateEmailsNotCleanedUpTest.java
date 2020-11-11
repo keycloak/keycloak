@@ -80,7 +80,7 @@ public class AccessTokenDuplicateEmailsNotCleanedUpTest extends AbstractKeycloak
     public void loginWithDuplicateEmail() throws Exception {
         oauth.doLogin("duplicate-email-user@localhost", "password");
 
-        assertEquals("Username already exists.", driver.findElement(By.xpath("//span[@class='kc-feedback-text']")).getText());
+        assertEquals("Username already exists.", driver.findElement(By.className("kc-feedback-text")).getText());
     }
     
     @Test

@@ -1,7 +1,10 @@
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 
 /**
  * login page for UsernameForm. It contains only username, but not password
@@ -10,6 +13,8 @@ import org.openqa.selenium.NoSuchElementException;
  */
 public class LoginUsernameOnlyPage extends LoginPage {
 
+    @FindBy(id = "input-error-username")
+    private WebElement usernameError;
 
     @Override
     public void login(String username) {
@@ -19,10 +24,17 @@ public class LoginUsernameOnlyPage extends LoginPage {
         submitButton.click();
     }
 
-
+    public String getUsernameError() {
+        try {
+            return UIUtils.getTextFromElement(usernameError);
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
 
     /**
      * Not supported for this implementation
+     *
      * @return
      */
     @Deprecated

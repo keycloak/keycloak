@@ -60,7 +60,7 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
 
         // Try bad password first
         passwordPage.login("bad-password");
-        Assert.assertEquals("Invalid password.", passwordPage.getError());
+        Assert.assertEquals("Invalid password.", passwordPage.getPasswordError());
 
         // Try good password
         passwordPage.login("password");

@@ -19,6 +19,27 @@
 
     <changeSet author="keycloak" id="map-remove-ri">
         <dropForeignKeyConstraint baseTableName="REALM_DEFAULT_GROUPS" constraintName="FK_DEF_GROUPS_GROUP"/>
+        <dropForeignKeyConstraint baseTableName="REALM_DEFAULT_ROLES" constraintName="FK_H4WPD7W4HSOOLNI3H0SW7BTJE"/>
+        <dropForeignKeyConstraint baseTableName="CLIENT_SCOPE_ROLE_MAPPING" constraintName="FK_CL_SCOPE_RM_ROLE"/>
+        <dropForeignKeyConstraint baseTableName="GROUP_ROLE_MAPPING" constraintName="FK_GROUP_ROLE_ROLE"/>
+        <dropForeignKeyConstraint baseTableName="CLIENT_DEFAULT_ROLES" constraintName="FK_8AELWNIBJI49AVXSRTUF6XJOW"/>
+        <dropForeignKeyConstraint baseTableName="SCOPE_MAPPING" constraintName="FK_P3RH9GRKU11KQFRS4FLTT7RNQ"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="12.1.0-add-realm-localization-table">
+        <createTable tableName="REALM_LOCALIZATIONS">
+            <column name="REALM_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="LOCALE" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TEXTS" type="CLOB">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey columnNames="REALM_ID, LOCALE" tableName="REALM_LOCALIZATIONS"/>
     </changeSet>
 
 </databaseChangeLog>

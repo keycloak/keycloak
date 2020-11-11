@@ -254,7 +254,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         loginPage.login("johnkeycloak", "Password1");
         loginPage.assertCurrent();
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         // Re-add LDAP provider
         Map<String, String> cfg = getLDAPRule().getConfig();
@@ -319,7 +319,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     public void loginLdapWithoutPassword() {
         loginPage.open();
         loginPage.login("john@email.org", "");
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
     }
 
     @Test
@@ -334,7 +334,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
         loginPage.open();
         loginPage.login("johnkeycloak", "Bad-password1");
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         loginPage.open();
         loginPage.login("johnkeycloak", "New-password1");

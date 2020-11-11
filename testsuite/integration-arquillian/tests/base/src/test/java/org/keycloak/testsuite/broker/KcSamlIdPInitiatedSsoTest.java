@@ -145,7 +145,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
     public void testProviderIdpInitiatedLogin() throws Exception {
         driver.navigate().to(getSamlIdpInitiatedUrl(REALM_PROV_NAME, "samlbroker"));
 
-        waitForPage("log in to", true);
+        waitForPage("sign in to", true);
 
         Assert.assertThat("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_PROV_NAME + "/"));
