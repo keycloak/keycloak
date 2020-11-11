@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
@@ -372,8 +373,14 @@ public class SessionCodeChecks {
         logger.debug("Authentication session not found. Trying to restart from cookie.");
         AuthenticationSessionModel authSession = null;
 
+        Cookie cook = RestartLoginCookie.getRestartCookie(session);
+        if(cook == null){
+            event.error(Errors.DISABLED_COOKIES);
+            return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.DISABLED_COOKIES);
+        }
+
         try {
-            authSession = RestartLoginCookie.restartSession(session, realm, existingRootSession, clientId);
+            authSession = RestartLoginCookie.restartSession(session, realm, existingRootSession, clientId, cook);
         } catch (Exception e) {
             ServicesLogger.LOGGER.failedToParseRestartLoginCookie(e);
         }
@@ -397,8 +404,8 @@ public class SessionCodeChecks {
             return Response.status(Response.Status.FOUND).location(redirectUri).build();
         } else {
             // Finally need to show error as all the fallbacks failed
-            event.error(Errors.DISABLED_COOKIES);
-            return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.DISABLED_COOKIES);
+            event.error(Errors.INVALID_CODE);
+            return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_CODE);
         }
     }
 
