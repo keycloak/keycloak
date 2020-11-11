@@ -1,7 +1,9 @@
+[id="proc-converting-composite-roles_{context}"]
+
 [[_composite-roles]]
 
 === Composite Roles
-
+[role="_abstract"]
 Any realm or client level role can be a _composite role_. A _composite role_ is a role that has one or more additional roles associated with it. When a composite role is mapped to a user, the user also gains the roles associated with that composite.  This inheritance is recursive so users also inherit any composite of composites. However, we recommend that composite roles are not overused.
 
 To convert a role to a composite role:

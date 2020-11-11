@@ -1,6 +1,7 @@
+[id="proc-assigning-role-mappings_{context}"]
 
 === User Role Mappings
-
+[role="_abstract"]
 You can assign User role mappings to a user through the `Role Mappings` tab for that user.
 
 .Procedure

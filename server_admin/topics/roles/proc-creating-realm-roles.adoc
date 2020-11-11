@@ -1,5 +1,7 @@
+[id="proc-creating-realm-roles_{context}"]
 
 === Realm Roles
+[role="_abstract"]
 Realm-level roles are a namespace for defining your roles. To see the list of roles, click `Roles` in the left menu.
 
 image:{project_images}/roles.png[]

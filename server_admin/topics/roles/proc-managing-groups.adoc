@@ -1,6 +1,6 @@
-
-== Groups
-
+[id="proc-managing-groups_{context}"]
+=== Groups
+[role="_abstract"]
 Groups in {project_name} manage a common set of attributes and role mappings for each user. Users can be members of any number of groups and inherit the attributes and role mappings assigned to each group.
 
 To manage groups, click `Groups` in the left menu.
