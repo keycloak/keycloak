@@ -20,6 +20,7 @@ package org.keycloak.authentication;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.conditional.ConditionalAuthenticator;
+import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.Constants;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -250,6 +252,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 requiredIListIterator.remove();
                 continue;
             }
+
             Response response = processSingleFlowExecutionModel(required, true);
             requiredElementsSuccessful &= processor.isSuccessful(required) || isSetupRequired(required);
             if (response != null) {
@@ -298,8 +301,11 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
      * Just iterates over executionsToProcess and fill "requiredList" and "alternativeList" according to it
      */
     void fillListsOfExecutions(Stream<AuthenticationExecutionModel> executionsToProcess, List<AuthenticationExecutionModel> requiredList, List<AuthenticationExecutionModel> alternativeList) {
+        Predicate<AuthenticationExecutionModel> isParentFlowConditional = model -> processor.getRealm().getAuthenticationExecutionByFlowId(model.getParentFlow()).isConditional();
+        Predicate<AuthenticationExecutionModel> conditional = this::isConditionalAuthenticator;
+
         executionsToProcess
-                .filter(((Predicate<AuthenticationExecutionModel>) this::isConditionalAuthenticator).negate())
+                .filter(conditional.and(isParentFlowConditional).negate())
                 .forEachOrdered(execution -> {
                     if (execution.isRequired() || execution.isConditional()) {
                         requiredList.add(execution);

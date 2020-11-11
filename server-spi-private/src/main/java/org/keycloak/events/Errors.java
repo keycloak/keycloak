@@ -94,5 +94,6 @@ public interface Errors {
     String ILLEGAL_ORIGIN = "illegal_origin";
     String DISPLAY_UNSUPPORTED = "display_unsupported";
     String LOGOUT_FAILED = "logout_failed";
+    String PRECONDITION_FAILED = "precondition_failed";
 
 }

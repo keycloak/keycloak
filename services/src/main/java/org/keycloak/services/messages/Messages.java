@@ -237,6 +237,12 @@ public class Messages {
 
     public static final String INTERNAL_SERVER_ERROR = "internalServerError";
 
+    // PreConditions
+    public static final String PRECONDITION_FAILED = "preconditionFailed";
+    public static final String PRECONDITION_ROLE_FAILED = "preconditionRoleFailed";
+    public static final String PRECONDITION_USER_CONFIG_FAILED = "preconditionUserConfigFailed";
+    public static final String PRECONDITION_USER_ATTRIBUTE_FAILED = "preconditionUserAttributeFailed";
+
     public static final String DELEGATION_COMPLETE = "delegationCompleteMessage";
     public static final String DELEGATION_COMPLETE_HEADER = "delegationCompleteHeader";
     public static final String DELEGATION_FAILED = "delegationFailedMessage";

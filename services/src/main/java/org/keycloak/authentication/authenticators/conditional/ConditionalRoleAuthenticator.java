@@ -8,6 +8,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.jboss.logging.Logger;
+import org.keycloak.services.messages.Messages;
 
 public class ConditionalRoleAuthenticator implements ConditionalAuthenticator {
     public static final ConditionalRoleAuthenticator SINGLETON = new ConditionalRoleAuthenticator();
@@ -20,14 +21,23 @@ public class ConditionalRoleAuthenticator implements ConditionalAuthenticator {
         AuthenticatorConfigModel authConfig = context.getAuthenticatorConfig();
         if (user != null && authConfig!=null && authConfig.getConfig()!=null) {
             String requiredRole = authConfig.getConfig().get(ConditionalRoleAuthenticatorFactory.CONDITIONAL_USER_ROLE);
+            final boolean negate = requiredRole.charAt(0) == '!';
+            requiredRole = negate ? requiredRole.substring(1) : requiredRole;
+
             RoleModel role = KeycloakModelUtils.getRoleFromString(realm, requiredRole);
             if (role == null) {
                 logger.errorv("Invalid role name submitted: {0}", requiredRole);
                 return false;
             }
-            return user.hasRole(role);
+
+            return negate != user.hasRole(role);
         }
         return false;
+    }
+
+    @Override
+    public String getErrorMessage() {
+        return Messages.PRECONDITION_ROLE_FAILED;
     }
 
     @Override

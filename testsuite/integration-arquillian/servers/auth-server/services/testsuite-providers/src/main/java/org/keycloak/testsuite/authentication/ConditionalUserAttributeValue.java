@@ -7,6 +7,7 @@ import org.keycloak.authentication.authenticators.conditional.ConditionalAuthent
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.messages.Messages;
 
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,11 @@ import java.util.Map;
 public class ConditionalUserAttributeValue implements ConditionalAuthenticator {
 
     static final ConditionalUserAttributeValue SINGLETON = new ConditionalUserAttributeValue();
+
+    @Override
+    public String getErrorMessage() {
+        return Messages.PRECONDITION_USER_ATTRIBUTE_FAILED;
+    }
 
     @Override
     public boolean matchCondition(AuthenticationFlowContext context) {

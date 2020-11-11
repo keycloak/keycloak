@@ -11,6 +11,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.messages.Messages;
 
 public class ConditionalUserConfiguredAuthenticator implements ConditionalAuthenticator {
     public static final ConditionalUserConfiguredAuthenticator SINGLETON = new ConditionalUserConfiguredAuthenticator();
@@ -25,7 +26,7 @@ public class ConditionalUserConfiguredAuthenticator implements ConditionalAuthen
         List<AuthenticationExecutionModel> alternativeExecutions = new LinkedList<>();
         context.getRealm().getAuthenticationExecutionsStream(flowId)
                 //Check if the execution's authenticator is a conditional authenticator, as they must not be evaluated here.
-                .filter(e -> isConditionalExecution(context, e))
+                .filter(e -> !isConditionalExecution(context, e))
                 .filter(e -> !Objects.equals(context.getExecution().getId(), e.getId()) && !e.isAuthenticatorFlow())
                 .forEachOrdered(e -> {
                     if (e.isRequired()) {
@@ -39,7 +40,7 @@ public class ConditionalUserConfiguredAuthenticator implements ConditionalAuthen
         } else  if (!alternativeExecutions.isEmpty()) {
             return alternativeExecutions.stream().anyMatch(e -> isConfiguredFor(e, context));
         }
-        return true;
+        return false;
     }
 
     private boolean isConditionalExecution(AuthenticationFlowContext context, AuthenticationExecutionModel e) {
@@ -47,11 +48,9 @@ public class ConditionalUserConfiguredAuthenticator implements ConditionalAuthen
                 .getProviderFactory(Authenticator.class, e.getAuthenticator());
         if (factory != null) {
             Authenticator auth = factory.create(context.getSession());
-            if (auth instanceof ConditionalAuthenticator) {
-                return false;
-            }
+            return auth instanceof ConditionalAuthenticator;
         }
-        return true;
+        return false;
     }
 
     private boolean isConfiguredFor(AuthenticationExecutionModel model, AuthenticationFlowContext context) {
@@ -61,6 +60,11 @@ public class ConditionalUserConfiguredAuthenticator implements ConditionalAuthen
         AuthenticatorFactory factory = (AuthenticatorFactory) context.getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, model.getAuthenticator());
         Authenticator authenticator = factory.create(context.getSession());
         return authenticator.configuredFor(context.getSession(), context.getRealm(), context.getUser());
+    }
+
+    @Override
+    public String getErrorMessage() {
+        return Messages.PRECONDITION_USER_CONFIG_FAILED;
     }
 
     @Override

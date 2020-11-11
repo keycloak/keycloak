@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
@@ -262,6 +263,22 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    @Test
+    @AuthServerContainerExclude(REMOTE)
+    public void testFlowUserConfigIsMissing() {
+        try {
+            configureBrowserFlowWithVariableFlowWithOTP("browser - copy", Requirement.REQUIRED);
+
+            loginUsernameOnlyPage.open();
+            loginUsernameOnlyPage.login("test-user@localhost");
+
+            errorPage.assertCurrent();
+            assertThat(errorPage.getError(), is("Your account does not have configured required authenticators."));
+        } finally {
+            revertFlows("browser - copy");
+        }
+    }
+
     private void configureBrowserFlowWithConditionalSubFlowHavingConditionalAuthenticator(String newFlowAlias, boolean conditionFlowHasConditionalAuthenticator) {
         testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
         testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
@@ -314,29 +331,77 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
     }
 
     // Configure a conditional authenticator in a non-conditional sub-flow
-    // In such case, the flow is evaluated and the conditional authenticator is considered as disabled
     @Test
     @AuthServerContainerExclude(REMOTE)
-    public void testConditionalAuthenticatorInNonConditionalFlow() {
+    public void testCondRoleFailInNonConditionalFlow() {
         try {
-            configureBrowserFlowWithConditionalAuthenticatorInNonConditionalFlow();
+            configureBrowserFlowWithConditionalRoleAuthenticatorInNonConditionalFlow("non-existing-role");
 
-            // provides username
             loginUsernameOnlyPage.open();
             loginUsernameOnlyPage.login("user-with-two-configured-otp");
 
-            // if flow was conditional, the conditional authenticator would disable the flow because no user have the expected role
-            // Here, the password form is shown: it shows that the executor of the conditional bloc has been disabled. Other
-            // executors of this flow are executed anyway
+            errorPage.assertCurrent();
+            assertThat(errorPage.getError(), is("Your account does not have required role."));
+        } finally {
+            revertFlows("browser - nonconditional");
+        }
+    }
+
+    @Test
+    @AuthServerContainerExclude(REMOTE)
+    public void testCondRoleInNonConditionalFlow() {
+        try {
+            configureBrowserFlowWithConditionalRoleAuthenticatorInNonConditionalFlow("user");
+
+            loginUsernameOnlyPage.open();
+            loginUsernameOnlyPage.login("user-with-two-configured-otp");
+
             passwordPage.assertCurrent();
         } finally {
             revertFlows("browser - nonconditional");
         }
     }
 
-    private void configureBrowserFlowWithConditionalAuthenticatorInNonConditionalFlow() {
+    @Test
+    @AuthServerContainerExclude(REMOTE)
+    public void testCondRoleNegationInNonConditionalFlow() {
+        try {
+            configureBrowserFlowWithConditionalRoleAuthenticatorInNonConditionalFlow("!offline_access");
+
+            loginUsernameOnlyPage.open();
+            loginUsernameOnlyPage.login("user-with-two-configured-otp");
+
+            passwordPage.assertCurrent();
+            passwordPage.clickResetLogin();
+
+            loginUsernameOnlyPage.assertCurrent();
+            loginUsernameOnlyPage.login("test-user@localhost");
+
+            errorPage.assertCurrent();
+            assertThat(errorPage.getError(), is("Your account does not have required role."));
+        } finally {
+            revertFlows("browser - nonconditional");
+        }
+    }
+
+    @Test
+    @AuthServerContainerExclude(REMOTE)
+    public void testConditionalAttributeInNonConditionalFlow() {
+        try {
+            configureBrowserFlowWithVariableSubFlowWithChangingConditionWhileFlowEvaluation(Requirement.REQUIRED, false);
+
+            loginUsernameOnlyPage.open();
+            loginUsernameOnlyPage.login("user-with-two-configured-otp");
+
+            errorPage.assertCurrent();
+            assertThat(errorPage.getError(), is("Your account does not have configured required user attribute."));
+        } finally {
+            revertFlows("browser - changing condition");
+        }
+    }
+
+    private void configureBrowserFlowWithConditionalRoleAuthenticatorInNonConditionalFlow(String role) {
         String newFlowAlias = "browser - nonconditional";
-        String requiredRole = "non-existing-role";
         testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
         testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
                 .selectFlow(newFlowAlias)
@@ -345,8 +410,7 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
                         .addAuthenticatorExecution(Requirement.REQUIRED, UsernameFormFactory.PROVIDER_ID)
                         .addSubFlowExecution(Requirement.REQUIRED, subFlow -> subFlow
                                 // Add authenticators to this flow: 1 conditional authenticator and a basic authenticator executions
-                                .addAuthenticatorExecution(Requirement.REQUIRED, ConditionalRoleAuthenticatorFactory.PROVIDER_ID,
-                                        config -> config.getConfig().put("condUserRole", requiredRole))
+                                .addAuthenticatorExecution(Requirement.REQUIRED, ConditionalRoleAuthenticatorFactory.PROVIDER_ID, config -> config.getConfig().put("condUserRole", role))
                                 .addAuthenticatorExecution(Requirement.REQUIRED, PasswordFormFactory.PROVIDER_ID)
                         )
                 )
@@ -478,7 +542,11 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
-    private void configureBrowserFlowWithConditionalSubFlowWithChangingConditionWhileFlowEvaluation() {
+    private void configureBrowserFlowWithVariableSubFlowWithChangingConditionWhileFlowEvaluation() {
+        configureBrowserFlowWithVariableSubFlowWithChangingConditionWhileFlowEvaluation(Requirement.CONDITIONAL, true);
+    }
+
+    private void configureBrowserFlowWithVariableSubFlowWithChangingConditionWhileFlowEvaluation(Requirement requirement, boolean isNotPresent) {
         final String newFlowAlias = "browser - changing condition";
         testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
         testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
@@ -486,13 +554,13 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
                 .inForms(forms -> forms
                         .clear()
                         .addAuthenticatorExecution(Requirement.REQUIRED, UsernameFormFactory.PROVIDER_ID)
-                        .addSubFlowExecution(Requirement.CONDITIONAL, subFlow -> {
+                        .addSubFlowExecution(requirement, subFlow -> {
                             // Add authenticators to this flow: 1 conditional authenticator and a basic authenticator executions
                             subFlow.addAuthenticatorExecution(Requirement.REQUIRED, ConditionalUserAttributeValueFactory.PROVIDER_ID,
                                     config -> {
                                         config.getConfig().put(ConditionalUserAttributeValueFactory.CONF_ATTRIBUTE_NAME, "attribute");
                                         config.getConfig().put(ConditionalUserAttributeValueFactory.CONF_ATTRIBUTE_EXPECTED_VALUE, "value");
-                                        config.getConfig().put(ConditionalUserAttributeValueFactory.CONF_NOT, Boolean.toString(true));
+                                        config.getConfig().put(ConditionalUserAttributeValueFactory.CONF_NOT, Boolean.toString(isNotPresent));
                                     });
 
                             // Set the attribute value
@@ -519,7 +587,7 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
     @AuthServerContainerExclude(REMOTE)
     public void testConditionalAuthenticatorWithConditionalSubFlowWithChangingConditionWhileFlowEvaluation() {
         try {
-            configureBrowserFlowWithConditionalSubFlowWithChangingConditionWhileFlowEvaluation();
+            configureBrowserFlowWithVariableSubFlowWithChangingConditionWhileFlowEvaluation();
 
             // provides username
             loginUsernameOnlyPage.open();
@@ -726,20 +794,25 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    private void configureBrowserFlowWithConditionalFlowWithOTP(String newFlowAlias) {
+        configureBrowserFlowWithVariableFlowWithOTP(newFlowAlias, Requirement.CONDITIONAL);
+    }
+
     /**
      * Configure the browser flow with a simple flow that contains:
      * UsernameForm REQUIRED
      * Subflow REQUIRED
-     * ** Sub-subflow CONDITIONAL
+     * ** Sub-subflow VARIABLE
      * ***** ConditionalUserConfiguredAuthenticator REQUIRED
      * ***** OTPFormAuthenticator REQUIRED
-     *
+     * <p>
      * The expected behaviour is to prevent login if the user doesn't have an OTP credential, and to be able to login with an
      * OTP if the user has one. This demonstrates that conditional branches act as disabled when their conditional authenticator evaluates to false
      *
      * @param newFlowAlias
+     * @param otpSubflowRequirement otp subflow requirement
      */
-    private void configureBrowserFlowWithConditionalFlowWithOTP(String newFlowAlias) {
+    private void configureBrowserFlowWithVariableFlowWithOTP(String newFlowAlias, Requirement otpSubflowRequirement) {
         testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
         testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
                 .selectFlow(newFlowAlias)
@@ -747,7 +820,7 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
                         .clear()
                         .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UsernameFormFactory.PROVIDER_ID)
                         .addSubFlowExecution(Requirement.REQUIRED, sf -> sf
-                                .addSubFlowExecution(Requirement.CONDITIONAL, subFlow -> subFlow
+                                .addSubFlowExecution(otpSubflowRequirement, subFlow -> subFlow
                                         .addAuthenticatorExecution(Requirement.REQUIRED, ConditionalUserConfiguredAuthenticatorFactory.PROVIDER_ID)
                                         .addAuthenticatorExecution(Requirement.REQUIRED, OTPFormAuthenticatorFactory.PROVIDER_ID)
                                 )
