@@ -11,9 +11,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.saml.SAMLEndpoint;
-import org.keycloak.broker.saml.SAMLIdentityProvider;
-import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.events.EventBuilder;
@@ -183,7 +180,9 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
     }
 
     public NiaIdentityProviderConfig getNiaConfig() {
-        return (NiaIdentityProviderConfig) super.getConfig();
+        NiaIdentityProviderConfig niaIdentityProviderConfig = new NiaIdentityProviderConfig();
+        return niaIdentityProviderConfig;
+        //return (NiaIdentityProviderConfig) super.getConfig();
 
     }
 }

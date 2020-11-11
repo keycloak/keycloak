@@ -121,7 +121,7 @@ public class NiaSAMLEndpoint {
     public static final String SAML_AUTHN_STATEMENT = "SAML_AUTHN_STATEMENT";
     protected RealmModel realm;
     protected EventBuilder event;
-    protected SAMLIdentityProviderConfig config;
+    protected NiaIdentityProviderConfig config;
     protected IdentityProvider.AuthenticationCallback callback;
     protected NiaIdentityProvider provider;
     private final DestinationValidator destinationValidator;
@@ -135,7 +135,7 @@ public class NiaSAMLEndpoint {
     @Context
     private HttpHeaders headers;
 
-    public NiaSAMLEndpoint(RealmModel realm, NiaIdentityProvider provider, SAMLIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback, DestinationValidator destinationValidator) {
+    public NiaSAMLEndpoint(RealmModel realm, NiaIdentityProvider provider, NiaIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback, DestinationValidator destinationValidator) {
         this.realm = realm;
         this.config = config;
         this.callback = callback;
