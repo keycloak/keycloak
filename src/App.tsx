@@ -6,7 +6,6 @@ import { Header } from "./PageHeader";
 import { PageNav } from "./PageNav";
 import { Help } from "./components/help-enabler/HelpHeader";
 
-import { WhoAmIContextProvider } from "./context/whoami/WhoAmI";
 import { ServerInfoProvider } from "./context/server-info/ServerInfoProvider";
 import { AlertProvider } from "./components/alert/Alerts";
 
@@ -16,15 +15,13 @@ import { PageBreadCrumbs } from "./components/bread-crumb/PageBreadCrumbs";
 import { ForbiddenSection } from "./ForbiddenSection";
 
 const AppContexts = ({ children }: { children: ReactNode }) => (
-  <WhoAmIContextProvider>
-    <AccessContextProvider>
-      <Help>
-        <AlertProvider>
-          <ServerInfoProvider>{children}</ServerInfoProvider>
-        </AlertProvider>
-      </Help>
-    </AccessContextProvider>
-  </WhoAmIContextProvider>
+  <AccessContextProvider>
+    <Help>
+      <AlertProvider>
+        <ServerInfoProvider>{children}</ServerInfoProvider>
+      </AlertProvider>
+    </Help>
+  </AccessContextProvider>
 );
 
 // If someone tries to go directly to a route they don't

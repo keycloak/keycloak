@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useContext } from "react";
 import i18n from "../../i18n";
 
 import { DataLoader } from "../../components/data-loader/DataLoader";
-import { useAdminClient } from "../auth/AdminClient";
+import { AdminClient } from "../auth/AdminClient";
 import WhoAmIRepresentation, {
   AccessType,
 } from "keycloak-admin/lib/defs/whoAmIRepresentation";
@@ -53,7 +53,7 @@ export const WhoAmIContext = React.createContext(new WhoAmI());
 
 type WhoAmIProviderProps = { children: React.ReactNode };
 export const WhoAmIContextProvider = ({ children }: WhoAmIProviderProps) => {
-  const adminClient = useAdminClient();
+  const adminClient = useContext(AdminClient)!;
 
   const whoAmILoader = async () => {
     if (adminClient.keycloak === undefined) return undefined;
