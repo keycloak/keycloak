@@ -320,9 +320,9 @@ jobs:
       - name: Run Quarkus tests
         run: |
           echo '::group::Compiling testsuite'
-          mvn clean install -nsu -B -Pquarkus,auth-server-quarkus -DskipTests -f testsuite/pom.xml
+          mvn clean install -nsu -B -Pauth-server-quarkus -DskipTests -f testsuite/pom.xml
           echo '::endgroup::'
-          mvn clean install -nsu -B -Pquarkus,auth-server-quarkus -f testsuite/integration-arquillian/tests/base/pom.xml -Dtest='!org.keycloak.testsuite.adapter.**,!**.crossdc.**,!**.cluster.**' | misc/log/trimmer.sh
+          mvn clean install -nsu -B -Pauth-server-quarkus -f testsuite/integration-arquillian/tests/base/pom.xml -Dtest='!org.keycloak.testsuite.adapter.**,!**.crossdc.**,!**.cluster.**' | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip reports-base-unit-tests.zip -@
           exit $TEST_RESULT
@@ -365,9 +365,9 @@ jobs:
       - name: Run Quarkus adapter tests
         run: |
           echo '::group::Compiling testsuite'
-          mvn clean install -nsu -B -Pquarkus,auth-server-quarkus -DskipTests -f testsuite/pom.xml
+          mvn clean install -nsu -B -Pauth-server-quarkus -DskipTests -f testsuite/pom.xml
           echo '::endgroup::'
-          mvn clean install -nsu -B -Pquarkus,auth-server-quarkus -f testsuite/integration-arquillian/tests/base/pom.xml -Dtest=org.keycloak.testsuite.adapter.** | misc/log/trimmer.sh
+          mvn clean install -nsu -B -Pauth-server-quarkus -f testsuite/integration-arquillian/tests/base/pom.xml -Dtest=org.keycloak.testsuite.adapter.** | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip reports-adapter-tests.zip -@
           exit $TEST_RESULT
@@ -410,7 +410,7 @@ jobs:
       - name: Run Quarkus cluster tests
         run: |
           echo '::group::Compiling testsuite'
-          mvn clean install -nsu -B -Pquarkus,auth-server-quarkus -DskipTests -f testsuite/pom.xml
+          mvn clean install -nsu -B -Pauth-server-quarkus -DskipTests -f testsuite/pom.xml
           echo '::endgroup::'
           mvn clean install -nsu -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -f testsuite/integration-arquillian/pom.xml  | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}

@@ -88,8 +88,7 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
     @Override
     public void commit() {
         try {
-            if (Status.STATUS_NO_TRANSACTION == tm.getStatus() ||
-                Status.STATUS_ACTIVE != tm.getStatus()) {
+            if (Status.STATUS_NO_TRANSACTION == tm.getStatus()) {
                 return;
             }
             logger.debug("JtaTransactionWrapper  commit");
@@ -104,8 +103,7 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
     @Override
     public void rollback() {
         try {
-            if (Status.STATUS_NO_TRANSACTION == tm.getStatus() ||
-                Status.STATUS_ACTIVE != tm.getStatus()) {
+            if (Status.STATUS_NO_TRANSACTION == tm.getStatus()) {
                 return;
             }
             logger.debug("JtaTransactionWrapper rollback");
