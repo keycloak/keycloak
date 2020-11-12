@@ -75,6 +75,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.util.AdminClientUtil;
 
 /**
  * Test that clients can override auth flows
@@ -232,7 +233,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void testDirectGrant(String clientId) {
-        Client httpClient = javax.ws.rs.client.ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         String grantUri = oauth.getResourceOwnerPasswordCredentialGrantUrl();
         WebTarget grantTarget = httpClient.target(grantUri);
 

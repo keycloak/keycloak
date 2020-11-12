@@ -41,7 +41,6 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -54,6 +53,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -64,7 +64,6 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
@@ -120,7 +119,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     @Test
     public void testSuccess_getMethod_header() throws Exception {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
 
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
@@ -136,7 +135,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     @Test
     public void testSuccess_postMethod_header() throws Exception {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
 
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
@@ -155,7 +154,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     @Test
     public void testSuccess_postMethod_body() throws Exception {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
 
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
@@ -209,7 +208,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         events.clear();
 
         // Send UserInfo request and ensure it is correct
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
         try {
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getAccessToken());
 
@@ -221,7 +220,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     @Test
     public void testSuccess_postMethod_header_textEntity() throws Exception {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
 
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
@@ -247,7 +246,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         clientResource.update(clientRep);
 
         // test signed response
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
 
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
@@ -305,7 +304,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
  
     @Test
     public void testSessionExpired() {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
 
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
@@ -338,7 +337,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     @Test
     public void testAccessTokenExpired() {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
 
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
@@ -385,7 +384,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
         events.clear();
 
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
 
         try {
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getAccessToken());
@@ -413,7 +412,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     @Test
     public void testNotBeforeTokens() {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
 
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
@@ -472,7 +471,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     @Test
     public void testSessionExpiredOfflineAccess() throws Exception {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
 
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client, true);
@@ -490,7 +489,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     @Test
     public void testUnsuccessfulUserInfoRequest() throws Exception {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
 
         try {
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, "bad");
@@ -519,7 +518,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     @Test
     public void testUnsuccessfulUserInfoRequestWithEmptyAccessToken() {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
 
         try {
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, "");
@@ -540,7 +539,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         samlClient.setProtocol("saml");
         adminClient.realm("test").clients().get(samlClient.getId()).update(samlClient);
 
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
         try {
             events.clear();
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessToken);
@@ -564,7 +563,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
         switchIncludeRolesInUserInfoEndpoint(true);
 
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
 
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
@@ -636,7 +635,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
             clientResource.update(clientRep);
 
             // test signed response
-            Client client = ClientBuilder.newClient();
+            Client client = AdminClientUtil.createResteasyClient();
 
             try {
                 AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);

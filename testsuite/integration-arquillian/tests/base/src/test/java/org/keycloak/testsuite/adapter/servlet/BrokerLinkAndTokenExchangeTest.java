@@ -63,6 +63,7 @@ import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -70,7 +71,6 @@ import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.util.BasicAuthHelper;
 
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
@@ -350,7 +350,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         // do exchange
 
         String accessToken = oauth.doGrantAccessTokenRequest(CHILD_IDP, "child", "password", null, ClientApp.DEPLOYMENT_NAME, "password").getAccessToken();
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         try {
             WebTarget exchangeUrl = childTokenExchangeWebTarget(httpClient);
             System.out.println("Exchange url: " + exchangeUrl.getUri().toString());
@@ -519,7 +519,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         String accessToken = oauth.doGrantAccessTokenRequest(PARENT_IDP, PARENT2_USERNAME, "password", null, PARENT_CLIENT, "password").getAccessToken();
         Assert.assertEquals(0, adminClient.realm(CHILD_IDP).getClientSessionStats().size());
 
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         try {
             WebTarget exchangeUrl = childTokenExchangeWebTarget(httpClient);
             System.out.println("Exchange url: " + exchangeUrl.getUri().toString());
@@ -721,7 +721,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
             Assert.assertEquals(0, adminClient.realm(CHILD_IDP).getClientSessionStats().size());
         }
 
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         try {
             WebTarget exchangeUrl = childTokenExchangeWebTarget(httpClient);
             {
