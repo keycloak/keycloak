@@ -37,6 +37,10 @@ import io.quarkus.deployment.IsDevelopment;
 import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
+import io.quarkus.smallrye.health.runtime.SmallRyeHealthHandler;
+import io.quarkus.vertx.http.deployment.RouteBuildItem;
+import io.vertx.core.Handler;
+import io.vertx.ext.web.RoutingContext;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
 import org.jboss.logging.Logger;
@@ -66,7 +70,9 @@ import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.hibernate.orm.deployment.PersistenceUnitDescriptorBuildItem;
 import io.quarkus.vertx.http.deployment.FilterBuildItem;
+import org.keycloak.services.NotFoundHandler;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.health.KeycloakMetricsHandler;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.transaction.JBossJtaTransactionManagerLookup;
 import org.keycloak.util.Environment;
@@ -74,6 +80,8 @@ import org.keycloak.util.Environment;
 class KeycloakProcessor {
 
     private static final Logger logger = Logger.getLogger(KeycloakProcessor.class);
+
+    private static final String DEFAULT_HEALTH_ENDPOINT = "/health";
 
     @BuildStep
     FeatureBuildItem getFeature() {
@@ -195,13 +203,41 @@ class KeycloakProcessor {
         indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("org.keycloak", "keycloak-services"));
     }
 
-    @Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep
-    void initializeFilter(BuildProducer<FilterBuildItem> routes, KeycloakRecorder recorder) {
-        Optional<Boolean> metricsEnabled = Configuration.getOptionalBooleanValue(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat("metrics.enabled"));
+    void initializeFilter(BuildProducer<FilterBuildItem> filters) {
+        filters.produce(new FilterBuildItem(new QuarkusRequestFilter(),FilterBuildItem.AUTHORIZATION - 10));
+    }
 
-        routes.produce(new FilterBuildItem(recorder.createFilter(metricsEnabled.orElse(false)),
-                FilterBuildItem.AUTHORIZATION - 10));
+    /**
+     * <p>Initialize metrics and health endpoints.
+     *
+     * <p>The only reason for manually registering these endpoints is that by default they run as blocking hence
+     * running in a different thread than the worker thread started by {@link QuarkusRequestFilter}.
+     * See https://github.com/quarkusio/quarkus/issues/12990.
+     *
+     * <p>By doing this, custom health checks such as {@link org.keycloak.services.health.KeycloakReadyHealthCheck} is
+     * executed within an active {@link org.keycloak.models.KeycloakSession}, making possible to use it when calculating the
+     * status.
+     *
+     * @param routes
+     */
+    @BuildStep
+    void initializeMetrics(BuildProducer<RouteBuildItem> routes) {
+        Handler<RoutingContext> healthHandler;
+        Handler<RoutingContext> metricsHandler;
+
+        if (isMetricsEnabled()) {
+            healthHandler = new SmallRyeHealthHandler();
+            metricsHandler = new KeycloakMetricsHandler();
+        } else {
+            healthHandler = new NotFoundHandler();
+            metricsHandler = new NotFoundHandler();
+        }
+
+        routes.produce(new RouteBuildItem(DEFAULT_HEALTH_ENDPOINT, healthHandler));
+        routes.produce(new RouteBuildItem(DEFAULT_HEALTH_ENDPOINT.concat("/live"), healthHandler));
+        routes.produce(new RouteBuildItem(DEFAULT_HEALTH_ENDPOINT.concat("/ready"), healthHandler));
+        routes.produce(new RouteBuildItem(KeycloakMetricsHandler.DEFAULT_METRICS_ENDPOINT, metricsHandler));
     }
 
     @BuildStep(onlyIf = IsDevelopment.class)
@@ -309,5 +345,9 @@ class KeycloakProcessor {
         } catch (NoSuchElementException e) {
             throw new RuntimeException("No valid ConfigProvider found");
         }
+    }
+
+    private boolean isMetricsEnabled() {
+        return Configuration.getOptionalBooleanValue(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat("metrics.enabled")).orElse(false);
     }
 }
