@@ -21,14 +21,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
             isDisabled={false}
             onClick={[Function]}
           >
-            add
+            Add
           </Button>,
           <Button
             id="modal-cancel"
             onClick={[Function]}
             variant="secondary"
           >
-            cancel
+            Cancel
           </Button>,
         ]
       }
@@ -42,7 +42,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
       onClose={[Function]}
       ouiaSafe={true}
       showClose={true}
-      title="chooseAMapperType"
+      title="Choose a mapper type"
       variant="medium"
     >
       <Portal
@@ -95,7 +95,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                       class="pf-c-modal-box__title pf-c-modal-box__title"
                       id="pf-modal-part-1"
                     >
-                      chooseAMapperType
+                      Choose a mapper type
                     </h1>
                   </header>
                   <div
@@ -109,11 +109,11 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                         class=""
                         data-pf-content="true"
                       >
-                        predefinedMappingDescription
+                        Choose one of the predefined mappings from this table
                       </p>
                     </div>
                     <table
-                      aria-label="chooseAMapperType"
+                      aria-label="Choose a mapper type"
                       class="pf-c-table pf-m-grid-md pf-m-compact"
                       data-ouia-component-id="OUIA-Generated-Table-1"
                       data-ouia-component-type="PF4/Table"
@@ -132,18 +132,18 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <th
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                             scope="col"
                           >
-                            name
+                            Name
                           </th>
                           <th
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                             scope="col"
                           >
-                            description
+                            Description
                           </th>
                         </tr>
                       </thead>
@@ -169,14 +169,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             zoneinfo
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a custom user attribute to a token claim.
                           </td>
@@ -200,14 +200,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             birthdate
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a custom user attribute to a token claim.
                           </td>
@@ -231,14 +231,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             family name
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a built in user property (email, firstName, lastName) to a token claim.
                           </td>
@@ -262,14 +262,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             gender
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a custom user attribute to a token claim.
                           </td>
@@ -293,14 +293,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             Impersonator Username
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a custom user session note to a token claim.
                           </td>
@@ -324,14 +324,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             phone number verified
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a custom user attribute to a token claim.
                           </td>
@@ -355,14 +355,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             locale
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a custom user attribute to a token claim.
                           </td>
@@ -386,14 +386,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             gss delegation credential
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a custom user session note to a token claim.
                           </td>
@@ -417,14 +417,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             allowed web origins
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Adds all allowed web origins to the 'allowed-origins' claim in the token
                           </td>
@@ -448,14 +448,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             middle name
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a custom user attribute to a token claim.
                           </td>
@@ -479,14 +479,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             nickname
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a custom user attribute to a token claim.
                           </td>
@@ -510,14 +510,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             updated at
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a custom user attribute to a token claim.
                           </td>
@@ -541,14 +541,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             email verified
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a built in user property (email, firstName, lastName) to a token claim.
                           </td>
@@ -572,14 +572,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             email
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a built in user property (email, firstName, lastName) to a token claim.
                           </td>
@@ -603,14 +603,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             client roles
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a user client role to a token claim.
                           </td>
@@ -634,14 +634,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             Impersonator User ID
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a custom user session note to a token claim.
                           </td>
@@ -665,14 +665,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             website
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a custom user attribute to a token claim.
                           </td>
@@ -696,14 +696,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             address
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Maps user address attributes (street, locality, region, postal_code, and country) to the OpenID Connect 'address' claim.
                           </td>
@@ -727,14 +727,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             given name
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a built in user property (email, firstName, lastName) to a token claim.
                           </td>
@@ -758,14 +758,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             profile
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a custom user attribute to a token claim.
                           </td>
@@ -789,14 +789,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             groups
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a user realm role to a token claim.
                           </td>
@@ -820,14 +820,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             phone number
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a custom user attribute to a token claim.
                           </td>
@@ -851,14 +851,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             full name
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Maps the user's first and last name to the OpenID Connect 'name' claim. Format is &lt;first&gt; + ' ' + &lt;last&gt;
                           </td>
@@ -882,14 +882,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             audience resolve
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Adds all client_ids of "allowed" clients to the audience field of the token. Allowed client means the client
  for which user has at least one client role
@@ -914,14 +914,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             picture
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a custom user attribute to a token claim.
                           </td>
@@ -945,14 +945,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             upn
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a built in user property (email, firstName, lastName) to a token claim.
                           </td>
@@ -976,14 +976,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             realm roles
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a user realm role to a token claim.
                           </td>
@@ -1007,14 +1007,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <td
                             class=""
                             data-key="1"
-                            data-label="name"
+                            data-label="Name"
                           >
                             username
                           </td>
                           <td
                             class=""
                             data-key="2"
-                            data-label="description"
+                            data-label="Description"
                           >
                             Map a built in user property (email, firstName, lastName) to a token claim.
                           </td>
@@ -1034,7 +1034,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                       id="modal-confirm"
                       type="button"
                     >
-                      add
+                      Add
                     </button>
                     <button
                       aria-disabled="false"
@@ -1045,7 +1045,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                       id="modal-cancel"
                       type="button"
                     >
-                      cancel
+                      Cancel
                     </button>
                   </footer>
                 </div>
@@ -1062,14 +1062,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                 isDisabled={false}
                 onClick={[Function]}
               >
-                add
+                Add
               </Button>,
               <Button
                 id="modal-cancel"
                 onClick={[Function]}
                 variant="secondary"
               >
-                cancel
+                Cancel
               </Button>,
             ]
           }
@@ -1086,7 +1086,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
           ouiaId="OUIA-Generated-Modal-medium-1"
           ouiaSafe={true}
           showClose={true}
-          title="chooseAMapperType"
+          title="Choose a mapper type"
           variant="medium"
         >
           <Backdrop>
@@ -1185,13 +1185,13 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                           <ModalBoxTitle
                             className="pf-c-modal-box__title"
                             id="pf-modal-part-1"
-                            title="chooseAMapperType"
+                            title="Choose a mapper type"
                           >
                             <h1
                               className="pf-c-modal-box__title pf-c-modal-box__title"
                               id="pf-modal-part-1"
                             >
-                              chooseAMapperType
+                              Choose a mapper type
                             </h1>
                           </ModalBoxTitle>
                         </header>
@@ -1212,19 +1212,19 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                   className=""
                                   data-pf-content={true}
                                 >
-                                  predefinedMappingDescription
+                                  Choose one of the predefined mappings from this table
                                 </p>
                               </Text>
                             </div>
                           </TextContent>
                           <Table
-                            aria-label="chooseAMapperType"
+                            aria-label="Choose a mapper type"
                             borders={true}
                             canSelectAll={false}
                             cells={
                               Array [
-                                "name",
-                                "description",
+                                "Name",
+                                "Description",
                               ]
                             }
                             className=""
@@ -1814,7 +1814,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                             variant="compact"
                           >
                             <Provider
-                              aria-label="chooseAMapperType"
+                              aria-label="Choose a mapper type"
                               className="pf-c-table pf-m-grid-md pf-m-compact"
                               columns={
                                 Array [
@@ -1893,7 +1893,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                     },
                                     "header": Object {
                                       "formatters": Array [],
-                                      "label": "name",
+                                      "label": "Name",
                                       "transforms": Array [
                                         [Function],
                                         [Function],
@@ -1902,7 +1902,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                     "property": "name",
                                     "props": Object {
                                       "data-key": 1,
-                                      "data-label": "name",
+                                      "data-label": "Name",
                                     },
                                   },
                                   Object {
@@ -1936,7 +1936,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                     },
                                     "header": Object {
                                       "formatters": Array [],
-                                      "label": "description",
+                                      "label": "Description",
                                       "transforms": Array [
                                         [Function],
                                         [Function],
@@ -1945,7 +1945,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                     "property": "description",
                                     "props": Object {
                                       "data-key": 2,
-                                      "data-label": "description",
+                                      "data-label": "Description",
                                     },
                                   },
                                 ]
@@ -1968,7 +1968,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                               role="grid"
                             >
                               <table
-                                aria-label="chooseAMapperType"
+                                aria-label="Choose a mapper type"
                                 className="pf-c-table pf-m-grid-md pf-m-compact"
                                 data-ouia-component-id="OUIA-Generated-Table-1"
                                 data-ouia-component-type="PF4/Table"
@@ -2062,7 +2062,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                               },
                                               "header": Object {
                                                 "formatters": Array [],
-                                                "label": "name",
+                                                "label": "Name",
                                                 "transforms": Array [
                                                   [Function],
                                                   [Function],
@@ -2071,7 +2071,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                               "property": "name",
                                               "props": Object {
                                                 "data-key": 1,
-                                                "data-label": "name",
+                                                "data-label": "Name",
                                               },
                                             },
                                             Object {
@@ -2105,7 +2105,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                               },
                                               "header": Object {
                                                 "formatters": Array [],
-                                                "label": "description",
+                                                "label": "Description",
                                                 "transforms": Array [
                                                   [Function],
                                                   [Function],
@@ -2114,7 +2114,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                               "property": "description",
                                               "props": Object {
                                                 "data-key": 2,
-                                                "data-label": "description",
+                                                "data-label": "Description",
                                               },
                                             },
                                           ]
@@ -2225,7 +2225,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   },
                                                   "header": Object {
                                                     "formatters": Array [],
-                                                    "label": "name",
+                                                    "label": "Name",
                                                     "transforms": Array [
                                                       [Function],
                                                       [Function],
@@ -2234,7 +2234,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   "property": "name",
                                                   "props": Object {
                                                     "data-key": 1,
-                                                    "data-label": "name",
+                                                    "data-label": "Name",
                                                   },
                                                 },
                                                 Object {
@@ -2268,7 +2268,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   },
                                                   "header": Object {
                                                     "formatters": Array [],
-                                                    "label": "description",
+                                                    "label": "Description",
                                                     "transforms": Array [
                                                       [Function],
                                                       [Function],
@@ -2277,7 +2277,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   "property": "description",
                                                   "props": Object {
                                                     "data-key": 2,
-                                                    "data-label": "description",
+                                                    "data-label": "Description",
                                                   },
                                                 },
                                               ]
@@ -2300,34 +2300,34 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                               </HeaderCell>
                                               <HeaderCell
                                                 data-key={1}
-                                                data-label="name"
+                                                data-label="Name"
                                                 key="1-header"
                                                 scope="col"
                                               >
                                                 <th
                                                   className=""
                                                   data-key={1}
-                                                  data-label="name"
+                                                  data-label="Name"
                                                   onMouseEnter={[Function]}
                                                   scope="col"
                                                 >
-                                                  name
+                                                  Name
                                                 </th>
                                               </HeaderCell>
                                               <HeaderCell
                                                 data-key={2}
-                                                data-label="description"
+                                                data-label="Description"
                                                 key="2-header"
                                                 scope="col"
                                               >
                                                 <th
                                                   className=""
                                                   data-key={2}
-                                                  data-label="description"
+                                                  data-label="Description"
                                                   onMouseEnter={[Function]}
                                                   scope="col"
                                                 >
-                                                  description
+                                                  Description
                                                 </th>
                                               </HeaderCell>
                                             </tr>
@@ -2417,7 +2417,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                           },
                                           "header": Object {
                                             "formatters": Array [],
-                                            "label": "name",
+                                            "label": "Name",
                                             "transforms": Array [
                                               [Function],
                                               [Function],
@@ -2426,7 +2426,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                           "property": "name",
                                           "props": Object {
                                             "data-key": 1,
-                                            "data-label": "name",
+                                            "data-label": "Name",
                                           },
                                         },
                                         Object {
@@ -2460,7 +2460,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                           },
                                           "header": Object {
                                             "formatters": Array [],
-                                            "label": "description",
+                                            "label": "Description",
                                             "transforms": Array [
                                               [Function],
                                               [Function],
@@ -2469,7 +2469,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                           "property": "description",
                                           "props": Object {
                                             "data-key": 2,
-                                            "data-label": "description",
+                                            "data-label": "Description",
                                           },
                                         },
                                       ]
@@ -5349,7 +5349,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                               },
                                               "header": Object {
                                                 "formatters": Array [],
-                                                "label": "name",
+                                                "label": "Name",
                                                 "transforms": Array [
                                                   [Function],
                                                   [Function],
@@ -5358,7 +5358,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                               "property": "name",
                                               "props": Object {
                                                 "data-key": 1,
-                                                "data-label": "name",
+                                                "data-label": "Name",
                                               },
                                             },
                                             Object {
@@ -5392,7 +5392,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                               },
                                               "header": Object {
                                                 "formatters": Array [],
-                                                "label": "description",
+                                                "label": "Description",
                                                 "transforms": Array [
                                                   [Function],
                                                   [Function],
@@ -5401,7 +5401,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                               "property": "description",
                                               "props": Object {
                                                 "data-key": 2,
-                                                "data-label": "description",
+                                                "data-label": "Description",
                                               },
                                             },
                                           ]
@@ -8828,7 +8828,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -8837,7 +8837,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -8871,7 +8871,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -8880,7 +8880,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -9030,14 +9030,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-0"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       zoneinfo
@@ -9045,14 +9045,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-0"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a custom user attribute to a token claim.
@@ -9139,7 +9139,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -9148,7 +9148,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -9182,7 +9182,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -9191,7 +9191,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -9341,14 +9341,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-1"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       birthdate
@@ -9356,14 +9356,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-1"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a custom user attribute to a token claim.
@@ -9450,7 +9450,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -9459,7 +9459,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -9493,7 +9493,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -9502,7 +9502,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -9652,14 +9652,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-2"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       family name
@@ -9667,14 +9667,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-2"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a built in user property (email, firstName, lastName) to a token claim.
@@ -9761,7 +9761,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -9770,7 +9770,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -9804,7 +9804,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -9813,7 +9813,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -9963,14 +9963,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-3"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       gender
@@ -9978,14 +9978,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-3"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a custom user attribute to a token claim.
@@ -10072,7 +10072,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -10081,7 +10081,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -10115,7 +10115,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -10124,7 +10124,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -10272,14 +10272,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-4"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Impersonator Username
@@ -10287,14 +10287,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-4"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a custom user session note to a token claim.
@@ -10381,7 +10381,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -10390,7 +10390,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -10424,7 +10424,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -10433,7 +10433,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -10583,14 +10583,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-5"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       phone number verified
@@ -10598,14 +10598,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-5"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a custom user attribute to a token claim.
@@ -10692,7 +10692,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -10701,7 +10701,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -10735,7 +10735,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -10744,7 +10744,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -10894,14 +10894,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-6"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       locale
@@ -10909,14 +10909,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-6"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a custom user attribute to a token claim.
@@ -11003,7 +11003,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -11012,7 +11012,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -11046,7 +11046,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -11055,7 +11055,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -11201,14 +11201,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-7"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       gss delegation credential
@@ -11216,14 +11216,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-7"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a custom user session note to a token claim.
@@ -11310,7 +11310,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -11319,7 +11319,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -11353,7 +11353,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -11362,7 +11362,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -11498,14 +11498,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-8"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       allowed web origins
@@ -11513,14 +11513,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-8"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Adds all allowed web origins to the 'allowed-origins' claim in the token
@@ -11607,7 +11607,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -11616,7 +11616,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -11650,7 +11650,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -11659,7 +11659,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -11809,14 +11809,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-9"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       middle name
@@ -11824,14 +11824,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-9"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a custom user attribute to a token claim.
@@ -11918,7 +11918,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -11927,7 +11927,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -11961,7 +11961,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -11970,7 +11970,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -12120,14 +12120,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-10"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       nickname
@@ -12135,14 +12135,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-10"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a custom user attribute to a token claim.
@@ -12229,7 +12229,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -12238,7 +12238,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -12272,7 +12272,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -12281,7 +12281,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -12431,14 +12431,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-11"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       updated at
@@ -12446,14 +12446,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-11"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a custom user attribute to a token claim.
@@ -12540,7 +12540,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -12549,7 +12549,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -12583,7 +12583,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -12592,7 +12592,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -12742,14 +12742,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-12"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       email verified
@@ -12757,14 +12757,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-12"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a built in user property (email, firstName, lastName) to a token claim.
@@ -12851,7 +12851,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -12860,7 +12860,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -12894,7 +12894,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -12903,7 +12903,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -13053,14 +13053,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-13"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       email
@@ -13068,14 +13068,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-13"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a built in user property (email, firstName, lastName) to a token claim.
@@ -13162,7 +13162,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -13171,7 +13171,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -13205,7 +13205,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -13214,7 +13214,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -13362,14 +13362,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-14"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       client roles
@@ -13377,14 +13377,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-14"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a user client role to a token claim.
@@ -13471,7 +13471,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -13480,7 +13480,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -13514,7 +13514,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -13523,7 +13523,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -13671,14 +13671,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-15"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Impersonator User ID
@@ -13686,14 +13686,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-15"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a custom user session note to a token claim.
@@ -13780,7 +13780,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -13789,7 +13789,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -13823,7 +13823,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -13832,7 +13832,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -13982,14 +13982,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-16"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       website
@@ -13997,14 +13997,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-16"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a custom user attribute to a token claim.
@@ -14091,7 +14091,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -14100,7 +14100,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -14134,7 +14134,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -14143,7 +14143,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -14299,14 +14299,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-17"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       address
@@ -14314,14 +14314,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-17"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Maps user address attributes (street, locality, region, postal_code, and country) to the OpenID Connect 'address' claim.
@@ -14408,7 +14408,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -14417,7 +14417,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -14451,7 +14451,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -14460,7 +14460,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -14610,14 +14610,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-18"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       given name
@@ -14625,14 +14625,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-18"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a built in user property (email, firstName, lastName) to a token claim.
@@ -14719,7 +14719,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -14728,7 +14728,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -14762,7 +14762,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -14771,7 +14771,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -14921,14 +14921,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-19"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       profile
@@ -14936,14 +14936,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-19"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a custom user attribute to a token claim.
@@ -15030,7 +15030,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -15039,7 +15039,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -15073,7 +15073,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -15082,7 +15082,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -15232,14 +15232,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-20"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       groups
@@ -15247,14 +15247,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-20"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a user realm role to a token claim.
@@ -15341,7 +15341,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -15350,7 +15350,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -15384,7 +15384,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -15393,7 +15393,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -15543,14 +15543,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-21"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       phone number
@@ -15558,14 +15558,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-21"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a custom user attribute to a token claim.
@@ -15652,7 +15652,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -15661,7 +15661,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -15695,7 +15695,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -15704,7 +15704,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -15848,14 +15848,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-22"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       full name
@@ -15863,14 +15863,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-22"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Maps the user's first and last name to the OpenID Connect 'name' claim. Format is &lt;first&gt; + ' ' + &lt;last&gt;
@@ -15957,7 +15957,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -15966,7 +15966,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -16000,7 +16000,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -16009,7 +16009,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -16149,14 +16149,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-23"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       audience resolve
@@ -16164,14 +16164,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-23"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Adds all client_ids of "allowed" clients to the audience field of the token. Allowed client means the client
@@ -16259,7 +16259,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -16268,7 +16268,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -16302,7 +16302,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -16311,7 +16311,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -16461,14 +16461,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-24"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       picture
@@ -16476,14 +16476,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-24"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a custom user attribute to a token claim.
@@ -16570,7 +16570,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -16579,7 +16579,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -16613,7 +16613,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -16622,7 +16622,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -16772,14 +16772,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-25"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       upn
@@ -16787,14 +16787,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-25"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a built in user property (email, firstName, lastName) to a token claim.
@@ -16881,7 +16881,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -16890,7 +16890,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -16924,7 +16924,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -16933,7 +16933,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -17081,14 +17081,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-26"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       realm roles
@@ -17096,14 +17096,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-26"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a user realm role to a token claim.
@@ -17190,7 +17190,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "name",
+                                                      "label": "Name",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -17199,7 +17199,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "name",
                                                     "props": Object {
                                                       "data-key": 1,
-                                                      "data-label": "name",
+                                                      "data-label": "Name",
                                                     },
                                                   },
                                                   Object {
@@ -17233,7 +17233,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     },
                                                     "header": Object {
                                                       "formatters": Array [],
-                                                      "label": "description",
+                                                      "label": "Description",
                                                       "transforms": Array [
                                                         [Function],
                                                         [Function],
@@ -17242,7 +17242,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                     "property": "description",
                                                     "props": Object {
                                                       "data-key": 2,
-                                                      "data-label": "description",
+                                                      "data-label": "Description",
                                                     },
                                                   },
                                                 ]
@@ -17392,14 +17392,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={1}
-                                                    data-label="name"
+                                                    data-label="Name"
                                                     isVisible={true}
                                                     key="col-1-row-27"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={1}
-                                                      data-label="name"
+                                                      data-label="Name"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       username
@@ -17407,14 +17407,14 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                                                   </BodyCell>
                                                   <BodyCell
                                                     data-key={2}
-                                                    data-label="description"
+                                                    data-label="Description"
                                                     isVisible={true}
                                                     key="col-2-row-27"
                                                   >
                                                     <td
                                                       className=""
                                                       data-key={2}
-                                                      data-label="description"
+                                                      data-label="Description"
                                                       onMouseEnter={[Function]}
                                                     >
                                                       Map a built in user property (email, firstName, lastName) to a token claim.
@@ -17456,7 +17456,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                               onClick={[Function]}
                               type="button"
                             >
-                              add
+                              Add
                             </button>
                           </Button>
                           <Button
@@ -17477,7 +17477,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                               onClick={[Function]}
                               type="button"
                             >
-                              cancel
+                              Cancel
                             </button>
                           </Button>
                         </footer>
@@ -17537,7 +17537,7 @@ exports[`<MapperDialog/> should return selected protocol mapping type on click 1
       onClose={[Function]}
       ouiaSafe={true}
       showClose={true}
-      title="chooseAMapperType"
+      title="Choose a mapper type"
       variant="medium"
     >
       <Portal
@@ -17590,7 +17590,7 @@ exports[`<MapperDialog/> should return selected protocol mapping type on click 1
                       class="pf-c-modal-box__title pf-c-modal-box__title"
                       id="pf-modal-part-3"
                     >
-                      chooseAMapperType
+                      Choose a mapper type
                     </h1>
                   </header>
                   <div
@@ -17604,11 +17604,11 @@ exports[`<MapperDialog/> should return selected protocol mapping type on click 1
                         class=""
                         data-pf-content="true"
                       >
-                        predefinedMappingDescription
+                        Choose one of the predefined mappings from this table
                       </p>
                     </div>
                     <ul
-                      aria-label="chooseAMapperType"
+                      aria-label="Choose a mapper type"
                       class="pf-c-data-list pf-m-compact"
                     >
                       <li
@@ -18010,7 +18010,7 @@ exports[`<MapperDialog/> should return selected protocol mapping type on click 1
           ouiaId="OUIA-Generated-Modal-medium-3"
           ouiaSafe={true}
           showClose={true}
-          title="chooseAMapperType"
+          title="Choose a mapper type"
           variant="medium"
         >
           <Backdrop>
@@ -18109,13 +18109,13 @@ exports[`<MapperDialog/> should return selected protocol mapping type on click 1
                           <ModalBoxTitle
                             className="pf-c-modal-box__title"
                             id="pf-modal-part-3"
-                            title="chooseAMapperType"
+                            title="Choose a mapper type"
                           >
                             <h1
                               className="pf-c-modal-box__title pf-c-modal-box__title"
                               id="pf-modal-part-3"
                             >
-                              chooseAMapperType
+                              Choose a mapper type
                             </h1>
                           </ModalBoxTitle>
                         </header>
@@ -18136,18 +18136,18 @@ exports[`<MapperDialog/> should return selected protocol mapping type on click 1
                                   className=""
                                   data-pf-content={true}
                                 >
-                                  predefinedMappingDescription
+                                  Choose one of the predefined mappings from this table
                                 </p>
                               </Text>
                             </div>
                           </TextContent>
                           <DataList
-                            aria-label="chooseAMapperType"
+                            aria-label="Choose a mapper type"
                             isCompact={true}
                             onSelectDataListItem={[Function]}
                           >
                             <ul
-                              aria-label="chooseAMapperType"
+                              aria-label="Choose a mapper type"
                               className="pf-c-data-list pf-m-compact"
                             >
                               <DataListItem

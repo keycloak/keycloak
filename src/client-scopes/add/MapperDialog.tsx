@@ -19,12 +19,10 @@ import {
   TableVariant,
 } from "@patternfly/react-table";
 import { useTranslation } from "react-i18next";
+import ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
+import { ProtocolMapperTypeRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
 
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
-import {
-  ProtocolMapperRepresentation,
-  ProtocolMapperTypeRepresentation,
-} from "../../context/server-info/server-info";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 
 export type AddMapperDialogModalProps = {
@@ -45,8 +43,8 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
 
   const serverInfo = useServerInfo();
   const protocol = props.protocol;
-  const protocolMappers = serverInfo.protocolMapperTypes[protocol];
-  const builtInMappers = serverInfo.builtinProtocolMappers[protocol];
+  const protocolMappers = serverInfo.protocolMapperTypes![protocol];
+  const builtInMappers = serverInfo.builtinProtocolMappers![protocol];
   const [filter, setFilter] = useState<ProtocolMapperRepresentation[]>([]);
 
   const allRows = builtInMappers.map((mapper) => {

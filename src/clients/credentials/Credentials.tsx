@@ -14,15 +14,15 @@ import {
   Split,
   SplitItem,
 } from "@patternfly/react-core";
-import React, { useContext, useEffect, useState } from "react";
+import CredentialRepresentation from "keycloak-admin/lib/defs/credentialRepresentation";
+import React, { useEffect, useState } from "react";
 import { Controller, UseFormMethods, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 
-import { HttpClientContext } from "../../context/http-service/HttpClientContext";
-import { RealmContext } from "../../context/realm-context/RealmContext";
+import { useAdminClient } from "../../context/auth/AdminClient";
 import { ClientSecret } from "./ClientSecret";
 import { SignedJWT } from "./SignedJWT";
 import { X509 } from "./X509";
@@ -49,8 +49,7 @@ export type CredentialsProps = {
 
 export const Credentials = ({ clientId, form, save }: CredentialsProps) => {
   const { t } = useTranslation("clients");
-  const httpClient = useContext(HttpClientContext)!;
-  const { realm } = useContext(RealmContext);
+  const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
   const clientAuthenticatorType = useWatch({
     control: form.control,
@@ -66,36 +65,37 @@ export const Credentials = ({ clientId, form, save }: CredentialsProps) => {
 
   useEffect(() => {
     (async () => {
-      const response = await httpClient.doGet<ClientAuthenticatorProviders[]>(
-        `/admin/realms/${realm}/authentication/client-authenticator-providers`
+      const providers = await adminClient.authenticationManagement.getClientAuthenticatorProviders(
+        { id: clientId }
       );
-      setProviders(response.data!);
+      setProviders(providers);
 
-      const secretResponse = await httpClient.doGet<Secret>(
-        `/admin/realms/${realm}/clients/${clientId}/client-secret`
-      );
-      setSecret(secretResponse.data!.value);
+      const secret = await adminClient.clients.getClientSecret({
+        id: clientId,
+      });
+      setSecret(secret.value!);
     })();
   }, []);
 
   async function regenerate<T>(
-    endpoint: string,
+    call: (clientId: string) => Promise<T>,
     message: string
   ): Promise<T | undefined> {
     try {
-      const response = await httpClient.doPost<T>(
-        `/admin/realms/${realm}/clients/${clientId}/${endpoint}`,
-        { client: clientId, realm }
-      );
+      const data = await call(clientId);
       addAlert(t(`${message}Success`), AlertVariant.success);
-      return response.data!;
+      return data;
     } catch (error) {
       addAlert(t(`${message}Error`, { error }), AlertVariant.danger);
     }
   }
 
   const regenerateClientSecret = async () => {
-    const secret = await regenerate<Secret>("client-secret", "clientSecret");
+    const secret = await regenerate<CredentialRepresentation>(
+      (clientId) =>
+        adminClient.clients.generateNewClientSecret({ id: clientId }),
+      "clientSecret"
+    );
     setSecret(secret?.value || "");
   };
 
@@ -109,7 +109,8 @@ export const Credentials = ({ clientId, form, save }: CredentialsProps) => {
 
   const regenerateAccessToken = async () => {
     const accessToken = await regenerate<AccessToken>(
-      "registration-access-token",
+      (clientId) =>
+        adminClient.clients.generateRegistrationAccessToken({ id: clientId }),
       "accessToken"
     );
     setAccessToken(accessToken?.registrationAccessToken || "");

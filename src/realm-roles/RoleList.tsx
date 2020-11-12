@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -11,11 +11,10 @@ import {
 } from "@patternfly/react-table";
 
 import { ExternalLink } from "../components/external-link/ExternalLink";
-import { RoleRepresentation } from "../model/role-model";
+import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import { AlertVariant, ButtonVariant } from "@patternfly/react-core";
-import { HttpClientContext } from "../context/http-service/HttpClientContext";
+import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
-import { RealmContext } from "../context/realm-context/RealmContext";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 
 type RolesListProps = {
@@ -31,8 +30,7 @@ const columns: (keyof RoleRepresentation)[] = [
 
 export const RolesList = ({ roles, refresh }: RolesListProps) => {
   const { t } = useTranslation("roles");
-  const httpClient = useContext(HttpClientContext)!;
-  const { realm } = useContext(RealmContext);
+  const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
   const [selectedRowId, setSelectedRowId] = useState(-1);
 
@@ -71,9 +69,9 @@ export const RolesList = ({ roles, refresh }: RolesListProps) => {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        await httpClient.doDelete(
-          `/admin/realms/${realm}/roles/${data[selectedRowId].role.name}`
-        );
+        await adminClient.roles.delByName({
+          name: data[selectedRowId].role.name!,
+        });
         refresh();
         addAlert(t("roleDeletedSuccess"), AlertVariant.success);
       } catch (error) {

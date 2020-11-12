@@ -1,17 +1,24 @@
-import Keycloak, { KeycloakInstance } from "keycloak-js";
+import KcAdminClient from "keycloak-admin";
 
-const realm =
-  new URLSearchParams(window.location.search).get("realm") || "master";
+export default async function (): Promise<KcAdminClient> {
+  const realm =
+    new URLSearchParams(window.location.search).get("realm") || "master";
 
-const keycloak: KeycloakInstance = Keycloak({
-  url: "http://localhost:8180/auth/",
-  realm: realm,
-  clientId: "security-admin-console-v2",
-});
+  const kcAdminClient = new KcAdminClient();
 
-export default async function (): Promise<KeycloakInstance> {
-  await keycloak.init({ onLoad: "check-sso", pkceMethod: "S256" }).catch(() => {
+  try {
+    await kcAdminClient.init(
+      { onLoad: "check-sso", pkceMethod: "S256" },
+      {
+        url: "http://localhost:8180/auth/",
+        realm: realm,
+        clientId: "security-admin-console-v2",
+      }
+    );
+    kcAdminClient.baseUrl = "";
+  } catch (error) {
     alert("failed to initialize keycloak");
-  });
-  return keycloak;
+  }
+
+  return kcAdminClient;
 }

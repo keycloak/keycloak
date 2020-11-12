@@ -22,7 +22,7 @@
     "@patternfly/react-table": "4.16.20",
     "file-saver": "^2.0.2",
     "i18next": "^19.6.2",
-    "keycloak-js": "^11.0.0",
+    "keycloak-admin": "^1.14.1",
     "react": "^16.8.5",
     "react-dom": "^16.8.5",
     "react-hook-form": "^6.8.2",

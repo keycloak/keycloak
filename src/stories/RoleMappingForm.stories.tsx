@@ -7,8 +7,8 @@ import roles from "../realm-roles/__tests__/mock-roles.json";
 import { ServerInfoContext } from "../context/server-info/ServerInfoProvider";
 
 import { RoleMappingForm } from "../client-scopes/add/RoleMappingForm";
-import { HttpClientContext } from "../context/http-service/HttpClientContext";
-import { HttpClient } from "../context/http-service/http-client";
+import { AdminClient } from "../context/auth/AdminClient";
+import KeycloakAdminClient from "keycloak-admin";
 
 export default {
   title: "Role Mapping Form",
@@ -17,18 +17,24 @@ export default {
 
 export const RoleMappingFormExample = () => (
   <ServerInfoContext.Provider value={serverInfo}>
-    <HttpClientContext.Provider
+    <AdminClient.Provider
       value={
         ({
-          doGet: () => {
-            return { data: roles };
+          setConfig: () => {},
+          roles: {
+            find: () => {
+              return roles;
+            },
           },
-        } as unknown) as HttpClient
+          clients: {
+            find: () => roles,
+          },
+        } as unknown) as KeycloakAdminClient
       }
     >
       <Page>
         <RoleMappingForm clientScopeId="dummy" />
       </Page>
-    </HttpClientContext.Provider>
+    </AdminClient.Provider>
   </ServerInfoContext.Provider>
 );

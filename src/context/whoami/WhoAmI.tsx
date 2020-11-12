@@ -1,11 +1,11 @@
-import React, { useContext } from "react";
+import React from "react";
 import i18n from "../../i18n";
 
-import WhoAmIRepresentation, { AccessType } from "./who-am-i-model";
-
-import { HttpClientContext } from "../http-service/HttpClientContext";
-import { KeycloakContext } from "../auth/KeycloakContext";
 import { DataLoader } from "../../components/data-loader/DataLoader";
+import { useAdminClient } from "../auth/AdminClient";
+import WhoAmIRepresentation, {
+  AccessType,
+} from "keycloak-admin/lib/defs/whoAmIRepresentation";
 
 export class WhoAmI {
   constructor(
@@ -53,24 +53,19 @@ export const WhoAmIContext = React.createContext(new WhoAmI());
 
 type WhoAmIProviderProps = { children: React.ReactNode };
 export const WhoAmIContextProvider = ({ children }: WhoAmIProviderProps) => {
-  const httpClient = useContext(HttpClientContext)!;
-  const keycloak = useContext(KeycloakContext);
+  const adminClient = useAdminClient();
 
   const whoAmILoader = async () => {
-    if (keycloak === undefined) return undefined;
+    if (adminClient.keycloak === undefined) return undefined;
 
-    const realm = keycloak.realm();
-
-    return await httpClient
-      .doGet(`/admin/${realm}/console/whoami/`)
-      .then((r) => r.data as WhoAmIRepresentation);
+    return await adminClient.whoAmI.find();
   };
 
   return (
     <DataLoader loader={whoAmILoader}>
       {(whoamirep) => (
         <WhoAmIContext.Provider
-          value={new WhoAmI(keycloak?.realm(), whoamirep.data)}
+          value={new WhoAmI(adminClient.keycloak?.realm, whoamirep.data)}
         >
           {children}
         </WhoAmIContext.Provider>

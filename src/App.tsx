@@ -6,7 +6,6 @@ import { Header } from "./PageHeader";
 import { PageNav } from "./PageNav";
 import { Help } from "./components/help-enabler/HelpHeader";
 
-import { RealmContextProvider } from "./context/realm-context/RealmContext";
 import { WhoAmIContextProvider } from "./context/whoami/WhoAmI";
 import { ServerInfoProvider } from "./context/server-info/ServerInfoProvider";
 import { AlertProvider } from "./components/alert/Alerts";
@@ -18,15 +17,13 @@ import { ForbiddenSection } from "./ForbiddenSection";
 
 const AppContexts = ({ children }: { children: ReactNode }) => (
   <WhoAmIContextProvider>
-    <RealmContextProvider>
-      <AccessContextProvider>
-        <Help>
-          <AlertProvider>
-            <ServerInfoProvider>{children}</ServerInfoProvider>
-          </AlertProvider>
-        </Help>
-      </AccessContextProvider>
-    </RealmContextProvider>
+    <AccessContextProvider>
+      <Help>
+        <AlertProvider>
+          <ServerInfoProvider>{children}</ServerInfoProvider>
+        </AlertProvider>
+      </Help>
+    </AccessContextProvider>
   </WhoAmIContextProvider>
 );
 

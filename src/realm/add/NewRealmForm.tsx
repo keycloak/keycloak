@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import {
   PageSection,
@@ -12,15 +12,15 @@ import {
 } from "@patternfly/react-core";
 
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
-import { RealmRepresentation } from "../models/Realm";
-import { HttpClientContext } from "../../context/http-service/HttpClientContext";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useForm, Controller } from "react-hook-form";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
+import RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
+import { useAdminClient } from "../../context/auth/AdminClient";
 
 export const NewRealmForm = () => {
   const { t } = useTranslation("realm");
-  const httpClient = useContext(HttpClientContext)!;
+  const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
 
   const { register, handleSubmit, setValue, control } = useForm<
@@ -38,7 +38,7 @@ export const NewRealmForm = () => {
 
   const save = async (realm: RealmRepresentation) => {
     try {
-      await httpClient.doPost("/admin/realms", realm);
+      await adminClient.realms.create(realm);
       addAlert(t("Realm created"), AlertVariant.success);
     } catch (error) {
       addAlert(

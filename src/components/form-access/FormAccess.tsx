@@ -14,9 +14,9 @@ import {
   GridItem,
   TextArea,
 } from "@patternfly/react-core";
+import { AccessType } from "keycloak-admin/lib/defs/whoAmIRepresentation";
 
 import { useAccess } from "../../context/access/Access";
-import { AccessType } from "../../context/whoami/who-am-i-model";
 
 export type FormAccessProps = FormProps & {
   /**

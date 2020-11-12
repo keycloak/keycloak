@@ -15,44 +15,42 @@ import {
   TextVariants,
 } from "@patternfly/react-core";
 
+import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 import { KeycloakCard } from "../components/keycloak-card/KeycloakCard";
 import { useAlerts } from "../components/alert/Alerts";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { DatabaseIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
 import { RealmContext } from "../context/realm-context/RealmContext";
-import { HttpClientContext } from "../context/http-service/HttpClientContext";
-import { UserFederationRepresentation } from "./model/userFederation";
+import { useAdminClient } from "../context/auth/AdminClient";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import "./user-federation.css";
 
+type Config = {
+  enabled: string[];
+};
+
 export const UserFederationSection = () => {
   const [userFederations, setUserFederations] = useState<
-    UserFederationRepresentation[]
+    ComponentRepresentation[]
   >();
   const { addAlert } = useAlerts();
+  const { t } = useTranslation("user-federation");
+  const { realm } = useContext(RealmContext);
+  const adminClient = useAdminClient();
 
   const loader = async () => {
     const testParams: { [name: string]: string | number } = {
       parentId: realm,
       type: "org.keycloak.storage.UserStorageProvider", // MF note that this is providerType in the output, but API call is still type
     };
-    const result = await httpClient.doGet<UserFederationRepresentation[]>(
-      `/admin/realms/${realm}/components`,
-      {
-        params: testParams,
-      }
-    );
-    setUserFederations(result.data);
+    const userFederations = await adminClient.components.find(testParams);
+    setUserFederations(userFederations);
   };
 
   useEffect(() => {
     loader();
   }, []);
-
-  const { t } = useTranslation("user-federation");
-  const httpClient = useContext(HttpClientContext)!;
-  const { realm } = useContext(RealmContext);
 
   const ufAddProviderDropdownItems = [
     <DropdownItem key="itemLDAP">LDAP</DropdownItem>,
@@ -75,9 +73,8 @@ export const UserFederationSection = () => {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        httpClient
-          .doDelete(`/admin/realms/${realm}/components/${currentCard}`)
-          .then(() => loader());
+        await adminClient.components.del({ id: currentCard });
+        await loader();
         addAlert(t("userFedDeletedSuccess"), AlertVariant.success);
       } catch (error) {
         addAlert(t("userFedDeleteError", { error }), AlertVariant.danger);
@@ -96,7 +93,7 @@ export const UserFederationSection = () => {
         <DropdownItem
           key={`${index}-cardDelete`}
           onClick={() => {
-            toggleDeleteForCard(userFederation.id);
+            toggleDeleteForCard(userFederation.id!);
           }}
         >
           {t("common:delete")}
@@ -105,14 +102,14 @@ export const UserFederationSection = () => {
       return (
         <GalleryItem key={index}>
           <KeycloakCard
-            id={userFederation.id}
+            id={userFederation.id!}
             dropdownItems={ufCardDropdownItems}
-            title={userFederation.name}
+            title={userFederation.name!}
             footerText={
               userFederation.providerId === "ldap" ? "LDAP" : "Kerberos"
             }
             labelText={
-              userFederation.config.enabled
+              (userFederation.config as Config)!.enabled[0] !== "false"
                 ? `${t("common:enabled")}`
                 : `${t("common:disabled")}`
             }

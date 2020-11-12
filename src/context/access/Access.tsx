@@ -1,8 +1,8 @@
 import React, { createContext, useContext } from "react";
+import { AccessType } from "keycloak-admin/lib/defs/whoAmIRepresentation";
 
 import { RealmContext } from "../../context/realm-context/RealmContext";
 import { WhoAmIContext } from "../../context/whoami/WhoAmI";
-import { AccessType } from "../../context/whoami/who-am-i-model";
 
 type AccessContextProps = {
   hasAccess: (...types: AccessType[]) => boolean;

@@ -15,7 +15,7 @@ import {
 } from "@patternfly/react-core";
 import { CheckIcon } from "@patternfly/react-icons";
 
-import { RealmRepresentation } from "../../realm/models/Realm";
+import RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
 import { RealmContext } from "../../context/realm-context/RealmContext";
 import { WhoAmIContext } from "../../context/whoami/WhoAmI";
 
@@ -60,7 +60,7 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
       search === ""
         ? realmList
         : realmList.filter(
-            (r) => r.realm.toLowerCase().indexOf(search.toLowerCase()) !== -1
+            (r) => r.realm!.toLowerCase().indexOf(search.toLowerCase()) !== -1
           );
     setFilteredItems(filtered || []);
   };
@@ -73,11 +73,11 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
     <DropdownItem
       key={`realm-dropdown-item-${r.realm}`}
       onClick={() => {
-        setRealm(r.realm);
+        setRealm(r.realm!);
         setOpen(!open);
       }}
     >
-      <RealmText value={r.realm} />
+      <RealmText value={r.realm!} />
     </DropdownItem>
   ));
 
@@ -114,7 +114,7 @@ export const RealmSelector = ({ realmList }: RealmSelectorProps) => {
         >
           {filteredItems.map((item) => (
             <ContextSelectorItem key={item.id}>
-              <RealmText value={item.realm} />
+              <RealmText value={item.realm!} />
             </ContextSelectorItem>
           ))}
           <ContextSelectorItem key="add">

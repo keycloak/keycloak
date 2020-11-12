@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React from "react";
 import {
   PageSection,
   Form,
@@ -11,18 +11,16 @@ import {
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { ClientRepresentation } from "../models/client-model";
 import { ClientDescription } from "../ClientDescription";
-import { HttpClientContext } from "../../context/http-service/HttpClientContext";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
 import { useAlerts } from "../../components/alert/Alerts";
-import { RealmContext } from "../../context/realm-context/RealmContext";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
+import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import { useAdminClient } from "../../context/auth/AdminClient";
 
 export const ImportForm = () => {
   const { t } = useTranslation("clients");
-  const httpClient = useContext(HttpClientContext)!;
-  const { realm } = useContext(RealmContext);
+  const adminClient = useAdminClient();
   const form = useForm<ClientRepresentation>();
   const { register, handleSubmit, setValue } = form;
 
@@ -44,7 +42,7 @@ export const ImportForm = () => {
 
   const save = async (client: ClientRepresentation) => {
     try {
-      await httpClient.doPost(`/admin/realms/${realm}/clients`, client);
+      await adminClient.clients.create({ ...client });
       addAlert(t("clientImportSuccess"), AlertVariant.success);
     } catch (error) {
       addAlert(`${t("clientImportError")} '${error}'`, AlertVariant.danger);

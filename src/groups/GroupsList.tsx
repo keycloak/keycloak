@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Table,
   TableHeader,
@@ -9,8 +9,7 @@ import { Button, AlertVariant } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { GroupRepresentation } from "./models/groups";
 import { UsersIcon } from "@patternfly/react-icons";
-import { HttpClientContext } from "../context/http-service/HttpClientContext";
-import { RealmContext } from "../context/realm-context/RealmContext";
+import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 
 export type GroupsListProps = {
@@ -32,10 +31,9 @@ export const GroupsList = ({
   setTableRowSelectedArray,
 }: GroupsListProps) => {
   const { t } = useTranslation("groups");
-  const httpClient = useContext(HttpClientContext)!;
+  const adminClient = useAdminClient();
   const columnGroupName: keyof GroupRepresentation = "name";
   const columnGroupNumber: keyof GroupRepresentation = "membersLength";
-  const { realm } = useContext(RealmContext);
   const { addAlert } = useAlerts();
   const [formattedData, setFormattedData] = useState<FormattedData[]>([]);
 
@@ -107,9 +105,7 @@ export const GroupsList = ({
         rowId: number
       ) => {
         try {
-          await httpClient.doDelete(
-            `/admin/realms/${realm}/groups/${list![rowId].id}`
-          );
+          await adminClient.groups.del({ id: list![rowId].id! });
           refresh();
           setTableRowSelectedArray([]);
           addAlert(t("Group deleted"), AlertVariant.success);

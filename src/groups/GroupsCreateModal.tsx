@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React from "react";
 import {
   AlertVariant,
   Button,
@@ -10,8 +10,7 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { HttpClientContext } from "../context/http-service/HttpClientContext";
-import { RealmContext } from "../context/realm-context/RealmContext";
+import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useForm } from "react-hook-form";
 
@@ -33,8 +32,7 @@ export const GroupsCreateModal = ({
   refresh,
 }: GroupsCreateModalProps) => {
   const { t } = useTranslation("groups");
-  const httpClient = useContext(HttpClientContext)!;
-  const { realm } = useContext(RealmContext);
+  const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
   const form = useForm();
   const { register, errors } = form;
@@ -46,9 +44,7 @@ export const GroupsCreateModal = ({
   const submitForm = async () => {
     if (await form.trigger()) {
       try {
-        await httpClient.doPost(`/admin/realms/${realm}/groups`, {
-          name: createGroupName,
-        });
+        await adminClient.groups.create({ name: createGroupName });
         refresh();
         setIsCreateModalOpen(false);
         setCreateGroupName("");

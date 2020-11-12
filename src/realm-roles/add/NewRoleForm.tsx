@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import {
   Text,
@@ -15,17 +15,15 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 
-import { RoleRepresentation } from "../../model/role-model";
-import { HttpClientContext } from "../../context/http-service/HttpClientContext";
 import { useAlerts } from "../../components/alert/Alerts";
 import { Controller, useForm } from "react-hook-form";
-import { RealmContext } from "../../context/realm-context/RealmContext";
+import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+import { useAdminClient } from "../../context/auth/AdminClient";
 
 export const NewRoleForm = () => {
   const { t } = useTranslation("roles");
-  const httpClient = useContext(HttpClientContext)!;
   const { addAlert } = useAlerts();
-  const { realm } = useContext(RealmContext);
+  const adminClient = useAdminClient();
 
   const { register, control, errors, handleSubmit } = useForm<
     RoleRepresentation
@@ -33,7 +31,7 @@ export const NewRoleForm = () => {
 
   const save = async (role: RoleRepresentation) => {
     try {
-      await httpClient.doPost(`admin/realms/${realm}/roles`, role);
+      await adminClient.roles.create(role);
       addAlert(t("roleCreated"), AlertVariant.success);
     } catch (error) {
       addAlert(`${t("roleCreateError")} '${error}'`, AlertVariant.danger);

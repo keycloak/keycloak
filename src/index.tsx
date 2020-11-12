@@ -2,22 +2,20 @@ import React from "react";
 import ReactDom from "react-dom";
 import i18n from "./i18n";
 
-import { App } from "./App";
+import { AdminClient } from "./context/auth/AdminClient";
 import init from "./context/auth/keycloak";
-import { KeycloakContext } from "./context/auth/KeycloakContext";
-import { KeycloakService } from "./context/auth/keycloak.service";
-import { HttpClientContext } from "./context/http-service/HttpClientContext";
-import { HttpClient } from "./context/http-service/http-client";
+import { App } from "./App";
+import { RealmContextProvider } from "./context/realm-context/RealmContext";
 
 console.info("supported languages", ...i18n.languages);
-init().then((keycloak) => {
-  const keycloakService = new KeycloakService(keycloak);
+
+init().then((adminClient) => {
   ReactDom.render(
-    <KeycloakContext.Provider value={keycloakService}>
-      <HttpClientContext.Provider value={new HttpClient(keycloakService)}>
+    <RealmContextProvider>
+      <AdminClient.Provider value={adminClient}>
         <App />
-      </HttpClientContext.Provider>
-    </KeycloakContext.Provider>,
+      </AdminClient.Provider>
+    </RealmContextProvider>,
     document.getElementById("app")
   );
 });

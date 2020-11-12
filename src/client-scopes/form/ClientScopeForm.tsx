@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useHistory, useParams } from "react-router-dom";
 import {
   ActionGroup,
@@ -22,8 +22,7 @@ import { Controller, useForm } from "react-hook-form";
 
 import { ClientScopeRepresentation } from "../models/client-scope";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { HttpClientContext } from "../../context/http-service/HttpClientContext";
-import { RealmContext } from "../../context/realm-context/RealmContext";
+import { useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
@@ -39,8 +38,7 @@ export const ClientScopeForm = () => {
   const [clientScope, setClientScope] = useState<ClientScopeRepresentation>();
   const [activeTab, setActiveTab] = useState(0);
 
-  const httpClient = useContext(HttpClientContext)!;
-  const { realm } = useContext(RealmContext);
+  const adminClient = useAdminClient();
   const providers = useLoginProviders();
   const { id } = useParams<{ id: string }>();
 
@@ -49,11 +47,9 @@ export const ClientScopeForm = () => {
 
   const load = async () => {
     if (id) {
-      const response = await httpClient.doGet<ClientScopeRepresentation>(
-        `/admin/realms/${realm}/client-scopes/${id}`
-      );
-      if (response.data) {
-        Object.entries(response.data).map((entry) => {
+      const data = await adminClient.clientScopes.findOne({ id });
+      if (data) {
+        Object.entries(data).map((entry) => {
           if (entry[0] === "attributes") {
             convertToFormValues(entry[1], "attributes", setValue);
           }
@@ -61,7 +57,7 @@ export const ClientScopeForm = () => {
         });
       }
 
-      setClientScope(response.data);
+      setClientScope(data);
     }
   };
 
@@ -75,11 +71,10 @@ export const ClientScopeForm = () => {
         clientScopes.attributes!
       );
 
-      const url = `/admin/realms/${realm}/client-scopes/`;
       if (id) {
-        await httpClient.doPut(url + id, clientScopes);
+        await adminClient.clientScopes.update({ id }, clientScopes);
       } else {
-        await httpClient.doPost(url, clientScopes);
+        await adminClient.clientScopes.create(clientScopes);
       }
       addAlert(t((id ? "update" : "create") + "Success"), AlertVariant.success);
     } catch (error) {

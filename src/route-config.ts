@@ -1,4 +1,6 @@
 import { TFunction } from "i18next";
+import { AccessType } from "keycloak-admin/lib/defs/whoAmIRepresentation";
+
 import { AuthenticationSection } from "./authentication/AuthenticationSection";
 import { ClientScopeForm } from "./client-scopes/form/ClientScopeForm";
 import { ClientScopesSection } from "./client-scopes/ClientScopesSection";
@@ -17,8 +19,6 @@ import { SessionsSection } from "./sessions/SessionsSection";
 import { UserFederationSection } from "./user-federation/UserFederationSection";
 import { UsersSection } from "./user/UsersSection";
 import { MappingDetails } from "./client-scopes/details/MappingDetails";
-
-import { AccessType } from "./context/whoami/who-am-i-model";
 import { ClientDetails } from "./clients/ClientDetails";
 
 export type RouteDef = {

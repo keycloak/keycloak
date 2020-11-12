@@ -1,17 +1,11 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HttpClientContext } from "../context/http-service/HttpClientContext";
 import { GroupsList } from "./GroupsList";
 import { GroupsCreateModal } from "./GroupsCreateModal";
-import { GroupRepresentation } from "./models/groups";
-import {
-  ServerGroupsArrayRepresentation,
-  ServerGroupMembersRepresentation,
-} from "./models/server-info";
 import { TableToolbar } from "../components/table-toolbar/TableToolbar";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { RealmContext } from "../context/realm-context/RealmContext";
+import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import {
   Button,
@@ -25,10 +19,11 @@ import {
   AlertVariant,
 } from "@patternfly/react-core";
 import "./GroupsSection.css";
+import GroupRepresentation from "keycloak-admin/lib/defs/groupRepresentation";
 
 export const GroupsSection = () => {
   const { t } = useTranslation("groups");
-  const httpClient = useContext(HttpClientContext)!;
+  const adminClient = useAdminClient();
   const [rawData, setRawData] = useState<{ [key: string]: any }[]>();
   const [filteredData, setFilteredData] = useState<{ [key: string]: any }[]>();
   const [isKebabOpen, setIsKebabOpen] = useState(false);
@@ -38,22 +33,16 @@ export const GroupsSection = () => {
     Array<number>
   >([]);
   const columnID: keyof GroupRepresentation = "id";
-  const membersLength: keyof GroupRepresentation = "membersLength";
   const columnGroupName: keyof GroupRepresentation = "name";
   const { addAlert } = useAlerts();
-  const { realm } = useContext(RealmContext);
+  const membersLength = "membersLength";
 
   const loader = async () => {
-    const groups = await httpClient.doGet<ServerGroupsArrayRepresentation[]>(
-      `/admin/realms/${realm}/groups`
-    );
-    const groupsData = groups.data!;
-    const getMembers = async (id: number) => {
-      const response = await httpClient.doGet<
-        ServerGroupMembersRepresentation[]
-      >(`/admin/realms/${realm}/groups/${id}/members`);
-      const responseData = response.data!;
-      return responseData.length;
+    const groupsData = await adminClient.groups.find();
+
+    const getMembers = async (id: string) => {
+      const response = await adminClient.groups.listMembers({ id });
+      return response.length;
     };
 
     const memberPromises = groupsData.map((group: { [key: string]: any }) =>
@@ -101,11 +90,9 @@ export const GroupsSection = () => {
     if (tableRowSelectedArray.length !== 0) {
       const deleteGroup = async (rowId: number) => {
         try {
-          await httpClient.doDelete(
-            `/admin/realms/${realm}/groups/${
-              filteredData ? filteredData![rowId].id : rawData![rowId].id
-            }`
-          );
+          await adminClient.groups.del({
+            id: filteredData ? filteredData![rowId].id : rawData![rowId].id,
+          });
           loader();
         } catch (error) {
           addAlert(`${t("groupDeleteError")} ${error}`, AlertVariant.danger);

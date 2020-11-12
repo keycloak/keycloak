@@ -1,7 +1,6 @@
 import FileSaver from "file-saver";
-
-import { ClientRepresentation } from "./clients/models/client-model";
-import { ProviderRepresentation } from "./context/server-info/server-info";
+import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import { ProviderRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
 
 export const sortProviders = (providers: {
   [index: string]: ProviderRepresentation;

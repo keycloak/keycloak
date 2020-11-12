@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   AlertVariant,
   ButtonVariant,
@@ -11,16 +11,15 @@ import {
 import { useTranslation } from "react-i18next";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useParams } from "react-router-dom";
+import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 
 import { ClientSettings } from "./ClientSettings";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useDownloadDialog } from "../components/download-dialog/DownloadDialog";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { HttpClientContext } from "../context/http-service/HttpClientContext";
-import { RealmContext } from "../context/realm-context/RealmContext";
+import { useAdminClient } from "../context/auth/AdminClient";
 import { Credentials } from "./credentials/Credentials";
-import { ClientRepresentation } from "../realm/models/Realm";
 import {
   convertFormValuesToObject,
   convertToFormValues,
@@ -33,8 +32,7 @@ import {
 
 export const ClientDetails = () => {
   const { t } = useTranslation("clients");
-  const httpClient = useContext(HttpClientContext)!;
-  const { realm } = useContext(RealmContext);
+  const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
 
   const form = useForm();
@@ -47,16 +45,15 @@ export const ClientDetails = () => {
 
   const [activeTab, setActiveTab] = useState(0);
   const [name, setName] = useState("");
-  const url = `/admin/realms/${realm}/clients/${id}`;
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "clients:clientDeleteConfirmTitle",
     messageKey: "clients:clientDeleteConfirm",
     continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
-    onConfirm: () => {
+    onConfirm: async () => {
       try {
-        httpClient.doDelete(`/admin/realms/${realm}/clients/${id}`);
+        await adminClient.clients.del({ id });
         addAlert(t("clientDeletedSuccess"), AlertVariant.success);
       } catch (error) {
         addAlert(`${t("clientDeleteError")} ${error}`, AlertVariant.danger);
@@ -84,10 +81,10 @@ export const ClientDetails = () => {
 
   useEffect(() => {
     (async () => {
-      const fetchedClient = await httpClient.doGet<ClientRepresentation>(url);
-      if (fetchedClient.data) {
-        setName(fetchedClient.data.clientId);
-        setupForm(fetchedClient.data);
+      const fetchedClient = await adminClient.clients.findOne({ id });
+      if (fetchedClient) {
+        setName(fetchedClient.clientId!);
+        setupForm(fetchedClient);
       }
     })();
   }, []);
@@ -105,7 +102,7 @@ export const ClientDetails = () => {
           redirectUris,
           attributes,
         };
-        await httpClient.doPut(url, client);
+        await adminClient.clients.update({ id }, client);
         setupForm(client as ClientRepresentation);
         addAlert(t("clientSaveSuccess"), AlertVariant.success);
       } catch (error) {

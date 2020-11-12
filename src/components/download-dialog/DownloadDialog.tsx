@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, ReactElement } from "react";
+import React, { useState, useEffect, ReactElement, useContext } from "react";
 import {
   Alert,
   AlertVariant,
@@ -15,11 +15,10 @@ import {
 import FileSaver from "file-saver";
 
 import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
-import { HttpClientContext } from "../../context/http-service/HttpClientContext";
-import { RealmContext } from "../../context/realm-context/RealmContext";
 import { HelpItem } from "../help-enabler/HelpItem";
 import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import { useAdminClient } from "../../context/auth/AdminClient";
 import { HelpContext } from "../help-enabler/HelpHeader";
 
 export type DownloadDialogProps = {
@@ -53,13 +52,12 @@ export const DownloadDialog = ({
   toggleDialog,
   protocol = "openid-connect",
 }: DownloadDialogModalProps) => {
-  const httpClient = useContext(HttpClientContext)!;
-  const { realm } = useContext(RealmContext);
+  const adminClient = useAdminClient();
   const { t } = useTranslation("common");
   const { enabled } = useContext(HelpContext);
   const serverInfo = useServerInfo();
 
-  const configFormats = serverInfo.clientInstallations[protocol];
+  const configFormats = serverInfo.clientInstallations![protocol];
   const [selected, setSelected] = useState(
     configFormats[configFormats.length - 1].id
   );
@@ -69,11 +67,16 @@ export const DownloadDialog = ({
   useEffect(() => {
     let isMounted = true;
     (async () => {
-      const response = await httpClient.doGet<string>(
-        `/admin/realms/${realm}/clients/${id}/installation/providers/${selected}`
-      );
+      const snippet = await adminClient.clients.getInstallationProviders({
+        id,
+        providerId: selected,
+      });
       if (isMounted) {
-        setSnippet(await response.text());
+        if (typeof snippet === "string") {
+          setSnippet(snippet);
+        } else {
+          setSnippet(JSON.stringify(snippet, undefined, 3));
+        }
       }
     })();
     return () => {

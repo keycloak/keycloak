@@ -1,14 +1,13 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button, PageSection } from "@patternfly/react-core";
 
-import { HttpClientContext } from "../context/http-service/HttpClientContext";
-import { RoleRepresentation } from "../model/role-model";
 import { RolesList } from "./RoleList";
-import { RealmContext } from "../context/realm-context/RealmContext";
-import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useAdminClient } from "../context/auth/AdminClient";
 import { PaginatingTableToolbar } from "../components/table-toolbar/PaginatingTableToolbar";
+import { ViewHeader } from "../components/view-header/ViewHeader";
+import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 
 export const RealmRolesSection = () => {
@@ -16,19 +15,11 @@ export const RealmRolesSection = () => {
   const [first, setFirst] = useState(0);
   const { t } = useTranslation("roles");
   const history = useHistory();
-  const httpClient = useContext(HttpClientContext)!;
+  const adminClient = useAdminClient();
   const [roles, setRoles] = useState<RoleRepresentation[]>();
-  const { realm } = useContext(RealmContext);
 
-  const loader = async () => {
-    const params: { [name: string]: string | number } = { first, max };
-
-    const result = await httpClient.doGet<RoleRepresentation[]>(
-      `/admin/realms/${realm}/roles`,
-      { params: params }
-    );
-    setRoles(result.data);
-  };
+  const params: { [name: string]: string | number } = { first, max };
+  const loader = async () => setRoles(await adminClient.roles.find(params));
 
   useEffect(() => {
     loader();

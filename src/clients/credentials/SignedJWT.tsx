@@ -18,7 +18,7 @@ export type SignedJWTProps = {
 
 export const SignedJWT = ({ form }: SignedJWTProps) => {
   const providers = sortProviders(
-    useServerInfo().providers.clientSignature.providers
+    useServerInfo().providers!.clientSignature.providers
   );
   const { t } = useTranslation("clients");
 

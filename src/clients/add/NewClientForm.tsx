@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { useHistory } from "react-router-dom";
 import {
   PageSection,
@@ -11,18 +11,16 @@ import {
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 
-import { HttpClientContext } from "../../context/http-service/HttpClientContext";
 import { GeneralSettings } from "./GeneralSettings";
 import { CapabilityConfig } from "./CapabilityConfig";
-import { ClientRepresentation } from "../models/client-model";
 import { useAlerts } from "../../components/alert/Alerts";
-import { RealmContext } from "../../context/realm-context/RealmContext";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
+import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import { useAdminClient } from "../../context/auth/AdminClient";
 
 export const NewClientForm = () => {
   const { t } = useTranslation("clients");
-  const httpClient = useContext(HttpClientContext)!;
-  const { realm } = useContext(RealmContext);
+  const adminClient = useAdminClient();
   const history = useHistory();
 
   const [client, setClient] = useState<ClientRepresentation>({
@@ -42,7 +40,7 @@ export const NewClientForm = () => {
 
   const save = async () => {
     try {
-      await httpClient.doPost(`/admin/realms/${realm}/clients`, client);
+      await adminClient.clients.create({ ...client });
       addAlert(t("createSuccess"), AlertVariant.success);
     } catch (error) {
       addAlert(t("createError", { error }), AlertVariant.danger);

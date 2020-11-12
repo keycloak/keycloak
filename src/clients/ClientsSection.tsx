@@ -1,15 +1,13 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button, PageSection, Spinner } from "@patternfly/react-core";
+import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 
 import { ClientList } from "./ClientList";
-import { HttpClientContext } from "../context/http-service/HttpClientContext";
-import { KeycloakContext } from "../context/auth/KeycloakContext";
-import { ClientRepresentation } from "./models/client-model";
-import { RealmContext } from "../context/realm-context/RealmContext";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { PaginatingTableToolbar } from "../components/table-toolbar/PaginatingTableToolbar";
+import { useAdminClient } from "../context/auth/AdminClient";
 
 export const ClientsSection = () => {
   const { t } = useTranslation("clients");
@@ -18,10 +16,8 @@ export const ClientsSection = () => {
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
   const [search, setSearch] = useState("");
+  const adminClient = useAdminClient();
   const [clients, setClients] = useState<ClientRepresentation[]>();
-  const httpClient = useContext(HttpClientContext)!;
-  const keycloak = useContext(KeycloakContext);
-  const { realm } = useContext(RealmContext);
 
   const loader = async () => {
     const params: { [name: string]: string | number } = { first, max };
@@ -29,11 +25,8 @@ export const ClientsSection = () => {
       params.clientId = search;
       params.search = "true";
     }
-    const result = await httpClient.doGet<ClientRepresentation[]>(
-      `/admin/realms/${realm}/clients`,
-      { params: params }
-    );
-    setClients(result.data);
+    const result = await adminClient.clients.find({ ...params });
+    setClients(result);
   };
 
   useEffect(() => {
@@ -84,7 +77,7 @@ export const ClientsSection = () => {
             <ClientList
               clients={clients}
               refresh={loader}
-              baseUrl={keycloak!.authServerUrl()!}
+              baseUrl={adminClient.keycloak.authServerUrl!}
             />
           </PaginatingTableToolbar>
         )}
