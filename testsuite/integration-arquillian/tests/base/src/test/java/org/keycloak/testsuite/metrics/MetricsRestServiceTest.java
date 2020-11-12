@@ -18,7 +18,6 @@ package org.keycloak.testsuite.metrics;
 
 import java.util.List;
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
@@ -27,6 +26,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ContainerAssume;
 
 import static org.hamcrest.Matchers.containsString;
@@ -51,7 +51,7 @@ public class MetricsRestServiceTest extends AbstractKeycloakTest {
 
     @Test
     public void testHealthEndpoint() {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
 
         try (Response response = client.target("http://" + MGMT_HOST + ":" + MGMT_PORT + "/health").request().get()) {
             Assert.assertThat(response, statusCodeIs(Status.OK));
@@ -63,7 +63,7 @@ public class MetricsRestServiceTest extends AbstractKeycloakTest {
 
     @Test
     public void  testMetricsEndpoint() {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
 
         try (Response response = client.target("http://" + MGMT_HOST + ":" + MGMT_PORT + "/metrics").request().get()) {
             Assert.assertThat(response, statusCodeIs(Status.OK));

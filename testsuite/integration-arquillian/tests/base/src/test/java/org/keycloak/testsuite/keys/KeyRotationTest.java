@@ -22,12 +22,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.RSATokenVerifier;
-import org.keycloak.TokenVerifier;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
-import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
@@ -42,7 +39,6 @@ import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -50,6 +46,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -327,9 +324,9 @@ public class KeyRotationTest extends AbstractKeycloakTest {
     }
 
     private void assertUserInfo(String token, int expectedStatus) {
-        Response userInfoResponse = UserInfoClientUtil.executeUserInfoRequest_getMethod(javax.ws.rs.client.ClientBuilder.newClient(), token);
-        assertEquals(expectedStatus, userInfoResponse.getStatus());
-        userInfoResponse.close();
+        try (Response userInfoResponse = UserInfoClientUtil.executeUserInfoRequest_getMethod(AdminClientUtil.createResteasyClient(), token)) {
+            assertEquals(expectedStatus, userInfoResponse.getStatus());
+        }
     }
 
     private void assertTokenIntrospection(String token, boolean expectActive) {

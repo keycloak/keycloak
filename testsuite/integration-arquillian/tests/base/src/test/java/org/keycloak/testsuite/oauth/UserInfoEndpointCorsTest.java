@@ -1,17 +1,14 @@
 package org.keycloak.testsuite.oauth;
 
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import java.util.List;
@@ -41,7 +38,7 @@ public class UserInfoEndpointCorsTest extends AbstractKeycloakTest {
 
         OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doGrantAccessTokenRequest(null, "test-user@localhost", "password");
 
-        WebTarget userInfoTarget =  UserInfoClientUtil.getUserInfoWebTarget(javax.ws.rs.client.ClientBuilder.newClient());
+        WebTarget userInfoTarget =  UserInfoClientUtil.getUserInfoWebTarget(AdminClientUtil.createResteasyClient());
         Response userInfoResponse = userInfoTarget.request()
                 .header(HttpHeaders.AUTHORIZATION, "bearer " + accessTokenResponse.getAccessToken())
                 .header("Origin", VALID_CORS_URL) // manually trigger CORS handling
@@ -61,7 +58,7 @@ public class UserInfoEndpointCorsTest extends AbstractKeycloakTest {
 
         OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doGrantAccessTokenRequest(null, "test-user@localhost", "password");
 
-        WebTarget userInfoTarget =  UserInfoClientUtil.getUserInfoWebTarget(javax.ws.rs.client.ClientBuilder.newClient());
+        WebTarget userInfoTarget =  UserInfoClientUtil.getUserInfoWebTarget(AdminClientUtil.createResteasyClient());
         Response userInfoResponse = userInfoTarget.request()
                 .header(HttpHeaders.AUTHORIZATION, "bearer " + accessTokenResponse.getAccessToken())
                 .header("Origin", INVALID_CORS_URL) // manually trigger CORS handling
