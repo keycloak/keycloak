@@ -40,15 +40,8 @@ public class QuarkusRequestFilter extends AbstractRequestFilter implements Handl
         // we don't really care about the result because any exception thrown should be handled by the parent class
     };
 
-    private Predicate<RoutingContext> enabledEndpoints;
-
     @Override
     public void handle(RoutingContext context) {
-        if (!enabledEndpoints.test(context)) {
-            context.fail(404);
-            return;
-        }
-
         // our code should always be run as blocking until we don't provide a better support for running non-blocking code
         // in the event loop
         context.vertx().executeBlocking(promise -> {
@@ -101,9 +94,5 @@ public class QuarkusRequestFilter extends AbstractRequestFilter implements Handl
                 return request.localAddress().port();
             }
         };
-    }
-
-    public void setEnabledEndpoints(Predicate<RoutingContext> disabledEndpoints) {
-        this.enabledEndpoints = disabledEndpoints;
     }
 }
