@@ -348,7 +348,9 @@ public class AccountFormService extends AbstractSecuredLocalService {
     @Path("/")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processAccountUpdate(final MultivaluedMap<String, String> formData) {
+    public Response processAccountUpdate() {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+
         if (auth == null) {
             return login(null);
         }
@@ -409,7 +411,9 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
     @Path("sessions")
     @POST
-    public Response processSessionsLogout(final MultivaluedMap<String, String> formData) {
+    public Response processSessionsLogout() {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+
         if (auth == null) {
             return login("sessions");
         }
@@ -441,7 +445,9 @@ public class AccountFormService extends AbstractSecuredLocalService {
     @Path("applications")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processRevokeGrant(final MultivaluedMap<String, String> formData) {
+    public Response processRevokeGrant() {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+
         if (auth == null) {
             return login("applications");
         }
@@ -495,7 +501,9 @@ public class AccountFormService extends AbstractSecuredLocalService {
     @Path("totp")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processTotpUpdate(final MultivaluedMap<String, String> formData) {
+    public Response processTotpUpdate() {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+
         if (auth == null) {
             return login("totp");
         }
@@ -565,7 +573,9 @@ public class AccountFormService extends AbstractSecuredLocalService {
     @Path("password")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processPasswordUpdate(final MultivaluedMap<String, String> formData) {
+    public Response processPasswordUpdate() {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+
         if (auth == null) {
             return login("password");
         }
@@ -647,7 +657,9 @@ public class AccountFormService extends AbstractSecuredLocalService {
     @Path("identity")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processFederatedIdentityUpdate(final MultivaluedMap<String, String> formData) {
+    public Response processFederatedIdentityUpdate() {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+
         if (auth == null) {
             return login("identity");
         }
@@ -753,7 +765,9 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
     @Path("resource/{resource_id}/grant")
     @POST
-    public Response grantPermission(@PathParam("resource_id") String resourceId, @FormParam("action") String action, @FormParam("permission_id") String[] permissionId, @FormParam("requester") String requester, MultivaluedMap<String, String> formData) {
+    public Response grantPermission(@PathParam("resource_id") String resourceId, @FormParam("action") String action, @FormParam("permission_id") String[] permissionId, @FormParam("requester") String requester) {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+
         if (auth == null) {
             return login("resource");
         }
@@ -875,7 +889,9 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
     @Path("resource/{resource_id}/share")
     @POST
-    public Response shareResource(@PathParam("resource_id") String resourceId, @FormParam("user_id") String[] userIds, @FormParam("scope_id") String[] scopes, MultivaluedMap<String, String> formData) {
+    public Response shareResource(@PathParam("resource_id") String resourceId, @FormParam("user_id") String[] userIds, @FormParam("scope_id") String[] scopes) {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+
         if (auth == null) {
             return login("resource");
         }
@@ -962,7 +978,9 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
     @Path("resource")
     @POST
-    public Response processResourceActions(@FormParam("resource_id") String[] resourceIds, @FormParam("action") String action, MultivaluedMap<String, String> formData) {
+    public Response processResourceActions(@FormParam("resource_id") String[] resourceIds, @FormParam("action") String action) {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+
         if (auth == null) {
             return login("resource");
         }

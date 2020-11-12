@@ -20,8 +20,6 @@ package org.keycloak.cli;
 import static org.keycloak.cli.Picocli.error;
 import static org.keycloak.cli.Picocli.println;
 
-import io.quarkus.bootstrap.runner.ClassLoadingResource;
-import io.quarkus.bootstrap.runner.JarResource;
 import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import org.keycloak.configuration.KeycloakConfigSourceProvider;
 
@@ -93,48 +91,14 @@ public class MainCommand {
 
     private void beforeReaugmentationOnWindows() throws Exception {
         // On Windows, files generated during re-augmentation are locked and can't be re-created.
-        // To workaround this behavior, we close these files as they are not needed during re-augmentation,
-        // but when actually running the application.
+        // To workaround this behavior, we reset the internal cache of the runner classloader and force files
+        // to be closed prior to re-augmenting the application
         // See KEYCLOAK-16218
         if (Environment.isWindows()) {
-            Field resourcesMapField = null;
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
-            try {
-                RunnerClassLoader cl = (RunnerClassLoader) Thread.currentThread().getContextClassLoader();
-
-                resourcesMapField = cl.getClass().getDeclaredField("resourceDirectoryMap");
-                resourcesMapField.setAccessible(true);
-
-                Map<String, ClassLoadingResource[]> resourcesMap = (Map<String, ClassLoadingResource[]>) resourcesMapField.get(cl);
-
-                for (ClassLoadingResource[] resources : resourcesMap.values()) {
-                    for (ClassLoadingResource resource : resources) {
-                        if (resource instanceof JarResource) {
-                            Field jarPath = null;
-
-                            try {
-                                JarResource jr = (JarResource) resource;
-
-                                jarPath = jr.getClass().getDeclaredField("jarPath");
-                                jarPath.setAccessible(true);
-
-                                Path path = (Path) jarPath.get(jr);
-
-                                if (path.getFileName().endsWith("generated-bytecode.jar")) {
-                                    jr.close();
-                                }
-                            } finally {
-                                if (jarPath != null) {
-                                    jarPath.setAccessible(false);
-                                }
-                            }
-                        }
-                    }
-                }
-            } finally {
-                if (resourcesMapField != null) {
-                    resourcesMapField.setAccessible(false);
-                }
+            if (classLoader instanceof RunnerClassLoader) {
+                RunnerClassLoader.class.cast(classLoader).resetInternalCaches();
             }
         }
     }
