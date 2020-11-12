@@ -56,7 +56,6 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
@@ -73,6 +72,7 @@ import static org.junit.Assume.assumeTrue;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
+import org.keycloak.testsuite.util.AdminClientUtil;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.BITBUCKET;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.FACEBOOK;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.FACEBOOK_INCLUDE_BIRTHDAY;
@@ -535,7 +535,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     private AccessTokenResponse checkFeature(int expectedStatusCode, String username) {
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         Response response = null;
         try {
             testingClient.server().run(SocialLoginTest::setupClientExchangePermissions);
@@ -573,7 +573,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         assertEquals(200, tokenResp.getStatus());
 
         ProfileAssume.assumeFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
 
         try {
             AccessTokenResponse tokenResponse = checkFeature(200, username);
