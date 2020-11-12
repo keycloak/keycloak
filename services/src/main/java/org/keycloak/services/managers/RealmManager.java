@@ -689,24 +689,6 @@ public class RealmManager {
         return false;
     }
 
-    /**
-     * Query users based on a search string:
-     * <p/>
-     * "Bill Burke" first and last name
-     * "bburke@redhat.com" email
-     * "Burke" lastname or username
-     *
-     * @param searchString
-     * @param realmModel
-     * @return
-     */
-    public List<UserModel> searchUsers(String searchString, RealmModel realmModel) {
-        if (searchString == null) {
-            return Collections.emptyList();
-        }
-        return session.users().searchForUser(searchString.trim(), realmModel);
-    }
-
     private void setupAuthorizationServices(RealmModel realm) {
         KeycloakModelUtils.setupAuthorizationServices(realm);
     }

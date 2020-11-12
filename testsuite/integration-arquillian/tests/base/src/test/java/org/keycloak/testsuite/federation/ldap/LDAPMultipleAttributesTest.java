@@ -42,6 +42,7 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -132,7 +133,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
             Assert.assertTrue("Wilson".equals(user.getLastName()) || "Schneider".equals(user.getLastName()));
 
             // Actually there are 2 postalCodes
-            List<String> postalCodes = user.getAttribute("postal_code");
+            List<String> postalCodes = user.getAttributeStream("postal_code").collect(Collectors.toList());
             assertPostalCodes(postalCodes, "88441", "77332");
             List<String> tmp = new LinkedList<>();
             tmp.addAll(postalCodes);
@@ -147,7 +148,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             UserModel user = session.users().getUserByUsername("bwilson", appRealm);
-            List<String> postalCodes = user.getAttribute("postal_code");
+            List<String> postalCodes = user.getAttributeStream("postal_code").collect(Collectors.toList());
             assertPostalCodes(postalCodes, "88441");
             List<String> tmp = new LinkedList<>();
             tmp.addAll(postalCodes);
@@ -161,7 +162,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             UserModel user = session.users().getUserByUsername("bwilson", appRealm);
-            assertPostalCodes(user.getAttribute("postal_code"), "88441", "77332");
+            assertPostalCodes(user.getAttributeStream("postal_code").collect(Collectors.toList()), "88441", "77332");
         });
     }
 

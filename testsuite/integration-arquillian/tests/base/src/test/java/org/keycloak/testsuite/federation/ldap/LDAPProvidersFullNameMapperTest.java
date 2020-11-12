@@ -34,6 +34,7 @@ import org.keycloak.testsuite.util.LDAPTestUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -155,9 +156,9 @@ public class LDAPProvidersFullNameMapperTest extends AbstractLDAPTest {
             LDAPTestAsserts.assertUserImported(session.users(), appRealm, "fullname", "James", "Dee", "fullname@email.org", "4578");
 
             UserModel fullnameUser = session.users().getUserByUsername("fullname", appRealm);
-            assertThat(fullnameUser.getAttribute("myAttribute"), contains("test"));
-            assertThat(fullnameUser.getAttribute("myEmptyAttribute"), is(empty()));
-            assertThat(fullnameUser.getAttribute("myNullAttribute"), is(empty()));
+            assertThat(fullnameUser.getAttributeStream("myAttribute").collect(Collectors.toList()), contains("test"));
+            assertThat(fullnameUser.getAttributeStream("myEmptyAttribute").collect(Collectors.toList()), is(empty()));
+            assertThat(fullnameUser.getAttributeStream("myNullAttribute").collect(Collectors.toList()), is(empty()));
 
             // Remove "fullnameUser" to assert he is removed from LDAP.
             session.users().removeUser(appRealm, fullnameUser);

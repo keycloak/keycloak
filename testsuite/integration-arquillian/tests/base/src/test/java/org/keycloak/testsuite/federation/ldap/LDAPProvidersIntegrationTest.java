@@ -71,11 +71,11 @@ import javax.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -468,9 +468,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             LDAPTestUtils.removeLDAPUserByUsername(ctx.getLdapProvider(), ctx.getRealm(), config, "maryjane");
 
             // Make sure the deletion took place.
-            List<UserModel> deletedUsers = session.users().searchForUser("mary yram", ctx.getRealm());
-            Assert.assertTrue(deletedUsers.isEmpty());
-
+            Assert.assertEquals(0, session.users().searchForUserStream("mary yram", ctx.getRealm()).count());
         });
     }
 
@@ -818,20 +816,20 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assert.assertNull(session.userLocalStorage().getUserByUsername("username3", appRealm));
             Assert.assertNull(session.userLocalStorage().getUserByUsername("username4", appRealm));
 
-            // search by username
-            session.users().searchForUser("username1", appRealm);
+            // search by username (we use a terminal operation on the stream to ensure it is consumed)
+            session.users().searchForUserStream("username1", appRealm).count();
             LDAPTestAsserts.assertUserImported(session.userLocalStorage(), appRealm, "username1", "John1", "Doel1", "user1@email.org", "121");
 
-            // search by email
-            session.users().searchForUser("user2@email.org", appRealm);
+            // search by email (we use a terminal operation on the stream to ensure it is consumed)
+            session.users().searchForUserStream("user2@email.org", appRealm).count();
             LDAPTestAsserts.assertUserImported(session.userLocalStorage(), appRealm, "username2", "John2", "Doel2", "user2@email.org", "122");
 
-            // search by lastName
-            session.users().searchForUser("Doel3", appRealm);
+            // search by lastName (we use a terminal operation on the stream to ensure it is consumed)
+            session.users().searchForUserStream("Doel3", appRealm).count();
             LDAPTestAsserts.assertUserImported(session.userLocalStorage(), appRealm, "username3", "John3", "Doel3", "user3@email.org", "123");
 
-            // search by firstName + lastName
-            session.users().searchForUser("John4 Doel4", appRealm);
+            // search by firstName + lastName (we use a terminal operation on the stream to ensure it is consumed)
+            session.users().searchForUserStream("John4 Doel4", appRealm).count();
             LDAPTestAsserts.assertUserImported(session.userLocalStorage(), appRealm, "username4", "John4", "Doel4", "user4@email.org", "124");
         });
     }
@@ -855,15 +853,15 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username6", "John6", "Doel6", "user6@email.org", null, "126");
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username7", "John7", "Doel7", "user7@email.org", null, "127");
 
-            // search by email
-            List<UserModel> list = session.users().searchForUser("user5@email.org", appRealm);
+            // search by email (we use a terminal operation on the stream to ensure it is consumed)
+            session.users().searchForUserStream("user5@email.org", appRealm).count();
             LDAPTestAsserts.assertUserImported(session.userLocalStorage(), appRealm, "username5", "John5", "Doel5", "user5@email.org", "125");
 
-            session.users().searchForUser("John6 Doel6", appRealm);
+            session.users().searchForUserStream("John6 Doel6", appRealm).count();
             LDAPTestAsserts.assertUserImported(session.userLocalStorage(), appRealm, "username6", "John6", "Doel6", "user6@email.org", "126");
 
-            session.users().searchForUser("user7@email.org", appRealm);
-            session.users().searchForUser("John7 Doel7", appRealm);
+            session.users().searchForUserStream("user7@email.org", appRealm).count();
+            session.users().searchForUserStream("John7 Doel7", appRealm).count();
             Assert.assertNull(session.userLocalStorage().getUserByUsername("username7", appRealm));
 
             // Remove custom filter
@@ -966,15 +964,16 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assert.assertNull(session.userLocalStorage().getUserByUsername("username10", appRealm));
 
             // search for user by attribute
-            List<UserModel> users = ctx.getLdapProvider().searchForUserByUserAttribute(ATTRIBUTE, ATTRIBUTE_VALUE, appRealm);
+            List<UserModel> users = ctx.getLdapProvider().searchForUserByUserAttributeStream(ATTRIBUTE, ATTRIBUTE_VALUE, appRealm)
+                    .collect(Collectors.toList());
             assertEquals(2, users.size());
-            assertNotNull(users.get(0).getAttribute(ATTRIBUTE));
-            assertEquals(1, users.get(0).getAttribute(ATTRIBUTE).size());
-            assertEquals(ATTRIBUTE_VALUE, users.get(0).getAttribute(ATTRIBUTE).get(0));
+            List<String> attrList = users.get(0).getAttributeStream(ATTRIBUTE).collect(Collectors.toList());
+            assertEquals(1, attrList.size());
+            assertEquals(ATTRIBUTE_VALUE, attrList.get(0));
 
-            assertNotNull(users.get(1).getAttribute(ATTRIBUTE));
-            assertEquals(1, users.get(1).getAttribute(ATTRIBUTE).size());
-            assertEquals(ATTRIBUTE_VALUE, users.get(1).getAttribute(ATTRIBUTE).get(0));
+            attrList = users.get(1).getAttributeStream(ATTRIBUTE).collect(Collectors.toList());
+            assertEquals(1, attrList.size());
+            assertEquals(ATTRIBUTE_VALUE, attrList.get(0));
 
 	        // user are now imported to local store
             LDAPTestAsserts.assertUserImported(session.userLocalStorage(), appRealm, "username8", "John8", "Doel8", "user8@email.org", ATTRIBUTE_VALUE);
@@ -1130,8 +1129,8 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
         testingClient.server().run(session -> {
             RealmModel appRealm = session.realms().getRealmByName(TEST_REALM_NAME);
-            List<UserModel> userVerified = session.users().searchForUser("john@test.com", appRealm);
-            Assert.assertTrue(userVerified.get(0).isEmailVerified());
+            Optional<UserModel> userVerified = session.users().searchForUserStream("john@test.com", appRealm).findFirst();
+            Assert.assertTrue(userVerified.get().isEmailVerified());
         });
 
         //Test untrusted email option 
@@ -1147,8 +1146,8 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
         testingClient.server().run(session -> {
             RealmModel appRealm = session.realms().getRealmByName(TEST_REALM_NAME);
-            List<UserModel> userNotVerified = session.users().searchForUser("john2@test.com", appRealm);
-            Assert.assertFalse(userNotVerified.get(0).isEmailVerified());
+            Optional<UserModel> userNotVerified = session.users().searchForUserStream("john2@test.com", appRealm).findFirst();
+            Assert.assertFalse(userNotVerified.get().isEmailVerified());
         });
     }
 

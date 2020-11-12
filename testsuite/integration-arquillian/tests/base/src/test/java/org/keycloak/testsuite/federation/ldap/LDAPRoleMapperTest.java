@@ -76,15 +76,15 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
             // check groups
             RoleModel group1 = appRealm.getRole("group1");
             Assert.assertNotNull(group1);
-            Assert.assertThat(session.users().getRoleMembers(appRealm, group1).stream().map(UserModel::getUsername).collect(Collectors.toSet()),
+            Assert.assertThat(session.users().getRoleMembersStream(appRealm, group1).map(UserModel::getUsername).collect(Collectors.toSet()),
                     Matchers.containsInAnyOrder("johnkeycloak", "marykeycloak", "robkeycloak"));
             RoleModel group2 = appRealm.getRole("group2");
             Assert.assertNotNull(group2);
-            Assert.assertThat(session.users().getRoleMembers(appRealm, group2).stream().map(UserModel::getUsername).collect(Collectors.toSet()),
+            Assert.assertThat(session.users().getRoleMembersStream(appRealm, group2).map(UserModel::getUsername).collect(Collectors.toSet()),
                     Matchers.containsInAnyOrder("johnkeycloak", "marykeycloak"));
             RoleModel group3 = appRealm.getRole("group3");
             Assert.assertNotNull(group3);
-            Assert.assertThat(session.users().getRoleMembers(appRealm, group3), Matchers.empty());
+            Assert.assertThat(session.users().getRoleMembersStream(appRealm, group3).collect(Collectors.toSet()), Matchers.empty());
         });
     }
 
@@ -124,15 +124,15 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
                 // check groups
                 RoleModel group1 = rolesClient.getRole("group1");
                 Assert.assertNotNull(group1);
-                Assert.assertThat(session.users().getRoleMembers(appRealm, group1).stream().map(UserModel::getUsername).collect(Collectors.toSet()),
+                Assert.assertThat(session.users().getRoleMembersStream(appRealm, group1).map(UserModel::getUsername).collect(Collectors.toSet()),
                         Matchers.containsInAnyOrder("johnkeycloak", "marykeycloak", "robkeycloak"));
                 RoleModel group2 = rolesClient.getRole("group2");
                 Assert.assertNotNull(group2);
-                Assert.assertThat(session.users().getRoleMembers(appRealm, group2).stream().map(UserModel::getUsername).collect(Collectors.toSet()),
+                Assert.assertThat(session.users().getRoleMembersStream(appRealm, group2).map(UserModel::getUsername).collect(Collectors.toSet()),
                         Matchers.containsInAnyOrder("johnkeycloak", "marykeycloak"));
                 RoleModel group3 = rolesClient.getRole("group3");
                 Assert.assertNotNull(group3);
-                Assert.assertThat(session.users().getRoleMembers(appRealm, group3), Matchers.empty());
+                Assert.assertThat(session.users().getRoleMembersStream(appRealm, group3).collect(Collectors.toSet()), Matchers.empty());
 
             } finally {
                 appRealm.removeClient(rolesClient.getId());

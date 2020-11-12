@@ -719,7 +719,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 if (link != null) {
 
                     // Removing last social provider is not possible if you don't have other possibility to authenticate
-                    if (session.users().getFederatedIdentities(user, realm).size() > 1 || user.getFederationLink() != null || isPasswordSet(session, realm, user)) {
+                    if (session.users().getFederatedIdentitiesStream(user, realm).count() > 1 || user.getFederationLink() != null || isPasswordSet(session, realm, user)) {
                         session.users().removeFederatedIdentity(realm, user, providerId);
 
                         logger.debugv("Social provider {0} removed successfully from user {1}", providerId, user.getUsername());

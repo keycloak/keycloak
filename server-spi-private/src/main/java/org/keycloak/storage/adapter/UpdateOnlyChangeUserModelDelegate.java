@@ -19,6 +19,9 @@
 package org.keycloak.storage.adapter;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -61,29 +64,28 @@ public class UpdateOnlyChangeUserModelDelegate extends UserModelDelegate {
 
     @Override
     public void setAttribute(String name, List<String> values) {
-        if (!isEqualOrBothNull(getAttribute(name), values)) {
+        if (!isEqualOrBothNull(getAttributeStream(name).collect(Collectors.toList()), values)) {
             delegate.setAttribute(name, values);
         }
     }
 
     @Override
     public void removeAttribute(String name) {
-        List<String> currentVal = getAttribute(name);
-        if (currentVal != null && !currentVal.isEmpty()) {
+        if (getAttributeStream(name).count() > 0) {
             delegate.removeAttribute(name);
         }
     }
 
     @Override
     public void addRequiredAction(String action) {
-        if (!getRequiredActions().contains(action)) {
+        if (action != null && getRequiredActionsStream().noneMatch(action::equals)) {
             delegate.addRequiredAction(action);
         }
     }
 
     @Override
     public void removeRequiredAction(String action) {
-        if (getRequiredActions().contains(action)) {
+        if (action != null && getRequiredActionsStream().anyMatch(action::equals)) {
             delegate.removeRequiredAction(action);
         }
     }
