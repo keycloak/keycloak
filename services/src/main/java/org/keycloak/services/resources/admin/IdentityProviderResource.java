@@ -190,7 +190,8 @@ public class IdentityProviderResource {
             // Admin changed the ID (alias) of identity provider. We must update all clients and users
             logger.debug("Changing providerId in all clients and linked users. oldProviderId=" + oldProviderId + ", newProviderId=" + newProviderId);
 
-            updateUsersAfterProviderAliasChange(session.users().getUsers(realm, false), oldProviderId, newProviderId, realm, session);
+            updateUsersAfterProviderAliasChange(session.users().getUsersStream(realm, false),
+                    oldProviderId, newProviderId, realm, session);
         }
     }
 
@@ -212,8 +213,8 @@ public class IdentityProviderResource {
         providerRep.setInternalId(identityProviderModel.getInternalId());
     }
 
-    private static void updateUsersAfterProviderAliasChange(List<UserModel> users, String oldProviderId, String newProviderId, RealmModel realm, KeycloakSession session) {
-        for (UserModel user : users) {
+    private static void updateUsersAfterProviderAliasChange(Stream<UserModel> users, String oldProviderId, String newProviderId, RealmModel realm, KeycloakSession session) {
+        users.forEach(user -> {
             FederatedIdentityModel federatedIdentity = session.users().getFederatedIdentity(user, oldProviderId, realm);
             if (federatedIdentity != null) {
                 // Remove old link first
@@ -224,7 +225,7 @@ public class IdentityProviderResource {
                         federatedIdentity.getToken());
                 session.users().addFederatedIdentity(realm, user, newFederatedIdentity);
             }
-        }
+        });
     }
 
 

@@ -42,6 +42,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -121,13 +122,13 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         } else {
 
             // we don't have java property. Let's set attribute
-            List<String> attrValues = localUser.getAttribute(userModelAttrName);
+            List<String> attrValues = localUser.getAttributeStream(userModelAttrName).collect(Collectors.toList());
 
-            if (attrValues.size() == 0) {
+            if (attrValues.isEmpty()) {
                 if (isMandatoryInLdap) {
                     ldapUser.setSingleAttribute(ldapAttrName, LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
                 } else {
-                    ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<String>());
+                    ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<>());
                 }
             } else {
                 ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<>(attrValues));

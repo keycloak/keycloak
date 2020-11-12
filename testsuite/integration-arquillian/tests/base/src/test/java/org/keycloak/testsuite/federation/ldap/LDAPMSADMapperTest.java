@@ -139,7 +139,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
             Assert.assertEquals("firstName", user.getFirstName());
             Assert.assertEquals("lastName", user.getLastName());
             Assert.assertTrue(user.isEnabled());
-            Assert.assertEquals(0, user.getRequiredActions().size());
+            Assert.assertEquals(0, user.getRequiredActionsStream().count());
         });
     }
 }

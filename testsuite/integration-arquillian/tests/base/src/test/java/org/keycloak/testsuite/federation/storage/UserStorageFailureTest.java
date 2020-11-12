@@ -55,8 +55,9 @@ import org.keycloak.testsuite.util.OAuthClient;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
+
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ContainerAssume;
 
@@ -308,33 +309,32 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
             UserModel local = session.users().getUserByUsername(LOCAL_USER, realm);
             Assert.assertNotNull(local);
-            List<UserModel> result;
-            result = session.users().searchForUser(LOCAL_USER, realm);
-            Assert.assertEquals(1, result.size());
-            session.users().searchForUser(FailableHardcodedStorageProvider.username, realm);
-            Assert.assertEquals(1, result.size());
-            session.users().searchForUser(LOCAL_USER, realm, 0, 2);
-            Assert.assertEquals(1, result.size());
-            session.users().searchForUser(FailableHardcodedStorageProvider.username, realm, 0, 2);
-            Assert.assertEquals(1, result.size());
+            Stream<UserModel> result;
+            result = session.users().searchForUserStream(LOCAL_USER, realm);
+            Assert.assertEquals(1, result.count());
+            result = session.users().searchForUserStream(FailableHardcodedStorageProvider.username, realm);
+            Assert.assertEquals(1, result.count());
+            result = session.users().searchForUserStream(LOCAL_USER, realm, 0, 2);
+            Assert.assertEquals(1, result.count());
+            result = session.users().searchForUserStream(FailableHardcodedStorageProvider.username, realm, 0, 2);
+            Assert.assertEquals(1, result.count());
             Map<String, String> localParam = new HashMap<>();
             localParam.put("username", LOCAL_USER);
             Map<String, String> hardcodedParam = new HashMap<>();
             hardcodedParam.put("username", FailableHardcodedStorageProvider.username);
 
-            result = session.users().searchForUser(localParam, realm);
-            Assert.assertEquals(1, result.size());
-            session.users().searchForUser(hardcodedParam, realm);
-            Assert.assertEquals(1, result.size());
-            session.users().searchForUser(localParam, realm, 0, 2);
-            Assert.assertEquals(1, result.size());
-            session.users().searchForUser(hardcodedParam, realm, 0, 2);
-            Assert.assertEquals(1, result.size());
+            result = session.users().searchForUserStream(localParam, realm);
+            Assert.assertEquals(1, result.count());
+            result = session.users().searchForUserStream(hardcodedParam, realm);
+            Assert.assertEquals(1, result.count());
+            result = session.users().searchForUserStream(localParam, realm, 0, 2);
+            Assert.assertEquals(1, result.count());
+            result = session.users().searchForUserStream(hardcodedParam, realm, 0, 2);
+            Assert.assertEquals(1, result.count());
 
-            session.users().getUsers(realm);
+            // we run a terminal operation on the stream to make sure it is consumed.
+            session.users().getUsersStream(realm).count();
             session.users().getUsersCount(realm);
-
-
 
             UserModel user = session.users().getUserByUsername(FailableHardcodedStorageProvider.username, realm);
             Assert.assertFalse(user instanceof CachedUserModel);

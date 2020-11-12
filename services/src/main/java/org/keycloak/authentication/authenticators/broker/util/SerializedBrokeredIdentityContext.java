@@ -30,7 +30,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.protocol.openshift.OpenShiftTokenReviewResponseRepresentation;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
@@ -40,6 +39,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -218,18 +219,23 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
     @JsonIgnore
     @Override
     public List<String> getAttribute(String key) {
+        return this.getAttributeStream(key).collect(Collectors.toList());
+    }
+
+    @JsonIgnore
+    @Override
+    public Stream<String> getAttributeStream(String key) {
         ContextDataEntry ctxEntry = this.contextData.get(Constants.USER_ATTRIBUTES_PREFIX + key);
         if (ctxEntry != null) {
             try {
                 String asString = ctxEntry.getData();
                 byte[] asBytes = Base64Url.decode(asString);
-                List<String> asList = JsonSerialization.readValue(asBytes, List.class);
-                return asList;
+                return JsonSerialization.readValue(asBytes, List.class).stream();
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             }
         } else {
-            return null;
+            return Stream.empty();
         }
     }
 

@@ -42,6 +42,7 @@ import org.keycloak.testsuite.federation.HardcodedClientStorageProviderFactory;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
@@ -207,12 +208,12 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
             UserModel john = currentSession.users().getUserByUsername("john", realm);
             UserModel mary = currentSession.users().getUserByUsername("mary", realm);
 
-            List<UserConsentModel> johnConsents = currentSession.users().getConsents(realm, john.getId());
-            Assert.assertEquals(2, johnConsents.size());
+            Assert.assertEquals(2, currentSession.users().getConsentsStream(realm, john.getId()).count());
 
             ClientModel hardcodedClient = currentSession.clients().getClientByClientId(realm, "hardcoded-client");
 
-            List<UserConsentModel> maryConsents = currentSession.users().getConsents(realm, mary.getId());
+            List<UserConsentModel> maryConsents = currentSession.users().getConsentsStream(realm, mary.getId())
+                    .collect(Collectors.toList());
             Assert.assertEquals(2, maryConsents.size());
             UserConsentModel maryConsent = maryConsents.get(0);
             UserConsentModel maryHardcodedConsent = maryConsents.get(1);
@@ -388,9 +389,7 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
             Assert.assertNull(hardcodedClient);
 
             UserModel mary = currentSession.users().getUserByUsername("mary", realm);
-
-            List<UserConsentModel> maryConsents = currentSession.users().getConsents(realm, mary.getId());
-            Assert.assertEquals(1, maryConsents.size());
+            Assert.assertEquals(1, currentSession.users().getConsentsStream(realm, mary.getId()).count());
         });
     }
 

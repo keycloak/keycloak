@@ -168,12 +168,14 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
             Assert.assertTrue(userGroups.contains(specialGroup));
 
             // 3 - Check through userProvider
-            List<UserModel> groupMembers = session.users().getGroupMembers(appRealm, specialGroup, 0, 10);
+            List<UserModel> groupMembers = session.users().getGroupMembersStream(appRealm, specialGroup, 0, 10)
+                    .collect(Collectors.toList());
 
             Assert.assertEquals(1, groupMembers.size());
             Assert.assertEquals("jamees,key*cložak)ppp", groupMembers.get(0).getUsername());
 
-            groupMembers = session.users().getGroupMembers(appRealm, groupWithSlashes, 0, 10);
+            groupMembers = session.users().getGroupMembersStream(appRealm, groupWithSlashes, 0, 10)
+                    .collect(Collectors.toList());
 
             Assert.assertEquals(1, groupMembers.size());
             Assert.assertEquals("jamees,key*cložak)ppp", groupMembers.get(0).getUsername());

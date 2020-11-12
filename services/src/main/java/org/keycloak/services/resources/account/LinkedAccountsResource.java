@@ -21,6 +21,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -110,14 +112,13 @@ public class LinkedAccountsResource {
 
     public SortedSet<LinkedAccountRepresentation> getLinkedAccounts(KeycloakSession session, RealmModel realm, UserModel user) {
         Set<String> socialIds = findSocialIds();
-        Set<FederatedIdentityModel> identities = session.users().getFederatedIdentities(user, realm);
         return realm.getIdentityProvidersStream().filter(IdentityProviderModel::isEnabled)
-                .map(provider -> toLinkedAccountRepresentation(provider, socialIds, identities))
+                .map(provider -> toLinkedAccountRepresentation(provider, socialIds, session.users().getFederatedIdentitiesStream(user, realm)))
                 .collect(Collectors.toCollection(TreeSet::new));
     }
 
     private LinkedAccountRepresentation toLinkedAccountRepresentation(IdentityProviderModel provider, Set<String> socialIds,
-                                                                      Set<FederatedIdentityModel> identities) {
+                                                                      Stream<FederatedIdentityModel> identities) {
         String providerId = provider.getAlias();
 
         FederatedIdentityModel identity = getIdentity(identities, providerId);
@@ -137,14 +138,10 @@ public class LinkedAccountsResource {
         }
         return rep;
     }
-    
-    private FederatedIdentityModel getIdentity(Set<FederatedIdentityModel> identities, String providerId) {
-        for (FederatedIdentityModel link : identities) {
-            if (providerId.equals(link.getIdentityProvider())) {
-                return link;
-            }
-        }
-        return null;
+
+    private FederatedIdentityModel getIdentity(Stream<FederatedIdentityModel> identities, String providerId) {
+        return identities.filter(model -> Objects.equals(model.getIdentityProvider(), providerId))
+                .findFirst().orElse(null);
     }
     
     @GET
@@ -212,7 +209,7 @@ public class LinkedAccountsResource {
         }
 
         // Removing last social provider is not possible if you don't have other possibility to authenticate
-        if (!(session.users().getFederatedIdentities(user, realm).size() > 1 || user.getFederationLink() != null || isPasswordSet())) {
+        if (!(session.users().getFederatedIdentitiesStream(user, realm).count() > 1 || user.getFederationLink() != null || isPasswordSet())) {
             return ErrorResponse.error(Messages.FEDERATED_IDENTITY_REMOVING_LAST_PROVIDER, Response.Status.BAD_REQUEST);
         }
         
