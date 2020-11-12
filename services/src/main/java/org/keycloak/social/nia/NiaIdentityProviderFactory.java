@@ -1,5 +1,6 @@
 package org.keycloak.social.nia;
 
+import org.keycloak.Config;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
@@ -36,9 +37,9 @@ public class NiaIdentityProviderFactory extends AbstractIdentityProviderFactory<
 
     }
 
-//    @Override
-//    public void init(Config.Scope config) {
-//        super.init(config);
-//        ths.destinationValidator = DestinationValidator.forProtocolMap(config.getArray("knownProtocols"));
-//    }
+    @Override
+    public void init(Config.Scope config) {
+        super.init(config);
+        this.destinationValidator = DestinationValidator.forProtocolMap(config.getArray("knownProtocols"));
+    }
 }
