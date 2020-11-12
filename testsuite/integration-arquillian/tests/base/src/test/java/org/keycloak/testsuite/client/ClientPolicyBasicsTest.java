@@ -82,6 +82,7 @@ import org.keycloak.services.clientpolicy.condition.ClientIpAddressConditionFact
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
 import org.keycloak.services.clientpolicy.condition.ClientUpdateContextConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforceExecutorFactory;
@@ -326,55 +327,7 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
             clientRep.setDefaultRoles(Arrays.asList("sample-client-role").toArray(new String[1]));
         });
 
-        oauth.clientId(response.getClientId());
-        String codeVerifier = "1a345A7890123456r8901c3456789012b45K7890l23"; // 43
-        String codeChallenge = generateS256CodeChallenge(codeVerifier);
-        oauth.codeChallenge(codeChallenge);
-        oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
-        oauth.nonce("bjapewiziIE083d");
-
-        oauth.doLogin(userName, userPassword);
-
-        EventRepresentation loginEvent = events.expectLogin().client(response.getClientId()).assertEvent();
-        String sessionId = loginEvent.getSessionId();
-        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-
-        oauth.codeVerifier(codeVerifier);
-
-        OAuthClient.AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
-
-        assertEquals(200, res.getStatusCode());
-        events.expectCodeToToken(codeId, sessionId).client(response.getClientId()).assertEvent();
-
-        AccessToken token = oauth.verifyToken(res.getAccessToken());
-
-        String userId = findUserByUsername(adminClient.realm(REALM_NAME), userName).getId();
-        assertEquals(userId, token.getSubject());
-        Assert.assertNotEquals(userName, token.getSubject());
-        assertEquals(sessionId, token.getSessionState());
-        assertEquals(response.getClientId(), token.getIssuedFor());
-
-        String refreshTokenString = res.getRefreshToken();
-        RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
-        assertEquals(sessionId, refreshToken.getSessionState());
-        assertEquals(response.getClientId(), refreshToken.getIssuedFor());
-
-        OAuthClient.AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(refreshTokenString, clientSecret);
-        assertEquals(200, refreshResponse.getStatusCode());
-
-        AccessToken refreshedToken = oauth.verifyToken(refreshResponse.getAccessToken());
-        RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshResponse.getRefreshToken());
-        assertEquals(sessionId, refreshedToken.getSessionState());
-        assertEquals(sessionId, refreshedRefreshToken.getSessionState());
-
-        assertEquals(findUserByUsername(adminClient.realm(REALM_NAME), userName).getId(), refreshedToken.getSubject());
-
-        events.expectRefresh(refreshToken.getId(), sessionId).client(response.getClientId()).assertEvent();
-
-        doIntrospectAccessToken(refreshResponse, userName, clientId, clientSecret);
-
-        doTokenRevoke(refreshResponse.getRefreshToken(), clientId, clientSecret, userId, false);
+        successfulLoginAndLogoutWithPKCE(response.getClientId(), clientSecret, userName, userPassword);
     }
 
     @Test
@@ -868,6 +821,45 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         }
     }
 
+    @Test
+    public void testClientScopesCondition() throws ClientRegistrationException, ClientPolicyException {
+        String policyName = "MyPolicy";
+        createPolicy(policyName, DefaultClientPolicyProviderFactory.PROVIDER_ID, null, null, null);
+        logger.info("... Created Policy : " + policyName);
+
+        createCondition("ClientScopesCondition", ClientScopesConditionFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+            setConditionClientScopes(provider, new ArrayList<>(Arrays.asList("offline_access", "microprofile-jwt")));
+        });
+        registerCondition("ClientScopesCondition", policyName);
+        logger.info("... Registered Condition : ClientScopesCondition");
+
+        createExecutor("PKCEEnforceExecutor", PKCEEnforceExecutorFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+            setExecutorAugmentActivate(provider);
+        });
+        registerExecutor("PKCEEnforceExecutor", policyName);
+        logger.info("... Registered Executor : PKCEEnforceExecutor");
+
+        String clientAlphaId = "Alpha-App";
+        String clientAlphaSecret = "secretAlpha";
+        String cAlphaId = createClientByAdmin(clientAlphaId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientAlphaSecret);
+        });
+
+        try {
+            oauth.scope("address" + " " + "phone");
+            successfulLoginAndLogout(clientAlphaId, clientAlphaSecret);
+
+            oauth.scope("microprofile-jwt" + " " + "profile");
+            failLoginByNotFollowingPKCE(clientAlphaId);
+
+            successfulLoginAndLogoutWithPKCE(clientAlphaId, clientAlphaSecret, "test-user@localhost", "password");
+        } catch (Exception e) {
+            fail();
+        } finally {
+            deleteClientByAdmin(cAlphaId);
+        }
+    }
+
     private AuthorizationEndpointRequestObject createValidRequestObjectForSecureRequestObjectExecutor(String clientId) throws URISyntaxException {
         AuthorizationEndpointRequestObject requestObject = new AuthorizationEndpointRequestObject();
         requestObject.id(KeycloakModelUtils.generateId());
@@ -988,6 +980,58 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
 
         oauth.doLogout(res.getRefreshToken(), clientSecret);
         events.expectLogout(sessionId).client(clientId).clearDetails().assertEvent();
+    }
+
+    private void successfulLoginAndLogoutWithPKCE(String clientId, String clientSecret, String userName, String userPassword) throws Exception {
+        oauth.clientId(clientId);
+        String codeVerifier = "1a345A7890123456r8901c3456789012b45K7890l23"; // 43
+        String codeChallenge = generateS256CodeChallenge(codeVerifier);
+        oauth.codeChallenge(codeChallenge);
+        oauth.codeChallengeMethod(OAuth2Constants.PKCE_METHOD_S256);
+        oauth.nonce("bjapewiziIE083d");
+
+        oauth.doLogin(userName, userPassword);
+
+        EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        oauth.codeVerifier(codeVerifier);
+
+        OAuthClient.AccessTokenResponse res = oauth.doAccessTokenRequest(code, clientSecret);
+
+        assertEquals(200, res.getStatusCode());
+        events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
+
+        AccessToken token = oauth.verifyToken(res.getAccessToken());
+
+        String userId = findUserByUsername(adminClient.realm(REALM_NAME), userName).getId();
+        assertEquals(userId, token.getSubject());
+        Assert.assertNotEquals(userName, token.getSubject());
+        assertEquals(sessionId, token.getSessionState());
+        assertEquals(clientId, token.getIssuedFor());
+
+        String refreshTokenString = res.getRefreshToken();
+        RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
+        assertEquals(sessionId, refreshToken.getSessionState());
+        assertEquals(clientId, refreshToken.getIssuedFor());
+
+        OAuthClient.AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(refreshTokenString, clientSecret);
+        assertEquals(200, refreshResponse.getStatusCode());
+
+        AccessToken refreshedToken = oauth.verifyToken(refreshResponse.getAccessToken());
+        RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshResponse.getRefreshToken());
+        assertEquals(sessionId, refreshedToken.getSessionState());
+        assertEquals(sessionId, refreshedRefreshToken.getSessionState());
+
+        assertEquals(findUserByUsername(adminClient.realm(REALM_NAME), userName).getId(), refreshedToken.getSubject());
+
+        events.expectRefresh(refreshToken.getId(), sessionId).client(clientId).assertEvent();
+
+        doIntrospectAccessToken(refreshResponse, userName, clientId, clientSecret);
+
+        doTokenRevoke(refreshResponse.getRefreshToken(), clientId, clientSecret, userId, false);
     }
 
     private void failLoginByNotFollowingPKCE(String clientId) {
@@ -1262,6 +1306,10 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
 
     private void setConditionClientIpAddress(ComponentRepresentation provider, List<String> clientIpAddresses) {
         provider.getConfig().put(ClientIpAddressConditionFactory.IPADDR, clientIpAddresses);
+    }
+
+    private void setConditionClientScopes(ComponentRepresentation provider, List<String> clientScopes) {
+        provider.getConfig().put(ClientScopesConditionFactory.SCOPES, clientScopes);
     }
 
     private void setExecutorAugmentActivate(ComponentRepresentation provider) {
