@@ -158,7 +158,7 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "anyone",
   },
   {
-    path: "",
+    path: "*",
     component: PageNotFoundSection,
     breadcrumb: "",
     access: "anyone",
