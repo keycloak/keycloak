@@ -405,8 +405,8 @@ public class AccountRestService {
         checkAccountApiEnabled();
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_APPLICATIONS);
 
-        Set<ClientModel> clients = new HashSet<ClientModel>();
-        List<String> inUseClients = new LinkedList<String>();
+        Set<ClientModel> clients = new HashSet<>();
+        List<String> inUseClients = new LinkedList<>();
         List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
         for(UserSessionModel s : sessions) {
             for (AuthenticatedClientSessionModel a : s.getAuthenticatedClientSessions().values()) {
@@ -416,7 +416,7 @@ public class AccountRestService {
             }
         }
 
-        List<String> offlineClients = new LinkedList<String>();
+        List<String> offlineClients = new LinkedList<>();
         List<UserSessionModel> offlineSessions = session.sessions().getOfflineUserSessions(realm, user);
         for(UserSessionModel s : offlineSessions) {
             for(AuthenticatedClientSessionModel a : s.getAuthenticatedClientSessions().values()) {
@@ -426,17 +426,16 @@ public class AccountRestService {
             }
         }
 
-        Map<String, UserConsentModel> consentModels = new HashMap<String, UserConsentModel>();
-        List<UserConsentModel> consents = session.users().getConsents(realm, user.getId());
-        for (UserConsentModel consent : consents) {
+        Map<String, UserConsentModel> consentModels = new HashMap<>();
+        session.users().getConsentsStream(realm, user.getId()).forEach(consent -> {
             ClientModel client = consent.getClient();
             clients.add(client);
             consentModels.put(client.getClientId(), consent);
-        }
+        });
 
         realm.getAlwaysDisplayInConsoleClientsStream().forEach(clients::add);
 
-        List<ClientRepresentation> apps = new LinkedList<ClientRepresentation>();
+        List<ClientRepresentation> apps = new LinkedList<>();
         for (ClientModel client : clients) {
             if (client.isBearerOnly() || client.getBaseUrl() == null || client.getBaseUrl().isEmpty()) {
                 continue;

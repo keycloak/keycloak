@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
@@ -115,10 +116,10 @@ public class UserUpdateHelper {
 
     private static void updateAttributes(UserModel currentUser, Map<String, List<String>> updatedUser, boolean removeMissingAttributes) {
         for (Map.Entry<String, List<String>> attr : updatedUser.entrySet()) {
-            List<String> currentValue = currentUser.getAttribute(attr.getKey());
+            List<String> currentValue = currentUser.getAttributeStream(attr.getKey()).collect(Collectors.toList());
             //In case of username we need to provide lower case values
             List<String> updatedValue = attr.getKey().equals(UserModel.USERNAME) ? AttributeToLower(attr.getValue()) : attr.getValue();
-            if ((currentValue == null || currentValue.size() != updatedValue.size() || !currentValue.containsAll(updatedValue))) {
+            if (currentValue.size() != updatedValue.size() || !currentValue.containsAll(updatedValue)) {
                 currentUser.setAttribute(attr.getKey(), updatedValue);
             }
         }

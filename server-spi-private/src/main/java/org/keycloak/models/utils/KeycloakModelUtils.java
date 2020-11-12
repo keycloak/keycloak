@@ -394,7 +394,7 @@ public final class KeycloakModelUtils {
 
 
     public static Collection<String> resolveAttribute(UserModel user, String name, boolean aggregateAttrs) {
-        List<String> values = user.getAttribute(name);
+        List<String> values = user.getAttributeStream(name).collect(Collectors.toList());
         Set<String> aggrValues = new HashSet<String>();
         if (!values.isEmpty()) {
             if (!aggregateAttrs) {

@@ -691,12 +691,12 @@ public class JpaUserFederatedStorageProvider implements
 
     @Override
     public List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user) {
-        return getStoredCredentials(realm, user.getId());
+        return getStoredCredentialsStream(realm, user.getId()).collect(Collectors.toList());
     }
 
     @Override
     public List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type) {
-        return getStoredCredentialsByType(realm, user.getId(), type);
+        return getStoredCredentialsByTypeStream(realm, user.getId(), type).collect(Collectors.toList());
     }
 
     @Override

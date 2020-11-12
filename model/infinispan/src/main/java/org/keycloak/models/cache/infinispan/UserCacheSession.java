@@ -647,13 +647,9 @@ public class UserCacheSession implements UserCache.Streams {
             return getDelegate().getFederatedIdentity(user, socialProvider, realm);
         }
 
-        Set<FederatedIdentityModel> federatedIdentities = getFederatedIdentities(user, realm);
-        for (FederatedIdentityModel socialLink : federatedIdentities) {
-            if (socialLink.getIdentityProvider().equals(socialProvider)) {
-                return socialLink;
-            }
-        }
-        return null;
+        return getFederatedIdentitiesStream(user, realm)
+                .filter(socialLink -> Objects.equals(socialLink.getIdentityProvider(), socialProvider))
+                .findFirst().orElse(null);
     }
 
     @Override
@@ -697,7 +693,7 @@ public class UserCacheSession implements UserCache.Streams {
 
         if (cached == null) {
             Long loaded = cache.getCurrentRevision(cacheKey);
-            List<UserConsentModel> consents = getDelegate().getConsents(realm, userId);
+            List<UserConsentModel> consents = getDelegate().getConsentsStream(realm, userId).collect(Collectors.toList());
             cached = new CachedUserConsents(loaded, cacheKey, realm, consents);
             cache.addRevisioned(cached, startupRevision);
         }
@@ -796,7 +792,8 @@ public class UserCacheSession implements UserCache.Streams {
 
     // just in case the transaction is rolled back you need to invalidate the user and all cache queries for that user
     protected void fullyInvalidateUser(RealmModel realm, UserModel user) {
-        Set<FederatedIdentityModel> federatedIdentities = realm.isIdentityFederationEnabled() ? getFederatedIdentities(user, realm) : null;
+        Stream<FederatedIdentityModel> federatedIdentities = realm.isIdentityFederationEnabled() ?
+                getFederatedIdentitiesStream(user, realm) : Stream.empty();
 
         UserFullInvalidationEvent event = UserFullInvalidationEvent.create(user.getId(), user.getUsername(), user.getEmail(), realm.getId(), realm.isIdentityFederationEnabled(), federatedIdentities);
 

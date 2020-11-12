@@ -91,7 +91,7 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
             Assert.assertTrue(currentSession.userCredentialManager().isValid(realm2, r2user1, UserCredentialModel.password("pass2")));
 
             // Test searching
-            Assert.assertEquals(2, currentSession.users().searchForUser("user", realm1).size());
+            Assert.assertEquals(2, currentSession.users().searchForUserStream("user", realm1).count());
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionTestUser2) -> {
@@ -105,8 +105,8 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
             currentSession.users().removeUser(realm1, r1user1);
             UserModel user2 = currentSession.users().getUserByUsername("user2", realm1);
             currentSession.users().removeUser(realm1, user2);
-            Assert.assertEquals(0, currentSession.users().searchForUser("user", realm1).size());
-            Assert.assertEquals(2, currentSession.users().searchForUser("user", realm2).size());
+            Assert.assertEquals(0, currentSession.users().searchForUserStream("user", realm1).count());
+            Assert.assertEquals(2, currentSession.users().searchForUserStream("user", realm2).count());
 
 
             UserModel user1 = currentSession.users().getUserByUsername("user1", realm1);

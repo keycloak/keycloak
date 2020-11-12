@@ -28,6 +28,9 @@ import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.commons.marshall.SerializeWith;
@@ -47,7 +50,7 @@ public class UserFullInvalidationEvent extends InvalidationEvent implements User
     private boolean identityFederationEnabled;
     private Map<String, String> federatedIdentities;
 
-    public static UserFullInvalidationEvent create(String userId, String username, String email, String realmId, boolean identityFederationEnabled, Collection<FederatedIdentityModel> federatedIdentities) {
+    public static UserFullInvalidationEvent create(String userId, String username, String email, String realmId, boolean identityFederationEnabled, Stream<FederatedIdentityModel> federatedIdentities) {
         UserFullInvalidationEvent event = new UserFullInvalidationEvent();
         event.userId = userId;
         event.username = username;
@@ -56,10 +59,8 @@ public class UserFullInvalidationEvent extends InvalidationEvent implements User
 
         event.identityFederationEnabled = identityFederationEnabled;
         if (identityFederationEnabled) {
-            event.federatedIdentities = new HashMap<>();
-            for (FederatedIdentityModel socialLink : federatedIdentities) {
-                event.federatedIdentities.put(socialLink.getIdentityProvider(), socialLink.getUserId());
-            }
+            event.federatedIdentities = federatedIdentities.collect(Collectors.toMap(socialLink -> socialLink.getIdentityProvider(),
+                    socialLink -> socialLink.getUserId()));
         }
 
         return event;

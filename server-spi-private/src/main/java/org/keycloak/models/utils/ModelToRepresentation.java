@@ -190,13 +190,8 @@ public class ModelToRepresentation {
         rep.setTotp(session.userCredentialManager().isConfiguredFor(realm, user, OTPCredentialModel.TYPE));
         rep.setDisableableCredentialTypes(session.userCredentialManager().getDisableableCredentialTypes(realm, user));
         rep.setFederationLink(user.getFederationLink());
-
         rep.setNotBefore(session.users().getNotBeforeOfUser(realm, user));
-
-        Set<String> requiredActions = user.getRequiredActions();
-        List<String> reqActions = new ArrayList<>(requiredActions);
-
-        rep.setRequiredActions(reqActions);
+        rep.setRequiredActions(user.getRequiredActionsStream().collect(Collectors.toList()));
 
         Map<String, List<String>> attributes = user.getAttributes();
         Map<String, List<String>> copy = null;

@@ -34,8 +34,7 @@ import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 import org.keycloak.storage.ldap.mappers.PasswordUpdateCallback;
 
 import javax.naming.AuthenticationException;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -133,7 +132,7 @@ public class MSADLDSUserAccountControlStorageMapper extends AbstractLDAPStorageM
         if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE) {
             if (errorCode.equals("532") || errorCode.equals("773")) {
                 // User needs to change his MSAD password. Allow him to login, but add UPDATE_PASSWORD required action
-                if (!user.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_PASSWORD.name())) {
+                if (user.getRequiredActionsStream().noneMatch(action -> Objects.equals(action, UserModel.RequiredAction.UPDATE_PASSWORD.name()))) {
                     user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
                 }
                 return true;
