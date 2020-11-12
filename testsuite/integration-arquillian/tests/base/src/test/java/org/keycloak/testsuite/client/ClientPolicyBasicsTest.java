@@ -29,6 +29,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -62,6 +63,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
@@ -90,6 +92,7 @@ import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmEnforceExecutorFactory;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -857,6 +860,121 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
             fail();
         } finally {
             deleteClientByAdmin(cAlphaId);
+        }
+    }
+
+    @Test
+    public void testSecureSigningAlgorithmEnforceExecutor() throws ClientRegistrationException, ClientPolicyException {
+        String policyName = "MyPolicy";
+        createPolicy(policyName, DefaultClientPolicyProviderFactory.PROVIDER_ID, null, null, null);
+        logger.info("... Created Policy : " + policyName);
+
+        createCondition("ClientUpdateContextCondition", ClientUpdateContextConditionFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+            setConditionRegistrationMethods(provider, new ArrayList<>(Arrays.asList(
+                    ClientUpdateContextConditionFactory.BY_AUTHENTICATED_USER,
+                    ClientUpdateContextConditionFactory.BY_INITIAL_ACCESS_TOKEN,
+                    ClientUpdateContextConditionFactory.BY_REGISTRATION_ACCESS_TOKEN)));
+        });
+        registerCondition("ClientUpdateContextCondition", policyName);
+        logger.info("... Registered Condition : ClientUpdateContextConditionFactory");
+
+        createExecutor("SecureSigningAlgorithmEnforceExecutor", SecureSigningAlgorithmEnforceExecutorFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+        });
+        registerExecutor("SecureSigningAlgorithmEnforceExecutor", policyName);
+        logger.info("... Registered Executor : SecureSigningAlgorithmEnforceExecutor");
+
+        String cAppAdminId = null;
+        String cAppDynamicId = null;
+        try {
+
+            // create by Admin REST API - fail
+            try {
+                createClientByAdmin("App-by-Admin", (ClientRepresentation clientRep) -> {
+                    clientRep.setDefaultRoles((String[]) Arrays.asList("sample-client-role-beta").toArray(new String[1]));
+                    clientRep.setSecret("secretBeta");
+                    clientRep.setAttributes(new HashMap<>());
+                    clientRep.getAttributes().put(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG, Algorithm.none.name());
+                });
+                fail();
+            } catch (ClientPolicyException e) {
+                assertEquals(Errors.INVALID_REGISTRATION, e.getMessage());
+            }
+
+            // create by Admin REST API - success
+            cAppAdminId = createClientByAdmin("App-by-Admin", (ClientRepresentation clientRep) -> {
+                clientRep.setAttributes(new HashMap<>());
+                clientRep.getAttributes().put(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG, Algorithm.PS256.name());
+                clientRep.getAttributes().put(OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG, Algorithm.ES256.name());
+                clientRep.getAttributes().put(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG, Algorithm.ES256.name());
+                clientRep.getAttributes().put(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, Algorithm.ES256.name());
+                clientRep.getAttributes().put(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG, Algorithm.ES256.name());
+            });
+
+            // update by Admin REST API - fail
+            try {
+            updateClientByAdmin(cAppAdminId, (ClientRepresentation clientRep) -> {
+                clientRep.setAttributes(new HashMap<>());
+                clientRep.getAttributes().put(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG, Algorithm.RS512.name());
+            });
+            } catch (Exception e) {
+                assertEquals("HTTP 400 Bad Request", e.getMessage());
+            }
+            ClientRepresentation cRep = getClientByAdmin(cAppAdminId);
+            assertEquals(Algorithm.ES256.name(), cRep.getAttributes().get(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG));
+
+            // update by Admin REST API - success
+            updateClientByAdmin(cAppAdminId, (ClientRepresentation clientRep) -> {
+                clientRep.setAttributes(new HashMap<>());
+                clientRep.getAttributes().put(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG, Algorithm.PS384.name());
+            });
+            cRep = getClientByAdmin(cAppAdminId);
+            assertEquals(Algorithm.PS384.name(), cRep.getAttributes().get(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG));
+
+            // create dynamically - fail
+            try {
+                createClientByAdmin("App-in-Dynamic", (ClientRepresentation clientRep) -> {
+                    clientRep.setDefaultRoles((String[]) Arrays.asList("sample-client-role-beta").toArray(new String[1]));
+                    clientRep.setSecret("secretBeta");
+                    clientRep.setAttributes(new HashMap<>());
+                    clientRep.getAttributes().put(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG, Algorithm.RS384.name());
+                });
+                fail();
+            } catch (ClientPolicyException e) {
+                assertEquals(Errors.INVALID_REGISTRATION, e.getMessage());
+            }
+
+            // create dynamically - success
+            cAppDynamicId = createClientDynamically("App-in-Dynamic", (OIDCClientRepresentation clientRep) -> {
+                clientRep.setUserinfoSignedResponseAlg(Algorithm.ES256.name());
+                clientRep.setRequestObjectSigningAlg(Algorithm.ES256.name());
+                clientRep.setIdTokenSignedResponseAlg(Algorithm.PS256.name());
+                clientRep.setTokenEndpointAuthSigningAlg(Algorithm.PS256.name());
+            });
+            events.expect(EventType.CLIENT_REGISTER).client(cAppDynamicId).user(Matchers.isEmptyOrNullString()).assertEvent();
+            getClientDynamically(cAppDynamicId);
+
+            // update dynamically - fail
+            try {
+                 updateClientDynamically(cAppDynamicId, (OIDCClientRepresentation clientRep) -> {
+                     clientRep.setIdTokenSignedResponseAlg(Algorithm.RS256.name());
+                 });
+                fail();
+            } catch (ClientRegistrationException e) {
+                assertEquals("Failed to send request", e.getMessage());
+            }
+            OIDCClientRepresentation oidcCRep = getClientDynamically(cAppDynamicId);
+            assertEquals(Algorithm.PS256.name(), oidcCRep.getIdTokenSignedResponseAlg());
+
+            // update dynamically - success
+            updateClientDynamically(cAppDynamicId, (OIDCClientRepresentation clientRep) -> {
+                clientRep.setIdTokenSignedResponseAlg(Algorithm.ES384.name());
+            });
+            oidcCRep = getClientDynamically(cAppDynamicId);
+            assertEquals(Algorithm.ES384.name(), oidcCRep.getIdTokenSignedResponseAlg());
+
+        } finally {
+            deleteClientByAdmin(cAppAdminId);
+            deleteClientDynamically(cAppDynamicId);
         }
     }
 
