@@ -3,7 +3,7 @@
 [role="_abstract"]
 Groups in {project_name} manage a common set of attributes and role mappings for each user. Users can be members of any number of groups and inherit the attributes and role mappings assigned to each group.
 
-To manage groups, click *Groups* in the left menu.
+To manage groups, click *Groups* in the menu.
 
 .Groups
 image:{project_images}/groups.png[]
@@ -29,7 +29,7 @@ Attributes and role mappings you define are inherited by the groups and users th
 
 To add a user to a group:
 
-. Click *Users* in the left menu.
+. Click *Users* in the menu.
 . Click the user that you want to perform a role mapping on. If the user is not displayed, click *View all users*.
 . Click *Groups*.
 +

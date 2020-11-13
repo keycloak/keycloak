@@ -3,7 +3,7 @@
 [role="_abstract"]
 To create a client scope, follow these steps:
 
-. Click *Client Scopes* in the left toolbar. 
+. Click *Client Scopes* in the menu. 
 +
 .Client Scopes List
 image:{project_images}/client-scopes-list.png[]

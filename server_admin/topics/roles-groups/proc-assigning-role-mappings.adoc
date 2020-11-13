@@ -5,7 +5,7 @@
 You can assign User role mappings to a user through the *Role Mappings* tab for that user.
 
 .Procedure
-. Click *Users* in the left menu.
+. Click *Users* in the menu.
 . Click the user that you want to perform a role mapping on. If the user is not displayed, click *View all users*.
 . Click the *Role Mappings* tab.
 . Click the role you want to assign to the user in the *Available Roles* box.

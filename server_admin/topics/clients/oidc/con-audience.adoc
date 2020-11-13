@@ -6,7 +6,7 @@
 [role="_abstract"]
 Typically, the environment where {project_name} is deployed consists of a set of _confidential_ or _public_ client applications that use {project_name} for authentication.
 
-There are also _services_ (_Resource Servers_ in the https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-4.2[OAuth 2 specification]) that serve requests from client applications and provide resources to these applications. These services require an _Access token_ (Bearer token) to be sent to them to authenticate a request. This token is obtained by the frontend application upon login to {project_name}.
+_Services_ (_Resource Servers_ in the https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-4.2[OAuth 2 specification]) are also available that serve requests from client applications and provide resources to these applications. These services require an _Access token_ (Bearer token) to be sent to them to authenticate a request. This token is obtained by the frontend application upon login to {project_name}.
 
 In the environment where trust among services is low, you may encounter this scenario:
 
@@ -24,9 +24,9 @@ In the environment where trust among services is low, you may encounter this sce
 
 This scenario is unlikely in environments with a high level of trust between services but not in environments where trust is low. In some environments, this workflow may be correct as the untrusted service may have to retrieve data from a trusted service to return data to the original client application.
 
-An unlimited audience is useful when a high level of trust exists between services. Otherwise, the audience should be limited. You can limit the audience and, at the same time, allow untrusted services to retrieve data from trusted services. In this case, you must ensure that the untrusted service and the trusted service are added as audiences to the token.
+An unlimited audience is useful when a high level of trust exists between services. Otherwise, the audience should be limited. You can limit the audience and, at the same time, allow untrusted services to retrieve data from trusted services. In this case, ensure that the untrusted service and the trusted service are added as audiences to the token.
 
-To prevent any misuse of the access token, limit the audience on the token and configure your services to verify the audience on the token. This will change the flow like this:
+To prevent any misuse of the access token, limit the audience on the token and configure your services to verify the audience on the token. The flow will change as follows:
 
 . A frontend application authenticates against {project_name}.
 
@@ -38,7 +38,7 @@ The token issued to the application contains a reference to the untrusted servic
 +
 .The untrusted service serves the request to the client application but also keeps the token.
 
-. The untrusted service invokes a trusted service with the token. Invocation is not successful because the trusted service checks the audience on the token and find that its audience is only for the untrusted service. This is expected behavior and security is not broken.
+. The untrusted service invokes a trusted service with the token. Invocation is not successful because the trusted service checks the audience on the token and find that its audience is only for the untrusted service. This behavior is expected and security is not broken.
 
 If the client wants to invoke the trusted service later, it must obtain another token by reissuing the SSO login with *scope=<trusted service>*. The returned token will then contain the trusted service as an audience:
 
@@ -46,7 +46,7 @@ If the client wants to invoke the trusted service later, it must obtain another 
 ----
 "audience": [ "<trusted service>" ]
 ----
-Use this to invoke the *<trusted service>*.
+Use this value to invoke the *<trusted service>*.
 
 ===== Setup
 
@@ -59,7 +59,7 @@ When setting up audience checking:
 [[_audience_resolve]]
 ===== Automatically add audience
 
-An _Audience Resolve_ protocol mapper is defined in the default client scope _roles_. The mapper checks for clients that have at least one client role available for the current token. The client ID of each client is then added as an audience. This is useful if your service (usually bearer-only) clients rely on client roles.
+An _Audience Resolve_ protocol mapper is defined in the default client scope _roles_. The mapper checks for clients that have at least one client role available for the current token. The client ID of each client is then added as an audience, which is useful if your service (usually bearer-only) clients rely on client roles.
 
 For example, for a bearer-only client and a confidential client,
 you can use the access token issued for the confidential client to invoke the bearer-only client REST service. The bearer-only client will be automatically added as an audience to the access token issued for the confidential client if the following are true:
@@ -79,8 +79,7 @@ Assuming that the client scope is added as an optional client scope to the confi
 
 [NOTE]
 ====
-The frontend client itself is not automatically added to the access token audience. This allows for easy differentiation between
-the access token and the ID token, since the access token will not contain the client for which the token is issued as an audience.
+The frontend client itself is not automatically added to the access token audience, therefore allowing easy differentiation between the access token and the ID token, since the access token will not contain the client for which the token is issued as an audience.
 
 If you need the client itself as an audience, see the
 <<_audience_hardcoded, hardcoded audience>> option. However, using the same client as both frontend and REST service is not recommended.
@@ -112,12 +111,11 @@ See <<_client_scopes_linking, Client Scopes Linking section>> for more details.
 
 * You can optionally <<_client_scopes_evaluate, Evaluate Client Scopes>> and generate an example access token. *good-service* will be added to the audience of the generated access token if *good-service* is included in the _scope_ parameter, when you assigned it as an optional client scope.
 
-* In your *my-app* application, you must ensure that the _scope_ parameter is used. The value *good-service* must be included when you want to issue the token for accessing *good-service*. 
+* In your *my-app* application, ensure that the _scope_ parameter is used. The value *good-service* must be included when you want to issue the token for accessing *good-service*. 
 +
 See:
 +
 ** link:{adapterguide_link}#_params_forwarding[parameters forwarding section] if your application uses the servlet adapter.
 ** link:{adapterguide_link}#_javascript_adapter[javascript adapter section] if your application uses the javascript adapter.
 
-NOTE: Both the _Audience_ and _Audience Resolve_ protocol mappers add the audiences to the access token only, by default. The ID Token
-typically contains only a single audience, the client ID for which the token was issued. This is a requirement of the OpenID Connect specification. However, the access token does not necessarily have the client ID, which was the token issued for, unless the audience mappers added it.
+NOTE: Both the _Audience_ and _Audience Resolve_ protocol mappers add the audiences to the access token only, by default. The ID Token typically contains only a single audience, the client ID for which the token was issued, a requirement of the OpenID Connect specification. However, the access token does not necessarily have the client ID, which was the token issued for, unless the audience mappers added it.

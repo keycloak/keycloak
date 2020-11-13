@@ -10,7 +10,7 @@ The Add Client page includes an *Import* option.
 image:{project_images}/add-client-saml.png[]
 
 .Procedure
-. Click the *Select File* button.
+. Click *Select File*.
 . Load the file that contains the XML entity descriptor information.  
 . Review the information to ensure everything is set up correctly.
 

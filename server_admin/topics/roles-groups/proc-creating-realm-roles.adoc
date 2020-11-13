@@ -2,7 +2,7 @@
 
 === Realm Roles
 [role="_abstract"]
-Realm-level roles are a namespace for defining your roles. To see the list of roles, click *Roles* in the left menu.
+Realm-level roles are a namespace for defining your roles. To see the list of roles, click *Roles* in the menu.
 
 image:{project_images}/roles.png[]
 

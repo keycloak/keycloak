@@ -57,4 +57,4 @@ but the Facebook Developer Console requires both of them to be filled.
 You will need also to obtain the App ID and App Secret from this page so you can enter them into the {project_name} `Add identity provider` page.
 To obtain this click on `Show` under `App Secret`. Go back to {project_name} and specify those items and finally save your Instagram Identity Provider.
 
-After this it is necessary to make the Instagram app public. Click `App Review` left menu item and then `Requests`. After that follow the instructions on screen.
+Now you can make the Instagram app public. Click `App Review` left menu item and then `Requests`. After that follow the instructions on screen.

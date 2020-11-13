@@ -4,27 +4,27 @@
 === Client Scopes
 
 [role="_abstract"]
-{project_name} allows you to define a shared client configuration in an entity called a _client scope_. This entity allows you to configure <<_protocol-mappers, protocol mappers>> and <<_role_scope_mappings, role scope mappings>> for multiple clients.
+Use {project_name} to define a shared client configuration in an entity called a _client scope_. A _client scope_ configures <<_protocol-mappers, protocol mappers>> and <<_role_scope_mappings, role scope mappings>> for multiple clients.
 
-Client scopes also support the OAuth 2 *scope* parameter. This parameter allows client applications to request more or fewer claims or roles in the access token, depending on the requirement of the application.
+Client scopes also support the OAuth 2 *scope* parameter. Client applications use this parameter to request claims or roles in the access token, depending on the requirement of the application.
 
 include::proc-creating-client-scopes.adoc[]
 
 ==== Protocol
-When you create a client scope, you must choose the *Protocol*. Clients linked in the same scope must have the same protocol.
+When you create a client scope, choose the *Protocol*. Clients linked in the same scope must have the same protocol.
 
 Each realm has a set of pre-defined built-in client scopes in the menu.
 
 * SAML protocol: The *role_list*. This scope contains one protocol mapper for  the roles list in the SAML assertion.
-* OpenID Connect protocol: There are several client scopes:
+* OpenID Connect protocol: Several client scopes are available:
 ** *roles*
 +
-This scope is not defined in the OpenID Connect specification and is not added automatically to the *scope* claim in the access token. This scope has  mappers, which are used to add the roles of the user to the access token and
-add audiences for clients that have at least one client role. This is described in more detail in the <<_audience_resolve, Audience section>>.
+This scope is not defined in the OpenID Connect specification and is not added automatically to the *scope* claim in the access token. This scope has mappers, which are used to add the roles of the user to the access token and
+add audiences for clients that have at least one client role. These mappers are described in more detail in the <<_audience_resolve, Audience section>>.
 +
 ** *web-origins*
 +
-This scope is also not defined in the OpenID Connect specification and not added to the *scope* claimin the access token. This scope is used to add allowed web origins to the access token *allowed-origins* claim.
+This scope is also not defined in the OpenID Connect specification and not added to the *scope* claiming the access token. This scope is used to add allowed web origins to the access token *allowed-origins* claim.
 +
 ** *microprofile-jwt*
 +
@@ -51,23 +51,23 @@ When the *phone* client scope is linked to a client, the client automatically in
 Built-in client scopes contain the protocol mappers as defined in the specification. You are free to edit client scopes and create, update, or remove any protocol mappers or role scope mappings.
 
 ==== Consent related settings
-Client scopes contain options related to the consent screen. Those options are useful if the linked client if the *Consent Required* switch is enabled on the client.
+Client scopes contain options related to the consent screen. Those options are useful if the linked client if *Consent Required* is enabled on the client.
 
 Display On Consent Screen::
-  If this switch is set to ON, and the scope is added to a client that requires consent, the text specified in *Consent Screen Text* will be displayed on the consent screen. This text is shown when the user is authenticated and before the user is redirected from {project_name} to the client. If this switch is OFF, this client scope will not be displayed on the consent screen.
+  If *Display On Consent Screen* is enabled, and the scope is added to a client that requires consent, the text specified in *Consent Screen Text* will be displayed on the consent screen. This text is shown when the user is authenticated and before the user is redirected from {project_name} to the client. If *Display On Consent Screen* is disabled, this client scope will not be displayed on the consent screen.
 
 Consent Screen Text::
   The text displayed on the consent screen when this client scope is added to a client when consent required defaults to the name of client scope. The value for this text can be customised by specifying a substitution variable with *${var-name}* strings. The customised value is  configured within the property files in your theme. See the  link:{developerguide_link}[{developerguide_name}] for more information on customisation.
 
 [[_client_scopes_linking]]
 ==== Link Client Scope with the Client
-Linking between a client scope and a client is configured in the *Client Scopes* tab of the client. There are 2 ways of linking between client scope and client.
+Linking between a client scope and a client is configured in the *Client Scopes* tab of the client. Two ways of linking between client scope and client are available.
 
 Default Client Scopes::
-This is applicable to the OpenID Connect and SAML clients. Default client scopes are applied when issuing OpenID Connect tokens or SAML assertions for a client. The client will inherit Protocol Mappers and Role Scope Mappings that are defined on the client scope. For the OpenID Connect Protocol, the Mappers and Role Scope Mappings are always applied, regardless of the value used for the scope parameter in the OpenID Connect authorization request.
+This setting is applicable to the OpenID Connect and SAML clients. Default client scopes are applied when issuing OpenID Connect tokens or SAML assertions for a client. The client will inherit Protocol Mappers and Role Scope Mappings that are defined on the client scope. For the OpenID Connect Protocol, the Mappers and Role Scope Mappings are always applied, regardless of the value used for the scope parameter in the OpenID Connect authorization request.
 
 Optional Client Scopes::
-This is applicable only for OpenID Connect clients. Optional client scopes are applied when issuing tokens for this client but only when requested by the *scope* parameter in the OpenID Connect authorization request.
+This setting is applicable only for OpenID Connect clients. Optional client scopes are applied when issuing tokens for this client but only when requested by the *scope* parameter in the OpenID Connect authorization request.
 
 ===== Example
 For this example, assume the client has *profile* and *email* linked as default client scopes, and *phone* and *address* linked as optional client scopes. The client uses the value of the scope parameter when sending a request to the OpenID Connect authorization endpoint.
@@ -98,7 +98,7 @@ Client scope::
 Client scopes are entities in {project_name} that are configured at the realm level and can be linked to clients. Client scopes are referenced by their name when a request is sent to the {project_name} authorization endpoint with a corresponding value of the *scope* parameter. See the <<_client_scopes_linking, client scopes linking>> section for more details.
 
 Role scope mapping::
-Available under the *Scope* tab of a client or client scope. Role scope mapping allows you to limit the roles which can be used in the access tokens. See the <<_role_scope_mappings, Role Scope Mappings section>> for more details.
+This is available under the *Scope* tab of a client or client scope. Use *Role scope mapping* to limit the roles that can be used in the access tokens. See the <<_role_scope_mappings, Role Scope Mappings section>> for more details.
 
 ifeval::[{project_community}==true]
 

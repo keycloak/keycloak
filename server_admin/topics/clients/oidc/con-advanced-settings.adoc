@@ -75,7 +75,7 @@ The procedure is:
 
 . Open the client's *Credentials* tab.
 . Select *Signed Jwt* from the *Client Authenticator* menu.
-. Set the *JWKS URL* switch to ON.
+. Toggle *JWKS URL* to ON.
 . Input the client's public key URL in the *JWKS URL* textbox.
 
 Key Encryption's algorithms are defined in the https://tools.ietf.org/html/rfc7518#section-4.1[Json Web Algorithm (JWA)] specification. {project_name} supports:

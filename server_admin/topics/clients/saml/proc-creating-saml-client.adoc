@@ -6,7 +6,7 @@
 POST and Redirect bindings are supported. You can choose to require client signature validation. You can have the server sign and/or encrypt responses as well.
 
 .Procedure
-. Click *Clients* in the left navigation pane.  
+. Click *Clients* in the menu.  
 
 . Click *Create* to go to the *Add Client* page.
 +
@@ -38,7 +38,7 @@ the name, set up a replacement string value. For example, a string value such as
 *Consent Required*:: When set to ON, users see a consent page that grants access to that application.  The page also displays the metadata of the information that the client can access. If you have ever done a social login to Facebook, you often see a similar page. Red Hat Single Sign-On provides the same functionality.
 
 *Include AuthnStatement*:: SAML login responses may specify the  authentication method used, such as password, as well as timestamps of the login and the session expiration.
-This switch is enabled by default, so that the *AuthnStatement* element will be included in login responses. Setting this to OFF prevents clients from determining the maximum session length, which can create client sessions that do not expire.
+*Include AuthnStatement* is enabled by default, so that the *AuthnStatement* element will be included in login responses. Setting this to OFF prevents clients from determining the maximum session length, which can create client sessions that do not expire.
 
 *Sign Documents*:: When set to ON, {project_name} signs the document using the realms private key.
 
@@ -64,19 +64,19 @@ This option is used when {project_name} server and adapter provide the IDP and S
 
 *Encrypt Assertions*:: Encrypts the assertions in SAML documents with the realms private key. The AES algorithm uses a key size of 128 bits. 
 
-*Client Signature Required*:: If this switch is set to ON, documents coming from a client are expected to be signed. {project_name} validates this signature using the client public key or certificate set up in the *SAML Keys* tab.
+*Client Signature Required*:: If *Client Signature Required* is enabled, documents coming from a client are expected to be signed. {project_name} validates this signature using the client public key or certificate set up in the *SAML Keys* tab.
 
-*Force POST Binding*:: By default, {project_name} responds using the initial SAML binding of the original request. By setting this switch to ON, {project_name} responds using the SAML POST binding even if the original request used the redirect binding.
+*Force POST Binding*:: By default, {project_name} responds using the initial SAML binding of the original request. By enabling *Force POST Binding*, {project_name} responds using the SAML POST binding even if the original request used the redirect binding.
 
-*Front Channel Logout*:: If this switch is set to ON, the application requires a browser redirect to perform a logout. For example, the application may require a cookie to be reset which could only be done via a redirect. If this switch is set to OFF, {project_name} invokes a background SAML request to log out of the application.
+*Front Channel Logout*:: If *Front Channel Logout* is enabled, the application requires a browser redirect to perform a logout. For example, the application may require a cookie to be reset which could only be done via a redirect. If *Front Channel Logout* is disabled, {project_name} invokes a background SAML request to log out of the application.
 
-*Force Name ID Format*:: If a request has a name ID policy, ignore it and use the value configured in the admin console under *Name ID Format*.
+*Force Name ID Format*:: If a request has a name ID policy, ignore it and use the value configured in the Admin Console under *Name ID Format*.
 
 *Name ID Format*:: The Name ID Format for the subject. This format is used if no name ID policy is specified in a request, or if the Force Name ID Format attribute is set to ON.
 
 *Root URL*:: When {project_name} uses a configured relative URL, this value is prepended to the URL.
 
-*Valid Redirect URIs*:: Enter a URL pattern and click the + sign to add.  Click the - sign to remove. Click the *Save* button to save these changes.
+*Valid Redirect URIs*:: Enter a URL pattern and click the + sign to add.  Click the - sign to remove. Click *Save* to save these changes.
 Wildcards values are allowed only at the end of a URL. For example, http://host.com/*$$.
 This field is used when the exact SAML endpoints are not registered and {project_name} pulls the Assertion Consumer URL from a request.
 

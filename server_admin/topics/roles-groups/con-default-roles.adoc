@@ -3,9 +3,9 @@
 [[_default_roles]]
 ==== Default Roles
 [role="_abstract"]
-Default roles allow you to automatically assign user role mappings when any user is newly created or imported through
+Use default roles to automatically assign user role mappings when any user is newly created or imported through
 <<_identity_broker, Identity Brokering>>.
-To specify default roles go to the *Roles* left menu item, and click the *Default Roles* tab.
+To specify default roles, click *Roles* in the menu and click the *Default Roles* tab.
 
 .Default Roles
 image:{project_images}/default-roles.png[]

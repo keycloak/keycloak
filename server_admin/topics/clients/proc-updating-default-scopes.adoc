@@ -1,7 +1,7 @@
 [id="proc_updating_client_scopes_{context}"]
 
 [role="_abstract"]
-*Realm Default Client Scopes* allow you to define sets of client scopes which are automatically linked to newly created clients.
+Use *Realm Default Client Scopes* to define sets of client scopes that are automatically linked to newly created clients.
 
 .Procedure
 . Click the *Client Scopes* tab for the client.

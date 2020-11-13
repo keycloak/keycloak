@@ -4,7 +4,7 @@
 To protect an application that uses the OpenID connect protocol, you create a client.
 
 .Procedure
-. Click *Clients* in the left navigation pane.  
+. Click *Clients* in the menu.  
 
 . Click *Create* to go to the *Add Client* page.
 +
@@ -47,4 +47,3 @@ image:{project_images}/client-settings-oidc.png[Client Settings]
 * For more information about fields on the *Settings* tab, see xref:con-basic-settings_{context}[Basic Settings].
 * For more information about the OIDC protocol, see xref:con-oidc_{context}[OpenID Connect].
 endif::[]
-
