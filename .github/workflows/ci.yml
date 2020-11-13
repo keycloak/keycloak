@@ -23,6 +23,9 @@ jobs:
       - name: Build Keycloak
         run: mvn clean install -nsu -B -e -DskipTests -Pquarkus,distribution
 
+      - name: Validate Keycloak.X Code Format
+        run: mvn -f quarkus/pom.xml clean install -nsu -B -e -DskipTests -Dcode-check
+
       - name: Store Keycloak artifacts
         id: store-keycloak
         uses: actions/upload-artifact@v2

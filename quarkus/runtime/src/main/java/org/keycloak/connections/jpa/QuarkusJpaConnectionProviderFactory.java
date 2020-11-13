@@ -19,6 +19,8 @@ package org.keycloak.connections.jpa;
 
 import static org.keycloak.connections.liquibase.QuarkusJpaUpdaterProvider.VERIFY_AND_RUN_MASTER_CHANGELOG;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import io.quarkus.runtime.Quarkus;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -31,7 +33,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.CDI;
 import javax.persistence.EntityManager;
@@ -39,9 +40,6 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.SynchronizationType;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import io.quarkus.runtime.Quarkus;
 import org.hibernate.internal.SessionFactoryImpl;
 import org.hibernate.internal.SessionImpl;
 import org.jboss.logging.Logger;
@@ -61,7 +59,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
-import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
@@ -83,7 +80,9 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
     private static final String SQL_GET_LATEST_VERSION = "SELECT VERSION FROM %sMIGRATION_MODEL";
 
     enum MigrationStrategy {
-        UPDATE, VALIDATE, MANUAL
+        UPDATE,
+        VALIDATE,
+        MANUAL
     }
 
     private EntityManagerFactory emf;
@@ -114,7 +113,8 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
             em = emf.createEntityManager(SynchronizationType.SYNCHRONIZED);
         }
         em = PersistenceExceptionConverter.create(em);
-        if (!jtaEnabled) session.getTransactionManager().enlist(new JpaKeycloakTransaction(em));
+        if (!jtaEnabled)
+            session.getTransactionManager().enlist(new JpaKeycloakTransaction(em));
         return new DefaultJpaConnectionProvider(em);
     }
 
@@ -213,7 +213,8 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
                         break;
                     case MANUAL:
                         export(connection, schema, databaseUpdateFile, session, updater);
-                        throw new ServerStartupError("Database not initialized, please initialize database with " + databaseUpdateFile.getAbsolutePath(), false);
+                        throw new ServerStartupError("Database not initialized, please initialize database with "
+                                + databaseUpdateFile.getAbsolutePath(), false);
                     case VALIDATE:
                         throw new ServerStartupError("Database not initialized, please enable database initialization", false);
                 }
@@ -225,14 +226,16 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
                     break;
                 case MANUAL:
                     export(connection, schema, databaseUpdateFile, session, updater);
-                    throw new ServerStartupError("Database not up-to-date, please migrate database with " + databaseUpdateFile.getAbsolutePath(), false);
+                    throw new ServerStartupError(
+                            "Database not up-to-date, please migrate database with " + databaseUpdateFile.getAbsolutePath(),
+                            false);
                 case VALIDATE:
                     throw new ServerStartupError("Database not up-to-date, please enable database migration", false);
             }
         }
 
         ExportImportManager exportImportManager = new ExportImportManager(session);
-        
+
         if (requiresMigration) {
             KeycloakModelUtils.runJobInTransaction(factory, new KeycloakSessionTask() {
                 @Override

@@ -16,6 +16,29 @@
  */
 package org.keycloak.services.resources;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Cookie;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.Response.Status;
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Version;
@@ -32,30 +55,6 @@ import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.ws.rs.core.Response.Status;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -100,7 +99,8 @@ public class QuarkusWelcomeResource {
             return createWelcomePage(null, null);
         } else {
             if (!isLocal()) {
-                ServicesLogger.LOGGER.rejectedNonLocalAttemptToCreateInitialUser(session.getContext().getConnection().getRemoteAddr());
+                ServicesLogger.LOGGER
+                        .rejectedNonLocalAttemptToCreateInitialUser(session.getContext().getConnection().getRemoteAddr());
                 throw new WebApplicationException(Response.Status.BAD_REQUEST);
             }
 
@@ -151,7 +151,8 @@ public class QuarkusWelcomeResource {
             InputStream resource = getTheme().getResourceAsStream(path);
             if (resource != null) {
                 String contentType = MimeTypeUtil.getContentType(path);
-                Response.ResponseBuilder builder = Response.ok(resource).type(contentType).cacheControl(CacheControlUtil.getDefaultCacheControl());
+                Response.ResponseBuilder builder = Response.ok(resource).type(contentType)
+                        .cacheControl(CacheControlUtil.getDefaultCacheControl());
                 return builder.build();
             } else {
                 return Response.status(Response.Status.NOT_FOUND).build();
@@ -173,7 +174,8 @@ public class QuarkusWelcomeResource {
             map.put("properties", theme.getProperties());
             map.put("adminUrl", session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path("/admin/").build());
 
-            map.put("resourcesPath", "resources/" + Version.RESOURCES_VERSION + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName());
+            map.put("resourcesPath", "resources/" + Version.RESOURCES_VERSION + "/" + theme.getType().toString().toLowerCase()
+                    + "/" + theme.getName());
             map.put("resourcesCommonPath", "resources/" + Version.RESOURCES_VERSION + "/common/keycloak");
 
             boolean bootstrap = shouldBootstrap();
@@ -230,7 +232,8 @@ public class QuarkusWelcomeResource {
             InetAddress remoteInetAddress = InetAddress.getByName(clientConnection.getRemoteAddr());
             InetAddress localInetAddress = InetAddress.getByName(clientConnection.getLocalAddr());
             String xForwardedFor = headers.getHeaderString("X-Forwarded-For");
-            logger.debugf("Checking WelcomePage. Remote address: %s, Local address: %s, X-Forwarded-For header: %s", remoteInetAddress.toString(), localInetAddress.toString(), xForwardedFor);
+            logger.debugf("Checking WelcomePage. Remote address: %s, Local address: %s, X-Forwarded-For header: %s",
+                    remoteInetAddress.toString(), localInetAddress.toString(), xForwardedFor);
 
             // Access through AJP protocol (loadbalancer) may cause that remoteAddress is "127.0.0.1".
             // So consider that welcome page accessed locally just if it was accessed really through "localhost" URL and without loadbalancer (x-forwarded-for header is empty).

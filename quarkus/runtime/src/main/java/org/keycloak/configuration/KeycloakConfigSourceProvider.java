@@ -24,7 +24,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.jboss.logging.Logger;
@@ -96,7 +95,7 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
         if (filePath == null) {
             return null;
         }
-        
+
         return Paths.get(filePath);
     }
 

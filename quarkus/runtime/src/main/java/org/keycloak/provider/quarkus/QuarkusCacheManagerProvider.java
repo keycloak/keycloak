@@ -20,14 +20,13 @@ package org.keycloak.provider.quarkus;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
 import org.infinispan.commons.util.FileLookupFactory;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.configuration.parsing.ParserRegistry;
 import org.infinispan.manager.DefaultCacheManager;
 import org.jboss.logging.Logger;
-import org.keycloak.cluster.ManagedCacheManagerProvider;
 import org.keycloak.Config;
+import org.keycloak.cluster.ManagedCacheManagerProvider;
 import org.keycloak.util.Environment;
 
 /**
@@ -55,7 +54,7 @@ public final class QuarkusCacheManagerProvider implements ManagedCacheManagerPro
     private URL loadConfiguration(Config.Scope config) {
         String pathPrefix;
         String homeDir = Environment.getHomeDir();
-        
+
         if (homeDir == null) {
             log.warn("Keycloak home directory not set");
             pathPrefix = "";
@@ -77,7 +76,7 @@ public final class QuarkusCacheManagerProvider implements ManagedCacheManagerPro
 
             log.infof("Loading cluster configuration from %s", configPath);
             URL url = FileLookupFactory.newInstance().lookupFileLocation(path, Thread.currentThread().getContextClassLoader());
-            
+
             if (url == null) {
                 throw new IllegalArgumentException("Could not load cluster configuration file at [" + configPath + "]");
             }
@@ -90,7 +89,7 @@ public final class QuarkusCacheManagerProvider implements ManagedCacheManagerPro
 
     private void configureTransportStack(Config.Scope config, ConfigurationBuilderHolder builder) {
         String transportStack = config.get("stack");
-        
+
         if (transportStack != null) {
             builder.getGlobalConfigurationBuilder().transport().defaultTransport()
                     .addProperty("configurationFile", "default-configs/default-jgroups-" + transportStack + ".xml");

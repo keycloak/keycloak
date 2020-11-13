@@ -19,12 +19,21 @@ package org.keycloak.connections.liquibase;
 
 import java.lang.reflect.Method;
 import java.sql.Connection;
-
 import javax.xml.parsers.SAXParserFactory;
-
+import liquibase.Liquibase;
+import liquibase.database.Database;
+import liquibase.database.DatabaseFactory;
 import liquibase.database.core.MariaDBDatabase;
 import liquibase.database.core.MySQLDatabase;
-import liquibase.database.core.PostgresDatabase;
+import liquibase.database.jvm.JdbcConnection;
+import liquibase.datatype.DataTypeFactory;
+import liquibase.exception.LiquibaseException;
+import liquibase.parser.ChangeLogParser;
+import liquibase.parser.ChangeLogParserFactory;
+import liquibase.parser.core.xml.XMLChangeLogSAXParser;
+import liquibase.resource.ClassLoaderResourceAccessor;
+import liquibase.resource.ResourceAccessor;
+import liquibase.servicelocator.ServiceLocator;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -37,20 +46,6 @@ import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionPr
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-
-import liquibase.Liquibase;
-import liquibase.database.Database;
-import liquibase.database.DatabaseFactory;
-import liquibase.database.jvm.JdbcConnection;
-import liquibase.datatype.DataTypeFactory;
-import liquibase.exception.LiquibaseException;
-import liquibase.logging.LogFactory;
-import liquibase.parser.ChangeLogParser;
-import liquibase.parser.ChangeLogParserFactory;
-import liquibase.parser.core.xml.XMLChangeLogSAXParser;
-import liquibase.resource.ClassLoaderResourceAccessor;
-import liquibase.resource.ResourceAccessor;
-import liquibase.servicelocator.ServiceLocator;
 
 public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionProviderFactory, LiquibaseConnectionProvider {
 
@@ -83,7 +78,7 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
         locator.register(new PostgresPlusDatabase());
         locator.register(new UpdatedMySqlDatabase());
         locator.register(new UpdatedMariaDBDatabase());
-        
+
         // registers only the database we are using
         try (Connection connection = jpaConnectionProvider.getConnection()) {
             Database database = DatabaseFactory.getInstance()
@@ -156,7 +151,8 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
     }
 
     @Override
-    public Liquibase getLiquibaseForCustomUpdate(Connection connection, String defaultSchema, String changelogLocation, ClassLoader classloader, String changelogTableName) throws LiquibaseException {
+    public Liquibase getLiquibaseForCustomUpdate(Connection connection, String defaultSchema, String changelogLocation,
+            ClassLoader classloader, String changelogTableName) throws LiquibaseException {
         Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
         if (defaultSchema != null) {
             database.setDefaultSchemaName(defaultSchema);
@@ -165,7 +161,8 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
         ResourceAccessor resourceAccessor = new ClassLoaderResourceAccessor(classloader);
         database.setDatabaseChangeLogTableName(changelogTableName);
 
-        logger.debugf("Using changelog file %s and changelogTableName %s", changelogLocation, database.getDatabaseChangeLogTableName());
+        logger.debugf("Using changelog file %s and changelogTableName %s", changelogLocation,
+                database.getDatabaseChangeLogTableName());
 
         return new Liquibase(changelogLocation, resourceAccessor, database);
     }

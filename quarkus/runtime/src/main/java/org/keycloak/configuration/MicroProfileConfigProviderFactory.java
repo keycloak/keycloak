@@ -18,7 +18,6 @@
 package org.keycloak.configuration;
 
 import java.util.Optional;
-
 import org.keycloak.Config;
 import org.keycloak.config.ConfigProviderFactory;
 

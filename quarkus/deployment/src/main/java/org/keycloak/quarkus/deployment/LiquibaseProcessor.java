@@ -1,5 +1,9 @@
 package org.keycloak.quarkus.deployment;
 
+import io.quarkus.deployment.annotations.BuildStep;
+import io.quarkus.deployment.annotations.ExecutionTime;
+import io.quarkus.deployment.annotations.Record;
+import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,8 +12,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
+import liquibase.database.Database;
+import liquibase.lockservice.LockService;
+import liquibase.logging.Logger;
+import liquibase.parser.ChangeLogParser;
+import liquibase.parser.core.xml.XMLChangeLogSAXParser;
+import liquibase.servicelocator.LiquibaseService;
+import liquibase.sqlgenerator.SqlGenerator;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
@@ -18,17 +27,6 @@ import org.keycloak.connections.jpa.updater.liquibase.lock.CustomInsertLockRecor
 import org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockDatabaseChangeLogGenerator;
 import org.keycloak.connections.jpa.updater.liquibase.lock.DummyLockService;
 import org.keycloak.connections.liquibase.KeycloakLogger;
-
-import io.quarkus.deployment.annotations.BuildStep;
-import io.quarkus.deployment.annotations.ExecutionTime;
-import io.quarkus.deployment.annotations.Record;
-import liquibase.database.Database;
-import liquibase.lockservice.LockService;
-import liquibase.logging.Logger;
-import liquibase.parser.ChangeLogParser;
-import liquibase.parser.core.xml.XMLChangeLogSAXParser;
-import liquibase.servicelocator.LiquibaseService;
-import liquibase.sqlgenerator.SqlGenerator;
 import org.keycloak.quarkus.KeycloakRecorder;
 
 class LiquibaseProcessor {

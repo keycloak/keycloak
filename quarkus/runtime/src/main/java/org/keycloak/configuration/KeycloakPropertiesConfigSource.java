@@ -17,6 +17,11 @@
 
 package org.keycloak.configuration;
 
+import static org.keycloak.common.util.StringPropertyReplacer.replaceProperties;
+import static org.keycloak.configuration.MicroProfileConfigProvider.NS_KEYCLOAK;
+import static org.keycloak.configuration.MicroProfileConfigProvider.NS_QUARKUS;
+
+import io.smallrye.config.PropertiesConfigSource;
 import java.io.Closeable;
 import java.io.FileNotFoundException;
 import java.io.IOError;
@@ -30,14 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
-
 import org.jboss.logging.Logger;
-
-import io.smallrye.config.PropertiesConfigSource;
-
-import static org.keycloak.common.util.StringPropertyReplacer.replaceProperties;
-import static org.keycloak.configuration.MicroProfileConfigProvider.NS_KEYCLOAK;
-import static org.keycloak.configuration.MicroProfileConfigProvider.NS_QUARKUS;
 
 /**
  * A configuration source for {@code keycloak.properties}.
@@ -118,7 +116,7 @@ public abstract class KeycloakPropertiesConfigSource extends PropertiesConfigSou
     }
 
     /**
-     * We need a better namespace resolution so that we don't need to add Quarkus extensions manually. Maybe the easiest 
+     * We need a better namespace resolution so that we don't need to add Quarkus extensions manually. Maybe the easiest
      * path is to just have the "kc" namespace for Keycloak-specific properties.
      * 
      * @param key the key to transform

@@ -20,7 +20,21 @@ package org.keycloak.quarkus.deployment;
 import static org.keycloak.configuration.Configuration.getPropertyNames;
 import static org.keycloak.configuration.Configuration.getRawValue;
 
-import javax.persistence.spi.PersistenceUnitTransactionType;
+import io.quarkus.deployment.IsDevelopment;
+import io.quarkus.deployment.annotations.BuildProducer;
+import io.quarkus.deployment.annotations.BuildStep;
+import io.quarkus.deployment.annotations.ExecutionTime;
+import io.quarkus.deployment.annotations.Record;
+import io.quarkus.deployment.builditem.FeatureBuildItem;
+import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
+import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
+import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
+import io.quarkus.hibernate.orm.deployment.PersistenceUnitDescriptorBuildItem;
+import io.quarkus.smallrye.health.runtime.SmallRyeHealthHandler;
+import io.quarkus.vertx.http.deployment.FilterBuildItem;
+import io.quarkus.vertx.http.deployment.RouteBuildItem;
+import io.vertx.core.Handler;
+import io.vertx.ext.web.RoutingContext;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Arrays;
@@ -32,15 +46,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
-
-import io.quarkus.deployment.IsDevelopment;
-import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
-import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
-import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
-import io.quarkus.smallrye.health.runtime.SmallRyeHealthHandler;
-import io.quarkus.vertx.http.deployment.RouteBuildItem;
-import io.vertx.core.Handler;
-import io.vertx.ext.web.RoutingContext;
+import javax.persistence.spi.PersistenceUnitTransactionType;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.jpa.boot.spi.PersistenceUnitDescriptor;
 import org.jboss.logging.Logger;
@@ -62,14 +68,6 @@ import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
 import org.keycloak.provider.quarkus.QuarkusRequestFilter;
 import org.keycloak.quarkus.KeycloakRecorder;
-
-import io.quarkus.deployment.annotations.BuildProducer;
-import io.quarkus.deployment.annotations.BuildStep;
-import io.quarkus.deployment.annotations.ExecutionTime;
-import io.quarkus.deployment.annotations.Record;
-import io.quarkus.deployment.builditem.FeatureBuildItem;
-import io.quarkus.hibernate.orm.deployment.PersistenceUnitDescriptorBuildItem;
-import io.quarkus.vertx.http.deployment.FilterBuildItem;
 import org.keycloak.services.NotFoundHandler;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.health.KeycloakMetricsHandler;
@@ -89,12 +87,16 @@ class KeycloakProcessor {
     }
 
     /**
-     * <p>Configures the persistence unit for Quarkus.
+     * <p>
+     * Configures the persistence unit for Quarkus.
      *
-     * <p>The main reason we have this build step is because we re-use the same persistence unit from {@code keycloak-model-jpa}
-     * module, the same used by the Wildfly distribution. The {@code hibernate-orm} extension expects that the dialect is statically
-     * set to the persistence unit if there is any from the classpath and we use this method to obtain the dialect from the configuration
-     * file so that we can build the application with whatever dialect we want. In addition to the dialect, we should also be 
+     * <p>
+     * The main reason we have this build step is because we re-use the same persistence unit from {@code keycloak-model-jpa}
+     * module, the same used by the Wildfly distribution. The {@code hibernate-orm} extension expects that the dialect is
+     * statically
+     * set to the persistence unit if there is any from the classpath and we use this method to obtain the dialect from the
+     * configuration
+     * file so that we can build the application with whatever dialect we want. In addition to the dialect, we should also be
      * allowed to set any additional defaults that we think that makes sense.
      *
      * @param recorder
@@ -103,7 +105,8 @@ class KeycloakProcessor {
      */
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
-    void configureHibernate(KeycloakRecorder recorder, HibernateOrmConfig config, List<PersistenceUnitDescriptorBuildItem> descriptors) {
+    void configureHibernate(KeycloakRecorder recorder, HibernateOrmConfig config,
+            List<PersistenceUnitDescriptorBuildItem> descriptors) {
         PersistenceUnitDescriptor unit = descriptors.get(0).asOutputPersistenceUnitDefinition().getActualHibernateDescriptor();
 
         unit.getProperties().setProperty(AvailableSettings.DIALECT, config.defaultPersistenceUnit.dialect.dialect.orElse(null));
@@ -112,10 +115,13 @@ class KeycloakProcessor {
     }
 
     /**
-     * <p>Load the built-in provider factories during build time so we don't spend time looking up them at runtime. By loading
+     * <p>
+     * Load the built-in provider factories during build time so we don't spend time looking up them at runtime. By loading
      * providers at this stage we are also able to perform a more dynamic configuration based on the default providers.
      *
-     * <p>User-defined providers are going to be loaded at startup</p>
+     * <p>
+     * User-defined providers are going to be loaded at startup
+     * </p>
      *
      * @param recorder
      */
@@ -134,7 +140,8 @@ class KeycloakProcessor {
                 for (ProviderFactory factory : value.getValue().values()) {
                     factories.computeIfAbsent(entry.getKey(),
                             key -> new HashMap<>())
-                            .computeIfAbsent(entry.getKey().getProviderClass(), aClass -> new HashMap<>()).put(factory.getId(),factory.getClass());
+                            .computeIfAbsent(entry.getKey().getProviderClass(), aClass -> new HashMap<>())
+                            .put(factory.getId(), factory.getClass());
                 }
             }
         }
@@ -143,10 +150,12 @@ class KeycloakProcessor {
     }
 
     /**
-     * <p>Make the build time configuration available at runtime so that the server can run without having to specify some of
+     * <p>
+     * Make the build time configuration available at runtime so that the server can run without having to specify some of
      * the properties again.
      *
-     * <p>This build step also adds a static call to {@link org.keycloak.cli.ShowConfigCommand#run} via the recorder
+     * <p>
+     * This build step also adds a static call to {@link org.keycloak.cli.ShowConfigCommand#run} via the recorder
      * so that the configuration can be shown when requested.
      *
      * @param recorder the recorder
@@ -191,8 +200,10 @@ class KeycloakProcessor {
     }
 
     /**
-     * This will cause quarkus tu include specified modules in the jandex index. For example keycloak-services is needed as it includes
-     * most of the JAX-RS resources, which are required to register Resteasy builtin providers. See {@link ResteasyDeployment#isRegisterBuiltin()}.
+     * This will cause quarkus tu include specified modules in the jandex index. For example keycloak-services is needed as it
+     * includes
+     * most of the JAX-RS resources, which are required to register Resteasy builtin providers. See
+     * {@link ResteasyDeployment#isRegisterBuiltin()}.
      * Similar reason is liquibase
      *
      * @param indexDependencyBuildItemBuildProducer
@@ -205,17 +216,20 @@ class KeycloakProcessor {
 
     @BuildStep
     void initializeFilter(BuildProducer<FilterBuildItem> filters) {
-        filters.produce(new FilterBuildItem(new QuarkusRequestFilter(),FilterBuildItem.AUTHORIZATION - 10));
+        filters.produce(new FilterBuildItem(new QuarkusRequestFilter(), FilterBuildItem.AUTHORIZATION - 10));
     }
 
     /**
-     * <p>Initialize metrics and health endpoints.
+     * <p>
+     * Initialize metrics and health endpoints.
      *
-     * <p>The only reason for manually registering these endpoints is that by default they run as blocking hence
+     * <p>
+     * The only reason for manually registering these endpoints is that by default they run as blocking hence
      * running in a different thread than the worker thread started by {@link QuarkusRequestFilter}.
      * See https://github.com/quarkusio/quarkus/issues/12990.
      *
-     * <p>By doing this, custom health checks such as {@link org.keycloak.services.health.KeycloakReadyHealthCheck} is
+     * <p>
+     * By doing this, custom health checks such as {@link org.keycloak.services.health.KeycloakReadyHealthCheck} is
      * executed within an active {@link org.keycloak.models.KeycloakSession}, making possible to use it when calculating the
      * status.
      *
@@ -298,8 +312,8 @@ class KeycloakProcessor {
     }
 
     private void checkProviders(Spi spi,
-                                Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoriesMap,
-                                Map<Class<? extends Provider>, String> defaultProviders) {
+            Map<Class<? extends Provider>, Map<String, ProviderFactory>> factoriesMap,
+            Map<Class<? extends Provider>, String> defaultProviders) {
         String defaultProvider = Config.getProvider(spi.getName());
 
         if (defaultProvider != null) {
@@ -336,7 +350,8 @@ class KeycloakProcessor {
     }
 
     protected void loadConfig() {
-        ServiceLoader<ConfigProviderFactory> loader = ServiceLoader.load(ConfigProviderFactory.class, KeycloakApplication.class.getClassLoader());
+        ServiceLoader<ConfigProviderFactory> loader = ServiceLoader.load(ConfigProviderFactory.class,
+                KeycloakApplication.class.getClassLoader());
 
         try {
             ConfigProviderFactory factory = loader.iterator().next();
@@ -348,6 +363,7 @@ class KeycloakProcessor {
     }
 
     private boolean isMetricsEnabled() {
-        return Configuration.getOptionalBooleanValue(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat("metrics.enabled")).orElse(false);
+        return Configuration.getOptionalBooleanValue(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat("metrics.enabled"))
+                .orElse(false);
     }
 }

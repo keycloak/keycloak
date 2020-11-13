@@ -17,21 +17,21 @@
 
 package org.keycloak.provider.quarkus;
 
-import java.util.function.Predicate;
-
-import org.keycloak.common.ClientConnection;
-import org.keycloak.services.filters.AbstractRequestFilter;
-
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.web.RoutingContext;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.services.filters.AbstractRequestFilter;
 
 /**
- * <p>This filter is responsible for managing the request lifecycle as well as setting up the necessary context to process incoming
+ * <p>
+ * This filter is responsible for managing the request lifecycle as well as setting up the necessary context to process incoming
  * requests.
  * 
- * <p>The filter itself runs in a event loop and should delegate to worker threads any blocking code (for now, all requests are handled
+ * <p>
+ * The filter itself runs in a event loop and should delegate to worker threads any blocking code (for now, all requests are
+ * handled
  * as blocking).
  */
 public class QuarkusRequestFilter extends AbstractRequestFilter implements Handler<RoutingContext> {
@@ -52,6 +52,7 @@ public class QuarkusRequestFilter extends AbstractRequestFilter implements Handl
                     // other methods from Vert.x to add a handler to the response works asynchronously
                     context.addHeadersEndHandler(event -> close(session));
                     context.next();
+
                     promise.complete();
                 } catch (Throwable cause) {
                     promise.fail(cause);

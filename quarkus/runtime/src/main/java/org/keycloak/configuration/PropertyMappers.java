@@ -19,19 +19,18 @@ package org.keycloak.configuration;
 import static org.keycloak.configuration.Messages.invalidDatabaseVendor;
 import static org.keycloak.configuration.PropertyMapper.MAPPERS;
 import static org.keycloak.configuration.PropertyMapper.create;
-import static org.keycloak.configuration.PropertyMapper.createWithDefault;
 import static org.keycloak.configuration.PropertyMapper.createBuildTimeProperty;
+import static org.keycloak.configuration.PropertyMapper.createWithDefault;
 import static org.keycloak.provider.quarkus.QuarkusPlatform.addInitializationException;
 
+import io.smallrye.config.ConfigSourceInterceptorContext;
+import io.smallrye.config.ConfigValue;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import io.smallrye.config.ConfigSourceInterceptorContext;
-import io.smallrye.config.ConfigValue;
 import org.keycloak.util.Environment;
 
 /**
@@ -57,28 +56,31 @@ public final class PropertyMappers {
             if (Environment.isDevMode() || (proxy != null && "edge".equalsIgnoreCase(proxy.getValue()))) {
                 enabled = true;
             }
-            
+
             if (!enabled) {
                 ConfigValue proceed = context.proceed("kc.https.certificate.file");
-                
+
                 if (proceed == null || proceed.getValue() == null) {
                     proceed = getMapper("quarkus.http.ssl.certificate.key-store-file").getOrDefault(context, null);
                 }
-                
+
                 if (proceed == null || proceed.getValue() == null) {
                     addInitializationException(Messages.httpsConfigurationNotSet());
                 }
             }
-            
+
             return enabled ? "enabled" : "disabled";
         }, "Enables the HTTP listener.");
         createWithDefault("http.host", "quarkus.http.host", "0.0.0.0", "The HTTP host.");
         createWithDefault("http.port", "quarkus.http.port", String.valueOf(8080), "The HTTP port.");
         createWithDefault("https.port", "quarkus.http.ssl-port", String.valueOf(8443), "The HTTPS port.");
-        createWithDefault("https.client-auth", "quarkus.http.ssl.client-auth", "none", "Configures the server to require/request client authentication. none, request, required.");
-        create("https.cipher-suites", "quarkus.http.ssl.cipher-suites", "The cipher suites to use. If none is given, a reasonable default is selected.");
+        createWithDefault("https.client-auth", "quarkus.http.ssl.client-auth", "none",
+                "Configures the server to require/request client authentication. none, request, required.");
+        create("https.cipher-suites", "quarkus.http.ssl.cipher-suites",
+                "The cipher suites to use. If none is given, a reasonable default is selected.");
         create("https.protocols", "quarkus.http.ssl.protocols", "The list of protocols to explicitly enable.");
-        create("https.certificate.file", "quarkus.http.ssl.certificate.file", "The file path to a server certificate or certificate chain in PEM format.");
+        create("https.certificate.file", "quarkus.http.ssl.certificate.file",
+                "The file path to a server certificate or certificate chain in PEM format.");
         createWithDefault("https.certificate.key-store-file", "quarkus.http.ssl.certificate.key-store-file",
                 new Supplier<String>() {
                     @Override
@@ -92,15 +94,21 @@ public final class PropertyMappers {
                                 return file.getAbsolutePath();
                             }
                         }
-                        
+
                         return null;
                     }
                 }, "An optional key store which holds the certificate information instead of specifying separate files.");
-        create("https.certificate.key-store-password", "quarkus.http.ssl.certificate.key-store-password", "A parameter to specify the password of the key store file. If not given, the default (\"password\") is used.", true);
-        create("https.certificate.key-store-file-type", "quarkus.http.ssl.certificate.key-store-file-type", "An optional parameter to specify type of the key store file. If not given, the type is automatically detected based on the file name.");
-        create("https.certificate.trust-store-file", "quarkus.http.ssl.certificate.trust-store-file", "An optional trust store which holds the certificate information of the certificates to trust.");
-        create("https.certificate.trust-store-password", "quarkus.http.ssl.certificate.trust-store-password", "A parameter to specify the password of the trust store file.", true);
-        create("https.certificate.trust-store-file-type", "quarkus.http.ssl.certificate.trust-store-file-type", "An optional parameter to specify type of the trust store file. If not given, the type is automatically detected based on the file name.");
+        create("https.certificate.key-store-password", "quarkus.http.ssl.certificate.key-store-password",
+                "A parameter to specify the password of the key store file. If not given, the default (\"password\") is used.",
+                true);
+        create("https.certificate.key-store-file-type", "quarkus.http.ssl.certificate.key-store-file-type",
+                "An optional parameter to specify type of the key store file. If not given, the type is automatically detected based on the file name.");
+        create("https.certificate.trust-store-file", "quarkus.http.ssl.certificate.trust-store-file",
+                "An optional trust store which holds the certificate information of the certificates to trust.");
+        create("https.certificate.trust-store-password", "quarkus.http.ssl.certificate.trust-store-password",
+                "A parameter to specify the password of the trust store file.", true);
+        create("https.certificate.trust-store-file-type", "quarkus.http.ssl.certificate.trust-store-file-type",
+                "An optional parameter to specify type of the trust store file. If not given, the type is automatically detected based on the file name.");
     }
 
     private static void configureProxyMappers() {
@@ -119,40 +127,52 @@ public final class PropertyMappers {
     }
 
     private static void configureDatabasePropertyMappers() {
-        createBuildTimeProperty("db", "quarkus.hibernate-orm.dialect", (db, context) -> Database.getDialect(db).orElse(null), null);
+        createBuildTimeProperty("db", "quarkus.hibernate-orm.dialect", (db, context) -> Database.getDialect(db).orElse(null),
+                null);
         create("db", "quarkus.datasource.jdbc.driver", (db, context) -> Database.getDriver(db).orElse(null), null);
         createBuildTimeProperty("db", "quarkus.datasource.db-kind", (db, context) -> {
             if (Database.isSupported(db)) {
                 return db;
             }
-            addInitializationException(invalidDatabaseVendor(db, "h2-file", "h2-mem", "mariadb", "mysql", "postgres", "postgres-95", "postgres-10"));
+            addInitializationException(invalidDatabaseVendor(db, "h2-file", "h2-mem", "mariadb", "mysql", "postgres",
+                    "postgres-95", "postgres-10"));
             return "h2";
         }, "The database vendor. Possible values are: h2-mem, h2-file, mariadb, mysql, postgres95, postgres10.");
         create("db", "quarkus.datasource.jdbc.transactions", (db, context) -> "xa", null);
-        create("db.url", "db", "quarkus.datasource.jdbc.url", (value, context) -> Database.getDefaultUrl(value).orElse(value), "The database JDBC URL. If not provided a default URL is set based on the selected database vendor. For instance, if using 'postgres', the JDBC URL would be 'jdbc:postgresql://localhost/keycloak'. The host, database and properties can be overridden by setting the following system properties, respectively: -Dkc.db.url.host, -Dkc.db.url.database, -Dkc.db.url.properties.");
+        create("db.url", "db", "quarkus.datasource.jdbc.url", (value, context) -> Database.getDefaultUrl(value).orElse(value),
+                "The database JDBC URL. If not provided a default URL is set based on the selected database vendor. For instance, if using 'postgres', the JDBC URL would be 'jdbc:postgresql://localhost/keycloak'. The host, database and properties can be overridden by setting the following system properties, respectively: -Dkc.db.url.host, -Dkc.db.url.database, -Dkc.db.url.properties.");
         create("db.username", "quarkus.datasource.username", "The database username.");
         create("db.password", "quarkus.datasource.password", "The database password.", true);
         create("db.schema", "quarkus.datasource.schema", "The database schema.");
         create("db.pool.initial-size", "quarkus.datasource.jdbc.initial-size", "The initial size of the connection pool.");
         create("db.pool.min-size", "quarkus.datasource.jdbc.min-size", "The minimal size of the connection pool.");
-        createWithDefault("db.pool.max-size", "quarkus.datasource.jdbc.max-size", String.valueOf(100), "The maximum size of the connection pool.");
+        createWithDefault("db.pool.max-size", "quarkus.datasource.jdbc.max-size", String.valueOf(100),
+                "The maximum size of the connection pool.");
     }
 
     private static void configureClustering() {
-        createWithDefault("cluster", "kc.spi.connections-infinispan.default.config-file", "default", (value, context) -> "cluster-" + value + ".xml", "Specifies clustering configuration. The specified value points to the infinispan configuration file prefixed with the 'cluster-` "
-                + "inside the distribution configuration directory. Supported values out of the box are 'local' and 'cluster'. Value 'local' points to the file cluster-local.xml and " +
-                "effectively disables clustering and use infinispan caches in the local mode. Value 'default' points to the file cluster-default.xml, which has clustering enabled for infinispan caches.");
-        create("cluster-stack", "kc.spi.connections-infinispan.default.stack", "Specified the default stack to use for cluster communication and node  discovery. Possible values are: tcp, udp, kubernetes, ec2.");
+        createWithDefault("cluster", "kc.spi.connections-infinispan.default.config-file", "default",
+                (value, context) -> "cluster-" + value + ".xml",
+                "Specifies clustering configuration. The specified value points to the infinispan configuration file prefixed with the 'cluster-` "
+                        + "inside the distribution configuration directory. Supported values out of the box are 'local' and 'cluster'. Value 'local' points to the file cluster-local.xml and "
+                        +
+                        "effectively disables clustering and use infinispan caches in the local mode. Value 'default' points to the file cluster-default.xml, which has clustering enabled for infinispan caches.");
+        create("cluster-stack", "kc.spi.connections-infinispan.default.stack",
+                "Specified the default stack to use for cluster communication and node  discovery. Possible values are: tcp, udp, kubernetes, ec2.");
     }
 
     private static void configureHostnameProviderMappers() {
-        create("hostname-frontend-url", "kc.spi.hostname.default.frontend-url", "The URL that should be used to serve frontend requests that are usually sent through the a public domain.");
-        create("hostname-admin-url", "kc.spi.hostname.default.admin-url", "The URL that should be used to expose the admin endpoints and console.");
-        create("hostname-force-backend-url-to-frontend-url ", "kc.spi.hostname.default.force-backend-url-to-frontend-url", "Forces backend requests to go through the URL defined as the frontend-url. Defaults to false. Possible values are true or false.");
+        create("hostname-frontend-url", "kc.spi.hostname.default.frontend-url",
+                "The URL that should be used to serve frontend requests that are usually sent through the a public domain.");
+        create("hostname-admin-url", "kc.spi.hostname.default.admin-url",
+                "The URL that should be used to expose the admin endpoints and console.");
+        create("hostname-force-backend-url-to-frontend-url ", "kc.spi.hostname.default.force-backend-url-to-frontend-url",
+                "Forces backend requests to go through the URL defined as the frontend-url. Defaults to false. Possible values are true or false.");
     }
 
     private static void configureMetrics() {
-        createBuildTimeProperty("metrics.enabled", "quarkus.datasource.metrics.enabled", "If the server should expose metrics and healthcheck. If enabled, metrics are available at the '/metrics' endpoint and healthcheck at the '/health' endpoint.");
+        createBuildTimeProperty("metrics.enabled", "quarkus.datasource.metrics.enabled",
+                "If the server should expose metrics and healthcheck. If enabled, metrics are available at the '/metrics' endpoint and healthcheck at the '/health' endpoint.");
     }
 
     static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
@@ -197,7 +217,7 @@ public final class PropertyMappers {
 
         return value;
     }
-    
+
     public static PropertyMapper getMapper(String property) {
         return MAPPERS.values().stream().filter(new Predicate<PropertyMapper>() {
             @Override

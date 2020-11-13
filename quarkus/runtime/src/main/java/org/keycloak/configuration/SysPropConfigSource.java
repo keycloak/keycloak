@@ -19,7 +19,6 @@ package org.keycloak.configuration;
 
 import java.util.Map;
 import java.util.TreeMap;
-
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**

@@ -4,11 +4,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.exception.ServiceNotFoundException;
-
-import liquibase.database.Database;
 import liquibase.logging.Logger;
 import liquibase.servicelocator.DefaultPackageScanClassResolver;
 import liquibase.servicelocator.ServiceLocator;

@@ -3,7 +3,6 @@ package org.keycloak;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.jboss.logging.Logger;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;

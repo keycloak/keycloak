@@ -29,16 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.reflections.Reflections;
-import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
-import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
-import org.keycloak.connections.jpa.updater.liquibase.ThreadLocalSessionContext;
-import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
-import org.keycloak.connections.jpa.util.JpaUtils;
-import org.keycloak.models.KeycloakSession;
-
 import liquibase.Contexts;
 import liquibase.LabelExpression;
 import liquibase.Liquibase;
@@ -62,6 +52,14 @@ import liquibase.statement.core.UpdateStatement;
 import liquibase.structure.core.Column;
 import liquibase.structure.core.Table;
 import liquibase.util.StreamUtil;
+import org.jboss.logging.Logger;
+import org.keycloak.common.util.reflections.Reflections;
+import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
+import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
+import org.keycloak.connections.jpa.updater.liquibase.ThreadLocalSessionContext;
+import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
+import org.keycloak.connections.jpa.util.JpaUtils;
+import org.keycloak.models.KeycloakSession;
 
 public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
 
@@ -112,7 +110,8 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
                 if (customChangelog != null) {
                     String factoryId = jpaProvider.getFactoryId();
                     String changelogTableName = JpaUtils.getCustomChangelogTableName(factoryId);
-                    Liquibase liquibase = getLiquibaseForCustomProviderUpdate(connection, defaultSchema, customChangelog, jpaProvider.getClass().getClassLoader(), changelogTableName);
+                    Liquibase liquibase = getLiquibaseForCustomProviderUpdate(connection, defaultSchema, customChangelog,
+                            jpaProvider.getClass().getClassLoader(), changelogTableName);
                     updateChangeSet(liquibase, exportWriter);
                 }
             }
@@ -134,29 +133,35 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
         return session.getAttributeOrDefault(VERIFY_AND_RUN_MASTER_CHANGELOG, Boolean.TRUE);
     }
 
-    protected void updateChangeSet(Liquibase liquibase, Writer exportWriter) throws LiquibaseException  {
+    protected void updateChangeSet(Liquibase liquibase, Writer exportWriter) throws LiquibaseException {
         String changelog = liquibase.getChangeLogFile();
         Database database = liquibase.getDatabase();
-        Table changelogTable = SnapshotGeneratorFactory.getInstance().getDatabaseChangeLogTable(new SnapshotControl(database, false, Table.class, Column.class), database);
+        Table changelogTable = SnapshotGeneratorFactory.getInstance()
+                .getDatabaseChangeLogTable(new SnapshotControl(database, false, Table.class, Column.class), database);
 
         if (changelogTable != null) {
             boolean hasDeploymentIdColumn = changelogTable.getColumn(DEPLOYMENT_ID_COLUMN) != null;
 
             // create DEPLOYMENT_ID column if it doesn't exist
             if (!hasDeploymentIdColumn) {
-                ChangeLogHistoryService changelogHistoryService = ChangeLogHistoryServiceFactory.getInstance().getChangeLogService(database);
+                ChangeLogHistoryService changelogHistoryService = ChangeLogHistoryServiceFactory.getInstance()
+                        .getChangeLogService(database);
                 changelogHistoryService.generateDeploymentId();
                 String deploymentId = changelogHistoryService.getDeploymentId();
 
-                logger.debugv("Adding missing column {0}={1} to {2} table", DEPLOYMENT_ID_COLUMN, deploymentId,changelogTable.getName());
+                logger.debugv("Adding missing column {0}={1} to {2} table", DEPLOYMENT_ID_COLUMN, deploymentId,
+                        changelogTable.getName());
 
                 List<SqlStatement> statementsToExecute = new ArrayList<>();
-                statementsToExecute.add(new AddColumnStatement(database.getLiquibaseCatalogName(), database.getLiquibaseSchemaName(),
-                        changelogTable.getName(), DEPLOYMENT_ID_COLUMN, "VARCHAR(10)", null));
-                statementsToExecute.add(new UpdateStatement(database.getLiquibaseCatalogName(), database.getLiquibaseSchemaName(), changelogTable.getName())
-                        .addNewColumnValue(DEPLOYMENT_ID_COLUMN, deploymentId));
-                statementsToExecute.add(new SetNullableStatement(database.getLiquibaseCatalogName(), database.getLiquibaseSchemaName(),
-                        changelogTable.getName(), DEPLOYMENT_ID_COLUMN, "VARCHAR(10)", false));
+                statementsToExecute
+                        .add(new AddColumnStatement(database.getLiquibaseCatalogName(), database.getLiquibaseSchemaName(),
+                                changelogTable.getName(), DEPLOYMENT_ID_COLUMN, "VARCHAR(10)", null));
+                statementsToExecute.add(new UpdateStatement(database.getLiquibaseCatalogName(),
+                        database.getLiquibaseSchemaName(), changelogTable.getName())
+                                .addNewColumnValue(DEPLOYMENT_ID_COLUMN, deploymentId));
+                statementsToExecute
+                        .add(new SetNullableStatement(database.getLiquibaseCatalogName(), database.getLiquibaseSchemaName(),
+                                changelogTable.getName(), DEPLOYMENT_ID_COLUMN, "VARCHAR(10)", false));
 
                 ExecutorService executorService = ExecutorService.getInstance();
                 Executor executor = executorService.getExecutor(liquibase.getDatabase());
@@ -175,7 +180,9 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
                 logger.infov("Initializing database schema. Using changelog {0}", changelog);
             } else {
                 if (logger.isDebugEnabled()) {
-                    logger.debugv("Updating database from {0} to {1}. Using changelog {2}", ranChangeSets.get(ranChangeSets.size() - 1).getId(), changeSets.get(changeSets.size() - 1).getId(), changelog);
+                    logger.debugv("Updating database from {0} to {1}. Using changelog {2}",
+                            ranChangeSets.get(ranChangeSets.size() - 1).getId(), changeSets.get(changeSets.size() - 1).getId(),
+                            changelog);
                 } else {
                     logger.infov("Updating database. Using changelog {0}", changelog);
                 }
@@ -204,19 +211,22 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
         Database database = liquibase.getDatabase();
 
         Executor oldTemplate = ExecutorService.getInstance().getExecutor(database);
-        LoggingExecutor executor = new LoggingExecutor(ExecutorService.getInstance().getExecutor(database), exportWriter, database);
+        LoggingExecutor executor = new LoggingExecutor(ExecutorService.getInstance().getExecutor(database), exportWriter,
+                database);
         ExecutorService.getInstance().setExecutor(database, executor);
 
         executor.comment("*********************************************************************");
         executor.comment("* Keycloak database creation script - apply this script to empty DB *");
-        executor.comment("*********************************************************************" + StreamUtil.getLineSeparator());
+        executor.comment(
+                "*********************************************************************" + StreamUtil.getLineSeparator());
 
         executor.execute(new CreateDatabaseChangeLogTableStatement());
         // DatabaseChangeLogLockTable is created before this code is executed and recreated if it does not exist automatically
         // in org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockService.init() called indirectly from
         // KeycloakApplication constructor (search for waitForLock() call). Hence it is not included in the creation script.
 
-        executor.comment("*********************************************************************" + StreamUtil.getLineSeparator());
+        executor.comment(
+                "*********************************************************************" + StreamUtil.getLineSeparator());
 
         ExecutorService.getInstance().setExecutor(database, oldTemplate);
     }
@@ -244,7 +254,8 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
                 if (customChangelog != null) {
                     String factoryId = jpaProvider.getFactoryId();
                     String changelogTableName = JpaUtils.getCustomChangelogTableName(factoryId);
-                    Liquibase liquibase = getLiquibaseForCustomProviderUpdate(connection, defaultSchema, customChangelog, jpaProvider.getClass().getClassLoader(), changelogTableName);
+                    Liquibase liquibase = getLiquibaseForCustomProviderUpdate(connection, defaultSchema, customChangelog,
+                            jpaProvider.getClass().getClassLoader(), changelogTableName);
                     if (validateChangeSet(liquibase, liquibase.getChangeLogFile()) != Status.VALID) {
                         return Status.OUTDATED;
                     }
@@ -294,10 +305,12 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
                 // TODO tracked as: https://issues.jboss.org/browse/KEYCLOAK-3730
                 // TODO: When https://liquibase.jira.com/browse/CORE-2919 is resolved, replace the following two lines with:
                 // List<ChangeSet> changeSets = liquibase.listUnrunChangeSets((Contexts) null, new LabelExpression(), false);
-                Method listUnrunChangeSets = Reflections.findDeclaredMethod(Liquibase.class, "listUnrunChangeSets", Contexts.class, LabelExpression.class, boolean.class);
+                Method listUnrunChangeSets = Reflections.findDeclaredMethod(Liquibase.class, "listUnrunChangeSets",
+                        Contexts.class, LabelExpression.class, boolean.class);
 
                 return Reflections
-                        .invokeMethod(true, listUnrunChangeSets, List.class, liquibase, (Contexts) null, new LabelExpression(), false);
+                        .invokeMethod(true, listUnrunChangeSets, List.class, liquibase, (Contexts) null, new LabelExpression(),
+                                false);
             }
         });
     }
@@ -307,9 +320,11 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
         return liquibaseProvider.getLiquibase(connection, defaultSchema);
     }
 
-    private Liquibase getLiquibaseForCustomProviderUpdate(Connection connection, String defaultSchema, String changelogLocation, ClassLoader classloader, String changelogTableName) throws LiquibaseException {
+    private Liquibase getLiquibaseForCustomProviderUpdate(Connection connection, String defaultSchema, String changelogLocation,
+            ClassLoader classloader, String changelogTableName) throws LiquibaseException {
         LiquibaseConnectionProvider liquibaseProvider = session.getProvider(LiquibaseConnectionProvider.class);
-        return liquibaseProvider.getLiquibaseForCustomUpdate(connection, defaultSchema, changelogLocation, classloader, changelogTableName);
+        return liquibaseProvider.getLiquibaseForCustomUpdate(connection, defaultSchema, changelogLocation, classloader,
+                changelogTableName);
     }
 
     @Override

@@ -22,7 +22,8 @@ import org.keycloak.util.Environment;
 public final class Messages {
 
     static IllegalArgumentException invalidDatabaseVendor(String db, String... availableOptions) {
-        return new IllegalArgumentException("Invalid database vendor [" + db + "]. Possible values are: " + String.join(", ", availableOptions) + ".");
+        return new IllegalArgumentException(
+                "Invalid database vendor [" + db + "]. Possible values are: " + String.join(", ", availableOptions) + ".");
     }
 
     static IllegalArgumentException invalidProxyMode(String mode) {
@@ -30,7 +31,8 @@ public final class Messages {
     }
 
     static IllegalStateException httpsConfigurationNotSet() {
-        StringBuilder builder = new StringBuilder("Key material not provided to setup HTTPS. Please configure your keys/certificates or enable HTTP");
+        StringBuilder builder = new StringBuilder(
+                "Key material not provided to setup HTTPS. Please configure your keys/certificates or enable HTTP");
         if (!"dev".equals(Environment.getProfile())) {
             builder.append(" or start the server using the 'dev' profile");
         }

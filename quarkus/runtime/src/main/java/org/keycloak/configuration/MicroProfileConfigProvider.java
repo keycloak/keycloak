@@ -19,7 +19,6 @@ package org.keycloak.configuration;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.microprofile.config.ConfigProvider;
-
 import org.keycloak.Config;
 
 public class MicroProfileConfigProvider implements Config.ConfigProvider {

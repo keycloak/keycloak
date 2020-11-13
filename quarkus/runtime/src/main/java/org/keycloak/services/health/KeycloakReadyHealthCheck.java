@@ -18,16 +18,15 @@ package org.keycloak.services.health;
 
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.agroal.runtime.health.DataSourceHealthCheck;
-import org.eclipse.microprofile.health.HealthCheckResponse;
-import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
-import org.eclipse.microprofile.health.Readiness;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import org.eclipse.microprofile.health.HealthCheckResponse;
+import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
+import org.eclipse.microprofile.health.Readiness;
 
 /**
  * Keycloak Healthcheck Readiness Probe.
@@ -45,7 +44,8 @@ public class KeycloakReadyHealthCheck extends DataSourceHealthCheck {
      * Date formatter, the same as used by Quarkus. This enables users to quickly compare the date printed
      * by the probe with the logs.
      */
-    static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS").withZone(ZoneId.systemDefault());
+    static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS")
+            .withZone(ZoneId.systemDefault());
 
     @Inject
     AgroalDataSource agroalDataSource;
