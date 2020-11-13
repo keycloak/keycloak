@@ -965,4 +965,35 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         driver.navigate().refresh();
         accountPage.assertCurrent();
     }
+
+    @Test
+    public void verifyEmailExpiredRegistration() throws IOException, MessagingException {
+        final String COMMON_ATTR = "verifyEmailRegistrationUser";
+
+        String appInitiatedRegisterUrl = oauth.getLoginFormUrl();
+        appInitiatedRegisterUrl = appInitiatedRegisterUrl.replace("openid-connect/auth", "openid-connect/registrations");
+        driver.navigate().to(appInitiatedRegisterUrl);
+
+        registerPage.assertCurrent();
+        registerPage.register(COMMON_ATTR, COMMON_ATTR, COMMON_ATTR + "@" + COMMON_ATTR, COMMON_ATTR, COMMON_ATTR, COMMON_ATTR);
+
+        verifyEmailPage.assertCurrent();
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getLastReceivedMessage();
+
+        String verificationUrl = getPasswordResetEmailLink(message);
+
+        try {
+            setTimeOffset(3600);
+
+            driver.navigate().to(verificationUrl.trim());
+
+            loginPage.assertCurrent();
+            assertEquals("Action expired. Please start again.", loginPage.getError());
+        } finally {
+            setTimeOffset(0);
+        }
+    }
 }
