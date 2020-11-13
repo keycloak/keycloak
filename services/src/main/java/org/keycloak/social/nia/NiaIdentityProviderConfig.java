@@ -57,8 +57,6 @@ public class NiaIdentityProviderConfig extends SAMLIdentityProviderConfig {
         this.setSingleSignOnServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
         this.setSingleLogoutServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
         this.setWantAuthnRequestsSigned(true);
-        this.setAuthnContextClassRefs("http://eidas.europa.eu/LoA/substantial");
-        this.setAuthnContextComparisonType(AuthnContextComparisonType.MINIMUM);
 
     }
 
