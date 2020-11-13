@@ -66,14 +66,14 @@ jobs:
         run: |
           mvn install -nsu -B -DskipTestsuite -DskipExamples -f pom.xml
           TEST_RESULT=$?
-          find . -path '*/target/surefire-reports/*.xml' | zip reports-unit-tests.zip -@
+          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-unit-tests.zip -@
           exit $TEST_RESULT
 
       - name: Unit test reports
         uses: actions/upload-artifact@v2
         if: failure()
         with:
-          name: reports-unit-tests.zip
+          name: reports-unit-tests
           retention-days: 14
           path: reports-unit-tests.zip
           if-no-files-found: ignore
@@ -115,14 +115,14 @@ jobs:
           echo '::endgroup::'
           mvn clean install -nsu -B -Pauth-server-wildfly -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
-          find . -path '*/target/surefire-reports/*.xml' | zip reports-base-tests.zip -@
+          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-base-tests.zip -@
           exit $TEST_RESULT
 
       - name: Base test reports
         uses: actions/upload-artifact@v2
         if: failure()
         with:
-          name: reports-base-tests.zip
+          name: reports-base-tests
           retention-days: 14
           path: reports-base-tests.zip
           if-no-files-found: ignore
@@ -167,14 +167,14 @@ jobs:
         run: |
           mvn clean install -nsu -B -Pauth-server-wildfly,auth-server-cluster,db-mysql,jpa -Dsession.cache.owners=2 -Dbackends.console.output=true -Dauth.server.log.check=false -Dfrontend.console.output=true -Dtest=org.keycloak.testsuite.cluster.**.*Test -f testsuite/integration-arquillian/pom.xml | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
-          find . -path '*/target/surefire-reports/*.xml' | zip reports-cluster-tests.zip -@
+          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-cluster-tests.zip -@
           exit $TEST_RESULT
 
       - name: Cluster test reports
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: reports-cluster-tests.zip
+          name: reports-cluster-tests
           retention-days: 14
           path: reports-cluster-tests.zip
           if-no-files-found: ignore
@@ -227,14 +227,14 @@ jobs:
           echo '::endgroup::'
           mvn clean install -B -nsu -f testsuite/integration-arquillian/tests/base/pom.xml -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly "-Dtest=org.keycloak.testsuite.crossdc.**.*,org.keycloak.testsuite.adapter.**.crossdc.**.*" | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
-          find . -path '*/target/surefire-reports/*.xml' | zip reports-cross-dc-tests.zip -@
+          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-cross-dc-tests.zip -@
           exit $TEST_RESULT
 
       - name: Cross-DC test reports
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: reports-cross-dc-tests.zip
+          name: reports-cross-dc-tests
           retention-days: 14
           path: reports-cross-dc-tests.zip
           if-no-files-found: ignore
@@ -276,14 +276,14 @@ jobs:
           echo '::endgroup::'
           mvn clean install -nsu -B -f testsuite/integration-arquillian/tests/base/pom.xml -Dkeycloak.client.provider=map -Dkeycloak.group.provider=map -Dkeycloak.role.provider=map | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
-          find . -path '*/target/surefire-reports/*.xml' | zip reports-base-undertow-tests.zip -@
+          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-base-undertow-tests.zip -@
           exit $TEST_RESULT
 
       - name: Base test - undertow reports
         uses: actions/upload-artifact@v2
         if: failure()
         with:
-          name: reports-base-undertow-tests.zip
+          name: reports-base-undertow-tests
           retention-days: 14
           path: reports-base-undertow-tests.zip
           if-no-files-found: ignore
@@ -324,14 +324,14 @@ jobs:
           echo '::endgroup::'
           mvn clean install -nsu -B -Pauth-server-quarkus -f testsuite/integration-arquillian/tests/base/pom.xml -Dtest='!org.keycloak.testsuite.adapter.**,!**.crossdc.**,!**.cluster.**' | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
-          find . -path '*/target/surefire-reports/*.xml' | zip reports-base-unit-tests.zip -@
+          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-base-unit-tests.zip -@
           exit $TEST_RESULT
 
       - name: Quarkus base / unit test reports
         uses: actions/upload-artifact@v2
         if: failure()
         with:
-          name: reports-quarkus-base-unit-tests.zip
+          name: reports-quarkus-base-unit-tests
           retention-days: 14
           path: reports-quarkus-base-unit-tests.zip
           if-no-files-found: ignore
@@ -369,14 +369,14 @@ jobs:
           echo '::endgroup::'
           mvn clean install -nsu -B -Pauth-server-quarkus -f testsuite/integration-arquillian/tests/base/pom.xml -Dtest=org.keycloak.testsuite.adapter.** | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
-          find . -path '*/target/surefire-reports/*.xml' | zip reports-adapter-tests.zip -@
+          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-adapter-tests.zip -@
           exit $TEST_RESULT
 
       - name: Quarkus adapter test reports
         uses: actions/upload-artifact@v2
         if: failure()
         with:
-          name: reports-quarkus-adapter-tests.zip
+          name: reports-quarkus-adapter-tests
           retention-days: 14
           path: reports-quarkus-adapter-tests.zip
           if-no-files-found: ignore
@@ -414,14 +414,14 @@ jobs:
           echo '::endgroup::'
           mvn clean install -nsu -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -f testsuite/integration-arquillian/pom.xml  | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
-          find . -path '*/target/surefire-reports/*.xml' | zip reports-cluster-tests.zip -@
+          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-cluster-tests.zip -@
           exit $TEST_RESULT
 
       - name: Quarkus cluster test reports
         uses: actions/upload-artifact@v2
         if: failure()
         with:
-          name: reports-quarkus-cluster-tests.zip
+          name: reports-quarkus-cluster-tests
           retention-days: 14
           path: reports-quarkus-cluster-tests.zip
           if-no-files-found: ignore
