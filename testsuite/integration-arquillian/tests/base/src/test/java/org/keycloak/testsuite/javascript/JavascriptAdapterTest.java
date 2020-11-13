@@ -765,6 +765,12 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .validateOutputField(this::assertInitAuth);
     }
 
+    @Test
+    public void check3pCookiesMessageCallbackTest() {
+        testExecutor.attachCheck3pCookiesIframeMutationObserver()
+                .init(defaultArguments(), this::assertInitNotAuth);
+    }
+
     protected void assertAdapterIsLoggedIn(WebDriver driver1, Object output, WebElement events) {
         assertTrue(testExecutor.isLoggedIn());
     }
