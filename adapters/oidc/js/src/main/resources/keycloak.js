@@ -1315,7 +1315,7 @@
                     }
 
                     if (event.data !== "supported" && event.data !== "unsupported") {
-                        promise.setError();
+                        return;
                     } else if (event.data === "unsupported") {
                         loginIframe.enable = false;
                         if (kc.silentCheckSsoFallback) {
