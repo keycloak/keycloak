@@ -53,7 +53,12 @@ public class NiaIdentityProviderConfig extends SAMLIdentityProviderConfig {
         this.setSignSpMetadata(true);
         this.setPostBindingAuthnRequest(true);
         this.setPostBindingResponse(true);
+        this.setPostBindingLogout(true);
         this.setSingleSignOnServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
+        this.setSingleLogoutServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
+        this.setWantAuthnRequestsSigned(true);
+        this.setAuthnContextClassRefs("http://eidas.europa.eu/LoA/substantial");
+        this.setAuthnContextComparisonType(AuthnContextComparisonType.MINIMUM);
 
     }
 
