@@ -126,7 +126,10 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     @Consumes(javax.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_HTML_UTF_8)
     @Path("/{action}")
-    public String post(@PathParam("action") String action) {
+    public Response post(@PathParam("action") String action) {
+        if ("clear-admin-actions".equals(action)) {
+            return clearAdminActions();
+        }
         MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
         String title = "APP_REQUEST";
         if (action.equals("auth")) {
@@ -151,7 +154,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
         sb.append("<a href=\"" + RealmsResource.accountUrl(base).build("test").toString() + "\" id=\"account\">account</a>");
 
         sb.append("</body></html>");
-        return sb.toString();
+        return Response.ok(sb.toString()).build();
     }
 
     @GET
