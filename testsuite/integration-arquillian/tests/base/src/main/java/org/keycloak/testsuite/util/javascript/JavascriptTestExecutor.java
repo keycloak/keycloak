@@ -48,6 +48,38 @@ public class JavascriptTestExecutor {
     public JavascriptTestExecutor login(JavascriptStateValidator validator) {
         return login(null, validator);
     }
+
+    /**
+     * Attaches a MutationObserver that sends a message from iframe to main window with incorrect data when the iframe is loaded
+     */
+    public JavascriptTestExecutor attachCheck3pCookiesIframeMutationObserver() {
+        jsExecutor.executeScript("// Select the node that will be observed for mutations\n" +
+                "    const targetNode = document.body;" +
+                "" +
+                "    // Options for the observer (which mutations to observe)\n" +
+                "    const config = {attributes: true, childList: true, subtree: true};" +
+                "" +
+                "    // Callback function to execute when mutations are observed\n" +
+                "    const callback = function (mutationsList, observer) {" +
+                "        console.log(\"Mutation found\");" +
+                "        var iframeNode = mutationsList[0].addedNodes[0];" +
+        "                if (iframeNode && iframeNode.localName === 'iframe') {" +
+        "                    var s = document.createElement('script');" +
+        "                    s.type = 'text/javascript';" +
+        "                    var code = \"window.parent.postMessage('Evil Message', '*');\";" +
+        "                    s.appendChild(document.createTextNode(code));" +
+        "                    iframeNode.contentDocument.body.appendChild(s);" +
+        "                }" +
+                "    }\n" +
+                "" +
+                "    // Create an observer instance linked to the callback function\n" +
+                "    const observer = new MutationObserver(callback);" +
+                "" +
+                "    // Start observing the target node for configured mutations\n" +
+                "    observer.observe(targetNode, config);");
+        
+        return this;
+    }
     
     public JavascriptTestExecutor login(String options, JavascriptStateValidator validator) {
         if (options == null)
