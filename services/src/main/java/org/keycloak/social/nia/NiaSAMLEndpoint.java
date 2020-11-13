@@ -16,7 +16,6 @@
  */
 package org.keycloak.social.nia;
 
-import org.keycloak.broker.saml.*;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 
@@ -102,10 +101,6 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.crypto.dsig.XMLSignature;
 import org.w3c.dom.NodeList;
 
-/**
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
- * @version $Revision: 1 $
- */
 public class NiaSAMLEndpoint {
 
     protected static final Logger logger = Logger.getLogger(NiaSAMLEndpoint.class);
