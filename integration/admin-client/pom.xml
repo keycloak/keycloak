@@ -31,7 +31,7 @@
     <description/>
 
     <properties>
-        <resteasy.versions>3.9.1.Final</resteasy.versions>
+        <resteasy.versions>3.13.2.Final</resteasy.versions>
     </properties>
 
     <dependencies>
