@@ -80,6 +80,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyProvider;
 import org.keycloak.services.clientpolicy.DefaultClientPolicyProviderFactory;
+import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientIpAddressConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
 import org.keycloak.services.clientpolicy.condition.ClientUpdateContextConditionFactory;
@@ -978,6 +979,48 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         }
     }
 
+    @Test
+    public void testClientAccessTypeCondition() throws ClientRegistrationException, ClientPolicyException {
+        String policyName = "MyPolicy";
+        createPolicy(policyName, DefaultClientPolicyProviderFactory.PROVIDER_ID, null, null, null);
+        logger.info("... Created Policy : " + policyName);
+
+        createCondition("ClientAccessTypeCondition", ClientAccessTypeConditionFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+            setConditionClientAccessType(provider, new ArrayList<>(Arrays.asList(ClientAccessTypeConditionFactory.TYPE_CONFIDENTIAL)));
+        });
+        registerCondition("ClientAccessTypeCondition", policyName);
+        logger.info("... Registered Condition : ClientAccessTypeCondition");
+
+        createExecutor("SecureSessionEnforceExecutor", SecureSessionEnforceExecutorFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+        });
+        registerExecutor("SecureSessionEnforceExecutor", policyName);
+        logger.info("... Registered Executor : SecureSessionEnforceExecutor");
+
+        // confidential client
+        String clientAlphaId = "Alpha-App";
+        String clientAlphaSecret = "secretAlpha";
+        String cAlphaId = createClientByAdmin(clientAlphaId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientAlphaSecret);
+            clientRep.setBearerOnly(Boolean.FALSE);
+            clientRep.setPublicClient(Boolean.FALSE);
+        });
+
+        // public client
+        String clientBetaId = "Beta-App";
+        String cBetaId = createClientByAdmin(clientBetaId, (ClientRepresentation clientRep) -> {
+            clientRep.setBearerOnly(Boolean.FALSE);
+            clientRep.setPublicClient(Boolean.TRUE);
+        });
+
+        try {
+            successfulLoginAndLogout(clientBetaId, null);
+            failLoginWithoutNonce(clientAlphaId);
+        } finally {
+            deleteClientByAdmin(cAlphaId);
+            deleteClientByAdmin(cBetaId);
+        }
+    }
+
     private AuthorizationEndpointRequestObject createValidRequestObjectForSecureRequestObjectExecutor(String clientId) throws URISyntaxException {
         AuthorizationEndpointRequestObject requestObject = new AuthorizationEndpointRequestObject();
         requestObject.id(KeycloakModelUtils.generateId());
@@ -1183,6 +1226,13 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         oauth.openLoginForm();
         assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
         assertEquals(errorDescription, oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
+    }
+
+    private void failLoginWithoutNonce(String clientId) {
+        oauth.clientId(clientId);
+        oauth.openLoginForm();
+        assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentQuery().get(OAuth2Constants.ERROR));
+        assertEquals("Missing parameter: nonce", oauth.getCurrentQuery().get(OAuth2Constants.ERROR_DESCRIPTION));
     }
 
     private String generateS256CodeChallenge(String codeVerifier) throws Exception {
@@ -1428,6 +1478,10 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
 
     private void setConditionClientScopes(ComponentRepresentation provider, List<String> clientScopes) {
         provider.getConfig().put(ClientScopesConditionFactory.SCOPES, clientScopes);
+    }
+
+    private void setConditionClientAccessType(ComponentRepresentation provider, List<String> clientAccessTypes) {
+        provider.getConfig().put(ClientAccessTypeConditionFactory.TYPE, clientAccessTypes);
     }
 
     private void setExecutorAugmentActivate(ComponentRepresentation provider) {
