@@ -2,7 +2,6 @@ package org.keycloak.social.nia;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProvider;
@@ -98,13 +97,13 @@ public class NiaSAMLEndpoint {
     public static final String SAML_ASSERTION = "SAML_ASSERTION";
     public static final String SAML_IDP_INITIATED_CLIENT_ID = "SAML_IDP_INITIATED_CLIENT_ID";
     public static final String SAML_AUTHN_STATEMENT = "SAML_AUTHN_STATEMENT";
-
+/*
+    TADY JE MUJ KOD A NEVIM PROC FUNGUJE*/
     protected RealmModel realm;
     protected EventBuilder event;
     protected NiaIdentityProviderConfig config;
     protected IdentityProvider.AuthenticationCallback callback;
     protected NiaIdentityProvider provider;
-
     private final DestinationValidator destinationValidator;
 
     @Context
