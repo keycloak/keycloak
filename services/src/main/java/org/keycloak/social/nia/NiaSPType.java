@@ -23,10 +23,7 @@ public class NiaSPType implements SamlProtocolExtensionsAwareBuilder.NodeGenerat
 
     @Override
     public void write(XMLStreamWriter writer) throws ProcessingException {
-        // StaxUtil.flush(writer);
         StaxUtil.writeNameSpace(writer, NS_PREFIX, SAML_EXTENSIONS);
-
-        //StaxUtil.writeNameSpace(writer, PREFIX, URI);
         NiaWriter niaWriter = new NiaWriter(writer);
         nameidtype.setValue(ATTRIBUTE_NAME);
         niaWriter.writeSptype(nameidtype, new QName(ELEMENT));
