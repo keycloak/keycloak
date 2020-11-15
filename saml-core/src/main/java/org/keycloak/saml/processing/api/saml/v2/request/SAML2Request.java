@@ -257,14 +257,10 @@ public class SAML2Request {
      *
      * @throws ConfigurationException
      */
-    public static LogoutRequestType createLogoutRequest(String issuer) throws ConfigurationException {
+    public static LogoutRequestType createLogoutRequest(NameIDType issuer) throws ConfigurationException {
         LogoutRequestType lrt = new LogoutRequestType(IDGenerator.create("ID_"), XMLTimeUtil.getIssueInstant());
 
-        // Create an issuer
-        NameIDType issuerNameID = new NameIDType();
-        issuerNameID.setValue(issuer);
-
-        lrt.setIssuer(issuerNameID);
+        lrt.setIssuer(issuer);
 
         return lrt;
     }

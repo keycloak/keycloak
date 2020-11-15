@@ -21,6 +21,7 @@ import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import org.keycloak.dom.saml.v2.protocol.RequestedAuthnContextType;
+import org.keycloak.saml.SAML2NameIDBuilder;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.IDGenerator;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
@@ -37,7 +38,7 @@ public class SAML2AuthnRequestBuilder implements SamlProtocolExtensionsAwareBuil
 
     private final AuthnRequestType authnRequestType;
     protected String destination;
-    protected String issuer;
+    protected NameIDType issuer;
     protected final List<NodeGenerator> extensions = new LinkedList<>();
 
     public SAML2AuthnRequestBuilder destination(String destination) {
@@ -45,9 +46,13 @@ public class SAML2AuthnRequestBuilder implements SamlProtocolExtensionsAwareBuil
         return this;
     }
 
-    public SAML2AuthnRequestBuilder issuer(String issuer) {
+    public SAML2AuthnRequestBuilder issuer(NameIDType issuer) {
         this.issuer = issuer;
         return this;
+    }
+
+    public SAML2AuthnRequestBuilder issuer(String issuer) {
+        return issuer(SAML2NameIDBuilder.value(issuer).build());
     }
 
     @Override
@@ -132,11 +137,8 @@ public class SAML2AuthnRequestBuilder implements SamlProtocolExtensionsAwareBuil
 
     public AuthnRequestType createAuthnRequest() {
         AuthnRequestType res = this.authnRequestType;
-        NameIDType nameIDType = new NameIDType();
-        nameIDType.setValue(this.issuer);
 
-        res.setIssuer(nameIDType);
-
+        res.setIssuer(issuer);
         res.setDestination(URI.create(this.destination));
 
         if (! this.extensions.isEmpty()) {
