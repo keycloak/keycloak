@@ -14,7 +14,7 @@
        </div>
 
        <p>${msg("deletingImplies")}</p>
-       <ul style="color: #72767b">
+       <ul style="color: #72767b;list-style: disc;list-style-position: inside;">
          <li>${msg("loggingOutImmediately")}</li>
          <li>${msg("errasingData")}</li>
        </ul>
