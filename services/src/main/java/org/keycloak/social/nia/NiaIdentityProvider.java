@@ -20,7 +20,6 @@ import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyStatus;
@@ -208,17 +207,17 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
 
     @Override
     public void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context) {
-        ResponseType responseType = (ResponseType) context.getContextData().get(SAMLEndpoint.SAML_LOGIN_RESPONSE);
-        AssertionType assertion = (AssertionType) context.getContextData().get(SAMLEndpoint.SAML_ASSERTION);
+        ResponseType responseType = (ResponseType) context.getContextData().get(NiaSAMLEndpoint.SAML_LOGIN_RESPONSE);
+        AssertionType assertion = (AssertionType) context.getContextData().get(NiaSAMLEndpoint.SAML_ASSERTION);
         SubjectType subject = assertion.getSubject();
         SubjectType.STSubType subType = subject.getSubType();
         if (subType != null) {
             NameIDType subjectNameID = (NameIDType) subType.getBaseID();
-            authSession.setUserSessionNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT_NAMEID, subjectNameID.serializeAsString());
+            authSession.setUserSessionNote(NiaSAMLEndpoint.SAML_FEDERATED_SUBJECT_NAMEID, subjectNameID.serializeAsString());
         }
-        AuthnStatementType authn = (AuthnStatementType) context.getContextData().get(SAMLEndpoint.SAML_AUTHN_STATEMENT);
+        AuthnStatementType authn = (AuthnStatementType) context.getContextData().get(NiaSAMLEndpoint.SAML_AUTHN_STATEMENT);
         if (authn != null && authn.getSessionIndex() != null) {
-            authSession.setUserSessionNote(SAMLEndpoint.SAML_FEDERATED_SESSION_INDEX, authn.getSessionIndex());
+            authSession.setUserSessionNote(NiaSAMLEndpoint.SAML_FEDERATED_SESSION_INDEX, authn.getSessionIndex());
 
         }
     }
@@ -280,8 +279,8 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
         SAML2LogoutRequestBuilder logoutBuilder = new SAML2LogoutRequestBuilder()
                 .assertionExpiration(realm.getAccessCodeLifespan())
                 .issuer(getEntityId(uriInfo, realm))
-                .sessionIndex(userSession.getNote(SAMLEndpoint.SAML_FEDERATED_SESSION_INDEX))
-                .nameId(NameIDType.deserializeFromString(userSession.getNote(SAMLEndpoint.SAML_FEDERATED_SUBJECT_NAMEID)))
+                .sessionIndex(userSession.getNote(NiaSAMLEndpoint.SAML_FEDERATED_SESSION_INDEX))
+                .nameId(NameIDType.deserializeFromString(userSession.getNote(NiaSAMLEndpoint.SAML_FEDERATED_SUBJECT_NAMEID)))
                 .destination(singleLogoutServiceUrl);
         LogoutRequestType logoutRequest = logoutBuilder.createLogoutRequest();
         for (SamlProtocolExtensionsAwareBuilder.NodeGenerator extension : extensions) {
