@@ -23,6 +23,7 @@ import java.net.URI;
 public class SAML2NameIDBuilder {
     private final NameIDType nameIdType;
     private String format;
+    private String nameQualifier;
     private String spNameQualifier;
 
     private SAML2NameIDBuilder(String value) {
@@ -39,6 +40,11 @@ public class SAML2NameIDBuilder {
         return this;
     }
 
+    public SAML2NameIDBuilder setNameQualifier(String nameQualifier) {
+        this.nameQualifier = nameQualifier;
+        return this;
+    }
+
     public SAML2NameIDBuilder setSPNameQualifier(String spNameQualifier) {
         this.spNameQualifier = spNameQualifier;
         return this;
@@ -47,6 +53,9 @@ public class SAML2NameIDBuilder {
     public NameIDType build() {
         if (this.format != null)
             this.nameIdType.setFormat(URI.create(this.format));
+
+        if (this.nameQualifier != null)
+            this.nameIdType.setNameQualifier(this.nameQualifier);
 
         if (this.spNameQualifier != null)
             this.nameIdType.setSPNameQualifier(this.spNameQualifier);
