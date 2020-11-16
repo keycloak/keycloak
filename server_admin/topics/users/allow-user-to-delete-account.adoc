@@ -6,22 +6,25 @@
 
 * Enabling the "Delete Account" Required Action
 
-Allowing the user to delete their account is done through an AIA (Application Initiated Action). You need first of all to enable the action from the admin console. In Authentication menu, go to the Required Actions tab and tick the enabled checkbox for the "Delete Account" action. 
+Allowing the user to delete their account is done through an AIA (Application Initiated Action). You need first of all to enable the action from the admin console. In the Authentication menu, go to the Required Actions tab and tick the enabled checkbox for the "Delete Account" action. 
 
 image:{project_images}/enable-delete-account-action.png[]
 
-* Making sure the Account Console client has the `delete-account` role:
+* Making sure the user has the "delete-account" as a client role:
 
-The second requirement to enable the delete account functionality is to make sure the "account" client has the `delete-account` role. The `delete-account` role is assigned by default, unless removed by the {project_name} admin. To enable the delete account role, go to Clients menu, and click on the "account" client. 
-Then go to the roles tab, and check if the `delete-account` is among the roles. In case it is not, you can add it by clicking on "Add Role". 
+The delete account functionality is enabled on a per user basis. The second requirement to enable the delete account functionality is to make sure the user has the `delete-account` as a client role.
 
-image:{project_images}/delete-account-role.png[]
+To enable the delete account role for a user, go to the Users menu, and find the user for which the delete account functionality is to be enabled. In the "Role Mappings" Tab, select the "account" client from "Clients Role" list. 
+
+Finally, select `delete-account` and click on add selected.
+
+image:{project_images}/delete-account-client-role.png[]
 
 
 === Deleting a user in action
 
 
-Once the functionlity is enabled, the user will see a new section named "Delete Account" appear in the user's account console
+Once the functionlity is enabled, the user will see a new section named "Delete Account" appear in the bottom of the "Personal Info" page
 
 image:{project_images}/delete-account-landing-screen.png[]
 
