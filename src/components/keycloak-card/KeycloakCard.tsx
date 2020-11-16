@@ -10,7 +10,6 @@ import {
   KebabToggle,
   Label,
 } from "@patternfly/react-core";
-// import { useTranslation } from "react-i18next";
 import "./keycloak-card.css";
 
 export type KeycloakCardProps = {
@@ -18,6 +17,7 @@ export type KeycloakCardProps = {
   title: string;
   dropdownItems?: ReactElement[];
   labelText?: string;
+  labelColor?: any;
   footerText?: string;
   configEnabled?: boolean;
   providerId?: string;
@@ -27,6 +27,7 @@ export const KeycloakCard = ({
   dropdownItems,
   title,
   labelText,
+  labelColor,
   footerText,
 }: KeycloakCardProps) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -54,7 +55,10 @@ export const KeycloakCard = ({
       <CardFooter>
         {footerText && footerText}
         {labelText && (
-          <Label color="blue" className="keycloak__keycloak-card__footer-label">
+          <Label
+            color={labelColor || "gray"}
+            className="keycloak__keycloak-card__footer-label"
+          >
             {labelText}
           </Label>
         )}

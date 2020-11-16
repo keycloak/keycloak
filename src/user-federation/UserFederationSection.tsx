@@ -113,6 +113,11 @@ export const UserFederationSection = () => {
                 ? `${t("common:enabled")}`
                 : `${t("common:disabled")}`
             }
+            labelColor={
+              (userFederation.config as Config)!.enabled[0] !== "false"
+                ? "blue"
+                : "gray"
+            }
           />
         </GalleryItem>
       );
@@ -127,7 +132,7 @@ export const UserFederationSection = () => {
         subKeyLinkProps={learnMoreLinkProps}
         {...(userFederations && userFederations.length > 0
           ? {
-              lowerDropdownItems: { ufAddProviderDropdownItems },
+              lowerDropdownItems: ufAddProviderDropdownItems,
               lowerDropdownMenuTitle: "user-federation:addNewProvider",
             }
           : {})}
