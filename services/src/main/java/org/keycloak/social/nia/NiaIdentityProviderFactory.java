@@ -28,8 +28,8 @@ import org.w3c.dom.Element;
 public class NiaIdentityProviderFactory extends AbstractIdentityProviderFactory<NiaIdentityProvider>
         implements SocialIdentityProviderFactory<NiaIdentityProvider> {
 
-    public static final String NIA_PROVIDER_ID = "NIA";
-    public static final String NIA_PROVIDER_NAME = "NIA";
+    public static final String NIA_PROVIDER_ID = "nia";
+    public static final String NIA_PROVIDER_NAME = "nia";
     public static final String[] COMPATIBLE_PROVIDER = new String[]{NIA_PROVIDER_ID};
 
     private DestinationValidator destinationValidator;
