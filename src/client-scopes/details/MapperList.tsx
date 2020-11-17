@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import {
   AlertVariant,
   ButtonVariant,
@@ -43,6 +43,7 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
   const { t } = useTranslation("client-scopes");
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
+  const history = useHistory();
 
   const [filteredData, setFilteredData] = useState<
     { mapper: ProtocolMapperRepresentation; cells: Row }[]
@@ -53,21 +54,34 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
     clientScope.protocol!
   ];
 
-  const [builtInDialogOpen, setBuiltInDialogOpen] = useState(false);
-  const toggleBuiltInMapperDialog = () =>
-    setBuiltInDialogOpen(!builtInDialogOpen);
+  const [addMapperDialogOpen, setAddMapperDialogOpen] = useState(false);
+  const [filter, setFilter] = useState(clientScope.protocolMappers);
+  const toggleAddMapperDialog = (buildIn: boolean) => {
+    if (buildIn) {
+      setFilter(mapperList);
+    } else {
+      setFilter(undefined);
+    }
+    setAddMapperDialogOpen(!addMapperDialogOpen);
+  };
+
   const addMappers = async (
     mappers: ProtocolMapperTypeRepresentation | ProtocolMapperRepresentation[]
-  ) => {
-    try {
-      await adminClient.clientScopes.addMultipleProtocolMappers(
-        { id: clientScope.id! },
-        mappers as ProtocolMapperRepresentation[]
-      );
-      refresh();
-      addAlert(t("mappingCreatedSuccess"), AlertVariant.success);
-    } catch (error) {
-      addAlert(t("mappingCreatedError", { error }), AlertVariant.danger);
+  ): Promise<void> => {
+    if (filter === undefined) {
+      const mapper = mappers as ProtocolMapperTypeRepresentation;
+      history.push(`/client-scopes/${clientScope.id}/${mapper.id}`);
+    } else {
+      try {
+        await adminClient.clientScopes.addMultipleProtocolMappers(
+          { id: clientScope.id! },
+          mappers as ProtocolMapperRepresentation[]
+        );
+        refresh();
+        addAlert(t("mappingCreatedSuccess"), AlertVariant.success);
+      } catch (error) {
+        addAlert(t("mappingCreatedError", { error }), AlertVariant.danger);
+      }
     }
   };
 
@@ -76,20 +90,20 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
       <>
         <AddMapperDialog
           protocol={clientScope.protocol!}
-          filter={mapperList || []}
+          filter={filter}
           onConfirm={addMappers}
-          open={builtInDialogOpen}
-          toggleDialog={toggleBuiltInMapperDialog}
+          open={addMapperDialogOpen}
+          toggleDialog={() => setAddMapperDialogOpen(!addMapperDialogOpen)}
         />
         <ListEmptyState
           message={t("emptyMappers")}
           instructions={t("emptyMappersInstructions")}
           primaryActionText={t("emptyPrimaryAction")}
-          onPrimaryAction={toggleBuiltInMapperDialog}
+          onPrimaryAction={() => toggleAddMapperDialog(true)}
           secondaryActions={[
             {
               text: t("emptySecondaryAction"),
-              onClick: () => {},
+              onClick: () => toggleAddMapperDialog(false),
               type: ButtonVariant.secondary,
             },
           ]}
@@ -149,10 +163,16 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
           }
           isOpen={mapperAction}
           dropdownItems={[
-            <DropdownItem key="predefined" onClick={toggleBuiltInMapperDialog}>
+            <DropdownItem
+              key="predefined"
+              onClick={() => toggleAddMapperDialog(true)}
+            >
               {t("fromPredefinedMapper")}
             </DropdownItem>,
-            <DropdownItem key="byConfiguration">
+            <DropdownItem
+              key="byConfiguration"
+              onClick={() => toggleAddMapperDialog(false)}
+            >
               {t("byConfiguration")}
             </DropdownItem>,
           ]}
@@ -161,10 +181,10 @@ export const MapperList = ({ clientScope, refresh }: MapperListProps) => {
     >
       <AddMapperDialog
         protocol={clientScope.protocol!}
-        filter={mapperList || []}
+        filter={filter}
         onConfirm={addMappers}
-        open={builtInDialogOpen}
-        toggleDialog={toggleBuiltInMapperDialog}
+        open={addMapperDialogOpen}
+        toggleDialog={() => setAddMapperDialogOpen(!addMapperDialogOpen)}
       />
       <Table
         variant={TableVariant.compact}

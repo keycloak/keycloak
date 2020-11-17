@@ -8,7 +8,7 @@ import { routes } from "../../route-config";
 
 export const PageBreadCrumbs = () => {
   const { t } = useTranslation();
-  const crumbs = useBreadcrumbs(routes(t)).slice(1);
+  const crumbs = useBreadcrumbs(routes(t), { excludePaths: ["/"] });
   return (
     <>
       {crumbs.length > 1 && (
