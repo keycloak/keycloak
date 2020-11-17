@@ -47,4 +47,12 @@ public interface UserCache extends UserProvider {
      *
      */
     void clear();
+
+    /**
+     * The {@link UserCache.Streams} interface differs from {@link UserCache} in that it extends the {@link UserProvider.Streams}
+     * interface, allowing implementations of {@link UserCache} to focus on the {@link java.util.stream.Stream}-based methods
+     * in the {@link UserProvider} interface.
+     */
+    interface Streams extends UserCache, UserProvider.Streams {
+    }
 }

@@ -57,7 +57,7 @@ import org.keycloak.storage.user.UserRegistrationProvider;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class BackwardsCompatibilityUserStorage implements UserLookupProvider, UserStorageProvider, UserRegistrationProvider,
-        CredentialInputUpdater, CredentialInputValidator, UserQueryProvider {
+        CredentialInputUpdater, CredentialInputValidator, UserQueryProvider.Streams {
 
     private static final Logger log = Logger.getLogger(BackwardsCompatibilityUserStorage.class);
 
@@ -82,7 +82,7 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
     }
 
     private UserModel createUser(RealmModel realm, String username) {
-        return new AbstractUserAdapterFederatedStorage(session, realm,  model) {
+        return new AbstractUserAdapterFederatedStorage.Streams(session, realm,  model) {
             @Override
             public String getUsername() {
                 return username;

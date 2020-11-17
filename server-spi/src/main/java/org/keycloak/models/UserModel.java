@@ -94,17 +94,18 @@ public interface UserModel extends RoleMapperModel {
      * @deprecated Use {@link #getAttributeStream(String) getAttributeStream} instead.
      */
     @Deprecated
-    default List<String> getAttribute(String name) {
-        return this.getAttributeStream(name).collect(Collectors.toList());
-    }
+    List<String> getAttribute(String name);
 
     /**
      * Obtains all values associated with the specified attribute name.
      *
      * @param name the name of the attribute.
-     * @return a non-null {@code Stream} of attribute values.
+     * @return a non-null {@link Stream} of attribute values.
      */
-    Stream<String> getAttributeStream(final String name);
+    default Stream<String> getAttributeStream(final String name) {
+        List<String> value = this.getAttribute(name);
+        return value != null ? value.stream() : Stream.empty();
+    }
 
     Map<String, List<String>> getAttributes();
 
@@ -112,16 +113,17 @@ public interface UserModel extends RoleMapperModel {
      * @deprecated Use {@link #getRequiredActionsStream() getRequiredActionsStream} instead.
      */
     @Deprecated
-    default Set<String> getRequiredActions() {
-        return this.getRequiredActionsStream().collect(Collectors.toSet());
-    }
+    Set<String> getRequiredActions();
 
     /**
      * Obtains the names of required actions associated with the user.
      *
-     * @return a non-null {@code Stream} of required action names.
+     * @return a non-null {@link Stream} of required action names.
      */
-    Stream<String> getRequiredActionsStream();
+    default Stream<String> getRequiredActionsStream() {
+        Set<String> value = this.getRequiredActions();
+        return value != null ? value.stream() : Stream.empty();
+    }
 
     void addRequiredAction(String action);
 
@@ -151,16 +153,17 @@ public interface UserModel extends RoleMapperModel {
      * @deprecated Use {@link #getGroupsStream() getGroupsStream} instead.
      */
     @Deprecated
-    default Set<GroupModel> getGroups() {
-        return getGroupsStream().collect(Collectors.toSet());
-    }
+    Set<GroupModel> getGroups();
 
     /**
      * Obtains the groups associated with the user.
      *
-     * @return a non-null {@code Stream} of groups.
+     * @return a non-null {@link Stream} of groups.
      */
-    Stream<GroupModel> getGroupsStream();
+    default Stream<GroupModel> getGroupsStream() {
+        Set<GroupModel> value = this.getGroups();
+        return value != null ? value.stream() : Stream.empty();
+    }
 
     /**
      * @deprecated Use {@link #getGroupsStream(String, Integer, Integer) getGroupsStream} instead.
@@ -229,5 +232,38 @@ public interface UserModel extends RoleMapperModel {
 
     enum RequiredAction {
         VERIFY_EMAIL, UPDATE_PROFILE, CONFIGURE_TOTP, UPDATE_PASSWORD, TERMS_AND_CONDITIONS
+    }
+
+    /**
+     * The {@link UserModel.Streams} interface makes all collection-based methods in {@link UserModel} default by providing
+     * implementations that delegate to the {@link Stream}-based variants instead of the other way around.
+     * <p/>
+     * It allows for implementations to focus on the {@link Stream}-based approach for processing sets of data and benefit
+     * from the potential memory and performance optimizations of that approach.
+     */
+    interface Streams extends UserModel, RoleMapperModel.Streams {
+        @Override
+        default List<String> getAttribute(String name) {
+            return this.getAttributeStream(name).collect(Collectors.toList());
+        }
+
+        @Override
+        Stream<String> getAttributeStream(final String name);
+
+        @Override
+        default Set<String> getRequiredActions() {
+            return this.getRequiredActionsStream().collect(Collectors.toSet());
+        }
+
+        @Override
+        Stream<String> getRequiredActionsStream();
+
+        @Override
+        default Set<GroupModel> getGroups() {
+            return this.getGroupsStream().collect(Collectors.toSet());
+        }
+
+        @Override
+        Stream<GroupModel> getGroupsStream();
     }
 }

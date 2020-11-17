@@ -17,7 +17,6 @@
 
 package org.keycloak.storage;
 
-import com.google.common.collect.Streams;
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
@@ -27,7 +26,6 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -65,7 +63,8 @@ import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserStorageManager extends AbstractStorageManager<UserStorageProvider, UserStorageProviderModel> implements UserProvider, OnUserCache, OnCreateComponent, OnUpdateComponent {
+public class UserStorageManager extends AbstractStorageManager<UserStorageProvider, UserStorageProviderModel>
+        implements UserProvider.Streams, OnUserCache, OnCreateComponent, OnUpdateComponent {
 
     private static final Logger logger = Logger.getLogger(UserStorageManager.class);
 
@@ -605,7 +604,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         Stream<FederatedIdentityModel> stream = StorageId.isLocalStorage(user) ?
                 localStorage().getFederatedIdentitiesStream(user, realm) : Stream.empty();
         if (getFederatedStorage() != null)
-            stream = Streams.concat(stream, getFederatedStorage().getFederatedIdentitiesStream(user.getId(), realm));
+            stream = Stream.concat(stream, getFederatedStorage().getFederatedIdentitiesStream(user.getId(), realm));
         return stream.distinct();
     }
 

@@ -54,8 +54,8 @@ import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserMapStorage implements UserLookupProvider, UserStorageProvider, UserRegistrationProvider, CredentialInputUpdater, CredentialInputValidator,
-  UserGroupMembershipFederatedStorage, UserQueryProvider, ImportedUserValidation {
+public class UserMapStorage implements UserLookupProvider, UserStorageProvider, UserRegistrationProvider, CredentialInputUpdater,
+        CredentialInputValidator, UserGroupMembershipFederatedStorage.Streams, UserQueryProvider.Streams, ImportedUserValidation {
 
     private static final Logger log = Logger.getLogger(UserMapStorage.class);
     
@@ -113,7 +113,7 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
             user.setEnabled(true);
             user.setFederationLink(model.getId());
         } else {
-            user = new AbstractUserAdapterFederatedStorage(session, realm, model) {
+            user = new AbstractUserAdapterFederatedStorage.Streams(session, realm, model) {
                 @Override
                 public String getUsername() {
                     return username;

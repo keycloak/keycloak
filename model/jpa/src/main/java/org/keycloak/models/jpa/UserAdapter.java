@@ -53,7 +53,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserAdapter implements UserModel, JpaModel<UserEntity> {
+public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
 
     protected UserEntity user;
     protected EntityManager em;
