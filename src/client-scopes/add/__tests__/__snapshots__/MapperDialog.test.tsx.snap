@@ -1,14 +1,14 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = `
+exports[`<MapperDialog/> should have disabled add button when nothing is selected 1`] = `
 <Test
   filter={Array []}
-  onConfirm={[MockFunction]}
+  onConfirm={[Function]}
   protocol="openid-connect"
 >
   <AddMapperDialog
     filter={Array []}
-    onConfirm={[MockFunction]}
+    onConfirm={[Function]}
     open={true}
     protocol="openid-connect"
     toggleDialog={[Function]}
@@ -18,7 +18,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
         Array [
           <Button
             id="modal-confirm"
-            isDisabled={false}
+            isDisabled={true}
             onClick={[Function]}
           >
             Add
@@ -1026,11 +1026,12 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                     class="pf-c-modal-box__footer"
                   >
                     <button
-                      aria-disabled="false"
-                      class="pf-c-button pf-m-primary"
+                      aria-disabled="true"
+                      class="pf-c-button pf-m-primary pf-m-disabled"
                       data-ouia-component-id="OUIA-Generated-Button-primary-2"
                       data-ouia-component-type="PF4/Button"
                       data-ouia-safe="true"
+                      disabled=""
                       id="modal-confirm"
                       type="button"
                     >
@@ -1059,7 +1060,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
             Array [
               <Button
                 id="modal-confirm"
-                isDisabled={false}
+                isDisabled={true}
                 onClick={[Function]}
               >
                 Add
@@ -17440,20 +17441,21 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
                         >
                           <Button
                             id="modal-confirm"
-                            isDisabled={false}
+                            isDisabled={true}
                             key="confirm"
                             onClick={[Function]}
                           >
                             <button
-                              aria-disabled={false}
+                              aria-disabled={true}
                               aria-label={null}
-                              className="pf-c-button pf-m-primary"
+                              className="pf-c-button pf-m-primary pf-m-disabled"
                               data-ouia-component-id="OUIA-Generated-Button-primary-2"
                               data-ouia-component-type="PF4/Button"
                               data-ouia-safe={true}
-                              disabled={false}
+                              disabled={true}
                               id="modal-confirm"
                               onClick={[Function]}
+                              tabIndex={null}
                               type="button"
                             >
                               Add
@@ -17508,7 +17510,7 @@ exports[`<MapperDialog/> should return empty array when selecting nothing 1`] = 
       onClick={[Function]}
       type="button"
     >
-      Show
+      Hide
     </button>
   </Button>
 </Test>
@@ -19157,7 +19159,7 @@ exports[`<MapperDialog/> should return selected protocol mapping type on click 1
       onClick={[Function]}
       type="button"
     >
-      Show
+      Hide
     </button>
   </Button>
 </Test>
