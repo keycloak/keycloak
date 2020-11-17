@@ -20,7 +20,9 @@ To add a group:
 . Click *New*.
 . Select the *Groups* icon in the tree to make a top-level group.
 . Enter a group name in the *Create Group* screen.
-. Click *Save*. The group management page displays.
+. Click *Save*.
++
+The group management page is displayed.
 +
 .Group
 image:{project_images}/group.png[]

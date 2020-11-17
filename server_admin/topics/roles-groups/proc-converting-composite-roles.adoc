@@ -4,13 +4,13 @@
 
 === Composite Roles
 [role="_abstract"]
-Any realm or client level role can be a _composite role_. A _composite role_ is a role that has one or more additional roles associated with it. When a composite role is mapped to a user, the user also gains the roles associated with that composite.  This inheritance is recursive so users also inherit any composite of composites. However, we recommend that composite roles are not overused.
+Any realm or client level role can be a _composite role_. A _composite role_ is a role that has one or more additional roles associated with it. When a composite role is mapped to a user, the user gains the roles associated with the composite role.  This inheritance is recursive so users also inherit any composite of composites. However, we recommend that composite roles are not overused.
 
 To convert a role to a composite role:
 
 . Click *Roles* in the menu.
 . Click the role to access the roles detail page.
-. Set *Composite Roles* to ON.
+. Toggle *Composite Roles* to ON.
 
 .Composite Role
 image:{project_images}/composite-role.png[]

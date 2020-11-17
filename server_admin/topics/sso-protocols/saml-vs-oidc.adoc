@@ -1,9 +1,9 @@
 
-=== OpenID Connect vs. SAML
+=== OpenID Connect compared to SAML
 
 Choosing between OpenID Connect and SAML is not just a matter of using a newer protocol (OIDC) instead of the older more mature protocol (SAML).
 
-In most cases {project_name} recommends using OIDC.
+For most purposes, {project_name} recommends using OIDC.
 
 SAML tends to be a bit more verbose than OIDC.
 

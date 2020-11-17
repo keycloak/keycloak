@@ -14,7 +14,7 @@ You can assign User role mappings to a user through the *Role Mappings* tab for 
 .Role Mappings
 image:{project_images}/user-role-mappings.png[]
 
-In the above example, we are assigning the composite role *developer* that was created in the <<_composite-roles, Composite Roles>> chapter to a user.
+In the preceding example, we are assigning the composite role *developer* to a user. That role was created in the <<_composite-roles, Composite Roles>> topic.
 
 .Effective Role Mappings
 image:{project_images}/effective-role-mappings.png[]

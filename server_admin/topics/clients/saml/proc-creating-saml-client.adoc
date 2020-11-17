@@ -42,7 +42,7 @@ the name, set up a replacement string value. For example, a string value such as
 
 *Sign Documents*:: When set to ON, {project_name} signs the document using the realms private key.
 
-*Optimize REDIRECT signing key lookup*:: When set to ON, the SP messages include the {project_name} native extension. This extension contains a hint with the signing key ID. The SP uses the extension for signature validation instead of attempting to validate the signature using keys. 
+*Optimize REDIRECT signing key lookup*:: When set to ON, the SAML protocol messages include the {project_name} native extension. This extension contains a hint with the signing key ID. The SP uses the extension for signature validation instead of attempting to validate the signature using keys. 
 +
 This option applies to REDIRECT bindings where the signature is transferred in query parameters and this information is not found in the signature information. This is contrary to POST binding messages where key ID is always included in document signature. 
 +

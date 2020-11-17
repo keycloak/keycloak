@@ -29,7 +29,7 @@ image:{project_images}/mapper-config.png[]
 
 Details on each option can be viewed by hovering over its tooltip.
 
-Use OIDC mappers to control where the claim gets placed. You opt to include or exclude the claim from the _id_ and _access_ tokens by adjusting the *Add to ID token* and *Add to access token* switches.
+You can use most OIDC mappers to control where the claim gets placed. You opt to include or exclude the claim from the _id_ and _access_ tokens by adjusting the *Add to ID token* and *Add to access token* switches.
 
 include::proc-creating-mappers.adoc[]
 

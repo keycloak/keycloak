@@ -2,7 +2,7 @@
 
 ==== Default Groups
 [role="_abstract"]
-To automatically assign group membership to new users, that are created or imported through <<_identity_broker, Identity Brokering>>, you use default groups.
+To automatically assign group membership to any users who is created or who is imported through <<_identity_broker, Identity Brokering>>, you use default groups.
 
 To specify default groups:
 

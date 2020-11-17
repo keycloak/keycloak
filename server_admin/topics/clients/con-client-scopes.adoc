@@ -1,4 +1,4 @@
-[id="client_scopes_{context}"]
+[id="con-client-scopes_{context}"]
 
 [[_client_scopes]]
 === Client Scopes
@@ -72,9 +72,10 @@ This setting is applicable only for OpenID Connect clients. Optional client scop
 ===== Example
 For this example, assume the client has *profile* and *email* linked as default client scopes, and *phone* and *address* linked as optional client scopes. The client uses the value of the scope parameter when sending a request to the OpenID Connect authorization endpoint.
 
-***
+[source,bash,subs=+attributes]
+----
 scope=openid phone
-***
+----
 
 The scope parameter contains the string, with the scope values divided by spaces. The value *openid* is the meta-value used for all OpenID Connect requests. The token will contain mappers and role scope mappings from the default client scopes *profile* and *email* as well as *phone*, an optional client scope requested by the scope parameter.
 
