@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
@@ -139,7 +140,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
     private String[] getProcessCommands() {
         List<String> commands = new ArrayList<>();
 
-        commands.add("./kc.sh");
+        commands.add((SystemUtils.IS_OS_WINDOWS ? "" : "./").concat("kc.".concat(SystemUtils.IS_OS_WINDOWS ? "bat" : "sh")));
 
         if (Boolean.valueOf(System.getProperty("auth.server.debug", "false"))) {
             commands.add("--debug");
