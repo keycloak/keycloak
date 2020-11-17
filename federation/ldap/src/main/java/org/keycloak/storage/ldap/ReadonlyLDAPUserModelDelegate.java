@@ -32,7 +32,7 @@ import org.keycloak.storage.ReadOnlyException;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class ReadonlyLDAPUserModelDelegate extends UserModelDelegate implements UserModel {
+public class ReadonlyLDAPUserModelDelegate extends UserModelDelegate {
 
     public ReadonlyLDAPUserModelDelegate(UserModel delegate) {
         super(delegate);

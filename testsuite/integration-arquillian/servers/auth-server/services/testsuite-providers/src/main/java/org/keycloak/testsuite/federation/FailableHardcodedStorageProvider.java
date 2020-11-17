@@ -43,7 +43,8 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class FailableHardcodedStorageProvider implements UserStorageProvider, UserLookupProvider, UserQueryProvider, ImportedUserValidation, CredentialInputUpdater, CredentialInputValidator {
+public class FailableHardcodedStorageProvider implements UserStorageProvider, UserLookupProvider, UserQueryProvider.Streams,
+        ImportedUserValidation, CredentialInputUpdater, CredentialInputValidator {
 
     public static String username = "billb";
     public static String password = "password";

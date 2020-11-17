@@ -39,18 +39,37 @@ public interface UserBrokerLinkFederatedStorage {
      * @deprecated Use {@link #getFederatedIdentitiesStream(String, RealmModel) getFederatedIdentitiesStream} instead.
      */
     @Deprecated
-    default Set<FederatedIdentityModel> getFederatedIdentities(String userId, RealmModel realm) {
-        return this.getFederatedIdentitiesStream(userId, realm).collect(Collectors.toSet());
-    }
+    Set<FederatedIdentityModel> getFederatedIdentities(String userId, RealmModel realm);
 
     /**
      * Obtains the identities of the federated user identified by {@code userId}.
      *
      * @param userId the user identifier.
      * @param realm a reference to the realm.
-     * @return a non-null {@code Stream} of federated identities associated with the user.
+     * @return a non-null {@link Stream} of federated identities associated with the user.
      */
-    Stream<FederatedIdentityModel> getFederatedIdentitiesStream(String userId, RealmModel realm);
+    default Stream<FederatedIdentityModel> getFederatedIdentitiesStream(String userId, RealmModel realm) {
+        Set<FederatedIdentityModel> value = this.getFederatedIdentities(userId, realm);
+        return value != null ? value.stream() : Stream.empty();
+    }
 
     FederatedIdentityModel getFederatedIdentity(String userId, String socialProvider, RealmModel realm);
+
+    /**
+     * The {@link Streams} interface makes all collection-based methods in {@link UserBrokerLinkFederatedStorage}
+     * default by providing implementations that delegate to the {@link Stream}-based variants instead of the other way
+     * around.
+     * <p/>
+     * It allows for implementations to focus on the {@link Stream}-based approach for processing sets of data and benefit
+     * from the potential memory and performance optimizations of that approach.
+     */
+    interface Streams extends UserBrokerLinkFederatedStorage {
+        @Override
+        default Set<FederatedIdentityModel> getFederatedIdentities(String userId, RealmModel realm) {
+            return this.getFederatedIdentitiesStream(userId, realm).collect(Collectors.toSet());
+        }
+
+        @Override
+        Stream<FederatedIdentityModel> getFederatedIdentitiesStream(String userId, RealmModel realm);
+    }
 }

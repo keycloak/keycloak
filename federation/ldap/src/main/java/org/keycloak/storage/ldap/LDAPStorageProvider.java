@@ -92,7 +92,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         CredentialAuthentication,
         UserLookupProvider,
         UserRegistrationProvider,
-        UserQueryProvider,
+        UserQueryProvider.Streams,
         ImportedUserValidation {
     private static final Logger logger = Logger.getLogger(LDAPStorageProvider.class);
 
