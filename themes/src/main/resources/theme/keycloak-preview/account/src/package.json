@@ -49,7 +49,7 @@
     "eslint-plugin-react": "^7.12.4",
     "rollup-plugin-postcss": "^2.5.0",
     "shx": "^0.3.2",
-    "snowpack": "^1.7.0",
+    "snowpack": "^1.7.1",
     "typescript": "^3.8.3"
   },
   "repository": {}
