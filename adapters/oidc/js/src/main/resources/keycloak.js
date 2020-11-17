@@ -60,7 +60,7 @@
             define( "keycloak", [], function () { return Keycloak; } );
         }
     }
-})(window, function (sha256_imported, base64js_imported) {
+})(typeof window === "undefined" ? global.window : window, function (sha256_imported, base64js_imported) {
     if (typeof Promise === 'undefined') {
         throw Error('Keycloak requires an environment that supports Promises. Make sure that you include the appropriate polyfill.');
     }
