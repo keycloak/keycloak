@@ -68,11 +68,12 @@ public interface GroupModel extends RoleMapperModel {
      * @return list of all attribute values or empty list if there are not any values. Never return null
      */
     @Deprecated
-    default List<String> getAttribute(String name) {
-        return getAttributeStream(name).collect(Collectors.toList());
-    }
+    List<String> getAttribute(String name);
 
-    Stream<String> getAttributeStream(String name);
+    default Stream<String> getAttributeStream(String name) {
+        List<String> value = this.getAttribute(name);
+        return value != null ? value.stream() : Stream.empty();
+    }
 
     Map<String, List<String>> getAttributes();
 
@@ -80,11 +81,12 @@ public interface GroupModel extends RoleMapperModel {
     String getParentId();
 
     @Deprecated
-    default Set<GroupModel> getSubGroups() {
-        return getSubGroupsStream().collect(Collectors.toSet());
-    }
+    Set<GroupModel> getSubGroups();
 
-    Stream<GroupModel> getSubGroupsStream();
+    default Stream<GroupModel> getSubGroupsStream() {
+        Set<GroupModel> value = this.getSubGroups();
+        return value != null ? value.stream() : Stream.empty();
+    }
 
     /**
      * You must also call addChild on the parent group, addChild on RealmModel if there is no parent group
@@ -106,4 +108,29 @@ public interface GroupModel extends RoleMapperModel {
      * @param subGroup
      */
     void removeChild(GroupModel subGroup);
+
+    /**
+     * The {@link GroupModel.Streams} interface makes all collection-based methods in {@link GroupModel} default by providing
+     * implementations that delegate to the {@link Stream}-based variants instead of the other way around.
+     * <p/>
+     * It allows for implementations to focus on the {@link Stream}-based approach for processing sets of data and benefit
+     * from the potential memory and performance optimizations of that approach.
+     */
+    interface Streams extends GroupModel, RoleMapperModel.Streams {
+        @Override
+        default List<String> getAttribute(String name) {
+            return this.getAttributeStream(name).collect(Collectors.toList());
+        }
+
+        @Override
+        Stream<String> getAttributeStream(String name);
+
+        @Override
+        default Set<GroupModel> getSubGroups() {
+            return this.getSubGroupsStream().collect(Collectors.toSet());
+        }
+
+        @Override
+        Stream<GroupModel> getSubGroupsStream();
+    }
 }
