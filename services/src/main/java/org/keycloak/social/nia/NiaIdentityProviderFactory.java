@@ -93,7 +93,7 @@ public class NiaIdentityProviderFactory extends AbstractIdentityProviderFactory<
                 }
 
                 if (idpDescriptor != null) {
-                    NiaIdentityProviderConfig samlIdentityProviderConfig = new NiaIdentityProviderConfig();
+                    NiaIdentityProviderConfig niaIdentityProviderConfig = new NiaIdentityProviderConfig();
                     String singleSignOnServiceUrl = null;
                     boolean postBindingResponse = false;
                     boolean postBindingLogout = false;
@@ -118,19 +118,19 @@ public class NiaIdentityProviderFactory extends AbstractIdentityProviderFactory<
                         }
 
                     }
-                    samlIdentityProviderConfig.setSingleLogoutServiceUrl(singleLogoutServiceUrl);
-                    samlIdentityProviderConfig.setSingleSignOnServiceUrl(singleSignOnServiceUrl);
-                    samlIdentityProviderConfig.setWantAuthnRequestsSigned(idpDescriptor.isWantAuthnRequestsSigned());
-                    samlIdentityProviderConfig.setAddExtensionsElementWithKeyInfo(false);
-                    samlIdentityProviderConfig.setValidateSignature(idpDescriptor.isWantAuthnRequestsSigned());
-                    samlIdentityProviderConfig.setPostBindingResponse(postBindingResponse);
-                    samlIdentityProviderConfig.setPostBindingAuthnRequest(postBindingResponse);
-                    samlIdentityProviderConfig.setPostBindingLogout(postBindingLogout);
-                    samlIdentityProviderConfig.setLoginHint(false);
+                    niaIdentityProviderConfig.setSingleLogoutServiceUrl(singleLogoutServiceUrl);
+                    niaIdentityProviderConfig.setSingleSignOnServiceUrl(singleSignOnServiceUrl);
+                    niaIdentityProviderConfig.setWantAuthnRequestsSigned(idpDescriptor.isWantAuthnRequestsSigned());
+                    niaIdentityProviderConfig.setAddExtensionsElementWithKeyInfo(false);
+                    niaIdentityProviderConfig.setValidateSignature(idpDescriptor.isWantAuthnRequestsSigned());
+                    niaIdentityProviderConfig.setPostBindingResponse(postBindingResponse);
+                    niaIdentityProviderConfig.setPostBindingAuthnRequest(postBindingResponse);
+                    niaIdentityProviderConfig.setPostBindingLogout(postBindingLogout);
+                    niaIdentityProviderConfig.setLoginHint(false);
 
                     List<String> nameIdFormatList = idpDescriptor.getNameIDFormat();
                     if (nameIdFormatList != null && !nameIdFormatList.isEmpty()) {
-                        samlIdentityProviderConfig.setNameIDPolicyFormat(nameIdFormatList.get(0));
+                        niaIdentityProviderConfig.setNameIDPolicyFormat(nameIdFormatList.get(0));
                     }
 
                     List<KeyDescriptorType> keyDescriptor = idpDescriptor.getKeyDescriptor();
@@ -142,9 +142,9 @@ public class NiaIdentityProviderFactory extends AbstractIdentityProviderFactory<
                             Element x509KeyInfo = DocumentUtil.getChildElement(keyInfo, new QName("dsig", "X509Certificate"));
 
                             if (KeyTypes.SIGNING.equals(keyDescriptorType.getUse())) {
-                                samlIdentityProviderConfig.addSigningCertificate(x509KeyInfo.getTextContent());
+                                niaIdentityProviderConfig.addSigningCertificate(x509KeyInfo.getTextContent());
                             } else if (KeyTypes.ENCRYPTION.equals(keyDescriptorType.getUse())) {
-                                samlIdentityProviderConfig.setEncryptionPublicKey(x509KeyInfo.getTextContent());
+                                niaIdentityProviderConfig.setEncryptionPublicKey(x509KeyInfo.getTextContent());
                             } else if (keyDescriptorType.getUse() == null) {
                                 defaultCertificate = x509KeyInfo.getTextContent();
                             }
@@ -152,16 +152,16 @@ public class NiaIdentityProviderFactory extends AbstractIdentityProviderFactory<
                     }
 
                     if (defaultCertificate != null) {
-                        if (samlIdentityProviderConfig.getSigningCertificates().length == 0) {
-                            samlIdentityProviderConfig.addSigningCertificate(defaultCertificate);
+                        if (niaIdentityProviderConfig.getSigningCertificates().length == 0) {
+                            niaIdentityProviderConfig.addSigningCertificate(defaultCertificate);
                         }
 
-                        if (samlIdentityProviderConfig.getEncryptionPublicKey() == null) {
-                            samlIdentityProviderConfig.setEncryptionPublicKey(defaultCertificate);
+                        if (niaIdentityProviderConfig.getEncryptionPublicKey() == null) {
+                            niaIdentityProviderConfig.setEncryptionPublicKey(defaultCertificate);
                         }
                     }
 
-                    samlIdentityProviderConfig.setEnabledFromMetadata(entityType.getValidUntil() == null
+                    niaIdentityProviderConfig.setEnabledFromMetadata(entityType.getValidUntil() == null
                             || entityType.getValidUntil().toGregorianCalendar().getTime().after(new Date(System.currentTimeMillis())));
 
                     // check for hide on login attribute
@@ -169,13 +169,13 @@ public class NiaIdentityProviderFactory extends AbstractIdentityProviderFactory<
                         for (AttributeType attribute : entityType.getExtensions().getEntityAttributes().getAttribute()) {
                             if (MACEDIR_ENTITY_CATEGORY.equals(attribute.getName())
                                     && attribute.getAttributeValue().contains(REFEDS_HIDE_FROM_DISCOVERY)) {
-                                samlIdentityProviderConfig.setHideOnLogin(true);
+                                niaIdentityProviderConfig.setHideOnLogin(true);
                             }
                         }
 
                     }
 
-                    return samlIdentityProviderConfig.getConfig();
+                    return niaIdentityProviderConfig.getConfig();
                 }
             }
         } catch (ParsingException pe) {

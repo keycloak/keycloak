@@ -19,6 +19,7 @@ import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.provider.IdentityProviderDataMarshaller;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.util.PemUtils;
@@ -77,7 +78,7 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
 
     @Override
     public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
-        return new NiaSAMLEndpoint(realm, this, getNiaConfig(), callback, destinationValidator);
+        return new NiaSAMLEndpoint(realm, this, getConfig(), callback, destinationValidator);
     }
 
     @Override
@@ -163,7 +164,14 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
     }
 
     private String getEntityId(UriInfo uriInfo, RealmModel realm) {
-        return UriBuilder.fromUri(uriInfo.getBaseUri()).path("realms").path(realm.getName()).build().toString();
+        String configEntityId = getConfig().getEntityId();
+
+        if (configEntityId == null || configEntityId.isEmpty()) {
+            return UriBuilder.fromUri(uriInfo.getBaseUri()).path("realms").path(realm.getName()).build().toString();
+        } else {
+            return configEntityId;
+        }
+        //   return UriBuilder.fromUri(uriInfo.getBaseUri()).path("realms").path(realm.getName()).build().toString();
     }
 
     private List<String> getAuthnContextClassRefUris() {
@@ -380,10 +388,14 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
         return Response.ok(identity.getToken()).build();
     }
 
-    public NiaIdentityProviderConfig getNiaConfig() {
-        NiaIdentityProviderConfig niaIdentityProviderConfig = new NiaIdentityProviderConfig();
-        return niaIdentityProviderConfig;
-        //return (NiaIdentityProviderConfig) super.getConfig();
-
+//    public NiaIdentityProviderConfig getNiaConfig() {
+//        NiaIdentityProviderConfig niaIdentityProviderConfig = new NiaIdentityProviderConfig();
+//        return niaIdentityProviderConfig;
+//        //return (NiaIdentityProviderConfig) super.getConfig();
+//
+//    }
+    @Override
+    public IdentityProviderDataMarshaller getMarshaller() {
+        return new NiaDataMarshaller();
     }
 }
