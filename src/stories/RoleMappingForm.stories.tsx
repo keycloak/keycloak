@@ -33,7 +33,7 @@ export const RoleMappingFormExample = () => (
       }
     >
       <Page>
-        <RoleMappingForm clientScopeId="dummy" />
+        <RoleMappingForm />
       </Page>
     </AdminClient.Provider>
   </ServerInfoContext.Provider>

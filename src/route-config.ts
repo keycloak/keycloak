@@ -20,6 +20,7 @@ import { UserFederationSection } from "./user-federation/UserFederationSection";
 import { UsersSection } from "./user/UsersSection";
 import { MappingDetails } from "./client-scopes/details/MappingDetails";
 import { ClientDetails } from "./clients/ClientDetails";
+import { RoleMappingForm } from "./client-scopes/add/RoleMappingForm";
 
 export type RouteDef = {
   path: string;
@@ -71,6 +72,12 @@ export const routes: RoutesFn = (t: TFunction) => [
     path: "/client-scopes/:id",
     component: ClientScopeForm,
     breadcrumb: t("client-scopes:clientScopeDetails"),
+    access: "view-clients",
+  },
+  {
+    path: "/client-scopes/:scopeId/oidc-role-name-mapper",
+    component: RoleMappingForm,
+    breadcrumb: t("client-scopes:mappingDetails"),
     access: "view-clients",
   },
   {

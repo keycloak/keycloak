@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { useHistory } from "react-router-dom";
+import { useHistory, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -29,11 +29,7 @@ import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { ProtocolMapperRepresentation } from "../models/client-scope";
 
-export type RoleMappingFormProps = {
-  clientScopeId: string;
-};
-
-export const RoleMappingForm = ({ clientScopeId }: RoleMappingFormProps) => {
+export const RoleMappingForm = () => {
   const { realm } = useContext(RealmContext);
   const adminClient = useAdminClient();
   const history = useHistory();
@@ -41,35 +37,48 @@ export const RoleMappingForm = ({ clientScopeId }: RoleMappingFormProps) => {
 
   const { t } = useTranslation("client-scopes");
   const { register, handleSubmit, control, errors } = useForm();
+  const { clientScopeId } = useParams<{ clientScopeId: string }>();
 
   const [roleOpen, setRoleOpen] = useState(false);
-  const [roles, setRoles] = useState<RoleRepresentation[]>([]);
 
   const [clientsOpen, setClientsOpen] = useState(false);
   const [clients, setClients] = useState<ClientRepresentation[]>([]);
   const [selectedClient, setSelectedClient] = useState<ClientRepresentation>();
-  const [clientRoles, setClientRoles] = useState<RoleRepresentation[]>();
+  const [clientRoles, setClientRoles] = useState<RoleRepresentation[]>([]);
 
   useEffect(() => {
     (async () => {
-      const roles = await adminClient.roles.find();
-      setRoles(roles);
       const clients = await adminClient.clients.find();
-      clients.map(
+
+      const asyncFilter = async (
+        predicate: (client: ClientRepresentation) => Promise<boolean>
+      ) => {
+        const results = await Promise.all(clients.map(predicate));
+        return clients.filter((_, index) => results[index]);
+      };
+
+      const filteredClients = await asyncFilter(
+        async (client) =>
+          (await adminClient.clients.listRoles({ id: client.id! })).length > 0
+      );
+
+      filteredClients.map(
         (client) =>
           (client.toString = function () {
-            return this.name!;
+            return this.clientId!;
           })
       );
-      setClients(clients);
+      setClients(filteredClients);
     })();
-  });
+  }, []);
 
   useEffect(() => {
     (async () => {
       const client = selectedClient as ClientRepresentation;
       if (client && client.name !== "realmRoles") {
         setClientRoles(await adminClient.clients.listRoles({ id: client.id! }));
+      } else {
+        setClientRoles(await adminClient.roles.find());
       }
     })();
   }, [selectedClient]);
@@ -105,7 +114,7 @@ export const RoleMappingForm = ({ clientScopeId }: RoleMappingFormProps) => {
       <SelectGroup key="group" label={t("clientGroup")}>
         {clients.map((client) => (
           <SelectOption key={client.id} value={client}>
-            {client.name}
+            {client.clientId}
           </SelectOption>
         ))}
       </SelectGroup>,
@@ -118,11 +127,7 @@ export const RoleMappingForm = ({ clientScopeId }: RoleMappingFormProps) => {
         {role.name}
       </SelectOption>
     );
-    if (clientRoles) {
-      return clientRoles.map((role) => createItem(role));
-    } else {
-      return roles.map((role) => createItem(role));
-    }
+    return clientRoles.map((role) => createItem(role));
   };
 
   return (
