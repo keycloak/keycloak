@@ -84,9 +84,9 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.crypto.dsig.XMLSignature;
 import org.w3c.dom.NodeList;
 
-public class NiaSAMLEndpoint {
+public class NiaEndpoint {
 
-    protected static final Logger logger = Logger.getLogger(NiaSAMLEndpoint.class);
+    protected static final Logger logger = Logger.getLogger(NiaEndpoint.class);
     public static final String SAML_FEDERATED_SESSION_INDEX = "SAML_FEDERATED_SESSION_INDEX";
     @Deprecated // in favor of SAML_FEDERATED_SUBJECT_NAMEID
     public static final String SAML_FEDERATED_SUBJECT = "SAML_FEDERATED_SUBJECT";
@@ -114,7 +114,7 @@ public class NiaSAMLEndpoint {
     @Context
     private HttpHeaders headers;
 
-    public NiaSAMLEndpoint(RealmModel realm, NiaIdentityProvider provider,
+    public NiaEndpoint(RealmModel realm, NiaIdentityProvider provider,
             NiaIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback,
             DestinationValidator destinationValidator) {
         this.realm = realm;
