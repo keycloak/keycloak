@@ -9,6 +9,8 @@ import {
   Dropdown,
   KebabToggle,
   Label,
+  Flex,
+  FlexItem,
 } from "@patternfly/react-core";
 import "./keycloak-card.css";
 
@@ -53,15 +55,16 @@ export const KeycloakCard = ({
       </CardHeader>
       <CardBody />
       <CardFooter>
-        {footerText && footerText}
-        {labelText && (
-          <Label
-            color={labelColor || "gray"}
-            className="keycloak__keycloak-card__footer-label"
-          >
-            {labelText}
-          </Label>
-        )}
+        <Flex>
+          <FlexItem className="keycloak--keycloak-card__footer">
+            {footerText && footerText}
+          </FlexItem>
+          <FlexItem>
+            {labelText && (
+              <Label color={labelColor || "gray"}>{labelText}</Label>
+            )}
+          </FlexItem>
+        </Flex>
       </CardFooter>
     </Card>
   );

@@ -100,7 +100,10 @@ export const UserFederationSection = () => {
         </DropdownItem>,
       ];
       return (
-        <GalleryItem key={index}>
+        <GalleryItem
+          key={index}
+          className="keycloak-admin--user-federation__gallery-item"
+        >
           <KeycloakCard
             id={userFederation.id!}
             dropdownItems={ufCardDropdownItems}
