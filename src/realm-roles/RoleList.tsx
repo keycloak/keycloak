@@ -16,6 +16,7 @@ import { AlertVariant, ButtonVariant } from "@patternfly/react-core";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { Link } from "react-router-dom";
 
 type RolesListProps = {
   roles?: RoleRepresentation[];
@@ -29,6 +30,23 @@ const columns: (keyof RoleRepresentation)[] = [
 ];
 
 export const RolesList = ({ roles, refresh }: RolesListProps) => {
+  const data1 = roles?.map((c) => {
+    return {
+      cells: columns.map((col) => {
+        if (col === "name") {
+          return (
+            <>
+              <Link key={c.id} to={`/roles/${c.id}`}>
+                {c[col]}
+              </Link>
+            </>
+          );
+        }
+        return c[col];
+      }),
+    };
+  });
+
   const { t } = useTranslation("roles");
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
@@ -40,7 +58,7 @@ export const RolesList = ({ roles, refresh }: RolesListProps) => {
 
   const externalLink = (): IFormatter => (data?: IFormatterValueType) => {
     return (data ? (
-      <ExternalLink href={data.toString()} />
+      <ExternalLink href={"roles/" + data.toString()} />
     ) : undefined) as object;
   };
 
@@ -96,7 +114,7 @@ export const RolesList = ({ roles, refresh }: RolesListProps) => {
           },
           { title: t("description"), cellFormatters: [emptyFormatter()] },
         ]}
-        rows={data}
+        rows={data1}
         actions={[
           {
             title: t("common:Delete"),
