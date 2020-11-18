@@ -64,8 +64,6 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-@EnableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true)
-@EnableFeature(value = Profile.Feature.ACCOUNT_API, skipRestart = true)
 @EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public class SigningInTest extends BaseAccountPageTest {
     public static final String PASSWORD_LABEL = "My Password";

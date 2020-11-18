@@ -1,7 +1,7 @@
 {
-  "name": "keycloak-preview",
+  "name": "keycloak.v2",
   "version": "1.0.0",
-  "description": "keycloak-preview account management written in React",
+  "description": "keycloak account management written in React",
   "scripts": {
     "build": "snowpack --optimize && npm run check-types && npm run babel && npm run move-web_modules && npm run copy-pf-resources",
     "babel": "babel --source-maps --extensions \".js,.ts,.tsx\" app/ --out-dir ../resources/",

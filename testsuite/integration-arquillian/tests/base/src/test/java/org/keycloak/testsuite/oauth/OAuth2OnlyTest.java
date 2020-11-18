@@ -18,8 +18,7 @@
 package org.keycloak.testsuite.oauth;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Collections;
 
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
@@ -92,12 +91,12 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
         trimRedirectUris(testApp);
     }
 
-    // testMissingRedirectUri requires only one redirection url defined in the client. We need to trim the other one.
+    // testMissingRedirectUri requires only one redirection url defined in the client. We need to trim the other ones.
     private final void trimRedirectUris(ClientRepresentation testApp) {
-        List<String> filteredUris = testApp.getRedirectUris().stream()
+        String redirectUri = testApp.getRedirectUris().stream()
               .filter(uri -> AUTH_SERVER_SSL_REQUIRED ? uri.startsWith("https://") : uri.startsWith("http://"))
-              .collect(Collectors.toList());
-        testApp.setRedirectUris(filteredUris);
+              .findFirst().get();
+        testApp.setRedirectUris(Collections.singletonList(redirectUri));
     }
 
     @Before

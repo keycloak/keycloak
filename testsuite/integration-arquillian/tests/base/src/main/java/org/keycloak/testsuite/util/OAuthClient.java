@@ -115,8 +115,16 @@ public class OAuthClient {
     public static void updateURLs(String serverRoot) {
         SERVER_ROOT = removeDefaultPorts(serverRoot);
         AUTH_SERVER_ROOT = SERVER_ROOT + "/auth";
-        APP_ROOT = AUTH_SERVER_ROOT + "/realms/master/app";
+        updateAppRootRealm("master");
+    }
+
+    public static void updateAppRootRealm(String realm) {
+        APP_ROOT = AUTH_SERVER_ROOT + "/realms/" + realm + "/app";
         APP_AUTH_ROOT = APP_ROOT + "/auth";
+    }
+
+    public static void resetAppRootRealm() {
+        updateAppRootRealm("master");
     }
 
     private WebDriver driver;
