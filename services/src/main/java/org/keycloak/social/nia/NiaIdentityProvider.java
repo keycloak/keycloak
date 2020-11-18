@@ -394,6 +394,7 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
 //        //return (NiaIdentityProviderConfig) super.getConfig();
 //
 //    }
+
     @Override
     public IdentityProviderDataMarshaller getMarshaller() {
         return new NiaDataMarshaller();
