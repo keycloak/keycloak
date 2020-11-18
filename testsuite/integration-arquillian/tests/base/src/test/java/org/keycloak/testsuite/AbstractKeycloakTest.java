@@ -32,6 +32,7 @@ import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -44,6 +45,7 @@ import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.KcArquillian;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.TestContext;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthServerContextRoot;
@@ -252,19 +254,13 @@ public abstract class AbstractKeycloakTest {
     }
 
     public void deleteAllCookiesForMasterRealm() {
-        deleteAllCookiesForRealm(accountPage);
-    }
-
-    protected void deleteAllCookiesForRealm(Account realmAccountPage) {
-        // masterRealmPage.navigateTo();
-        realmAccountPage.navigateTo(); // Because IE webdriver freezes when loading a JSON page (realm page), we need to use this alternative
-        log.info("deleting cookies in '" + realmAccountPage.getAuthRealm() + "' realm");
-        driver.manage().deleteAllCookies();
+        deleteAllCookiesForRealm(MASTER);
     }
 
     protected void deleteAllCookiesForRealm(String realmName) {
-        // masterRealmPage.navigateTo();
-        navigateToUri(accountPage.getAuthRoot() + "/realms/" + realmName + "/account"); // Because IE webdriver freezes when loading a JSON page (realm page), we need to use this alternative
+        // we can't use /auth/realms/{realmName} because some browsers (e.g. Chrome) apparently don't send cookies
+        // to JSON pages and therefore can't delete realms cookies there; a non existing page will do just fine
+        navigateToUri(accountPage.getAuthRoot() + "/realms/" + realmName + "/super-random-page");
         log.info("deleting cookies in '" + realmName + "' realm");
         driver.manage().deleteAllCookies();
     }

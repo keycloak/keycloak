@@ -20,6 +20,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -31,6 +32,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.account.AccountManagement;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
@@ -51,6 +53,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
  *
  * @author fkiss
  */
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
 
     @Page

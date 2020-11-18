@@ -181,7 +181,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
                       {application.description &&
                         <GridItem><strong>{Msg.localize('description') + ': '}</strong> {application.description}</GridItem>
                       }
-                      <GridItem><strong>URL: </strong> {application.effectiveUrl}</GridItem>
+                      <GridItem><strong>URL: </strong> <span id={this.elementId('effectiveurl', application)}>{application.effectiveUrl.split('"')}</span></GridItem>
                       {application.consent &&
                         <React.Fragment>
                           <GridItem span={12}>

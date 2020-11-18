@@ -26,6 +26,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -41,6 +42,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -66,6 +68,7 @@ import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
 /**
  * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
  */
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class OAuthGrantTest extends AbstractKeycloakTest {
 
     public static final String THIRD_PARTY_APP = "third-party";

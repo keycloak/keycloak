@@ -14,7 +14,7 @@ Before committing changes review changes in `src/main/resources/theme/keycloak/c
 
 The node dependencies will be downloaded at build time, based on the content of `package-lock.json`. To update `package-lock.json`:
 
-    cd src/main/resources/theme/keycloak-preview/account/resources/
+    cd src/main/resources/theme/keycloak.v2/account/resources/
     npm install
     git add package-lock.json
     cd -

@@ -21,6 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
@@ -32,6 +33,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.federation.PassThroughFederatedUserStorageProvider;
 import org.keycloak.testsuite.federation.PassThroughFederatedUserStorageProviderFactory;
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
@@ -53,6 +55,7 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.A
  * @version $Revision: 1 $
  */
 @AuthServerContainerExclude(AuthServer.REMOTE)
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class AccountLinkTest extends AbstractKeycloakTest {
     public static final String CHILD_IDP = "child";
     public static final String PARENT_IDP = "parent-idp";

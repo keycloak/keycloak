@@ -138,6 +138,10 @@ unzip prepared server:
 
     unzip -q testsuite/integration-arquillian/servers/auth-server/jboss/wildfly/target/integration-arquillian-servers-auth-server-wildfly-*.zip
 
+create admin user:
+
+    sh auth-server-wildfly/bin/add-user-keycloak.sh -r master -u admin -p admin
+
 start the server:
 
     sh auth-server-wildfly/bin/standalone.sh \
@@ -162,6 +166,10 @@ unzip prepared servers:
 
     unzip -q keycloak/testsuite/integration-arquillian/servers/auth-server/jboss/wildfly/target/integration-arquillian-servers-auth-server-wildfly-*.zip
     unzip -q keycloak/testsuite/integration-arquillian/servers/app-server/jboss/wildfly/target/integration-arquillian-servers-app-server-wildfly-*.zip
+
+create admin user:
+
+    sh auth-server-wildfly/bin/add-user-keycloak.sh -r master -u admin -p admin
 
 start both servers:
 

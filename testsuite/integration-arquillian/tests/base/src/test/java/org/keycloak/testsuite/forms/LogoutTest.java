@@ -19,6 +19,7 @@ package org.keycloak.testsuite.forms;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -28,6 +29,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 
@@ -153,6 +155,7 @@ public class LogoutTest extends AbstractTestRealmKeycloakTest {
 
     //KEYCLOAK-2741
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void logoutWithRememberMe() {
         setRememberMe(true);
         

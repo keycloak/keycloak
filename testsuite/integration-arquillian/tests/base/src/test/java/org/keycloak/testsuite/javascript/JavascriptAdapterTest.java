@@ -7,6 +7,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -20,6 +21,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
@@ -280,6 +282,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     }
 
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void grantBrowserBasedApp() {
         Assume.assumeTrue("This test doesn't work with phantomjs", !"phantomjs".equals(System.getProperty("js.browser")));
 

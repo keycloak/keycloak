@@ -23,6 +23,7 @@ import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
@@ -36,6 +37,7 @@ import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapper;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
@@ -96,6 +98,7 @@ public class LDAPPasswordModifyExtensionTest extends AbstractLDAPTest  {
     }
 
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void ldapPasswordChangeWithAccountConsole() throws Exception {
         changePasswordPage.open();
         loginPage.login("johnkeycloak", "Password1");

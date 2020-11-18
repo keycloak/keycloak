@@ -20,7 +20,9 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.ProfileAssume;
@@ -31,6 +33,7 @@ import java.util.List;
  * @author <a href="mailto:gerbermichi@me.com">Michael Gerber</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class AccountPageTest extends AbstractI18NTest {
 
     @Page
