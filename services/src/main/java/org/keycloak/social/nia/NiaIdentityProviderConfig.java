@@ -38,12 +38,12 @@ public class NiaIdentityProviderConfig extends IdentityProviderModel {
     public static final String AUTHN_CONTEXT_DECL_REFS = "authnContextDeclRefs";
     public static final String SIGN_SP_METADATA = "signSpMetadata";
 
-    NiaIdentityProviderConfig(IdentityProviderModel model) {
+    public NiaIdentityProviderConfig(IdentityProviderModel model) {
         super(model);
 //        initialize();
     }
 
-    NiaIdentityProviderConfig() {
+    public NiaIdentityProviderConfig() {
 //        initialize();
     }
 
