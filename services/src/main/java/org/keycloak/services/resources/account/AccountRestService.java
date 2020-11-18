@@ -206,8 +206,6 @@ public class AccountRestService {
         return new ResourcesService(session, user, auth, request);
     }
 
-    // TODO Federated identities
-
     private ClientRepresentation modelToRepresentation(ClientModel model, List<String> inUseClients, List<String> offlineClients, Map<String, UserConsentModel> consents) {
         ClientRepresentation representation = new ClientRepresentation();
         representation.setClientId(model.getClientId());
@@ -465,6 +463,6 @@ public class AccountRestService {
     private static void checkAccountApiEnabled() {
         if (!Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_API)) {
             throw new NotFoundException();
-        }
+}
     }
 }

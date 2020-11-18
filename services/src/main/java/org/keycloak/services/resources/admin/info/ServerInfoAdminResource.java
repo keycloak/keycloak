@@ -170,8 +170,8 @@ public class ServerInfoAdminResource {
             Collections.sort(themeNames);
 
             if (!Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2)) {
-                themeNames.remove("keycloak-preview");
-                themeNames.remove("rh-sso-preview");
+                themeNames.remove("keycloak.v2");
+                themeNames.remove("rh-sso.v2");
             }
 
             List<ThemeInfoRepresentation> themes = new LinkedList<>();

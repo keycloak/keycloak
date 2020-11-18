@@ -4,7 +4,9 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.console.page.fragment.LocaleDropdown;
 import org.keycloak.testsuite.console.page.realm.ThemeSettings;
@@ -19,6 +21,7 @@ import static org.keycloak.testsuite.util.URLAssert.*;
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class InternationalizationTest extends AbstractRealmTest {
     private static final String THEME_NAME = "internat-test";
     private static final String LOCALE_CS_NAME = "Čeština";

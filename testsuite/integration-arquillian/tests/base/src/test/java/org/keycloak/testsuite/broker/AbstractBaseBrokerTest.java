@@ -23,6 +23,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -34,6 +35,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
@@ -76,6 +78,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
  * No test methods there. Just some useful common functionality
  */
 @AuthServerContainerExclude(AuthServer.REMOTE)
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     protected static final String ATTRIBUTE_VALUE = "attribute.value";

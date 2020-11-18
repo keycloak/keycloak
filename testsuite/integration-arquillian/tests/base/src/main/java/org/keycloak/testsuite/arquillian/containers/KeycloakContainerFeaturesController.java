@@ -23,9 +23,10 @@ import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
 import java.lang.reflect.AnnotatedElement;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -81,23 +82,6 @@ public class KeycloakContainerFeaturesController {
             this.onlyForProduct = onlyForProduct;
         }
 
-        /**
-         * All features we want to enable/disable must be disabled/enabled
-         * otherwise at the end of a test the environment will be in an inconsistent state because we would disable/enable
-         * some feature which was enabled/disabled before test
-         *
-         */
-        private void assertValid() {
-            // feature may be disabled after test method run, if trying to disable a disabled feature, ignore
-            if (FeatureAction.DISABLE.equals(action) && !ProfileAssume.isFeatureEnabled(feature)) {
-                return;
-            }
-            assertThat("An annotation requested to " + action.name()
-                            + " feature " + feature.name() + " however it was already in that state" ,
-                    ProfileAssume.isFeatureEnabled(feature),
-                    is(!(action == FeatureAction.ENABLE)));
-        }
-
         private void assertPerformed() {
             assertThat("An annotation requested to " + action.name() +
                             " feature " + feature.name() + ", however after performing this operation " +
@@ -107,8 +91,39 @@ public class KeycloakContainerFeaturesController {
         }
 
         public void performAction() {
-            assertValid();
-            action.accept(testContextInstance.get().getTestingClient(), feature);
+            if ((action == FeatureAction.ENABLE && !ProfileAssume.isFeatureEnabled(feature))
+                    || (action == FeatureAction.DISABLE && ProfileAssume.isFeatureEnabled(feature))) {
+                action.accept(testContextInstance.get().getTestingClient(), feature);
+            }
+        }
+
+        public Profile.Feature getFeature() {
+            return feature;
+        }
+
+        public boolean isSkipRestart() {
+            return skipRestart;
+        }
+
+        public FeatureAction getAction() {
+            return action;
+        }
+
+        public boolean isOnlyForProduct() {
+            return onlyForProduct;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            UpdateFeature that = (UpdateFeature) o;
+            return feature == that.feature;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(feature);
         }
     }
 
@@ -125,10 +140,10 @@ public class KeycloakContainerFeaturesController {
         }
     }
 
-    private void updateFeatures(List<UpdateFeature> updateFeatures) throws Exception {
+    private void updateFeatures(Set<UpdateFeature> updateFeatures) throws Exception {
         updateFeatures = updateFeatures.stream()
                 .filter(this::skipForProduct)
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
 
         updateFeatures.forEach(UpdateFeature::performAction);
 
@@ -146,25 +161,40 @@ public class KeycloakContainerFeaturesController {
     }
 
     private void checkAnnotatedElementForFeatureAnnotations(AnnotatedElement annotatedElement, State state) throws Exception {
-        List<UpdateFeature> updateFeatureList = new ArrayList<>(0);
+        Set<UpdateFeature> updateFeatureSet = new HashSet<>();
 
-        if (isEnableFeature(annotatedElement)) {
-            updateFeatureList.addAll(Arrays.stream(annotatedElement.getAnnotationsByType(EnableFeature.class))
-                    .map(annotation -> new UpdateFeature(annotation.value(), annotation.skipRestart(),
-                            state == State.BEFORE ? FeatureAction.ENABLE : FeatureAction.DISABLE, annotation.onlyForProduct()))
-                    .collect(Collectors.toList()));
+        updateFeatureSet.addAll(getUpdateFeaturesSet(annotatedElement, state));
+
+        // we can't rely on @Inherited annotations as it stops "searching" when it finds the first occurrence of given
+        // annotation, i.e. annotation from the most specific test class
+        if (annotatedElement instanceof Class) {
+            Class<?> clazz = ((Class<?>) annotatedElement).getSuperclass();
+            while (clazz != null) {
+                // duplicates (i.e. annotations from less specific test classes) won't be added
+                updateFeatureSet.addAll(getUpdateFeaturesSet(clazz, state));
+                clazz = clazz.getSuperclass();
+            }
         }
 
-        if (isDisableFeature(annotatedElement)) {
-            updateFeatureList.addAll(Arrays.stream(annotatedElement.getAnnotationsByType(DisableFeature.class))
-                    .map(annotation -> new UpdateFeature(annotation.value(), annotation.skipRestart(),
-                            state == State.BEFORE ? FeatureAction.DISABLE : FeatureAction.ENABLE, annotation.onlyForProduct()))
-                    .collect(Collectors.toList()));
+        if (!updateFeatureSet.isEmpty()) {
+            updateFeatures(updateFeatureSet);
         }
+    }
 
-        if (!updateFeatureList.isEmpty()) {
-            updateFeatures(updateFeatureList);
-        }
+    private Set<UpdateFeature> getUpdateFeaturesSet(AnnotatedElement annotatedElement, State state) {
+        Set<UpdateFeature> ret = new HashSet<>();
+
+        ret.addAll(Arrays.stream(annotatedElement.getAnnotationsByType(EnableFeature.class))
+                .map(annotation -> new UpdateFeature(annotation.value(), annotation.skipRestart(),
+                        state == State.BEFORE ? FeatureAction.ENABLE : FeatureAction.DISABLE, annotation.onlyForProduct()))
+                .collect(Collectors.toSet()));
+
+        ret.addAll(Arrays.stream(annotatedElement.getAnnotationsByType(DisableFeature.class))
+                .map(annotation -> new UpdateFeature(annotation.value(), annotation.skipRestart(),
+                        state == State.BEFORE ? FeatureAction.DISABLE : FeatureAction.ENABLE, annotation.onlyForProduct()))
+                .collect(Collectors.toSet()));
+
+        return ret;
     }
 
     private boolean isEnableFeature(AnnotatedElement annotatedElement) {

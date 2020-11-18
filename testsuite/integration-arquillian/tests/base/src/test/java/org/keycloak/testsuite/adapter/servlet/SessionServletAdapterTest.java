@@ -25,12 +25,14 @@ import org.junit.After;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.common.Profile;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.page.SessionPortal;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.account.Sessions;
 import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
@@ -187,6 +189,7 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
 
     //KEYCLOAK-1216
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void testAccountManagementSessionsLogout() {
         // login as bburke
         loginAndCheckSession(testRealmLoginPage);

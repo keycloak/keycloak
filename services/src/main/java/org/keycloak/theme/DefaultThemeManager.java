@@ -37,6 +37,7 @@ import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import org.keycloak.common.Profile;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -44,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultThemeManager implements ThemeManager {
 
     private static final Logger log = Logger.getLogger(DefaultThemeManager.class);
+    private static final boolean isAccount2Enabled = Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2);
 
     private final DefaultThemeManagerFactory factory;
     private final KeycloakSession session;
@@ -62,6 +64,14 @@ public class DefaultThemeManager implements ThemeManager {
         return getTheme(name, type);
     }
 
+    private String typeBasedDefault(Theme.Type type) {
+        if ((type == Theme.Type.ACCOUNT) && isAccount2Enabled) {
+            return "keycloak.v2";
+        }
+        
+        return "keycloak";
+    }
+    
     @Override
     public Theme getTheme(String name, Theme.Type type) {
         if (name == null) {
@@ -72,7 +82,7 @@ public class DefaultThemeManager implements ThemeManager {
         if (theme == null) {
             theme = loadTheme(name, type);
             if (theme == null) {
-                theme = loadTheme("keycloak", type);
+                theme = loadTheme(typeBasedDefault(type), type);
                 if (theme == null) {
                     theme = loadTheme("base", type);
                 }
@@ -81,9 +91,18 @@ public class DefaultThemeManager implements ThemeManager {
                 theme = factory.addCachedTheme(name, type, theme);
             }
         }
+        
+        if (!isAccount2Enabled && theme.getName().equals("keycloak.v2")) {
+            theme = loadTheme("keycloak", type);
+        }
+        
+        if (!isAccount2Enabled && theme.getName().equals("rhsso.v2")) {
+            theme = loadTheme("rhsso", type);
+        }
+        
         return theme;
     }
-
+    
     @Override
     public Set<String> nameSet(Theme.Type type) {
         Set<String> themes = new HashSet<String>();

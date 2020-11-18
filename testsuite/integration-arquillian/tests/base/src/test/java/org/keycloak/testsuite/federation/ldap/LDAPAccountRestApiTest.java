@@ -39,14 +39,12 @@ import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.TokenUtil;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
