@@ -147,7 +147,7 @@ public class SamlService extends AuthorizationEndpointBase {
             SAMLDocumentHolder holder = extractResponseDocument(samlResponse);
 
             if (! (holder.getSamlObject() instanceof StatusResponseType)) {
-                event.detail(Details.REASON, "invalid_saml_response");
+                event.detail(Details.REASON, Errors.INVALID_SAML_RESPONSE);
                 event.error(Errors.INVALID_SAML_RESPONSE);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
@@ -155,12 +155,12 @@ public class SamlService extends AuthorizationEndpointBase {
             StatusResponseType statusResponse = (StatusResponseType) holder.getSamlObject();
             // validate destination
             if (statusResponse.getDestination() == null && containsUnencryptedSignature(holder)) {
-                event.detail(Details.REASON, "missing_required_destination");
+                event.detail(Details.REASON, Errors.MISSING_REQUIRED_DESTINATION);
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
             if (! destinationValidator.validate(this.getExpectedDestinationUri(session), statusResponse.getDestination())) {
-                event.detail(Details.REASON, "invalid_destination");
+                event.detail(Details.REASON, Errors.INVALID_DESTINATION);
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
@@ -269,7 +269,7 @@ public class SamlService extends AuthorizationEndpointBase {
             logger.debug("verified request");
 
             if (requestAbstractType.getDestination() == null && containsUnencryptedSignature(documentHolder)) {
-                event.detail(Details.REASON, "missing_required_destination");
+                event.detail(Details.REASON, Errors.MISSING_REQUIRED_DESTINATION);
                 event.error(Errors.INVALID_REQUEST);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
@@ -343,7 +343,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 if (isSupportedNameIdFormat(nameIdFormat)) {
                     authSession.setClientNote(GeneralConstants.NAMEID_FORMAT, nameIdFormat);
                 } else {
-                    event.detail(Details.REASON, "unsupported_nameid_format");
+                    event.detail(Details.REASON, Errors.UNSUPPORTED_NAMEID_FORMAT);
                     event.error(Errors.INVALID_SAML_AUTHN_REQUEST);
                     return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.UNSUPPORTED_NAME_ID_FORMAT);
                 }
@@ -508,7 +508,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 return false;
             }
             if (! destinationValidator.validate(this.getExpectedDestinationUri(session), req.getDestination())) {
-                event.detail(Details.REASON, "invalid_destination");
+                event.detail(Details.REASON, Errors.INVALID_DESTINATION);
                 event.error(errorCode);
                 return false;
             }

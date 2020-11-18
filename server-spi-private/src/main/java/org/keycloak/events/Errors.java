@@ -94,5 +94,9 @@ public interface Errors {
     String ILLEGAL_ORIGIN = "illegal_origin";
     String DISPLAY_UNSUPPORTED = "display_unsupported";
     String LOGOUT_FAILED = "logout_failed";
+    String INVALID_DESTINATION = "invalid_destination";
+    String MISSING_REQUIRED_DESTINATION = "missing_required_destination";
+    String INVALID_SAML_DOCUMENT = "invalid_saml_document";
+    String UNSUPPORTED_NAMEID_FORMAT = "unsupported_nameid_format";
 
 }
