@@ -1,6 +1,5 @@
 package org.keycloak.broker.nia;
 
-import org.keycloak.social.nia.*;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamWriter;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;

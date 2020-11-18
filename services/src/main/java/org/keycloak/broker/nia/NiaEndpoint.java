@@ -1,6 +1,5 @@
 package org.keycloak.broker.nia;
 
-import org.keycloak.social.nia.*;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.broker.provider.BrokeredIdentityContext;

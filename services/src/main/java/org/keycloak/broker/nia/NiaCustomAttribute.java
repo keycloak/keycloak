@@ -1,6 +1,5 @@
 package org.keycloak.broker.nia;
 
-import org.keycloak.social.nia.*;
 import javax.xml.stream.XMLStreamWriter;
 import org.keycloak.saml.SamlProtocolExtensionsAwareBuilder;
 import org.keycloak.saml.common.exceptions.ProcessingException;

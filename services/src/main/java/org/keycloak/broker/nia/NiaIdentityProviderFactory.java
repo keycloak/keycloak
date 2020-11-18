@@ -26,8 +26,7 @@ import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.validators.DestinationValidator;
 import org.w3c.dom.Element;
 
-public class NiaIdentityProviderFactory extends AbstractIdentityProviderFactory<NiaIdentityProvider>
-        implements SocialIdentityProviderFactory<NiaIdentityProvider> {
+public class NiaIdentityProviderFactory extends AbstractIdentityProviderFactory<NiaIdentityProvider> {
 
     public static final String NIA_PROVIDER_ID = "nia";
     public static final String NIA_PROVIDER_NAME = "nia";

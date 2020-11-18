@@ -22,7 +22,6 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProviderDataMarshaller;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyStatus;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
@@ -64,8 +63,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityProviderConfig>
-        implements SocialIdentityProvider<NiaIdentityProviderConfig> {
+public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityProviderConfig> {
 
     protected static final Logger logger = Logger.getLogger(NiaIdentityProvider.class);
 
