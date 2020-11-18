@@ -78,7 +78,7 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
 
     @Override
     public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
-        return new NiaEndpoint(realm, this, getNiaConfig(), callback, destinationValidator);
+        return new NiaEndpoint(realm, this, getConfig(), callback, destinationValidator);
     }
 
     @Override
@@ -87,8 +87,8 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
             UriInfo uriInfo = request.getUriInfo();
             RealmModel realm = request.getRealm();
             String issuerURL = getEntityId(uriInfo, realm);
-            String destinationUrl = getNiaConfig().getSingleSignOnServiceUrl();
-            String nameIDPolicyFormat = getNiaConfig().getNameIDPolicyFormat();
+            String destinationUrl = getConfig().getSingleSignOnServiceUrl();
+            String nameIDPolicyFormat = getConfig().getNameIDPolicyFormat();
 
             if (nameIDPolicyFormat == null) {
                 nameIDPolicyFormat = JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get();
@@ -98,13 +98,13 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
 
             String assertionConsumerServiceUrl = request.getRedirectUri();
 
-            if (getNiaConfig().isPostBindingResponse()) {
+            if (getConfig().isPostBindingResponse()) {
                 protocolBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get();
             }
 
             SAML2RequestedAuthnContextBuilder requestedAuthnContext
                     = new SAML2RequestedAuthnContextBuilder()
-                            .setComparison(getNiaConfig().getAuthnContextComparisonType());
+                            .setComparison(getConfig().getAuthnContextComparisonType());
 
             for (String authnContextClassRef : getAuthnContextClassRefUris()) {
                 requestedAuthnContext.addAuthnContextClassRef(authnContextClassRef);
@@ -113,12 +113,12 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
             for (String authnContextDeclRef : getAuthnContextDeclRefUris()) {
                 requestedAuthnContext.addAuthnContextDeclRef(authnContextDeclRef);
             }
-            String loginHint = getNiaConfig().isLoginHint() ? request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM) : null;
+            String loginHint = getConfig().isLoginHint() ? request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM) : null;
             SAML2AuthnRequestBuilder authnRequestBuilder = new SAML2AuthnRequestBuilder()
                     .assertionConsumerUrl(assertionConsumerServiceUrl)
                     .destination(destinationUrl)
                     .issuer(issuerURL)
-                    .forceAuthn(getNiaConfig().isForceAuthn())
+                    .forceAuthn(getConfig().isForceAuthn())
                     .protocolBinding(protocolBinding)
                     .nameIdPolicy(SAML2NameIDPolicyBuilder
                             .format(nameIDPolicyFormat)
@@ -130,16 +130,16 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
 
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                     .relayState(request.getState().getEncoded());
-            boolean postBinding = getNiaConfig().isPostBindingAuthnRequest();
+            boolean postBinding = getConfig().isPostBindingAuthnRequest();
 
-            if (getNiaConfig().isWantAuthnRequestsSigned()) {
+            if (getConfig().isWantAuthnRequestsSigned()) {
                 KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
 
-                String keyName = getNiaConfig().getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
+                String keyName = getConfig().getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
                 binding.signWith(keyName, keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
                         .signatureAlgorithm(getSignatureAlgorithm())
                         .signDocument();
-                if (!postBinding && getNiaConfig().isAddExtensionsElementWithKeyInfo()) {    // Only include extension if REDIRECT binding and signing whole SAML protocol message
+                if (!postBinding && getConfig().isAddExtensionsElementWithKeyInfo()) {    // Only include extension if REDIRECT binding and signing whole SAML protocol message
                     authnRequestBuilder.addExtension(new KeycloakKeySamlExtensionGenerator(keyName));
                 }
             }
@@ -164,7 +164,7 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
     }
 
     private String getEntityId(UriInfo uriInfo, RealmModel realm) {
-        String configEntityId = getNiaConfig().getEntityId();
+        String configEntityId = getConfig().getEntityId();
 
         if (configEntityId == null || configEntityId.isEmpty()) {
             return UriBuilder.fromUri(uriInfo.getBaseUri()).path("realms").path(realm.getName()).build().toString();
@@ -175,7 +175,7 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
     }
 
     private List<String> getAuthnContextClassRefUris() {
-        String authnContextClassRefs = getNiaConfig().getAuthnContextClassRefs();
+        String authnContextClassRefs = getConfig().getAuthnContextClassRefs();
         if (authnContextClassRefs == null || authnContextClassRefs.isEmpty()) {
             return new LinkedList<String>();
         }
@@ -189,7 +189,7 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
     }
 
     private List<String> getAuthnContextDeclRefUris() {
-        String authnContextDeclRefs = getNiaConfig().getAuthnContextDeclRefs();
+        String authnContextDeclRefs = getConfig().getAuthnContextDeclRefs();
         if (authnContextDeclRefs == null || authnContextDeclRefs.isEmpty()) {
             return new LinkedList<String>();
         }
@@ -203,7 +203,7 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
     }
 
     public SignatureAlgorithm getSignatureAlgorithm() {
-        String alg = getNiaConfig().getSignatureAlgorithm();
+        String alg = getConfig().getSignatureAlgorithm();
         if (alg != null) {
             SignatureAlgorithm algorithm = SignatureAlgorithm.valueOf(alg);
             if (algorithm != null) {
@@ -232,8 +232,8 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
 
     @Override
     public void backchannelLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
-        String singleLogoutServiceUrl = getNiaConfig().getSingleLogoutServiceUrl();
-        if (singleLogoutServiceUrl == null || singleLogoutServiceUrl.trim().equals("") || !getNiaConfig().isBackchannelSupported()) {
+        String singleLogoutServiceUrl = getConfig().getSingleLogoutServiceUrl();
+        if (singleLogoutServiceUrl == null || singleLogoutServiceUrl.trim().equals("") || !getConfig().isBackchannelSupported()) {
             return;
         }
         JaxrsSAML2BindingBuilder binding = buildLogoutBinding(session, userSession, realm);
@@ -257,12 +257,12 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
 
     @Override
     public Response keycloakInitiatedBrowserLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
-        String singleLogoutServiceUrl = getNiaConfig().getSingleLogoutServiceUrl();
+        String singleLogoutServiceUrl = getConfig().getSingleLogoutServiceUrl();
         if (singleLogoutServiceUrl == null || singleLogoutServiceUrl.trim().equals("")) {
             return null;
         }
 
-        if (getNiaConfig().isBackchannelSupported()) {
+        if (getConfig().isBackchannelSupported()) {
             backchannelLogout(session, userSession, uriInfo, realm);
             return null;
         } else {
@@ -272,7 +272,7 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
                     singleLogoutServiceUrl = logoutRequest.getDestination().toString();
                 }
                 JaxrsSAML2BindingBuilder binding = buildLogoutBinding(session, userSession, realm);
-                if (getNiaConfig().isPostBindingLogout()) {
+                if (getConfig().isPostBindingLogout()) {
                     return binding.postBinding(SAML2Request.convert(logoutRequest)).request(singleLogoutServiceUrl);
                 } else {
                     return binding.redirectBinding(SAML2Request.convert(logoutRequest)).request(singleLogoutServiceUrl);
@@ -303,9 +303,9 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
     private JaxrsSAML2BindingBuilder buildLogoutBinding(KeycloakSession session, UserSessionModel userSession, RealmModel realm) {
         JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                 .relayState(userSession.getId());
-        if (getNiaConfig().isWantAuthnRequestsSigned()) {
+        if (getConfig().isWantAuthnRequestsSigned()) {
             KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
-            String keyName = getNiaConfig().getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
+            String keyName = getConfig().getXmlSigKeyInfoKeyNameTransformer().getKeyName(keys.getKid(), keys.getCertificate());
             binding.signWith(keyName, keys.getPrivateKey(), keys.getPublicKey(), keys.getCertificate())
                     .signatureAlgorithm(getSignatureAlgorithm())
                     .signDocument();
@@ -318,22 +318,22 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
         try {
             URI authnBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri();
 
-            if (getNiaConfig().isPostBindingAuthnRequest()) {
+            if (getConfig().isPostBindingAuthnRequest()) {
                 authnBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri();
             }
 
             URI endpoint = uriInfo.getBaseUriBuilder()
                     .path("realms").path(realm.getName())
                     .path("broker")
-                    .path(getNiaConfig().getAlias())
+                    .path(getConfig().getAlias())
                     .path("endpoint")
                     .build();
 
-            boolean wantAuthnRequestsSigned = getNiaConfig().isWantAuthnRequestsSigned();
-            boolean wantAssertionsSigned = getNiaConfig().isWantAssertionsSigned();
-            boolean wantAssertionsEncrypted = getNiaConfig().isWantAssertionsEncrypted();
+            boolean wantAuthnRequestsSigned = getConfig().isWantAuthnRequestsSigned();
+            boolean wantAssertionsSigned = getConfig().isWantAssertionsSigned();
+            boolean wantAssertionsEncrypted = getConfig().isWantAssertionsEncrypted();
             String entityId = getEntityId(uriInfo, realm);
-            String nameIDPolicyFormat = getNiaConfig().getNameIDPolicyFormat();
+            String nameIDPolicyFormat = getConfig().getNameIDPolicyFormat();
 
             List<Element> signingKeys = new ArrayList<Element>();
             List<Element> encryptionKeys = new ArrayList<Element>();
@@ -358,9 +358,9 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
                     entityId, nameIDPolicyFormat, signingKeys, encryptionKeys);
 
             // Metadata signing
-            if (getNiaConfig().isSignSpMetadata()) {
+            if (getConfig().isSignSpMetadata()) {
                 KeyManager.ActiveRsaKey activeKey = session.keys().getActiveRsaKey(realm);
-                String keyName = getNiaConfig().getXmlSigKeyInfoKeyNameTransformer().getKeyName(activeKey.getKid(), activeKey.getCertificate());
+                String keyName = getConfig().getXmlSigKeyInfoKeyNameTransformer().getKeyName(activeKey.getKid(), activeKey.getCertificate());
                 KeyPair keyPair = new KeyPair(activeKey.getPublicKey(), activeKey.getPrivateKey());
 
                 Document metadataDocument = DocumentUtil.getDocument(descriptor);
@@ -389,9 +389,8 @@ public class NiaIdentityProvider extends AbstractIdentityProvider<NiaIdentityPro
     }
 
     public NiaIdentityProviderConfig getNiaConfig() {
-        NiaIdentityProviderConfig niaIdentityProviderConfig = new NiaIdentityProviderConfig();
-        return niaIdentityProviderConfig;
-        //return (NiaIdentityProviderConfig) super.getConfig();
+
+        return (NiaIdentityProviderConfig) super.getConfig();
 
     }
 
