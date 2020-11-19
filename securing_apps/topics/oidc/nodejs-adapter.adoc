@@ -209,7 +209,7 @@ If `response_mode` is set to `permissions` (default mode), the server only retur
 
 [source,javascript]
 ----
-    app.get('/apis/me', keycloak.enforcer('user:profile', {response_mode: 'token'}), function (req, res) {
+    app.get('/apis/me', keycloak.enforcer('user:profile', {response_mode: 'permissions'}), function (req, res) {
         var permissions = req.permissions;
 
         // show user profile
