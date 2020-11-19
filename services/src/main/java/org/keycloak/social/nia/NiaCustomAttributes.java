@@ -19,6 +19,8 @@ public class NiaCustomAttributes implements SamlProtocolExtensionsAwareBuilder.N
         StaxUtil.writeStartElement(writer, ELEMENT, REQUESTED, "");
         NiaCustomAttribute nia = new NiaCustomAttribute("http://www.stork.gov.eu/1.0/eMail", TRUE);
         nia.write(writer);
+        nia = new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentFamilyName", TRUE);
+        nia.write(writer);
 //        nia = new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/CurrentGivenName", TRUE);
 //        nia.write(writer);
 //        nia = new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/DateOfBirth", TRUE);
