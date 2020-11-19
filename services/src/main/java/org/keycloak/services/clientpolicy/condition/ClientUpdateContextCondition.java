@@ -17,6 +17,9 @@
 
 package org.keycloak.services.clientpolicy.condition;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
@@ -57,10 +60,15 @@ public class ClientUpdateContextCondition implements ClientPolicyConditionProvid
     private boolean isAuthMethodMatched(String authMethod) {
         if (authMethod == null) return false;
 
-        ClientPolicyLogger.log(logger, "auth method = " + authMethod);
-        componentModel.getConfig().get(ClientUpdateContextConditionFactory.UPDATE_CLIENT_SOURCE).stream().forEach(i -> ClientPolicyLogger.log(logger, "auth method expected = " + i));
+        List<String> expectedAuthMethods = componentModel.getConfig().get(ClientUpdateContextConditionFactory.UPDATE_CLIENT_SOURCE);
+        if (expectedAuthMethods == null) expectedAuthMethods = Collections.emptyList();
 
-        boolean isMatched = componentModel.getConfig().get(ClientUpdateContextConditionFactory.UPDATE_CLIENT_SOURCE).stream().anyMatch(i -> i.equals(authMethod));
+        if (logger.isTraceEnabled()) {
+            ClientPolicyLogger.log(logger, "auth method = " + authMethod);
+            expectedAuthMethods.stream().forEach(i -> ClientPolicyLogger.log(logger, "auth method expected = " + i));
+        }
+
+        boolean isMatched = expectedAuthMethods.stream().anyMatch(i -> i.equals(authMethod));
         if (isMatched) {
             ClientPolicyLogger.log(logger, "auth method matched.");
         } else {
