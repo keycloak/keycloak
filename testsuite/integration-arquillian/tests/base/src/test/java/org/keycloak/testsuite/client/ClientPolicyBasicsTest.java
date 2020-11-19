@@ -1021,6 +1021,63 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         }
     }
 
+    @Test
+    public void testConditionWithoutNoConfiguration() throws ClientRegistrationException, ClientPolicyException {
+        String policyName = "MyPolicy-ClientAccessTypeCondition";
+        createPolicy(policyName, DefaultClientPolicyProviderFactory.PROVIDER_ID, null, null, null);
+        logger.info("... Created Policy : " + policyName);
+        createCondition("ClientAccessTypeCondition", ClientAccessTypeConditionFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+        });
+        registerCondition("ClientAccessTypeCondition", policyName);
+        logger.info("... Registered Condition : ClientAccessTypeCondition");
+
+        policyName = "MyPolicy-ClientIpAddressCondition";
+        createPolicy(policyName, DefaultClientPolicyProviderFactory.PROVIDER_ID, null, null, null);
+        logger.info("... Created Policy : " + policyName);
+        createCondition("ClientIpAddressCondition", ClientIpAddressConditionFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+        });
+        registerCondition("ClientIpAddressCondition", policyName);
+        logger.info("... Registered Condition : ClientIpAddressCondition");
+
+        policyName = "MyPolicy-ClientScopesCondition";
+        createPolicy(policyName, DefaultClientPolicyProviderFactory.PROVIDER_ID, null, null, null);
+        logger.info("... Created Policy : " + policyName);
+        createCondition("ClientScopesCondition", ClientScopesConditionFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+        });
+        registerCondition("ClientScopesCondition", policyName);
+        logger.info("... Registered Condition : ClientScopesCondition");
+
+        policyName = "MyPolicy-ClientUpdateContextCondition";
+        createPolicy(policyName, DefaultClientPolicyProviderFactory.PROVIDER_ID, null, null, null);
+        logger.info("... Created Policy : " + policyName);
+        createCondition("ClientUpdateContextCondition", ClientUpdateContextConditionFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+        });
+        registerCondition("ClientUpdateContextCondition", policyName);
+        logger.info("... Registered Condition : ClientUpdateContextCondition");
+
+        policyName = "MyPolicy-SecureSessionEnforceExecutor";
+        createPolicy(policyName, DefaultClientPolicyProviderFactory.PROVIDER_ID, null, null, null);
+        logger.info("... Created Policy : " + policyName);
+        createExecutor("SecureSessionEnforceExecutor", SecureSessionEnforceExecutorFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+        });
+        registerExecutor("SecureSessionEnforceExecutor", policyName);
+        logger.info("... Registered Executor : SecureSessionEnforceExecutor");
+
+        String clientAlphaId = "Alpha-App";
+        String clientAlphaSecret = "secretAlpha";
+        String cAlphaId = createClientByAdmin(clientAlphaId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientAlphaSecret);
+            clientRep.setBearerOnly(Boolean.FALSE);
+            clientRep.setPublicClient(Boolean.FALSE);
+        });
+
+        try {
+            successfulLoginAndLogout(clientAlphaId, clientAlphaSecret);
+        } finally {
+            deleteClientByAdmin(cAlphaId);
+        }
+    }
+
     private AuthorizationEndpointRequestObject createValidRequestObjectForSecureRequestObjectExecutor(String clientId) throws URISyntaxException {
         AuthorizationEndpointRequestObject requestObject = new AuthorizationEndpointRequestObject();
         requestObject.id(KeycloakModelUtils.generateId());

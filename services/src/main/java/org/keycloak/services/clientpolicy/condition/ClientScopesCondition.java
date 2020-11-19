@@ -17,6 +17,7 @@
 
 package org.keycloak.services.clientpolicy.condition;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -84,10 +85,12 @@ public class ClientScopesCondition implements ClientPolicyConditionProvider {
     }
 
     private boolean isScopeMatched(String explicitScopes, ClientModel client) {
+        if (explicitScopes == null) explicitScopes = "";
         Collection<String> explicitSpecifiedScopes = new HashSet<>(Arrays.asList(explicitScopes.split(" ")));
         Set<String> defaultScopes = client.getClientScopes(true, true).keySet();
         Set<String> optionalScopes = client.getClientScopes(false, true).keySet();
         List<String> expectedScopes = componentModel.getConfig().get(ClientScopesConditionFactory.SCOPES);
+        if (expectedScopes == null) expectedScopes = new ArrayList<>();
 
         if (logger.isTraceEnabled()) {
             explicitSpecifiedScopes.stream().forEach(i -> ClientPolicyLogger.log(logger, " explicit specified client scope = " + i));

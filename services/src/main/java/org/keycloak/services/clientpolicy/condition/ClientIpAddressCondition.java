@@ -17,6 +17,9 @@
 
 package org.keycloak.services.clientpolicy.condition;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.jboss.logging.Logger;
 
 import org.keycloak.component.ComponentModel;
@@ -67,12 +70,15 @@ public class ClientIpAddressCondition implements ClientPolicyConditionProvider {
     private boolean isIpAddressMatched() {
         String ipAddr = session.getContext().getConnection().getRemoteAddr();
 
+        List<String> expectedIpAddresses = componentModel.getConfig().get(ClientIpAddressConditionFactory.IPADDR);
+        if (expectedIpAddresses == null) expectedIpAddresses = Collections.emptyList();
+
         if (logger.isTraceEnabled()) {
-            componentModel.getConfig().get(ClientIpAddressConditionFactory.IPADDR).stream().forEach(i -> ClientPolicyLogger.log(logger, "ip address expected = " + i));
-            ClientPolicyLogger.log(logger, "ip address expected = " + ipAddr);
+            ClientPolicyLogger.log(logger, "ip address = " + ipAddr);
+            expectedIpAddresses.stream().forEach(i -> ClientPolicyLogger.log(logger, "ip address expected = " + i));
         }
 
-        boolean isMatched = componentModel.getConfig().get(ClientIpAddressConditionFactory.IPADDR).stream().anyMatch(i -> i.equals(ipAddr));
+        boolean isMatched = expectedIpAddresses.stream().anyMatch(i -> i.equals(ipAddr));
         if (isMatched) {
            ClientPolicyLogger.log(logger, "ip address matched.");
         }  else {
