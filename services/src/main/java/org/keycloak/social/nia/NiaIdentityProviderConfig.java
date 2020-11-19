@@ -40,11 +40,11 @@ public class NiaIdentityProviderConfig extends IdentityProviderModel {
 
     NiaIdentityProviderConfig(IdentityProviderModel model) {
         super(model);
-//        initialize();
+        initialize();
     }
 
     NiaIdentityProviderConfig() {
-//        initialize();
+        initialize();
     }
 
     private void initialize() {
@@ -52,8 +52,8 @@ public class NiaIdentityProviderConfig extends IdentityProviderModel {
 //        this.setPostBindingAuthnRequest(true);
 //        this.setPostBindingResponse(true);
 //        this.setPostBindingLogout(true);
-//        this.setSingleSignOnServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
-//        this.setSingleLogoutServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
+        this.setSingleSignOnServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
+        this.setSingleLogoutServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
 //        this.setWantAuthnRequestsSigned(true);
 
     }
