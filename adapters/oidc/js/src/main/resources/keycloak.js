@@ -1052,10 +1052,16 @@
                     throw 'Invalid token';
             }
 
-            str = decodeURIComponent(escape(atob(str)));
+            str = b64DecodeUnicode(str);
 
             str = JSON.parse(str);
             return str;
+        }
+
+        function b64DecodeUnicode(str) {
+            return decodeURIComponent(atob(str).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
         }
 
         function createUUID() {
