@@ -87,21 +87,8 @@ public class DeleteAccountActionTest extends AbstractTestRealmKeycloakTest {
 
 
   private void addDeleteAccountRoleToUserClientRoles() {
-    createDeleteAccountRoleIfNotExists();
     UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
     ApiUtil.assignClientRoles(adminClient.realm("test"), user.getId(), "account", AccountRoles.DELETE_ACCOUNT);
-  }
-
-  private void createDeleteAccountRoleIfNotExists() {
-    RoleRepresentation deleteRole = new RoleRepresentation();
-    deleteRole.setName(AccountRoles.DELETE_ACCOUNT);
-
-    try {
-      adminClient.realm("test").roles().create(deleteRole);
-    }
-    catch (Exception exp) {
-
-    }
   }
 
   private void removeDeleteAccountRoleFromUserClientRoles() {

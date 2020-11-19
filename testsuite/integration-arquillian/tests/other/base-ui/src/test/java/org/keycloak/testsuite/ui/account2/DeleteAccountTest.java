@@ -124,19 +124,7 @@ public class DeleteAccountTest extends BaseAccountPageTest {
   }
 
   private void addDeleteAccountRoleToUserClientRoles() {
-    createDeleteAccountRoleIfNotExists();
     ApiUtil.assignClientRoles(testRealmResource(), testUser.getId(), "account",AccountRoles.DELETE_ACCOUNT);
-  }
-
-  private void createDeleteAccountRoleIfNotExists() {
-    RoleRepresentation deleteRole = new RoleRepresentation();
-    deleteRole.setName(AccountRoles.DELETE_ACCOUNT);
-    try {
-      testRealmResource().roles().create(deleteRole);
-    }
-    catch (Exception exp) {
-
-    }
   }
 
   private void disableDeleteAccountRequiredAction() {
