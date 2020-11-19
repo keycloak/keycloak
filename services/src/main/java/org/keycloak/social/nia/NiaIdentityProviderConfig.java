@@ -49,8 +49,8 @@ public class NiaIdentityProviderConfig extends IdentityProviderModel {
 
     private void initialize() {
 //        this.setSignSpMetadata(true);
-//        this.setPostBindingAuthnRequest(true);
-//        this.setPostBindingResponse(true);
+    this.setPostBindingAuthnRequest(true);
+   this.setPostBindingResponse(true);
 //        this.setPostBindingLogout(true);
         this.setSingleSignOnServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
         this.setSingleLogoutServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
