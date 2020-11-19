@@ -67,8 +67,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import org.keycloak.social.nia.NiaCustomAttributes;
-import org.keycloak.social.nia.NiaSPType;
 
 /**
  * @author Pedro Igor
@@ -133,9 +131,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                             .format(nameIDPolicyFormat)
                             .setAllowCreate(Boolean.TRUE))
                     .requestedAuthnContext(requestedAuthnContext)
-                    .subject(loginHint)
-                    .addExtension(new NiaSPType())
-                    .addExtension(new NiaCustomAttributes());
+                    .subject(loginHint);
 
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                     .relayState(request.getState().getEncoded());
