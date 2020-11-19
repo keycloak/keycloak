@@ -45,7 +45,6 @@ import org.keycloak.common.Profile;
 public class DefaultThemeManager implements ThemeManager {
 
     private static final Logger log = Logger.getLogger(DefaultThemeManager.class);
-    private static final boolean isAccount2Enabled = Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2);
 
     private final DefaultThemeManagerFactory factory;
     private final KeycloakSession session;
@@ -65,7 +64,7 @@ public class DefaultThemeManager implements ThemeManager {
     }
 
     private String typeBasedDefault(Theme.Type type) {
-        if ((type == Theme.Type.ACCOUNT) && isAccount2Enabled) {
+        if ((type == Theme.Type.ACCOUNT) && isAccount2Enabled()) {
             return "keycloak.v2";
         }
         
@@ -92,11 +91,11 @@ public class DefaultThemeManager implements ThemeManager {
             }
         }
         
-        if (!isAccount2Enabled && theme.getName().equals("keycloak.v2")) {
+        if (!isAccount2Enabled() && theme.getName().equals("keycloak.v2")) {
             theme = loadTheme("keycloak", type);
         }
         
-        if (!isAccount2Enabled && theme.getName().equals("rhsso.v2")) {
+        if (!isAccount2Enabled() && theme.getName().equals("rhsso.v2")) {
             theme = loadTheme("rhsso", type);
         }
         
@@ -322,6 +321,10 @@ public class DefaultThemeManager implements ThemeManager {
         }
 
         return providers;
+    }
+
+    private static boolean isAccount2Enabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2);
     }
 
 }
