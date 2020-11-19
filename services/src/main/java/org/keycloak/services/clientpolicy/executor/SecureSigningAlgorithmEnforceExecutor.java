@@ -17,12 +17,9 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
-import org.apache.commons.compress.utils.Sets;
 import org.jboss.logging.Logger;
 
 import org.keycloak.OAuthErrorException;

@@ -17,42 +17,26 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.jboss.logging.Logger;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.common.util.StreamUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.connections.httpclient.HttpClientProvider;
-import org.keycloak.constants.AdapterConstants;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.jose.jws.JWSInputException;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestParser;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
-import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyLogger;
-import org.keycloak.util.JsonSerialization;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 
 public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider {
