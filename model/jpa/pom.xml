@@ -118,10 +118,6 @@
             <artifactId>slf4j-log4j12</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-core</artifactId>
-        </dependency>
-        <dependency>
             <groupId>${jdbc.mvn.groupId}</groupId>
             <artifactId>${jdbc.mvn.artifactId}</artifactId>
             <version>${jdbc.mvn.version}</version>
