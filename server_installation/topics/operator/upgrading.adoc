@@ -1,0 +1,43 @@
+
+[[_operator-upgrade-strategy]]
+=== Upgrade strategy
+
+You can configure how the operator performs {project_name} upgrades. You can choose from the following upgrade strategies.
+
+* `recreate`: This is the default strategy. The operator removes all {project_name} replicas, optionally creates a backup
+  and then creates the replicas based on a newer {project_name} image. This strategy is suitable for major upgrades as
+  a single {project_name} version is accessing the underlying database. The downside is {project_name} needs to be shut
+  down during the upgrade.
+* `rolling`: The operator removes one replica at a time and creates it again based on a newer {project_name} image. This
+  ensures a zero-downtime upgrade but is more suitable for minor version upgrades that do not require database migration
+  since the database is accessed by multiple {project_name} versions concurrently. Automatic backups are not supported
+  with this strategy.
+
+.Example YAML file for a Keycloak custom resource
+```yaml
+apiVersion: keycloak.org/v1alpha1
+kind: Keycloak
+metadata:
+  name: example-keycloak
+  labels:
+ifeval::[{project_community}==true]
+   app: keycloak
+endif::[]
+ifeval::[{project_product}==true]
+   app: sso
+endif::[]
+spec:
+  instances: 2
+  migration:
+    strategy: recreate
+    backups:
+      enabled: True
+  externalAccess:
+    enabled: True
+```
+
+ifeval::[{project_community}==true]
+.Additional Resources
+
+* For more information on rolling updates, see the https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#rolling-update[Updating StatefulSets manual].
+endif::[]
