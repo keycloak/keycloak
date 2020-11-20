@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.Retry;
 import org.keycloak.crypto.Algorithm;
@@ -68,6 +69,7 @@ import javax.ws.rs.core.UriBuilder;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -88,6 +90,7 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class LoginTest extends AbstractTestRealmKeycloakTest {
+
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -831,7 +834,25 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         Assert.assertNotNull(link, thirdParty.getBaseUrl());
     }
 
+    @Test
+    public void loginWithDisabledCookies() {
+        String userId = adminClient.realm("test").users().search("test-user@localhost").get(0).getId();
+        oauth.clientId("test-app");
+        oauth.openLoginForm();
 
+        driver.manage().deleteAllCookies();
+
+        // Cookie has been deleted or disabled, the error shown in the UI should be Errors.DISABLED_COOKIES
+        loginPage.login("login@test.com", "password");
+
+        events.expect(EventType.LOGIN_ERROR)
+                .user(new UserRepresentation())
+                .client(new ClientRepresentation())
+                .error(Errors.DISABLED_COOKIES)
+                .assertEvent();
+
+        errorPage.assertCurrent();
+    }
 
     @Test
     public void openLoginFormWithDifferentApplication() throws Exception {
