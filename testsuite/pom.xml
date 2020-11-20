@@ -45,6 +45,7 @@
     <modules>
         <module>db-allocator-plugin</module>
         <module>integration-arquillian</module>
+        <module>model</module>
         <module>utils</module>
     </modules>
 
