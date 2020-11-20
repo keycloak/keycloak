@@ -60,6 +60,8 @@ public class Messages {
 
     public static final String MISSING_TOTP_DEVICE_NAME = "missingTotpDeviceNameMessage";
 
+    public static final String DISABLED_COOKIES = "disabledCookiesMessage";
+
     public static final String NOTMATCH_PASSWORD = "notMatchPasswordMessage";
 
     public static final String INVALID_PASSWORD_EXISTING = "invalidPasswordExistingMessage";
