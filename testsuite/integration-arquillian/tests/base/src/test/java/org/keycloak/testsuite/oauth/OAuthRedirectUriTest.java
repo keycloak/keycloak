@@ -149,6 +149,16 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
                 .secret("password");
         realm.client(installedAppCustomScheme);
 
+        ClientBuilder installedAppLoopback = ClientBuilder.create().clientId("test-installed-loopback").name("test-installed-loopback")
+                .redirectUris(Constants.INSTALLED_APP_LOOPBACK)
+                .secret("password");
+        realm.client(installedAppLoopback);
+
+        ClientBuilder installedAppLoopback2 = ClientBuilder.create().clientId("test-installed-loopback2").name("test-installed-loopback2")
+                .redirectUris(Constants.INSTALLED_APP_LOOPBACK + "/myapp")
+                .secret("password");
+        realm.client(installedAppLoopback2);
+
         testRealms.add(realm.build());
     }
 
@@ -394,6 +404,25 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         checkRedirectUri("http://localhosts/myapp", false);
         checkRedirectUri("http://localhost", false);
         checkRedirectUri("http://localhost/myapp2", false);
+    }
+
+    @Test
+    public void testLoopback() throws IOException {
+        oauth.clientId("test-installed-loopback");
+
+        checkRedirectUri("http://127.0.0.1", true);
+        checkRedirectUri("http://127.0.0.1:8280", true, true);
+
+        checkRedirectUri("http://127.0.0.1/myapp", false);
+        checkRedirectUri("http://127.0.0.1:8180/myapp", false, true);
+
+        oauth.clientId("test-installed-loopback2");
+
+        checkRedirectUri("http://127.0.0.1/myapp", true);
+        checkRedirectUri("http://127.0.0.1:8280/myapp", true, true);
+
+        checkRedirectUri("http://127.0.0.1", false);
+        checkRedirectUri("http://127.0.0.1/myapp2", false);
     }
 
     @Test
