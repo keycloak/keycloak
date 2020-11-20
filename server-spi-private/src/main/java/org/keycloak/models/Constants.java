@@ -44,6 +44,8 @@ public final class Constants {
 
     public static final String INSTALLED_APP_URN = "urn:ietf:wg:oauth:2.0:oob";
     public static final String INSTALLED_APP_URL = "http://localhost";
+    public static final String INSTALLED_APP_LOOPBACK = "http://127.0.0.1";
+
     public static final String READ_TOKEN_ROLE = "read-token";
     public static final String[] BROKER_SERVICE_ROLES = {READ_TOKEN_ROLE};
     public static final String OFFLINE_ACCESS_ROLE = OAuth2Constants.OFFLINE_ACCESS;
