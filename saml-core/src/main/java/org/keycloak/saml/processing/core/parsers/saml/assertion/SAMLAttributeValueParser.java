@@ -103,6 +103,8 @@ public class SAMLAttributeValueParser implements StaxParser {
             return XMLTimeUtil.parse(StaxParserUtil.getElementText(xmlEventReader));
         } else if(typeValue.contains(":boolean")){
             return StaxParserUtil.getElementText(xmlEventReader);
+        }else if(typeValue.contains(":CurrentFamilyNameType")){
+            return StaxParserUtil.getElementText(xmlEventReader);
         }
 
         throw logger.parserUnknownXSI(typeValue);
