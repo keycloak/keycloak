@@ -27,6 +27,8 @@ public class NiaCustomAttributes implements SamlProtocolExtensionsAwareBuilder.N
         nia.write(writer);
         nia = new NiaCustomAttribute("http://eidas.europa.eu/attributes/naturalperson/PlaceOfBirth", TRUE);
         nia.write(writer);
+        nia = new NiaCustomAttribute("http://schemas.eidentity.cz/moris/2016/identity/claims/phonenumber", TRUE);
+        nia.write(writer);
         StaxUtil.writeEndElement(writer);
         StaxUtil.flush(writer);
     }
