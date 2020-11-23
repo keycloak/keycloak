@@ -24,7 +24,13 @@ import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.representations.idm.*;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
@@ -40,7 +46,10 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
-import org.keycloak.testsuite.util.*;
+import org.keycloak.testsuite.util.FlowUtil;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.RoleBuilder;
+import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.authentication.ConditionalUserAttributeValueFactory;
 import org.keycloak.testsuite.authentication.SetUserAttributeAuthenticatorFactory;
 import org.openqa.selenium.By;
@@ -52,8 +61,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB;
@@ -1306,7 +1315,7 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
         revertFlows(testRealm(), flowToDeleteAlias);
     }
 
-    static void revertFlows(RealmResource realmResource, String flowToDeleteAlias) {
+    public static void revertFlows(RealmResource realmResource, String flowToDeleteAlias) {
         List<AuthenticationFlowRepresentation> flows = realmResource.flows().getFlows();
 
         // Set default browser flow
