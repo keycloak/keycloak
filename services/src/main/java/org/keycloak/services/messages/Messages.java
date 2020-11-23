@@ -259,6 +259,9 @@ public class Messages {
     public static final String WEBAUTHN_ERROR_REGISTER_VERIFICATION = "webauthn-error-register-verification";
     public static final String WEBAUTHN_ERROR_USER_NOT_FOUND = "webauthn-error-user-not-found";
 
+    // Conditions in Conditional Flow
+    public static final String ACCESS_DENIED = "access-denied";
+
     public static final String DELETE_ACCOUNT_LACK_PRIVILEDGES = "deletingAccountForbidden";
     public static final String DELETE_ACCOUNT_ERROR = "errorDeletingAccount";
 
