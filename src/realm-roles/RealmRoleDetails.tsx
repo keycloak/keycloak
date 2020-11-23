@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { useHistory } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useHistory, useParams } from "react-router-dom";
 import {
   ActionGroup,
+  AlertVariant,
   Button,
   FormGroup,
   PageSection,
@@ -10,24 +11,60 @@ import {
   TabTitleText,
   TextArea,
   TextInput,
+  ValidatedOptions,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
-
-import { ViewHeader } from "../components/view-header/ViewHeader";
-import { RoleRepresentation } from "../model/role-model";
+import { Controller, useForm } from "react-hook-form";
 import { FormAccess } from "../components/form-access/FormAccess";
 
-export const RolesForm = () => {
-  const { t } = useTranslation("client-scopes");
-  const { register, errors } = useForm<RoleRepresentation>();
-  const history = useHistory();
+import { useAlerts } from "../components/alert/Alerts";
+import { ViewHeader } from "../components/view-header/ViewHeader";
 
+import { useAdminClient } from "../context/auth/AdminClient";
+import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+
+export const RolesForm = () => {
+  const { t } = useTranslation("roles");
+  const { register, handleSubmit, errors, control, setValue } = useForm<
+    RoleRepresentation
+  >();
+  const history = useHistory();
+  const [name, setName] = useState("");
   const [activeTab, setActiveTab] = useState(0);
+
+  const adminClient = useAdminClient();
+
+  const { id } = useParams<{ id: string }>();
+
+  const { addAlert } = useAlerts();
+
+  useEffect(() => {
+    (async () => {
+      const fetchedRole = await adminClient.roles.findOneById({ id });
+      setName(fetchedRole.name!);
+      setupForm(fetchedRole);
+    })();
+  }, []);
+
+  const setupForm = (role: RoleRepresentation) => {
+    Object.entries(role).map((entry) => {
+      setValue(entry[0], entry[1]);
+    });
+  };
+
+  const save = async (role: RoleRepresentation) => {
+    try {
+      await adminClient.roles.updateById({ id }, role);
+      setupForm(role as RoleRepresentation);
+      addAlert(t("roleSaveSuccess"), AlertVariant.success);
+    } catch (error) {
+      addAlert(`${t("roleSaveError")} '${error}'`, AlertVariant.danger);
+    }
+  };
 
   return (
     <>
-      <ViewHeader titleKey={"Role Name"} subKey="" />
+      <ViewHeader titleKey={name} subKey="" />
 
       <PageSection variant="light">
         <Tabs
@@ -35,28 +72,49 @@ export const RolesForm = () => {
           onSelect={(_, key) => setActiveTab(key as number)}
           isBox
         >
-          <Tab eventKey={0} title={<TabTitleText>{t("Details")}</TabTitleText>}>
-            <FormAccess isHorizontal role="manage-realm" className="pf-u-mt-lg">
+          <Tab eventKey={0} title={<TabTitleText>{t("details")}</TabTitleText>}>
+            <FormAccess
+              isHorizontal
+              onSubmit={handleSubmit(save)}
+              role="manage-realm"
+              className="pf-u-mt-lg"
+            >
               <FormGroup
-                label={t("Role name")}
+                label={t("roleName")}
                 fieldId="kc-name"
                 isRequired
                 validated={errors.name ? "error" : "default"}
                 helperTextInvalid={t("common:required")}
               >
-                <TextInput
-                  ref={register({ required: true })}
-                  type="text"
-                  id="kc-name"
-                  name="name"
-                />
+                {name ? (
+                  <TextInput
+                    ref={register({ required: true })}
+                    type="text"
+                    id="kc-name"
+                    name="name"
+                    isReadOnly
+                  />
+                ) : undefined}
               </FormGroup>
               <FormGroup label={t("description")} fieldId="kc-description">
-                <TextArea
-                  ref={register}
-                  type="text"
-                  id="kc-description"
+                <Controller
                   name="description"
+                  defaultValue=""
+                  control={control}
+                  rules={{ maxLength: 255 }}
+                  render={({ onChange, value }) => (
+                    <TextArea
+                      type="text"
+                      validated={
+                        errors.description
+                          ? ValidatedOptions.error
+                          : ValidatedOptions.default
+                      }
+                      id="kc-role-description"
+                      value={value}
+                      onChange={onChange}
+                    />
+                  )}
                 />
               </FormGroup>
               <ActionGroup>
