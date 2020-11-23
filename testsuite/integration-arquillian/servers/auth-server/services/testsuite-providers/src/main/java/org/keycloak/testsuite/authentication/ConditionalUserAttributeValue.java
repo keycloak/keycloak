@@ -8,7 +8,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -19,8 +18,6 @@ public class ConditionalUserAttributeValue implements ConditionalAuthenticator {
 
     @Override
     public boolean matchCondition(AuthenticationFlowContext context) {
-        boolean result = false;
-
         // Retrieve configuration
         Map<String, String> config = context.getAuthenticatorConfig().getConfig();
         String attributeName = config.get(ConditionalUserAttributeValueFactory.CONF_ATTRIBUTE_NAME);
@@ -32,12 +29,8 @@ public class ConditionalUserAttributeValue implements ConditionalAuthenticator {
             throw new AuthenticationFlowException("authenticator: " + ConditionalUserAttributeValueFactory.PROVIDER_ID, AuthenticationFlowError.UNKNOWN_USER);
         }
 
-        result =  user.getAttributeStream(attributeName).anyMatch(attr -> Objects.equals(attr, attributeValue));
-        if (negateOutput) {
-            result = !result;
-        }
-
-        return result;
+        boolean result = user.getAttributeStream(attributeName).anyMatch(attr -> Objects.equals(attr, attributeValue));
+        return negateOutput != result;
     }
 
     @Override

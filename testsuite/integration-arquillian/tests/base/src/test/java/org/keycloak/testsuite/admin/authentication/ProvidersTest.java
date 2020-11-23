@@ -216,6 +216,12 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Set a user attribute");
         addProviderInfo(result, "idp-detect-existing-broker-user", "Detect existing broker user",
                 "Detect if there is an existing Keycloak account with same email like identity provider. If no, throw an error.");
+
+        addProviderInfo(result, "deny-access-authenticator", "Deny access",
+                "Access will be always denied. Useful for example in the conditional flows to be used after satisfying the previous conditions");
+        addProviderInfo(result, "allow-access-authenticator", "Allow access",
+                "Authenticator will always successfully authenticate. Useful for example in the conditional flows to be used after satisfying the previous conditions");
+
         return result;
     }
 

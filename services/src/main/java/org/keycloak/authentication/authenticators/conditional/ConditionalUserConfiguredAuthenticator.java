@@ -25,7 +25,7 @@ public class ConditionalUserConfiguredAuthenticator implements ConditionalAuthen
         List<AuthenticationExecutionModel> alternativeExecutions = new LinkedList<>();
         context.getRealm().getAuthenticationExecutionsStream(flowId)
                 //Check if the execution's authenticator is a conditional authenticator, as they must not be evaluated here.
-                .filter(e -> isConditionalExecution(context, e))
+                .filter(e -> !isConditionalExecution(context, e))
                 .filter(e -> !Objects.equals(context.getExecution().getId(), e.getId()) && !e.isAuthenticatorFlow())
                 .forEachOrdered(e -> {
                     if (e.isRequired()) {
@@ -47,11 +47,9 @@ public class ConditionalUserConfiguredAuthenticator implements ConditionalAuthen
                 .getProviderFactory(Authenticator.class, e.getAuthenticator());
         if (factory != null) {
             Authenticator auth = factory.create(context.getSession());
-            if (auth instanceof ConditionalAuthenticator) {
-                return false;
-            }
+            return (auth instanceof ConditionalAuthenticator);
         }
-        return true;
+        return false;
     }
 
     private boolean isConfiguredFor(AuthenticationExecutionModel model, AuthenticationFlowContext context) {
