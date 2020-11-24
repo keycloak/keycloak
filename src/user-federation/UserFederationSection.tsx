@@ -26,10 +26,6 @@ import { useAdminClient } from "../context/auth/AdminClient";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import "./user-federation.css";
 
-type Config = {
-  enabled: string[];
-};
-
 export const UserFederationSection = () => {
   const [userFederations, setUserFederations] = useState<
     ComponentRepresentation[]
@@ -112,14 +108,12 @@ export const UserFederationSection = () => {
               userFederation.providerId === "ldap" ? "LDAP" : "Kerberos"
             }
             labelText={
-              (userFederation.config as Config)!.enabled[0] !== "false"
+              userFederation.config!["enabled"][0] !== "false"
                 ? `${t("common:enabled")}`
                 : `${t("common:disabled")}`
             }
             labelColor={
-              (userFederation.config as Config)!.enabled[0] !== "false"
-                ? "blue"
-                : "gray"
+              userFederation.config!["enabled"][0] !== "false" ? "blue" : "gray"
             }
           />
         </GalleryItem>

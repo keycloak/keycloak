@@ -12489,10 +12489,10 @@ jsx-ast-utils@^2.2.1, jsx-ast-utils@^2.2.3, jsx-ast-utils@^2.4.1:
     array-includes "^3.1.1"
     object.assign "^4.1.0"
 
-keycloak-admin@^1.14.1:
-  version "1.14.1"
-  resolved "https://registry.yarnpkg.com/keycloak-admin/-/keycloak-admin-1.14.1.tgz#d30507b1b89270e42dc2e1ab73842afe3df5c0af"
-  integrity sha512-duQYY+I8iSeSOYtsJnyfQ9LUuKeY5oZCp2rkfH4tJ71VYuk0bon4liN2OBGmLO8PBsZ2TXW95rSydZumysuP/g==
+keycloak-admin@1.14.2:
+  version "1.14.2"
+  resolved "https://registry.yarnpkg.com/keycloak-admin/-/keycloak-admin-1.14.2.tgz#5b983a10bcc01573c79d4f3d6eefe74bd35c8d3f"
+  integrity sha512-eO0jLEVQJ+yk2Xw6B73dDQWhHwR5CjGsdx3zu1csJTTehCy0ftLJVX/BFnlGmQnF1sVYKpXomoCbUtesYYXntQ==
   dependencies:
     axios "^0.21.0"
     camelize "^1.0.0"
