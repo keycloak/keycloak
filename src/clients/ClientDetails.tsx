@@ -29,6 +29,8 @@ import {
   convertToMultiline,
   toValue,
 } from "../components/multi-line-input/MultiLineInput";
+import { ClientScopes } from "./scopes/ClientScopes";
+import { EvaluateScopes } from "./scopes/EvaluateScopes";
 
 export const ClientDetails = () => {
   const { t } = useTranslation("clients");
@@ -44,7 +46,8 @@ export const ClientDetails = () => {
   const { id } = useParams<{ id: string }>();
 
   const [activeTab, setActiveTab] = useState(0);
-  const [name, setName] = useState("");
+  const [activeTab2, setActiveTab2] = useState(30);
+  const [client, setClient] = useState<ClientRepresentation>();
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "clients:clientDeleteConfirmTitle",
@@ -83,7 +86,7 @@ export const ClientDetails = () => {
     (async () => {
       const fetchedClient = await adminClient.clients.findOne({ id });
       if (fetchedClient) {
-        setName(fetchedClient.clientId!);
+        setClient(fetchedClient);
         setupForm(fetchedClient);
       }
     })();
@@ -133,7 +136,7 @@ export const ClientDetails = () => {
             <>
               <DisableConfirm />
               <ViewHeader
-                titleKey={name}
+                titleKey={client ? client.clientId! : ""}
                 subKey="clients:clientsExplain"
                 dropdownItems={[
                   <DropdownItem
@@ -189,6 +192,31 @@ export const ClientDetails = () => {
               <Credentials clientId={id} form={form} save={save} />
             </Tab>
           )}
+          <Tab
+            eventKey={2}
+            title={<TabTitleText>{t("clientScopes")}</TabTitleText>}
+          >
+            <Tabs
+              activeKey={activeTab2}
+              isSecondary
+              onSelect={(_, key) => setActiveTab2(key as number)}
+            >
+              {client && (
+                <Tab
+                  eventKey={30}
+                  title={<TabTitleText>{t("setup")}</TabTitleText>}
+                >
+                  <ClientScopes clientId={id} protocol={client!.protocol!} />
+                </Tab>
+              )}
+              <Tab
+                eventKey={31}
+                title={<TabTitleText>{t("evaluate")}</TabTitleText>}
+              >
+                <EvaluateScopes />
+              </Tab>
+            </Tabs>
+          </Tab>
         </Tabs>
       </PageSection>
     </>

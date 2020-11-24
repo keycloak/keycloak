@@ -1,4 +1,9 @@
-import React, { MouseEventHandler, ReactNode } from "react";
+import React, {
+  FormEvent,
+  Fragment,
+  MouseEventHandler,
+  ReactNode,
+} from "react";
 import {
   Toolbar,
   ToolbarContent,
@@ -14,12 +19,13 @@ import { useTranslation } from "react-i18next";
 type TableToolbarProps = {
   toolbarItem?: ReactNode;
   toolbarItemFooter?: ReactNode;
-  children: React.ReactNode;
+  children: ReactNode;
+  searchTypeComponent?: ReactNode;
   inputGroupName?: string;
   inputGroupPlaceholder?: string;
   inputGroupOnChange?: (
     newInput: string,
-    event: React.FormEvent<HTMLInputElement>
+    event: FormEvent<HTMLInputElement>
   ) => void;
   inputGroupOnClick?: MouseEventHandler;
 };
@@ -28,6 +34,7 @@ export const TableToolbar = ({
   toolbarItem,
   toolbarItemFooter,
   children,
+  searchTypeComponent,
   inputGroupName,
   inputGroupPlaceholder,
   inputGroupOnChange,
@@ -38,10 +45,11 @@ export const TableToolbar = ({
     <>
       <Toolbar>
         <ToolbarContent>
-          <React.Fragment>
+          <Fragment>
             {inputGroupName && (
               <ToolbarItem>
                 <InputGroup>
+                  {searchTypeComponent}
                   <TextInput
                     name={inputGroupName}
                     id={inputGroupName}
@@ -60,7 +68,7 @@ export const TableToolbar = ({
                 </InputGroup>
               </ToolbarItem>
             )}
-          </React.Fragment>
+          </Fragment>
           {toolbarItem}
         </ToolbarContent>
       </Toolbar>

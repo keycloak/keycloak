@@ -13,6 +13,24 @@
     "downloadAdaptorTitle": "Download adaptor configs",
     "settings": "Settings",
     "credentials": "Credentials",
+    "clientScopes": "Client scopes",
+    "addClientScope": "Add client scope",
+    "addClientScopesTo": "Add client scopes to {{clientId}}",
+    "searchByName": "Search by name",
+    "setup": "Setup",
+    "evaluate": "Evaluate",
+    "changeTypeTo": "Change type to",
+    "clientScope": {
+      "default" : "Default",
+      "optional" : "Optional"
+    },
+    "clientScopeSearch": {
+      "client": "Client scope",
+      "assigned": "Assigned type"
+    },
+    "emptyClientScopes": "This client doesn't have any added client scopes",
+    "emptyClientScopesInstructions": "There are currently no client scopes linked to this client. You can add existing client scopes to this client to share protocol mappers and roles.",
+    "emptyClientScopesPrimaryAction": "Add client scopes",
     "details": "Details",
     "clientList": "Clients",
     "clientSettings": "Client details",
