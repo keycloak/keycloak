@@ -10,6 +10,7 @@
     "roleName": "Role name",
     "roleDetails": "Role details",
     "composite": "Composite",
+    "deleteRole": "Delete this role",
     "description": "Description",
     "details": "Details",
     "roleList": "Role list",

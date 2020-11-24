@@ -4,6 +4,8 @@ import {
   ActionGroup,
   AlertVariant,
   Button,
+  ButtonVariant,
+  DropdownItem,
   FormGroup,
   PageSection,
   Tab,
@@ -22,6 +24,7 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 
 import { useAdminClient } from "../context/auth/AdminClient";
 import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 
 export const RolesForm = () => {
   const { t } = useTranslation("roles");
@@ -33,6 +36,8 @@ export const RolesForm = () => {
   const [activeTab, setActiveTab] = useState(0);
 
   const adminClient = useAdminClient();
+
+  const selectedRoleName = name;
 
   const { id } = useParams<{ id: string }>();
 
@@ -62,9 +67,39 @@ export const RolesForm = () => {
     }
   };
 
+  const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
+    titleKey: "roles:roleDeleteConfirm",
+    messageKey: t("roles:roleDeleteConfirmDialog", { selectedRoleName }),
+    continueButtonLabel: "common:delete",
+    continueButtonVariant: ButtonVariant.danger,
+    onConfirm: async () => {
+      try {
+        await adminClient.roles.delByName({
+          name: name,
+        });
+        addAlert(t("roleDeletedSuccess"), AlertVariant.success);
+      } catch (error) {
+        addAlert(`${t("roleDeleteError")} ${error}`, AlertVariant.danger);
+      }
+    },
+  });
+
   return (
     <>
-      <ViewHeader titleKey={name} subKey="" />
+      <DeleteConfirm />
+      <ViewHeader
+        titleKey={name}
+        subKey=""
+        dropdownItems={[
+          <DropdownItem
+            key="action"
+            component="button"
+            onClick={() => toggleDeleteDialog()}
+          >
+            {t("deleteRole")}
+          </DropdownItem>,
+        ]}
+      />
 
       <PageSection variant="light">
         <Tabs
