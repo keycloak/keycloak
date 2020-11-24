@@ -22,7 +22,7 @@ export const LdapSettingsSearching = () => {
           label={t("editMode")}
           labelIcon={
             <HelpItem
-              helpText={helpText("editModeHelp")}
+              helpText={helpText("editModeLdapHelp")}
               forLabel={t("editMode")}
               forID="kc-edit-mode"
             />

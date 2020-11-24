@@ -52,6 +52,10 @@
 
     "cacheSettings": "Cache settings",
     "cachePolicy": "Cache policy",
+    "evictionDay": "Eviction day",
+    "evictionHour": "Eviction hour",
+    "evictionMinute": "Eviction minute",
+    "maxLifespan": "Max lifespan",
 
     "advancedSettings": "Advanced settings",
     "enableLdapv3Password": "Enable the LDAPv3 password modify extended operation",

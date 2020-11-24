@@ -56,6 +56,14 @@
     "required": "Required field",
     "maxLength": "Max length {{length}}",
 
-    "createRealm": "Create Realm"
+    "createRealm": "Create Realm",
+
+    "Sunday": "Sunday",
+    "Monday": "Monday",
+    "Tuesday": "Tuesday",
+    "Wednesday": "Wednesday",
+    "Thursday": "Thursday",
+    "Friday": "Friday",
+    "Saturday": "Saturday"
   }
 }
