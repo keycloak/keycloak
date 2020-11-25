@@ -59,6 +59,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     public static final String REGULAR_EXPRESSION = "x509-cert-auth.regular-expression";
     public static final String ENABLE_CRL = "x509-cert-auth.crl-checking-enabled";
     public static final String ENABLE_OCSP = "x509-cert-auth.ocsp-checking-enabled";
+    public static final String OCSP_FAIL_OPEN = "x509-cert-auth.ocsp-fail-open";
     public static final String ENABLE_CRLDP = "x509-cert-auth.crldp-checking-enabled";
     public static final String CANONICAL_DN = "x509-cert-auth.canonical-dn-enabled";
     public static final String TIMESTAMP_VALIDATION = "x509-cert-auth.timestamp-validation-enabled";
@@ -116,6 +117,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
                         .cRLDPEnabled(config.getCRLDistributionPointEnabled())
                         .cRLrelativePath(config.getCRLRelativePath())
                         .oCSPEnabled(config.getOCSPEnabled())
+                        .oCSPFailOpen(config.getOCSPFailOpen())
                         .oCSPResponseCertificate(config.getOCSPResponderCertificate())
                         .oCSPResponderURI(config.getOCSPResponder())
                     .trustValidation()

@@ -130,6 +130,15 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
         return this;
     }
 
+    public boolean getOCSPFailOpen() {
+        return Boolean.parseBoolean(getConfig().getOrDefault(OCSP_FAIL_OPEN, Boolean.toString(false)));
+    }
+
+    public X509AuthenticatorConfigModel setOCSPFailOpen(boolean value) {
+        getConfig().put(OCSP_FAIL_OPEN, Boolean.toString(value));
+        return this;
+    }
+
     public boolean getCRLDistributionPointEnabled() {
         return Boolean.parseBoolean(getConfig().get(ENABLE_CRLDP));
     }
