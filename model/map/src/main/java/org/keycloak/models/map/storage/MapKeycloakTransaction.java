@@ -115,7 +115,7 @@ public class MapKeycloakTransaction<K, V> implements KeycloakTransaction {
      * Adds a given task if not exists for the given key
      */
     private void addTask(MapOperation op, K key, V value) {
-        log.tracev("Adding operation {0} for {1}", op, key);
+        log.tracef("Adding operation %s for %s  @ %08x", op, key, System.identityHashCode(value));
 
         K taskKey = key;
         tasks.merge(taskKey, op.taskFor(key, value), MapTaskCompose::new);
@@ -149,7 +149,7 @@ public class MapKeycloakTransaction<K, V> implements KeycloakTransaction {
     }
 
     public void putIfChanged(K key, V value, Predicate<V> shouldPut) {
-        log.tracev("Adding operation UPDATE_IF_CHANGED for {0}", key);
+        log.tracef("Adding operation UPDATE_IF_CHANGED for %s  @ %08x", key, System.identityHashCode(value));
 
         K taskKey = key;
         MapTaskWithValue<K, V> op = new MapTaskWithValue<K, V>(value) {
