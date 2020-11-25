@@ -6,10 +6,12 @@
 = Enabling user registration
 
 [role="_abstract"]
-Enable users to self-register. After you enable this setting, a *Register* link is displayed on the login page of the admin console.
+Enable users to self-register.
 
 .Procedure
 . Click *Realm Settings* in the main menu.  
 . Click the *Login* tab.  
 . Toggle *User Registration* to *ON*. 
 . Click *Save*.
+
+After you enable this setting, a *Register* link displays on the login page of the Admin Console.

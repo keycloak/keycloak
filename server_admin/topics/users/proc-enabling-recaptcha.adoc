@@ -12,36 +12,38 @@ Once reCAPTCHA is enabled, you can edit `register.ftl` in your login theme to co
 
 .Procedure
 . Enter the following URL in a browser:
++
+[source,bash,subs=+attributes]
 ----
 https://developers.google.com/recaptcha/
 ----
+
 . Create an API key to get your reCAPTCHA site key and secret. Note the reCAPTCHA site key and secret for future use in this procedure.
 +
 NOTE: The localhost works by default. You do not have to specify a domain.
 +
 . Navigate to the {project_name} admin console.
-. Click *Authentication* in the main menu. 
+. Click *Authentication* in the menu. 
 . Click the *Flows* tab.  
 . Select *Registration* from the drop down menu.
 . Set the *reCAPTCHA* requirement to *Required*. This enables
 reCAPTCHA.  
 . Click *Actions* to the right of the reCAPTCHA flow entry.
-. Click the *Config* link. The config page is displayed.
+. Click the *Config* link.
 +
 .Recaptcha Config Page
 image:{project_images}/recaptcha-config.png[]
 
-.. Enter the reCAPTCHA site key generated from the Google reCAPTCHA website on the config page. 
-.. Enter the secret generated from the Google reCAPTCHA website.
-.. Authorize Google to use the registration page as an iframe.
+.. Enter the *Recaptcha Site Key* generated from the Google reCAPTCHA website.
+.. Enter the *Recaptcha Secret* generated from the Google reCAPTCHA website.
+. Authorize Google to use the registration page as an iframe.
 +
 NOTE: In {project_name}, websites cannot include a login page dialog in an iframe. This restriction is to prevent clickjacking attacks. You need to change the default HTTP response headers that is set in {project_name}.
 +
-.. Click *Realm Settings* in the main menu. 
+.. Click *Realm Settings* in the menu. 
 .. Click the *Security Defenses* tab.  
 .. Enter `https://www.google.com` in the field for the *X-Frame-Options* header.
 .. Enter `https://www.google.com` in the field for the *Content-Security-Policy* header.
-
 
 [role="_additional-resources"]
 .Additional resources

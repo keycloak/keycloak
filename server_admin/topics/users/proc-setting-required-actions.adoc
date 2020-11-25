@@ -3,7 +3,7 @@
 // con-required-actions.adoc
 
 [id="proc-setting-required-actions_{context}"]
-= Setting required actions
+= Setting required actions for one user
 
 You can set the actions that are required for any user.
 

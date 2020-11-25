@@ -3,20 +3,12 @@
 // con-required-actions.adoc
 
 [id="proc-setting-default-required-actions_{context}"]
-= Setting default required actions
+= Setting required actions for all users
 
-You can specify what actions are required before the first login of any new user. The default required actions can be modified after a user is created.
-
-You can set default required actions in two ways. You 
-can use the user registration link or the *Required Actions* tab.
+You can specify what actions are required before the first login of all new users. The requirements apply to a user created by the *Add User* button on the *Users* page or the *Register* link on the login page.
 
 .Procedure
 
-.Using the user registration link 
-. Click the *User Registration* link on the login page.  
-. Specify the default required actions. 
-
-.Using the Required Actions tab
 . Click *Authentication* in the menu.
 . Click the *Required Actions* tab.
 . Click the checkbox in the *Default Action* column for one or more required actions. When a new user logs in for the first time, the selected actions must be executed.

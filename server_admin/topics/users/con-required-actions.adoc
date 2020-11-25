@@ -5,9 +5,7 @@
 [id="con-required-actions_{context}"]
 = Required Actions
 
-You can set the actions that a user must perform at the first login. These actions are required after the user provides credentials. After the first login, these actions are no longer required.
-
-You can add required actions for each user in the *Details* tab of the admin console.
+You can set the actions that a user must perform at the first login. These actions are required after the user provides credentials. After the first login, these actions are no longer required. You add required actions on the *Details* tab of that user.
 
 The following are examples of required action types:
 
