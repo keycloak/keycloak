@@ -306,7 +306,7 @@ public class AuthorizationTokenService {
 
             if (rootAuthSession == null) {
                 if (userSessionModel.getUser().getServiceAccountClientLink() == null) {
-                    rootAuthSession = keycloakSession.authenticationSessions().createRootAuthenticationSession(userSessionModel.getId(), realm);
+                    rootAuthSession = keycloakSession.authenticationSessions().createRootAuthenticationSession(realm, userSessionModel.getId());
                 } else {
                     // if the user session is associated with a service account
                     rootAuthSession = new AuthenticationSessionManager(keycloakSession).createAuthenticationSession(realm, false);
