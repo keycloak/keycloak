@@ -115,6 +115,11 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     }
 
     @Test
+    public void loginWithRevalidateCertEnabledCertIsTrusted() throws Exception {
+        x509BrowserLogin(createLoginSubjectEmailWithRevalidateCert(true), userId, "test-user@localhost", "test-user@localhost");
+    }
+
+    @Test
     public void loginIgnoreX509IdentityContinueToFormLogin() throws Exception {
         // Set the X509 authenticator configuration
         AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", createLoginSubjectEmail2UsernameOrEmailConfig().getConfig());
