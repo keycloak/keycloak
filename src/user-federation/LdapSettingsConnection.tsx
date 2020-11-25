@@ -5,64 +5,85 @@ import {
   InputGroup,
   Select,
   SelectOption,
+  SelectVariant,
   Switch,
   TextInput,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import React from "react";
+import React, { useState } from "react";
 import { HelpItem } from "../components/help-enabler/HelpItem";
+import { Controller, useForm } from "react-hook-form";
+import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 import { EyeIcon } from "@patternfly/react-icons";
 
 export const LdapSettingsConnection = () => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
 
+  const [
+    isTruststoreSpiDropdownOpen,
+    setIsTruststoreSpiDropdownOpen,
+  ] = useState(false);
+  const [isBindTypeDropdownOpen, setIsBindTypeDropdownOpen] = useState(false);
+  const { register, handleSubmit, control } = useForm<
+    ComponentRepresentation
+  >();
+  const onSubmit = (data: ComponentRepresentation) => {
+    console.log(data);
+  };
+
   return (
     <>
       {/* Cache settings */}
-      <Form isHorizontal>
+      <Form isHorizontal onSubmit={handleSubmit(onSubmit)}>
         <FormGroup
           label={t("connectionURL")}
           labelIcon={
             <HelpItem
               helpText={helpText("consoleDisplayConnectionUrlHelp")}
               forLabel={t("connectionURL")}
-              forID="kc-connection-url"
+              forID="kc-console-connection-url"
             />
           }
-          fieldId="kc-connection-url"
+          fieldId="kc-console-connection-url"
           isRequired
         >
           <TextInput
             isRequired
             type="text"
-            id="kc-connection-url"
-            name="kc-connection-url"
-            // value={value1}
-            // onChange={this.handleTextInputChange1}
+            id="kc-console-connection-url"
+            name="connectionUrl"
+            ref={register}
           />
         </FormGroup>
 
         <FormGroup
-          label={t("enableStarttls")}
+          label={t("enableStartTls")}
           labelIcon={
             <HelpItem
-              helpText={helpText("enableStarttlsHelp")}
-              forLabel={t("enableStarttls")}
+              helpText={helpText("enableStartTlsHelp")}
+              forLabel={t("enableStartTls")}
               forID="kc-enable-start-tls"
             />
           }
           fieldId="kc-enable-start-tls"
           hasNoPaddingTop
         >
-          <Switch
-            id={"kc-enable-start-tls"}
-            isChecked={true}
-            isDisabled={false}
-            onChange={() => undefined as any}
-            label={t("common:on")}
-            labelOff={t("common:off")}
-          />
+          <Controller
+            name="enableStartTls"
+            defaultValue={false}
+            control={control}
+            render={({ onChange, value }) => (
+              <Switch
+                id={"kc-enable-start-tls"}
+                isChecked={value}
+                isDisabled={false}
+                onChange={onChange}
+                label={t("common:on")}
+                labelOff={t("common:off")}
+              />
+            )}
+          ></Controller>
         </FormGroup>
 
         <FormGroup
@@ -76,29 +97,33 @@ export const LdapSettingsConnection = () => {
           }
           fieldId="kc-use-truststore-spi"
         >
-          <Select
-            toggleId="kc-use-truststore-spi"
-            // isOpen={openType}
-            onToggle={() => {}}
-            // variant={SelectVariant.single}
-            // value={selected}
-            // selections={selected}
-            // onSelect={(_, value) => {
-            //   setSelected(value as string);
-            //   setOpenType(false);
-            // }}
-            aria-label="Only for LDAPS" // TODO
-          >
-            {/* {configFormats.map((configFormat) => ( */}
-            <SelectOption
-              key={"key"}
-              value={"value"}
-              // isSelected={selected === configFormat.id}
-            >
-              {"display name"}
-            </SelectOption>
-            {/* ))} */}
-          </Select>
+          <Controller
+            name="useTruststoreSpi"
+            defaultValue=""
+            control={control}
+            render={({ onChange, value }) => (
+              <Select
+                toggleId="kc-use-truststore-spi"
+                onToggle={() =>
+                  setIsTruststoreSpiDropdownOpen(!isTruststoreSpiDropdownOpen)
+                }
+                isOpen={isTruststoreSpiDropdownOpen}
+                onSelect={(_, value) => {
+                  onChange(value as string);
+                  setIsTruststoreSpiDropdownOpen(false);
+                }}
+                selections={value}
+                variant={SelectVariant.single}
+              >
+                <SelectOption
+                  key={0}
+                  value="LDAP connection URL"
+                  isPlaceholder
+                />
+                <SelectOption key={1} value="something else" />
+              </Select>
+            )}
+          ></Controller>
         </FormGroup>
 
         <FormGroup
@@ -113,14 +138,21 @@ export const LdapSettingsConnection = () => {
           fieldId="kc-connection-pooling"
           hasNoPaddingTop
         >
-          <Switch
-            id={"kc-connection-pooling"}
-            isChecked={true}
-            isDisabled={false}
-            onChange={() => undefined as any}
-            label={t("common:on")}
-            labelOff={t("common:off")}
-          />
+          <Controller
+            name="connectionPooling"
+            defaultValue={false}
+            control={control}
+            render={({ onChange, value }) => (
+              <Switch
+                id={"kc-connection-pooling"}
+                isDisabled={false}
+                onChange={onChange}
+                isChecked={value}
+                label={t("common:on")}
+                labelOff={t("common:off")}
+              />
+            )}
+          ></Controller>
         </FormGroup>
 
         <FormGroup
@@ -129,17 +161,16 @@ export const LdapSettingsConnection = () => {
             <HelpItem
               helpText={helpText("connectionTimeoutHelp")}
               forLabel={t("connectionTimeout")}
-              forID="kc-connection-timeout"
+              forID="kc-console-connection-timeout"
             />
           }
-          fieldId="kc-connection-timeout"
+          fieldId="kc-console-connection-timeout"
         >
           <TextInput
             type="text"
-            id="kc-connection-timeout"
-            name="kc-connection-timeout"
-            // value={value1}
-            // onChange={this.handleTextInputChange1}
+            id="kc-console-connection-timeout"
+            name="connectionTimeout"
+            ref={register}
           />
         </FormGroup>
 
@@ -155,19 +186,35 @@ export const LdapSettingsConnection = () => {
           fieldId="kc-bind-type"
           isRequired
         >
-          <Select
-            toggleId="kc-bind-type"
-            // isOpen={openType}
-            onToggle={() => {}}
-            // variant={SelectVariant.single}
-            // value={selected}
-            // selections={selected}
-            // onSelect={(_, value) => {
-            //   setSelected(value as string);
-            //   setOpenType(false);
-            // }}
-            aria-label="simple" // TODO
-          ></Select>
+          <Controller
+            name="bindType"
+            defaultValue=""
+            control={control}
+            render={({ onChange, value }) => (
+              <Select
+                toggleId="kc-bind-type"
+                required
+                onToggle={() =>
+                  setIsBindTypeDropdownOpen(!isBindTypeDropdownOpen)
+                }
+                isOpen={isBindTypeDropdownOpen}
+                onSelect={(_, value) => {
+                  onChange(value as string);
+                  setIsBindTypeDropdownOpen(false);
+                }}
+                selections={value}
+                variant={SelectVariant.single}
+                // aria-label="simple" // TODO
+              >
+                <SelectOption
+                  key={3}
+                  value="Connection timeout"
+                  isPlaceholder
+                />
+                <SelectOption key={4} value="something" />
+              </Select>
+            )}
+          ></Controller>
         </FormGroup>
 
         <FormGroup
@@ -176,17 +223,16 @@ export const LdapSettingsConnection = () => {
             <HelpItem
               helpText={helpText("bindDnHelp")}
               forLabel={t("bindDn")}
-              forID="kc-bind-dn"
+              forID="kc-console-bind-dn"
             />
           }
-          fieldId="kc-bind-dn"
+          fieldId="kc-console-bind-dn"
         >
           <TextInput
             type="text"
-            id="kc-bind-dn"
-            name="kc-bind-dn"
-            // value={value1}
-            // onChange={this.handleTextInputChange1}
+            id="kc-console-bind-dn"
+            name="bindDn"
+            ref={register}
           />
         </FormGroup>
 
@@ -196,19 +242,19 @@ export const LdapSettingsConnection = () => {
             <HelpItem
               helpText={helpText("bindCredentialsHelp")}
               forLabel={t("bindCredentials")}
-              forID="kc-bind-credentials"
+              forID="kc-console-bind-credentials"
             />
           }
-          fieldId="kc-bind-credentials"
+          fieldId="kc-console-bind-credentials"
           isRequired
         >
           <InputGroup>
-            <TextInput
-              name="kc-bind-credentials"
-              id="kc-bind-credentials"
-              type="password"
-              aria-label="bind credentials"
+            <TextInput // TODO: Make password field
               isRequired
+              type="text"
+              id="kc-console-bind-credentials"
+              name="bindCredentials"
+              ref={register}
             />
             <Button
               variant="control"
@@ -218,6 +264,14 @@ export const LdapSettingsConnection = () => {
             </Button>
           </InputGroup>
         </FormGroup>
+
+        <FormGroup fieldId="kc-test-button">
+          <Button variant="secondary" id="kc-test-button">
+            Test
+          </Button>
+        </FormGroup>
+
+        <button type="submit">Test Submit</button>
       </Form>
     </>
   );

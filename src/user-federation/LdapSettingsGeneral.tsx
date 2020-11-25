@@ -1,16 +1,33 @@
-import { Form, FormGroup, Select, TextInput } from "@patternfly/react-core";
+import {
+  Form,
+  FormGroup,
+  Select,
+  SelectOption,
+  SelectVariant,
+  TextInput,
+} from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import React from "react";
+import React, { useState } from "react";
 import { HelpItem } from "../components/help-enabler/HelpItem";
+import { useForm, Controller } from "react-hook-form";
+import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 
 export const LdapSettingsGeneral = () => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
 
+  const [isVendorDropdownOpen, setIsVendorDropdownOpen] = useState(false);
+  const { register, handleSubmit, control } = useForm<
+    ComponentRepresentation
+  >();
+  const onSubmit = (data: ComponentRepresentation) => {
+    console.log(data);
+  };
+
   return (
     <>
       {/* Cache settings */}
-      <Form isHorizontal>
+      <Form isHorizontal onSubmit={handleSubmit(onSubmit)}>
         <FormGroup
           label={t("consoleDisplayName")}
           labelIcon={
@@ -27,9 +44,8 @@ export const LdapSettingsGeneral = () => {
             isRequired
             type="text"
             id="kc-console-display-name"
-            name="kc-console-display-name"
-            // value={value1}
-            // onChange={this.handleTextInputChange1}
+            name="displayName"
+            ref={register}
           />
         </FormGroup>
 
@@ -45,21 +61,36 @@ export const LdapSettingsGeneral = () => {
           fieldId="kc-vendor"
           isRequired
         >
-          <Select
-            toggleId="kc-vendor"
-            // isOpen={openType}
-            onToggle={() => {}}
-            // variant={SelectVariant.single}
-            // value={selected}
-            // selections={selected}
-            // onSelect={(_, value) => {
-            //   setSelected(value as string);
-            //   setOpenType(false);
-            // }}
-            aria-label="Other"
-            isDisabled
-          ></Select>
+          <Controller
+            name="vendor"
+            defaultValue=""
+            control={control}
+            render={({ onChange, value }) => (
+              <Select
+                toggleId="kc-vendor"
+                required
+                onToggle={() => setIsVendorDropdownOpen(!isVendorDropdownOpen)}
+                isOpen={isVendorDropdownOpen}
+                onSelect={(_, value) => {
+                  onChange(value as string);
+                  setIsVendorDropdownOpen(false);
+                }}
+                selections={value}
+                variant={SelectVariant.single}
+                // aria-label="Other"
+                // isDisabled
+              >
+                <SelectOption key={0} value="Choose..." isPlaceholder />
+                <SelectOption key={1} value="Active Directory" />
+                <SelectOption key={2} value="Red Hat Directory Server" />
+                <SelectOption key={3} value="Tivoli" />
+                <SelectOption key={4} value="Novell eDirectory" />
+                <SelectOption key={5} value="Other" />
+              </Select>
+            )}
+          ></Controller>
         </FormGroup>
+        <button type="submit">Test submit</button>
       </Form>
     </>
   );

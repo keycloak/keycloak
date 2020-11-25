@@ -2,15 +2,24 @@ import { Form, FormGroup, Switch, TextInput } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import React from "react";
 import { HelpItem } from "../components/help-enabler/HelpItem";
+import { useForm, Controller } from "react-hook-form";
+import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 
 export const LdapSettingsSynchronization = () => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
 
+  const { register, handleSubmit, control } = useForm<
+    ComponentRepresentation
+  >();
+  const onSubmit = (data: ComponentRepresentation) => {
+    console.log(data);
+  };
+
   return (
     <>
       {/* Synchronization settings */}
-      <Form isHorizontal>
+      <Form isHorizontal onSubmit={handleSubmit(onSubmit)}>
         <FormGroup
           label={t("importUsers")}
           labelIcon={
@@ -23,16 +32,21 @@ export const LdapSettingsSynchronization = () => {
           fieldId="kc-import-users"
           hasNoPaddingTop
         >
-          <Switch
-            id={"kc-import-users"}
-            isChecked={true}
-            isDisabled={false}
-            onChange={() => undefined as any} //TODO: switch shows/hides other fields
-            label={t("common:on")}
-            labelOff={t("common:off")}
-          />
+          <Controller
+            name="importUsers"
+            defaultValue={false}
+            control={control}
+            render={({ onChange, value }) => (
+              <Switch
+                id={"kc-import-users"}
+                isChecked={value}
+                isDisabled={false}
+                onChange={onChange}
+                aria-label={t("importUsers") + " " + t("common:on")}
+              />
+            )}
+          ></Controller>
         </FormGroup>
-
         <FormGroup
           label={t("batchSize")}
           labelIcon={
@@ -44,9 +58,13 @@ export const LdapSettingsSynchronization = () => {
           }
           fieldId="kc-batch-size"
         >
-          <TextInput type="text" id="kc-batch-size" name="batchSize" />
+          <TextInput
+            type="text"
+            id="kc-batch-size"
+            name="batchSize"
+            ref={register}
+          />
         </FormGroup>
-
         <FormGroup
           label={t("periodicFullSync")}
           labelIcon={
@@ -59,16 +77,22 @@ export const LdapSettingsSynchronization = () => {
           fieldId="kc-periodic-full-sync"
           hasNoPaddingTop
         >
-          <Switch
-            id={"kc-periodic-full-sync"}
-            label={t("common:on")}
-            labelOff={t("common:off")}
-            isChecked={true}
-            isDisabled={false}
-            onChange={() => undefined as any}
-          />
+          <Controller
+            name="periodicFullSync"
+            defaultValue={false}
+            control={control}
+            render={({ onChange, value }) => (
+              <Switch
+                id={"kc-periodic-full-sync"}
+                isChecked={value}
+                isDisabled={false}
+                onChange={onChange}
+                label={t("common:on")}
+                labelOff={t("common:off")}
+              />
+            )}
+          ></Controller>
         </FormGroup>
-
         <FormGroup
           label={t("periodicChangedUsersSync")}
           labelIcon={
@@ -81,15 +105,23 @@ export const LdapSettingsSynchronization = () => {
           fieldId="kc-periodic-changed-users-sync"
           hasNoPaddingTop
         >
-          <Switch
-            id={"kc-periodic-changed-users-sync"}
-            isChecked={true}
-            isDisabled={false}
-            onChange={() => undefined as any}
-            label={t("common:on")}
-            labelOff={t("common:off")}
-          />
+          <Controller
+            name="periodicChangedUsersSync"
+            defaultValue={false}
+            control={control}
+            render={({ onChange, value }) => (
+              <Switch
+                id={"kc-periodic-changed-users-sync"}
+                isChecked={value}
+                isDisabled={false}
+                onChange={onChange}
+                label={t("common:on")}
+                labelOff={t("common:off")}
+              />
+            )}
+          ></Controller>
         </FormGroup>
+        <button type="submit">Test submit</button>
       </Form>
     </>
   );

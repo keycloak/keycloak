@@ -1,16 +1,61 @@
-import { Form, FormGroup, Select, SelectOption } from "@patternfly/react-core";
+import {
+  Form,
+  FormGroup,
+  Select,
+  SelectOption,
+  SelectVariant,
+  TextInput,
+} from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import React from "react";
+import React, { useState } from "react";
 import { HelpItem } from "../components/help-enabler/HelpItem";
+import { useForm, Controller } from "react-hook-form";
+import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 
 export const LdapSettingsCache = () => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
 
+  const [isCachePolicyDropdownOpen, setIsCachePolicyDropdownOpen] = useState(
+    false
+  );
+
+  const [isEvictionHourDropdownOpen, setIsEvictionHourDropdownOpen] = useState(
+    false
+  );
+  const [
+    isEvictionMinuteDropdownOpen,
+    setIsEvictionMinuteDropdownOpen,
+  ] = useState(false);
+  const [isEvictionDayDropdownOpen, setIsEvictionDayDropdownOpen] = useState(
+    false
+  );
+
+  const { handleSubmit, control, register } = useForm<
+    ComponentRepresentation
+  >();
+  const onSubmit = (data: ComponentRepresentation) => {
+    console.log(data);
+  };
+
+  const hourOptions = [
+    <SelectOption key={0} value={t("common:selectOne")} isPlaceholder />,
+  ];
+  for (let index = 1; index <= 24; index++) {
+    hourOptions.push(<SelectOption key={index + 1} value={index} />);
+  }
+
+  const minuteOptions = [
+    <SelectOption key={0} value={t("common:selectOne")} isPlaceholder />,
+  ];
+  for (let index = 1; index <= 60; index++) {
+    minuteOptions.push(<SelectOption key={index + 1} value={index} />);
+  }
+
   return (
     <>
       {/* Cache settings */}
-      <Form isHorizontal>
+      <Form isHorizontal onSubmit={handleSubmit(onSubmit)}>
         <FormGroup
           label={t("cachePolicy")}
           labelIcon={
@@ -22,29 +67,182 @@ export const LdapSettingsCache = () => {
           }
           fieldId="kc-cache-policy"
         >
-          <Select
-            toggleId="kc-cache-policy"
-            // isOpen={openType}
-            onToggle={() => {}}
-            // variant={SelectVariant.single}
-            // value={selected}
-            // selections={selected}
-            // onSelect={(_, value) => {
-            //   setSelected(value as string);
-            //   setOpenType(false);
-            // }}
-            aria-label="Select Input"
-          >
-            {/* {configFormats.map((configFormat) => ( */}
-            <SelectOption
-              key={"key"}
-              value={"value"}
-              // isSelected={selected === configFormat.id}
-            >
-              {"display name"}
-            </SelectOption>
-          </Select>
+          <Controller
+            name="cachePolicy"
+            defaultValue=""
+            control={control}
+            render={({ onChange, value }) => (
+              <Select
+                toggleId="kc-cache-policy"
+                required
+                onToggle={() =>
+                  setIsCachePolicyDropdownOpen(!isCachePolicyDropdownOpen)
+                }
+                isOpen={isCachePolicyDropdownOpen}
+                onSelect={(_, value) => {
+                  onChange(value as string);
+                  setIsCachePolicyDropdownOpen(false);
+                }}
+                selections={value}
+                variant={SelectVariant.single}
+                // aria-label="Other"
+                // isDisabled
+              >
+                <SelectOption key={0} value="Choose..." isPlaceholder />
+                <SelectOption key={1} value="DEFAULT" />
+                <SelectOption key={2} value="EVICT_DAILY" />
+                <SelectOption key={3} value="EVICT_WEEKLY" />
+                <SelectOption key={4} value="MAX_LIFESPAN" />
+                <SelectOption key={5} value="NO_CACHE" />
+              </Select>
+            )}
+          ></Controller>
         </FormGroup>
+
+        {/* TODO: Field shows only if cache policy is EVICT_WEEKLY */}
+        <FormGroup
+          label={t("evictionDay")}
+          labelIcon={
+            <HelpItem
+              helpText={helpText("evictionDayHelp")}
+              forLabel={t("evictionDay")}
+              forID="kc-eviction-day"
+            />
+          }
+          fieldId="kc-eviction-day"
+        >
+          <Controller
+            name="evictionDay"
+            defaultValue=""
+            control={control}
+            render={({ onChange, value }) => (
+              <Select
+                toggleId="kc-eviction-day"
+                required
+                onToggle={() =>
+                  setIsEvictionDayDropdownOpen(!isEvictionDayDropdownOpen)
+                }
+                isOpen={isEvictionDayDropdownOpen}
+                onSelect={(_, value) => {
+                  onChange(value as string);
+                  setIsEvictionDayDropdownOpen(false);
+                }}
+                selections={value}
+                variant={SelectVariant.single}
+              >
+                <SelectOption
+                  key={0}
+                  value={t("common:selectOne")}
+                  isPlaceholder
+                />
+                <SelectOption key={1} value={t("common:Sunday")} />
+                <SelectOption key={2} value={t("common:Monday")} />
+                <SelectOption key={3} value={t("common:Tuesday")} />
+                <SelectOption key={4} value={t("common:Wednesday")} />
+                <SelectOption key={5} value={t("common:Thursday")} />
+                <SelectOption key={6} value={t("common:Friday")} />
+                <SelectOption key={7} value={t("common:Saturday")} />
+              </Select>
+            )}
+          ></Controller>
+        </FormGroup>
+
+        {/* TODO: Field shows only if cache policy is EVICT_WEEKLY or EVICT_DAILY */}
+        {/* TODO: Investigate whether this should be a number field instead of a dropdown/text field */}
+        <FormGroup
+          label={t("evictionHour")}
+          labelIcon={
+            <HelpItem
+              helpText={helpText("evictionHourHelp")}
+              forLabel={t("evictionHour")}
+              forID="kc-eviction-hour"
+            />
+          }
+          fieldId="kc-eviction-hour"
+        >
+          <Controller
+            name="evictionHour"
+            defaultValue=""
+            control={control}
+            render={({ onChange, value }) => (
+              <Select
+                toggleId="kc-eviction-hour"
+                onToggle={() =>
+                  setIsEvictionHourDropdownOpen(!isEvictionHourDropdownOpen)
+                }
+                isOpen={isEvictionHourDropdownOpen}
+                onSelect={(_, value) => {
+                  onChange(value as string);
+                  setIsEvictionHourDropdownOpen(false);
+                }}
+                selections={value}
+                variant={SelectVariant.single}
+              >
+                {hourOptions}
+              </Select>
+            )}
+          ></Controller>
+        </FormGroup>
+
+        {/* TODO: Field shows only if cache policy is EVICT_WEEKLY or EVICT_DAILY */}
+        {/* TODO: Investigate whether this should be a number field instead of a dropdown/text field */}
+        <FormGroup
+          label={t("evictionMinute")}
+          labelIcon={
+            <HelpItem
+              helpText={helpText("evictionMinuteHelp")}
+              forLabel={t("evictionMinute")}
+              forID="kc-eviction-minute"
+            />
+          }
+          fieldId="kc-eviction-minute"
+        >
+          <Controller
+            name="evictionMinute"
+            defaultValue=""
+            control={control}
+            render={({ onChange, value }) => (
+              <Select
+                toggleId="kc-eviction-minute"
+                onToggle={() =>
+                  setIsEvictionMinuteDropdownOpen(!isEvictionMinuteDropdownOpen)
+                }
+                isOpen={isEvictionMinuteDropdownOpen}
+                onSelect={(_, value) => {
+                  onChange(value as string);
+                  setIsEvictionMinuteDropdownOpen(false);
+                }}
+                selections={value}
+                variant={SelectVariant.single}
+              >
+                {minuteOptions}
+              </Select>
+            )}
+          ></Controller>
+        </FormGroup>
+
+        {/* TODO: Field shows only if cache policy is MAX_LIFESPAN */}
+        <FormGroup
+          label={t("maxLifespan")}
+          labelIcon={
+            <HelpItem
+              helpText={helpText("maxLifespanHelp")}
+              forLabel={t("maxLifespan")}
+              forID="kc-max-lifespan"
+            />
+          }
+          fieldId="kc-max-lifespan"
+        >
+          <TextInput
+            isRequired
+            type="text"
+            id="kc-max-lifespan"
+            name="maxLifespan"
+            ref={register}
+          />
+        </FormGroup>
+
+        <button type="submit">Test submit</button>
       </Form>
     </>
   );
