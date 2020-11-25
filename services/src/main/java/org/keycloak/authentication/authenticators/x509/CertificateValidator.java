@@ -403,6 +403,7 @@ public class CertificateValidator {
     boolean _crldpEnabled;
     CRLLoaderImpl _crlLoader;
     boolean _ocspEnabled;
+    boolean _ocspFailOpen;
     OCSPChecker ocspChecker;
     boolean _timestampValidationEnabled;
     boolean _trustValidationEnabled;
@@ -417,6 +418,7 @@ public class CertificateValidator {
                                    boolean cRLDPCheckingEnabled,
                                    CRLLoaderImpl crlLoader,
                                    boolean oCSPCheckingEnabled,
+                                   boolean ocspFailOpen,
                                    OCSPChecker ocspChecker,
                                    KeycloakSession session,
                                    boolean timestampValidationEnabled,
@@ -430,6 +432,7 @@ public class CertificateValidator {
         _crldpEnabled = cRLDPCheckingEnabled;
         _crlLoader = crlLoader;
         _ocspEnabled = oCSPCheckingEnabled;
+        _ocspFailOpen = ocspFailOpen;
         this.ocspChecker = ocspChecker;
         this.session = session;
         _timestampValidationEnabled = timestampValidationEnabled;
@@ -705,25 +708,38 @@ public class CertificateValidator {
             }
         }
 
-        OCSPUtils.OCSPRevocationStatus rs = ocspChecker.check(cert, issuer);
+        try {
+            OCSPUtils.OCSPRevocationStatus rs = ocspChecker.check(cert, issuer);
 
-        if (rs == null) {
-            throw new GeneralSecurityException("Unable to check client revocation status using OCSP");
-        }
+            if (rs == null) {
+                if (_ocspFailOpen)
+                    logger.warnf("Unable to check client revocation status using OCSP - continuing certificate authentication because of fail-open OCSP configuration setting");
+                else
+                    throw new GeneralSecurityException("Unable to check client revocation status using OCSP");
+            }
 
-        if (rs.getRevocationStatus() == OCSPUtils.RevocationStatus.UNKNOWN) {
-            throw new GeneralSecurityException("Unable to determine certificate's revocation status.");
-        }
-        else if (rs.getRevocationStatus() == OCSPUtils.RevocationStatus.REVOKED) {
+            if (rs.getRevocationStatus() == OCSPUtils.RevocationStatus.UNKNOWN) {
+                if (_ocspFailOpen)
+                    logger.warnf("Unable to determine certificate's revocation status - continuing certificate authentication because of fail-open OCSP configuration setting");
+                else
+                    throw new GeneralSecurityException("Unable to determine certificate's revocation status.");
+            }
+            else if (rs.getRevocationStatus() == OCSPUtils.RevocationStatus.REVOKED) {
 
-            StringBuilder sb = new StringBuilder();
-            sb.append("Certificate's been revoked.");
-            sb.append("\n");
-            sb.append(rs.getRevocationReason().toString());
-            sb.append("\n");
-            sb.append(String.format("Revoked on: %s",rs.getRevocationTime().toString()));
+                StringBuilder sb = new StringBuilder();
+                sb.append("Certificate's been revoked.");
+                sb.append("\n");
+                sb.append(rs.getRevocationReason().toString());
+                sb.append("\n");
+                sb.append(String.format("Revoked on: %s",rs.getRevocationTime().toString()));
 
-            throw new GeneralSecurityException(sb.toString());
+                throw new GeneralSecurityException(sb.toString());
+            }
+        } catch (CertPathValidatorException e) {
+            if (_ocspFailOpen)
+                logger.warnf("Unable to check client revocation status using OCSP - continuing certificate authentication because of fail-open OCSP configuration setting");
+            else
+                throw e;
         }
     }
 
@@ -792,6 +808,7 @@ public class CertificateValidator {
         boolean _crldpEnabled;
         CRLLoaderImpl _crlLoader;
         boolean _ocspEnabled;
+        boolean _ocspFailOpen;
         String _responderUri;
         X509Certificate _responderCert;
         boolean _timestampValidationEnabled;
@@ -967,7 +984,14 @@ public class CertificateValidator {
             }
 
             public class GotOCSP {
-                public GotOCSP oCSPResponseCertificate(String responderCert) {
+                public GotOCSPFailOpen oCSPFailOpen(boolean ocspFailOpen) {
+                    _ocspFailOpen = ocspFailOpen;
+                    return new GotOCSPFailOpen();
+                }
+            }
+
+            public class GotOCSPFailOpen {
+                public GotOCSPFailOpen oCSPResponseCertificate(String responderCert) {
                     if (responderCert != null && !responderCert.isEmpty()) {
                         try {
                             _responderCert = XMLSignatureUtil.getX509CertificateFromKeyInfoString(responderCert);
@@ -979,7 +1003,7 @@ public class CertificateValidator {
                             throw new RuntimeException(e);
                         }
                     }
-                    return new GotOCSP();
+                    return new GotOCSPFailOpen();
                 }
 
                 public CertificateValidatorBuilder oCSPResponderURI(String responderURI) {
@@ -1050,7 +1074,7 @@ public class CertificateValidator {
             }
             return new CertificateValidator(certs, _keyUsageBits, _extendedKeyUsage,
                     _certificatePolicy, _certificatePolicyMode,
-                    _crlCheckingEnabled, _crldpEnabled, _crlLoader, _ocspEnabled,
+                    _crlCheckingEnabled, _crldpEnabled, _crlLoader, _ocspEnabled, _ocspFailOpen,
                     new BouncyCastleOCSPChecker(session, _responderUri, _responderCert), session, _timestampValidationEnabled, _trustValidationEnabled);
         }
     }
