@@ -1,25 +1,21 @@
-import { Form, FormGroup, Switch, TextInput } from "@patternfly/react-core";
+import { FormGroup, Switch, TextInput } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import React from "react";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useForm, Controller } from "react-hook-form";
 import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import { FormAccess } from "../components/form-access/FormAccess";
 
 export const LdapSettingsSynchronization = () => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
 
-  const { register, handleSubmit, control } = useForm<
-    ComponentRepresentation
-  >();
-  const onSubmit = (data: ComponentRepresentation) => {
-    console.log(data);
-  };
+  const { register, control } = useForm<ComponentRepresentation>();
 
   return (
     <>
       {/* Synchronization settings */}
-      <Form isHorizontal onSubmit={handleSubmit(onSubmit)}>
+      <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
           label={t("importUsers")}
           labelIcon={
@@ -121,8 +117,7 @@ export const LdapSettingsSynchronization = () => {
             )}
           ></Controller>
         </FormGroup>
-        <button type="submit">Test submit</button>
-      </Form>
+      </FormAccess>
     </>
   );
 };

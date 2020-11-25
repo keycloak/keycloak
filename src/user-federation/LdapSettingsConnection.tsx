@@ -1,6 +1,5 @@
 import {
   Button,
-  Form,
   FormGroup,
   InputGroup,
   Select,
@@ -15,6 +14,7 @@ import { HelpItem } from "../components/help-enabler/HelpItem";
 import { Controller, useForm } from "react-hook-form";
 import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 import { EyeIcon } from "@patternfly/react-icons";
+import { FormAccess } from "../components/form-access/FormAccess";
 
 export const LdapSettingsConnection = () => {
   const { t } = useTranslation("user-federation");
@@ -24,18 +24,15 @@ export const LdapSettingsConnection = () => {
     isTruststoreSpiDropdownOpen,
     setIsTruststoreSpiDropdownOpen,
   ] = useState(false);
+
   const [isBindTypeDropdownOpen, setIsBindTypeDropdownOpen] = useState(false);
-  const { register, handleSubmit, control } = useForm<
-    ComponentRepresentation
-  >();
-  const onSubmit = (data: ComponentRepresentation) => {
-    console.log(data);
-  };
+
+  const { register, control } = useForm<ComponentRepresentation>();
 
   return (
     <>
       {/* Cache settings */}
-      <Form isHorizontal onSubmit={handleSubmit(onSubmit)}>
+      <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
           label={t("connectionURL")}
           labelIcon={
@@ -249,9 +246,9 @@ export const LdapSettingsConnection = () => {
           isRequired
         >
           <InputGroup>
-            <TextInput // TODO: Make password field
+            <TextInput // TODO: Make password field switch to type=text with button
               isRequired
-              type="text"
+              type="password"
               id="kc-console-bind-credentials"
               name="bindCredentials"
               ref={register}
@@ -266,13 +263,13 @@ export const LdapSettingsConnection = () => {
         </FormGroup>
 
         <FormGroup fieldId="kc-test-button">
+          {" "}
+          {/* TODO: whatever this button is supposed to do */}
           <Button variant="secondary" id="kc-test-button">
             Test
           </Button>
         </FormGroup>
-
-        <button type="submit">Test Submit</button>
-      </Form>
+      </FormAccess>
     </>
   );
 };

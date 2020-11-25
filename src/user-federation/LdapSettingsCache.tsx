@@ -1,5 +1,4 @@
 import {
-  Form,
   FormGroup,
   Select,
   SelectOption,
@@ -11,6 +10,7 @@ import React, { useState } from "react";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useForm, Controller } from "react-hook-form";
 import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import { FormAccess } from "../components/form-access/FormAccess";
 
 export const LdapSettingsCache = () => {
   const { t } = useTranslation("user-federation");
@@ -27,16 +27,10 @@ export const LdapSettingsCache = () => {
     isEvictionMinuteDropdownOpen,
     setIsEvictionMinuteDropdownOpen,
   ] = useState(false);
+
   const [isEvictionDayDropdownOpen, setIsEvictionDayDropdownOpen] = useState(
     false
   );
-
-  const { handleSubmit, control, register } = useForm<
-    ComponentRepresentation
-  >();
-  const onSubmit = (data: ComponentRepresentation) => {
-    console.log(data);
-  };
 
   const hourOptions = [
     <SelectOption key={0} value={t("common:selectOne")} isPlaceholder />,
@@ -52,10 +46,12 @@ export const LdapSettingsCache = () => {
     minuteOptions.push(<SelectOption key={index + 1} value={index} />);
   }
 
+  const { control, register } = useForm<ComponentRepresentation>();
+
   return (
     <>
       {/* Cache settings */}
-      <Form isHorizontal onSubmit={handleSubmit(onSubmit)}>
+      <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
           label={t("cachePolicy")}
           labelIcon={
@@ -241,9 +237,7 @@ export const LdapSettingsCache = () => {
             ref={register}
           />
         </FormGroup>
-
-        <button type="submit">Test submit</button>
-      </Form>
+      </FormAccess>
     </>
   );
 };

@@ -1,5 +1,4 @@
 import {
-  Form,
   FormGroup,
   Select,
   SelectOption,
@@ -11,23 +10,20 @@ import React, { useState } from "react";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useForm, Controller } from "react-hook-form";
 import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import { FormAccess } from "../components/form-access/FormAccess";
 
 export const LdapSettingsGeneral = () => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
 
   const [isVendorDropdownOpen, setIsVendorDropdownOpen] = useState(false);
-  const { register, handleSubmit, control } = useForm<
-    ComponentRepresentation
-  >();
-  const onSubmit = (data: ComponentRepresentation) => {
-    console.log(data);
-  };
+
+  const { register, control } = useForm<ComponentRepresentation>();
 
   return (
     <>
       {/* Cache settings */}
-      <Form isHorizontal onSubmit={handleSubmit(onSubmit)}>
+      <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
           label={t("consoleDisplayName")}
           labelIcon={
@@ -90,8 +86,7 @@ export const LdapSettingsGeneral = () => {
             )}
           ></Controller>
         </FormGroup>
-        <button type="submit">Test submit</button>
-      </Form>
+      </FormAccess>
     </>
   );
 };

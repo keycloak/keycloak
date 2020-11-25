@@ -1,22 +1,20 @@
-import { Form, FormGroup, Switch } from "@patternfly/react-core";
+import { FormGroup, Switch } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import React from "react";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useForm, Controller } from "react-hook-form";
 import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
+import { FormAccess } from "../components/form-access/FormAccess";
 
 export const LdapSettingsAdvanced = () => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
 
-  const { handleSubmit, control } = useForm<ComponentRepresentation>();
-  const onSubmit = (data: ComponentRepresentation) => {
-    console.log(data);
-  };
+  const { control } = useForm<ComponentRepresentation>();
 
   return (
     <>
-      <Form isHorizontal onSubmit={handleSubmit(onSubmit)}>
+      <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
           label={t("enableLdapv3Password")}
           labelIcon={
@@ -103,9 +101,7 @@ export const LdapSettingsAdvanced = () => {
             )}
           ></Controller>
         </FormGroup>
-
-        <button type="submit">Test submit</button>
-      </Form>
+      </FormAccess>
     </>
   );
 };
