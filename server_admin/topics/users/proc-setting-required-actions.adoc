@@ -8,7 +8,7 @@
 You can set the actions that are required for any user.
 
 .Procedure
-. Click *Users* in the left column.
+. Click *Users* in the menu.
 . Select a user from the list.
 . Navigate to the *Required User Actions* list.
 +

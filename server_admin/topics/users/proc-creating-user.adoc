@@ -12,8 +12,8 @@ You create users in the realm where you intend to have applications needed by th
 * You are in a realm other than the master realm.
 
 .Procedure
-. In the admin console, click *Users* in the left menu.
-. Click *Add User* on the right side of the empty user list.
+. Click *Users* in the menu.
+. Click *Add User*.
 . Enter the details for the new user.
 
 ifdef::standalone[]
@@ -24,10 +24,10 @@ NOTE: *Username* is the only required field.
 endif::[]
 
 ifdef::api-management[]
-. Set *Email Verified* to *ON*.
+. Toggle *Email Verified* to *ON*.
 . Click *Save*.
 . In the *Credentials* tab, set the password in both fields.
-.. Set *Temporary* to *OFF* to avoid resetting the password during the next log in.
+.. Toggle *Temporary* to *OFF* to avoid resetting the password during the next log in.
 .. Click *Reset Password*.
 .. Click *Change Password*.
 .. Click *Save*.

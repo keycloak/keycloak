@@ -15,7 +15,7 @@ image:{project_images}/registration-form.png[]
 * User registration is enabled.
 
 .Procedure
-. Click the *Register* link on the login page. You are directed to the registration page.
+. Click the *Register* link on the login page. The registration page is displayed.
 . Enter the user profile information.
 . Enter the new password.
 . Click *Save*.

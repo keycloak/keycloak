@@ -17,6 +17,6 @@ can use the user registration link or the *Required Actions* tab.
 . Specify the default required actions. 
 
 .Using the Required Actions tab
-. Click *Authentication* in the left menu.
+. Click *Authentication* in the menu.
 . Click the *Required Actions* tab.
 . Click the checkbox in the *Default Action* column for one or more required actions. When a new user logs in for the first time, the selected actions must be executed.

@@ -14,6 +14,8 @@ Alternatively, you can send an email to the user that requests the user reset th
 * You are logged in to the appropriate realm.
 
 .Procedure
+. Click *Users* in the main menu. The user list page is displayed.
+. Select a user.
 . Navigate to the *Reset Actions* list.
 . Click *Configure OTP*. 
 . Click *Send Email*. The sent email contains a link that directs the user to the OTP setup page. 
