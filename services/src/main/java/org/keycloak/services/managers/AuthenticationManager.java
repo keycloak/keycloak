@@ -314,7 +314,7 @@ public class AuthenticationManager {
         }
 
         if (rootLogoutSession == null) {
-            rootLogoutSession = session.authenticationSessions().createRootAuthenticationSession(authSessionId, realm);
+            rootLogoutSession = session.authenticationSessions().createRootAuthenticationSession(realm, authSessionId);
         }
         if (browserCookie && !browserCookiePresent) {
             // Update cookie if needed

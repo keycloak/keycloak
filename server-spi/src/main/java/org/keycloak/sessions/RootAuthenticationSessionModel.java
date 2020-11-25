@@ -23,50 +23,70 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 
 /**
- * Represents usually one browser session with potentially many browser tabs. Every browser tab is represented by {@link AuthenticationSessionModel}
- * of different client.
+ * Represents usually one browser session with potentially many browser tabs. Every browser tab is represented by
+ * {@link AuthenticationSessionModel} of different client.
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public interface RootAuthenticationSessionModel {
 
+    /**
+     * Returns id of the root authentication session.
+     * @return {@code String}
+     */
     String getId();
-    RealmModel getRealm();
-
-    int getTimestamp();
-    void setTimestamp(int timestamp);
-
 
     /**
+     * Returns realm associated to the root authentication session.
+     * @return {@code RealmModel}
+     */
+    RealmModel getRealm();
+
+    /**
+     * Returns timestamp when the root authentication session was created or updated.
+     * @return {@code int}
+     */
+    int getTimestamp();
+
+    /**
+     * Sets a timestamp when the root authentication session was created or updated.
+     * @param timestamp {@code int}
+     */
+    void setTimestamp(int timestamp);
+
+    /**
+     * Returns authentication sessions for the root authentication session.
      * Key is tabId, Value is AuthenticationSessionModel.
-     * @return authentication sessions or empty map if no authenticationSessions presents. Never return null.
+     * @return {@code Map<String, AuthenticationSessionModel>} authentication sessions or empty map if no
+     * authentication sessions are present. Never return null.
      */
     Map<String, AuthenticationSessionModel> getAuthenticationSessions();
 
-
     /**
-     * @return authentication session for particular client and tab or null if it doesn't yet exists.
+     * Returns an authentication session for the particular client and tab or null if it doesn't yet exists.
+     * @param client {@code ClientModel} If {@code null} is provided the method will return {@code null}.
+     * @param tabId {@code String} If {@code null} is provided the method will return {@code null}.
+     * @return {@code AuthenticationSessionModel} or {@code null} in no authentication session is found.
      */
     AuthenticationSessionModel getAuthenticationSession(ClientModel client, String tabId);
 
-
     /**
-     * Create new authentication session and returns it. Overwrites existing session for particular client if already exists.
-     *
-     * @param client
-     * @return non-null fresh authentication session
+     * Create a new authentication session and returns it. Overwrites existing session for particular client if already exists.
+     * @param client {@code ClientModel} Can't be {@code null}.
+     * @return {@code AuthenticationSessionModel} non-null fresh authentication session. Never returns {@code null}.
      */
     AuthenticationSessionModel createAuthenticationSession(ClientModel client);
 
     /**
-     * Removes authentication session from root authentication session.
+     * Removes the authentication session specified by tab id from the root authentication session.
      * If there's no child authentication session left in the root authentication session, it's removed as well.
-     * @param tabId String
+     * @param tabId {@code String} Can't be {@code null}.
      */
     void removeAuthenticationSessionByTabId(String tabId);
 
     /**
      * Will completely restart whole state of authentication session. It will just keep same ID. It will setup it with provided realm.
+     * @param realm {@code RealmModel} Associated realm to the root authentication session.
      */
     void restartSession(RealmModel realm);
 

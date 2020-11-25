@@ -30,6 +30,10 @@
         "provider": "${keycloak.role.provider:jpa}"
     },
 
+    "authenticationSessions": {
+        "provider": "${keycloak.authSession.provider:infinispan}"
+    },
+
     "mapStorage": {
         "provider": "${keycloak.mapStorage.provider:concurrenthashmap}",
         "concurrenthashmap": {
