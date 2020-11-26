@@ -892,7 +892,10 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
             UserCredentialModel cred = UserCredentialModel.password("Candycand1", true);
             session.userCredentialManager().updateCredential(appRealm, user, cred);
-            CredentialModel userCredentialValueModel = session.userCredentialManager().getStoredCredentialsByType(appRealm, user, PasswordCredentialModel.TYPE).get(0);
+            CredentialModel userCredentialValueModel = session.userCredentialManager()
+                    .getStoredCredentialsByTypeStream(appRealm, user, PasswordCredentialModel.TYPE)
+                    .findFirst().orElse(null);
+            Assert.assertNotNull(userCredentialValueModel);
             Assert.assertEquals(PasswordCredentialModel.TYPE, userCredentialValueModel.getType());
             Assert.assertTrue(session.userCredentialManager().isValid(appRealm, user, cred));
 

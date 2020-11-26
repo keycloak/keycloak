@@ -43,8 +43,7 @@ import org.keycloak.utils.CredentialHelper;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import java.util.Collections;
-import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -96,10 +95,10 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
             return;
         }
         OTPCredentialProvider otpCredentialProvider = (OTPCredentialProvider) context.getSession().getProvider(CredentialProvider.class, "keycloak-otp");
-        final List<CredentialModel> otpCredentials = (otpCredentialProvider.isConfiguredFor(context.getRealm(), context.getUser()))
-            ? context.getSession().userCredentialManager().getStoredCredentialsByType(context.getRealm(), context.getUser(), OTPCredentialModel.TYPE)
-            : Collections.EMPTY_LIST;
-        if (otpCredentials.size() >= 1 && Validation.isBlank(userLabel)) {
+        final Stream<CredentialModel> otpCredentials  = (otpCredentialProvider.isConfiguredFor(context.getRealm(), context.getUser()))
+            ? context.getSession().userCredentialManager().getStoredCredentialsByTypeStream(context.getRealm(), context.getUser(), OTPCredentialModel.TYPE)
+            : Stream.empty();
+        if (otpCredentials.count() >= 1 && Validation.isBlank(userLabel)) {
             Response challenge = context.form()
                     .setAttribute("mode", mode)
                     .addError(new FormMessage(Validation.FIELD_OTP_LABEL, Messages.MISSING_TOTP_DEVICE_NAME))

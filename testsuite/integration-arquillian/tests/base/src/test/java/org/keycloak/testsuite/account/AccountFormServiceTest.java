@@ -79,6 +79,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.hamcrest.Matchers;
 import org.junit.Assume;
@@ -482,7 +483,8 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = session.getContext().getRealm();
             UserModel user = session.users().getUserById(uId, realm);
             assertThat(user, Matchers.notNullValue());
-            List<CredentialModel> storedCredentials = session.userCredentialManager().getStoredCredentials(realm, user);
+            List<CredentialModel> storedCredentials = session.userCredentialManager()
+                    .getStoredCredentialsStream(realm, user).collect(Collectors.toList());
             assertThat(storedCredentials, Matchers.hasSize(expectedNumberOfStoredCredentials));
         });
     }

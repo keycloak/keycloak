@@ -64,12 +64,10 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.persistence.LockModeType;
@@ -82,7 +80,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
  * @version $Revision: 1 $
  */
 @SuppressWarnings("JpaQueryApiInspection")
-public class JpaUserProvider implements UserProvider.Streams, UserCredentialStore {
+public class JpaUserProvider implements UserProvider.Streams, UserCredentialStore.Streams {
 
     private static final String EMAIL = "email";
     private static final String EMAIL_VERIFIED = "emailVerified";
@@ -1022,27 +1020,20 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user) {
-        return credentialStore.getStoredCredentials(realm, user);
+    public Stream<CredentialModel> getStoredCredentialsStream(RealmModel realm, UserModel user) {
+        return credentialStore.getStoredCredentialsStream(realm, user);
     }
 
     @Override
-    public List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type) {
-        List<CredentialEntity> results;
+    public Stream<CredentialModel> getStoredCredentialsByTypeStream(RealmModel realm, UserModel user, String type) {
         UserEntity userEntity = userInEntityManagerContext(user.getId());
         if (userEntity != null) {
-
             // user already in persistence context, no need to execute a query
-            results = userEntity.getCredentials().stream().filter(it -> type.equals(it.getType()))
+            return userEntity.getCredentials().stream().filter(it -> type.equals(it.getType()))
                     .sorted(Comparator.comparingInt(CredentialEntity::getPriority))
-                    .collect(Collectors.toList());
-            List<CredentialModel> rtn = new LinkedList<>();
-            for (CredentialEntity entity : results) {
-                rtn.add(toModel(entity));
-            }
-            return rtn;
+                    .map(this::toModel);
         } else {
-           return credentialStore.getStoredCredentialsByType(realm, user, type);
+           return credentialStore.getStoredCredentialsByTypeStream(realm, user, type);
         }
     }
 

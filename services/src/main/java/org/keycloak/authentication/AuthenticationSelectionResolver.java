@@ -76,13 +76,9 @@ class AuthenticationSelectionResolver {
 
             //add credential authenticators in order
             if (processor.getAuthenticationSession().getAuthenticatedUser() != null) {
-                List<CredentialModel> credentials = processor.getSession().userCredentialManager()
-                        .getStoredCredentials(processor.getRealm(), processor.getAuthenticationSession().getAuthenticatedUser())
-                        .stream()
+                authenticationSelectionList = processor.getSession().userCredentialManager()
+                        .getStoredCredentialsStream(processor.getRealm(), processor.getAuthenticationSession().getAuthenticatedUser())
                         .filter(credential -> typeAuthExecMap.containsKey(credential.getType()))
-                        .collect(Collectors.toList());
-
-                authenticationSelectionList = credentials.stream()
                         .map(CredentialModel::getType)
                         .distinct()
                         .map(credentialType -> new AuthenticationSelectionOption(processor.getSession(), typeAuthExecMap.get(credentialType)))

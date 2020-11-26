@@ -23,7 +23,6 @@ import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.storage.StorageId;
@@ -32,10 +31,10 @@ import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 import org.keycloak.storage.user.UserLookupProvider;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -83,12 +82,9 @@ public class PassThroughFederatedUserStorageProvider implements
              if (INITIAL_PASSWORD.equals(input.getChallengeResponse())) {
                  return true;
              }
-            Optional<CredentialModel> existing = session.userFederatedStorage()
-                    .getStoredCredentialsByTypeStream(realm, user.getId(), "CLEAR_TEXT_PASSWORD")
-                    .findFirst();
-            if (existing.isPresent())
-                return existing.get().getSecretData().equals("{\"value\":\"" + input.getChallengeResponse() + "\"}");
-            return false;
+            return session.userFederatedStorage().getStoredCredentialsByTypeStream(realm, user.getId(), "CLEAR_TEXT_PASSWORD")
+                    .map(credentialModel -> credentialModel.getSecretData())
+                    .anyMatch(Predicate.isEqual("{\"value\":\"" + input.getChallengeResponse() + "\"}"));
         }
         return false;
     }
