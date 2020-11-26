@@ -1,5 +1,25 @@
 = Highlights
 
+== Keycloak.X distribution preview
+
+Introduction a preview of the new and upcoming Keycloak.X distribution. This distribution is powered by Quarkus, bringing
+significant improvements to startup time and memory consumption, as well as making it a lot easier to configure Keycloak.
+
+== New Account console is now the default
+
+The new account console is no longer a preview feature and is now the default account console in Keycloak. The old account
+console will stay around for a while. For those that have a custom theme for the old account console the old console
+will be used by default, giving you the time to update your custom theme to the new account console.
+
+== OpenID Connect Back-Channel Logout
+
+Support for OpenID Connect Back-Channel Logout is no available, thanks to https://github.com/DaSmoo[DaSmoo] and
+https://github.com/benjamin37[benjamin37].
+
+== Upgrade to Wildfly 21
+
+The {project_name} server was upgraded to use Wildfly 21 as the underlying container.
+
 == Ability to request AuthnContext in SAML identity provider
 
 Support for specification of AuthnContext section in authentication requests issued by SAML identity provider has been added.
