@@ -71,7 +71,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
  */
 public class JpaUserFederatedStorageProvider implements
         UserFederatedStorageProvider.Streams,
-        UserCredentialStore {
+        UserCredentialStore.Streams {
 
     protected static final Logger logger = Logger.getLogger(JpaUserFederatedStorageProvider.class);
 
@@ -690,13 +690,13 @@ public class JpaUserFederatedStorageProvider implements
     }
 
     @Override
-    public List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user) {
-        return getStoredCredentialsStream(realm, user.getId()).collect(Collectors.toList());
+    public Stream<CredentialModel> getStoredCredentialsStream(RealmModel realm, UserModel user) {
+        return getStoredCredentialsStream(realm, user.getId());
     }
 
     @Override
-    public List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type) {
-        return getStoredCredentialsByTypeStream(realm, user.getId(), type).collect(Collectors.toList());
+    public Stream<CredentialModel> getStoredCredentialsByTypeStream(RealmModel realm, UserModel user, String type) {
+        return getStoredCredentialsByTypeStream(realm, user.getId(), type);
     }
 
     @Override

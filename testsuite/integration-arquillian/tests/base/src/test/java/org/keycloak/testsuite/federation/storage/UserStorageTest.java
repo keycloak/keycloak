@@ -63,6 +63,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Calendar.DAY_OF_WEEK;
 import static java.util.Calendar.HOUR_OF_DAY;
@@ -879,8 +880,8 @@ public class UserStorageTest extends AbstractAuthTest {
             UserModel user = currentSession.users().getUserByUsername("thor", realm);
             Assert.assertFalse(StorageId.isLocalStorage(user));
 
-            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
-            org.keycloak.testsuite.Assert.assertEquals(0, list.size());
+            Stream<CredentialModel> credentials = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user);
+            org.keycloak.testsuite.Assert.assertEquals(0, credentials.count());
 
             // Create password
             CredentialModel passwordCred = PasswordCredentialModel.createFromValues("my-algorithm", "theSalt".getBytes(), 22, "ABC");
@@ -902,7 +903,8 @@ public class UserStorageTest extends AbstractAuthTest {
             UserModel user = currentSession.users().getUserByUsername("thor", realm);
 
             // Assert priorities: password, otp1, otp2
-            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
+            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user)
+                    .collect(Collectors.toList());
             assertOrder(list, passwordId.get(), otp1Id.get(), otp2Id.get());
 
             // Assert can't move password when newPreviousCredential not found
@@ -920,7 +922,8 @@ public class UserStorageTest extends AbstractAuthTest {
             UserModel user = currentSession.users().getUserByUsername("thor", realm);
 
             // Assert priorities: password, otp2, otp1
-            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
+            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user)
+                    .collect(Collectors.toList());
             assertOrder(list, passwordId.get(), otp2Id.get(), otp1Id.get());
 
             // Move otp2 to the top
@@ -932,7 +935,8 @@ public class UserStorageTest extends AbstractAuthTest {
             UserModel user = currentSession.users().getUserByUsername("thor", realm);
 
             // Assert priorities: otp2, password, otp1
-            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
+            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user)
+                    .collect(Collectors.toList());
             assertOrder(list, otp2Id.get(), passwordId.get(), otp1Id.get());
 
             // Move password down
@@ -944,7 +948,8 @@ public class UserStorageTest extends AbstractAuthTest {
             UserModel user = currentSession.users().getUserByUsername("thor", realm);
 
             // Assert priorities: otp2, otp1, password
-            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
+            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user)
+                    .collect(Collectors.toList());
             assertOrder(list, otp2Id.get(), otp1Id.get(), passwordId.get());
 
             // Remove otp2 down two positions
@@ -956,7 +961,8 @@ public class UserStorageTest extends AbstractAuthTest {
             UserModel user = currentSession.users().getUserByUsername("thor", realm);
 
             // Assert priorities: otp2, otp1, password
-            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
+            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user)
+                    .collect(Collectors.toList());
             assertOrder(list, otp1Id.get(), passwordId.get(), otp2Id.get());
 
             // Remove password
@@ -968,7 +974,8 @@ public class UserStorageTest extends AbstractAuthTest {
             UserModel user = currentSession.users().getUserByUsername("thor", realm);
 
             // Assert priorities: otp2, password
-            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentials(realm, user);
+            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user)
+                    .collect(Collectors.toList());
             assertOrder(list, otp1Id.get(), otp2Id.get());
         });
     }

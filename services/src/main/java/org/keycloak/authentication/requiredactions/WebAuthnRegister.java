@@ -22,6 +22,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -47,7 +48,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
 
-import com.webauthn4j.WebAuthnManager;
 import com.webauthn4j.converter.util.ObjectConverter;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
 import com.webauthn4j.data.attestation.statement.AttestationStatement;
@@ -125,15 +125,11 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
 
         String excludeCredentialIds = "";
         if (avoidSameAuthenticatorRegister) {
-            List<CredentialModel> webAuthnCredentials = session.userCredentialManager().getStoredCredentialsByType(context.getRealm(), userModel, getCredentialType());
-            List<String> webAuthnCredentialPubKeyIds = webAuthnCredentials.stream().map(credentialModel -> {
-
-                WebAuthnCredentialModel credModel = WebAuthnCredentialModel.createFromCredentialModel(credentialModel);
-                return Base64Url.encodeBase64ToBase64Url(credModel.getWebAuthnCredentialData().getCredentialId());
-
-            }).collect(Collectors.toList());
-
-            excludeCredentialIds = stringifyExcludeCredentialIds(webAuthnCredentialPubKeyIds);
+            excludeCredentialIds = session.userCredentialManager().getStoredCredentialsByTypeStream(context.getRealm(), userModel, getCredentialType())
+                    .map(credentialModel -> {
+                        WebAuthnCredentialModel credModel = WebAuthnCredentialModel.createFromCredentialModel(credentialModel);
+                        return Base64Url.encodeBase64ToBase64Url(credModel.getWebAuthnCredentialData().getCredentialId());
+                    }).collect(Collectors.joining(","));
         }
 
         String isSetRetry = context.getHttpRequest().getDecodedFormParameters().getFirst(WebAuthnConstants.IS_SET_RETRY);
@@ -296,15 +292,6 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
                 // NOP
             }
         }
-        if (sb.lastIndexOf(",") > -1) sb.deleteCharAt(sb.lastIndexOf(","));
-        return sb.toString();
-    }
-
-    private String stringifyExcludeCredentialIds(List<String> credentialIdsList) {
-        if (credentialIdsList == null || credentialIdsList.isEmpty()) return "";
-        StringBuilder sb = new StringBuilder();
-        for (String s : credentialIdsList)
-            if (s != null && !s.isEmpty()) sb.append(s).append(",");
         if (sb.lastIndexOf(",") > -1) sb.deleteCharAt(sb.lastIndexOf(","));
         return sb.toString();
     }

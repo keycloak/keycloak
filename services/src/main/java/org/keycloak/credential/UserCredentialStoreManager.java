@@ -25,7 +25,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.models.cache.UserCache;
-import org.keycloak.provider.ProviderFactory;
 import org.keycloak.storage.AbstractStorageManager;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
@@ -33,12 +32,8 @@ import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -46,7 +41,8 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserCredentialStoreManager extends AbstractStorageManager<UserStorageProvider, UserStorageProviderModel> implements UserCredentialManager, OnUserCache {
+public class UserCredentialStoreManager extends AbstractStorageManager<UserStorageProvider, UserStorageProviderModel>
+        implements UserCredentialManager.Streams, OnUserCache {
 
     public UserCredentialStoreManager(KeycloakSession session) {
         super(session, UserStorageProviderFactory.class, UserStorageProvider.class, UserStorageProviderModel::new, "user");
@@ -89,13 +85,13 @@ public class UserCredentialStoreManager extends AbstractStorageManager<UserStora
     }
 
     @Override
-    public List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user) {
-        return getStoreForUser(user).getStoredCredentials(realm, user);
+    public Stream<CredentialModel> getStoredCredentialsStream(RealmModel realm, UserModel user) {
+        return getStoreForUser(user).getStoredCredentialsStream(realm, user);
     }
 
     @Override
-    public List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type) {
-        return getStoreForUser(user).getStoredCredentialsByType(realm, user, type);
+    public Stream<CredentialModel> getStoredCredentialsByTypeStream(RealmModel realm, UserModel user, String type) {
+        return getStoreForUser(user).getStoredCredentialsByTypeStream(realm, user, type);
     }
 
     @Override
@@ -218,23 +214,20 @@ public class UserCredentialStoreManager extends AbstractStorageManager<UserStora
     }
 
     @Override
-    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
-        Set<String> types = new HashSet<>();
+    public Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user) {
+        Stream<String> types = Stream.empty();
         String providerId = StorageId.isLocalStorage(user) ? user.getFederationLink() : StorageId.resolveProviderId(user);
         if (providerId != null) {
             UserStorageProviderModel model = getStorageProviderModel(realm, providerId);
-            if (model == null || !model.isEnabled()) return Collections.EMPTY_SET;
+            if (model == null || !model.isEnabled()) return types;
 
             CredentialInputUpdater updater = getStorageProviderInstance(model, CredentialInputUpdater.class);
-            if (updater != null) types.addAll(updater.getDisableableCredentialTypes(realm, user));
+            if (updater != null) types = updater.getDisableableCredentialTypesStream(realm, user);
         }
 
-        types.addAll(getCredentialProviders(session, CredentialInputUpdater.class)
-                .map(updater -> updater.getDisableableCredentialTypes(realm, user))
-                .flatMap(Set::stream)
-                .collect(Collectors.toSet()));
-
-        return types;
+        return Stream.concat(types, getCredentialProviders(session, CredentialInputUpdater.class)
+                .flatMap(updater -> updater.getDisableableCredentialTypesStream(realm, user)))
+                .distinct();
     }
 
     @Override
@@ -298,10 +291,9 @@ public class UserCredentialStoreManager extends AbstractStorageManager<UserStora
     }
 
     @Override
-    public List<String> getConfiguredUserStorageCredentialTypes(RealmModel realm, UserModel user) {
+    public Stream<String> getConfiguredUserStorageCredentialTypesStream(RealmModel realm, UserModel user) {
         return getCredentialProviders(session, CredentialProvider.class).map(CredentialProvider::getType)
-                .filter(credentialType -> UserStorageCredentialConfigured.CONFIGURED == isConfiguredThroughUserStorage(realm, user, credentialType))
-                .collect(Collectors.toList());
+                .filter(credentialType -> UserStorageCredentialConfigured.CONFIGURED == isConfiguredThroughUserStorage(realm, user, credentialType));
     }
 
     @Override

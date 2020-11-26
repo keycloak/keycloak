@@ -33,10 +33,8 @@ import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -44,7 +42,7 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 public class FailableHardcodedStorageProvider implements UserStorageProvider, UserLookupProvider, UserQueryProvider.Streams,
-        ImportedUserValidation, CredentialInputUpdater, CredentialInputValidator {
+        ImportedUserValidation, CredentialInputUpdater.Streams, CredentialInputValidator {
 
     public static String username = "billb";
     public static String password = "password";
@@ -97,9 +95,9 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     }
 
     @Override
-    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+    public Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user) {
         checkForceFail();
-        return Collections.EMPTY_SET;
+        return Stream.empty();
     }
 
     @Override
