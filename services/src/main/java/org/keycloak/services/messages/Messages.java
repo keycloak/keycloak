@@ -54,6 +54,8 @@ public class Messages {
 
     public static final String MISSING_USERNAME = "missingUsernameMessage";
 
+    public static final String UPDATE_READ_ONLY_ATTRIBUTES_REJECTED = "updateReadOnlyAttributesRejectedMessage";
+
     public static final String MISSING_PASSWORD = "missingPasswordMessage";
 
     public static final String MISSING_TOTP = "missingTotpMessage";
