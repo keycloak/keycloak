@@ -20,6 +20,7 @@ package org.keycloak.authentication.authenticators.x509;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -67,7 +68,7 @@ public abstract class UserIdentityToModelMapper {
             for (int i = 1; i <_customAttributes.size(); ++i) {
                 String customAttribute = _customAttributes.get(i);
                 String userIdentityValue = userIdentityValues.get(i);
-                usersStream = usersStream.filter(user -> user.getFirstAttribute(customAttribute).equals(userIdentityValue));
+                usersStream = usersStream.filter(user -> Objects.equals(user.getFirstAttribute(customAttribute), userIdentityValue));
             }
             List<UserModel> users = usersStream.collect(Collectors.toList());
             if (users.size() > 1) {

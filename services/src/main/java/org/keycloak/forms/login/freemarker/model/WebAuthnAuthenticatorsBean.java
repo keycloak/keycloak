@@ -17,9 +17,9 @@ package org.keycloak.forms.login.freemarker.model;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.keycloak.common.util.Base64Url;
-import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -30,13 +30,13 @@ public class WebAuthnAuthenticatorsBean {
 
     public WebAuthnAuthenticatorsBean(KeycloakSession session, RealmModel realm, UserModel user, String credentialType) {
         // should consider multiple credentials in the future, but only single credential supported now.
-        for (CredentialModel credential : session.userCredentialManager().getStoredCredentialsByType(realm, user, credentialType)) {
-            WebAuthnCredentialModel webAuthnCredential = WebAuthnCredentialModel.createFromCredentialModel(credential);
-
-            String credentialId = Base64Url.encodeBase64ToBase64Url(webAuthnCredential.getWebAuthnCredentialData().getCredentialId());
-            String label = (webAuthnCredential.getUserLabel()==null || webAuthnCredential.getUserLabel().isEmpty()) ? "label missing" : webAuthnCredential.getUserLabel();
-            authenticators.add(new WebAuthnAuthenticatorBean(credentialId, label));
-        }
+        this.authenticators = session.userCredentialManager().getStoredCredentialsByTypeStream(realm, user, credentialType)
+                .map(WebAuthnCredentialModel::createFromCredentialModel)
+                .map(webAuthnCredential -> {
+                    String credentialId = Base64Url.encodeBase64ToBase64Url(webAuthnCredential.getWebAuthnCredentialData().getCredentialId());
+                    String label = (webAuthnCredential.getUserLabel()==null || webAuthnCredential.getUserLabel().isEmpty()) ? "label missing" : webAuthnCredential.getUserLabel();
+                    return new WebAuthnAuthenticatorBean(credentialId, label);
+                }).collect(Collectors.toList());
     }
 
     public List<WebAuthnAuthenticatorBean> getAuthenticators() {

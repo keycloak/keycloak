@@ -23,6 +23,7 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.core.Response;
 
@@ -292,8 +293,8 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractAuthTest {
         testingClient.server().run(session -> {
             RealmModel realm1 = session.realms().getRealmByName("test");
             UserModel user1 = session.users().getUserByUsername("otp1", realm1);
-            List<CredentialModel> keycloakDBCredentials = session.userCredentialManager().getStoredCredentials(realm1, user1);
-            Assert.assertTrue(keycloakDBCredentials.isEmpty());
+            Assert.assertEquals(0, session.userCredentialManager()
+                    .getStoredCredentialsStream(realm1, user1).count());
         });
     }
 
