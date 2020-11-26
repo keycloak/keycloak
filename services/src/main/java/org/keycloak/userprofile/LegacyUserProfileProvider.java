@@ -17,6 +17,11 @@
 
 package org.keycloak.userprofile;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -32,10 +37,14 @@ import org.keycloak.userprofile.validation.ValidationChainBuilder;
 public class LegacyUserProfileProvider implements UserProfileProvider {
 
     private static final Logger logger = Logger.getLogger(LegacyUserProfileProvider.class);
-    private KeycloakSession session;
+    private final KeycloakSession session;
+    private final Pattern readOnlyAttributes;
+    private final Pattern adminReadOnlyAttributes;
 
-    public LegacyUserProfileProvider(KeycloakSession session) {
+    public LegacyUserProfileProvider(KeycloakSession session, Pattern readOnlyAttributes, Pattern adminReadOnlyAttributes) {
         this.session = session;
+        this.readOnlyAttributes = readOnlyAttributes;
+        this.adminReadOnlyAttributes = adminReadOnlyAttributes;
     }
 
     @Override
@@ -50,18 +59,22 @@ public class LegacyUserProfileProvider implements UserProfileProvider {
         ValidationChainBuilder builder = ValidationChainBuilder.builder();
         switch (updateContext.getUpdateEvent()) {
             case UserResource:
+                addReadOnlyAttributeValidators(builder, adminReadOnlyAttributes, updateContext, updatedProfile);
                 break;
             case IdpReview:
                 addBasicValidators(builder, !realm.isRegistrationEmailAsUsername());
+                addReadOnlyAttributeValidators(builder, readOnlyAttributes, updateContext, updatedProfile);
                 break;
             case Account:
             case RegistrationProfile:
             case UpdateProfile:
                 addBasicValidators(builder, !realm.isRegistrationEmailAsUsername() && realm.isEditUsernameAllowed());
+                addReadOnlyAttributeValidators(builder, readOnlyAttributes, updateContext, updatedProfile);
                 addSessionValidators(builder);
                 break;
             case RegistrationUserCreation:
                 addUserCreationValidators(builder);
+                addReadOnlyAttributeValidators(builder, readOnlyAttributes, updateContext, updatedProfile);
                 break;
         }
         return new UserProfileValidationResult(builder.build().validate(updateContext,updatedProfile));
@@ -72,16 +85,16 @@ public class LegacyUserProfileProvider implements UserProfileProvider {
 
         if (realm.isRegistrationEmailAsUsername()) {
             builder.addAttributeValidator().forAttribute(UserModel.EMAIL)
-                    .addValidationFunction(Messages.INVALID_EMAIL, StaticValidators.isEmailValid())
-                    .addValidationFunction(Messages.MISSING_EMAIL, StaticValidators.isBlank())
-                    .addValidationFunction(Messages.EMAIL_EXISTS, StaticValidators.doesEmailExist(session)).build()
+                    .addSingleAttributeValueValidationFunction(Messages.INVALID_EMAIL, StaticValidators.isEmailValid())
+                    .addSingleAttributeValueValidationFunction(Messages.MISSING_EMAIL, StaticValidators.isBlank())
+                    .addSingleAttributeValueValidationFunction(Messages.EMAIL_EXISTS, StaticValidators.doesEmailExist(session)).build()
                     .build();
 
 
         } else {
             builder.addAttributeValidator().forAttribute(UserModel.USERNAME)
-                    .addValidationFunction(Messages.MISSING_USERNAME, StaticValidators.isBlank())
-                    .addValidationFunction(Messages.USERNAME_EXISTS,
+                    .addSingleAttributeValueValidationFunction(Messages.MISSING_USERNAME, StaticValidators.isBlank())
+                    .addSingleAttributeValueValidationFunction(Messages.USERNAME_EXISTS,
                             (value, o) -> session.users().getUserByUsername(value, realm) == null)
                     .build();
         }
@@ -90,30 +103,48 @@ public class LegacyUserProfileProvider implements UserProfileProvider {
     private void addBasicValidators(ValidationChainBuilder builder, boolean userNameExistsCondition) {
 
         builder.addAttributeValidator().forAttribute(UserModel.USERNAME)
-                .addValidationFunction(Messages.MISSING_USERNAME, StaticValidators.checkUsernameExists(userNameExistsCondition)).build()
+                .addSingleAttributeValueValidationFunction(Messages.MISSING_USERNAME, StaticValidators.checkUsernameExists(userNameExistsCondition)).build()
 
                 .addAttributeValidator().forAttribute(UserModel.FIRST_NAME)
-                .addValidationFunction(Messages.MISSING_FIRST_NAME, StaticValidators.isBlank()).build()
+                .addSingleAttributeValueValidationFunction(Messages.MISSING_FIRST_NAME, StaticValidators.isBlank()).build()
 
                 .addAttributeValidator().forAttribute(UserModel.LAST_NAME)
-                .addValidationFunction(Messages.MISSING_LAST_NAME, StaticValidators.isBlank()).build()
+                .addSingleAttributeValueValidationFunction(Messages.MISSING_LAST_NAME, StaticValidators.isBlank()).build()
 
                 .addAttributeValidator().forAttribute(UserModel.EMAIL)
-                .addValidationFunction(Messages.MISSING_EMAIL, StaticValidators.isBlank())
-                .addValidationFunction(Messages.INVALID_EMAIL, StaticValidators.isEmailValid())
+                .addSingleAttributeValueValidationFunction(Messages.MISSING_EMAIL, StaticValidators.isBlank())
+                .addSingleAttributeValueValidationFunction(Messages.INVALID_EMAIL, StaticValidators.isEmailValid())
                 .build();
     }
 
     private void addSessionValidators(ValidationChainBuilder builder) {
         RealmModel realm = this.session.getContext().getRealm();
         builder.addAttributeValidator().forAttribute(UserModel.USERNAME)
-                .addValidationFunction(Messages.USERNAME_EXISTS, StaticValidators.userNameExists(session))
-                .addValidationFunction(Messages.READ_ONLY_USERNAME, StaticValidators.isUserMutable(realm)).build()
+                .addSingleAttributeValueValidationFunction(Messages.USERNAME_EXISTS, StaticValidators.userNameExists(session))
+                .addSingleAttributeValueValidationFunction(Messages.READ_ONLY_USERNAME, StaticValidators.isUserMutable(realm)).build()
 
                 .addAttributeValidator().forAttribute(UserModel.EMAIL)
-                .addValidationFunction(Messages.EMAIL_EXISTS, StaticValidators.isEmailDuplicated(session))
-                .addValidationFunction(Messages.USERNAME_EXISTS, StaticValidators.doesEmailExistAsUsername(session)).build()
+                .addSingleAttributeValueValidationFunction(Messages.EMAIL_EXISTS, StaticValidators.isEmailDuplicated(session))
+                .addSingleAttributeValueValidationFunction(Messages.USERNAME_EXISTS, StaticValidators.doesEmailExistAsUsername(session)).build()
                 .build();
     }
 
+    private void addReadOnlyAttributeValidators(ValidationChainBuilder builder, Pattern configuredReadOnlyAttrs, UserProfileContext updateContext, UserProfile updatedProfile) {
+        addValidatorsForAllAttributeOfUser(builder, configuredReadOnlyAttrs, updatedProfile);
+        addValidatorsForAllAttributeOfUser(builder, configuredReadOnlyAttrs, updateContext.getCurrentProfile());
+    }
+
+
+    private void addValidatorsForAllAttributeOfUser(ValidationChainBuilder builder, Pattern configuredReadOnlyAttrsPattern, UserProfile profile) {
+        if (profile == null) {
+            return;
+        }
+
+        profile.getAttributes().keySet().stream()
+                .filter(currentAttrName -> configuredReadOnlyAttrsPattern.matcher(currentAttrName).find())
+                .forEach((currentAttrName) ->
+                        builder.addAttributeValidator().forAttribute(currentAttrName)
+                                .addValidationFunction(Messages.UPDATE_READ_ONLY_ATTRIBUTES_REJECTED, StaticValidators.isAttributeUnchanged(currentAttrName)).build()
+                );
+    }
 }

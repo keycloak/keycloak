@@ -40,6 +40,7 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
@@ -85,6 +86,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
 import javax.mail.internet.MimeMessage;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
@@ -112,6 +114,8 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.Assert.assertNames;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
+
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
@@ -1088,6 +1092,57 @@ public class UserTest extends AbstractAdminTest {
 
         user1 = realm.users().get(user1Id).toRepresentation();
         assertNull(user1.getAttributes());
+    }
+
+    @Test
+    @AuthServerContainerExclude(QUARKUS) // TODO: Enable for quarkus
+    public void updateUserWithReadOnlyAttributes() {
+        // Admin is able to update "usercertificate" attribute
+        UserRepresentation user1 = new UserRepresentation();
+        user1.setUsername("user1");
+        user1.singleAttribute("usercertificate", "foo1");
+        String user1Id = createUser(user1);
+        user1 = realm.users().get(user1Id).toRepresentation();
+
+        // Update of the user should be rejected due adding the "denied" attribute LDAP_ID
+        try {
+            user1.singleAttribute("usercertificate", "foo");
+            user1.singleAttribute("saml.persistent.name.id.for.foo", "bar");
+            user1.singleAttribute(LDAPConstants.LDAP_ID, "baz");
+            updateUser(realm.users().get(user1Id), user1);
+            Assert.fail("Not supposed to successfully update user");
+        } catch (BadRequestException bre) {
+            // Expected
+        }
+
+        // The same test as before, but with the case-sensitivity used
+        try {
+            user1.getAttributes().remove(LDAPConstants.LDAP_ID);
+            user1.singleAttribute("LDap_Id", "baz");
+            updateUser(realm.users().get(user1Id), user1);
+            Assert.fail("Not supposed to successfully update user");
+        } catch (BadRequestException bre) {
+            // Expected
+        }
+
+        // Attribute "deniedSomeAdmin" was denied for administrator
+        try {
+            user1.getAttributes().remove("LDap_Id");
+            user1.singleAttribute("deniedSomeAdmin", "baz");
+            updateUser(realm.users().get(user1Id), user1);
+            Assert.fail("Not supposed to successfully update user");
+        } catch (BadRequestException bre) {
+            // Expected
+        }
+
+        // usercertificate and saml attribute are allowed by admin
+        user1.getAttributes().remove("deniedSomeAdmin");
+        updateUser(realm.users().get(user1Id), user1);
+
+        user1 = realm.users().get(user1Id).toRepresentation();
+        assertEquals("foo", user1.getAttributes().get("usercertificate").get(0));
+        assertEquals("bar", user1.getAttributes().get("saml.persistent.name.id.for.foo").get(0));
+        assertFalse(user1.getAttributes().containsKey(LDAPConstants.LDAP_ID));
     }
 
     @Test

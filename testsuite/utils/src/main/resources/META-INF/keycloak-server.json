@@ -112,6 +112,13 @@
         }
     },
 
+    "userProfile": {
+        "legacy-user-profile": {
+            "read-only-attributes": [ "deniedFoo", "deniedBar*", "deniedSome/thing", "deniedsome*thing" ],
+            "admin-read-only-attributes": [ "deniedSomeAdmin" ]
+        }
+    },
+
     "x509cert-lookup": {
         "provider": "${keycloak.x509cert.lookup.provider:}",
         "haproxy": {

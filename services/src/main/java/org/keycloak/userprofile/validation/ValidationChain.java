@@ -18,11 +18,11 @@
 package org.keycloak.userprofile.validation;
 
 import org.keycloak.userprofile.UserProfile;
-import org.keycloak.userprofile.UserProfileAttributes;
 import org.keycloak.userprofile.UserProfileContext;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
@@ -40,16 +40,14 @@ public class ValidationChain {
             List<ValidationResult> validationResults = new ArrayList<>();
 
             String attributeKey = attribute.attributeKey;
-            String attributeValue = updatedProfile.getAttributes().getFirstAttribute(attributeKey);
-            boolean attributeChanged = false;
+            List<String> attributeValues = updatedProfile.getAttributes().getAttribute(attributeKey);
 
-            if (attributeValue != null) {
-                attributeChanged = updateContext.getCurrentProfile() != null
-                        && !attributeValue.equals(updateContext.getCurrentProfile().getAttributes().getFirstAttribute(attributeKey));
-                for (Validator validator : attribute.validators) {
-                    validationResults.add(new ValidationResult(validator.function.apply(attributeValue, updateContext), validator.errorType));
-                }
+            List<String> existingAttrValues = updateContext.getCurrentProfile() == null ? null : updateContext.getCurrentProfile().getAttributes().getAttribute(attributeKey);
+            boolean attributeChanged = !Objects.equals(attributeValues, existingAttrValues);
+            for (Validator validator : attribute.validators) {
+                validationResults.add(new ValidationResult(validator.function.apply(attributeValues, updateContext), validator.errorType));
             }
+
             overallResults.add(new AttributeValidationResult(attributeKey, attributeChanged, validationResults));
         }
 

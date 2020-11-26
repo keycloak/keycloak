@@ -24,9 +24,9 @@ public class ValidationChainTest {
     public void setUp() throws Exception {
         builder = ValidationChainBuilder.builder()
                 .addAttributeValidator().forAttribute("FAKE_FIELD")
-                .addValidationFunction("FAKE_FIELD_ERRORKEY", (value, updateUserProfileContext) -> !value.equals("content")).build()
+                .addSingleAttributeValueValidationFunction("FAKE_FIELD_ERRORKEY", (value, updateUserProfileContext) -> !value.equals("content")).build()
                 .addAttributeValidator().forAttribute("firstName")
-                .addValidationFunction("FIRST_NAME_FIELD_ERRORKEY", (value, updateUserProfileContext) -> true).build();
+                .addSingleAttributeValueValidationFunction("FIRST_NAME_FIELD_ERRORKEY", (value, updateUserProfileContext) -> true).build();
 
         //default user content
         rep.singleAttribute(UserModel.FIRST_NAME, "firstName");
@@ -53,15 +53,15 @@ public class ValidationChainTest {
     @Test
     public void mergedConfig() {
         testchain = builder.addAttributeValidator().forAttribute("FAKE_FIELD")
-                .addValidationFunction("FAKE_FIELD_ERRORKEY_1", (value, updateUserProfileContext) -> false).build()
+                .addSingleAttributeValueValidationFunction("FAKE_FIELD_ERRORKEY_1", (value, updateUserProfileContext) -> false).build()
                 .addAttributeValidator().forAttribute("FAKE_FIELD")
-                .addValidationFunction("FAKE_FIELD_ERRORKEY_2", (value, updateUserProfileContext) -> false).build().build();
+                .addSingleAttributeValueValidationFunction("FAKE_FIELD_ERRORKEY_2", (value, updateUserProfileContext) -> false).build().build();
 
         UserProfileValidationResult results = new UserProfileValidationResult(testchain.validate(updateContext, new UserRepresentationUserProfile(rep)));
         Assert.assertEquals(true, results.hasFailureOfErrorType("FAKE_FIELD_ERRORKEY_1"));
         Assert.assertEquals(true, results.hasFailureOfErrorType("FAKE_FIELD_ERRORKEY_2"));
         Assert.assertEquals(true, results.getValidationResults().stream().filter(o -> o.getField().equals("firstName")).collect(Collectors.toList()).get(0).isValid());
-        Assert.assertEquals(false, results.hasAttributeChanged("firstName"));
+        Assert.assertEquals(true, results.hasAttributeChanged("firstName"));
 
     }
 

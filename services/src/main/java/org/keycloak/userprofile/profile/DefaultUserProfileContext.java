@@ -60,8 +60,13 @@ public class DefaultUserProfileContext implements UserProfileContext {
         return new DefaultUserProfileContext(UserUpdateEvent.RegistrationProfile, null);
     }
 
-    public static DefaultUserProfileContext forUserResource(UserRepresentation rep) {
-        return new DefaultUserProfileContext(UserUpdateEvent.UserResource, new UserRepresentationUserProfile(rep));
+    /**
+     * @param currentUser if this is null, then we're creating new user. If it is not null, we're updating existing user
+     * @return user profile context for the validation of user when called from admin REST API
+     */
+    public static DefaultUserProfileContext forUserResource(UserModel currentUser) {
+        UserProfile currentUserProfile = currentUser == null ? null : new UserModelUserProfile(currentUser);
+        return new DefaultUserProfileContext(UserUpdateEvent.UserResource, currentUserProfile);
     }
 
     @Override
