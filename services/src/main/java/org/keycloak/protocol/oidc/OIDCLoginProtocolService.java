@@ -17,6 +17,10 @@
 
 package org.keycloak.protocol.oidc;
 
+import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
@@ -226,8 +230,11 @@ public class OIDCLoginProtocolService {
                 .filter(k -> k.getStatus().isEnabled() && Objects.equals(k.getUse(), KeyUse.SIG) && k.getPublicKey() != null)
                 .map(k -> {
                     JWKBuilder b = JWKBuilder.create().kid(k.getKid()).algorithm(k.getAlgorithm());
+                    List<X509Certificate> certificates = Optional.ofNullable(k.getCertificateChain())
+                        .filter(certs -> !certs.isEmpty())
+                        .orElseGet(() -> Collections.singletonList(k.getCertificate()));
                     if (k.getType().equals(KeyType.RSA)) {
-                        return b.rsa(k.getPublicKey(), k.getCertificate());
+                        return b.rsa(k.getPublicKey(), certificates);
                     } else if (k.getType().equals(KeyType.EC)) {
                         return b.ec(k.getPublicKey());
                     }

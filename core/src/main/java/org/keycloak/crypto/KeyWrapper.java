@@ -16,6 +16,7 @@
  */
 package org.keycloak.crypto;
 
+import java.util.List;
 import javax.crypto.SecretKey;
 import java.security.Key;
 import java.security.cert.X509Certificate;
@@ -33,6 +34,7 @@ public class KeyWrapper {
     private Key publicKey;
     private Key privateKey;
     private X509Certificate certificate;
+    private List<X509Certificate> certificateChain;
 
     public String getProviderId() {
         return providerId;
@@ -120,6 +122,14 @@ public class KeyWrapper {
 
     public void setCertificate(X509Certificate certificate) {
         this.certificate = certificate;
+    }
+
+    public List<X509Certificate> getCertificateChain() {
+        return certificateChain;
+    }
+
+    public void setCertificateChain(List<X509Certificate> certificateChain) {
+        this.certificateChain = certificateChain;
     }
 
 }

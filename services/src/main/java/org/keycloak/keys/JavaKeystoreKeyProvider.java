@@ -23,27 +23,27 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.RealmModel;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.security.KeyPair;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
+import java.security.*;
+import java.security.cert.*;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class JavaKeystoreKeyProvider extends AbstractRsaKeyProvider {
 
-    public JavaKeystoreKeyProvider(RealmModel realm, ComponentModel model) {
+    public JavaKeystoreKeyProvider(RealmModel realm, ComponentModel model, KeyStore trustStore) {
         super(realm, model);
+        getKeysStream()
+                .map(KeyWrapper::getCertificateChain)
+                .filter(Objects::nonNull)
+                .filter(list -> list.size() > 1)
+                .findFirst()
+                .ifPresent(chain -> validateCertificateChain(chain, trustStore));
     }
 
     @Override
@@ -62,7 +62,13 @@ public class JavaKeystoreKeyProvider extends AbstractRsaKeyProvider {
                 certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, realm.getName());
             }
 
-            return createKeyWrapper(keyPair, certificate);
+            List<X509Certificate> certificateChain = Optional.ofNullable(keyStore.getCertificateChain(model.get(JavaKeystoreKeyProviderFactory.KEY_ALIAS_KEY)))
+                    .map(certificates -> Arrays.stream(certificates)
+                            .map(X509Certificate.class::cast)
+                            .collect(Collectors.toList()))
+                    .orElseGet(Collections::emptyList);
+
+            return createKeyWrapper(keyPair, certificate, certificateChain);
         } catch (KeyStoreException kse) {
             throw new RuntimeException("KeyStore error on server. " + kse.getMessage(), kse);
         } catch (FileNotFoundException fnfe) {
@@ -78,4 +84,17 @@ public class JavaKeystoreKeyProvider extends AbstractRsaKeyProvider {
         }
     }
 
+    private void validateCertificateChain(List<X509Certificate> certificateChain, KeyStore trustStore) {
+        try {
+            PKIXParameters params = new PKIXParameters(trustStore);
+            params.setRevocationEnabled(false);
+
+            final CertPath certPath = CertificateFactory.getInstance("X.509").generateCertPath(certificateChain);
+
+            final CertPathValidator validator = CertPathValidator.getInstance("PKIX");
+            validator.validate(certPath, params);
+        } catch (GeneralSecurityException e) {
+            throw new RuntimeException("Failed to validate server certificate against certificate chain", e);
+        }
+    }
 }
