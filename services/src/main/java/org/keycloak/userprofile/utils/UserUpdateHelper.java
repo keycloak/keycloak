@@ -57,8 +57,8 @@ public class UserUpdateHelper {
         update(UserUpdateEvent.Account, realm, user, updatedProfile);
     }
 
-    public static void updateUserResource(RealmModel realm, UserModel user, UserProfile userRepresentationUserProfile) {
-        update(UserUpdateEvent.UserResource, realm, user, userRepresentationUserProfile);
+    public static void updateUserResource(RealmModel realm, UserModel user, UserProfile userRepresentationUserProfile, boolean removeExistingAttributes) {
+        update(UserUpdateEvent.UserResource, realm, user, userRepresentationUserProfile.getAttributes(), removeExistingAttributes);
     }
 
     /**

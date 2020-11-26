@@ -170,6 +170,11 @@ public class AccountRestService {
             return ErrorResponse.exists(Messages.USERNAME_EXISTS);
         if (result.hasFailureOfErrorType(Messages.EMAIL_EXISTS))
             return ErrorResponse.exists(Messages.EMAIL_EXISTS);
+        if (!result.getErrors().isEmpty()) {
+            // Here should be possibility to somehow return all errors?
+            String firstErrorMessage = result.getErrors().get(0).getFailedValidations().get(0).getErrorType();
+            return ErrorResponse.error(firstErrorMessage, Response.Status.BAD_REQUEST);
+        }
 
         try {
             UserUpdateHelper.updateAccount(realm, user, updatedUser);

@@ -147,6 +147,11 @@ public class UsersResource {
         }
 
         try {
+            Response response = UserResource.validateUserProfile(null, rep, session);
+            if (response != null) {
+                return response;
+            }
+
             UserModel user = session.users().addUser(realm, username);
 
             UserResource.updateUserFromRep(user, rep, session, false);
