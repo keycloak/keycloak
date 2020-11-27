@@ -503,10 +503,12 @@ public class StaxParserUtil {
         return str;
     }
 
-    public static String base64decode(XMLEventReader xmlEventReader) throws ParsingException {
+    public static String getAddressElement(XMLEventReader xmlEventReader) throws ParsingException {
         String str = null;
         try {
             str = xmlEventReader.getElementText().trim();
+            byte[] valueDecoded = Base64.decode(str);
+            System.out.println("Decoded value is " + new String(valueDecoded));
         } catch (XMLStreamException e) {
             throw logger.parserException(e);
         }
