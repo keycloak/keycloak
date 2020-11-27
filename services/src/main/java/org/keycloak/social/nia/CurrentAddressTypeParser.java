@@ -15,16 +15,16 @@ import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLMetadataQName
  *
  * @author lubbe
  */
-public class CurrentAddressTypeParser extends AbstractStaxSamlMetadataParser<T> {
+public class CurrentAddressTypeParser //extends AbstractStaxSamlMetadataParser<T>
+{
 
-    @Override
-    protected T instantiateElement(XMLEventReader xmlEventReader, StartElement element) throws ParsingException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    protected void processSubElement(XMLEventReader xmlEventReader, T target, SAMLMetadataQNames element, StartElement elementDetail) throws ParsingException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
+//    @Override
+//    protected T instantiateElement(XMLEventReader xmlEventReader, StartElement element) throws ParsingException {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
+//
+//    @Override
+//    protected void processSubElement(XMLEventReader xmlEventReader, T target, SAMLMetadataQNames element, StartElement elementDetail) throws ParsingException {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//    }
 }
