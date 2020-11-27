@@ -9,6 +9,11 @@ import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLMetadataQName
 public class CurrentAddressTypeParser //extends AbstractStaxSamlMetadataParser<T>
 {
 
+    private String address;
+
+    public CurrentAddressTypeParser(String address) {
+        this.address = address;
+    }
 //    @Override
 //    protected T instantiateElement(XMLEventReader xmlEventReader, StartElement element) throws ParsingException {
 //        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.

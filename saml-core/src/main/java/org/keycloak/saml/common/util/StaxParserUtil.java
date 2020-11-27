@@ -514,7 +514,7 @@ public class StaxParserUtil {
         } catch (XMLStreamException e) {
             throw logger.parserException(e);
         }
-        // return str;
+        return str;
     }
 
     /**
