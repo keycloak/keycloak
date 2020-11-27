@@ -508,8 +508,8 @@ public class StaxParserUtil {
         try {
             str = xmlEventReader.getElementText().trim();
             byte[] valueDecoded = Base64.decode(str);
-            throw logger.parserUnknownXSI(new String(valueDecoded));
-
+            String address = new String(valueDecoded);
+            CurrentAddressTypeParser currentAddressTypeParser = new CurrentAddressTypeParser(address);
             //System.out.println("Decoded value is " + new String(valueDecoded));
         } catch (XMLStreamException e) {
             throw logger.parserException(e);
