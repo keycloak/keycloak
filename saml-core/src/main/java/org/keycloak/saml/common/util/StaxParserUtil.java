@@ -52,7 +52,6 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.InputStream;
-import static java.lang.System.console;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -509,12 +508,13 @@ public class StaxParserUtil {
         try {
             str = xmlEventReader.getElementText().trim();
             byte[] valueDecoded = Base64.decode(str);
-            console.log();
-            System.out.println("Decoded value is " + new String(valueDecoded));
+            throw logger.parserUnknownXSI(new String(valueDecoded));
+
+            //System.out.println("Decoded value is " + new String(valueDecoded));
         } catch (XMLStreamException e) {
             throw logger.parserException(e);
         }
-        return str;
+        // return str;
     }
 
     /**
