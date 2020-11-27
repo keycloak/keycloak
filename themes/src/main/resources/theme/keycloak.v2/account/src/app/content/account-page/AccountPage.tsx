@@ -85,8 +85,11 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
             .then((response: HttpResponse<FormFields>) => {
                 this.setState(this.DEFAULT_STATE);
                 const formFields = response.data;
-                if (!formFields!.attributes || !formFields!.attributes.locale) {
+                if (!formFields!.attributes) {
                     formFields!.attributes = { locale: [locale] };
+                }
+                else if (!formFields!.attributes.locale) {
+                    formFields!.attributes.locale = [locale];
                 }
 
                 this.setState({...{ formFields: formFields as FormFields }});
