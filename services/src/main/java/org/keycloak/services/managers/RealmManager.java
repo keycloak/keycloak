@@ -57,6 +57,7 @@ import org.keycloak.services.clientregistration.policy.DefaultClientRegistration
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import org.keycloak.utils.ReservedCharValidator;
 
 /**
@@ -719,7 +720,15 @@ public class RealmManager {
             ClientManager clientManager = new ClientManager(this);
 
             for (ClientRepresentation client : clients) {
-                ClientModel clientModel = this.getRealmByName(rep.getRealm()).getClientById(client.getId());
+                RealmModel realmModel = this.getRealmByName(rep.getRealm());
+
+                ClientModel clientModel = Optional.ofNullable(client.getId())
+                        .map(realmModel::getClientById)
+                        .orElseGet(() -> realmModel.getClientByClientId(client.getClientId()));
+                
+                if (clientModel == null) {
+                    throw new RuntimeException("Cannot find provided client by dir import.");
+                }
 
                 UserModel serviceAccount = null;
                 if (clientModel.isServiceAccountsEnabled()) {
