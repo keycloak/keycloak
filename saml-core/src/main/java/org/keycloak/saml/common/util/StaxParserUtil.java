@@ -523,7 +523,7 @@ public class StaxParserUtil {
             XMLEvent event = xmlEventReader.nextEvent();
             if (event.getEventType() == XMLStreamConstants.START_ELEMENT) {
                 StartElement startElement = event.asStartElement();
-                throw logger.parserUnknownXSI(startElement.getName().getLocalPart());
+                throw logger.parserUnknownXSI(startElement.getName().toString());
             }
         }
         // address = xmlEventReader.getElementText().trim();
