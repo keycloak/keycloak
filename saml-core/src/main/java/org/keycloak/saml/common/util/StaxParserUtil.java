@@ -59,6 +59,7 @@ import java.util.Objects;
 import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.stream.XMLStreamConstants;
 
 /**
  * Utility for the stax based parser
@@ -518,8 +519,14 @@ public class StaxParserUtil {
 
     public static String currentAddressTypeParser(XMLEventReader xmlEventReader, String address)
             throws XMLStreamException, ParsingException {
-
-        address = xmlEventReader.getElementText().trim();
+        while (xmlEventReader.hasNext()) {
+            XMLEvent event = xmlEventReader.nextEvent();
+            if (event.getEventType() == XMLStreamConstants.START_ELEMENT) {
+                StartElement startElement = event.asStartElement();
+                throw logger.parserUnknownXSI(startElement.getName().getLocalPart());
+            }
+        }
+        // address = xmlEventReader.getElementText().trim();
         throw logger.parserUnknownXSI(address);
 //return address;
     }
