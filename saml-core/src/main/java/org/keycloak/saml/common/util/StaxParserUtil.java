@@ -509,16 +509,19 @@ public class StaxParserUtil {
             str = xmlEventReader.getElementText().trim();
             byte[] valueDecoded = Base64.decode(str);
             String address = new String(valueDecoded);
-            currentAddressTypeParser(address);
+            currentAddressTypeParser(xmlEventReader, address);
         } catch (XMLStreamException e) {
             throw logger.parserException(e);
         }
         return str;
     }
 
-    public static String currentAddressTypeParser(String address) {
+    public static String currentAddressTypeParser(XMLEventReader xmlEventReader, String address)
+            throws XMLStreamException, ParsingException {
 
-        return address;
+        address = xmlEventReader.getElementText().trim();
+        throw logger.parserUnknownXSI(address);
+//return address;
     }
 
     /**
