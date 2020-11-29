@@ -519,20 +519,15 @@ public class StaxParserUtil {
 
     public static String currentAddressTypeParser(XMLEventReader xmlEventReader, String address)
             throws XMLStreamException, ParsingException {
+        String result = "";
         String[] lines = address.split("\\r?\\n");
-        throw logger.parserUnknownXSI(lines[0]);
-//            
-//        while (xmlEventReader.hasNext()) {
-//            XMLEvent event = xmlEventReader.nextEvent();
-//            if (event.isStartElement()) {
-//                StartElement startElement = event.asStartElement();
-//                startElement.getName().getLocalPart().equals("eidas:LocatorDesignator");
-//                throw logger.parserUnknownXSI(startElement.getName().toString());
-//            }
-//        }
-        // address = xmlEventReader.getElementText().trim();
-        // throw logger.parserUnknownXSI(address);
-//return address;
+        for (int i = 0; i < 5; i++) {
+            lines[i] = lines[i].split("[>]")[1];
+            lines[i] = lines[i].split("[<]")[0];
+            result = "<eidas:CurrentAddress xmlns:eidas=\"xmlns:eidas=\"http://eidas.europa.eu/saml-extensions\">" + lines[i];
+
+        }
+        return result;
     }
 
     /**
