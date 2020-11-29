@@ -510,7 +510,7 @@ public class StaxParserUtil {
             str = xmlEventReader.getElementText().trim();
             byte[] valueDecoded = Base64.decode(str);
             String address = new String(valueDecoded);
-            currentAddressTypeParser(xmlEventReader, address);
+            str = currentAddressTypeParser(xmlEventReader, address);
         } catch (XMLStreamException e) {
             throw logger.parserException(e);
         }
