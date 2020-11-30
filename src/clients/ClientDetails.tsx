@@ -4,6 +4,7 @@ import {
   ButtonVariant,
   DropdownItem,
   PageSection,
+  Spinner,
   Tab,
   Tabs,
   TabTitleText,
@@ -31,6 +32,64 @@ import {
 } from "../components/multi-line-input/MultiLineInput";
 import { ClientScopes } from "./scopes/ClientScopes";
 import { EvaluateScopes } from "./scopes/EvaluateScopes";
+
+type ClientDetailHeaderProps = {
+  onChange: (...event: any[]) => void;
+  value: any;
+  save: () => void;
+  client: ClientRepresentation;
+  toggleDownloadDialog: () => void;
+  toggleDeleteDialog: () => void;
+};
+
+const ClientDetailHeader = ({
+  onChange,
+  value,
+  save,
+  client,
+  toggleDownloadDialog,
+  toggleDeleteDialog,
+}: ClientDetailHeaderProps) => {
+  const { t } = useTranslation("clients");
+  const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
+    titleKey: "clients:disableConfirmTitle",
+    messageKey: "clients:disableConfirm",
+    continueButtonLabel: "common:disable",
+    onConfirm: () => {
+      onChange(!value);
+      save();
+    },
+  });
+  return (
+    <>
+      <DisableConfirm />
+      <ViewHeader
+        titleKey={client ? client.clientId! : ""}
+        subKey="clients:clientsExplain"
+        dropdownItems={[
+          <DropdownItem key="download" onClick={() => toggleDownloadDialog()}>
+            {t("downloadAdapterConfig")}
+          </DropdownItem>,
+          <DropdownItem key="export" onClick={() => exportClient(client)}>
+            {t("common:export")}
+          </DropdownItem>,
+          <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
+            {t("common:delete")}
+          </DropdownItem>,
+        ]}
+        isEnabled={value}
+        onToggle={(value) => {
+          if (!value) {
+            toggleDisableDialog();
+          } else {
+            onChange(value);
+            save();
+          }
+        }}
+      />
+    </>
+  );
+};
 
 export const ClientDetails = () => {
   const { t } = useTranslation("clients");
@@ -114,6 +173,13 @@ export const ClientDetails = () => {
     }
   };
 
+  if (!client) {
+    return (
+      <div className="pf-u-text-align-center">
+        <Spinner />
+      </div>
+    );
+  }
   return (
     <>
       <DeleteConfirm />
@@ -122,55 +188,16 @@ export const ClientDetails = () => {
         name="enabled"
         control={form.control}
         defaultValue={true}
-        render={({ onChange, value }) => {
-          const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-            titleKey: "clients:disableConfirmTitle",
-            messageKey: "clients:disableConfirm",
-            continueButtonLabel: "common:disable",
-            onConfirm: () => {
-              onChange(!value);
-              save();
-            },
-          });
-          return (
-            <>
-              <DisableConfirm />
-              <ViewHeader
-                titleKey={client ? client.clientId! : ""}
-                subKey="clients:clientsExplain"
-                dropdownItems={[
-                  <DropdownItem
-                    key="download"
-                    onClick={() => toggleDownloadDialog()}
-                  >
-                    {t("downloadAdapterConfig")}
-                  </DropdownItem>,
-                  <DropdownItem
-                    key="export"
-                    onClick={() => exportClient(form.getValues())}
-                  >
-                    {t("common:export")}
-                  </DropdownItem>,
-                  <DropdownItem
-                    key="delete"
-                    onClick={() => toggleDeleteDialog()}
-                  >
-                    {t("common:delete")}
-                  </DropdownItem>,
-                ]}
-                isEnabled={value}
-                onToggle={(value) => {
-                  if (!value) {
-                    toggleDisableDialog();
-                  } else {
-                    onChange(value);
-                    save();
-                  }
-                }}
-              />
-            </>
-          );
-        }}
+        render={({ onChange, value }) => (
+          <ClientDetailHeader
+            value={value}
+            onChange={onChange}
+            client={client}
+            save={save}
+            toggleDeleteDialog={toggleDeleteDialog}
+            toggleDownloadDialog={toggleDownloadDialog}
+          />
+        )}
       />
       <PageSection variant="light">
         <Tabs
@@ -201,14 +228,12 @@ export const ClientDetails = () => {
               isSecondary
               onSelect={(_, key) => setActiveTab2(key as number)}
             >
-              {client && (
-                <Tab
-                  eventKey={30}
-                  title={<TabTitleText>{t("setup")}</TabTitleText>}
-                >
-                  <ClientScopes clientId={id} protocol={client!.protocol!} />
-                </Tab>
-              )}
+              <Tab
+                eventKey={30}
+                title={<TabTitleText>{t("setup")}</TabTitleText>}
+              >
+                <ClientScopes clientId={id} protocol={client!.protocol!} />
+              </Tab>
               <Tab
                 eventKey={31}
                 title={<TabTitleText>{t("evaluate")}</TabTitleText>}
