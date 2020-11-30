@@ -106,7 +106,7 @@ public class SAMLAttributeValueParser implements StaxParser {
         } else if (typeValue.contains(":CurrentFamilyNameType")) {
             return StaxParserUtil.getElementText(xmlEventReader);
         } else if (typeValue.contains(":CurrentGivenNameType")) {
-            return StaxParserUtil.getElementTexts(xmlEventReader);
+            return StaxParserUtil.getElementText(xmlEventReader);
         } else if (typeValue.contains(":DateOfBirthType")) {
             return XMLTimeUtil.parse(StaxParserUtil.getElementText(xmlEventReader));
         } else if (typeValue.contains(":PlaceOfBirthType")) {
