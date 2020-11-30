@@ -59,37 +59,25 @@ export const GroupsList = ({
     setFormattedData(formatData(list!));
   }, [list]);
 
-  function onSelect(
-    _: React.FormEvent<HTMLInputElement>,
-    isSelected: boolean,
-    rowId: number
-  ) {
-    let localRow;
-    if (rowId === undefined) {
-      localRow = formattedData.map((row: { [key: string]: any }) => {
-        row.selected = isSelected;
-        return row;
-      });
-    } else {
-      localRow = [...formattedData];
-      const localTableRow = [...tableRowSelectedArray];
-      if (localRow[rowId].selected !== isSelected) {
-        localRow[rowId].selected = isSelected;
-      }
-
-      if (localTableRow.includes(rowId)) {
-        const index = localTableRow.indexOf(rowId);
-        if (index === 0) {
-          localTableRow.shift();
-        } else {
-          localTableRow.splice(index, 1);
-        }
-        setTableRowSelectedArray(localTableRow);
-      } else {
-        setTableRowSelectedArray([rowId, ...tableRowSelectedArray]);
-      }
-      setFormattedData(localRow);
+  function onSelect(isSelected: boolean, rowId: number) {
+    const localRow = [...formattedData];
+    const localTableRow = [...tableRowSelectedArray];
+    if (localRow[rowId].selected !== isSelected) {
+      localRow[rowId].selected = isSelected;
     }
+
+    if (localTableRow.includes(rowId)) {
+      const index = localTableRow.indexOf(rowId);
+      if (index === 0) {
+        localTableRow.shift();
+      } else {
+        localTableRow.splice(index, 1);
+      }
+      setTableRowSelectedArray(localTableRow);
+    } else {
+      setTableRowSelectedArray([rowId, ...tableRowSelectedArray]);
+    }
+    setFormattedData(localRow);
   }
 
   const tableHeader = [{ title: t("groupName") }, { title: t("members") }];
@@ -122,7 +110,7 @@ export const GroupsList = ({
         <Table
           actions={actions}
           variant={TableVariant.compact}
-          onSelect={onSelect}
+          onSelect={(_, isSelected, rowId) => onSelect(isSelected, rowId)}
           canSelectAll={false}
           aria-label={t("tableOfGroups")}
           cells={tableHeader}
