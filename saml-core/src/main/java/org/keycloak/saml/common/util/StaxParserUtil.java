@@ -498,12 +498,21 @@ public class StaxParserUtil {
         String str = null;
         try {
             str = xmlEventReader.getElementText().trim();
-            throw logger.parserUnknownXSI(str);
-
         } catch (XMLStreamException e) {
             throw logger.parserException(e);
         }
-        //  return str;
+        return str;
+    }
+
+    public static String getElementTexts(XMLEventReader xmlEventReader) throws ParsingException {
+        String str = null;
+        try {
+            str = xmlEventReader.getElementText().trim();
+            throw logger.parserUnknownXSI(str);
+        } catch (XMLStreamException e) {
+            throw logger.parserException(e);
+        }
+        //return str;
     }
 
     public static String getAddressElement(XMLEventReader xmlEventReader) throws ParsingException {
