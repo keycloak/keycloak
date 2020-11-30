@@ -14,11 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.model;
+package org.keycloak.testsuite.model;
 
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 import java.util.Set;
+import java.util.stream.Stream;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
 
 /**
  *
@@ -40,6 +43,25 @@ public class KeycloakModelParameters {
 
     boolean isFactoryAllowed(ProviderFactory factory) {
         return allowedFactories.stream().anyMatch((c) -> c.isAssignableFrom(factory.getClass()));
+    }
+
+    /**
+     * Returns stream of parameters of the given type, or an empty stream if no parameters of the given type are supplied
+     * by this clazz.
+     * @param <T>
+     * @param clazz
+     * @return
+     */
+    public <T> Stream<T> getParameters(Class<T> clazz) {
+        return Stream.empty();
+    }
+
+    public Statement classRule(Statement base, Description description) {
+        return base;
+    }
+
+    public Statement instanceRule(Statement base, Description description) {
+        return base;
     }
 
 }

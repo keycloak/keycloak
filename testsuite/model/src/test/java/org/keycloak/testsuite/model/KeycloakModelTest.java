@@ -14,14 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.model;
+package org.keycloak.testsuite.model;
 
 import org.keycloak.Config.Scope;
 import org.keycloak.authorization.AuthorizationSpi;
 import org.keycloak.authorization.DefaultAuthorizationProviderFactory;
 import org.keycloak.authorization.store.StoreFactorySpi;
 import org.keycloak.cluster.ClusterSpi;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.events.EventStoreSpi;
 import org.keycloak.executors.DefaultExecutorsProviderFactory;
 import org.keycloak.executors.ExecutorsSpi;
@@ -30,7 +29,6 @@ import org.keycloak.models.ClientSpi;
 import org.keycloak.models.GroupSpi;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmSpi;
 import org.keycloak.models.RoleSpi;
 import org.keycloak.models.UserSpi;
@@ -41,28 +39,29 @@ import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
 import org.keycloak.services.DefaultKeycloakSession;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
-import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.storage.UserStorageProviderModel;
 import com.google.common.collect.ImmutableSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.hamcrest.Matchers;
 import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Assume;
+import org.junit.AssumptionViolatedException;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
-import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertThat;
 
 /**
  * Base of testcases that operate on session level. The tests derived from this class
@@ -87,13 +86,56 @@ public abstract class KeycloakModelTest {
         @Override
         public Statement apply(Statement base, Description description) {
             Class<?> testClass = description.getTestClass();
+            Stream<RequireProvider> st = Stream.empty();
             while (testClass != Object.class) {
-                for (RequireProvider ann : testClass.getAnnotationsByType(RequireProvider.class)) {
-                    Assume.assumeThat("Provider must exist: " + ann.value(), FACTORY.getProviderFactory(ann.value()), Matchers.notNullValue());
-                }
+                st = Stream.concat(Stream.of(testClass.getAnnotationsByType(RequireProvider.class)), st);
                 testClass = testClass.getSuperclass();
             }
-            return base;
+            List<Class<? extends Provider>> notFound = st.map(RequireProvider::value)
+              .filter(pClass -> FACTORY.getProviderFactory(pClass) == null)
+              .collect(Collectors.toList());
+            Assume.assumeThat("Some required providers not found", notFound, Matchers.empty());
+
+            Statement res = base;
+            for (KeycloakModelParameters kmp : KeycloakModelTest.MODEL_PARAMETERS) {
+                res = kmp.classRule(res, description);
+            }
+            return res;
+        }
+    };
+
+    @Rule
+    public final TestRule guaranteeRequiredFactoryOnMethod = new TestRule() {
+        @Override
+        public Statement apply(Statement base, Description description) {
+            Stream<RequireProvider> st = Optional.ofNullable(description.getAnnotation(RequireProviders.class))
+              .map(RequireProviders::value)
+              .map(Stream::of)
+              .orElseGet(Stream::empty);
+
+            RequireProvider rp = description.getAnnotation(RequireProvider.class);
+            if (rp != null) {
+                st = Stream.concat(st, Stream.of(rp));
+            }
+
+            for (Iterator<Class<? extends Provider>> iterator = st.map(RequireProvider::value).iterator(); iterator.hasNext();) {
+                Class<? extends Provider> providerClass = iterator.next();
+
+                if (FACTORY.getProviderFactory(providerClass) == null) {
+                    return new Statement() {
+                        @Override
+                        public void evaluate() throws Throwable {
+                            throw new AssumptionViolatedException("Provider must exist: " + providerClass);
+                        }
+                    };
+                }
+            }
+
+            Statement res = base;
+            for (KeycloakModelParameters kmp : KeycloakModelTest.MODEL_PARAMETERS) {
+                res = kmp.instanceRule(res, description);
+            }
+            return res;
         }
     };
 
@@ -124,7 +166,7 @@ public abstract class KeycloakModelTest {
           Stream.of(basicParameters),
           Stream.of(System.getProperty("keycloak.model.parameters", "").split("\\s*,\\s*"))
             .filter(s -> s != null && ! s.trim().isEmpty())
-            .map(cn -> { try { return Class.forName(cn.indexOf('.') >= 0 ? cn : ("org.keycloak.model.parameters." + cn)); } catch (Exception e) { LOG.error("Cannot find " + cn); return null; }})
+            .map(cn -> { try { return Class.forName(cn.indexOf('.') >= 0 ? cn : ("org.keycloak.testsuite.model.parameters." + cn)); } catch (Exception e) { LOG.error("Cannot find " + cn); return null; }})
             .filter(Objects::nonNull)
             .map(c -> { try { return c.newInstance(); } catch (Exception e) { LOG.error("Cannot instantiate " + c); return null; }} )
             .filter(KeycloakModelParameters.class::isInstance)
@@ -176,21 +218,12 @@ public abstract class KeycloakModelTest {
         KeycloakModelUtils.runJobInTransaction(FACTORY, this::cleanEnvironment);
     }
 
-    protected String registerUserFederationIfAvailable(RealmModel realm) {
-        final List<ProviderFactory> userFedProviders = FACTORY.getProviderFactories(UserStorageProvider.class);
+    protected <T> Stream<T> getParameters(Class<T> clazz) {
+        return MODEL_PARAMETERS.stream().flatMap(mp -> mp.getParameters(clazz)).filter(Objects::nonNull);
+    }
 
-        if (! userFedProviders.isEmpty() && realm != null) {
-            assertThat("Cannot handle more than 1 user federation provider", userFedProviders, hasSize(1));
-            UserStorageProviderModel federatedStorage = new UserStorageProviderModel();
-            federatedStorage.setName(userFedProviders.get(0).getId());
-            federatedStorage.setProviderId(userFedProviders.get(0).getId());
-            federatedStorage.setProviderType(UserStorageProvider.class.getName());
-            federatedStorage.setParentId(realm.getId());
-            ComponentModel res = realm.addComponentModel(federatedStorage);
-            log.infof("Added %s user federation provider: %s", federatedStorage.getName(), res.getId());
-            return res.getId();
-        }
-        return null;
+    protected <T> void withEach(Class<T> parameterClazz, Consumer<T> what) {
+        getParameters(parameterClazz).forEach(what);
     }
 
     protected <T> void inRolledBackTransaction(T parameter, BiConsumer<KeycloakSession, T> what) {
