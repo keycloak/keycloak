@@ -17,20 +17,21 @@
  */
 package org.keycloak.authorization.client;
 
-import static org.keycloak.constants.ServiceUrlConstants.AUTHZ_DISCOVERY_URL;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Objects;
-
 import org.keycloak.authorization.client.representation.ServerConfiguration;
 import org.keycloak.authorization.client.resource.AuthorizationResource;
 import org.keycloak.authorization.client.resource.ProtectionResource;
+import org.keycloak.authorization.client.token.TokenExchange;
 import org.keycloak.authorization.client.util.Http;
 import org.keycloak.authorization.client.util.TokenCallable;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Objects;
+
+import static org.keycloak.constants.ServiceUrlConstants.AUTHZ_DISCOVERY_URL;
 
 /**
  * <p>This is class serves as an entry point for clients looking for access to Keycloak Authorization Services.
@@ -185,6 +186,46 @@ public class AuthzClient {
         return new AuthorizationResource(configuration, serverConfiguration, this.http, createRefreshableAccessTokenSupplier(userName, password));
     }
 
+    /**
+     * <p>Creates a {@link TokenExchange} instance which can be used to obtain tokens from the server.
+     *
+     * @return a {@link TokenExchange}
+     */
+    public TokenExchange exchange() {
+        return new TokenExchange(configuration, serverConfiguration, this.http, null);
+    }
+
+    /**
+     * <p>Creates a {@link TokenExchange} instance which can be used to obtain tokens from the server.
+     *
+     * @param accessToken the Access Token that will be used as a bearer to access the token endpoint
+     * @return a {@link TokenExchange}
+     */
+    public TokenExchange exchange(final String accessToken) {
+        return new TokenExchange(configuration, serverConfiguration, this.http, new TokenCallable(http, configuration, serverConfiguration) {
+            @Override
+            public String call() {
+                return accessToken;
+            }
+
+            @Override
+            protected boolean isRetry() {
+                return false;
+            }
+        });
+    }
+
+    /**
+     * <p>Creates a {@link TokenExchange} instance which can be used to obtain tokens from the server.
+     *
+     * @param userName an ID Token or Access Token representing an identity and/or access context
+     * @param password
+     * @return a {@link TokenExchange}
+     */
+    public TokenExchange exchange(final String userName, final String password) {
+        return new TokenExchange(configuration, serverConfiguration, this.http, createRefreshableAccessTokenSupplier(userName, password));
+    }
+    
     /**
      * Obtains an access token using the client credentials.
      *
