@@ -62,6 +62,11 @@
             <artifactId>keycloak-server-spi</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>integration-arquillian-tests-base</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>${jdbc.mvn.groupId}</groupId>
             <artifactId>${jdbc.mvn.artifactId}</artifactId>
             <version>${jdbc.mvn.version}</version>
@@ -127,14 +132,28 @@
         <profile>
             <id>jpa-federation+infinispan</id>
             <properties>
-                <keycloak.model.parameters>Infinispan,JpaFederation,BackwardsCompatibilityUserStorage</keycloak.model.parameters>
+                <keycloak.model.parameters>Infinispan,JpaFederation,TestsuiteUserMapStorage</keycloak.model.parameters>
             </properties>
         </profile>
 
         <profile>
             <id>jpa-federation</id>
             <properties>
-                <keycloak.model.parameters>JpaFederation,BackwardsCompatibilityUserStorage</keycloak.model.parameters>
+                <keycloak.model.parameters>JpaFederation,TestsuiteUserMapStorage</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>jpa-federation+ldap</id>
+            <properties>
+                <keycloak.model.parameters>JpaFederation,LdapUserStorage</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>jpa-federation+ldap+infinispan</id>
+            <properties>
+                <keycloak.model.parameters>JpaFederation,LdapUserStorage,Infinispan</keycloak.model.parameters>
             </properties>
         </profile>
 

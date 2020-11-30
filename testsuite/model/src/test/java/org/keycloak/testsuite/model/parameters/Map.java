@@ -14,9 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.model.parameters;
+package org.keycloak.testsuite.model.parameters;
 
-import org.keycloak.model.KeycloakModelParameters;
+import org.keycloak.testsuite.model.KeycloakModelParameters;
 import org.keycloak.models.map.client.MapClientProviderFactory;
 import org.keycloak.models.map.group.MapGroupProviderFactory;
 import org.keycloak.models.map.role.MapRoleProviderFactory;

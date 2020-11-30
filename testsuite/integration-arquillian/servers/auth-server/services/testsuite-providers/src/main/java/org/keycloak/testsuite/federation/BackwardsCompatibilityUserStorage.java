@@ -71,12 +71,15 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
         this.users = users;
     }
 
+    private static String translateUserName(String userName) {
+        return userName == null ? null : userName.toLowerCase();
+    }
 
     @Override
     public UserModel getUserById(String id, RealmModel realm) {
         StorageId storageId = new StorageId(id);
         final String username = storageId.getExternalId();
-        if (!users.containsKey(username)) return null;
+        if (!users.containsKey(translateUserName(username))) return null;
 
         return createUser(realm, username);
     }
@@ -149,7 +152,7 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
             assertNotNull(newPassword.getValue());
             assertNotNull(newPassword.getSalt());
 
-            users.get(user.getUsername()).hashedPassword = newPassword;
+            users.get(translateUserName(user.getUsername())).hashedPassword = newPassword;
 
             UserCache userCache = session.userCache();
             if (userCache != null) {
@@ -176,7 +179,7 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
             newOTP.setAlgorithm(otpPolicy.getAlgorithm());
             newOTP.setPeriod(otpPolicy.getPeriod());
 
-            users.get(user.getUsername()).otp = newOTP;
+            users.get(translateUserName(user.getUsername())).otp = newOTP;
 
             return true;
         } else {
@@ -205,7 +208,7 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
     }
 
     private MyUser getMyUser(UserModel user) {
-        return users.get(user.getUsername());
+        return users.get(translateUserName(user.getUsername()));
     }
 
     @Override
@@ -237,7 +240,7 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
 
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
-        MyUser myUser = users.get(user.getUsername());
+        MyUser myUser = users.get(translateUserName(user.getUsername()));
         if (myUser == null) return false;
 
         if (input.getType().equals(UserCredentialModel.PASSWORD)) {
@@ -286,7 +289,7 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
 
     @Override
     public UserModel getUserByUsername(String username, RealmModel realm) {
-        if (!users.containsKey(username)) return null;
+        if (!users.containsKey(translateUserName(username))) return null;
 
         return createUser(realm, username);
     }
@@ -298,13 +301,13 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        users.put(username, new MyUser(username));
+        users.put(translateUserName(username), new MyUser(username));
         return createUser(realm, username);
     }
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-        return users.remove(user.getUsername()) != null;
+        return users.remove(translateUserName(user.getUsername())) != null;
     }
 
 

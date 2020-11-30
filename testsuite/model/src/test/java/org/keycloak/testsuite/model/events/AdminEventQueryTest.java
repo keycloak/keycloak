@@ -14,14 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.model.events;
+package org.keycloak.testsuite.model.events;
 
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
-import org.keycloak.model.KeycloakModelTest;
-import org.keycloak.model.RequireProvider;
+import org.keycloak.testsuite.model.KeycloakModelTest;
+import org.keycloak.testsuite.model.RequireProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import java.util.stream.Collectors;

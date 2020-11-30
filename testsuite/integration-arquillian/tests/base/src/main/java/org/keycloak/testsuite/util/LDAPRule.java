@@ -266,6 +266,10 @@ public class LDAPRule extends ExternalResource {
         return ldapTestConfiguration.getSleepTime();
     }
 
+    public LDAPEmbeddedServer getLdapEmbeddedServer() {
+        return ldapEmbeddedServer;
+    }
+
     /** Allows to run particular LDAP test just under specific conditions (eg. some test running just on Active Directory) **/
     public interface LDAPAssume {
 
