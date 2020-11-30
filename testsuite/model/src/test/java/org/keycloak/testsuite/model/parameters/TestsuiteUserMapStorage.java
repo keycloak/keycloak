@@ -14,32 +14,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.model.parameters;
+package org.keycloak.testsuite.model.parameters;
 
-import org.keycloak.model.KeycloakModelParameters;
+import org.keycloak.testsuite.model.KeycloakModelParameters;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
-import org.keycloak.storage.UserStorageProviderSpi;
-import org.keycloak.storage.federated.UserFederatedStorageProviderSpi;
-import org.keycloak.storage.jpa.JpaUserFederatedStorageProviderFactory;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testsuite.federation.BackwardsCompatibilityUserStorageFactory;
+import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import com.google.common.collect.ImmutableSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 /**
  *
  * @author hmlnarik
  */
-public class BackwardsCompatibilityUserStorage extends KeycloakModelParameters {
+public class TestsuiteUserMapStorage extends KeycloakModelParameters {
 
     static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
       .build();
 
     static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
-      .add(BackwardsCompatibilityUserStorageFactory.class)
+      .add(UserMapStorageFactory.class)
       .build();
 
-    public BackwardsCompatibilityUserStorage() {
+    private final AtomicInteger counter = new AtomicInteger();
+
+    public TestsuiteUserMapStorage() {
         super(ALLOWED_SPIS, ALLOWED_FACTORIES);
+    }
+
+    @Override
+    public <T> Stream<T> getParameters(Class<T> clazz) {
+        if (UserStorageProviderModel.class.isAssignableFrom(clazz)) {
+            UserStorageProviderModel federatedStorage = new UserStorageProviderModel();
+            federatedStorage.setName(UserMapStorageFactory.PROVIDER_ID + ":" + counter.getAndIncrement());
+            federatedStorage.setProviderId(UserMapStorageFactory.PROVIDER_ID);
+            federatedStorage.setProviderType(UserStorageProvider.class.getName());
+            return Stream.of((T) federatedStorage);
+        } else {
+            return super.getParameters(clazz);
+        }
     }
 }

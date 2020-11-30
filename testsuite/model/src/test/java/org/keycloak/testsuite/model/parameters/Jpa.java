@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.model.parameters;
+package org.keycloak.testsuite.model.parameters;
 
 import org.keycloak.authorization.jpa.store.JPAAuthorizationStoreFactory;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
@@ -25,7 +25,7 @@ import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionPr
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionSpi;
 import org.keycloak.connections.jpa.updater.liquibase.lock.LiquibaseDBLockProviderFactory;
 import org.keycloak.events.jpa.JpaEventStoreProviderFactory;
-import org.keycloak.model.KeycloakModelParameters;
+import org.keycloak.testsuite.model.KeycloakModelParameters;
 import org.keycloak.models.dblock.DBLockSpi;
 import org.keycloak.models.jpa.JpaClientProviderFactory;
 import org.keycloak.models.jpa.JpaGroupProviderFactory;

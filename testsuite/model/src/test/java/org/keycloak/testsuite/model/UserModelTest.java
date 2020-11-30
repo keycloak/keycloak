@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.model;
+package org.keycloak.testsuite.model;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
@@ -26,7 +26,6 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
-import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -55,6 +54,9 @@ import static org.junit.Assume.assumeThat;
 public class UserModelTest extends KeycloakModelTest {
 
     protected static final int NUM_GROUPS = 100;
+    private static final int FIRST_DELETED_USER_INDEX = 10;
+    private static final int LAST_DELETED_USER_INDEX = 90;
+    private static final int DELETED_USER_COUNT = LAST_DELETED_USER_INDEX - FIRST_DELETED_USER_INDEX;
 
     private String realmId;
     private final List<String> groupIds = new ArrayList<>(NUM_GROUPS);
@@ -64,8 +66,6 @@ public class UserModelTest extends KeycloakModelTest {
     public void createEnvironment(KeycloakSession s) {
         RealmModel realm = s.realms().createRealm("realm");
         this.realmId = realm.getId();
-
-        this.userFederationId = registerUserFederationIfAvailable(realm);
 
         IntStream.range(0, NUM_GROUPS).forEach(i -> {
             groupIds.add(s.groups().createGroup(realm, "group-" + i).getId());
@@ -150,11 +150,41 @@ public class UserModelTest extends KeycloakModelTest {
     }
 
     @Test
-    public void testAddDirtyRemoveFederationUsersInTheSameGroupConcurrent() {
-        assumeThat("Test for federated providers only", userFederationId, Matchers.notNullValue());
+    @RequireProvider(UserStorageProvider.class)
+    public void testAddDirtyRemoveFederationUser() {
+        registerUserFederationWithRealm();
 
+        inComittedTransaction(1, (session, i) -> {
+            final RealmModel realm = session.realms().getRealm(realmId);
+            final UserModel user = session.users().addUser(realm, "user-A");
+        });
+
+        // Remove user _from the federation_, simulates eg. user being removed from LDAP without Keycloak knowing
+        inComittedTransaction(1, (session, i) -> {
+            final RealmModel realm = session.realms().getRealm(realmId);
+            final UserStorageProvider instance = getUserFederationInstance(session, realm);
+            log.debugf("Removing selected users from backend");
+            final UserModel user = session.users().getUserByUsername("user-A", realm);
+            ((UserRegistrationProvider) instance).removeUser(realm, user);
+        });
+
+        inComittedTransaction(1, (session, i) -> {
+            final RealmModel realm = session.realms().getRealm(realmId);
+            if (session.userCache() != null) {
+                session.userCache().clear();
+            }
+            final UserModel user = session.users().getUserByUsername("user-A", realm);
+            assertThat("User should not be found in the main store", user, Matchers.nullValue());
+        });
+    }
+
+    @Test
+    @RequireProvider(UserStorageProvider.class)
+    public void testAddDirtyRemoveFederationUsersInTheSameGroupConcurrent() {
         final ConcurrentSkipListSet<String> userIds = new ConcurrentSkipListSet<>();
         String groupId = groupIds.get(0);
+
+        registerUserFederationWithRealm();
 
         // Create users and let them join first group
         IntStream.range(0, 100).parallel().forEach(index -> inComittedTransaction(index, (session, i) -> {
@@ -167,25 +197,11 @@ public class UserModelTest extends KeycloakModelTest {
         // Remove users _from the federation_, simulates eg. user being removed from LDAP without Keycloak knowing
         inComittedTransaction(1, (session, i) -> {
             final RealmModel realm = session.realms().getRealm(realmId);
-            UserStorageProvider instance = (UserStorageProvider)session.getAttribute(userFederationId);
-
-            if (instance == null) {
-                ComponentModel model = realm.getComponent(userFederationId);
-                UserStorageProviderModel storageModel = new UserStorageProviderModel(model);
-                UserStorageProviderFactory factory = (UserStorageProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, model.getProviderId());
-                instance = factory.create(session, model);
-                if (instance == null) {
-                    throw new RuntimeException("UserStorageProvideFactory (of type " + factory.getClass().getName() + ") produced a null instance");
-                }
-                session.enlistForClose(instance);
-                session.setAttribute(userFederationId, instance);
-            }
-
-            final UserStorageProvider lambdaInstance = instance;
+            UserStorageProvider instance = getUserFederationInstance(session, realm);
             log.debugf("Removing selected users from backend");
             IntStream.range(FIRST_DELETED_USER_INDEX, LAST_DELETED_USER_INDEX).forEach(j -> {
-                final UserModel user = ((UserLookupProvider) lambdaInstance).getUserByUsername("user-" + j, realm);
-                ((UserRegistrationProvider) lambdaInstance).removeUser(realm, user);
+                final UserModel user = session.users().getUserByUsername("user-" + j, realm);
+                ((UserRegistrationProvider) instance).removeUser(realm, user);
             });
         });
 
@@ -229,7 +245,34 @@ public class UserModelTest extends KeycloakModelTest {
             assertThat(session.users().getGroupMembersStream(realm, group).collect(Collectors.toList()), Matchers.empty());
         });
     }
-    private static final int FIRST_DELETED_USER_INDEX = 10;
-    private static final int LAST_DELETED_USER_INDEX = 90;
-    private static final int DELETED_USER_COUNT = LAST_DELETED_USER_INDEX - FIRST_DELETED_USER_INDEX;
+
+    private void registerUserFederationWithRealm() {
+        getParameters(UserStorageProviderModel.class).forEach(fs -> inComittedTransaction(fs, (session, federatedStorage) -> {
+            assumeThat("Cannot handle more than 1 user federation provider", userFederationId, Matchers.nullValue());
+            RealmModel realm = session.realms().getRealm(realmId);
+            federatedStorage.setParentId(realmId);
+            federatedStorage.setImportEnabled(true);
+            ComponentModel res = realm.addComponentModel(federatedStorage);
+            userFederationId = res.getId();
+            log.infof("Added %s user federation provider: %s", federatedStorage.getName(), userFederationId);
+        }));
+    }
+
+    private UserStorageProvider getUserFederationInstance(KeycloakSession session, final RealmModel realm) throws RuntimeException {
+        UserStorageProvider instance = (UserStorageProvider)session.getAttribute(userFederationId);
+
+        if (instance == null) {
+            ComponentModel model = realm.getComponent(userFederationId);
+            UserStorageProviderFactory factory = (UserStorageProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, model.getProviderId());
+            instance = factory.create(session, model);
+            if (instance == null) {
+                throw new RuntimeException("UserStorageProvideFactory (of type " + factory.getClass().getName() + ") produced a null instance");
+            }
+            session.enlistForClose(instance);
+            session.setAttribute(userFederationId, instance);
+        }
+
+        return instance;
+    }
+
 }

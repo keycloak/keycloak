@@ -14,16 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.model.parameters;
+package org.keycloak.testsuite.model.parameters;
 
-import org.keycloak.cluster.infinispan.InfinispanClusterProviderFactory;
-import org.keycloak.connections.infinispan.InfinispanConnectionProviderFactory;
-import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
-import org.keycloak.model.KeycloakModelParameters;
-import org.keycloak.models.cache.CacheRealmProviderSpi;
-import org.keycloak.models.cache.CacheUserProviderSpi;
-import org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderFactory;
-import org.keycloak.models.cache.infinispan.InfinispanUserCacheProviderFactory;
+import org.keycloak.testsuite.model.KeycloakModelParameters;
+import org.keycloak.models.map.client.MapClientProviderFactory;
+import org.keycloak.models.map.group.MapGroupProviderFactory;
+import org.keycloak.models.map.role.MapRoleProviderFactory;
+import org.keycloak.models.map.storage.ConcurrentHashMapStorageProvider;
+import org.keycloak.models.map.storage.MapStorageProvider;
+import org.keycloak.models.map.storage.MapStorageSpi;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 import com.google.common.collect.ImmutableSet;
@@ -33,27 +32,21 @@ import java.util.Set;
  *
  * @author hmlnarik
  */
-public class Infinispan extends KeycloakModelParameters {
+public class ConcurrentHashMapStorage extends KeycloakModelParameters {
 
     static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
-      .add(CacheRealmProviderSpi.class)
-      .add(CacheUserProviderSpi.class)
-      .add(InfinispanConnectionSpi.class)
-
       .build();
 
     static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
-      .add(InfinispanCacheRealmProviderFactory.class)
-      .add(InfinispanClusterProviderFactory.class)
-      .add(InfinispanConnectionProviderFactory.class)
-      .add(InfinispanUserCacheProviderFactory.class)
+      .add(ConcurrentHashMapStorageProvider.class)
       .build();
 
     static {
-        System.setProperty("keycloak.connectionsInfinispan.default.embedded", System.getProperty("keycloak.connectionsInfinispan.default.embedded", "true"));
+        System.setProperty("keycloak.mapStorage.concurrenthashmap.dir", System.getProperty("keycloak.mapStorage.concurrenthashmap.dir", "${project.build.directory:target}"));
     }
 
-    public Infinispan() {
+    public ConcurrentHashMapStorage() {
         super(ALLOWED_SPIS, ALLOWED_FACTORIES);
     }
+
 }
