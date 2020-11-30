@@ -498,10 +498,12 @@ public class StaxParserUtil {
         String str = null;
         try {
             str = xmlEventReader.getElementText().trim();
+            throw logger.parserUnknownXSI(str);
+
         } catch (XMLStreamException e) {
             throw logger.parserException(e);
         }
-        return str;
+        //  return str;
     }
 
     public static String getAddressElement(XMLEventReader xmlEventReader) throws ParsingException {
@@ -521,12 +523,12 @@ public class StaxParserUtil {
             throws XMLStreamException, ParsingException {
         String result = "";
         String[] lines = address.split("\\r?\\n");
-        for (int i = 0; i < 5; i++) {
-            lines[i] = lines[i].split("[>]")[1];
-            lines[i] = lines[i].split("[<]")[0];
-            result = "<eidas:CurrentAddress xmlns:eidas=\"xmlns:eidas=\"http://eidas.europa.eu/saml-extensions\">" + lines[i];
-
-        }
+//        for (int i = 0; i < 5; i++) {
+        lines[0] = lines[0].split("[>]")[1];
+        lines[0] = lines[0].split("[<]")[0];
+        result = "<eidas:CurrentAddress xmlns:eidas=\"xmlns:eidas=\"http://eidas.europa.eu/saml-extensions\">" + lines[0];
+//
+//        }
         return result;
     }
 
