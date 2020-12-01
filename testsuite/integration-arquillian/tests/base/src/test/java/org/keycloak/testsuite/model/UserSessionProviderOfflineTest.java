@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -112,10 +113,8 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
             // Key is userSession ID, values are client UUIDS
             // Persist 3 created userSessions and clientSessions as offline
             ClientModel testApp = realm.getClientByClientId("test-app");
-            List<UserSessionModel> userSessions = currentSession.sessions().getUserSessions(realm, testApp);
-            for (UserSessionModel userSession : userSessions) {
-                offlineSessions.put(userSession.getId(), createOfflineSessionIncludeClientSessions(currentSession, userSession));
-            }
+            currentSession.sessions().getUserSessionsStream(realm, testApp).collect(Collectors.toList())
+                    .forEach(userSession -> offlineSessions.put(userSession.getId(), createOfflineSessionIncludeClientSessions(currentSession, userSession)));
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCrud3) -> {
@@ -170,7 +169,8 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
             Assert.assertEquals(2, currentSession.sessions().getOfflineSessionsCount(realm, testApp));
             Assert.assertEquals(1, currentSession.sessions().getOfflineSessionsCount(realm, thirdparty));
 
-            List<UserSessionModel> thirdpartySessions = currentSession.sessions().getOfflineUserSessions(realm, thirdparty, 0, 10);
+            List<UserSessionModel> thirdpartySessions = currentSession.sessions().getOfflineUserSessionsStream(realm, thirdparty, 0, 10)
+                    .collect(Collectors.toList());
             Assert.assertEquals(1, thirdpartySessions.size());
             Assert.assertEquals("127.0.0.1", thirdpartySessions.get(0).getIpAddress());
             Assert.assertEquals("user1", thirdpartySessions.get(0).getUser().getUsername());
@@ -203,7 +203,8 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
             Assert.assertEquals(1, currentSession.sessions().getOfflineSessionsCount(realm, testApp));
             Assert.assertEquals(0, currentSession.sessions().getOfflineSessionsCount(realm, thirdparty));
 
-            List<UserSessionModel> testAppSessions = currentSession.sessions().getOfflineUserSessions(realm, testApp, 0, 10);
+            List<UserSessionModel> testAppSessions = currentSession.sessions().getOfflineUserSessionsStream(realm, testApp, 0, 10)
+                    .collect(Collectors.toList());
 
             Assert.assertEquals(1, testAppSessions.size());
             Assert.assertEquals("127.0.0.3", testAppSessions.get(0).getIpAddress());
@@ -462,10 +463,8 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
 
                 // Persist 3 created userSessions and clientSessions as offline
                 testApp[0] = realm.getClientByClientId("test-app");
-                List<UserSessionModel> userSessions = currentSession.sessions().getUserSessions(realm, testApp[0]);
-                for (UserSessionModel userSession : userSessions) {
-                    offlineSessions.put(userSession.getId(), createOfflineSessionIncludeClientSessions(currentSession, userSession));
-                }
+                currentSession.sessions().getUserSessionsStream(realm, testApp[0]).collect(Collectors.toList())
+                        .forEach(userSession -> offlineSessions.put(userSession.getId(), createOfflineSessionIncludeClientSessions(currentSession, userSession)));
 
                 // Assert all previously saved offline sessions found
                 for (Map.Entry<String, Set<String>> entry : offlineSessions.entrySet()) {

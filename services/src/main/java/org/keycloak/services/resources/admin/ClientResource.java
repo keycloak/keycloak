@@ -50,10 +50,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
-import org.keycloak.services.clientpolicy.AdminClientRegisterContext;
 import org.keycloak.services.clientpolicy.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.DefaultClientPolicyManager;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.services.managers.ClientManager;
@@ -78,11 +76,12 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 import static java.lang.Boolean.TRUE;
 
@@ -462,17 +461,13 @@ public class ClientResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<UserSessionRepresentation> getUserSessions(@QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
+    public Stream<UserSessionRepresentation> getUserSessions(@QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
         auth.clients().requireView(client);
 
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
-        List<UserSessionRepresentation> sessions = new ArrayList<UserSessionRepresentation>();
-        for (UserSessionModel userSession : session.sessions().getUserSessions(client.getRealm(), client, firstResult, maxResults)) {
-            UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession);
-            sessions.add(rep);
-        }
-        return sessions;
+        return session.sessions().getUserSessionsStream(client.getRealm(), client, firstResult, maxResults)
+                .map(ModelToRepresentation::toRepresentation);
     }
 
     /**
@@ -511,30 +506,14 @@ public class ClientResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<UserSessionRepresentation> getOfflineUserSessions(@QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
+    public Stream<UserSessionRepresentation> getOfflineUserSessions(@QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults) {
         auth.clients().requireView(client);
 
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
-        List<UserSessionRepresentation> sessions = new ArrayList<UserSessionRepresentation>();
-        List<UserSessionModel> userSessions = session.sessions().getOfflineUserSessions(client.getRealm(), client, firstResult, maxResults);
-        for (UserSessionModel userSession : userSessions) {
-            UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession);
 
-            // Update lastSessionRefresh with the timestamp from clientSession
-            for (Map.Entry<String, AuthenticatedClientSessionModel> csEntry : userSession.getAuthenticatedClientSessions().entrySet()) {
-                String clientUuid = csEntry.getKey();
-                AuthenticatedClientSessionModel clientSession = csEntry.getValue();
-
-                if (client.getId().equals(clientUuid)) {
-                    rep.setLastAccess(Time.toMillis(clientSession.getTimestamp()));
-                    break;
-                }
-            }
-
-            sessions.add(rep);
-        }
-        return sessions;
+        return session.sessions().getOfflineUserSessionsStream(client.getRealm(), client, firstResult, maxResults)
+                .map(this::toUserSessionRepresentation);
     }
 
     /**
@@ -700,5 +679,24 @@ public class ClientResource {
         } else {
             authorization().disable();
         }
+    }
+
+    /**
+     * Converts the specified {@link UserSessionModel} into a {@link UserSessionRepresentation}.
+     *
+     * @param userSession the model to be converted.
+     * @return a reference to the constructed representation.
+     */
+    private UserSessionRepresentation toUserSessionRepresentation(final UserSessionModel userSession) {
+        UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession);
+
+        // Update lastSessionRefresh with the timestamp from clientSession
+        Map.Entry<String, AuthenticatedClientSessionModel> result = userSession.getAuthenticatedClientSessions().entrySet().stream()
+                .filter(entry -> Objects.equals(client.getId(), entry.getKey()))
+                .findFirst().orElse(null);
+        if (result != null) {
+            rep.setLastAccess(Time.toMillis(result.getValue().getTimestamp()));
+        }
+        return rep;
     }
 }

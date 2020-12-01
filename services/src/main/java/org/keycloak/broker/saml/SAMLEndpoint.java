@@ -83,9 +83,15 @@ import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.security.Key;
 import java.security.cert.X509Certificate;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.keycloak.protocol.saml.SamlPrincipalType;
 import org.keycloak.rotation.HardcodedKeyLocator;
@@ -93,14 +99,14 @@ import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.validators.ConditionsValidator;
 import org.keycloak.saml.validators.DestinationValidator;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
 import java.net.URI;
 import java.security.cert.CertificateException;
-import org.w3c.dom.Element;
 
-import java.util.*;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.crypto.dsig.XMLSignature;
-import org.w3c.dom.NodeList;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -296,22 +302,13 @@ public class SAMLEndpoint {
         protected Response logoutRequest(LogoutRequestType request, String relayState) {
             String brokerUserId = config.getAlias() + "." + request.getNameID().getValue();
             if (request.getSessionIndex() == null || request.getSessionIndex().isEmpty()) {
-                List<UserSessionModel> userSessions = session.sessions().getUserSessionByBrokerUserId(realm, brokerUserId);
-                for (UserSessionModel userSession : userSessions) {
-                    if (userSession.getState() == UserSessionModel.State.LOGGING_OUT || userSession.getState() == UserSessionModel.State.LOGGED_OUT) {
-                        continue;
-                    }
-
-                    for(Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext();) {
-                        request = it.next().beforeProcessingLogoutRequest(request, userSession, null);
-                    }
-
-                    try {
-                        AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, false);
-                    } catch (Exception e) {
-                        logger.warn("failed to do backchannel logout for userSession", e);
-                    }
-                }
+                AtomicReference<LogoutRequestType> ref = new AtomicReference<>(request);
+                session.sessions().getUserSessionByBrokerUserIdStream(realm, brokerUserId)
+                        .filter(userSession -> userSession.getState() != UserSessionModel.State.LOGGING_OUT &&
+                                userSession.getState() != UserSessionModel.State.LOGGED_OUT)
+                        .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
+                        .forEach(processLogout(ref));
+                request = ref.get();
 
             }  else {
                 for (String sessionIndex : request.getSessionIndex()) {
@@ -367,6 +364,19 @@ public class SAMLEndpoint {
                 throw new RuntimeException(e);
             }
 
+        }
+
+        private Consumer<UserSessionModel> processLogout(AtomicReference<LogoutRequestType> ref) {
+            return userSession -> {
+                for(Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext();) {
+                    ref.set(it.next().beforeProcessingLogoutRequest(ref.get(), userSession, null));
+                }
+                try {
+                    AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, false);
+                } catch (Exception e) {
+                    logger.warn("failed to do backchannel logout for userSession", e);
+                }
+            };
         }
 
         private String getEntityId(UriInfo uriInfo, RealmModel realm) {
@@ -578,11 +588,6 @@ public class SAMLEndpoint {
             }
             return AuthenticationManager.finishBrowserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
         }
-
-
-
-
-
     }
 
     protected class PostBinding extends Binding {

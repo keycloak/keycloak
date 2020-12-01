@@ -548,15 +548,15 @@ public class AuthenticationManager {
      * @param headers
      */
     public static void backchannelLogoutUserFromClient(KeycloakSession session, RealmModel realm, UserModel user, ClientModel client, UriInfo uriInfo, HttpHeaders headers) {
-        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
-        for (UserSessionModel userSession : userSessions) {
-            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
-            if (clientSession != null) {
-                backchannelLogoutClientSession(session, realm, clientSession, null, uriInfo, headers);
-                clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
-                org.keycloak.protocol.oidc.TokenManager.dettachClientSession(session.sessions(), realm, clientSession);
-            }
-        }
+        session.sessions().getUserSessionsStream(realm, user)
+                .map(userSession -> userSession.getAuthenticatedClientSessionByClient(client.getId()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList()) // collect to avoid concurrent modification.
+                .forEach(clientSession -> {
+                    backchannelLogoutClientSession(session, realm, clientSession, null, uriInfo, headers);
+                    clientSession.setAction(AuthenticationSessionModel.Action.LOGGED_OUT.name());
+                    TokenManager.dettachClientSession(session.sessions(), realm, clientSession);
+                });
     }
 
     public static Response browserLogout(KeycloakSession session,

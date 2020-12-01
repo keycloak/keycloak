@@ -46,10 +46,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -249,8 +251,10 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         }
 
 
-        assertSessions(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user1", realm)), sessions[0], sessions[1]);
-        assertSessions(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user2", realm)), sessions[2]);
+        assertSessions(session.sessions().getUserSessionsStream(realm, session.users().getUserByUsername("user1", realm))
+                .collect(Collectors.toList()), sessions[0], sessions[1]);
+        assertSessions(session.sessions().getUserSessionsStream(realm, session.users().getUserByUsername("user2", realm))
+                .collect(Collectors.toList()), sessions[2]);
     }
 
     @Test
@@ -262,20 +266,18 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
             inheritClientConnection(session, kcSession);
             createSessions(kcSession);
         });
-        Map<String, Integer> clientSessionsKept = new HashMap<>();
-        for (UserSessionModel s : session.sessions().getUserSessions(realm,
-            session.users().getUserByUsername("user2", realm))) {
-
-            clientSessionsKept.put(s.getId(), s.getAuthenticatedClientSessions().keySet().size());
-        }
+        Map<String, Integer> clientSessionsKept = session.sessions().getUserSessionsStream(realm,
+                session.users().getUserByUsername("user2", realm))
+                .collect(Collectors.toMap(model -> model.getId(), model -> model.getAuthenticatedClientSessions().keySet().size()));
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession kcSession) -> {
             kcSession.sessions().removeUserSessions(realm, kcSession.users().getUserByUsername("user1", realm));
         });
 
-        assertTrue(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user1", realm)).isEmpty());
-        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm,
-            session.users().getUserByUsername("user2", realm));
+        assertEquals(0, session.sessions().getUserSessionsStream(realm, session.users().getUserByUsername("user1", realm))
+                .count());
+        List<UserSessionModel> userSessions = session.sessions().getUserSessionsStream(realm,
+            session.users().getUserByUsername("user2", realm)).collect(Collectors.toList());
 
         assertSame(userSessions.size(), 1);
 
@@ -309,8 +311,10 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
             kcSession.sessions().removeUserSessions(realm);
         });
 
-        assertTrue(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user1", realm)).isEmpty());
-        assertTrue(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user2", realm)).isEmpty());
+        assertEquals(0, session.sessions().getUserSessionsStream(realm, session.users().getUserByUsername("user1", realm))
+                .count());
+        assertEquals(0, session.sessions().getUserSessionsStream(realm, session.users().getUserByUsername("user2", realm))
+                .count());
     }
 
     @Test
@@ -544,8 +548,10 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         }
 
 
-        assertSessions(session.sessions().getUserSessions(realm, realm.getClientByClientId("test-app")), sessions[0], sessions[1], sessions[2]);
-        assertSessions(session.sessions().getUserSessions(realm, realm.getClientByClientId("third-party")), sessions[0]);
+        assertSessions(session.sessions().getUserSessionsStream(realm, realm.getClientByClientId("test-app"))
+                .collect(Collectors.toList()), sessions[0], sessions[1], sessions[2]);
+        assertSessions(session.sessions().getUserSessionsStream(realm, realm.getClientByClientId("third-party"))
+                .collect(Collectors.toList()), sessions[0]);
     }
 
     @Test
@@ -663,7 +669,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
     }
 
     private static void assertPaginatedSession(KeycloakSession session, RealmModel realm, ClientModel client, int start, int max, int expectedSize) {
-        List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, client, start, max);
+        List<UserSessionModel> sessions = session.sessions().getUserSessionsStream(realm, client, start, max).collect(Collectors.toList());
         String[] actualIps = new String[sessions.size()];
 
         for (int i = 0; i < actualIps.length; i++) {
@@ -773,11 +779,11 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
 
         session.userStorageManager().removeUser(realm, user1);
 
-        assertTrue(session.sessions().getUserSessions(realm, user1).isEmpty());
+        assertEquals(0, session.sessions().getUserSessionsStream(realm, user1).count());
 
         session.getTransactionManager().commit();
 
-        assertFalse(session.sessions().getUserSessions(realm, session.users().getUserByUsername("user2", realm)).isEmpty());
+        assertNotEquals(0, session.sessions().getUserSessionsStream(realm, session.users().getUserByUsername("user2", realm)).count());
 
         user1 = session.users().getUserByUsername("user1", realm);
         user2 = session.users().getUserByUsername("user2", realm);
