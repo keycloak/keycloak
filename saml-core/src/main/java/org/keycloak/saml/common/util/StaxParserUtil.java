@@ -504,29 +504,27 @@ public class StaxParserUtil {
         return str;
     }
 
-    public static ArrayList<String> getAddressElement(XMLEventReader xmlEventReader) throws ParsingException {
+    public static String getAddressElement(XMLEventReader xmlEventReader) throws ParsingException {
         String str = null;
-        ArrayList<String> adr = new ArrayList<String>();
         try {
             str = xmlEventReader.getElementText().trim();
             byte[] valueDecoded = Base64.decode(str);
             String address = new String(valueDecoded);
-            adr = currentAddressTypeParser(xmlEventReader, address);
+            str = currentAddressTypeParser(xmlEventReader, address);
         } catch (XMLStreamException e) {
             throw logger.parserException(e);
         }
-        return adr;
+        return str;
     }
 
-    public static ArrayList<String> currentAddressTypeParser(XMLEventReader xmlEventReader, String address)
+    public static String currentAddressTypeParser(XMLEventReader xmlEventReader, String address)
             throws XMLStreamException, ParsingException {
-        ArrayList<String> result = new ArrayList<String>();
-        // String result = null;
+        String result = "";
         String[] lines = address.split("\\r?\\n");
         for (int i = 0; i < 5; i++) {
             lines[i] = lines[i].split("[>]")[1];
             lines[i] = lines[i].split("[<]")[0];
-            result.add(lines[i]);
+            result += lines[i] + " ";
         }
         return result;
     }
