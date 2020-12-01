@@ -94,6 +94,7 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -414,13 +415,17 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     @Path("{provider_id}/endpoint")
     public Object getEndpoint(@PathParam("provider_id") String providerId) {
-        IdentityProvider identityProvider = getIdentityProvider(session, realmModel, providerId);
+        IdentityProvider identityProvider;
+
+        try {
+            identityProvider = getIdentityProvider(session, realmModel, providerId);
+        } catch (IdentityBrokerException e) {
+            throw new NotFoundException(e.getMessage());
+        }
+
         Object callback = identityProvider.callback(realmModel, this, event);
         ResteasyProviderFactory.getInstance().injectProperties(callback);
-        //resourceContext.initResource(brokerService);
         return callback;
-
-
     }
 
     @Path("{provider_id}/token")
