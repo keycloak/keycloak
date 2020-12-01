@@ -286,16 +286,16 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     }
 
     protected void testMigrationTo12_0_0() {
-        testAccountConsoleClientHasDeleteUserRole(masterRealm);
-        testAccountConsoleClientHasDeleteUserRole(migrationRealm);
+        testDeleteAccount(masterRealm);
+        testDeleteAccount(migrationRealm);
     }
 
-    private void testAccountConsoleClientHasDeleteUserRole(RealmResource realm) {
+    private void testDeleteAccount(RealmResource realm) {
         ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
-
         ClientResource accountResource = realm.clients().get(accountClient.getId());
-        RoleRepresentation deleteUserRole = accountResource.roles().get(AccountRoles.DELETE_ACCOUNT).toRepresentation();
-        assertNotNull(deleteUserRole);
+
+        assertNotNull(accountResource.roles().get(AccountRoles.DELETE_ACCOUNT).toRepresentation());
+        assertNotNull(realm.flows().getRequiredAction("delete_account"));
     }
 
     private void testAccountClient(RealmResource realm) {

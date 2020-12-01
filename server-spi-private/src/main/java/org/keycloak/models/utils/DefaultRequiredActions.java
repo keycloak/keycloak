@@ -84,7 +84,10 @@ public class DefaultRequiredActions {
         }
 
         addUpdateLocaleAction(realm);
+        addDeleteAccountAction(realm);
+    }
 
+    public static void addDeleteAccountAction(RealmModel realm) {
         if (realm.getRequiredActionProviderByAlias("delete_account") == null) {
             RequiredActionProviderModel deleteAccount = new RequiredActionProviderModel();
             deleteAccount.setEnabled(false);
