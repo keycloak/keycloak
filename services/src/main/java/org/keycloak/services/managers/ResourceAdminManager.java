@@ -37,7 +37,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -118,38 +117,6 @@ public class ResourceAdminManager {
 
         return result;
     }
-
-    public void logoutUser(RealmModel realm, UserModel user, KeycloakSession keycloakSession) {
-        keycloakSession.users().setNotBeforeForUser(realm, user, Time.currentTime());
-
-        List<UserSessionModel> userSessions = keycloakSession.sessions().getUserSessions(realm, user);
-        logoutUserSessions(realm, userSessions);
-    }
-
-    protected void logoutUserSessions(RealmModel realm, List<UserSessionModel> userSessions) {
-        // Map from "app" to clientSessions for this app
-        MultivaluedHashMap<String, AuthenticatedClientSessionModel> clientSessions = new MultivaluedHashMap<>();
-        for (UserSessionModel userSession : userSessions) {
-            putClientSessions(clientSessions, userSession);
-        }
-
-        logger.debugv("logging out {0} resources ", clientSessions.size());
-        //logger.infov("logging out resources: {0}", clientSessions);
-
-        for (Map.Entry<String, List<AuthenticatedClientSessionModel>> entry : clientSessions.entrySet()) {
-            if (entry.getValue().size() == 0) {
-                continue;
-            }
-            logoutClientSessions(realm, entry.getValue().get(0).getClient(), entry.getValue());
-        }
-    }
-
-    private void putClientSessions(MultivaluedHashMap<String, AuthenticatedClientSessionModel> clientSessions, UserSessionModel userSession) {
-        for (Map.Entry<String, AuthenticatedClientSessionModel> entry : userSession.getAuthenticatedClientSessions().entrySet()) {
-            clientSessions.add(entry.getKey(), entry.getValue());
-        }
-    }
-
 
     public Response logoutClientSession(RealmModel realm, ClientModel resource, AuthenticatedClientSessionModel clientSession) {
         return logoutClientSessions(realm, resource, Arrays.asList(clientSession));

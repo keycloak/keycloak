@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -102,10 +103,8 @@ public class UserSessionPersisterProviderTest extends AbstractTestRealmKeycloakT
             // Persist 3 created userSessions and clientSessions as offline
             RealmModel realm = sessionWL22.realms().getRealm("test");
             ClientModel testApp = realm.getClientByClientId("test-app");
-            List<UserSessionModel> userSessions = sessionWL22.sessions().getUserSessions(realm, testApp);
-            for (UserSessionModel userSessionLooper : userSessions) {
-                persistUserSession(sessionWL22, userSessionLooper, true);
-            }
+            sessionWL22.sessions().getUserSessionsStream(realm, testApp).collect(Collectors.toList())
+                    .forEach(userSessionLooper -> persistUserSession(sessionWL22, userSessionLooper, true));
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionWL2) -> {
