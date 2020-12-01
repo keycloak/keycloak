@@ -1,13 +1,13 @@
 [id="proc-specifying-default-groups_{context}"]
 
-==== Default Groups
+= Using Default Groups
 [role="_abstract"]
 To automatically assign group membership to any users who is created or who is imported through <<_identity_broker, Identity Brokering>>, you use default groups.
-
-To specify default groups:
 
 . Click *Groups* in the menu.
 . Click the *Default Groups* tab.
 
 .Default Groups
 image:{project_images}/default-groups.png[]
+
+This screenshot shows that some _default groups_ already exist.

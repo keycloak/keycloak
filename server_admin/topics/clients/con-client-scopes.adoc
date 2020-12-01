@@ -1,7 +1,7 @@
 [id="con-client-scopes_{context}"]
 
 [[_client_scopes]]
-=== Client Scopes
+= Client Scopes
 
 [role="_abstract"]
 Use {project_name} to define a shared client configuration in an entity called a _client scope_. A _client scope_ configures <<_protocol-mappers, protocol mappers>> and <<_role_scope_mappings, role scope mappings>> for multiple clients.
@@ -10,7 +10,7 @@ Client scopes also support the OAuth 2 *scope* parameter. Client applications us
 
 include::proc-creating-client-scopes.adoc[]
 
-==== Protocol
+== Protocol
 When you create a client scope, choose the *Protocol*. Clients linked in the same scope must have the same protocol.
 
 Each realm has a set of pre-defined built-in client scopes in the menu.
@@ -50,7 +50,7 @@ When the *phone* client scope is linked to a client, the client automatically in
 
 Built-in client scopes contain the protocol mappers as defined in the specification. You are free to edit client scopes and create, update, or remove any protocol mappers or role scope mappings.
 
-==== Consent related settings
+== Consent related settings
 Client scopes contain options related to the consent screen. Those options are useful if the linked client if *Consent Required* is enabled on the client.
 
 Display On Consent Screen::
@@ -60,7 +60,7 @@ Consent Screen Text::
   The text displayed on the consent screen when this client scope is added to a client when consent required defaults to the name of client scope. The value for this text can be customised by specifying a substitution variable with *${var-name}* strings. The customised value is  configured within the property files in your theme. See the  link:{developerguide_link}[{developerguide_name}] for more information on customisation.
 
 [[_client_scopes_linking]]
-==== Link Client Scope with the Client
+== Link Client Scope with the Client
 Linking between a client scope and a client is configured in the *Client Scopes* tab of the client. Two ways of linking between client scope and client are available.
 
 Default Client Scopes::
@@ -69,7 +69,7 @@ This setting is applicable to the OpenID Connect and SAML clients. Default clien
 Optional Client Scopes::
 This setting is applicable only for OpenID Connect clients. Optional client scopes are applied when issuing tokens for this client but only when requested by the *scope* parameter in the OpenID Connect authorization request.
 
-===== Example
+=== Example
 For this example, assume the client has *profile* and *email* linked as default client scopes, and *phone* and *address* linked as optional client scopes. The client uses the value of the scope parameter when sending a request to the OpenID Connect authorization endpoint.
 
 [source,bash,subs=+attributes]
@@ -80,10 +80,10 @@ scope=openid phone
 The scope parameter contains the string, with the scope values divided by spaces. The value *openid* is the meta-value used for all OpenID Connect requests. The token will contain mappers and role scope mappings from the default client scopes *profile* and *email* as well as *phone*, an optional client scope requested by the scope parameter.
 
 [[_client_scopes_evaluate]]
-==== Evaluating Client Scopes
+== Evaluating Client Scopes
 include::proc-evaluating-client-scopes.adoc[]
 
-==== Client Scopes Permissions
+== Client Scopes Permissions
 
 When issuing tokens to a user, the client scope applies only if the user is permitted to use it.
 
@@ -91,10 +91,10 @@ When a client scope does not have any role scope mappings defined, each user is 
 
 If a user is not permitted to use the client scope, no protocol mappers or role scope mappings will be used when generating tokens. The client scope will not appear in the _scope_ value in the token.
 
-==== Realm Default Client Scopes
+== Realm Default Client Scopes
 include::proc-updating-default-scopes.adoc[]
 
-==== Scopes explained
+== Scopes explained
 Client scope::
 Client scopes are entities in {project_name} that are configured at the realm level and can be linked to clients. Client scopes are referenced by their name when a request is sent to the {project_name} authorization endpoint with a corresponding value of the *scope* parameter. See the <<_client_scopes_linking, client scopes linking>> section for more details.
 

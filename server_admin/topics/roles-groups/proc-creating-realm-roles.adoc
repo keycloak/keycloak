@@ -1,12 +1,10 @@
 [id="proc-creating-realm-roles_{context}"]
 
-=== Realm Roles
+= Creating a Realm Role
 [role="_abstract"]
 Realm-level roles are a namespace for defining your roles. To see the list of roles, click *Roles* in the menu.
 
 image:{project_images}/roles.png[]
-
-To create a role:
 
 .Procedure
 . Click *Add Role*.

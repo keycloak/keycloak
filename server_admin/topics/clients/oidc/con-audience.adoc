@@ -1,8 +1,6 @@
-[id="con_audience_{context}"]
 
-[[_audience]]
-
-==== Audience Support
+[id="con-audience_{context}"]
+= Audience Support
 [role="_abstract"]
 Typically, the environment where {project_name} is deployed consists of a set of _confidential_ or _public_ client applications that use {project_name} for authentication.
 
@@ -48,7 +46,7 @@ If the client wants to invoke the trusted service later, it must obtain another 
 ----
 Use this value to invoke the *<trusted service>*.
 
-===== Setup
+== Setup
 
 When setting up audience checking:
 
@@ -57,7 +55,7 @@ When setting up audience checking:
 * Ensure that access tokens issued by {project_name} contain all necessary audiences. Audiences can be added using the client roles as described in the <<_audience_resolve, next section>> or hardcoded as described in <<_audience_hardcoded, below>>.
 
 [[_audience_resolve]]
-===== Automatically add audience
+== Automatically add audience
 
 An _Audience Resolve_ protocol mapper is defined in the default client scope _roles_. The mapper checks for clients that have at least one client role available for the current token. The client ID of each client is then added as an audience, which is useful if your service (usually bearer-only) clients rely on client roles.
 
@@ -86,7 +84,7 @@ If you need the client itself as an audience, see the
 ====
 
 [[_audience_hardcoded]]
-===== Hardcoded audience
+== Hardcoded audience
 
 When your service relies on realm roles or does not rely on the roles in the token at all, it can be useful to use a hardcoded audience. A hardcoded audience is a protocol mapper, that will add the client ID of the specified service client as an audience to the token.
 You can use any custom value, for example a URL, if you want to use a different audience than the client ID.

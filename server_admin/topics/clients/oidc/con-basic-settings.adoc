@@ -1,5 +1,5 @@
 [id="con-basic-settings_{context}"]
-==== Basic Settings
+= Basic Settings
 [role="_abstract"]
 
 When you create an OIDC client, you see the following fields on the *Settings* tab.

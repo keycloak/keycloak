@@ -1,7 +1,7 @@
 [id="con-protocol-mappers_{context}"]
 [[_protocol-mappers]]
 
-=== OIDC Token and SAML Assertion Mappings
+= OIDC Token and SAML Assertion Mappings
 
 [role="_abstract"]
 Applications receiving ID tokens, access tokens, or SAML assertions may require different roles and user metadata. 
@@ -33,7 +33,7 @@ You can use most OIDC mappers to control where the claim gets placed. You opt to
 
 include::proc-creating-mappers.adoc[]
 
-==== Priority order
+== Priority order
 
 Mapper implementations have _priority order_. _Priority order_ is not the configuration property of the mapper. It is the property of the concrete implementation of the mapper.
 
@@ -45,7 +45,7 @@ For example, to compute the roles which will be included with a token:
 . Process a JavaScript script that uses the roles and audiences already available in the token.
 
 [[_protocol-mappers_oidc-user-session-note-mappers]]
-==== OIDC User Session Note Mappers
+== OIDC User Session Note Mappers
 
 User session details are defined using mappers and are automatically included when you use or enable a feature on a client. Click *Add builtin* to include session details.
 
@@ -60,7 +60,7 @@ Service account sessions provide the following details:
 * *clientAddress*: The remote host IP of the service account's authenticated device.
 * *clientHost*: The remote host name of the service account's authenticated device.
 
-==== Script Mapper
+== Script Mapper
 
 Use the *Script Mapper* to map claims to tokens by running user-defined JavaScript code. For more details about deploying scripts to the server, see link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}].
 

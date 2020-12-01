@@ -7,4 +7,8 @@ xref:con-oidc_{context}[OpenID Connect] is the recommended protocol to secure ap
 include::proc-creating-oidc-client.adoc[]
 include::con-basic-settings.adoc[]
 include::con-advanced-settings.adoc[]
+=======
+>>>>>>> ee3211e6... applying indentation using leveloffsets
+
+>>>>>>> 25f32ee4... applying indentation using leveloffsets
 include::oidc/con-audience.adoc[]

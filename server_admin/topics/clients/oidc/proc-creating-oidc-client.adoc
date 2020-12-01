@@ -1,5 +1,5 @@
 [id="proc-creating-oidc-client_{context}"]
-==== Creating an OpenID Connect Client
+= Creating an OpenID Connect Client
 [role="_abstract"]
 To protect an application that uses the OpenID connect protocol, you create a client.
 

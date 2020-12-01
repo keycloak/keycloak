@@ -6,12 +6,12 @@ A role typically applies to one type of user. For example, an organization may i
 
 There is a global namespace for roles and each client also has its own dedicated namespace where roles can be defined. 
 
-include::roles-groups/proc-creating-realm-roles.adoc[]
-include::roles-groups/con-client-roles.adoc[]
-include::roles-groups/proc-converting-composite-roles.adoc[]
-include::roles-groups/proc-assigning-role-mappings.adoc[]
-include::roles-groups/con-default-roles.adoc[]
-include::roles-groups/con-role-scope-mappings.adoc[]
-include::roles-groups/proc-managing-groups.adoc[]
-include::roles-groups/con-comparing-groups-roles.adoc[]
-include::roles-groups/proc-specifying-default-groups.adoc[]
+include::roles-groups/proc-creating-realm-roles.adoc[leveloffset=2]
+include::roles-groups/con-client-roles.adoc[leveloffset=2]
+include::roles-groups/proc-converting-composite-roles.adoc[leveloffset=2]
+include::roles-groups/proc-assigning-role-mappings.adoc[leveloffset=2]
+include::roles-groups/proc-using-default-roles.adoc[leveloffset=2]
+include::roles-groups/con-role-scope-mappings.adoc[leveloffset=2]
+include::roles-groups/proc-managing-groups.adoc[leveloffset=2]
+include::roles-groups/con-comparing-groups-roles.adoc[leveloffset=3]
+include::roles-groups/proc-specifying-default-groups.adoc[leveloffset=3]

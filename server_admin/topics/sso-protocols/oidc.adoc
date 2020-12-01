@@ -57,7 +57,7 @@ to provide a client secret when they exchange the temporary codes for tokens.  _
 _Public_ clients are perfectly fine so long as HTTPS is strictly enforced and you are very strict about what redirect URIs are registered for the
 client.  HTML5/JavaScript clients always have to be _public_ clients because there is no way to transmit the client secret to them in a secure
 manner.  Again, this is ok so long as you use HTTPS and strictly enforce redirect URI registration.  This guide goes more detail
-into this in the <<_clients, Managing Clients>> chapter.
+into this in the xref:assembly-managing-clients_{context}[Managing Clients] chapter.
 
 {project_name} also supports the optional https://datatracker.ietf.org/doc/html/rfc7636[Proof Key for Code Exchange] specification.
 

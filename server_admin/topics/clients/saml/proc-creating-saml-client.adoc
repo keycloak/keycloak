@@ -1,6 +1,6 @@
 [id="proc-creating-saml-client_{context}"]
 
-=== SAML Clients
+= Creating a SAML Client
 [role="_abstract"]
 {project_name} supports <<_saml,SAML 2.0>> for registered applications.
 POST and Redirect bindings are supported. You can choose to require client signature validation. You can have the server sign and/or encrypt responses as well.

@@ -1,10 +1,14 @@
-[id="con-default-roles_{context}"]
+[id="proc-using-default-roles_{context}"]
 
 [[_default_roles]]
-==== Default Roles
+= Using Default Roles
 [role="_abstract"]
 Use default roles to automatically assign user role mappings when a user is created or imported through <<_identity_broker, Identity Brokering>>.
-To specify default roles, click *Roles* in the menu and click the *Default Roles* tab.
+
+.Procedure
+
+. Click *Roles* in the menu
+. Click the *Default Roles* tab.
 
 .Default Roles
 image:{project_images}/default-roles.png[]
