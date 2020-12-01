@@ -2,6 +2,8 @@ package org.keycloak.testsuite.broker;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -13,24 +15,31 @@ import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.mappers.ExternalKeycloakRoleToRoleMapper;
 import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
+import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.Urls;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
 
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -38,7 +47,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
@@ -445,6 +456,31 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             assertThat(resource, Matchers.notNullValue());
             resource.remove();
             assertThat(Optional.of(realmResource.identityProviders().findAll().size()).orElse(0), Matchers.is(COUNT_PROVIDERS));
+        }
+    }
+
+    @Test
+    public void testIdPNotFound() {
+        final String notExistingIdP = "not-exists";
+        final String realmName = Optional.ofNullable(realmsResouce().realm(bc.providerRealmName()).toRepresentation().getRealm()).orElse(null);
+        assertThat(realmName, notNullValue());
+        final String LINK = OAuthClient.AUTH_SERVER_ROOT + "/realms/" + realmName + "/broker/" + notExistingIdP + "/endpoint";
+
+        driver.navigate().to(LINK);
+
+        errorPage.assertCurrent();
+        assertThat(errorPage.getError(), is("Page not found"));
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            SimpleHttp.Response simple = SimpleHttp.doGet(LINK, client).asResponse();
+            assertThat(simple, notNullValue());
+            assertThat(simple.getStatus(), is(Response.Status.NOT_FOUND.getStatusCode()));
+
+            OAuth2ErrorRepresentation error = simple.asJson(OAuth2ErrorRepresentation.class);
+            assertThat(error, notNullValue());
+            assertThat(error.getError(), is("Identity Provider [" + notExistingIdP + "] not found."));
+        } catch (IOException ex) {
+            Assert.fail("Cannot create HTTP client. Details: " + ex.getMessage());
         }
     }
 
