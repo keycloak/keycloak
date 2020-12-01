@@ -49,15 +49,13 @@ public class NiaIdentityProviderConfig extends IdentityProviderModel {
 
     private void initialize() {
 
-//        this.setSignSpMetadata(true);
         setAuthnContextComparisonType(AuthnContextComparisonType.MINIMUM);
-        // setAuthnContextClassRefs("http://eidas.europa.eu/LoA/substantial");
+        setAuthnContextClassRefs("http://eidas.europa.eu/LoA/substantial");
         setPostBindingAuthnRequest(true);
         setPostBindingResponse(true);
-//        this.setPostBindingLogout(true);
+        setPostBindingLogout(true);
         setSingleSignOnServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
         setSingleLogoutServiceUrl("https://tnia.eidentita.cz/FPSTS/saml2/basic");
-//        this.setWantAuthnRequestsSigned(true);
 
     }
 
