@@ -17,7 +17,8 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
-import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -36,7 +37,6 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.headers.SecurityHeadersProvider;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -223,14 +223,11 @@ public class TokenRevocationEndpoint {
         if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType())) {
             new UserSessionManager(session).revokeOfflineToken(user, client);
         }
-
-        List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
-        for (UserSessionModel userSession : userSessions) {
-            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
-            if (clientSession != null) {
-                org.keycloak.protocol.oidc.TokenManager.dettachClientSession(session.sessions(), realm, clientSession);
-            }
-        }
+        session.sessions().getUserSessionsStream(realm, user)
+                .map(userSession -> userSession.getAuthenticatedClientSessionByClient(client.getId()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList()) // collect to avoid concurrent modification as dettachClientSession removes the user sessions.
+                .forEach(clientSession -> TokenManager.dettachClientSession(session.sessions(), realm, clientSession));
     }
 
     private void revokeAccessToken() {

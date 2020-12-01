@@ -33,7 +33,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.ConsentRepresentation;
 import org.keycloak.representations.account.ConsentScopeRepresentation;
@@ -79,6 +78,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -401,51 +401,36 @@ public class AccountRestService {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public List<ClientRepresentation> applications(@QueryParam("name") String name) {
+    public Stream<ClientRepresentation> applications(@QueryParam("name") String name) {
         checkAccountApiEnabled();
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_APPLICATIONS);
 
         Set<ClientModel> clients = new HashSet<>();
         List<String> inUseClients = new LinkedList<>();
-        List<UserSessionModel> sessions = session.sessions().getUserSessions(realm, user);
-        for(UserSessionModel s : sessions) {
-            for (AuthenticatedClientSessionModel a : s.getAuthenticatedClientSessions().values()) {
-                ClientModel client = a.getClient();
-                clients.add(client);
-                inUseClients.add(client.getClientId());
-            }
-        }
+        clients.addAll(session.sessions().getUserSessionsStream(realm, user)
+                .flatMap(s -> s.getAuthenticatedClientSessions().values().stream())
+                .map(AuthenticatedClientSessionModel::getClient)
+                .peek(client -> inUseClients.add(client.getClientId()))
+                .collect(Collectors.toSet()));
 
         List<String> offlineClients = new LinkedList<>();
-        List<UserSessionModel> offlineSessions = session.sessions().getOfflineUserSessions(realm, user);
-        for(UserSessionModel s : offlineSessions) {
-            for(AuthenticatedClientSessionModel a : s.getAuthenticatedClientSessions().values()) {
-                ClientModel client = a.getClient();
-                clients.add(client);
-                offlineClients.add(client.getClientId());
-            }
-        }
+        clients.addAll(session.sessions().getOfflineUserSessionsStream(realm, user)
+                .flatMap(s -> s.getAuthenticatedClientSessions().values().stream())
+                .map(AuthenticatedClientSessionModel::getClient)
+                .peek(client -> offlineClients.add(client.getClientId()))
+                .collect(Collectors.toSet()));
 
         Map<String, UserConsentModel> consentModels = new HashMap<>();
-        session.users().getConsentsStream(realm, user.getId()).forEach(consent -> {
-            ClientModel client = consent.getClient();
-            clients.add(client);
-            consentModels.put(client.getClientId(), consent);
-        });
+        clients.addAll(session.users().getConsentsStream(realm, user.getId())
+                .peek(consent -> consentModels.put(consent.getClient().getClientId(), consent))
+                .map(UserConsentModel::getClient)
+                .collect(Collectors.toSet()));
 
         realm.getAlwaysDisplayInConsoleClientsStream().forEach(clients::add);
 
-        List<ClientRepresentation> apps = new LinkedList<>();
-        for (ClientModel client : clients) {
-            if (client.isBearerOnly() || client.getBaseUrl() == null || client.getBaseUrl().isEmpty()) {
-                continue;
-            }
-            else if (matches(client, name)) {
-                apps.add(modelToRepresentation(client, inUseClients, offlineClients, consentModels));
-            }
-        }
-
-        return apps;
+        return clients.stream().filter(client -> !client.isBearerOnly() && client.getBaseUrl() != null && !client.getClientId().isEmpty())
+                .filter(client -> matches(client, name))
+                .map(client -> modelToRepresentation(client, inUseClients, offlineClients, consentModels));
     }
 
     private boolean matches(ClientModel client, String name) {

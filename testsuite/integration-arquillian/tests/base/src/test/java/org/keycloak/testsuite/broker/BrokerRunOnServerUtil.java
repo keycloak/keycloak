@@ -135,8 +135,7 @@ final class BrokerRunOnServerUtil {
         return (session) -> {
             RealmModel realm = session.realms().getRealmByName("consumer");
             UserModel user = session.users().getUserByUsername("testuser", realm);
-            List<UserSessionModel> userSessions = session.sessions().getUserSessions(realm, user);
-            UserSessionModel sessions = userSessions.get(0);
+            UserSessionModel sessions = session.sessions().getUserSessionsStream(realm, user).findFirst().get();
             assertEquals("sessionvalue", sessions.getNote("user-session-attr"));
         };
     }
