@@ -443,8 +443,7 @@ public class RealmManager {
             manageConsentRole.setDescription("${role_" + AccountRoles.MANAGE_CONSENT + "}");
             manageConsentRole.addCompositeRole(viewConsentRole);
 
-            RoleModel deleteOwnAccount = accountClient.addRole(AccountRoles.DELETE_ACCOUNT);
-            deleteOwnAccount.setDescription("${role_"+AccountRoles.DELETE_ACCOUNT+"}");
+            KeycloakModelUtils.setupDeleteAccount(accountClient);
 
             ClientModel accountConsoleClient = realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID);
             if (accountConsoleClient == null) {
@@ -550,6 +549,7 @@ public class RealmManager {
             setupOfflineTokens(realm, rep);
         }
 
+
         if (rep.getClientScopes() == null) {
             createDefaultClientScopes(realm);
         }
@@ -582,6 +582,10 @@ public class RealmManager {
 
         setupAuthenticationFlows(realm);
         setupRequiredActions(realm);
+
+        if (!hasRealmRole(rep, AccountRoles.DELETE_ACCOUNT)) {
+            KeycloakModelUtils.setupDeleteAccount(realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID));
+        }
 
         // Refresh periodic sync tasks for configured storageProviders
         UserStorageSyncManager storageSync = new UserStorageSyncManager();

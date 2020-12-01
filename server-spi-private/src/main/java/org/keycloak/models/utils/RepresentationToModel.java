@@ -294,6 +294,7 @@ public class RepresentationToModel {
 
                 newRealm.addRequiredActionProvider(model);
             }
+            DefaultRequiredActions.addDeleteAccountAction(newRealm);
         } else {
             DefaultRequiredActions.addActions(newRealm);
         }
