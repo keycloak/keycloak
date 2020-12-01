@@ -50,7 +50,6 @@ public class NiaIdentityProviderConfig extends IdentityProviderModel {
     private void initialize() {
 
         setAuthnContextComparisonType(AuthnContextComparisonType.MINIMUM);
-        setAuthnContextClassRefs("http://eidas.europa.eu/LoA/substantial");
         setPostBindingAuthnRequest(true);
         setPostBindingResponse(true);
         setPostBindingLogout(true);
