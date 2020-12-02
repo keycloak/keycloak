@@ -1,17 +1,17 @@
 import React from "react";
 import { Meta } from "@storybook/react";
 import { Page } from "@patternfly/react-core";
-import { RolesForm } from "../realm-roles/RealmRoleDetails";
+import { RealmRolesForm } from "../realm-roles/RealmRoleForm";
 
 export default {
   title: "Role details tab",
-  component: RolesForm,
+  component: RealmRolesForm,
 } as Meta;
 
 export const RoleDetailsExample = () => {
   return (
     <Page>
-      <RolesForm />
+      <RealmRolesForm />
     </Page>
   );
 };

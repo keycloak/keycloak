@@ -11,8 +11,7 @@ import { EventsSection } from "./events/EventsSection";
 import { GroupsSection } from "./groups/GroupsSection";
 import { IdentityProvidersSection } from "./identity-providers/IdentityProvidersSection";
 import { PageNotFoundSection } from "./PageNotFoundSection";
-import { NewRoleForm } from "./realm-roles/add/NewRoleForm";
-import { RolesForm } from "./realm-roles/RealmRoleDetails";
+import { RealmRolesForm } from "./realm-roles/RealmRoleForm";
 import { RealmRolesSection } from "./realm-roles/RealmRolesSection";
 import { RealmSettingsSection } from "./realm-settings/RealmSettingsSection";
 import { NewRealmForm } from "./realm/add/NewRealmForm";
@@ -106,16 +105,16 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "view-realm",
   },
   {
-    path: "/roles/:id",
-    component: RolesForm,
-    breadcrumb: t("roles:roleDetails"),
-    access: "view-realm",
-  },
-  {
-    path: "/add-role",
-    component: NewRoleForm,
+    path: "/roles/add-role",
+    component: RealmRolesForm,
     breadcrumb: t("roles:createRole"),
     access: "manage-realm",
+  },
+  {
+    path: "/roles/:id",
+    component: RealmRolesForm,
+    breadcrumb: t("roles:roleDetails"),
+    access: "view-realm",
   },
   {
     path: "/users",

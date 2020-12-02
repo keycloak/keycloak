@@ -25,6 +25,7 @@ export const RealmRolesSection = () => {
     loader();
   }, [first, max]);
 
+  const goToCreate = () => history.push("/roles/add-role");
   return (
     <>
       <ViewHeader titleKey="roles:title" subKey="roles:roleExplain" />
@@ -42,9 +43,7 @@ export const RealmRolesSection = () => {
             }}
             toolbarItem={
               <>
-                <Button onClick={() => history.push("/add-role")}>
-                  {t("createRole")}
-                </Button>
+                <Button onClick={goToCreate}>{t("createRole")}</Button>
               </>
             }
           >
@@ -56,7 +55,7 @@ export const RealmRolesSection = () => {
             message={t("noRolesInThisRealm")}
             instructions={t("noRolesInThisRealmInstructions")}
             primaryActionText={t("createRole")}
-            onPrimaryAction={() => history.push("/add-role")}
+            onPrimaryAction={goToCreate}
           />
         )}
       </PageSection>
