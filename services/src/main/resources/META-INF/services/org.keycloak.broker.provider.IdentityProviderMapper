@@ -36,5 +36,3 @@ org.keycloak.social.stackoverflow.StackoverflowUserAttributeMapper
 org.keycloak.social.microsoft.MicrosoftUserAttributeMapper
 org.keycloak.social.instagram.InstagramUserAttributeMapper
 org.keycloak.social.nia.NiaUserAttributeMapper
-org.keycloak.social.nia.NiaAdvancedAttributeToRoleMapper
-org.keycloak.social.nia.NiaAttributeToRoleMapper
