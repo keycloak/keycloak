@@ -26,7 +26,7 @@ import liquibase.database.jvm.JdbcConnection;
 import liquibase.datatype.DataTypeFactory;
 import liquibase.exception.LiquibaseException;
 import liquibase.logging.LogFactory;
-import liquibase.logging.LogLevel;
+import liquibase.logging.LogType;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import liquibase.resource.ResourceAccessor;
 import liquibase.servicelocator.ServiceLocator;
@@ -164,95 +164,93 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
     private static class LogWrapper extends LogFactory {
 
         private static final liquibase.logging.Logger logger = new liquibase.logging.Logger() {
-            @Override
-            public void setName(String name) {
-            }
-
-            @Override
-            public void setLogLevel(String level) {
-            }
-
-            @Override
-            public void setLogLevel(LogLevel level) {
-            }
-
-            @Override
-            public void setLogLevel(String logLevel, String logFile) {
-            }
 
             @Override
             public void severe(String message) {
-                DefaultLiquibaseConnectionProvider.logger.error(message);
+                severe(null, message, null);
             }
 
             @Override
             public void severe(String message, Throwable e) {
+                severe(null, message, e);
+            }
+
+            @Override
+            public void severe(LogType target, String message) {
+                severe(target, message, null);
+            }
+
+            @Override
+            public void severe(LogType target, String message, Throwable e) {
                 DefaultLiquibaseConnectionProvider.logger.error(message, e);
             }
 
             @Override
             public void warning(String message) {
-                // Ignore this warning as cascaded drops doesn't work anyway with all DBs, which we need to support
-                if ("Database does not support drop with cascade".equals(message)) {
-                    DefaultLiquibaseConnectionProvider.logger.debug(message);
-                } else {
-                    DefaultLiquibaseConnectionProvider.logger.warn(message);
-                }
+                warning(null, message, null);
             }
 
             @Override
             public void warning(String message, Throwable e) {
-                DefaultLiquibaseConnectionProvider.logger.warn(message, e);
+                warning(null, message, e);
+            }
+
+            @Override
+            public void warning(LogType target, String message) {
+                warning(target, message, null);
+            }
+
+            @Override
+            public void warning(LogType target, String message, Throwable e) {
+                // Ignore this warning as cascaded drops doesn't work anyway with all DBs, which we need to support
+                if ("Database does not support drop with cascade".equals(message)) {
+                    DefaultLiquibaseConnectionProvider.logger.debug(message, e);
+                } else {
+                    DefaultLiquibaseConnectionProvider.logger.warn(message, e);
+                }
             }
 
             @Override
             public void info(String message) {
-                DefaultLiquibaseConnectionProvider.logger.debug(message);
+                info(null, message, null);
             }
 
             @Override
             public void info(String message, Throwable e) {
+                info(null, message, e);
+            }
+
+            @Override
+            public void info(LogType target, String message) {
+                info(target, message, null);
+            }
+
+            @Override
+            public void info(LogType target, String message, Throwable e) {
                 DefaultLiquibaseConnectionProvider.logger.debug(message, e);
             }
 
             @Override
             public void debug(String message) {
-                if (DefaultLiquibaseConnectionProvider.logger.isTraceEnabled()) {
-                    DefaultLiquibaseConnectionProvider.logger.trace(message);
-                }
-            }
-
-            @Override
-            public LogLevel getLogLevel() {
-                if (DefaultLiquibaseConnectionProvider.logger.isTraceEnabled()) {
-                    return LogLevel.DEBUG;
-                } else if (DefaultLiquibaseConnectionProvider.logger.isDebugEnabled()) {
-                    return LogLevel.INFO;
-                } else {
-                    return LogLevel.WARNING;
-                }
+                debug(null, message, null);
             }
 
             @Override
             public void debug(String message, Throwable e) {
-                DefaultLiquibaseConnectionProvider.logger.trace(message, e);
+                debug(null, message, e);
             }
 
             @Override
-            public void setChangeLog(DatabaseChangeLog databaseChangeLog) {
+            public void debug(LogType target, String message) {
+                debug(target, message, null);
             }
 
             @Override
-            public void setChangeSet(ChangeSet changeSet) {
+            public void debug(LogType target, String message, Throwable e) {
+                if (DefaultLiquibaseConnectionProvider.logger.isTraceEnabled()) {
+                    DefaultLiquibaseConnectionProvider.logger.trace(message, e);
+                }
             }
-
-            @Override
-            public int getPriority() {
-                return 0;
-            }
-
-            @Override
-            public void closeLogFile() {}
         };
 
         @Override
