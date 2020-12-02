@@ -48,8 +48,6 @@ public class NiaIdentityProviderConfig extends IdentityProviderModel {
     }
 
     private void initialize() {
-
-        setAuthnContextComparisonType(AuthnContextComparisonType.MINIMUM);
         setPostBindingAuthnRequest(true);
         setPostBindingResponse(true);
         setPostBindingLogout(true);
