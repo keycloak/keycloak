@@ -25,23 +25,31 @@ export const Header = () => {
 
   const ManageAccountDropdownItem = () => {
     return (
-      <DropdownItem
-        key="manage account"
-        onClick={() => adminClient.keycloak.accountManagement()}
-      >
-        {t("manageAccount")}
-      </DropdownItem>
+      <>
+        {adminClient.keycloak && (
+          <DropdownItem
+            key="manage account"
+            onClick={() => adminClient.keycloak.accountManagement()}
+          >
+            {t("manageAccount")}
+          </DropdownItem>
+        )}
+      </>
     );
   };
 
   const SignOutDropdownItem = () => {
     return (
-      <DropdownItem
-        key="sign out"
-        onClick={() => adminClient.keycloak.logout({ redirectUri: "" })}
-      >
-        {t("signOut")}
-      </DropdownItem>
+      <>
+        {adminClient.keycloak && (
+          <DropdownItem
+            key="sign out"
+            onClick={() => adminClient.keycloak.logout({ redirectUri: "" })}
+          >
+            {t("signOut")}
+          </DropdownItem>
+        )}
+      </>
     );
   };
 

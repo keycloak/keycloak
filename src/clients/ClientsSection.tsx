@@ -77,7 +77,11 @@ export const ClientsSection = () => {
             <ClientList
               clients={clients}
               refresh={loader}
-              baseUrl={adminClient.keycloak.authServerUrl!}
+              baseUrl={
+                adminClient.keycloak
+                  ? adminClient.keycloak.authServerUrl!
+                  : adminClient.baseUrl + "/"
+              }
             />
           </PaginatingTableToolbar>
         )}

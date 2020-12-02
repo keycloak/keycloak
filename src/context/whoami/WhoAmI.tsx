@@ -56,8 +56,6 @@ export const WhoAmIContextProvider = ({ children }: WhoAmIProviderProps) => {
   const adminClient = useContext(AdminClient)!;
 
   const whoAmILoader = async () => {
-    if (adminClient.keycloak === undefined) return undefined;
-
     return await adminClient.whoAmI.find();
   };
 
