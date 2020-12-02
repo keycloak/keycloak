@@ -737,7 +737,7 @@ public class CertificateValidator {
                 if (extendedKeyUsage == null || extendedKeyUsage.trim().length() == 0)
                     return _parent;
 
-                String[] strs = extendedKeyUsage.split("[,;:]]");
+                String[] strs = extendedKeyUsage.split("[,;:]");
                 for (String str : strs) {
                     _extendedKeyUsage.add(str.trim());
                 }
