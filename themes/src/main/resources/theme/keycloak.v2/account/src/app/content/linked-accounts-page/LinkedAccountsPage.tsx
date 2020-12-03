@@ -35,6 +35,7 @@ import {
 import {
     BitbucketIcon,
     CubeIcon,
+    DiscordIcon,
     FacebookIcon,
     GithubIcon,
     GitlabIcon,
@@ -222,6 +223,7 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
         if (account.providerName.toLowerCase().includes('gitlab')) return (<GitlabIcon id={socialIconId} size='xl'/>);
         if (account.providerName.toLowerCase().includes('paypal')) return (<PaypalIcon id={socialIconId} size='xl'/>);
         if (account.providerName.toLowerCase().includes('stackoverflow')) return (<StackOverflowIcon id={socialIconId} size='xl'/>);
+        if (account.providerName.toLowerCase().includes('discord')) return (<DiscordIcon id={socialIconId} size='xl'/>);
 
         return (<CubeIcon id={`${account.providerAlias}-idp-icon-default`} size='xl'/>);
     }

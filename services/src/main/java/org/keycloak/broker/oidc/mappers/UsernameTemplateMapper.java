@@ -29,6 +29,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.social.bitbucket.BitbucketIdentityProviderFactory;
+import org.keycloak.social.discord.DiscordIdentityProviderFactory;
 import org.keycloak.social.facebook.FacebookIdentityProviderFactory;
 import org.keycloak.social.github.GitHubIdentityProviderFactory;
 import org.keycloak.social.gitlab.GitLabIdentityProviderFactory;
@@ -66,6 +67,7 @@ public class UsernameTemplateMapper extends AbstractClaimMapper {
             KeycloakOIDCIdentityProviderFactory.PROVIDER_ID,
             OIDCIdentityProviderFactory.PROVIDER_ID,
             BitbucketIdentityProviderFactory.PROVIDER_ID,
+            DiscordIdentityProviderFactory.PROVIDER_ID,
             FacebookIdentityProviderFactory.PROVIDER_ID,
             GitHubIdentityProviderFactory.PROVIDER_ID,
             GitLabIdentityProviderFactory.PROVIDER_ID,
