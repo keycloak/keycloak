@@ -233,10 +233,16 @@ Leave this parameter empty to disable the Key Usage validation. See link:https:/
 *Validate Extended Key Usage*::
 Verifies one or more purposes defined in the Extended Key Usage extension. See link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.12[RFC5280, Section-4.2.1.12] for more information. Leave this parameter empty to disable the Extended Key Usage validation. {project_name} raises an error when flagged as critical by the issuing CA and a key usage extension mismatch occurs.
 
+*Validate Certificate Policy*::
+Verifies one or more policy OIDs as defined in the Certificate Policy extension. See link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.4[RFC5280, Section-4.2.1.4]. Leave the parameter empty to disable the Certificate Policy validation. Multiple policies should be separated using a comma.
+
+*Certificate Policy Validation Mode*::
+When more than one policy is specified in the `Validate Certificate Policy` setting, it decides whether the matching should check for all requested policies to be present, or one match is enough for a successful authentication. Default value is `All`, meaning that all requested policies should be present in the client certificate.
+
 *Bypass identity confirmation*::
 If enabled, X.509 client certificate authentication does not prompt the user to confirm the certificate identity. {project_name} signs in the user upon successful authentication.
 
-`Revalidate client certificate`::
+*Revalidate client certificate*::
 If set, the client certificate trust chain will be always verified at the application level using the certificates present in the configured trust store. This can be useful if the underlying web server does not enforce client certificate chain validation, for example because it is behind a non-validating load balancer or reverse proxy, or when the number of allowed CAs is too large for the mutual SSL negotiation (most browsers cap the maximum SSL negotiation packet size at 32767 bytes, which corresponds to about 200 advertised CAs). By default this option is off.
 
 ==== Adding X.509 Client Certificate Authentication to a Direct Grant Flow
