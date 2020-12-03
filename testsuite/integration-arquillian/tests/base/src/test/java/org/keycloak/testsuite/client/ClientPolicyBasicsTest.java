@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -61,6 +62,8 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -72,8 +75,10 @@ import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.Urls;
@@ -83,6 +88,7 @@ import org.keycloak.services.clientpolicy.DefaultClientPolicyProviderFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
 import org.keycloak.services.clientpolicy.condition.ClientUpdateContextConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceGroupsConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceHostsConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
@@ -154,6 +160,34 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
+
+        List<UserRepresentation> users = realm.getUsers();
+
+        LinkedList<CredentialRepresentation> credentials = new LinkedList<>();
+        CredentialRepresentation password = new CredentialRepresentation();
+        password.setType(CredentialRepresentation.PASSWORD);
+        password.setValue("password");
+        credentials.add(password);
+
+        UserRepresentation user = new UserRepresentation();
+        user.setEnabled(true);
+        user.setUsername("manage-clients");
+        user.setCredentials(credentials);
+        user.setClientRoles(Collections.singletonMap(Constants.REALM_MANAGEMENT_CLIENT_ID, Collections.singletonList(AdminRoles.MANAGE_CLIENTS)));
+
+        users.add(user);
+
+        user = new UserRepresentation();
+        user.setEnabled(true);
+        user.setUsername("create-clients");
+        user.setCredentials(credentials);
+        user.setClientRoles(Collections.singletonMap(Constants.REALM_MANAGEMENT_CLIENT_ID, Collections.singletonList(AdminRoles.CREATE_CLIENT)));
+        user.setGroups(Arrays.asList("topGroup")); // defined in testrealm.json
+
+        users.add(user);
+
+        realm.setUsers(users);
+
         testRealms.add(realm);
     }
 
@@ -996,13 +1030,21 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         registerCondition("ClientAccessTypeCondition", policyName);
         logger.info("... Registered Condition : ClientAccessTypeCondition");
 
-        policyName = "MyPolicy-ClientScopesCondition";
+        policyName = "MyPolicy-ClientUpdateSourceGroupsCondition";
         createPolicy(policyName, DefaultClientPolicyProviderFactory.PROVIDER_ID, null, null, null);
         logger.info("... Created Policy : " + policyName);
-        createCondition("ClientScopesCondition", ClientScopesConditionFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+        createCondition("ClientUpdateSourceGroupsCondition", ClientUpdateSourceGroupsConditionFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
         });
-        registerCondition("ClientScopesCondition", policyName);
-        logger.info("... Registered Condition : ClientScopesCondition");
+        registerCondition("ClientUpdateSourceGroupsCondition", policyName);
+        logger.info("... Registered Condition : ClientUpdateSourceGroupsCondition");
+
+        policyName = "MyPolicy-ClientUpdateContextCondition";
+        createPolicy(policyName, DefaultClientPolicyProviderFactory.PROVIDER_ID, null, null, null);
+        logger.info("... Created Policy : " + policyName);
+        createCondition("ClientUpdateContextCondition", ClientUpdateContextConditionFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+        });
+        registerCondition("ClientUpdateContextCondition", policyName);
+        logger.info("... Registered Condition : ClientUpdateContextCondition");
 
         policyName = "MyPolicy-ClientUpdateContextCondition";
         createPolicy(policyName, DefaultClientPolicyProviderFactory.PROVIDER_ID, null, null, null);
@@ -1075,6 +1117,41 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
             });
         } finally {
             deleteClientByAdmin(cAlphaId);
+        }
+    }
+
+    @Test
+    public void testClientUpdateSourceGroupsCondition() throws ClientRegistrationException, ClientPolicyException {
+        String policyName = "MyPolicy";
+        createPolicy(policyName, DefaultClientPolicyProviderFactory.PROVIDER_ID, null, null, null);
+        logger.info("... Created Policy : " + policyName);
+
+        createCondition("ClientUpdateSourceGroupsCondition", ClientUpdateSourceGroupsConditionFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+            setConditionClientUpdateSourceGroups(provider, new ArrayList<>(Arrays.asList("topGroup")));
+        });
+        registerCondition("ClientUpdateSourceGroupsCondition", policyName);
+        logger.info("... Registered Condition : ClientUpdateSourceGroupsCondition");
+
+        createExecutor("SecureClientAuthEnforceExecutor", SecureClientAuthEnforceExecutorFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+            setExecutorAcceptedClientAuthMethods(provider, new ArrayList<>(Arrays.asList(JWTClientAuthenticator.PROVIDER_ID)));
+        });
+        registerExecutor("SecureClientAuthEnforceExecutor", policyName);
+        logger.info("... Registered Executor : SecureClientAuthEnforceExecutor");
+
+        String cid = null;
+        try {
+            try {
+                authCreateClients();
+                createClientDynamically("Gourmet-App", (OIDCClientRepresentation clientRep) -> {});
+                fail();
+            } catch (ClientRegistrationException e) {
+                assertEquals("Failed to send request", e.getMessage());
+            }
+            authManageClients();
+            cid = createClientDynamically("Gourmet-App", (OIDCClientRepresentation clientRep) -> {});
+        } finally {
+            deleteClientByAdmin(cid);
+
         }
     }
 
@@ -1328,6 +1405,26 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         events.expect(EventType.REVOKE_GRANT).clearDetails().client(clientId).user(userId).assertEvent();
     }
 
+    private void authCreateClients() {
+        reg.auth(Auth.token(getToken("create-clients", "password")));
+    }
+
+    private void authManageClients() {
+        reg.auth(Auth.token(getToken("manage-clients", "password")));
+    }
+
+    private void authNoAccess() {
+        reg.auth(Auth.token(getToken("no-access", "password")));
+    }
+
+    private String getToken(String username, String password) {
+        try {
+            return oauth.doGrantAccessTokenRequest(REALM_NAME, username, password, null, Constants.ADMIN_CLI_CLIENT_ID, null).getAccessToken();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private ComponentRepresentation createComponentInstance(String name, String providerId, String providerType, String subType) {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setId(org.keycloak.models.utils.KeycloakModelUtils.generateId());
@@ -1540,6 +1637,10 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
     private void setConditionClientUpdateSourceHosts(ComponentRepresentation provider, List<String> hosts) {
         provider.getConfig().putSingle(ClientUpdateSourceHostsConditionFactory.HOST_SENDING_REQUEST_MUST_MATCH, "true");
         provider.getConfig().put(ClientUpdateSourceHostsConditionFactory.TRUSTED_HOSTS, hosts);
+    }
+
+    private void setConditionClientUpdateSourceGroups(ComponentRepresentation provider, List<String> groups) {
+        provider.getConfig().put(ClientUpdateSourceGroupsConditionFactory.GROUPS, groups);
     }
 
     private void setExecutorAugmentActivate(ComponentRepresentation provider) {
