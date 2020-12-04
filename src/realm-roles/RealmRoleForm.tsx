@@ -16,12 +16,7 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import {
-  Controller,
-  SubmitHandler,
-  useForm,
-  UseFormMethods,
-} from "react-hook-form";
+import { SubmitHandler, useForm, UseFormMethods } from "react-hook-form";
 
 import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import { FormAccess } from "../components/form-access/FormAccess";
@@ -63,25 +58,31 @@ const RoleForm = ({ form, save, editMode }: RoleFormType) => {
           isReadOnly={editMode}
         />
       </FormGroup>
-      <FormGroup label={t("description")} fieldId="kc-description">
-        <Controller
+      <FormGroup
+        label={t("description")}
+        fieldId="kc-description"
+        validated={
+          form.errors.description
+            ? ValidatedOptions.error
+            : ValidatedOptions.default
+        }
+        helperTextInvalid={form.errors.description?.message}
+      >
+        <TextArea
           name="description"
-          defaultValue=""
-          control={form.control}
-          rules={{ maxLength: 255 }}
-          render={({ onChange, value }) => (
-            <TextArea
-              type="text"
-              validated={
-                form.errors.description
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default
-              }
-              id="kc-role-description"
-              value={value}
-              onChange={onChange}
-            />
-          )}
+          ref={form.register({
+            maxLength: {
+              value: 255,
+              message: t("common:maxLength", { length: 255 }),
+            },
+          })}
+          type="text"
+          validated={
+            form.errors.description
+              ? ValidatedOptions.error
+              : ValidatedOptions.default
+          }
+          id="kc-role-description"
         />
       </FormGroup>
       <ActionGroup>

@@ -86,6 +86,7 @@ export const FormAccess = ({
             children,
           } as any);
         }
+
         return cloneElement(
           child,
           child.type === FormGroup ||
