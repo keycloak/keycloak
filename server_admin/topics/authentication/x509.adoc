@@ -219,6 +219,9 @@ Verifies one or more purposes as defined in the Extended Key Usage extension. Se
 `Bypass identity confirmation`::
 If set, X.509 client certificate authentication will not prompt the user to confirm the certificate identity and will automatically sign in the user upon successful authentication.
 
+`Revalidate client certificate`::
+If set, the client certificate trust chain will be always verified at the application level using the certificates present in the configured trust store. This can be useful if the underlying web server does not enforce client certificate chain validation, for example because it is behind a non-validating load balancer or reverse proxy, or when the number of allowed CAs is too large for the mutual SSL negotiation (most browsers cap the maximum SSL negotiation packet size at 32767 bytes, which corresponds to about 200 advertised CAs). By default this option is off.
+
 ==== Adding X.509 Client Certificate Authentication to a Direct Grant Flow
 
 * Using {project_name} admin console, click on "Authentication" and select the "Direct Grant" flow,
