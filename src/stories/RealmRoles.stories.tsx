@@ -1,7 +1,9 @@
 import React from "react";
 import { Meta } from "@storybook/react";
+
 import { RolesList } from "../realm-roles/RoleList";
 import rolesMock from "../realm-roles/__tests__/mock-roles.json";
+import { MockAdminClient } from "./MockAdminClient";
 
 export default {
   title: "Roles List",
@@ -9,5 +11,7 @@ export default {
 } as Meta;
 
 export const RolesListExample = () => (
-  <RolesList roles={rolesMock} refresh={() => {}} />
+  <MockAdminClient>
+    <RolesList roles={rolesMock} refresh={() => {}} />
+  </MockAdminClient>
 );

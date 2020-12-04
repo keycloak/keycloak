@@ -8,6 +8,7 @@ import {
   DownloadDialog,
   useDownloadDialog,
 } from "../components/download-dialog/DownloadDialog";
+import { MockAdminClient } from "./MockAdminClient";
 
 export default {
   title: "Download Dialog",
@@ -20,10 +21,14 @@ const Test = () => {
   });
   return (
     <ServerInfoContext.Provider value={serverInfo}>
-      <button id="show" onClick={toggle}>
-        Show
-      </button>
-      <Dialog />
+      <MockAdminClient
+        mock={{ clients: { getInstallationProviders: () => '{some: "json"}' } }}
+      >
+        <button id="show" onClick={toggle}>
+          Show
+        </button>
+        <Dialog />
+      </MockAdminClient>
     </ServerInfoContext.Provider>
   );
 };

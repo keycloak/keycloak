@@ -2,6 +2,7 @@ import React from "react";
 import { Meta } from "@storybook/react";
 import { Page } from "@patternfly/react-core";
 import { UserFederationKerberosSettings } from "../user-federation/UserFederationKerberosSettings";
+import { MockAdminClient } from "./MockAdminClient";
 
 export default {
   title: "User Federation Kerberos Settings Tab",
@@ -11,7 +12,9 @@ export default {
 export const view = () => {
   return (
     <Page>
-      <UserFederationKerberosSettings />
+      <MockAdminClient>
+        <UserFederationKerberosSettings />
+      </MockAdminClient>
     </Page>
   );
 };

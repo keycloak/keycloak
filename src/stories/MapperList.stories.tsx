@@ -5,6 +5,7 @@ import serverInfo from "../context/server-info/__tests__/mock.json";
 import clientScopeMock from "../client-scopes/__tests__/mock-client-scope.json";
 import { ServerInfoContext } from "../context/server-info/ServerInfoProvider";
 import { MapperList } from "../client-scopes/details/MapperList";
+import { MockAdminClient } from "./MockAdminClient";
 
 export default {
   title: "Mapper List",
@@ -13,6 +14,8 @@ export default {
 
 export const MapperListExample = () => (
   <ServerInfoContext.Provider value={serverInfo}>
-    <MapperList clientScope={clientScopeMock} refresh={() => {}} />
+    <MockAdminClient>
+      <MapperList clientScope={clientScopeMock} refresh={() => {}} />
+    </MockAdminClient>
   </ServerInfoContext.Provider>
 );

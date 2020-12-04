@@ -2,6 +2,7 @@ import React from "react";
 import { Meta } from "@storybook/react";
 import { Page } from "@patternfly/react-core";
 import { NewRealmForm } from "../realm/add/NewRealmForm";
+import { MockAdminClient } from "./MockAdminClient";
 
 export default {
   title: "New realm form",
@@ -11,7 +12,9 @@ export default {
 export const view = () => {
   return (
     <Page>
-      <NewRealmForm />
+      <MockAdminClient>
+        <NewRealmForm />
+      </MockAdminClient>
     </Page>
   );
 };
