@@ -634,15 +634,13 @@ public class TokenManager {
     public AccessTokenResponse transformAccessTokenResponse(KeycloakSession session, AccessTokenResponse accessTokenResponse,
             UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
 
-        for (Map.Entry<ProtocolMapperModel, ProtocolMapper> entry : ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)) {
-            ProtocolMapperModel mapping = entry.getKey();
-            ProtocolMapper mapper = entry.getValue();
-            if (mapper instanceof OIDCAccessTokenResponseMapper) {
-                accessTokenResponse = ((OIDCAccessTokenResponseMapper) mapper).transformAccessTokenResponse(accessTokenResponse, mapping, session, userSession, clientSessionCtx);
-            }
-        }
+        AtomicReference<AccessTokenResponse> finalResponseToken = new AtomicReference<>(accessTokenResponse);
+        ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)
+                .filter(mapper -> mapper.getValue() instanceof OIDCAccessTokenResponseMapper)
+                .forEach(mapper -> finalResponseToken.set(((OIDCAccessTokenResponseMapper) mapper.getValue())
+                        .transformAccessTokenResponse(finalResponseToken.get(), mapper.getKey(), session, userSession, clientSessionCtx)));
 
-        return accessTokenResponse;
+        return finalResponseToken.get();
     }
 
     public AccessToken transformUserInfoAccessToken(KeycloakSession session, AccessToken token,
