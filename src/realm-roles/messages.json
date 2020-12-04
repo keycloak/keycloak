@@ -1,10 +1,8 @@
 {
   "roles": {
     "attributes": "Attributes",
-<<<<<<< HEAD
     "addAttributeText": "Add an attribute",
-=======
->>>>>>> add role attributes, WIP
+    "deleteAttributeText": "Delete an attribute",
     "title": "Realm roles",
     "createRole": "Create role",
     "importRole": "Import role",
