@@ -16,6 +16,10 @@
     "clientScopes": "Client scopes",
     "addClientScope": "Add client scope",
     "addClientScopesTo": "Add client scopes to {{clientId}}",
+    "clientScopeRemoveSuccess": "Scope mapping successfully removed",
+    "clientScopeRemoveError": "Could not remove the scope mapping {{error}}",
+    "clientScopeSuccess": "Scope mapping successfully updated",
+    "clientScopeError": "Could not update the scope mapping {{error}}",
     "searchByName": "Search by name",
     "setup": "Setup",
     "evaluate": "Evaluate",
@@ -28,6 +32,7 @@
       "client": "Client scope",
       "assigned": "Assigned type"
     },
+    "assignedType": "Assigned type",
     "emptyClientScopes": "This client doesn't have any added client scopes",
     "emptyClientScopesInstructions": "There are currently no client scopes linked to this client. You can add existing client scopes to this client to share protocol mappers and roles.",
     "emptyClientScopesPrimaryAction": "Add client scopes",

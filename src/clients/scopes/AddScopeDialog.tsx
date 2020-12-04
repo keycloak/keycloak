@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Button,
@@ -18,25 +18,55 @@ import {
 } from "@patternfly/react-table";
 import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
 
-import { clientScopeTypesDropdown } from "./ClientScopeTypes";
+import { ClientScopeType, clientScopeTypesDropdown } from "./ClientScopeTypes";
 
 export type AddScopeDialogProps = {
   clientScopes: ClientScopeRepresentation[];
   open: boolean;
   toggleDialog: () => void;
+  onAdd: (
+    scopes: { scope: ClientScopeRepresentation; type: ClientScopeType }[]
+  ) => void;
+};
+
+type Row = {
+  selected: boolean;
+  scope: ClientScopeRepresentation;
+  cells: (string | undefined)[];
 };
 
 export const AddScopeDialog = ({
   clientScopes,
   open,
   toggleDialog,
+  onAdd,
 }: AddScopeDialogProps) => {
   const { t } = useTranslation("clients");
   const [addToggle, setAddToggle] = useState(false);
+  const [rows, setRows] = useState<Row[]>([]);
 
-  const data = clientScopes.map((scope) => {
-    return { cells: [scope.name, scope.description] };
-  });
+  useEffect(() => {
+    setRows(
+      clientScopes.map((scope) => {
+        return {
+          selected: false,
+          scope,
+          cells: [scope.name, scope.description],
+        };
+      })
+    );
+  }, [clientScopes]);
+
+  const action = (scope: ClientScopeType) => {
+    const scopes = rows
+      .filter((row) => row.selected)
+      .map((row) => {
+        return { scope: row.scope, type: scope };
+      });
+    onAdd(scopes);
+    setAddToggle(false);
+    toggleDialog();
+  };
 
   return (
     <Modal
@@ -60,13 +90,21 @@ export const AddScopeDialog = ({
               {t("common:add")}
             </DropdownToggle>
           }
-          dropdownItems={clientScopeTypesDropdown(t)}
+          dropdownItems={clientScopeTypesDropdown(t, action)}
         />,
         <Button
           id="modal-cancel"
           key="cancel"
           variant={ButtonVariant.secondary}
-          onClick={toggleDialog}
+          onClick={() => {
+            setRows(
+              rows.map((row) => {
+                row.selected = false;
+                return row;
+              })
+            );
+            toggleDialog();
+          }}
         >
           {t("common:cancel")}
         </Button>,
@@ -75,8 +113,20 @@ export const AddScopeDialog = ({
       <Table
         variant={TableVariant.compact}
         cells={[t("name"), t("description")]}
-        onSelect={(_, isSelected, rowIndex) => {}}
-        rows={data}
+        onSelect={(_, isSelected, rowIndex) => {
+          if (rowIndex === -1) {
+            setRows(
+              rows.map((row) => {
+                row.selected = isSelected;
+                return row;
+              })
+            );
+          } else {
+            rows[rowIndex].selected = isSelected;
+            setRows([...rows]);
+          }
+        }}
+        rows={rows}
         aria-label={t("chooseAMapperType")}
       >
         <TableHeader />

@@ -16,7 +16,12 @@ export const clientScopeTypesSelectOptions = (t: TFunction) =>
     </SelectOption>
   ));
 
-export const clientScopeTypesDropdown = (t: TFunction) =>
+export const clientScopeTypesDropdown = (
+  t: TFunction,
+  onClick: (scope: ClientScopeType) => void
+) =>
   clientScopeTypes.map((type) => (
-    <DropdownItem key={type}>{t(`clientScope.${type}`)}</DropdownItem>
+    <DropdownItem key={type} onClick={() => onClick(type as ClientScopeType)}>
+      {t(`clientScope.${type}`)}
+    </DropdownItem>
   ));

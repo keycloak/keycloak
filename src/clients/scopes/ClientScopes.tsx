@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { TFunction } from "i18next";
 import {
   IFormatter,
   IFormatterValueType,
@@ -10,6 +9,7 @@ import {
   TableVariant,
 } from "@patternfly/react-table";
 import {
+  AlertVariant,
   Button,
   Dropdown,
   DropdownItem,
@@ -32,6 +32,7 @@ import {
   ClientScopeType,
   ClientScope,
 } from "./ClientScopeTypes";
+import { useAlerts } from "../../components/alert/Alerts";
 
 export type ClientScopesProps = {
   clientId: string;
@@ -41,6 +42,11 @@ export type ClientScopesProps = {
 const firstUpperCase = (name: string) =>
   name.charAt(0).toUpperCase() + name.slice(1);
 
+const castAdminClient = (adminClient: KeycloakAdminClient) =>
+  (adminClient.clients as unknown) as {
+    [index: string]: Function;
+  };
+
 const changeScope = async (
   adminClient: KeycloakAdminClient,
   clientId: string,
@@ -48,30 +54,43 @@ const changeScope = async (
   type: ClientScopeType,
   changeTo: ClientScopeType
 ) => {
-  const typeToName = firstUpperCase(type);
-  const changeToName = firstUpperCase(changeTo);
+  await removeScope(adminClient, clientId, clientScope, type);
+  await addScope(adminClient, clientId, clientScope, changeTo);
+};
 
-  const indexedAdminClient = (adminClient.clients as unknown) as {
-    [index: string]: Function;
-  };
-  await indexedAdminClient[`del${typeToName}ClientScope`]({
+const removeScope = async (
+  adminClient: KeycloakAdminClient,
+  clientId: string,
+  clientScope: ClientScopeRepresentation,
+  type: ClientScopeType
+) => {
+  const typeToName = firstUpperCase(type);
+  await castAdminClient(adminClient)[`del${typeToName}ClientScope`]({
     id: clientId,
     clientScopeId: clientScope.id!,
   });
-  await indexedAdminClient[`add${changeToName}ClientScope`]({
+};
+
+const addScope = async (
+  adminClient: KeycloakAdminClient,
+  clientId: string,
+  clientScope: ClientScopeRepresentation,
+  type: ClientScopeType
+) => {
+  const typeToName = firstUpperCase(type);
+  await castAdminClient(adminClient)[`add${typeToName}ClientScope`]({
     id: clientId,
     clientScopeId: clientScope.id!,
   });
 };
 
 type CellDropdownProps = {
-  clientId: string;
   clientScope: ClientScopeRepresentation;
   type: ClientScopeType;
+  onSelect: (value: ClientScopeType) => void;
 };
 
-const CellDropdown = ({ clientId, clientScope, type }: CellDropdownProps) => {
-  const adminClient = useAdminClient();
+const CellDropdown = ({ clientScope, type, onSelect }: CellDropdownProps) => {
   const { t } = useTranslation("clients");
   const [open, setOpen] = useState(false);
 
@@ -82,13 +101,7 @@ const CellDropdown = ({ clientId, clientScope, type }: CellDropdownProps) => {
       isOpen={open}
       selections={[type]}
       onSelect={(_, value) => {
-        changeScope(
-          adminClient,
-          clientId,
-          clientScope,
-          type,
-          value as ClientScopeType
-        );
+        onSelect(value as ClientScopeType);
         setOpen(false);
       }}
     >
@@ -100,6 +113,7 @@ const CellDropdown = ({ clientId, clientScope, type }: CellDropdownProps) => {
 type SearchType = "client" | "assigned";
 
 type TableRow = {
+  selected: boolean;
   clientScope: ClientScopeRepresentation;
   type: ClientScopeType;
   cells: (string | undefined)[];
@@ -108,6 +122,8 @@ type TableRow = {
 export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
+  const { addAlert } = useAlerts();
+
   const [searchToggle, setSearchToggle] = useState(false);
   const [searchType, setSearchType] = useState<SearchType>("client");
   const [addToggle, setAddToggle] = useState(false);
@@ -131,6 +147,7 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
     const optional = optionalClientScopes.map((c) => {
       const scope = find(c.id!);
       return {
+        selected: false,
         clientScope: c,
         type: ClientScope.optional,
         cells: [c.name, c.id, scope.description],
@@ -140,35 +157,28 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
     const defaultScopes = defaultClientScopes.map((c) => {
       const scope = find(c.id!);
       return {
+        selected: false,
         clientScope: c,
         type: ClientScope.default,
         cells: [c.name, c.id, scope.description],
       };
     });
 
-    setRows([...optional, ...defaultScopes]);
-  };
+    const data = [...optional, ...defaultScopes];
+    setRows(data);
+    const names = data.map((row) => row.cells[0]);
 
-  useEffect(() => {
-    loader();
-  }, []);
-
-  useEffect(() => {
-    if (rows) {
-      loadRest(rows);
-    }
-  }, [rows]);
-
-  const loadRest = async (rows: { cells: (string | undefined)[] }[]) => {
-    const clientScopes = await adminClient.clientScopes.find();
-    const names = rows.map((row) => row.cells[0]);
-
+    console.log("set rest");
     setRest(
       clientScopes
         .filter((scope) => !names.includes(scope.name))
         .filter((scope) => scope.protocol === protocol)
     );
   };
+
+  useEffect(() => {
+    loader();
+  }, []);
 
   const dropdown = (): IFormatter => (data?: IFormatterValueType) => {
     if (!data) {
@@ -177,9 +187,23 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
     const row = rows?.find((row) => row.clientScope.id === data.toString())!;
     return (
       <CellDropdown
-        clientId={clientId}
         clientScope={row.clientScope}
         type={row.type}
+        onSelect={async (value) => {
+          try {
+            await changeScope(
+              adminClient,
+              clientId,
+              row.clientScope,
+              row.type,
+              value
+            );
+            addAlert(t("clientScopeSuccess"), AlertVariant.success);
+            await loader();
+          } catch (error) {
+            addAlert(t("clientScopeError", { error }), AlertVariant.danger);
+          }
+        }}
       />
     );
   };
@@ -194,109 +218,179 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
         </div>
       )}
 
-      {rows && rows.length > 0 && (
-        <>
-          {rest && (
-            <AddScopeDialog
-              clientScopes={rest}
-              open={addDialogOpen}
-              toggleDialog={() => setAddDialogOpen(!addDialogOpen)}
-            />
-          )}
+      {rest && (
+        <AddScopeDialog
+          clientScopes={rest}
+          open={addDialogOpen}
+          toggleDialog={() => setAddDialogOpen(!addDialogOpen)}
+          onAdd={async (scopes) => {
+            try {
+              await Promise.all(
+                scopes.map(
+                  async (scope) =>
+                    await addScope(
+                      adminClient,
+                      clientId,
+                      scope.scope,
+                      scope.type
+                    )
+                )
+              );
+              addAlert(t("clientScopeSuccess"), AlertVariant.success);
+              loader();
+            } catch (error) {
+              addAlert(t("clientScopeError", { error }), AlertVariant.danger);
+            }
+          }}
+        />
+      )}
 
-          <TableToolbar
-            searchTypeComponent={
-              <Dropdown
-                toggle={
-                  <DropdownToggle
-                    id="toggle-id"
-                    onToggle={() => setSearchToggle(!searchToggle)}
-                  >
-                    <FilterIcon /> {t(`clientScopeSearch.${searchType}`)}
-                  </DropdownToggle>
-                }
-                aria-label="Select Input"
-                isOpen={searchToggle}
-                dropdownItems={[
-                  <DropdownItem
-                    key="client"
-                    onClick={() => {
-                      setSearchType("client");
-                      setSearchToggle(false);
-                    }}
-                  >
-                    {t("clientScopeSearch.client")}
-                  </DropdownItem>,
-                  <DropdownItem
-                    key="assigned"
-                    onClick={() => {
-                      setSearchType("assigned");
-                      setSearchToggle(false);
-                    }}
-                  >
-                    {t("clientScopeSearch.assigned")}
-                  </DropdownItem>,
-                ]}
-              />
-            }
-            inputGroupName="clientsScopeToolbarTextInput"
-            inputGroupPlaceholder={t("searchByName")}
-            inputGroupOnChange={filterData}
-            toolbarItem={
-              <Split hasGutter>
-                <SplitItem>
-                  <Button onClick={() => setAddDialogOpen(true)}>
-                    {t("addClientScope")}
-                  </Button>
-                </SplitItem>
-                <SplitItem>
-                  <Select
-                    id="add-dropdown"
-                    key="add-dropdown"
-                    isOpen={addToggle}
-                    selections={[]}
-                    placeholderText={t("changeTypeTo")}
-                    onToggle={() => setAddToggle(!addToggle)}
-                    onSelect={(_, value) => {
-                      console.log(value);
+      {rows && rows.length > 0 && (
+        <TableToolbar
+          searchTypeComponent={
+            <Dropdown
+              toggle={
+                <DropdownToggle
+                  id="toggle-id"
+                  onToggle={() => setSearchToggle(!searchToggle)}
+                >
+                  <FilterIcon /> {t(`clientScopeSearch.${searchType}`)}
+                </DropdownToggle>
+              }
+              aria-label="Select Input"
+              isOpen={searchToggle}
+              dropdownItems={[
+                <DropdownItem
+                  key="client"
+                  onClick={() => {
+                    setSearchType("client");
+                    setSearchToggle(false);
+                  }}
+                >
+                  {t("clientScopeSearch.client")}
+                </DropdownItem>,
+                <DropdownItem
+                  key="assigned"
+                  onClick={() => {
+                    setSearchType("assigned");
+                    setSearchToggle(false);
+                  }}
+                >
+                  {t("clientScopeSearch.assigned")}
+                </DropdownItem>,
+              ]}
+            />
+          }
+          inputGroupName="clientsScopeToolbarTextInput"
+          inputGroupPlaceholder={t("searchByName")}
+          inputGroupOnChange={filterData}
+          toolbarItem={
+            <Split hasGutter>
+              <SplitItem>
+                <Button onClick={() => setAddDialogOpen(true)}>
+                  {t("addClientScope")}
+                </Button>
+              </SplitItem>
+              <SplitItem>
+                <Select
+                  id="add-dropdown"
+                  key="add-dropdown"
+                  isOpen={addToggle}
+                  selections={[]}
+                  placeholderText={t("changeTypeTo")}
+                  onToggle={() => setAddToggle(!addToggle)}
+                  onSelect={async (_, value) => {
+                    try {
+                      await Promise.all(
+                        rows.map((row) => {
+                          if (row.selected) {
+                            return changeScope(
+                              adminClient,
+                              clientId,
+                              row.clientScope,
+                              row.type,
+                              value as ClientScope
+                            );
+                          }
+                          return Promise.resolve();
+                        })
+                      );
                       setAddToggle(false);
-                    }}
-                  >
-                    {clientScopeTypesSelectOptions(t)}
-                  </Select>
-                </SplitItem>
-              </Split>
-            }
-          >
-            <Table
-              onSelect={() => {}}
-              variant={TableVariant.compact}
-              cells={[
-                t("name"),
-                { title: t("description"), cellFormatters: [dropdown()] },
-                t("protocol"),
-              ]}
-              rows={rows}
-              actions={[
-                {
-                  title: t("common:remove"),
-                  onClick: () => {},
+                      await loader();
+                      addAlert(t("clientScopeSuccess"), AlertVariant.success);
+                    } catch (error) {
+                      addAlert(
+                        t("clientScopeError", { error }),
+                        AlertVariant.danger
+                      );
+                    }
+                  }}
+                >
+                  {clientScopeTypesSelectOptions(t)}
+                </Select>
+              </SplitItem>
+            </Split>
+          }
+        >
+          <Table
+            onSelect={(_, isSelected, rowIndex) => {
+              if (rowIndex === -1) {
+                setRows(
+                  rows.map((row) => {
+                    row.selected = isSelected;
+                    return row;
+                  })
+                );
+              } else {
+                rows[rowIndex].selected = isSelected;
+                setRows([...rows]);
+              }
+            }}
+            variant={TableVariant.compact}
+            cells={[
+              t("name"),
+              { title: t("assignedType"), cellFormatters: [dropdown()] },
+              t("description"),
+            ]}
+            rows={rows}
+            actions={[
+              {
+                title: t("common:remove"),
+                onClick: async (_, rowId) => {
+                  try {
+                    await removeScope(
+                      adminClient,
+                      clientId,
+                      rows[rowId].clientScope,
+                      rows[rowId].type
+                    );
+                    addAlert(
+                      t("clientScopeRemoveSuccess"),
+                      AlertVariant.success
+                    );
+                    loader();
+                  } catch (error) {
+                    addAlert(
+                      t("clientScopeRemoveError", { error }),
+                      AlertVariant.danger
+                    );
+                  }
                 },
-              ]}
-              aria-label={t("clientScopeList")}
-            >
-              <TableHeader />
-              <TableBody />
-            </Table>
-          </TableToolbar>
-        </>
+              },
+            ]}
+            aria-label={t("clientScopeList")}
+          >
+            <TableHeader />
+            <TableBody />
+          </Table>
+        </TableToolbar>
       )}
       {rows && rows.length === 0 && (
         <ListEmptyState
           message={t("clients:emptyClientScopes")}
           instructions={t("clients:emptyClientScopesInstructions")}
           primaryActionText={t("clients:emptyClientScopesPrimaryAction")}
-          onPrimaryAction={() => {}}
+          onPrimaryAction={() => setAddDialogOpen(true)}
         />
       )}
     </>
