@@ -885,7 +885,7 @@ public class ModelToRepresentation {
             ClientModel clientModel = realm.getClientById(resourceServer);
             owner.setName(clientModel.getClientId());
         } else {
-            UserModel userModel = keycloakSession.users().getUserById(owner.getId(), realm);
+            UserModel userModel = keycloakSession.users().getUserById(realm, owner.getId());
 
             if (userModel == null) {
                 throw new RuntimeException("Could not find the user [" + owner.getId() + "] who owns the Resource [" + resource.getId() + "].");
@@ -934,8 +934,8 @@ public class ModelToRepresentation {
             representation.setResourceName(resource.getName());
             KeycloakSession keycloakSession = authorization.getKeycloakSession();
             RealmModel realm = authorization.getRealm();
-            UserModel userOwner = keycloakSession.users().getUserById(ticket.getOwner(), realm);
-            UserModel requester = keycloakSession.users().getUserById(ticket.getRequester(), realm);
+            UserModel userOwner = keycloakSession.users().getUserById(realm, ticket.getOwner());
+            UserModel requester = keycloakSession.users().getUserById(realm, ticket.getRequester());
             representation.setRequesterName(requester.getUsername());
             if (userOwner != null) {
                 representation.setOwnerName(userOwner.getUsername());

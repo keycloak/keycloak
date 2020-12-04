@@ -380,7 +380,7 @@ public class UserResource {
 
     private Stream<FederatedIdentityRepresentation> getFederatedIdentities(UserModel user) {
         Set<String> idps = realm.getIdentityProvidersStream().map(IdentityProviderModel::getAlias).collect(Collectors.toSet());
-        return session.users().getFederatedIdentitiesStream(user, realm)
+        return session.users().getFederatedIdentitiesStream(realm, user)
                 .filter(identity -> idps.contains(identity.getIdentityProvider()))
                 .map(ModelToRepresentation::toRepresentation);
     }
@@ -397,7 +397,7 @@ public class UserResource {
     @NoCache
     public Response addFederatedIdentity(final @PathParam("provider") String provider, FederatedIdentityRepresentation rep) {
         auth.users().requireManage(user);
-        if (session.users().getFederatedIdentity(user, provider, realm) != null) {
+        if (session.users().getFederatedIdentity(realm, user, provider) != null) {
             return ErrorResponse.exists("User is already linked with provider");
         }
 

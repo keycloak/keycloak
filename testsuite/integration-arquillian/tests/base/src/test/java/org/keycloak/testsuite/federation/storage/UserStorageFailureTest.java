@@ -185,7 +185,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
             try {
-                UserModel user = session.users().getUserByUsername(FailableHardcodedStorageProvider.username, realm);
+                UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
                 Assert.fail();
             } catch (Exception e) {
                 Assert.assertEquals("FORCED FAILURE", e.getMessage());
@@ -214,7 +214,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
     protected void evictUser(final String username) {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
-            UserModel user = session.users().getUserByUsername(username, realm);
+            UserModel user = session.users().getUserByUsername(realm, username);
             session.userCache().evict(realm, user);
         });
     }
@@ -262,7 +262,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
-            UserModel user = session.userLocalStorage().getUserByUsername(FailableHardcodedStorageProvider.username, realm);
+            UserModel user = session.userLocalStorage().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
             if (user != null) {
                 session.userLocalStorage().removeUser(realm, user);
             }
@@ -272,7 +272,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
-            UserModel user = session.users().getUserByUsername(FailableHardcodedStorageProvider.username, realm);
+            UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
             Assert.assertNotNull(user);
 
         });
@@ -286,11 +286,11 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
-            UserModel local = session.users().getUserByUsername(LOCAL_USER, realm);
+            UserModel local = session.users().getUserByUsername(realm, LOCAL_USER);
             Assert.assertNotNull(local);
             // assert that lookup of user storage user fails
             try {
-                UserModel user = session.users().getUserByUsername(FailableHardcodedStorageProvider.username, realm);
+                UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
                 Assert.fail();
             } catch (Exception e) {
                 Assert.assertEquals("FORCED FAILURE", e.getMessage());
@@ -307,36 +307,36 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
-            UserModel local = session.users().getUserByUsername(LOCAL_USER, realm);
+            UserModel local = session.users().getUserByUsername(realm, LOCAL_USER);
             Assert.assertNotNull(local);
             Stream<UserModel> result;
-            result = session.users().searchForUserStream(LOCAL_USER, realm);
+            result = session.users().searchForUserStream(realm, LOCAL_USER);
             Assert.assertEquals(1, result.count());
-            result = session.users().searchForUserStream(FailableHardcodedStorageProvider.username, realm);
+            result = session.users().searchForUserStream(realm, FailableHardcodedStorageProvider.username);
             Assert.assertEquals(1, result.count());
-            result = session.users().searchForUserStream(LOCAL_USER, realm, 0, 2);
+            result = session.users().searchForUserStream(realm, LOCAL_USER, 0, 2);
             Assert.assertEquals(1, result.count());
-            result = session.users().searchForUserStream(FailableHardcodedStorageProvider.username, realm, 0, 2);
+            result = session.users().searchForUserStream(realm, FailableHardcodedStorageProvider.username, 0, 2);
             Assert.assertEquals(1, result.count());
             Map<String, String> localParam = new HashMap<>();
             localParam.put("username", LOCAL_USER);
             Map<String, String> hardcodedParam = new HashMap<>();
             hardcodedParam.put("username", FailableHardcodedStorageProvider.username);
 
-            result = session.users().searchForUserStream(localParam, realm);
+            result = session.users().searchForUserStream(realm, localParam);
             Assert.assertEquals(1, result.count());
-            result = session.users().searchForUserStream(hardcodedParam, realm);
+            result = session.users().searchForUserStream(realm, hardcodedParam);
             Assert.assertEquals(1, result.count());
-            result = session.users().searchForUserStream(localParam, realm, 0, 2);
+            result = session.users().searchForUserStream(realm, localParam, 0, 2);
             Assert.assertEquals(1, result.count());
-            result = session.users().searchForUserStream(hardcodedParam, realm, 0, 2);
+            result = session.users().searchForUserStream(realm, hardcodedParam, 0, 2);
             Assert.assertEquals(1, result.count());
 
             // we run a terminal operation on the stream to make sure it is consumed.
             session.users().getUsersStream(realm).count();
             session.users().getUsersCount(realm);
 
-            UserModel user = session.users().getUserByUsername(FailableHardcodedStorageProvider.username, realm);
+            UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
             Assert.assertFalse(user instanceof CachedUserModel);
             Assert.assertEquals(FailableHardcodedStorageProvider.username, user.getUsername());
             Assert.assertEquals(FailableHardcodedStorageProvider.email, user.getEmail());
@@ -353,7 +353,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
-            UserModel user = session.users().getUserByUsername(FailableHardcodedStorageProvider.username, realm);
+            UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
             Assert.assertFalse(user instanceof CachedUserModel);
             Assert.assertEquals(FailableHardcodedStorageProvider.username, user.getUsername());
             Assert.assertEquals(FailableHardcodedStorageProvider.email, user.getEmail());
@@ -363,7 +363,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
-            UserModel user = session.users().getUserByUsername(FailableHardcodedStorageProvider.username, realm);
+            UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
             Assert.assertFalse(user instanceof CachedUserModel);
             Assert.assertEquals(FailableHardcodedStorageProvider.username, user.getUsername());
             Assert.assertEquals(FailableHardcodedStorageProvider.email, user.getEmail());
@@ -378,7 +378,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
-            UserModel user = session.users().getUserByUsername(FailableHardcodedStorageProvider.username, realm);
+            UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
             Assert.assertTrue(user instanceof CachedUserModel);
             Assert.assertEquals(FailableHardcodedStorageProvider.username, user.getUsername());
             Assert.assertEquals(FailableHardcodedStorageProvider.email, user.getEmail());

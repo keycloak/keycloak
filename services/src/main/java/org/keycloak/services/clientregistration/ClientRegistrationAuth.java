@@ -291,7 +291,7 @@ public class ClientRegistrationAuth {
 
     private boolean hasRoleInModel(String[] roles) {
         ClientModel roleNamespace;
-        UserModel user = session.users().getUserById(jwt.getSubject(), realm);
+        UserModel user = session.users().getUserById(realm, jwt.getSubject());
         if (user == null) {
             return false;
         }

@@ -244,10 +244,10 @@ public class PolicyEvaluationService {
 
         UserSessionModel userSession = null;
         if (subject != null) {
-            UserModel userModel = keycloakSession.users().getUserById(subject, realm);
+            UserModel userModel = keycloakSession.users().getUserById(realm, subject);
             
             if (userModel == null) {
-                userModel = keycloakSession.users().getUserByUsername(subject, realm);
+                userModel = keycloakSession.users().getUserByUsername(realm, subject);
             }
 
             if (userModel != null) {

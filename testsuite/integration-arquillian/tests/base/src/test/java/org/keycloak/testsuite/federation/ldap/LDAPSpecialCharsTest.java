@@ -145,7 +145,7 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
             LDAPTestUtils.updateGroupMapperConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString());
             appRealm.updateComponent(mapperModel);
 
-            UserModel specialUser = session.users().getUserByUsername("jamees,key*cložak)ppp", appRealm);
+            UserModel specialUser = session.users().getUserByUsername(appRealm, "jamees,key*cložak)ppp");
             Assert.assertNotNull(specialUser);
 
             // 1 - Grant some groups in LDAP

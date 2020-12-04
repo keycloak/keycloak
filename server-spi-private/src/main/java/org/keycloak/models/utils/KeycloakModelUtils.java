@@ -205,13 +205,13 @@ public final class KeycloakModelUtils {
      */
     public static UserModel findUserByNameOrEmail(KeycloakSession session, RealmModel realm, String username) {
         if (realm.isLoginWithEmailAllowed() && username.indexOf('@') != -1) {
-            UserModel user = session.users().getUserByEmail(username, realm);
+            UserModel user = session.users().getUserByEmail(realm, username);
             if (user != null) {
                 return user;
             }
         }
 
-        return session.users().getUserByUsername(username, realm);
+        return session.users().getUserByUsername(realm, username);
     }
 
     /**

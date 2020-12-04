@@ -215,7 +215,7 @@ public class IdentityProviderResource {
 
     private static void updateUsersAfterProviderAliasChange(Stream<UserModel> users, String oldProviderId, String newProviderId, RealmModel realm, KeycloakSession session) {
         users.forEach(user -> {
-            FederatedIdentityModel federatedIdentity = session.users().getFederatedIdentity(user, oldProviderId, realm);
+            FederatedIdentityModel federatedIdentity = session.users().getFederatedIdentity(realm, user, oldProviderId);
             if (federatedIdentity != null) {
                 // Remove old link first
                 session.users().removeFederatedIdentity(realm, user, oldProviderId);

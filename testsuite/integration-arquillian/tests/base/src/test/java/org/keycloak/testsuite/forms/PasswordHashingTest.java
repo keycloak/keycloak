@@ -241,7 +241,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
     private CredentialModel fetchCredentials(String username) {
         return testingClient.server("test").fetch(session -> {
             RealmModel realm = session.getContext().getRealm();
-            UserModel user = session.users().getUserByUsername(username, realm);
+            UserModel user = session.users().getUserByUsername(realm, username);
             return session.userCredentialManager().getStoredCredentialsByTypeStream(realm, user, CredentialRepresentation.PASSWORD)
                     .findFirst().orElse(null);
         }, CredentialModel.class);

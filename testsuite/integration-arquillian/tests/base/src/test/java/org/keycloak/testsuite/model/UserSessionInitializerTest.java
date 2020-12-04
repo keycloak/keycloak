@@ -71,8 +71,8 @@ public class UserSessionInitializerTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = session.realms().getRealmByName("test");
             session.sessions().removeUserSessions(realm);
 
-            UserModel user1 = session.users().getUserByUsername("user1", realm);
-            UserModel user2 = session.users().getUserByUsername("user2", realm);
+            UserModel user1 = session.users().getUserByUsername(realm, "user1");
+            UserModel user2 = session.users().getUserByUsername(realm, "user2");
 
             UserManager um = new UserManager(session);
             if (user1 != null)
@@ -121,9 +121,9 @@ public class UserSessionInitializerTest extends AbstractTestRealmKeycloakTest {
                     .collect(Collectors.toList());
             UserSessionProviderTest.assertSessions(loadedSessions, origSessions);
 
-            assertSessionLoaded(loadedSessions, origSessions[0].getId(), currentSession.users().getUserByUsername("user1", realm), "127.0.0.1", started, started, "test-app", "third-party");
-            assertSessionLoaded(loadedSessions, origSessions[1].getId(), currentSession.users().getUserByUsername("user1", realm), "127.0.0.2", started, started, "test-app");
-            assertSessionLoaded(loadedSessions, origSessions[2].getId(), currentSession.users().getUserByUsername("user2", realm), "127.0.0.3", started, started, "test-app");
+            assertSessionLoaded(loadedSessions, origSessions[0].getId(), currentSession.users().getUserByUsername(realm, "user1"), "127.0.0.1", started, started, "test-app", "third-party");
+            assertSessionLoaded(loadedSessions, origSessions[1].getId(), currentSession.users().getUserByUsername(realm, "user1"), "127.0.0.2", started, started, "test-app");
+            assertSessionLoaded(loadedSessions, origSessions[2].getId(), currentSession.users().getUserByUsername(realm, "user2"), "127.0.0.3", started, started, "test-app");
         });
     }
 
@@ -172,7 +172,7 @@ public class UserSessionInitializerTest extends AbstractTestRealmKeycloakTest {
                     .collect(Collectors.toList());
 
             assertThat("Size of loaded Sessions", loadedSessions.size(), is(1));
-            assertSessionLoaded(loadedSessions, origSessions[0].getId(), currentSession.users().getUserByUsername("user1", realm), "127.0.0.1", started, started, "third-party");
+            assertSessionLoaded(loadedSessions, origSessions[0].getId(), currentSession.users().getUserByUsername(realm, "user1"), "127.0.0.1", started, started, "third-party");
 
             // Revert client
             realm.addClient("test-app");
@@ -246,15 +246,15 @@ public class UserSessionInitializerTest extends AbstractTestRealmKeycloakTest {
         RealmModel realm = session.realms().getRealmByName(realmName);
 
         UserSessionModel[] sessions = new UserSessionModel[3];
-        sessions[0] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.1", "form", true, null, null);
+        sessions[0] = session.sessions().createUserSession(realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", true, null, null);
 
         createClientSession(session, realm.getClientByClientId("test-app"), sessions[0], "http://redirect", "state");
         createClientSession(session, realm.getClientByClientId("third-party"), sessions[0], "http://redirect", "state");
 
-        sessions[1] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user1", realm), "user1", "127.0.0.2", "form", true, null, null);
+        sessions[1] = session.sessions().createUserSession(realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.2", "form", true, null, null);
         createClientSession(session, realm.getClientByClientId("test-app"), sessions[1], "http://redirect", "state");
 
-        sessions[2] = session.sessions().createUserSession(realm, session.users().getUserByUsername("user2", realm), "user2", "127.0.0.3", "form", true, null, null);
+        sessions[2] = session.sessions().createUserSession(realm, session.users().getUserByUsername(realm, "user2"), "user2", "127.0.0.3", "form", true, null, null);
         createClientSession(session, realm.getClientByClientId("test-app"), sessions[2], "http://redirect", "state");
 
         return sessions;

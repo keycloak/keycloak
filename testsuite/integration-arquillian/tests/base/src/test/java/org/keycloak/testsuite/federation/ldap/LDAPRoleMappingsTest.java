@@ -126,8 +126,8 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
 
             LDAPTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ctx.getLdapModel(), LDAPGroupMapperMode.LDAP_ONLY);
 
-            UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
-            UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
+            UserModel john = session.users().getUserByUsername(appRealm, "johnkeycloak");
+            UserModel mary = session.users().getUserByUsername(appRealm, "marykeycloak");
 
             // 1 - Grant some roles in LDAP
 
@@ -156,7 +156,7 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
 
             // 2 - Check that role mappings are not in local Keycloak DB (They are in LDAP).
 
-            UserModel johnDb = session.userLocalStorage().getUserByUsername("johnkeycloak", appRealm);
+            UserModel johnDb = session.userLocalStorage().getUserByUsername(appRealm, "johnkeycloak");
             Set<RoleModel> johnDbRoles = johnDb.getRoleMappingsStream().collect(Collectors.toSet());
             Assert.assertFalse(johnDbRoles.contains(realmRole1));
             Assert.assertFalse(johnDbRoles.contains(realmRole2));
@@ -207,7 +207,7 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
 
             LDAPTestUtils.addOrUpdateRoleLDAPMappers(appRealm, ctx.getLdapModel(), LDAPGroupMapperMode.READ_ONLY);
 
-            UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
+            UserModel mary = session.users().getUserByUsername(appRealm, "marykeycloak");
 
             RoleModel realmRole1 = appRealm.getRole("realmRole1");
             RoleModel realmRole2 = appRealm.getRole("realmRole2");
@@ -235,7 +235,7 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
             Assert.assertTrue(maryRoles.contains(realmRole3));
 
             // Assert that access through DB will have just DB mapped role
-            UserModel maryDB = session.userLocalStorage().getUserByUsername("marykeycloak", appRealm);
+            UserModel maryDB = session.userLocalStorage().getUserByUsername(appRealm, "marykeycloak");
             Set<RoleModel> maryDBRoles = maryDB.getRealmRoleMappingsStream().collect(Collectors.toSet());
             Assert.assertFalse(maryDBRoles.contains(realmRole1));
             Assert.assertFalse(maryDBRoles.contains(realmRole2));
@@ -257,7 +257,7 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
+            UserModel mary = session.users().getUserByUsername(appRealm, "marykeycloak");
 
             // Assert role mappings is not available
             Set<RoleModel> maryRoles = mary.getRealmRoleMappingsStream().collect(Collectors.toSet());
@@ -286,7 +286,7 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
             roleMapper.addRoleMappingInLDAP("realmRole2", robLdap);
 
             // Get user and check that he has requested roles from LDAP
-            UserModel rob = session.users().getUserByUsername("robkeycloak", appRealm);
+            UserModel rob = session.users().getUserByUsername(appRealm, "robkeycloak");
             RoleModel realmRole1 = appRealm.getRole("realmRole1");
             RoleModel realmRole2 = appRealm.getRole("realmRole2");
             RoleModel realmRole3 = appRealm.getRole("realmRole3");
@@ -352,7 +352,7 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             // make sure user is cached.
-            UserModel johnRoleMapper = session.users().getUserByUsername("johnrolemapper", appRealm);
+            UserModel johnRoleMapper = session.users().getUserByUsername(appRealm, "johnrolemapper");
             Assert.assertNotNull(johnRoleMapper);
             Assert.assertEquals(0, johnRoleMapper.getRealmRoleMappingsStream().count());
 
@@ -372,7 +372,7 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
             roleMapper.addRoleMappingInLDAP("realmRole2", johnLdap);
 
             // Get user and check that he has requested roles from LDAP
-            UserModel johnRoleMapper = session.users().getUserByUsername("johnrolemapper", appRealm);
+            UserModel johnRoleMapper = session.users().getUserByUsername(appRealm, "johnrolemapper");
             RoleModel realmRole1 = appRealm.getRole("realmRole1");
             RoleModel realmRole2 = appRealm.getRole("realmRole2");
 
@@ -407,7 +407,7 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             // Get user and check that he has requested roles from LDAP
-            UserModel johnRoleMapper = session.users().getUserByUsername("johnrolemapper", appRealm);
+            UserModel johnRoleMapper = session.users().getUserByUsername(appRealm, "johnrolemapper");
             RoleModel realmRole1 = appRealm.getRole("realmRole1");
             RoleModel realmRole2 = appRealm.getRole("realmRole2");
 
@@ -457,7 +457,7 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             // Get user in Keycloak. Ensure that he is member of requested group
-            UserModel carlos = session.users().getUserByUsername("carloskeycloak", appRealm);
+            UserModel carlos = session.users().getUserByUsername(appRealm, "carloskeycloak");
             Set<RoleModel> carlosRoles = carlos.getRealmRoleMappingsStream().collect(Collectors.toSet());
 
             RoleModel realmRole1 = appRealm.getRole("realmRole1");

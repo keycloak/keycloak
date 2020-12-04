@@ -563,7 +563,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
     public static void testCheckUserAttributes(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("authz-test");
-        UserModel jdoe = session.users().getUserByUsername("jdoe", realm);
+        UserModel jdoe = session.users().getUserByUsername(realm, "jdoe");
 
         jdoe.setAttribute("a1", Arrays.asList("1", "2"));
         jdoe.setSingleAttribute("a2", "3");

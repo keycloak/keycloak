@@ -36,6 +36,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 public class MapGroupProvider implements GroupProvider {
 
@@ -124,15 +125,7 @@ public class MapGroupProvider implements GroupProvider {
             groupModelStream = groupModelStream.filter(groupModel -> groupModel.getName().toLowerCase().contains(s));
         }
 
-        if (first != null && first > 0) {
-            groupModelStream = groupModelStream.skip(first);
-        }
-
-        if (max != null && max >= 0) {
-            groupModelStream = groupModelStream.limit(max);
-        }
-
-        return groupModelStream;
+        return paginatedStream(groupModelStream, first, max);
     }
 
     @Override
@@ -157,15 +150,7 @@ public class MapGroupProvider implements GroupProvider {
         LOG.tracef("getGroupsByRole(%s, %s, %d, %d)%s", realm, role, firstResult, maxResults, getShortStackTrace());
         Stream<GroupModel> groupModelStream = getGroupsStream(realm).filter(groupModel -> groupModel.hasRole(role));
 
-        if (firstResult != null && firstResult > 0) {
-            groupModelStream = groupModelStream.skip(firstResult);
-        }
-        
-        if (maxResults != null && maxResults >= 0) {
-            groupModelStream = groupModelStream.limit(maxResults);
-        }
-
-        return groupModelStream;
+        return paginatedStream(groupModelStream, firstResult, maxResults);
     }
 
     @Override
@@ -179,15 +164,7 @@ public class MapGroupProvider implements GroupProvider {
     public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
         Stream<GroupModel> groupModelStream = getTopLevelGroupsStream(realm);
         
-        if (firstResult != null && firstResult > 0) {
-            groupModelStream = groupModelStream.skip(firstResult);
-        }
-        
-        if (maxResults != null && maxResults >= 0) {
-            groupModelStream = groupModelStream.limit(maxResults);
-        }
-        
-        return groupModelStream;
+        return paginatedStream(groupModelStream, firstResult, maxResults);
         
     }
 
@@ -197,15 +174,8 @@ public class MapGroupProvider implements GroupProvider {
         Stream<GroupModel> groupModelStream = getGroupsStream(realm)
                 .filter(groupModel -> groupModel.getName().contains(search));
 
-        if (firstResult != null && firstResult > 0) {
-            groupModelStream = groupModelStream.skip(firstResult);
-        }
 
-        if (maxResults != null && maxResults >= 0) {
-            groupModelStream = groupModelStream.limit(maxResults);
-        }
-
-        return groupModelStream;
+        return paginatedStream(groupModelStream, firstResult, maxResults);
     }
 
     @Override

@@ -100,7 +100,7 @@ public class ClientUpdateSourceGroupsCondition implements ClientPolicyConditionP
 
     private boolean isGroupMatched(String subjectId) {
         if (subjectId == null) return false;
-        return isGroupsMatched(session.users().getUserById(subjectId, session.getContext().getRealm()));
+        return isGroupsMatched(session.users().getUserById(session.getContext().getRealm(), subjectId));
     }
 
     private boolean isGroupsMatched(UserModel user) {

@@ -99,7 +99,7 @@ public class ClientUpdateSourceRolesCondition implements ClientPolicyConditionPr
 
     private boolean isRoleMatched(String subjectId) {
         if (subjectId == null) return false;
-        return isRolesMatched(session.users().getUserById(subjectId, session.getContext().getRealm()));
+        return isRolesMatched(session.users().getUserById(session.getContext().getRealm(), subjectId));
     }
 
     private boolean isRolesMatched(UserModel user) {

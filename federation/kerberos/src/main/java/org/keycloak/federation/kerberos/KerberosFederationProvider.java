@@ -48,7 +48,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class KerberosFederationProvider implements UserStorageProvider,
-        UserLookupProvider,
+        UserLookupProvider.Streams,
         CredentialInputValidator,
         CredentialInputUpdater.Streams,
         CredentialAuthentication,
@@ -83,7 +83,7 @@ public class KerberosFederationProvider implements UserStorageProvider,
     }
 
     @Override
-    public UserModel getUserByUsername(String username, RealmModel realm) {
+    public UserModel getUserByUsername(RealmModel realm, String username) {
         KerberosUsernamePasswordAuthenticator authenticator = factory.createKerberosUsernamePasswordAuthenticator(kerberosConfig);
         if (authenticator.isUserAvailable(username)) {
             // Case when method was called with username including kerberos realm like john@REALM.ORG . Authenticator already checked that kerberos realm was correct
@@ -98,12 +98,12 @@ public class KerberosFederationProvider implements UserStorageProvider,
     }
 
     @Override
-    public UserModel getUserByEmail(String email, RealmModel realm) {
+    public UserModel getUserByEmail(RealmModel realm, String email) {
         return null;
     }
 
     @Override
-    public UserModel getUserById(String id, RealmModel realm) {
+    public UserModel getUserById(RealmModel realm, String id) {
         return null;
     }
 
@@ -234,9 +234,9 @@ public class KerberosFederationProvider implements UserStorageProvider,
      * @return user if found or successfully created. Null if user with same username already exists, but is not linked to this provider
      */
     protected UserModel findOrCreateAuthenticatedUser(RealmModel realm, String username) {
-        UserModel user = session.userLocalStorage().getUserByUsername(username, realm);
+        UserModel user = session.userLocalStorage().getUserByUsername(realm, username);
         if (user != null) {
-            user = session.users().getUserById(user.getId(), realm);  // make sure we get a cached instance
+            user = session.users().getUserById(realm, user.getId());  // make sure we get a cached instance
             logger.debug("Kerberos authenticated user " + username + " found in Keycloak storage");
 
             if (!model.getId().equals(user.getFederationLink())) {

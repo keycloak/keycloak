@@ -708,7 +708,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             // Need to reset not-before of user, which was updated during user.logout()
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName("test");
-                UserModel user = session.users().getUserByUsername("test-user@localhost", realm);
+                UserModel user = session.users().getUserByUsername(realm, "test-user@localhost");
                 session.users().setNotBeforeForUser(realm, user, 0);
             });
         }

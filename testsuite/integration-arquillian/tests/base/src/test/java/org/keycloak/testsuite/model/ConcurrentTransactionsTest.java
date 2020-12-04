@@ -222,10 +222,10 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
                             try {
                                 // Read user attribute
                                 RealmModel realm = session1.realms().getRealmByName("original");
-                                UserModel john = session1.users().getUserByUsername("john", realm);
+                                UserModel john = session1.users().getUserByUsername(realm, "john");
                                 String attrVal = john.getFirstAttribute("foo");
 
-                                UserModel john2 = session1.users().getUserByUsername("john2", realm);
+                                UserModel john2 = session1.users().getUserByUsername(realm, "john2");
                                 String attrVal2 = john2.getFirstAttribute("foo");
 
                                 // Wait until it's read in both threads
@@ -277,8 +277,8 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
 
         RealmModel realm = currentSession.realms().getRealmByName("original");
 
-        UserModel realmUser1 = currentSession.users().getUserByUsername(user1, realm);
-        UserModel realmUser2 = currentSession.users().getUserByUsername(user2, realm);
+        UserModel realmUser1 = currentSession.users().getUserByUsername(realm, user1);
+        UserModel realmUser2 = currentSession.users().getUserByUsername(realm, user2);
 
         UserManager um = new UserManager(currentSession);
         if (realmUser1 != null) {

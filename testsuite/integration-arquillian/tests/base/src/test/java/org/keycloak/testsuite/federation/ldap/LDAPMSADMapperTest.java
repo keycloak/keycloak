@@ -131,7 +131,7 @@ public class LDAPMSADMapperTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel user = session.users().getUserByUsername("registerUserSuccess2", appRealm);
+            UserModel user = session.users().getUserByUsername(appRealm, "registerUserSuccess2");
             Assert.assertNotNull(user);
             Assert.assertNotNull(user.getFederationLink());
             Assert.assertEquals(user.getFederationLink(), ctx.getLdapModel().getId());

@@ -119,7 +119,7 @@ public class LinkedAccountsResource {
     public SortedSet<LinkedAccountRepresentation> getLinkedAccounts(KeycloakSession session, RealmModel realm, UserModel user) {
         Set<String> socialIds = findSocialIds();
         return realm.getIdentityProvidersStream().filter(IdentityProviderModel::isEnabled)
-                .map(provider -> toLinkedAccountRepresentation(provider, socialIds, session.users().getFederatedIdentitiesStream(user, realm)))
+                .map(provider -> toLinkedAccountRepresentation(provider, socialIds, session.users().getFederatedIdentitiesStream(realm, user)))
                 .collect(Collectors.toCollection(TreeSet::new));
     }
 
@@ -209,13 +209,13 @@ public class LinkedAccountsResource {
             return ErrorResponse.error(errorMessage, Response.Status.BAD_REQUEST);
         }
         
-        FederatedIdentityModel link = session.users().getFederatedIdentity(user, providerId, realm);
+        FederatedIdentityModel link = session.users().getFederatedIdentity(realm, user, providerId);
         if (link == null) {
             return ErrorResponse.error(Messages.FEDERATED_IDENTITY_NOT_ACTIVE, Response.Status.BAD_REQUEST);
         }
 
         // Removing last social provider is not possible if you don't have other possibility to authenticate
-        if (!(session.users().getFederatedIdentitiesStream(user, realm).count() > 1 || user.getFederationLink() != null || isPasswordSet())) {
+        if (!(session.users().getFederatedIdentitiesStream(realm, user).count() > 1 || user.getFederationLink() != null || isPasswordSet())) {
             return ErrorResponse.error(Messages.FEDERATED_IDENTITY_REMOVING_LAST_PROVIDER, Response.Status.BAD_REQUEST);
         }
         

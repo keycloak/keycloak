@@ -71,10 +71,10 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
             if (realm != null) {
 
                 session.sessions().removeUserSessions(realm);
-                UserModel user = session.users().getUserByUsername("user", realm);
-                UserModel user1 = session.users().getUserByUsername("user1", realm);
-                UserModel user2 = session.users().getUserByUsername("user2", realm);
-                UserModel user3 = session.users().getUserByUsername("user3", realm);
+                UserModel user = session.users().getUserByUsername(realm, "user");
+                UserModel user1 = session.users().getUserByUsername(realm, "user1");
+                UserModel user2 = session.users().getUserByUsername(realm, "user2");
+                UserModel user3 = session.users().getUserByUsername(realm, "user3");
 
                 UserManager um = new UserManager(session);
                 if (user != null) {
@@ -163,8 +163,8 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
             ClientModel fooClient = realm.getClientByClientId("foo-client");
             ClientModel barClient = realm.getClientByClientId("bar-client");
 
-            UserModel john = currentSession.users().getUserByUsername("john", realm);
-            UserModel mary = currentSession.users().getUserByUsername("mary", realm);
+            UserModel john = currentSession.users().getUserByUsername(realm, "john");
+            UserModel mary = currentSession.users().getUserByUsername(realm, "mary");
 
             UserConsentModel johnFooConsent = currentSession.users().getConsentByClient(realm, john.getId(), fooClient.getId());
             Assert.assertEquals(johnFooConsent.getGrantedClientScopes().size(), 1);
@@ -205,8 +205,8 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
 
             ClientModel fooClient = realm.getClientByClientId("foo-client");
 
-            UserModel john = currentSession.users().getUserByUsername("john", realm);
-            UserModel mary = currentSession.users().getUserByUsername("mary", realm);
+            UserModel john = currentSession.users().getUserByUsername(realm, "john");
+            UserModel mary = currentSession.users().getUserByUsername(realm, "mary");
 
             Assert.assertEquals(2, currentSession.users().getConsentsStream(realm, john.getId()).count());
 
@@ -240,7 +240,7 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = currentSession.realms().getRealm("original");
 
             ClientModel fooClient = realm.getClientByClientId("foo-client");
-            UserModel john = currentSession.users().getUserByUsername("john", realm);
+            UserModel john = currentSession.users().getUserByUsername(realm, "john");
 
             UserConsentModel johnConsent = currentSession.users().getConsentByClient(realm, john.getId(), fooClient.getId());
             Assert.assertEquals(1, johnConsent.getGrantedClientScopes().size());
@@ -257,7 +257,7 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = currentSession.realms().getRealm("original");
 
             ClientModel fooClient = realm.getClientByClientId("foo-client");
-            UserModel john = currentSession.users().getUserByUsername("john", realm);
+            UserModel john = currentSession.users().getUserByUsername(realm, "john");
             UserConsentModel johnConsent = currentSession.users().getConsentByClient(realm, john.getId(), fooClient.getId());
 
             Assert.assertEquals(johnConsent.getGrantedClientScopes().size(), 0);
@@ -274,8 +274,8 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = currentSession.realms().getRealm("original");
 
             ClientModel fooClient = realm.getClientByClientId("foo-client");
-            UserModel john = currentSession.users().getUserByUsername("john", realm);
-            UserModel mary = currentSession.users().getUserByUsername("mary", realm);
+            UserModel john = currentSession.users().getUserByUsername(realm, "john");
+            UserModel mary = currentSession.users().getUserByUsername(realm, "mary");
 
             currentSession.users().revokeConsentForClient(realm, john.getId(), fooClient.getId());
             ClientModel hardcodedClient = currentSession.clients().getClientByClientId(realm, "hardcoded-client");
@@ -289,9 +289,9 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
             ClientModel fooClient = realm.getClientByClientId("foo-client");
             ClientModel hardcodedClient = currentSession.clients().getClientByClientId(realm, "hardcoded-client");
 
-            UserModel john = currentSession.users().getUserByUsername("john", realm);
+            UserModel john = currentSession.users().getUserByUsername(realm, "john");
             Assert.assertNull(currentSession.users().getConsentByClient(realm, john.getId(), fooClient.getId()));
-            UserModel mary = currentSession.users().getUserByUsername("mary", realm);
+            UserModel mary = currentSession.users().getUserByUsername(realm, "mary");
             Assert.assertNull(currentSession.users().getConsentByClient(realm, mary.getId(), hardcodedClient.getId()));
         });
     }
@@ -304,9 +304,9 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
             KeycloakSession currentSession = sessionUT;
             RealmModel realm = currentSession.realms().getRealm("original");
 
-            UserModel john = currentSession.users().getUserByUsername("john", realm);
+            UserModel john = currentSession.users().getUserByUsername(realm, "john");
             currentSession.users().removeUser(realm, john);
-            UserModel mary = currentSession.users().getUserByUsername("mary", realm);
+            UserModel mary = currentSession.users().getUserByUsername(realm, "mary");
             currentSession.users().removeUser(realm, mary);
         });
     }
@@ -329,7 +329,7 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
 
             ClientModel fooClient = realm.getClientByClientId("foo-client");
 
-            UserModel john = currentSession.users().getUserByUsername("john", realm);
+            UserModel john = currentSession.users().getUserByUsername(realm, "john");
             UserConsentModel johnConsent = currentSession.users().getConsentByClient(realm, john.getId(), fooClient.getId());
 
             Assert.assertEquals(johnConsent.getGrantedClientScopes().size(), 0);
@@ -359,7 +359,7 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
             ClientModel fooClient = realm.getClientByClientId("foo-client");
             Assert.assertNull(realm.getClientByClientId("bar-client"));
 
-            UserModel john = currentSession.users().getUserByUsername("john", realm);
+            UserModel john = currentSession.users().getUserByUsername(realm, "john");
             ClientModel barClient = realm.getClientByClientId("bar-client");
 
             UserConsentModel johnFooConsent = currentSession.users().getConsentByClient(realm, john.getId(), fooClient.getId());
@@ -388,7 +388,7 @@ public class UserConsentModelTest extends AbstractTestRealmKeycloakTest {
             ClientModel hardcodedClient = currentSession.clients().getClientByClientId(realm, "hardcoded-client");
             Assert.assertNull(hardcodedClient);
 
-            UserModel mary = currentSession.users().getUserByUsername("mary", realm);
+            UserModel mary = currentSession.users().getUserByUsername(realm, "mary");
             Assert.assertEquals(1, currentSession.users().getConsentsStream(realm, mary.getId()).count());
         });
     }

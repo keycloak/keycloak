@@ -149,7 +149,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
             // lowercase before search
             email = KeycloakModelUtils.toLowerCaseSafe(email);
 
-            UserModel that = session.userLocalStorage().getUserByEmail(email, realm);
+            UserModel that = session.userLocalStorage().getUserByEmail(realm, email);
             if (that != null && !that.getId().equals(user.getId())) {
                 session.getTransactionManager().setRollbackOnly();
                 String exceptionMessage = String.format("Can't import user '%s' from LDAP because email '%s' already exists in Keycloak. Existing user with this email is '%s'", user.getUsername(), email, that.getUsername());
@@ -166,7 +166,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
             }
             boolean usernameChanged = !username.equals(user.getUsername());
             if (realm.isEditUsernameAllowed() && usernameChanged) {
-                UserModel that = session.users().getUserByUsername(username, realm);
+                UserModel that = session.users().getUserByUsername(realm, username);
                 if (that != null && !that.getId().equals(user.getId())) {
                     throw new ModelDuplicateException(
                             String.format("Cannot change the username to '%s' because the username already exists in keycloak", username),

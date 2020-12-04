@@ -133,12 +133,12 @@ public class UsersResource {
         }
 
         // Double-check duplicated username and email here due to federation
-        if (session.users().getUserByUsername(username, realm) != null) {
+        if (session.users().getUserByUsername(realm, username) != null) {
             return ErrorResponse.exists("User exists with same username");
         }
         if (rep.getEmail() != null && !realm.isDuplicateEmailsAllowed()) {
             try {
-                if(session.users().getUserByEmail(rep.getEmail(), realm) != null) {
+                if(session.users().getUserByEmail(realm, rep.getEmail()) != null) {
                     return ErrorResponse.exists("User exists with same email");
                 }
             } catch (ModelDuplicateException e) {
@@ -192,7 +192,7 @@ public class UsersResource {
      */
     @Path("{id}")
     public UserResource user(final @PathParam("id") String id) {
-        UserModel user = session.users().getUserById(id, realm);
+        UserModel user = session.users().getUserById(realm, id);
         if (user == null) {
             // we do this to make sure somebody can't phish ids
             if (auth.users().canQuery()) throw new NotFoundException("User not found");
@@ -251,7 +251,7 @@ public class UsersResource {
         if (search != null) {
             if (search.startsWith(SEARCH_ID_PARAMETER)) {
                 UserModel userModel =
-                        session.users().getUserById(search.substring(SEARCH_ID_PARAMETER.length()).trim(), realm);
+                        session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
                 if (userModel != null) {
                     userModels = Stream.of(userModel);
                 }
@@ -341,12 +341,12 @@ public class UsersResource {
 
         if (search != null) {
             if (search.startsWith(SEARCH_ID_PARAMETER)) {
-                UserModel userModel = session.users().getUserById(search.substring(SEARCH_ID_PARAMETER.length()).trim(), realm);
+                UserModel userModel = session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
                 return userModel != null && userPermissionEvaluator.canView(userModel) ? 1 : 0;
             } else if (userPermissionEvaluator.canView()) {
-                return session.users().getUsersCount(search.trim(), realm);
+                return session.users().getUsersCount(realm, search.trim());
             } else {
-                return session.users().getUsersCount(search.trim(), realm, auth.groups().getGroupsWithViewPermission());
+                return session.users().getUsersCount(realm, search.trim(), auth.groups().getGroupsWithViewPermission());
             }
         } else if (last != null || first != null || email != null || username != null || emailVerified != null) {
             Map<String, String> parameters = new HashMap<>();
@@ -366,9 +366,9 @@ public class UsersResource {
                 parameters.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
             }
             if (userPermissionEvaluator.canView()) {
-                return session.users().getUsersCount(parameters, realm);
+                return session.users().getUsersCount(realm, parameters);
             } else {
-                return session.users().getUsersCount(parameters, realm, auth.groups().getGroupsWithViewPermission());
+                return session.users().getUsersCount(realm, parameters, auth.groups().getGroupsWithViewPermission());
             }
         } else if (userPermissionEvaluator.canView()) {
             return session.users().getUsersCount(realm);
@@ -388,7 +388,7 @@ public class UsersResource {
             }
         }
 
-        Stream<UserModel> userModels = session.users().searchForUserStream(attributes, realm, firstResult, maxResults);
+        Stream<UserModel> userModels = session.users().searchForUserStream(realm, attributes, firstResult, maxResults);
         return toRepresentation(realm, usersEvaluator, briefRepresentation, userModels);
     }
 

@@ -281,7 +281,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
             final String userId = impersonatedUserId;
             final UserSessionNotesHolder notesHolder = testingClient.server("test").fetch(session -> {
                 final RealmModel realm = session.realms().getRealmByName("test");
-                final UserModel user = session.users().getUserById(userId, realm);
+                final UserModel user = session.users().getUserById(realm, userId);
                 final UserSessionModel userSession = session.sessions().getUserSessionsStream(realm, user).findFirst().get();
                 return new UserSessionNotesHolder(userSession.getNotes());
             }, UserSessionNotesHolder.class);

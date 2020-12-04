@@ -68,6 +68,7 @@ import static org.keycloak.models.UserModel.EMAIL_VERIFIED;
 import static org.keycloak.models.UserModel.FIRST_NAME;
 import static org.keycloak.models.UserModel.LAST_NAME;
 import static org.keycloak.models.UserModel.USERNAME;
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 public class MapUserProvider implements UserProvider.Streams, UserCredentialStore.Streams {
 
@@ -96,12 +97,12 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
 
             @Override
             public boolean checkEmailUniqueness(RealmModel realm, String email) {
-                return getUserByEmail(email, realm) != null;
+                return getUserByEmail(realm, email) != null;
             }
 
             @Override
             public boolean checkUsernameUniqueness(RealmModel realm, String username) {
-                return getUserByUsername(username, realm) != null;
+                return getUserByUsername(realm, username) != null;
             }
         };
     }
@@ -156,18 +157,6 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         return getNotRemovedUpdatedUsersStream()
                 .filter(entityRealmFilter(realm));
     }
-    
-    private <T> Stream<T> paginatedStream(Stream<T> originalStream, Integer first, Integer max) {
-        if (first != null && first > 0) {
-            originalStream = originalStream.skip(first);
-        }
-
-        if (max != null && max >= 0) {
-            originalStream = originalStream.limit(max);
-        }
-
-        return originalStream;
-    }
 
     @Override
     public void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel socialLink) {
@@ -206,7 +195,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public Stream<FederatedIdentityModel> getFederatedIdentitiesStream(UserModel user, RealmModel realm) {
+    public Stream<FederatedIdentityModel> getFederatedIdentitiesStream(RealmModel realm, UserModel user) {
         LOG.tracef("getFederatedIdentitiesStream(%s, %s)%s", realm, user.getId(), getShortStackTrace());
         return getEntityById(realm, user.getId())
                 .map(AbstractUserEntity::getFederatedIdentities).orElseGet(Stream::empty)
@@ -214,7 +203,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm) {
+    public FederatedIdentityModel getFederatedIdentity(RealmModel realm, UserModel user, String socialProvider) {
         LOG.tracef("getFederatedIdentity(%s, %s, %s)%s", realm, user.getId(), socialProvider, getShortStackTrace());
         return getEntityById(realm, user.getId())
                 .map(userEntity -> userEntity.getFederatedIdentity(socialProvider))
@@ -223,7 +212,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public UserModel getUserByFederatedIdentity(FederatedIdentityModel socialLink, RealmModel realm) {
+    public UserModel getUserByFederatedIdentity(RealmModel realm, FederatedIdentityModel socialLink) {
         LOG.tracef("getUserByFederatedIdentity(%s, %s)%s", realm, socialLink, getShortStackTrace());
         return getUnsortedUserEntitiesStream(realm)
                 .filter(userEntity -> Objects.nonNull(userEntity.getFederatedIdentity(socialLink.getIdentityProvider())))
@@ -231,7 +220,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
                 .collect(Collectors.collectingAndThen(
                         Collectors.toList(),
                         list -> {
-                            if (list.size() == 0) {
+                            if (list.isEmpty()) {
                                 return null;
                             } else if (list.size() != 1) {
                                 throw new IllegalStateException("More results found for identityProvider=" + socialLink.getIdentityProvider() +
@@ -246,8 +235,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public void addConsent(RealmModel realm, String userId, UserConsentModel consent) {
         LOG.tracef("addConsent(%s, %s, %s)%s", realm, userId, consent, getShortStackTrace());
 
-        UserConsentEntity consentEntity = UserConsentEntity.fromModel(consent);
-        getRegisteredEntityById(realm, userId).ifPresent(userEntity -> userEntity.addUserConsent(consentEntity));
+        getRegisteredEntityByIdOrThrow(realm, userId)
+                .addUserConsent(UserConsentEntity.fromModel(consent));
     }
 
     @Override
@@ -298,15 +287,15 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore) {
         LOG.tracef("setNotBeforeForUser(%s, %s, %d)%s", realm, user.getId(), notBefore, getShortStackTrace());
-        getRegisteredEntityById(realm, user.getId()).ifPresent(userEntity -> userEntity.setNotBefore(notBefore));
+        getRegisteredEntityByIdOrThrow(realm, user.getId()).setNotBefore(notBefore);
     }
 
     @Override
     public int getNotBeforeOfUser(RealmModel realm, UserModel user) {
         LOG.tracef("getNotBeforeOfUser(%s, %s)%s", realm, user.getId(), getShortStackTrace());
         return getEntityById(realm, user.getId())
-                .map(AbstractUserEntity::getNotBefore)
-                .orElse(0);
+                .orElseThrow(this::userDoesntExistException)
+                .getNotBefore();
     }
 
     @Override
@@ -317,7 +306,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
                 .collect(Collectors.collectingAndThen(
                         Collectors.toList(),
                         list -> {
-                            if (list.size() == 0) {
+                            if (list.isEmpty()) {
                                 return null;
                             } else if (list.size() != 1) {
                                 throw new IllegalStateException("More service account linked users found for client=" + client.getClientId() +
@@ -479,13 +468,13 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public UserModel getUserById(String id, RealmModel realm) {
+    public UserModel getUserById(RealmModel realm, String id) {
         LOG.tracef("getUserById(%s, %s)%s", realm, id, getShortStackTrace());
         return getEntityById(realm, id).map(entityToAdapterFunc(realm)).orElse(null);
     }
 
     @Override
-    public UserModel getUserByUsername(String username, RealmModel realm) {
+    public UserModel getUserByUsername(RealmModel realm, String username) {
         if (username == null) return null;
         final String usernameLowercase = username.toLowerCase();
         
@@ -497,12 +486,12 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public UserModel getUserByEmail(String email, RealmModel realm) {
+    public UserModel getUserByEmail(RealmModel realm, String email) {
         LOG.tracef("getUserByEmail(%s, %s)%s", realm, email, getShortStackTrace());
         List<MapUserEntity> usersWithEmail = getUnsortedUserEntitiesStream(realm)
-                .filter(userEntity -> Objects.equals(userEntity.getEmail(), email))
+                .filter(userEntity -> Objects.equals(userEntity.getEmail(), email.toLowerCase()))
                 .collect(Collectors.toList());
-        if (usersWithEmail.size() == 0) return null;
+        if (usersWithEmail.isEmpty()) return null;
         
         if (usersWithEmail.size() > 1) {
             // Realm settings have been changed from allowing duplicate emails to not allowing them
@@ -523,19 +512,13 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         return new MapUserAdapter(session, realm, userEntity) {
             @Override
             public boolean checkEmailUniqueness(RealmModel realm, String email) {
-                return getUserByEmail(email, realm) != null;
+                return getUserByEmail(realm, email) != null;
             }
             @Override
             public boolean checkUsernameUniqueness(RealmModel realm, String username) {
-                return getUserByUsername(username, realm) != null;
+                return getUserByUsername(realm, username) != null;
             }
         };
-    }
-
-    @Override
-    public int getUsersCount(RealmModel realm) {
-        LOG.tracef("getUsersCount(%s)%s", realm, getShortStackTrace());
-        return getUsersCount(realm, false);
     }
 
     @Override
@@ -564,46 +547,22 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm) {
-        LOG.tracef("getUsersStream(%s)%s", realm, getShortStackTrace());
-        return getUsersStream(realm, null, null, false);
-    }
-
-    @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, boolean includeServiceAccounts) {
-        LOG.tracef("getUsersStream(%s)%s", realm, getShortStackTrace());
-        return getUsersStream(realm, null, null, includeServiceAccounts);
-    }
-
-    @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults) {
         LOG.tracef("getUsersStream(%s, %d, %d)%s", realm, firstResult, maxResults, getShortStackTrace());
         return getUsersStream(realm, firstResult, maxResults, false);
     }
 
     @Override
-    public Stream<UserModel> searchForUserStream(String search, RealmModel realm) {
-        LOG.tracef("searchForUserStream(%s, %s)%s", realm, search, getShortStackTrace());
-        return searchForUserStream(search, realm, null, null);
-    }
-
-    @Override
-    public Stream<UserModel> searchForUserStream(String search, RealmModel realm, Integer firstResult, Integer maxResults) {
+    public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
         LOG.tracef("searchForUserStream(%s, %s, %d, %d)%s", realm, search, firstResult, maxResults, getShortStackTrace());
         Map<String, String> attributes = new HashMap<>();
         attributes.put(UserModel.SEARCH, search);
         session.setAttribute(UserModel.INCLUDE_SERVICE_ACCOUNT, false);
-        return searchForUserStream(attributes, realm, firstResult, maxResults);
+        return searchForUserStream(realm, attributes, firstResult, maxResults);
     }
 
     @Override
-    public Stream<UserModel> searchForUserStream(Map<String, String> params, RealmModel realm) {
-        LOG.tracef("searchForUserStream(%s, %s)%s", realm, params, getShortStackTrace());
-        return searchForUserStream(params, realm, null, null);
-    }
-
-    @Override
-    public Stream<UserModel> searchForUserStream(Map<String, String> attributes, RealmModel realm, Integer firstResult, Integer maxResults) {
+    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         LOG.tracef("searchForUserStream(%s, %s, %d, %d)%s", realm, attributes, firstResult, maxResults, getShortStackTrace());
         /* Find all predicates based on attributes map */
         List<Predicate<MapUserEntity>> predicatesList = new ArrayList<>();
@@ -735,13 +694,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group) {
-        LOG.tracef("getGroupMembersStream(%s, %s)%s", realm, group.getId(), getShortStackTrace());
-        return getGroupMembersStream(realm, group, null, null);
-    }
-
-    @Override
-    public Stream<UserModel> searchForUserByUserAttributeStream(String attrName, String attrValue, RealmModel realm) {
+    public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
         LOG.tracef("searchForUserByUserAttributeStream(%s, %s, %s)%s", realm, attrName, attrValue, getShortStackTrace());
         return getUnsortedUserEntitiesStream(realm)
                 .filter(userEntity -> userEntity.getAttribute(attrName).contains(attrValue))

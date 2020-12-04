@@ -57,6 +57,7 @@ import java.util.stream.Stream;
 import org.keycloak.models.ModelException;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 
@@ -288,12 +289,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
     }
 
     protected Stream<RoleModel> getRolesStream(TypedQuery<RoleEntity> query, RealmModel realm, Integer first, Integer max) {
-        if(Objects.nonNull(first) && Objects.nonNull(max)
-                && first >= 0 && max >= 0) {
-            query= query.setFirstResult(first).setMaxResults(max);
-        }
-
-        Stream<RoleEntity> results = query.getResultStream();
+        Stream<RoleEntity> results = paginateQuery(query, first, max).getResultStream();
 
         return closing(results.map(role -> new RoleAdapter(session, realm, em, role)));
     }
@@ -451,18 +447,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
         return closing(paginateQuery(query, first, max).getResultStream())
                 .map(g -> session.groups().getGroupById(realm, g));
     }
-    
-    private static <T> TypedQuery<T> paginateQuery(TypedQuery<T> query, Integer first, Integer max) {
-        if (first != null && first > 0) {
-            query = query.setFirstResult(first);
-        }
-
-        if (max != null && max >= 0) {
-            query = query.setMaxResults(max);
-        }
-
-        return query;
-    }
 
     @Override
     public Stream<GroupModel> getGroupsStream(RealmModel realm, Stream<String> ids) {
@@ -515,13 +499,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
     public Stream<GroupModel> getGroupsByRoleStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
         TypedQuery<GroupEntity> query = em.createNamedQuery("groupsInRole", GroupEntity.class);
         query.setParameter("roleId", role.getId());
-        if (firstResult != null && firstResult > 0) {
-            query = query.setFirstResult(firstResult);
-        }
-        if (maxResults != null && maxResults > 0) {
-            query = query.setMaxResults(maxResults);
-        }
-        Stream<GroupEntity> results = query.getResultStream();
+
+        Stream<GroupEntity> results = paginateQuery(query, firstResult, maxResults).getResultStream();
 
         return closing(results
         		.map(g -> (GroupModel) new GroupAdapter(realm, em, g))
@@ -657,14 +636,9 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
     @Override
     public Stream<ClientModel> getClientsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
         TypedQuery<String> query = em.createNamedQuery("getClientIdsByRealm", String.class);
-        if (firstResult != null && firstResult > 0) {
-            query.setFirstResult(firstResult);
-        }
-        if (maxResults != null && maxResults > 0) {
-            query.setMaxResults(maxResults);
-        }
+
         query.setParameter("realm", realm.getId());
-        Stream<String> clients = query.getResultStream();
+        Stream<String> clients = paginateQuery(query, firstResult, maxResults).getResultStream();
 
         return closing(clients.map(c -> session.clients().getClientById(realm, c)).filter(Objects::nonNull));
     }
@@ -706,15 +680,10 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
     @Override
     public Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
         TypedQuery<String> query = em.createNamedQuery("searchClientsByClientId", String.class);
-        if (firstResult != null && firstResult > 0) {
-            query.setFirstResult(firstResult);
-        }
-        if (maxResults != null && maxResults > 0) {
-            query.setMaxResults(maxResults);
-        }
         query.setParameter("clientId", clientId);
         query.setParameter("realm", realm.getId());
-        Stream<String> results = query.getResultStream();
+
+        Stream<String> results = paginateQuery(query, firstResult, maxResults).getResultStream();
         return closing(results.map(c -> session.clients().getClientById(realm, c)));
     }
 

@@ -77,7 +77,7 @@ public class MapAuthenticationSessionAdapter implements AuthenticationSessionMod
 
     @Override
     public UserModel getAuthenticatedUser() {
-        return entity.getAuthUserId() == null ? null : session.users().getUserById(entity.getAuthUserId(), getRealm());
+        return entity.getAuthUserId() == null ? null : session.users().getUserById(getRealm(), entity.getAuthUserId());
     }
 
     @Override

@@ -342,7 +342,7 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
 
     @Override
     public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
-        UserModel user = getUserByUsername(search, realm);
+        UserModel user = getUserByUsername(realm, search);
         return user == null ? Collections.emptyList() : Arrays.asList(user);
     }
 

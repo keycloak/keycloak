@@ -44,7 +44,7 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 public class SSSDFederationProvider implements UserStorageProvider,
-        UserLookupProvider,
+        UserLookupProvider.Streams,
         CredentialInputUpdater.Streams,
         CredentialInputValidator,
         ImportedUserValidation {
@@ -68,7 +68,7 @@ public class SSSDFederationProvider implements UserStorageProvider,
 
 
     @Override
-    public UserModel getUserByUsername(String username, RealmModel realm) {
+    public UserModel getUserByUsername(RealmModel realm, String username) {
         return findOrCreateAuthenticatedUser(realm, username);
     }
 
@@ -85,7 +85,7 @@ public class SSSDFederationProvider implements UserStorageProvider,
          * @return user if found or successfully created. Null if user with same username already exists, but is not linked to this provider
          */
     protected UserModel findOrCreateAuthenticatedUser(RealmModel realm, String username) {
-        UserModel user = session.userLocalStorage().getUserByUsername(username, realm);
+        UserModel user = session.userLocalStorage().getUserByUsername(realm, username);
         if (user != null) {
             logger.debug("SSSD authenticated user " + username + " found in Keycloak storage");
 
@@ -130,12 +130,12 @@ public class SSSDFederationProvider implements UserStorageProvider,
     }
 
     @Override
-    public UserModel getUserById(String id, RealmModel realm) {
+    public UserModel getUserById(RealmModel realm, String id) {
         return null;
     }
 
     @Override
-    public UserModel getUserByEmail(String email, RealmModel realm) {
+    public UserModel getUserByEmail(RealmModel realm, String email) {
         return null;
     }
 

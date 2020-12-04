@@ -592,7 +592,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         RealmModel realm = session.realms().getRealm(realmName);
         if (realm == null) return false;
         UserProvider userProvider = session.getProvider(UserProvider.class);
-        UserModel user = userProvider.getUserByUsername(userName, realm);
+        UserModel user = userProvider.getUserByUsername(realm, userName);
         return session.userCredentialManager().isValid(realm, user, UserCredentialModel.password(password));
     }
 
@@ -604,7 +604,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
                                                          @QueryParam("userId") String userId,
                                                          @QueryParam("userName") String userName) {
         RealmModel realm = getRealmByName(realmName);
-        UserModel foundFederatedUser = session.users().getUserByFederatedIdentity(new FederatedIdentityModel(identityProvider, userId, userName), realm);
+        UserModel foundFederatedUser = session.users().getUserByFederatedIdentity(realm, new FederatedIdentityModel(identityProvider, userId, userName));
         if (foundFederatedUser == null) return null;
         return ModelToRepresentation.toRepresentation(session, realm, foundFederatedUser);
     }
@@ -616,7 +616,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
                                                                       @QueryParam("userName") String userName) {
         RealmModel realm = getRealmByName(realmName);
         DummyUserFederationProviderFactory factory = (DummyUserFederationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, "dummy");
-        UserModel user = factory.create(session, null).getUserByUsername(userName, realm);
+        UserModel user = factory.create(session, null).getUserByUsername(realm, userName);
         if (user == null) return null;
         return ModelToRepresentation.toRepresentation(session, realm, user);
     }

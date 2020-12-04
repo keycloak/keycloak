@@ -593,7 +593,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                         String username = LDAPUtils.getUsername(ldapUser, ldapFedProvider.getLdapIdentityStore().getConfig());
                         exists.value = true;
                         LDAPUtils.checkUuid(ldapUser, ldapFedProvider.getLdapIdentityStore().getConfig());
-                        UserModel currentUser = session.userLocalStorage().getUserByUsername(username, currentRealm);
+                        UserModel currentUser = session.userLocalStorage().getUserByUsername(currentRealm, username);
 
                         if (currentUser == null) {
 
@@ -649,7 +649,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                             }
 
                             if (username != null) {
-                                UserModel existing = session.userLocalStorage().getUserByUsername(username, currentRealm);
+                                UserModel existing = session.userLocalStorage().getUserByUsername(currentRealm, username);
                                 if (existing != null) {
                                     UserCache userCache = session.userCache();
                                     if (userCache != null) {

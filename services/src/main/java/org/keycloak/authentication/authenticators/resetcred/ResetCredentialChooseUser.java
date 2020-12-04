@@ -65,7 +65,7 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
 
         String actionTokenUserId = context.getAuthenticationSession().getAuthNote(DefaultActionTokenKey.ACTION_TOKEN_USER_ID);
         if (actionTokenUserId != null) {
-            UserModel existingUser = context.getSession().users().getUserById(actionTokenUserId, context.getRealm());
+            UserModel existingUser = context.getSession().users().getUserById(context.getRealm(), actionTokenUserId);
 
             // Action token logics handles checks for user ID validity and user being enabled
 
@@ -96,9 +96,9 @@ public class ResetCredentialChooseUser implements Authenticator, AuthenticatorFa
         username = username.trim();
         
         RealmModel realm = context.getRealm();
-        UserModel user = context.getSession().users().getUserByUsername(username, realm);
+        UserModel user = context.getSession().users().getUserByUsername(realm, username);
         if (user == null && realm.isLoginWithEmailAllowed() && username.contains("@")) {
-            user =  context.getSession().users().getUserByEmail(username, realm);
+            user =  context.getSession().users().getUserByEmail(realm, username);
         }
 
         context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
