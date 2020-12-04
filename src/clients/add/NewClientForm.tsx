@@ -38,6 +38,8 @@ export const NewClientForm = () => {
   const { addAlert } = useAlerts();
   const methods = useForm<ClientRepresentation>({ defaultValues: client });
 
+  console.log(methods.errors.description);
+
   const save = async () => {
     try {
       await adminClient.clients.create({ ...client });
