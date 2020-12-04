@@ -41,6 +41,9 @@ There are also design changes in the login theme for better user experience.
 You can even define an icon for your custom Identity providers.
 For details, please refer to the link:{developerguide_link}#custom-identity-providers-icons[docs].
 
+== Gatekeeper EOL
+Gatekeeper reached end of life, in November 21. This means that we no longer support, or update it. The announcement is available https://www.keycloak.org/2020/08/sunsetting-louketo-project.adoc[here].
+
 == Other improvements
 
 * Support for OAuth2 Client Credentials grant without refresh token and without user session. Thanks to https://github.com/thomasdarimont[Thomas Darimont]
