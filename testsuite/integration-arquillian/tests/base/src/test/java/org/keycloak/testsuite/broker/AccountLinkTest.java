@@ -169,9 +169,9 @@ public class AccountLinkTest extends AbstractKeycloakTest {
     
     private static void checkEmptyFederatedIdentities(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
-        UserModel user = session.users().getUserByUsername("child", realm);
-        assertEquals(0, session.users().getFederatedIdentitiesStream(user, realm).count());
-        assertNull(session.users().getFederatedIdentity(user, PARENT_IDP, realm));
+        UserModel user = session.users().getUserByUsername(realm, "child");
+        assertEquals(0, session.users().getFederatedIdentitiesStream(realm, user).count());
+        assertNull(session.users().getFederatedIdentity(realm, user, PARENT_IDP));
     }
 
     protected void testAccountLink(String childUsername, String childPassword, String childIdp) {

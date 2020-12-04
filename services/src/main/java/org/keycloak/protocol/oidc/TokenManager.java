@@ -294,14 +294,14 @@ public class TokenManager {
      */
     public static UserModel lookupUserFromStatelessToken(KeycloakSession session, RealmModel realm, AccessToken token) {
         // Try to lookup user based on "sub" claim. It should work for most cases with some rare exceptions (EG. OIDC "pairwise" subjects)
-        UserModel user = session.users().getUserById(token.getSubject(), realm);
+        UserModel user = session.users().getUserById(realm, token.getSubject());
         if (user != null) {
             return user;
         }
 
         // Fallback to lookup user based on username (preferred_username claim)
         if (token.getPreferredUsername() != null) {
-            user = session.users().getUserByUsername(token.getPreferredUsername(), realm);
+            user = session.users().getUserByUsername(realm, token.getPreferredUsername());
             if (user != null) {
                 return user;
             }

@@ -38,7 +38,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.models.map.storage.MapStorage;
+
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 public class MapClientProvider implements ClientProvider {
 
@@ -130,14 +132,7 @@ public class MapClientProvider implements ClientProvider {
 
     @Override
     public Stream<ClientModel> getClientsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
-        Stream<ClientModel> s = getClientsStream(realm);
-        if (firstResult != null && firstResult >= 0) {
-            s = s.skip(firstResult);
-        }
-        if (maxResults != null && maxResults >= 0) {
-            s = s.limit(maxResults);
-        }
-        return s;
+        return paginatedStream(getClientsStream(realm), firstResult, maxResults);
     }
 
     private Stream<MapClientEntity> getNotRemovedUpdatedClientsStream() {
@@ -281,14 +276,7 @@ public class MapClientProvider implements ClientProvider {
           .filter(entity -> entity.getClientId() != null && entity.getClientId().toLowerCase().contains(clientIdLower))
           .sorted(COMPARE_BY_CLIENT_ID);
 
-        if (firstResult != null && firstResult >= 0) {
-            s = s.skip(firstResult);
-        }
-        if (maxResults != null && maxResults >= 0) {
-            s = s.limit(maxResults);
-        }
-
-        return s.map(entityToAdapterFunc(realm));
+        return paginatedStream(s, firstResult, maxResults).map(entityToAdapterFunc(realm));
     }
 
     @Override

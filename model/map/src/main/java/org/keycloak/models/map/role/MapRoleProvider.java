@@ -35,6 +35,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.models.map.storage.MapStorage;
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
+
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.map.common.StreamUtils;
@@ -126,14 +128,7 @@ public class MapRoleProvider implements RoleProvider {
 
     @Override
     public Stream<RoleModel> getRealmRolesStream(RealmModel realm, Integer first, Integer max) {
-        Stream<RoleModel> s = getRealmRolesStream(realm);
-        if (first != null && first >= 0) {
-            s = s.skip(first);
-        }
-        if (max != null && max >= 0) {
-            s = s.limit(max);
-        }
-        return s;
+        return paginatedStream(getRealmRolesStream(realm), first, max);
     }
 
     @Override
@@ -171,14 +166,7 @@ public class MapRoleProvider implements RoleProvider {
 
     @Override
     public Stream<RoleModel> getClientRolesStream(ClientModel client, Integer first, Integer max) {
-        Stream<RoleModel> s = getClientRolesStream(client);
-        if (first != null && first > 0) {
-            s = s.skip(first);
-        }
-        if (max != null && max >= 0) {
-            s = s.limit(max);
-        }
-        return s;
+        return paginatedStream(getClientRolesStream(client), first, max);
     }
 
     @Override
@@ -326,14 +314,7 @@ public class MapRoleProvider implements RoleProvider {
             )
             .sorted(COMPARE_BY_NAME);
 
-        if (first != null && first > 0) {
-            s = s.skip(first);
-        }
-        if (max != null && max >= 0) {
-            s = s.limit(max);
-        }
-
-        return s.map(entityToAdapterFunc(realm));
+        return paginatedStream(s.map(entityToAdapterFunc(realm)), first, max);
     }
 
     @Override
@@ -350,14 +331,7 @@ public class MapRoleProvider implements RoleProvider {
             )
             .sorted(COMPARE_BY_NAME);
 
-        if (first != null && first > 0) {
-            s = s.skip(first);
-        }
-        if (max != null && max >= 0) {
-            s = s.limit(max);
-        }
-
-        return s.map(entityToAdapterFunc(client.getRealm()));
+        return paginatedStream(s,first, max).map(entityToAdapterFunc(client.getRealm()));
     }
 
     @Override

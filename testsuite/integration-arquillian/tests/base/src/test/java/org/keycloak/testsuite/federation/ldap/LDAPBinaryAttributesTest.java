@@ -162,7 +162,7 @@ public class LDAPBinaryAttributesTest extends AbstractLDAPTest {
         String joeId = joe.getId();
         testingClient.server().run(session -> {
             RealmModel test = session.realms().getRealmByName("test");
-            UserModel userById = session.userLocalStorage().getUserById(joeId, test);
+            UserModel userById = session.userLocalStorage().getUserById(test, joeId);
 
             assertThat(userById.getAttributes().get(LDAPConstants.JPEG_PHOTO), is(nullValue()));
         });

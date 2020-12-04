@@ -160,7 +160,7 @@ public class ClientScopeEvaluateResource {
             throw new NotFoundException("No userId provided");
         }
 
-        UserModel user = session.users().getUserById(userId, realm);
+        UserModel user = session.users().getUserById(realm, userId);
         if (user == null) {
             throw new NotFoundException("No user found");
         }

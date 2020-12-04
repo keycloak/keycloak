@@ -63,7 +63,7 @@ public abstract class UserIdentityToModelMapper {
             if (_customAttributes.isEmpty() || userIdentityValues.isEmpty() || (_customAttributes.size() != userIdentityValues.size())) {
                 return null;
             }
-            Stream<UserModel> usersStream = session.users().searchForUserByUserAttributeStream(_customAttributes.get(0), userIdentityValues.get(0), context.getRealm());
+            Stream<UserModel> usersStream = session.users().searchForUserByUserAttributeStream(context.getRealm(), _customAttributes.get(0), userIdentityValues.get(0));
             
             for (int i = 1; i <_customAttributes.size(); ++i) {
                 String customAttribute = _customAttributes.get(i);

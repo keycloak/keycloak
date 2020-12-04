@@ -481,7 +481,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         final String uId = userId;  // Needed for run-on-server
         testingClient.server("test").run(session -> {
             RealmModel realm = session.getContext().getRealm();
-            UserModel user = session.users().getUserById(uId, realm);
+            UserModel user = session.users().getUserById(realm, uId);
             assertThat(user, Matchers.notNullValue());
             List<CredentialModel> storedCredentials = session.userCredentialManager()
                     .getStoredCredentialsStream(realm, user).collect(Collectors.toList());

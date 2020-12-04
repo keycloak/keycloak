@@ -180,7 +180,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         String userVerificationRequirement = getWebAuthnPolicy(context).getUserVerificationRequirement();
         if (WebAuthnConstants.OPTION_REQUIRED.equals(userVerificationRequirement)) isUVFlagChecked = true;
 
-        UserModel user = session.users().getUserById(userId, context.getRealm());
+        UserModel user = session.users().getUserById(context.getRealm(), userId);
 
         AuthenticationRequest authenticationRequest = new AuthenticationRequest(
                 credentialId,

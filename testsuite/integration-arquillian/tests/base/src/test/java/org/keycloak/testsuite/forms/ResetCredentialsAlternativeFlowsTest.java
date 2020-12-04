@@ -551,7 +551,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
             // Remove the within test registered 'bwilson' user
             testingClient.server("test").run(session -> {
                 UserManager um = new UserManager(session);
-                UserModel user = session.users().getUserByUsername("bwilson", session.getContext().getRealm());
+                UserModel user = session.users().getUserByUsername(session.getContext().getRealm(), "bwilson");
                 if (user != null) {
                     um.removeUser(session.getContext().getRealm(), user);
                 }

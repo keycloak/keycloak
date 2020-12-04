@@ -485,7 +485,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 IdentityProviderModel identityProviderConfig = getIdentityProviderConfig(providerId);
 
                 if (identityProviderConfig.isStoreToken()) {
-                    FederatedIdentityModel identity = this.session.users().getFederatedIdentity(authResult.getUser(), providerId, this.realmModel);
+                    FederatedIdentityModel identity = this.session.users().getFederatedIdentity(this.realmModel, authResult.getUser(), providerId);
 
                     if (identity == null) {
                         return corsResponse(badRequest("User [" + authResult.getUser().getId() + "] is not associated with identity provider [" + providerId + "]."), clientModel);
@@ -557,12 +557,12 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 .detail(Details.IDENTITY_PROVIDER, providerId)
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
 
-        UserModel federatedUser = this.session.users().getUserByFederatedIdentity(federatedIdentityModel, this.realmModel);
+        UserModel federatedUser = this.session.users().getUserByFederatedIdentity(this.realmModel, federatedIdentityModel);
         boolean shouldMigrateId = false;
         // try to find the user using legacy ID
         if (federatedUser == null && context.getLegacyId() != null) {
             federatedIdentityModel = new FederatedIdentityModel(federatedIdentityModel, context.getLegacyId());
-            federatedUser = this.session.users().getUserByFederatedIdentity(federatedIdentityModel, this.realmModel);
+            federatedUser = this.session.users().getUserByFederatedIdentity(this.realmModel, federatedIdentityModel);
             shouldMigrateId = true;
         }
 
@@ -962,7 +962,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         if (federatedUser != null) {
             if (context.getIdpConfig().isStoreToken()) {
-                FederatedIdentityModel oldModel = this.session.users().getFederatedIdentity(federatedUser, context.getIdpConfig().getAlias(), this.realmModel);
+                FederatedIdentityModel oldModel = this.session.users().getFederatedIdentity(this.realmModel, federatedUser, context.getIdpConfig().getAlias());
                 if (!ObjectUtil.isEqualOrBothNull(context.getToken(), oldModel.getToken())) {
                     this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, newModel);
                     if (isDebugEnabled()) {
@@ -1010,7 +1010,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
 
     private void updateFederatedIdentity(BrokeredIdentityContext context, UserModel federatedUser) {
-        FederatedIdentityModel federatedIdentityModel = this.session.users().getFederatedIdentity(federatedUser, context.getIdpConfig().getAlias(), this.realmModel);
+        FederatedIdentityModel federatedIdentityModel = this.session.users().getFederatedIdentity(this.realmModel, federatedUser, context.getIdpConfig().getAlias());
 
         if (context.getIdpConfig().getSyncMode() == IdentityProviderSyncMode.FORCE) {
             setBasicUserAttributes(context, federatedUser);
@@ -1041,7 +1041,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     private void migrateFederatedIdentityId(BrokeredIdentityContext context, UserModel federatedUser) {
-        FederatedIdentityModel identityModel = this.session.users().getFederatedIdentity(federatedUser, context.getIdpConfig().getAlias(), this.realmModel);
+        FederatedIdentityModel identityModel = this.session.users().getFederatedIdentity(this.realmModel, federatedUser, context.getIdpConfig().getAlias());
         FederatedIdentityModel migratedIdentityModel = new FederatedIdentityModel(identityModel, context.getId());
 
         // since ID is a partial key we need to recreate the identity

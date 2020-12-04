@@ -516,7 +516,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         realm.removeClient(realm.getClientByClientId("direct-exchanger").getId());
         realm.removeClient(realm.getClientByClientId("target").getId());
         realm.removeRole(realm.getRole("example"));
-        session.users().removeUser(realm, session.users().getUserByUsername("impersonated-user", realm));
+        session.users().removeUser(realm, session.users().getUserByUsername(realm, "impersonated-user"));
     }
 
     private Response checkTokenExchange() {

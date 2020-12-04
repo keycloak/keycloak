@@ -228,20 +228,20 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
             LDAPStorageProvider ldapProvider = ctx.getLdapProvider();
 
             // assume no user imported
-            UserModel user = localStorage.getUserByUsername("johnkeycloak", realm);
+            UserModel user = localStorage.getUserByUsername(realm, "johnkeycloak");
             assumeThat(user, is(nullValue()));
 
             // trigger import
-            List<UserModel> byEmail = ldapProvider.searchForUserByUserAttributeStream("email", "john_old@email.org", realm)
+            List<UserModel> byEmail = ldapProvider.searchForUserByUserAttributeStream(realm, "email", "john_old@email.org")
                     .collect(Collectors.toList());
             assumeThat(byEmail, hasSize(1));
 
             // assume that user has been imported
-            user = localStorage.getUserByUsername("johnkeycloak", realm);
+            user = localStorage.getUserByUsername(realm, "johnkeycloak");
             assumeThat(user, is(not(nullValue())));
 
             // search a second time
-            byEmail = ldapProvider.searchForUserByUserAttributeStream("email", "john_old@email.org", realm)
+            byEmail = ldapProvider.searchForUserByUserAttributeStream(realm, "email", "john_old@email.org")
                     .collect(Collectors.toList());
             assertThat(byEmail, hasSize(1));
         });

@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
  */
 public class PassThroughFederatedUserStorageProvider implements
         UserStorageProvider,
-        UserLookupProvider,
+        UserLookupProvider.Streams,
         CredentialInputValidator,
         CredentialInputUpdater
 {
@@ -130,20 +130,20 @@ public class PassThroughFederatedUserStorageProvider implements
     }
 
     @Override
-    public UserModel getUserById(String id, RealmModel realm) {
+    public UserModel getUserById(RealmModel realm, String id) {
         if (!StorageId.externalId(id).equals(PASSTHROUGH_USERNAME)) return null;
         return getUserModel(realm);
     }
 
     @Override
-    public UserModel getUserByUsername(String username, RealmModel realm) {
+    public UserModel getUserByUsername(RealmModel realm, String username) {
         if  (!PASSTHROUGH_USERNAME.equals(username)) return null;
 
         return getUserModel(realm);
     }
 
     @Override
-    public UserModel getUserByEmail(String email, RealmModel realm) {
+    public UserModel getUserByEmail(RealmModel realm, String email) {
         Optional<StorageId> result = session.userFederatedStorage()
                 .getUsersByUserAttributeStream(realm, AbstractUserAdapterFederatedStorage.EMAIL_ATTRIBUTE, email)
                 .map(StorageId::new)

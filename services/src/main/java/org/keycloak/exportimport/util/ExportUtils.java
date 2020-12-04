@@ -458,7 +458,7 @@ public class ExportUtils {
         UserRepresentation userRep = ModelToRepresentation.toRepresentation(session, realm, user);
 
         // Social links
-        List<FederatedIdentityRepresentation> socialLinkReps = session.users().getFederatedIdentitiesStream(user, realm)
+        List<FederatedIdentityRepresentation> socialLinkReps = session.users().getFederatedIdentitiesStream(realm, user)
                 .map(ExportUtils::exportSocialLink).collect(Collectors.toList());
         if (socialLinkReps.size() > 0) {
             userRep.setFederatedIdentities(socialLinkReps);

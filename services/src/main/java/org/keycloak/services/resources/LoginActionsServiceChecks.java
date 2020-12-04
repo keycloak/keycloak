@@ -137,7 +137,7 @@ public class LoginActionsServiceChecks {
      *  it optionally also injects the user using the given function (e.g. into session context).
      */
     public static void checkIsUserValid(KeycloakSession session, RealmModel realm, String userId, Consumer<UserModel> userSetter) throws VerificationException {
-        UserModel user = userId == null ? null : session.users().getUserById(userId, realm);
+        UserModel user = userId == null ? null : session.users().getUserById(realm, userId);
 
         if (user == null) {
             throw new ExplainedVerificationException(Errors.USER_NOT_FOUND, Messages.INVALID_USER);

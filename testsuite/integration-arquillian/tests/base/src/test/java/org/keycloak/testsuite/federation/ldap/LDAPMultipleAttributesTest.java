@@ -111,8 +111,8 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             // Test user imported in local storage now
-            UserModel user = session.users().getUserByUsername("jbrown", appRealm);
-            Assert.assertNotNull(session.userLocalStorage().getUserById(user.getId(), appRealm));
+            UserModel user = session.users().getUserByUsername(appRealm, "jbrown");
+            Assert.assertNotNull(session.userLocalStorage().getUserById(appRealm, user.getId()));
             LDAPTestAsserts.assertUserImported(session.userLocalStorage(), appRealm, "jbrown", "James", "Brown", "jbrown@keycloak.org", "88441");
         });
     }
@@ -125,7 +125,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
             session.userCache().clear();
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel user = session.users().getUserByUsername("bwilson", appRealm);
+            UserModel user = session.users().getUserByUsername(appRealm, "bwilson");
             Assert.assertEquals("bwilson@keycloak.org", user.getEmail());
             Assert.assertEquals("Bruce", user.getFirstName());
 
@@ -147,7 +147,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel user = session.users().getUserByUsername("bwilson", appRealm);
+            UserModel user = session.users().getUserByUsername(appRealm, "bwilson");
             List<String> postalCodes = user.getAttributeStream("postal_code").collect(Collectors.toList());
             assertPostalCodes(postalCodes, "88441");
             List<String> tmp = new LinkedList<>();
@@ -161,7 +161,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            UserModel user = session.users().getUserByUsername("bwilson", appRealm);
+            UserModel user = session.users().getUserByUsername(appRealm, "bwilson");
             assertPostalCodes(user.getAttributeStream("postal_code").collect(Collectors.toList()), "88441", "77332");
         });
     }

@@ -63,7 +63,7 @@ public class EmailEventListenerProvider implements EventListenerProvider {
     
     private void sendEmail(Event event) {
         RealmModel realm = model.getRealm(event.getRealmId());
-        UserModel user = session.users().getUserById(event.getUserId(), realm);
+        UserModel user = session.users().getUserById(realm, event.getUserId());
         if (user != null && user.getEmail() != null && user.isEmailVerified()) {
             try {
                 emailTemplateProvider.setRealm(realm).setUser(user).sendEvent(event);

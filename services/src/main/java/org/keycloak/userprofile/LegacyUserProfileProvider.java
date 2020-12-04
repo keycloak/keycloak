@@ -95,7 +95,7 @@ public class LegacyUserProfileProvider implements UserProfileProvider {
             builder.addAttributeValidator().forAttribute(UserModel.USERNAME)
                     .addSingleAttributeValueValidationFunction(Messages.MISSING_USERNAME, StaticValidators.isBlank())
                     .addSingleAttributeValueValidationFunction(Messages.USERNAME_EXISTS,
-                            (value, o) -> session.users().getUserByUsername(value, realm) == null)
+                            (value, o) -> session.users().getUserByUsername(realm, value) == null)
                     .build();
         }
     }

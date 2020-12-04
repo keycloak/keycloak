@@ -834,9 +834,9 @@ public class TokenEndpoint {
         String requestedSubject = formParams.getFirst(OAuth2Constants.REQUESTED_SUBJECT);
         if (requestedSubject != null) {
             event.detail(Details.REQUESTED_SUBJECT, requestedSubject);
-            UserModel requestedUser = session.users().getUserByUsername(requestedSubject, realm);
+            UserModel requestedUser = session.users().getUserByUsername(realm, requestedSubject);
             if (requestedUser == null) {
-                requestedUser = session.users().getUserById(requestedSubject, realm);
+                requestedUser = session.users().getUserById(realm, requestedSubject);
             }
 
             if (requestedUser == null) {
@@ -1135,7 +1135,7 @@ public class TokenEndpoint {
         FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(providerId, context.getId(),
                 context.getUsername(), context.getToken());
 
-        UserModel user = this.session.users().getUserByFederatedIdentity(federatedIdentityModel, realm);
+        UserModel user = this.session.users().getUserByFederatedIdentity(realm, federatedIdentityModel);
 
         if (user == null) {
 
@@ -1154,14 +1154,14 @@ public class TokenEndpoint {
             username = username.trim();
             context.setModelUsername(username);
             if (context.getEmail() != null && !realm.isDuplicateEmailsAllowed()) {
-                UserModel existingUser = session.users().getUserByEmail(context.getEmail(), realm);
+                UserModel existingUser = session.users().getUserByEmail(realm, context.getEmail());
                 if (existingUser != null) {
                     event.error(Errors.FEDERATED_IDENTITY_EXISTS);
                     throw new CorsErrorResponseException(cors, Errors.INVALID_TOKEN, "User already exists", Response.Status.BAD_REQUEST);
                 }
             }
 
-            UserModel existingUser = session.users().getUserByUsername(username, realm);
+            UserModel existingUser = session.users().getUserByUsername(realm, username);
             if (existingUser != null) {
                 event.error(Errors.FEDERATED_IDENTITY_EXISTS);
                 throw new CorsErrorResponseException(cors, Errors.INVALID_TOKEN, "User already exists", Response.Status.BAD_REQUEST);

@@ -709,11 +709,11 @@ public class AccountFormService extends AbstractSecuredLocalService {
                     return account.setError(Response.Status.INTERNAL_SERVER_ERROR, Messages.IDENTITY_PROVIDER_REDIRECT_ERROR).createResponse(AccountPages.FEDERATED_IDENTITY);
                 }
             case REMOVE:
-                FederatedIdentityModel link = session.users().getFederatedIdentity(user, providerId, realm);
+                FederatedIdentityModel link = session.users().getFederatedIdentity(realm, user, providerId);
                 if (link != null) {
 
                     // Removing last social provider is not possible if you don't have other possibility to authenticate
-                    if (session.users().getFederatedIdentitiesStream(user, realm).count() > 1 || user.getFederationLink() != null || isPasswordSet(session, realm, user)) {
+                    if (session.users().getFederatedIdentitiesStream(realm, user).count() > 1 || user.getFederationLink() != null || isPasswordSet(session, realm, user)) {
                         session.users().removeFederatedIdentity(realm, user, providerId);
 
                         logger.debugv("Social provider {0} removed successfully from user {1}", providerId, user.getUsername());
@@ -833,7 +833,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
             Map<String, String> filters = new HashMap<>();
 
             filters.put(PermissionTicket.RESOURCE, resource.getId());
-            filters.put(PermissionTicket.REQUESTER, session.users().getUserByUsername(requester, realm).getId());
+            filters.put(PermissionTicket.REQUESTER, session.users().getUserByUsername(realm, requester).getId());
 
             if (isRevoke) {
                 filters.put(PermissionTicket.GRANTED, Boolean.TRUE.toString());
@@ -909,14 +909,14 @@ public class AccountFormService extends AbstractSecuredLocalService {
         }
 
         for (String id : userIds) {
-            UserModel user = session.users().getUserById(id, realm);
+            UserModel user = session.users().getUserById(realm, id);
 
             if (user == null) {
-                user = session.users().getUserByUsername(id, realm);
+                user = session.users().getUserByUsername(realm, id);
             }
 
             if (user == null) {
-                user = session.users().getUserByEmail(id, realm);
+                user = session.users().getUserByEmail(realm, id);
             }
 
             if (user == null) {

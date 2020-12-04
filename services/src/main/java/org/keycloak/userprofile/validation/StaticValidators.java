@@ -55,7 +55,7 @@ public class StaticValidators {
             if (Validation.isBlank(value)) return true;
             return !(context.getCurrentProfile() != null
                     && !value.equals(context.getCurrentProfile().getAttributes().getFirstAttribute(UserModel.USERNAME))
-                    && session.users().getUserByUsername(value, session.getContext().getRealm()) != null);
+                    && session.users().getUserByUsername(session.getContext().getRealm(), value) != null);
         };
     }
 
@@ -80,7 +80,7 @@ public class StaticValidators {
             if (Validation.isBlank(value)) return true;
             RealmModel realm = session.getContext().getRealm();
             if (!realm.isDuplicateEmailsAllowed()) {
-                UserModel userByEmail = session.users().getUserByEmail(value, realm);
+                UserModel userByEmail = session.users().getUserByEmail(realm, value);
                 return !(realm.isRegistrationEmailAsUsername() && userByEmail != null && context.getCurrentProfile() != null && !userByEmail.getId().equals(context.getCurrentProfile().getId()));
             }
             return true;
@@ -92,7 +92,7 @@ public class StaticValidators {
             if (Validation.isBlank(value)) return true;
             RealmModel realm = session.getContext().getRealm();
             if (!realm.isDuplicateEmailsAllowed()) {
-                UserModel userByEmail = session.users().getUserByEmail(value, realm);
+                UserModel userByEmail = session.users().getUserByEmail(realm, value);
                 // check for duplicated email
                 return !(userByEmail != null && (context.getCurrentProfile() == null || !userByEmail.getId().equals(context.getCurrentProfile().getId())));
             }
@@ -104,7 +104,7 @@ public class StaticValidators {
         return (value, context) ->
                 !(value != null
                         && !session.getContext().getRealm().isDuplicateEmailsAllowed()
-                        && session.users().getUserByEmail(value, session.getContext().getRealm()) != null);
+                        && session.users().getUserByEmail(session.getContext().getRealm(), value) != null);
     }
 
     public static BiFunction<List<String>, UserProfileContext, Boolean> isAttributeUnchanged(String attributeName) {

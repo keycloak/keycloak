@@ -38,7 +38,7 @@ public class DynamicClientRegisterContext implements ClientUpdateContext {
         this.token = token;
         if (token != null) {
             if (token.getSubject() != null) {
-                this.user = context.getSession().users().getUserById(token.getSubject(), realm);
+                this.user = context.getSession().users().getUserById(realm, token.getSubject());
             }
             if (token.getIssuedFor() != null) {
                 this.client = realm.getClientByClientId(token.getIssuedFor());

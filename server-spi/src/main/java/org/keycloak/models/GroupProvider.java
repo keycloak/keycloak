@@ -38,7 +38,7 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @param id Id.
      * @param realm Realm.
      * @return GroupModel with the corresponding id.
-     * @deprecated Use method {@code getGroupById(realm, id)}
+     * @deprecated Use method {@link #getGroupById(RealmModel, String) getGroupById}
      */
     default GroupModel getGroupById(String id, RealmModel realm) {
         return getGroupById(realm, id);
@@ -140,7 +140,7 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @param firstResult First result to return. Ignored if negative.
      * @param maxResults Maximum number of results to return. Ignored if negative.
      * @return List of groups with the given role.
-     * @deprecated Use {@link #getGroupsByRoleStream(RealmModel, RoleModel, int, int) getGroupsByRoleStream} instead.
+     * @deprecated Use {@link #getGroupsByRoleStream(RealmModel, RoleModel, Integer, Integer) getGroupsByRoleStream} instead.
      */
     @Deprecated
     default List<GroupModel> getGroupsByRole(RealmModel realm, RoleModel role, int firstResult, int maxResults) {

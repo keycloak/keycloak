@@ -54,7 +54,7 @@ public class AccountFederatedIdentityBean {
                 .map(provider -> {
                     String providerId = provider.getAlias();
 
-                    FederatedIdentityModel identity = getIdentity(session.users().getFederatedIdentitiesStream(user, realm), providerId);
+                    FederatedIdentityModel identity = getIdentity(session.users().getFederatedIdentitiesStream(realm, user), providerId);
 
                     if (identity != null) {
                         availableIdentities.getAndIncrement();

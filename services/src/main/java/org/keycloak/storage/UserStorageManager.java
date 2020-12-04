@@ -58,6 +58,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -136,7 +137,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         runJobInTransaction(session.getKeycloakSessionFactory(), session -> {
             RealmModel realmModel = session.realms().getRealm(realm.getId());
             if (realmModel == null) return;
-            UserModel deletedUser = session.userLocalStorage().getUserById(userId, realmModel);
+            UserModel deletedUser = session.userLocalStorage().getUserById(realmModel, userId);
             if (deletedUser != null) {
                 try {
                     new UserManager(session).removeUser(realmModel, deletedUser, session.userLocalStorage());
@@ -161,10 +162,8 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         Stream<UserModel> query(Object provider);
     }
 
-    protected Stream<UserModel> query(PaginatedQuery pagedQuery, RealmModel realm, int firstResult, int maxResults) {
-        if (maxResults == 0) return Stream.empty();
-        if (firstResult < 0) firstResult = 0;
-        if (maxResults < 0) maxResults = Integer.MAX_VALUE - 1;
+    protected Stream<UserModel> query(PaginatedQuery pagedQuery, RealmModel realm, Integer firstResult, Integer maxResults) {
+        if (maxResults != null && maxResults == 0) return Stream.empty();
 
         Stream<Object> providersStream = Stream.concat(Stream.of((Object) localStorage()), getEnabledStorageProviders(realm, UserQueryProvider.class));
 
@@ -173,9 +172,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             providersStream = Stream.concat(providersStream, Stream.of(federatedStorageProvider));
         }
 
-        return providersStream.flatMap(pagedQuery::query)
-                .skip(firstResult)
-                .limit(maxResults);
+        return paginatedStream(providersStream.flatMap(pagedQuery::query), firstResult, maxResults);
     }
 
     /**
@@ -232,33 +229,33 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         {@link UserLookupProvider} methods implementations start here */
 
     @Override
-    public UserModel getUserById(String id, RealmModel realm) {
+    public UserModel getUserById(RealmModel realm, String id) {
         StorageId storageId = new StorageId(id);
         if (storageId.getProviderId() == null) {
-            UserModel user = localStorage().getUserById(id, realm);
+            UserModel user = localStorage().getUserById(realm, id);
             return importValidation(realm, user);
         }
 
         UserLookupProvider provider = getStorageProviderInstance(realm, storageId.getProviderId(), UserLookupProvider.class);
         if (provider == null) return null;
 
-        return provider.getUserById(id, realm);
+        return provider.getUserById(realm, id);
     }
 
     @Override
-    public UserModel getUserByUsername(String username, RealmModel realm) {
-        UserModel user = localStorage().getUserByUsername(username, realm);
+    public UserModel getUserByUsername(RealmModel realm, String username) {
+        UserModel user = localStorage().getUserByUsername(realm, username);
         if (user != null) {
             return importValidation(realm, user);
         }
 
         return mapEnabledStorageProvidersWithTimeout(realm, UserLookupProvider.class,
-                provider -> provider.getUserByUsername(username, realm)).findFirst().orElse(null);
+                provider -> provider.getUserByUsername(realm, username)).findFirst().orElse(null);
     }
 
     @Override
-    public UserModel getUserByEmail(String email, RealmModel realm) {
-        UserModel user = localStorage().getUserByEmail(email, realm);
+    public UserModel getUserByEmail(RealmModel realm, String email) {
+        UserModel user = localStorage().getUserByEmail(realm, email);
         if (user != null) {
             user = importValidation(realm, user);
             // Case when email was changed directly in the userStorage and doesn't correspond anymore to the email from local DB
@@ -268,16 +265,11 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         }
 
         return mapEnabledStorageProvidersWithTimeout(realm, UserLookupProvider.class,
-                provider -> provider.getUserByEmail(email, realm)).findFirst().orElse(null);
+                provider -> provider.getUserByEmail(realm, email)).findFirst().orElse(null);
     }
 
     /** {@link UserLookupProvider} methods implementations end here
         {@link UserQueryProvider} methods implementation start here */
-
-    @Override
-    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group) {
-        return getGroupMembersStream(realm, group, -1, -1);
-    }
 
     @Override
     public Stream<UserModel> getGroupMembersStream(final RealmModel realm, final GroupModel group, Integer firstResult, Integer maxResults) {
@@ -287,17 +279,12 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
             } else if (provider instanceof UserFederatedStorageProvider) {
                 return ((UserFederatedStorageProvider)provider).getMembershipStream(realm, group, -1, -1).
-                        map(id -> getUserById(id, realm));
+                        map(id -> getUserById(realm, id));
            }
             return Stream.empty();
         }, realm, firstResult, maxResults);
 
         return importValidation(realm, results);
-    }
-
-    @Override
-    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role) {
-        return getRoleMembersStream(realm, role, -1, -1);
     }
 
     @Override
@@ -314,17 +301,12 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public Stream<UserModel> getUsersStream(RealmModel realm) {
-        return getUsersStream(realm, false);
+        return getUsersStream(realm, null, null, false);
     }
 
     @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults) {
         return getUsersStream(realm, firstResult, maxResults, false);
-    }
-
-    @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, boolean includeServiceAccounts) {
-        return getUsersStream(realm, 0, Integer.MAX_VALUE - 1, includeServiceAccounts);
     }
 
     @Override
@@ -362,35 +344,30 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override // TODO: missing storageProviders count?
-    public int getUsersCount(String search, RealmModel realm) {
-        return localStorage().getUsersCount(search, realm);
+    public int getUsersCount(RealmModel realm, String search) {
+        return localStorage().getUsersCount(realm, search);
     }
 
     @Override // TODO: missing storageProviders count?
-    public int getUsersCount(String search, RealmModel realm, Set<String> groupIds) {
-        return localStorage().getUsersCount(search, realm, groupIds);
+    public int getUsersCount(RealmModel realm, String search, Set<String> groupIds) {
+        return localStorage().getUsersCount(realm, search, groupIds);
     }
 
     @Override // TODO: missing storageProviders count?
-    public int getUsersCount(Map<String, String> params, RealmModel realm) {
-        return localStorage().getUsersCount(params, realm);
+    public int getUsersCount(RealmModel realm, Map<String, String> params) {
+        return localStorage().getUsersCount(realm, params);
     }
 
     @Override // TODO: missing storageProviders count?
-    public int getUsersCount(Map<String, String> params, RealmModel realm, Set<String> groupIds) {
-        return localStorage().getUsersCount(params, realm, groupIds);
+    public int getUsersCount(RealmModel realm, Map<String, String> params, Set<String> groupIds) {
+        return localStorage().getUsersCount(realm, params, groupIds);
     }
 
     @Override
-    public Stream<UserModel> searchForUserStream(String search, RealmModel realm) {
-        return searchForUserStream(search, realm, 0, Integer.MAX_VALUE - 1);
-    }
-
-    @Override
-    public Stream<UserModel> searchForUserStream(String search, RealmModel realm, Integer firstResult, Integer maxResults) {
+    public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
         Stream<UserModel> results = query((provider) -> {
             if (provider instanceof UserQueryProvider) {
-                return ((UserQueryProvider)provider).searchForUserStream(search, realm);
+                return ((UserQueryProvider)provider).searchForUserStream(realm, search);
             }
             return Stream.empty();
         }, realm, firstResult, maxResults);
@@ -398,18 +375,13 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public Stream<UserModel> searchForUserStream(Map<String, String> attributes, RealmModel realm) {
-        return searchForUserStream(attributes, realm, 0, Integer.MAX_VALUE - 1);
-    }
-
-    @Override
-    public Stream<UserModel> searchForUserStream(Map<String, String> attributes, RealmModel realm, Integer firstResult, Integer maxResults) {
+    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         Stream<UserModel> results = query((provider) -> {
             if (provider instanceof UserQueryProvider) {
                 if (attributes.containsKey(UserModel.SEARCH)) {
-                    return ((UserQueryProvider)provider).searchForUserStream(attributes.get(UserModel.SEARCH), realm);
+                    return ((UserQueryProvider)provider).searchForUserStream(realm, attributes.get(UserModel.SEARCH));
                 } else {
-                    return ((UserQueryProvider)provider).searchForUserStream(attributes, realm);
+                    return ((UserQueryProvider)provider).searchForUserStream(realm, attributes);
                 }
             }
             return Stream.empty();
@@ -419,18 +391,18 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public Stream<UserModel> searchForUserByUserAttributeStream(String attrName, String attrValue, RealmModel realm) {
+    public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
         Stream<UserModel> results = query((provider) -> {
             if (provider instanceof UserQueryProvider) {
-                return ((UserQueryProvider)provider).searchForUserByUserAttributeStream(attrName, attrValue, realm);
+                return ((UserQueryProvider)provider).searchForUserByUserAttributeStream(realm, attrName, attrValue);
             } else if (provider instanceof UserFederatedStorageProvider) {
                 return  ((UserFederatedStorageProvider)provider).getUsersByUserAttributeStream(realm, attrName, attrValue)
-                        .map(id -> getUserById(id, realm))
+                        .map(id -> getUserById(realm, id))
                         .filter(Objects::nonNull);
 
             }
             return Stream.empty();
-        }, realm,0, Integer.MAX_VALUE - 1);
+        }, realm,null, null);
 
         // removeDuplicates method may cause concurrent issues, it should not be used on parallel streams
         results = removeDuplicates(results);
@@ -594,14 +566,14 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public UserModel getUserByFederatedIdentity(FederatedIdentityModel socialLink, RealmModel realm) {
-        UserModel user = localStorage().getUserByFederatedIdentity(socialLink, realm);
+    public UserModel getUserByFederatedIdentity(RealmModel realm, FederatedIdentityModel socialLink) {
+        UserModel user = localStorage().getUserByFederatedIdentity(realm, socialLink);
         if (user != null) {
             return importValidation(realm, user);
         }
         if (getFederatedStorage() == null) return null;
         String id = getFederatedStorage().getUserByFederatedIdentity(socialLink, realm);
-        if (id != null) return getUserById(id, realm);
+        if (id != null) return getUserById(realm, id);
         return null;
     }
 
@@ -611,20 +583,20 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public Stream<FederatedIdentityModel> getFederatedIdentitiesStream(UserModel user, RealmModel realm) {
+    public Stream<FederatedIdentityModel> getFederatedIdentitiesStream(RealmModel realm, UserModel user) {
         if (user == null) throw new IllegalStateException("Federated user no longer valid");
         Stream<FederatedIdentityModel> stream = StorageId.isLocalStorage(user) ?
-                localStorage().getFederatedIdentitiesStream(user, realm) : Stream.empty();
+                localStorage().getFederatedIdentitiesStream(realm, user) : Stream.empty();
         if (getFederatedStorage() != null)
             stream = Stream.concat(stream, getFederatedStorage().getFederatedIdentitiesStream(user.getId(), realm));
         return stream.distinct();
     }
 
     @Override
-    public FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm) {
+    public FederatedIdentityModel getFederatedIdentity(RealmModel realm, UserModel user, String socialProvider) {
         if (user == null) throw new IllegalStateException("Federated user no longer valid");
         if (StorageId.isLocalStorage(user)) {
-            FederatedIdentityModel model = localStorage().getFederatedIdentity(user, socialProvider, realm);
+            FederatedIdentityModel model = localStorage().getFederatedIdentity(realm, user, socialProvider);
             if (model != null) return model;
         }
         if (getFederatedStorage() != null) return getFederatedStorage().getFederatedIdentity(user.getId(), socialProvider, realm);

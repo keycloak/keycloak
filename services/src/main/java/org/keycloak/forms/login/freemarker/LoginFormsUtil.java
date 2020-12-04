@@ -54,12 +54,12 @@ public class LoginFormsUtil {
                 throw new IllegalStateException("USERNAME_EDIT_DISABLED but username not known");
             }
 
-            UserModel user = session.users().getUserByUsername(username, realm);
+            UserModel user = session.users().getUserByUsername(realm, username);
             if (user == null || !user.isEnabled()) {
                 throw new IllegalStateException("User " + username + " not found or disabled");
             }
 
-            Set<String> federatedIdentities = session.users().getFederatedIdentitiesStream(user, realm)
+            Set<String> federatedIdentities = session.users().getFederatedIdentitiesStream(realm, user)
                     .map(federatedIdentityModel -> federatedIdentityModel.getIdentityProvider())
                     .collect(Collectors.toSet());
 

@@ -70,8 +70,8 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
             RealmModel realm = session.realms().getRealm("test");
             session.sessions().removeUserSessions(realm);
 
-            UserModel user1 = session.users().getUserByUsername("user1", realm);
-            UserModel user2 = session.users().getUserByUsername("user2", realm);
+            UserModel user1 = session.users().getUserByUsername(realm, "user1");
+            UserModel user2 = session.users().getUserByUsername(realm, "user2");
 
             UserManager um = new UserManager(session);
             if (user1 != null) {
@@ -121,13 +121,13 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
             // Update and commit
             authSession.setAction("foo-updated");
             rootAuthSession.setTimestamp(200);
-            authSession.setAuthenticatedUser(currentSession.users().getUserByUsername("user1", realm));
+            authSession.setAuthenticatedUser(currentSession.users().getUserByUsername(realm, "user1"));
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCRUD3) -> {
             KeycloakSession currentSession = sessionCRUD3;
             RealmModel realm = currentSession.realms().getRealm("test");
-            UserModel user1 = currentSession.users().getUserByUsername("user1", realm);
+            UserModel user1 = currentSession.users().getUserByUsername(realm, "user1");
 
             // Ensure currentSession was updated
             RootAuthenticationSessionModel rootAuthSession = currentSession.authenticationSessions().getRootAuthenticationSession(realm, rootAuthSessionID.get());
@@ -162,7 +162,7 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
             RealmModel realm = currentSession.realms().getRealm("test");
 
             ClientModel client1 = realm.getClientByClientId("test-app");
-            UserModel user1 = currentSession.users().getUserByUsername("user1", realm);
+            UserModel user1 = currentSession.users().getUserByUsername(realm, "user1");
 
             AuthenticationSessionModel authSession = currentSession.authenticationSessions().createRootAuthenticationSession(realm)
                     .createAuthenticationSession(client1);

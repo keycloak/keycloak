@@ -46,16 +46,16 @@ public class TestCacheUtils {
         realm.getClientScopesStream().map(ClientScopeModel::getId).forEach(realm::getClientScopeById);
 
         session.users().getUsersStream(realm).forEach(user -> {
-            session.users().getUserById(user.getId(), realm);
+            session.users().getUserById(realm, user.getId());
             if (user.getEmail() != null) {
-                session.users().getUserByEmail(user.getEmail(), realm);
+                session.users().getUserByEmail(realm, user.getEmail());
             }
-            session.users().getUserByUsername(user.getUsername(), realm);
+            session.users().getUserByUsername(realm, user.getUsername());
 
             session.users().getConsentsStream(realm, user.getId());
 
-            session.users().getFederatedIdentitiesStream(user, realm)
-                    .forEach(identity -> session.users().getUserByFederatedIdentity(identity, realm));
+            session.users().getFederatedIdentitiesStream(realm, user)
+                    .forEach(identity -> session.users().getUserByFederatedIdentity(realm, identity));
         });
     }
 
