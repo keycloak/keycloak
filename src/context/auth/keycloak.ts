@@ -15,6 +15,7 @@ export default async function (): Promise<KcAdminClient> {
         clientId: "security-admin-console-v2",
       }
     );
+    kcAdminClient.setConfig({ realmName: realm });
     kcAdminClient.baseUrl = "";
   } catch (error) {
     alert("failed to initialize keycloak");
