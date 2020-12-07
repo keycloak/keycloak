@@ -1,3 +1,4 @@
+import { IFormatter, IFormatterValueType } from "@patternfly/react-table";
 import FileSaver from "file-saver";
 import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import { ProviderRepresentation } from "keycloak-admin/lib/defs/serverInfoRepesentation";
@@ -64,4 +65,10 @@ export const convertFormValuesToObject = (obj: any) => {
     return { [newKey]: obj[key] };
   });
   return Object.assign({}, ...keyValues);
+};
+
+export const emptyFormatter = (): IFormatter => (
+  data?: IFormatterValueType
+) => {
+  return data ? data : "—";
 };

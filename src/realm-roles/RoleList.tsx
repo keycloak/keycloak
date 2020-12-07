@@ -1,6 +1,6 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-
 import {
   Table,
   TableBody,
@@ -9,14 +9,13 @@ import {
   IFormatter,
   IFormatterValueType,
 } from "@patternfly/react-table";
-
-import { ExternalLink } from "../components/external-link/ExternalLink";
-import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import { AlertVariant, ButtonVariant } from "@patternfly/react-core";
+import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
+
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { Link } from "react-router-dom";
+import { emptyFormatter } from "../util";
 
 type RolesListProps = {
   roles?: RoleRepresentation[];
@@ -51,16 +50,6 @@ export const RolesList = ({ roles, refresh }: RolesListProps) => {
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
   const [selectedRowId, setSelectedRowId] = useState(-1);
-
-  const emptyFormatter = (): IFormatter => (data?: IFormatterValueType) => {
-    return data ? data : "—";
-  };
-
-  const externalLink = (): IFormatter => (data?: IFormatterValueType) => {
-    return (data ? (
-      <ExternalLink href={"roles/" + data.toString()} />
-    ) : undefined) as object;
-  };
 
   const boolFormatter = (): IFormatter => (data?: IFormatterValueType) => {
     const boolVal = data?.toString();
@@ -106,7 +95,7 @@ export const RolesList = ({ roles, refresh }: RolesListProps) => {
         cells={[
           {
             title: t("roleName"),
-            cellFormatters: [externalLink(), emptyFormatter()],
+            cellFormatters: [emptyFormatter()],
           },
           {
             title: t("composite"),

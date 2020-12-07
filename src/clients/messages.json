@@ -24,6 +24,7 @@
     "setup": "Setup",
     "evaluate": "Evaluate",
     "changeTypeTo": "Change type to",
+    "assignRole": "Assign role",
     "clientScope": {
       "default" : "Default",
       "optional" : "Optional"
@@ -33,6 +34,8 @@
       "assigned": "Assigned type"
     },
     "assignedType": "Assigned type",
+    "hideInheritedRoles": "Hide inherited roles",
+    "inherentFrom": "Inherited from",
     "emptyClientScopes": "This client doesn't have any added client scopes",
     "emptyClientScopesInstructions": "There are currently no client scopes linked to this client. You can add existing client scopes to this client to share protocol mappers and roles.",
     "emptyClientScopesPrimaryAction": "Add client scopes",
@@ -61,8 +64,8 @@
     "authenticationFlow": "Authentication flow",
     "standardFlow": "Standard flow",
     "directAccess": "Direct access",
-    "serviceAccount": "Service account",
-    "enableServiceAccount": "Enable service account",
+    "serviceAccount": "Service account roles",
+    "enableServiceAccount": "Enable service account roles",
     "displayOnClient": "Display client on screen",
     "consentScreenText": "Client consent screen text",
     "loginSettings": "Login settings",

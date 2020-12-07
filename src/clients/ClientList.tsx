@@ -15,7 +15,7 @@ import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
 import { ExternalLink } from "../components/external-link/ExternalLink";
 import { useAlerts } from "../components/alert/Alerts";
 import { useAdminClient } from "../context/auth/AdminClient";
-import { exportClient } from "../util";
+import { emptyFormatter, exportClient } from "../util";
 
 type ClientListProps = {
   clients?: ClientRepresentation[];
@@ -34,10 +34,6 @@ export const ClientList = ({ baseUrl, clients, refresh }: ClientListProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
   const { addAlert } = useAlerts();
-
-  const emptyFormatter = (): IFormatter => (data?: IFormatterValueType) => {
-    return data ? data : "—";
-  };
 
   const externalLink = (): IFormatter => (data?: IFormatterValueType) => {
     return (data ? (
