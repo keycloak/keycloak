@@ -48,6 +48,8 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
         ouiaSafe={true}
         showClose={true}
         title="Delete app02?"
+        titleIconVariant={null}
+        titleLabel=""
         variant="small"
       >
         <Portal
@@ -97,10 +99,15 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
                       class="pf-c-modal-box__header"
                     >
                       <h1
-                        class="pf-c-modal-box__title pf-c-modal-box__title"
+                        class="pf-c-modal-box__title"
                         id="pf-modal-part-2"
                       >
-                        Delete app02?
+                        
+                        <span
+                          class="pf-c-modal-box__title-text"
+                        >
+                          Delete app02?
+                        </span>
                       </h1>
                     </header>
                     <div
@@ -174,6 +181,8 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
             ouiaSafe={true}
             showClose={true}
             title="Delete app02?"
+            titleIconVariant={null}
+            titleLabel=""
             variant="small"
           >
             <Backdrop>
@@ -236,6 +245,7 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
                               data-ouia-safe={true}
                               disabled={false}
                               onClick={[Function]}
+                              role={null}
                               type="button"
                             >
                               <TimesIcon
@@ -265,20 +275,27 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
                             </button>
                           </Button>
                         </ModalBoxCloseButton>
-                        <ModalBoxHeader>
+                        <ModalBoxHeader
+                          help={null}
+                        >
                           <header
                             className="pf-c-modal-box__header"
                           >
                             <ModalBoxTitle
-                              className="pf-c-modal-box__title"
                               id="pf-modal-part-2"
                               title="Delete app02?"
+                              titleIconVariant={null}
+                              titleLabel=""
                             >
                               <h1
-                                className="pf-c-modal-box__title pf-c-modal-box__title"
+                                className="pf-c-modal-box__title"
                                 id="pf-modal-part-2"
                               >
-                                Delete app02?
+                                <span
+                                  className="pf-c-modal-box__title-text"
+                                >
+                                  Delete app02?
+                                </span>
                               </h1>
                             </ModalBoxTitle>
                           </header>
@@ -313,6 +330,7 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
                                 disabled={false}
                                 id="modal-confirm"
                                 onClick={[Function]}
+                                role={null}
                                 type="button"
                               >
                                 Delete
@@ -334,6 +352,7 @@ exports[`Confirmation dialog renders simple confirm dialog 1`] = `
                                 disabled={false}
                                 id="modal-cancel"
                                 onClick={[Function]}
+                                role={null}
                                 type="button"
                               >
                                 cancel

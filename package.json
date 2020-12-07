@@ -16,10 +16,10 @@
     "test": "jest"
   },
   "dependencies": {
-    "@patternfly/patternfly": "^4.42.2",
-    "@patternfly/react-core": "4.50.2",
-    "@patternfly/react-icons": "4.7.6",
-    "@patternfly/react-table": "4.16.20",
+    "@patternfly/patternfly": "^4.65.6",
+    "@patternfly/react-core": "4.79.2",
+    "@patternfly/react-icons": "4.7.18",
+    "@patternfly/react-table": "4.19.24",
     "file-saver": "^2.0.2",
     "i18next": "^19.6.2",
     "keycloak-admin": "1.14.2",

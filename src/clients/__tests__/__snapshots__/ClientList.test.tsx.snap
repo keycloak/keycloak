@@ -8,7 +8,7 @@ Object {
       <table
         aria-label="Clients"
         class="pf-c-table pf-m-grid-md pf-m-compact"
-        data-ouia-component-id="OUIA-Generated-Table-1"
+        data-ouia-component-id="OUIA-Generated-Table-2"
         data-ouia-component-type="PF4/Table"
         data-ouia-safe="true"
         role="grid"
@@ -16,7 +16,12 @@ Object {
         <thead
           class=""
         >
-          <tr>
+          <tr
+            class=""
+            data-ouia-component-id="OUIA-Generated-TableRow-1"
+            data-ouia-component-type="PF4/TableRow"
+            data-ouia-safe="true"
+          >
             <th
               class=""
               data-key="0"
@@ -53,15 +58,17 @@ Object {
               class=""
               data-key="4"
               data-label=""
+              scope=""
             />
           </tr>
         </thead>
         <tbody
           class=""
+          role="rowgroup"
         >
           <tr
             class=""
-            data-ouia-component-id="OUIA-Generated-TableRow-1"
+            data-ouia-component-id="OUIA-Generated-TableRow-2"
             data-ouia-component-type="PF4/TableRow"
             data-ouia-safe="true"
           >
@@ -161,7 +168,7 @@ Object {
           </tr>
           <tr
             class=""
-            data-ouia-component-id="OUIA-Generated-TableRow-2"
+            data-ouia-component-id="OUIA-Generated-TableRow-3"
             data-ouia-component-type="PF4/TableRow"
             data-ouia-safe="true"
           >
@@ -261,7 +268,7 @@ Object {
           </tr>
           <tr
             class=""
-            data-ouia-component-id="OUIA-Generated-TableRow-3"
+            data-ouia-component-id="OUIA-Generated-TableRow-4"
             data-ouia-component-type="PF4/TableRow"
             data-ouia-safe="true"
           >
@@ -334,7 +341,7 @@ Object {
           </tr>
           <tr
             class=""
-            data-ouia-component-id="OUIA-Generated-TableRow-4"
+            data-ouia-component-id="OUIA-Generated-TableRow-5"
             data-ouia-component-type="PF4/TableRow"
             data-ouia-safe="true"
           >
@@ -407,7 +414,7 @@ Object {
           </tr>
           <tr
             class=""
-            data-ouia-component-id="OUIA-Generated-TableRow-5"
+            data-ouia-component-id="OUIA-Generated-TableRow-6"
             data-ouia-component-type="PF4/TableRow"
             data-ouia-safe="true"
           >
@@ -478,7 +485,7 @@ Object {
           </tr>
           <tr
             class=""
-            data-ouia-component-id="OUIA-Generated-TableRow-6"
+            data-ouia-component-id="OUIA-Generated-TableRow-7"
             data-ouia-component-type="PF4/TableRow"
             data-ouia-safe="true"
           >
@@ -578,7 +585,7 @@ Object {
           </tr>
           <tr
             class=""
-            data-ouia-component-id="OUIA-Generated-TableRow-7"
+            data-ouia-component-id="OUIA-Generated-TableRow-8"
             data-ouia-component-type="PF4/TableRow"
             data-ouia-safe="true"
           >
@@ -649,7 +656,7 @@ Object {
           </tr>
           <tr
             class=""
-            data-ouia-component-id="OUIA-Generated-TableRow-8"
+            data-ouia-component-id="OUIA-Generated-TableRow-9"
             data-ouia-component-type="PF4/TableRow"
             data-ouia-safe="true"
           >
@@ -755,7 +762,7 @@ Object {
     <table
       aria-label="Clients"
       class="pf-c-table pf-m-grid-md pf-m-compact"
-      data-ouia-component-id="OUIA-Generated-Table-1"
+      data-ouia-component-id="OUIA-Generated-Table-2"
       data-ouia-component-type="PF4/Table"
       data-ouia-safe="true"
       role="grid"
@@ -763,7 +770,12 @@ Object {
       <thead
         class=""
       >
-        <tr>
+        <tr
+          class=""
+          data-ouia-component-id="OUIA-Generated-TableRow-1"
+          data-ouia-component-type="PF4/TableRow"
+          data-ouia-safe="true"
+        >
           <th
             class=""
             data-key="0"
@@ -800,15 +812,17 @@ Object {
             class=""
             data-key="4"
             data-label=""
+            scope=""
           />
         </tr>
       </thead>
       <tbody
         class=""
+        role="rowgroup"
       >
         <tr
           class=""
-          data-ouia-component-id="OUIA-Generated-TableRow-1"
+          data-ouia-component-id="OUIA-Generated-TableRow-2"
           data-ouia-component-type="PF4/TableRow"
           data-ouia-safe="true"
         >
@@ -908,7 +922,7 @@ Object {
         </tr>
         <tr
           class=""
-          data-ouia-component-id="OUIA-Generated-TableRow-2"
+          data-ouia-component-id="OUIA-Generated-TableRow-3"
           data-ouia-component-type="PF4/TableRow"
           data-ouia-safe="true"
         >
@@ -1008,7 +1022,7 @@ Object {
         </tr>
         <tr
           class=""
-          data-ouia-component-id="OUIA-Generated-TableRow-3"
+          data-ouia-component-id="OUIA-Generated-TableRow-4"
           data-ouia-component-type="PF4/TableRow"
           data-ouia-safe="true"
         >
@@ -1081,7 +1095,7 @@ Object {
         </tr>
         <tr
           class=""
-          data-ouia-component-id="OUIA-Generated-TableRow-4"
+          data-ouia-component-id="OUIA-Generated-TableRow-5"
           data-ouia-component-type="PF4/TableRow"
           data-ouia-safe="true"
         >
@@ -1154,7 +1168,7 @@ Object {
         </tr>
         <tr
           class=""
-          data-ouia-component-id="OUIA-Generated-TableRow-5"
+          data-ouia-component-id="OUIA-Generated-TableRow-6"
           data-ouia-component-type="PF4/TableRow"
           data-ouia-safe="true"
         >
@@ -1225,7 +1239,7 @@ Object {
         </tr>
         <tr
           class=""
-          data-ouia-component-id="OUIA-Generated-TableRow-6"
+          data-ouia-component-id="OUIA-Generated-TableRow-7"
           data-ouia-component-type="PF4/TableRow"
           data-ouia-safe="true"
         >
@@ -1325,7 +1339,7 @@ Object {
         </tr>
         <tr
           class=""
-          data-ouia-component-id="OUIA-Generated-TableRow-7"
+          data-ouia-component-id="OUIA-Generated-TableRow-8"
           data-ouia-component-type="PF4/TableRow"
           data-ouia-safe="true"
         >
@@ -1396,7 +1410,7 @@ Object {
         </tr>
         <tr
           class=""
-          data-ouia-component-id="OUIA-Generated-TableRow-8"
+          data-ouia-component-id="OUIA-Generated-TableRow-9"
           data-ouia-component-type="PF4/TableRow"
           data-ouia-safe="true"
         >

@@ -101,6 +101,9 @@ exports[`renders realm selector 1`] = `
                     aria-expanded="true"
                     aria-haspopup="true"
                     class="pf-c-dropdown__toggle keycloak__realm_selector_dropdown__toggle"
+                    data-ouia-component-id="OUIA-Generated-DropdownToggle-1"
+                    data-ouia-component-type="PF4/DropdownToggle"
+                    data-ouia-safe="true"
                     id="realm-select-toggle"
                     type="button"
                   >
@@ -138,6 +141,9 @@ exports[`renders realm selector 1`] = `
                       <a
                         aria-disabled="false"
                         class="pf-c-dropdown__menu-item"
+                        data-ouia-component-id="OUIA-Generated-DropdownItem-1"
+                        data-ouia-component-type="PF4/DropdownItem"
+                        data-ouia-safe="true"
                         tabindex="-1"
                       >
                         <div
@@ -163,6 +169,9 @@ exports[`renders realm selector 1`] = `
               aria-haspopup={true}
               bubbleEvent={false}
               className="keycloak__realm_selector_dropdown__toggle"
+              data-ouia-component-id="OUIA-Generated-DropdownToggle-1"
+              data-ouia-component-type="PF4/DropdownToggle"
+              data-ouia-safe={true}
               getMenuRef={[Function]}
               id="realm-select-toggle"
               isActive={false}
@@ -186,6 +195,9 @@ exports[`renders realm selector 1`] = `
                       aria-expanded="true"
                       aria-haspopup="true"
                       class="pf-c-dropdown__toggle keycloak__realm_selector_dropdown__toggle"
+                      data-ouia-component-id="OUIA-Generated-DropdownToggle-1"
+                      data-ouia-component-type="PF4/DropdownToggle"
+                      data-ouia-safe="true"
                       id="realm-select-toggle"
                       type="button"
                     >
@@ -223,6 +235,9 @@ exports[`renders realm selector 1`] = `
                         <a
                           aria-disabled="false"
                           class="pf-c-dropdown__menu-item"
+                          data-ouia-component-id="OUIA-Generated-DropdownItem-1"
+                          data-ouia-component-type="PF4/DropdownItem"
+                          data-ouia-safe="true"
                           tabindex="-1"
                         >
                           <div
@@ -248,6 +263,9 @@ exports[`renders realm selector 1`] = `
                 aria-expanded={false}
                 aria-haspopup={true}
                 className="pf-c-dropdown__toggle keycloak__realm_selector_dropdown__toggle"
+                data-ouia-component-id="OUIA-Generated-DropdownToggle-1"
+                data-ouia-component-type="PF4/DropdownToggle"
+                data-ouia-safe={true}
                 disabled={false}
                 id="realm-select-toggle"
                 onClick={[Function]}

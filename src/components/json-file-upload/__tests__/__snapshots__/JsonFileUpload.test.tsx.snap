@@ -100,7 +100,7 @@ exports[`<JsonFileUpload /> render 1`] = `
                     <div
                       className="pf-c-input-group"
                     >
-                      <ForwardRef
+                      <TextInput
                         aria-describedby="test-browse-button"
                         aria-label="Drag a file here or browse to upload"
                         id="test-filename"
@@ -146,7 +146,7 @@ exports[`<JsonFileUpload /> render 1`] = `
                             value=""
                           />
                         </TextInputBase>
-                      </ForwardRef>
+                      </TextInput>
                       <Button
                         id="test-browse-button"
                         isDisabled={false}
@@ -164,6 +164,7 @@ exports[`<JsonFileUpload /> render 1`] = `
                           disabled={false}
                           id="test-browse-button"
                           onClick={[Function]}
+                          role={null}
                           type="button"
                         >
                           Browse...
@@ -184,6 +185,7 @@ exports[`<JsonFileUpload /> render 1`] = `
                           data-ouia-safe={true}
                           disabled={true}
                           onClick={[Function]}
+                          role={null}
                           tabIndex={null}
                           type="button"
                         >
@@ -198,7 +200,6 @@ exports[`<JsonFileUpload /> render 1`] = `
                 >
                   <TextArea
                     aria-label="File upload"
-                    className=""
                     disabled={false}
                     id="test"
                     isRequired={false}
@@ -209,18 +210,33 @@ exports[`<JsonFileUpload /> render 1`] = `
                     validated="default"
                     value=""
                   >
-                    <textarea
-                      aria-invalid={false}
+                    <TextArea
                       aria-label="File upload"
-                      className="pf-c-form-control pf-m-resize-vertical"
+                      className=""
                       disabled={false}
                       id="test"
+                      innerRef={null}
+                      isRequired={false}
                       name="test"
                       onChange={[Function]}
                       readOnly={false}
-                      required={false}
+                      resizeOrientation="vertical"
+                      validated="default"
                       value=""
-                    />
+                    >
+                      <textarea
+                        aria-invalid={false}
+                        aria-label="File upload"
+                        className="pf-c-form-control pf-m-resize-vertical"
+                        disabled={false}
+                        id="test"
+                        name="test"
+                        onChange={[Function]}
+                        readOnly={false}
+                        required={false}
+                        value=""
+                      />
+                    </TextArea>
                   </TextArea>
                 </div>
                 <input
@@ -355,7 +371,7 @@ exports[`<JsonFileUpload /> upload file 1`] = `
                     <div
                       className="pf-c-input-group"
                     >
-                      <ForwardRef
+                      <TextInput
                         aria-describedby="upload-browse-button"
                         aria-label="Drag a file here or browse to upload"
                         id="upload-filename"
@@ -401,7 +417,7 @@ exports[`<JsonFileUpload /> upload file 1`] = `
                             value=""
                           />
                         </TextInputBase>
-                      </ForwardRef>
+                      </TextInput>
                       <Button
                         id="upload-browse-button"
                         isDisabled={false}
@@ -419,6 +435,7 @@ exports[`<JsonFileUpload /> upload file 1`] = `
                           disabled={false}
                           id="upload-browse-button"
                           onClick={[Function]}
+                          role={null}
                           type="button"
                         >
                           Browse...
@@ -439,6 +456,7 @@ exports[`<JsonFileUpload /> upload file 1`] = `
                           data-ouia-safe={true}
                           disabled={true}
                           onClick={[Function]}
+                          role={null}
                           tabIndex={null}
                           type="button"
                         >
@@ -453,7 +471,6 @@ exports[`<JsonFileUpload /> upload file 1`] = `
                 >
                   <TextArea
                     aria-label="File upload"
-                    className=""
                     disabled={false}
                     id="upload"
                     isRequired={false}
@@ -464,18 +481,33 @@ exports[`<JsonFileUpload /> upload file 1`] = `
                     validated="default"
                     value=""
                   >
-                    <textarea
-                      aria-invalid={false}
+                    <TextArea
                       aria-label="File upload"
-                      className="pf-c-form-control pf-m-resize-vertical"
+                      className=""
                       disabled={false}
                       id="upload"
+                      innerRef={null}
+                      isRequired={false}
                       name="upload"
                       onChange={[Function]}
                       readOnly={false}
-                      required={false}
+                      resizeOrientation="vertical"
+                      validated="default"
                       value=""
-                    />
+                    >
+                      <textarea
+                        aria-invalid={false}
+                        aria-label="File upload"
+                        className="pf-c-form-control pf-m-resize-vertical"
+                        disabled={false}
+                        id="upload"
+                        name="upload"
+                        onChange={[Function]}
+                        readOnly={false}
+                        required={false}
+                        value=""
+                      />
+                    </TextArea>
                   </TextArea>
                 </div>
                 <input

@@ -39,7 +39,7 @@ exports[`<FormAccess /> render normal form 1`] = `
               <div
                 className="pf-c-form__group-control"
               >
-                <ForwardRef
+                <TextInput
                   id="field"
                   isDisabled={false}
                   key=".0"
@@ -75,7 +75,7 @@ exports[`<FormAccess /> render normal form 1`] = `
                       type="text"
                     />
                   </TextInputBase>
-                </ForwardRef>
+                </TextInput>
               </div>
             </div>
           </FormGroup>

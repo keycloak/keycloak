@@ -13,6 +13,9 @@ exports[`<HelpHeader /> enable help 1`] = `
       aria-haspopup="true"
       aria-label="Help"
       class="pf-c-dropdown__toggle pf-m-plain"
+      data-ouia-component-id="OUIA-Generated-DropdownToggle-3"
+      data-ouia-component-type="PF4/DropdownToggle"
+      data-ouia-safe="true"
       id="help"
       type="button"
     >
@@ -44,6 +47,9 @@ exports[`<HelpHeader /> enable help 1`] = `
         <a
           aria-disabled="false"
           class="pf-c-dropdown__menu-item"
+          data-ouia-component-id="OUIA-Generated-DropdownItem-3"
+          data-ouia-component-type="PF4/DropdownItem"
+          data-ouia-safe="true"
           tabindex="-1"
         >
           <div
@@ -81,6 +87,9 @@ exports[`<HelpHeader /> enable help 1`] = `
         <a
           aria-disabled="false"
           class="pf-c-dropdown__menu-item pf-m-description"
+          data-ouia-component-id="OUIA-Generated-DropdownItem-4"
+          data-ouia-component-type="PF4/DropdownItem"
+          data-ouia-safe="true"
           tabindex="-1"
         >
           <div
@@ -166,6 +175,9 @@ exports[`<HelpHeader /> open dropdown 1`] = `
       aria-haspopup="true"
       aria-label="Help"
       class="pf-c-dropdown__toggle pf-m-plain"
+      data-ouia-component-id="OUIA-Generated-DropdownToggle-2"
+      data-ouia-component-type="PF4/DropdownToggle"
+      data-ouia-safe="true"
       id="help"
       type="button"
     >
@@ -197,6 +209,9 @@ exports[`<HelpHeader /> open dropdown 1`] = `
         <a
           aria-disabled="false"
           class="pf-c-dropdown__menu-item"
+          data-ouia-component-id="OUIA-Generated-DropdownItem-1"
+          data-ouia-component-type="PF4/DropdownItem"
+          data-ouia-safe="true"
           tabindex="-1"
         >
           <div
@@ -234,6 +249,9 @@ exports[`<HelpHeader /> open dropdown 1`] = `
         <a
           aria-disabled="false"
           class="pf-c-dropdown__menu-item pf-m-description"
+          data-ouia-component-id="OUIA-Generated-DropdownItem-2"
+          data-ouia-component-type="PF4/DropdownItem"
+          data-ouia-safe="true"
           tabindex="-1"
         >
           <div
@@ -314,6 +332,9 @@ exports[`<HelpHeader /> render 1`] = `
       aria-haspopup="true"
       aria-label="Help"
       class="pf-c-dropdown__toggle pf-m-plain"
+      data-ouia-component-id="OUIA-Generated-DropdownToggle-1"
+      data-ouia-component-type="PF4/DropdownToggle"
+      data-ouia-safe="true"
       id="help"
       type="button"
     >

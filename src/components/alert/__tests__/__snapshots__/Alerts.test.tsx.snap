@@ -41,6 +41,7 @@ exports[`remove alert after timeout: cleared alert 1`] = `
         data-ouia-safe={true}
         disabled={false}
         onClick={[Function]}
+        role={null}
         type="button"
       >
         Add
@@ -91,6 +92,7 @@ exports[`remove alert after timeout: with alert 1`] = `
         data-ouia-safe={true}
         disabled={false}
         onClick={[Function]}
+        role={null}
         type="button"
       >
         Add
