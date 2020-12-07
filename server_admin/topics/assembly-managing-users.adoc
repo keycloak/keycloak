@@ -7,6 +7,8 @@ From the Admin Console, you have a wide range of actions you can perform to mana
 include::users/proc-searching-user.adoc[leveloffset=+2]
 include::users/proc-creating-user.adoc[leveloffset=+2]
 include::users/proc-deleting-user.adoc[leveloffset=+2]
+
+include::users/proc-allow-user-to-delete-account.adoc[leveloffset=+2]
 include::users/proc-configuring-user-attributes.adoc[leveloffset=+2]
 
 include::users/ref-user-credentials.adoc[leveloffset=+2]
