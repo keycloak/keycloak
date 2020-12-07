@@ -1,39 +1,28 @@
-import React, { useEffect, useState } from "react";
-import { Button, PageSection, Spinner } from "@patternfly/react-core";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { useHistory } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
+import { Button, PageSection } from "@patternfly/react-core";
+import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
 
-import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
-import { TableToolbar } from "../components/table-toolbar/TableToolbar";
-import { ClientScopeList } from "./ClientScopesList";
-import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient } from "../context/auth/AdminClient";
+import { ViewHeader } from "../components/view-header/ViewHeader";
+import { DataList } from "../components/table-toolbar/DataList";
 
 export const ClientScopesSection = () => {
   const { t } = useTranslation("client-scopes");
   const history = useHistory();
-  const [rawData, setRawData] = useState<ClientRepresentation[]>();
-  const [filteredData, setFilteredData] = useState<ClientRepresentation[]>();
 
   const adminClient = useAdminClient();
 
-  useEffect(() => {
-    (async () => {
-      if (filteredData) {
-        return filteredData;
-      }
-      const result = await adminClient.clientScopes.find();
-      setRawData(result);
-    })();
-  }, []);
+  const loader = async () => await adminClient.clientScopes.find();
 
-  const filterData = (search: string) => {
-    setFilteredData(
-      rawData!.filter((group) =>
-        group.name!.toLowerCase().includes(search.toLowerCase())
-      )
-    );
-  };
+  const ClientScopeDetailLink = (clientScope: ClientScopeRepresentation) => (
+    <>
+      <Link key={clientScope.id} to={`/client-scopes/${clientScope.id}`}>
+        {clientScope.name}
+      </Link>
+    </>
+  );
   return (
     <>
       <ViewHeader
@@ -41,25 +30,36 @@ export const ClientScopesSection = () => {
         subKey="client-scopes:clientScopeExplain"
       />
       <PageSection variant="light">
-        {!rawData && (
-          <div className="pf-u-text-align-center">
-            <Spinner />
-          </div>
-        )}
-        {rawData && (
-          <TableToolbar
-            inputGroupName="clientsScopeToolbarTextInput"
-            inputGroupPlaceholder={t("searchFor")}
-            inputGroupOnChange={filterData}
-            toolbarItem={
-              <Button onClick={() => history.push("/client-scopes/new")}>
-                {t("createClientScope")}
-              </Button>
-            }
-          >
-            <ClientScopeList clientScopes={filteredData || rawData} />
-          </TableToolbar>
-        )}
+        <DataList
+          loader={loader}
+          ariaLabelKey="client-scopes:clientScopeList"
+          searchPlaceholderKey="client-scopes:searchFor"
+          toolbarItem={
+            <Button onClick={() => history.push("/client-scopes/new")}>
+              {t("createClientScope")}
+            </Button>
+          }
+          actions={[
+            {
+              title: t("common:export"),
+              onRowClick: () => {},
+            },
+            {
+              title: t("common:delete"),
+              onRowClick: () => {},
+            },
+          ]}
+          columns={[
+            {
+              name: "name",
+              cellRenderer: ClientScopeDetailLink,
+            },
+            { name: "description" },
+            {
+              name: "protocol",
+            },
+          ]}
+        />
       </PageSection>
     </>
   );

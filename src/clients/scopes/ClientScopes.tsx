@@ -168,7 +168,6 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
     setRows(data);
     const names = data.map((row) => row.cells[0]);
 
-    console.log("set rest");
     setRest(
       clientScopes
         .filter((scope) => !names.includes(scope.name))

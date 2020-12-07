@@ -53,7 +53,7 @@
     "clientSaveError": "Client could not be updated:",
     "clientImportSuccess": "Client imported successfully",
     "clientDeletedSuccess": "The client has been deleted",
-    "clientDeleteError": "Could not delete client:",
+    "clientDeleteError": "Could not delete client: {{error}}",
     "clientDeleteConfirmTitle": "Delete client?",
     "disableConfirmTitle": "Disable client?",
     "downloadAdapterConfig": "Download adapter config",
