@@ -62,6 +62,9 @@ public class UserRoleMappingEntity  {
     @Column(name = "ROLE_ID")
     protected String roleId;
 
+    @Column(name = "CREATED_TIMESTAMP")
+    protected Long createdTimestamp;
+
     public UserEntity getUser() {
         return user;
     }
@@ -78,6 +81,13 @@ public class UserRoleMappingEntity  {
         this.roleId = roleId;
     }
 
+    public Long getCreatedTimestamp() {
+        return createdTimestamp;
+    }
+
+    public void setCreatedTimestamp(Long createdTimestamp) {
+        this.createdTimestamp = createdTimestamp;
+    }
 
     public static class Key implements Serializable {
 

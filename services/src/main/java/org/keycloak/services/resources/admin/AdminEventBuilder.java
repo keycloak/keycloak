@@ -203,6 +203,17 @@ public class AdminEventBuilder {
         return this;
     }
 
+    public AdminEventBuilder resourcePath(UriInfo uriInfo, String id, String content) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getResourcePath(uriInfo));
+        sb.append("/");
+        sb.append(id);
+        sb.append("  ");
+        sb.append(content);
+        adminEvent.setResourcePath(sb.toString());
+        return this;
+    }
+
     private String getResourcePath(UriInfo uriInfo) {
         String path = uriInfo.getPath();
 

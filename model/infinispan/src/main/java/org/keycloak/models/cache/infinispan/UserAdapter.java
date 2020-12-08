@@ -423,8 +423,8 @@ public class UserAdapter implements CachedUserModel {
 
     @Override
     public Long getLoginTimestamp() {
-        if (updated != null) return updated.getLoginTimestamp();
-        return cached.getLoginTimestamp();
+        getDelegateForUpdate();
+        return updated.getLoginTimestamp();
     }
 
     @Override

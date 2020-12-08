@@ -448,6 +448,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         UserRoleMappingEntity entity = new UserRoleMappingEntity();
         entity.setUser(getEntity());
         entity.setRoleId(role.getId());
+        entity.setCreatedTimestamp(Time.currentTimeMillis());
         em.persist(entity);
         em.flush();
         em.detach(entity);

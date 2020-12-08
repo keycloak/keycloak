@@ -266,7 +266,7 @@ public class ClientsResource {
         Set<ResourceRepresentation> allsResource = new LinkedHashSet<>();
         for (Resource resource : resources) {
             ResourceRepresentation resourceRepresentation = ModelToRepresentation.toRepresentation(resource, resourceServer, authorizationProvider, false);
-            resourceRepresentation.setParent(resource.getParentId());
+            resourceRepresentation.setParentId(resource.getParentId());
             allsResource.add(resourceRepresentation);
             alls.put(resource.getId(), resourceRepresentation);
         }
@@ -310,8 +310,8 @@ public class ClientsResource {
         }
         Set<ResourceRepresentation> resourceRepresentations = new LinkedHashSet<>();
         for (ResourceRepresentation resourceRepresentation : resources) {
-            if (resourceRepresentation.getParent() != null) {
-                ResourceRepresentation parent = alls.get(resourceRepresentation.getParent());
+            if (resourceRepresentation.getParentId() != null) {
+                ResourceRepresentation parent = alls.get(resourceRepresentation.getParentId());
                 if (parent != null) {
                     parent.getSubResources().add(resourceRepresentation);
                 } else {
@@ -442,7 +442,7 @@ public class ClientsResource {
         for (Resource resource : resources) {
             ResourceRepresentation resourceRepresentation = ModelToRepresentation.toRepresentation(resource, resourceServer, authorizationProvider, false);
             String parentKey = resource.getSingleAttribute("parent");
-            resourceRepresentation.setParent(parentKey);
+            resourceRepresentation.setParentId(parentKey);
             allsResource.add(resourceRepresentation);
             alls.put(resource.getName(), resourceRepresentation);
         }
@@ -484,7 +484,7 @@ public class ClientsResource {
         Set<ResourceRepresentation> allsResource = new LinkedHashSet<>();
         for (Resource resource : resources) {
             ResourceRepresentation resourceRepresentation = ModelToRepresentation.toRepresentation(resource, resourceServer, authorizationProvider, false);
-            resourceRepresentation.setParent(resource.getParentId());
+            resourceRepresentation.setParentId(resource.getParentId());
             allsResource.add(resourceRepresentation);
             alls.put(resource.getId(), resourceRepresentation);
         }
@@ -577,7 +577,7 @@ public class ClientsResource {
         Set<ResourceRepresentation> allsResource = new LinkedHashSet<>();
         for (Resource resource : resources) {
             ResourceRepresentation resourceRepresentation = ModelToRepresentation.toRepresentation(resource, resourceServer, authorizationProvider, false);
-            resourceRepresentation.setParent(resource.getParentId());
+            resourceRepresentation.setParentId(resource.getParentId());
             allsResource.add(resourceRepresentation);
             alls.put(resource.getId(), resourceRepresentation);
         }

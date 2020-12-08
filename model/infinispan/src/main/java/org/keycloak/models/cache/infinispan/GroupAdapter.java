@@ -291,8 +291,8 @@ public class GroupAdapter implements GroupModel {
 
     @Override
     public Long getUserCount() {
-        if (isUpdated()) return updated.getUserCount();
-        return cached.getUserCount();
+        getDelegateForUpdate();
+        return updated.getUserCount();
     }
 
 

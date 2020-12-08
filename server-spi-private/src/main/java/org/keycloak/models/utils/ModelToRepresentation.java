@@ -1022,8 +1022,10 @@ public class ModelToRepresentation {
         resource.setSort(model.getSort());
         resource.setPermission(model.getPermission());
         resource.setEnabled(model.isEnabled());
-        resource.setParent(model.getParentId());
-
+        if(model.getParent()!=null) {
+            resource.setParent(toRepresentation(model.getParent(), resourceServer, authorization, deep));
+        }
+        resource.setParentId(model.getParentId());
         KeycloakSession keycloakSession = authorization.getKeycloakSession();
         RealmModel realm = authorization.getRealm();
 

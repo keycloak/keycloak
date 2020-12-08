@@ -2639,7 +2639,7 @@ public class RepresentationToModel {
             existing.setPermission(resource.getPermission());
             existing.setSort(resource.getSort());
             existing.setEnabled(resource.isEnabled());
-            Resource parent = resourceStore.findById(resource.getParent(), resourceServer.getId());
+            Resource parent = resourceStore.findById(resource.getParentId(), resourceServer.getId());
             if (parent != null) {
                 existing.setParent(parent);
             }
@@ -2658,8 +2658,7 @@ public class RepresentationToModel {
         model.setPermission(resource.getPermission());
         model.setSort(resource.getSort());
         model.setEnabled(resource.isEnabled());
-
-        Resource parent = resourceStore.findById(resource.getParent(), resourceServer.getId());
+        Resource parent = resourceStore.findById(resource.getParentId(), resourceServer.getId());
         if (parent != null) {
             model.setParent(parent);
         }

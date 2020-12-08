@@ -47,4 +47,12 @@
                              tableName="USER_ENTITY"/>
     </changeSet>
 
+    <changeSet author="liubinwang@govnet.com.cn" id="11.0.0.uc_02">
+        <addColumn tableName="USER_ROLE_MAPPING">
+            <column name="CREATED_TIMESTAMP" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

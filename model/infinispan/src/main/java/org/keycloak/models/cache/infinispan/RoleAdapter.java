@@ -228,7 +228,7 @@ public class RoleAdapter implements RoleModel {
 
     @Override
     public Long getUserCount() {
-        if (isUpdated()) return updated.getUserCount();
+        getDelegateForUpdate();
         return cached.getUserCount();
     }
 

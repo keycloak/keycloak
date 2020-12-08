@@ -62,7 +62,8 @@ public class ResourceRepresentation {
     private Integer sort;
     private String permission;
     private boolean enabled;
-    private String parent;
+    private ResourceRepresentation parent;
+    private String parentId;
     /**
      * Creates a new instance.
      *
@@ -325,11 +326,19 @@ public class ResourceRepresentation {
         this.enabled = enabled;
     }
 
-    public String getParent() {
+    public ResourceRepresentation getParent() {
         return parent;
     }
 
-    public void setParent(String parent) {
+    public void setParent(ResourceRepresentation parent) {
         this.parent = parent;
+    }
+
+    public String getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(String parentId) {
+        this.parentId = parentId;
     }
 }

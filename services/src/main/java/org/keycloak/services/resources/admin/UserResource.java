@@ -37,22 +37,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
-import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.ModelException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserConsentModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserLoginFailureModel;
-import org.keycloak.models.UserManager;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.*;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -269,6 +254,28 @@ public class UserResource {
 
             for (String attr : attrsToRemove) {
                 user.removeAttribute(attr);
+            }
+        }
+
+        Map<String, List<String>> clientRoles = rep.getClientRoles();
+        if (clientRoles != null) {
+            for (String client : clientRoles.keySet()) {
+                ClientModel clientModel = realm.getClientById(client);
+                List<String> roles = clientRoles.get(client);
+                Set<RoleModel> roleRemove = null;
+                if (roles != null) {
+                    roleRemove = new HashSet<>(user.getClientRoleMappings(clientModel));
+                    for (String roleName : roles) {
+                        roleRemove.remove(clientModel.getRole(roleName));
+                    }
+                    for (String roleName : roles) {
+                        user.grantRole(clientModel.getRole(roleName));
+                    }
+                    for(RoleModel roleModel:roleRemove){
+                        user.deleteRoleMapping(roleModel);
+                    }
+
+                }
             }
         }
     }

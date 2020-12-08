@@ -115,7 +115,7 @@ public class PolicyService {
 
         representation.setId(policy.getId());
 
-        audit(representation, representation.getId(), OperationType.CREATE, session);
+        audit(representation, representation.getId(), policy.getName(), OperationType.CREATE, session);
 
         return Response.status(Status.CREATED).entity(representation).build();
     }
@@ -316,9 +316,9 @@ public class PolicyService {
         return authorization.getProviderFactory(policyType);
     }
 
-    private void audit(AbstractPolicyRepresentation resource, String id, OperationType operation, KeycloakSession session) {
+    private void audit(AbstractPolicyRepresentation resource, String id,String content, OperationType operation, KeycloakSession session) {
         if (id != null) {
-            adminEvent.operation(operation).resourcePath(session.getContext().getUri(), id).representation(resource).success();
+            adminEvent.operation(operation).resourcePath(session.getContext().getUri(), id, content).representation(resource).success();
         } else {
             adminEvent.operation(operation).resourcePath(session.getContext().getUri()).representation(resource).success();
         }

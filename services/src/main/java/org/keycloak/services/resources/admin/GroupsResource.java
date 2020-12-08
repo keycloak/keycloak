@@ -188,7 +188,7 @@ public class GroupsResource {
     public GroupRepresentation getGroup(@QueryParam("groupName") String groupName, @QueryParam("hierarchy") Boolean hierarchy) {
         GroupModel group = realm.getGroupByName(groupName);
         if (group == null) {
-            throw new NotFoundException("Could not find group by name");
+            return null;
         }
         if (hierarchy != null && hierarchy) {
             return ModelToRepresentation.toGroupHierarchy(group, false);
