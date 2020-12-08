@@ -54,7 +54,11 @@ import org.keycloak.services.resources.Cors;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.util.TokenUtil;
 
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -64,6 +68,9 @@ import javax.ws.rs.core.UriBuilder;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
+
+import static org.keycloak.models.UserSessionModel.State.LOGGED_OUT;
+import static org.keycloak.models.UserSessionModel.State.LOGGING_OUT;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -152,10 +159,14 @@ public class LogoutEndpoint {
             if (idToken != null && idToken.getSessionState().equals(AuthenticationManager.getSessionIdFromSessionCookie(session))) {
                 return initiateBrowserLogout(userSession, redirect, state, initiatingIdp);
             }
-            // non browser logout
-            event.event(EventType.LOGOUT);
-            AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, true);
-            event.user(userSession.getUser()).session(userSession).success();
+            // check if the user session is not logging out or already logged out
+            // this might happen when a backChannelLogout is already initiated from AuthenticationManager.authenticateIdentityCookie
+            if (userSession.getState() != LOGGING_OUT && userSession.getState() != LOGGED_OUT) {
+                // non browser logout
+                event.event(EventType.LOGOUT);
+                AuthenticationManager.backchannelLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, true);
+                event.user(userSession.getUser()).session(userSession).success();
+            }
         }
 
         if (redirect != null) {
