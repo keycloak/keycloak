@@ -210,7 +210,7 @@ export const ClientDetails = () => {
         >
           <Tab
             eventKey={0}
-            title={<TabTitleText>{t("settings")}</TabTitleText>}
+            title={<TabTitleText>{t("common:settings")}</TabTitleText>}
           >
             <ClientSettings form={form} save={save} />
           </Tab>

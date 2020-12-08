@@ -103,7 +103,7 @@ export const ClientScopeForm = () => {
         >
           <Tab
             eventKey={0}
-            title={<TabTitleText>{t("settings")}</TabTitleText>}
+            title={<TabTitleText>{t("common:settings")}</TabTitleText>}
           >
             <Form
               isHorizontal

@@ -13,6 +13,7 @@ import {
   FlexItem,
 } from "@patternfly/react-core";
 import "./keycloak-card.css";
+import { useHistory } from "react-router-dom";
 
 export type KeycloakCardProps = {
   id: string;
@@ -26,6 +27,7 @@ export type KeycloakCardProps = {
 };
 
 export const KeycloakCard = ({
+  id,
   dropdownItems,
   title,
   labelText,
@@ -33,12 +35,23 @@ export const KeycloakCard = ({
   footerText,
 }: KeycloakCardProps) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const history = useHistory();
+
   const onDropdownToggle = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
+  const handleCardMenuClick = (e: any) => {
+    e.stopPropagation();
+  };
+
+  const openSettings = () => {
+    history.push(`/user-federation/${id}`);
+  };
+
   return (
-    <Card>
+    <Card isSelectable onClick={openSettings}>
       <CardHeader>
         <CardActions>
           {dropdownItems && (
@@ -46,6 +59,7 @@ export const KeycloakCard = ({
               isPlain
               position={"right"}
               toggle={<KebabToggle onToggle={onDropdownToggle} />}
+              onClick={(e) => handleCardMenuClick(e)}
               isOpen={isDropdownOpen}
               dropdownItems={dropdownItems}
             />

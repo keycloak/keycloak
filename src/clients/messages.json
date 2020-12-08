@@ -11,7 +11,6 @@
     "name": "Name",
     "formatOption": "Format option",
     "downloadAdaptorTitle": "Download adaptor configs",
-    "settings": "Settings",
     "credentials": "Credentials",
     "clientScopes": "Client scopes",
     "addClientScope": "Add client scope",

@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import {
   FormGroup,
   Select,
@@ -8,17 +9,39 @@ import {
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "../components/help-enabler/HelpItem";
-import React, { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
 import { FormAccess } from "../components/form-access/FormAccess";
+import { useAdminClient } from "../context/auth/AdminClient";
+import { useParams } from "react-router-dom";
+import { convertToFormValues } from "../util";
 
 export const KerberosSettingsRequired = () => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
-
+  const adminClient = useAdminClient();
   const [isEditModeDropdownOpen, setIsEditModeDropdownOpen] = useState(false);
-  const { register, control } = useForm<ComponentRepresentation>();
+  const { register, control, setValue } = useForm<ComponentRepresentation>();
+  const { id } = useParams<{ id: string }>();
+
+  const setupForm = (component: ComponentRepresentation) => {
+    Object.entries(component).map((entry) => {
+      if (entry[0] === "config") {
+        convertToFormValues(entry[1], "config", setValue);
+      } else {
+        setValue(entry[0], entry[1]);
+      }
+    });
+  };
+
+  useEffect(() => {
+    (async () => {
+      const fetchedComponent = await adminClient.components.findOne({ id });
+      if (fetchedComponent) {
+        setupForm(fetchedComponent);
+      }
+    })();
+  }, []);
 
   return (
     <>
@@ -40,7 +63,7 @@ export const KerberosSettingsRequired = () => {
             isRequired
             type="text"
             id="kc-console-display-name"
-            name="consoleDisplayName"
+            name="name"
             ref={register}
           />
         </FormGroup>
@@ -61,7 +84,7 @@ export const KerberosSettingsRequired = () => {
             isRequired
             type="text"
             id="kc-kerberos-realm"
-            name="kerberosRealm"
+            name="config.kerberosRealm"
             ref={register}
           />
         </FormGroup>
@@ -82,7 +105,7 @@ export const KerberosSettingsRequired = () => {
             isRequired
             type="text"
             id="kc-server-principal"
-            name="serverPrincipal"
+            name="config.serverPrincipal"
             ref={register}
           />
         </FormGroup>
@@ -103,7 +126,7 @@ export const KerberosSettingsRequired = () => {
             isRequired
             type="text"
             id="kc-key-tab"
-            name="keyTab"
+            name="config.keyTab"
             ref={register}
           />
         </FormGroup>
@@ -122,7 +145,7 @@ export const KerberosSettingsRequired = () => {
         >
           {" "}
           <Controller
-            name="debug"
+            name="config.debug"
             defaultValue={false}
             control={control}
             render={({ onChange, value }) => (
@@ -151,7 +174,7 @@ export const KerberosSettingsRequired = () => {
           hasNoPaddingTop
         >
           <Controller
-            name="allowPasswordAuthentication"
+            name="config.allowPasswordAuthentication"
             defaultValue={false}
             control={control}
             render={({ onChange, value }) => (
@@ -181,8 +204,8 @@ export const KerberosSettingsRequired = () => {
         >
           {" "}
           <Controller
-            name="editMode"
-            defaultValue=""
+            name="config.editMode"
+            defaultValue={t("common:selectOne")}
             control={control}
             render={({ onChange, value }) => (
               <Select
@@ -204,7 +227,8 @@ export const KerberosSettingsRequired = () => {
                   value={t("common:selectOne")}
                   isPlaceholder
                 />
-                <SelectOption key={1} value="UNSYNCED" />
+                <SelectOption key={1} value="READ_ONLY" />
+                <SelectOption key={2} value="UNSYNCED" />
               </Select>
             )}
           ></Controller>
@@ -223,7 +247,7 @@ export const KerberosSettingsRequired = () => {
           hasNoPaddingTop
         >
           <Controller
-            name="updateFirstLogin"
+            name="config.updateProfileFirstLogin"
             defaultValue={false}
             control={control}
             render={({ onChange, value }) => (

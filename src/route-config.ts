@@ -20,6 +20,7 @@ import { UserFederationSection } from "./user-federation/UserFederationSection";
 import { UsersSection } from "./user/UsersSection";
 import { MappingDetails } from "./client-scopes/details/MappingDetails";
 import { ClientDetails } from "./clients/ClientDetails";
+import { UserFederationKerberosSettings } from "./user-federation/UserFederationKerberosSettings";
 import { RoleMappingForm } from "./client-scopes/add/RoleMappingForm";
 
 export type RouteDef = {
@@ -162,6 +163,12 @@ export const routes: RoutesFn = (t: TFunction) => [
     path: "/user-federation",
     component: UserFederationSection,
     breadcrumb: t("userFederation"),
+    access: "view-realm",
+  },
+  {
+    path: "/user-federation/:id",
+    component: UserFederationKerberosSettings,
+    breadcrumb: t("common:settings"),
     access: "view-realm",
   },
   {
