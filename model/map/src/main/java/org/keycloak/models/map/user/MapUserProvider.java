@@ -53,7 +53,7 @@ import static org.keycloak.models.UserModel.FIRST_NAME;
 import static org.keycloak.models.UserModel.LAST_NAME;
 import static org.keycloak.models.UserModel.USERNAME;
 
-public class MapUserProvider implements UserProvider.Streams, UserCredentialStore {
+public class MapUserProvider implements UserProvider.Streams, UserCredentialStore.Streams {
 
     private static final Logger LOG = Logger.getLogger(MapUserProvider.class);
     private static final Predicate<MapUserEntity> ALWAYS_FALSE = c -> { return false; };
@@ -110,8 +110,9 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         }
     }
 
-    private MapUserEntity getEntityByIdOrThrow(RealmModel realm, String id) {
+    private MapUserEntity getRegisteredEntityByIdOrThrow(RealmModel realm, String id) {
         return getEntityById(realm, id)
+                .map(this::registerEntityForChanges)
                 .orElseThrow(this::userDoesntExistException);
     }
 
@@ -199,7 +200,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm) {
         LOG.tracef("getFederatedIdentity(%s, %s, %s)%s", realm, user.getId(), socialProvider, getShortStackTrace());
-        return getRegisteredEntityById(realm, user.getId())
+        return getEntityById(realm, user.getId())
                 .map(userEntity -> userEntity.getFederatedIdentity(socialProvider))
                 .map(UserFederatedIdentityEntity::toModel)
                 .orElse(null);
@@ -245,7 +246,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public Stream<UserConsentModel> getConsentsStream(RealmModel realm, String userId) {
         LOG.tracef("getConsentByClientStream(%s, %s)%s", realm, userId, getShortStackTrace());
-        return getRegisteredEntityById(realm, userId)
+        return getEntityById(realm, userId)
                 .map(AbstractUserEntity::getUserConsents)
                 .orElse(Stream.empty())
                 .map(consent -> UserConsentEntity.toModel(realm, consent));
@@ -255,10 +256,10 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public void updateConsent(RealmModel realm, String userId, UserConsentModel consent) {
         LOG.tracef("updateConsent(%s, %s, %s)%s", realm, userId, consent, getShortStackTrace());
 
-        MapUserEntity user = getEntityByIdOrThrow(realm, userId);
+        MapUserEntity user = getRegisteredEntityByIdOrThrow(realm, userId);
         UserConsentEntity userConsentEntity = user.getUserConsent(consent.getClient().getId());
         if (userConsentEntity == null) {
-            throw new ModelException("Consent or not found for client [" + consent.getClient().getId() + "] and user [" + userId + "]");
+            throw new ModelException("Consent not found for client [" + consent.getClient().getId() + "] and user [" + userId + "]");
         }
 
         userConsentEntity.setGrantedClientScopesIds(
@@ -782,7 +783,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         LOG.tracef("createCredential(%s, %s, %s)%s", realm, user.getId(), cred.getId(), getShortStackTrace());
         UserCredentialEntity credentialEntity = UserCredentialEntity.fromModel(cred);
 
-        registerEntityForChanges(getEntityByIdOrThrow(realm, user.getId()))
+        getRegisteredEntityByIdOrThrow(realm, user.getId())
                 .addCredential(credentialEntity);
 
         return UserCredentialEntity.toModel(credentialEntity);
@@ -806,21 +807,19 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user) {
-        LOG.tracef("getStoredCredentials(%s, %s)%s", realm, user.getId(), getShortStackTrace());
+    public Stream<CredentialModel> getStoredCredentialsStream(RealmModel realm, UserModel user) {
+        LOG.tracef("getStoredCredentialsStream(%s, %s)%s", realm, user.getId(), getShortStackTrace());
         return getEntityById(realm, user.getId())
                 .map(AbstractUserEntity::getCredentials)
                 .orElseGet(Stream::empty)
-                .map(UserCredentialEntity::toModel)
-                .collect(Collectors.toList());
+                .map(UserCredentialEntity::toModel);
     }
 
     @Override
-    public List<CredentialModel> getStoredCredentialsByType(RealmModel realm, UserModel user, String type) {
-        LOG.tracef("getStoredCredentialsByType(%s, %s, %s)%s", realm, user.getId(), type, getShortStackTrace());
-        return getStoredCredentials(realm, user).stream()
-                .filter(credential -> Objects.equals(type, credential.getType()))
-                .collect(Collectors.toList());
+    public Stream<CredentialModel> getStoredCredentialsByTypeStream(RealmModel realm, UserModel user, String type) {
+        LOG.tracef("getStoredCredentialsByTypeStream(%s, %s, %s)%s", realm, user.getId(), type, getShortStackTrace());
+        return getStoredCredentialsStream(realm, user)
+                .filter(credential -> Objects.equals(type, credential.getType()));
     }
 
     @Override

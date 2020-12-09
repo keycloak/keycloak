@@ -902,16 +902,9 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
 
         TypedQuery<UserEntity> query = em.createQuery(queryBuilder);
 
-        if (firstResult != -1) {
-            query.setFirstResult(firstResult);
-        }
-
-        if (maxResults != -1) {
-            query.setMaxResults(maxResults);
-        }
-
         UserProvider users = session.users();
-        return closing(query.getResultStream().map(userEntity -> users.getUserById(userEntity.getId(), realm)));
+        return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
+                .map(userEntity -> users.getUserById(userEntity.getId(), realm));
     }
 
     @Override
