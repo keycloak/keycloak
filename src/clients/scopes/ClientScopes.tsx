@@ -14,10 +14,10 @@ import {
   Dropdown,
   DropdownItem,
   DropdownToggle,
+  KebabToggle,
   Select,
   Spinner,
-  Split,
-  SplitItem,
+  ToolbarItem,
 } from "@patternfly/react-core";
 import { FilterIcon } from "@patternfly/react-icons";
 import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
@@ -128,6 +128,7 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
   const [searchType, setSearchType] = useState<SearchType>("client");
   const [addToggle, setAddToggle] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [kebabOpen, setKebabOpen] = useState(false);
 
   const [rows, setRows] = useState<TableRow[]>();
   const [rest, setRest] = useState<ClientScopeRepresentation[]>();
@@ -284,13 +285,13 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
           inputGroupPlaceholder={t("searchByName")}
           inputGroupOnChange={filterData}
           toolbarItem={
-            <Split hasGutter>
-              <SplitItem>
+            <>
+              <ToolbarItem>
                 <Button onClick={() => setAddDialogOpen(true)}>
                   {t("addClientScope")}
                 </Button>
-              </SplitItem>
-              <SplitItem>
+              </ToolbarItem>
+              <ToolbarItem>
                 <Select
                   id="add-dropdown"
                   key="add-dropdown"
@@ -327,8 +328,56 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
                 >
                   {clientScopeTypesSelectOptions(t)}
                 </Select>
-              </SplitItem>
-            </Split>
+              </ToolbarItem>
+              <ToolbarItem>
+                <Dropdown
+                  onSelect={() => {}}
+                  toggle={
+                    <KebabToggle onToggle={() => setKebabOpen(!kebabOpen)} />
+                  }
+                  isOpen={kebabOpen}
+                  isPlain
+                  dropdownItems={[
+                    <DropdownItem
+                      key="deleteAll"
+                      isDisabled={
+                        rows.filter((row) => row.selected).length === 0
+                      }
+                      onClick={async () => {
+                        try {
+                          await Promise.all(
+                            rows.map(async (row) => {
+                              if (row.selected) {
+                                await removeScope(
+                                  adminClient,
+                                  clientId,
+                                  row.clientScope,
+                                  row.type
+                                );
+                              }
+                            })
+                          );
+
+                          setKebabOpen(false);
+                          addAlert(
+                            t("clientScopeRemoveSuccess"),
+                            AlertVariant.success
+                          );
+                          loader();
+                        } catch (error) {
+                          addAlert(
+                            t("clientScopeRemoveError", { error }),
+                            AlertVariant.danger
+                          );
+                        }
+                      }}
+                    >
+                      {t("common:remove")}
+                    </DropdownItem>,
+                  ]}
+                />
+              </ToolbarItem>
+            </>
           }
         >
           <Table
