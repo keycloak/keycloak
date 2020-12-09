@@ -506,6 +506,8 @@ which simulate hardware authentication device. For automated WebAuthN testing, t
 To enabling the feature you have to add flag to _chromeArguments_. In each WebAuthN test should be method with ``@Before`` annotation
 to verify the browser properties.
 
+**Note:** The testing feature is only available for Chrome version 68-80.
+
 #### Example of verifying the browser properties
 ```
 @Before
