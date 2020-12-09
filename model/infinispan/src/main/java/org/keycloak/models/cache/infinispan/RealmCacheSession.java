@@ -20,7 +20,6 @@ package org.keycloak.models.cache.infinispan;
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.*;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.CachedRealmModel;
@@ -141,11 +140,6 @@ public class RealmCacheSession implements CacheRealmProvider {
     public void clear() {
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
         cluster.notify(InfinispanCacheRealmProviderFactory.REALM_CLEAR_CACHE_EVENTS, new ClearCacheEvent(), false, ClusterProvider.DCNotify.ALL_DCS);
-    }
-
-    @Override
-    public MigrationModel getMigrationModel() {
-        return getRealmDelegate().getMigrationModel();
     }
 
     @Override
@@ -1375,11 +1369,6 @@ public class RealmCacheSession implements CacheRealmProvider {
     @Override
     public void removeExpiredClientInitialAccess() {
         getRealmDelegate().removeExpiredClientInitialAccess();
-    }
-
-    @Override
-    public void decreaseRemainingCount(RealmModel realm, ClientInitialAccessModel clientInitialAccess) {
-        getRealmDelegate().decreaseRemainingCount(realm, clientInitialAccess);
     }
 
     @Override

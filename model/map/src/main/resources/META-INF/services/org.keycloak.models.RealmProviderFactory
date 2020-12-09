@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.models.jpa.JpaClientScopeProviderFactory
+org.keycloak.models.map.realm.MapRealmProviderFactory

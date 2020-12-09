@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,14 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.common;
+package org.keycloak.models.map.realm;
 
-/**
- *
- * @author hmlnarik
- */
-public interface AbstractEntity<K> extends UpdatableEntity {
+public class MapRealmEntity extends AbstractRealmEntity<String> {
 
-    K getId();
+    protected MapRealmEntity() {
+        super();
+    }
+
+    public MapRealmEntity(String id) {
+        super(id);
+    }
 
 }

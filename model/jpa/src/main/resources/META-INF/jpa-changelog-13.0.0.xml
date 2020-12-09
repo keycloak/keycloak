@@ -42,6 +42,9 @@
         <dropForeignKeyConstraint baseTableName="DEFAULT_CLIENT_SCOPE" constraintName="FK_R_DEF_CLI_SCOPE_SCOPE"/>
         <dropForeignKeyConstraint baseTableName="CLIENT_SCOPE_CLIENT" constraintName="FK_C_CLI_SCOPE_SCOPE"/>
         <dropForeignKeyConstraint baseTableName="CLIENT_SCOPE_CLIENT" constraintName="FK_C_CLI_SCOPE_CLIENT"/>
+        <dropForeignKeyConstraint baseTableName="CLIENT" constraintName="FK_P56CTINXXB9GSK57FO49F9TAC"/>
+        <dropForeignKeyConstraint baseTableName="CLIENT_SCOPE" constraintName="FK_REALM_CLI_SCOPE"/>
+        <dropForeignKeyConstraint baseTableName="KEYCLOAK_GROUP" constraintName="FK_GROUP_REALM"/>
     </changeSet>
 
     <changeSet author="keycloak" id="13.0.0-increase-column-size-federated">
