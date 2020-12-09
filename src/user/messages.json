@@ -1,5 +1,17 @@
 {
   "users": {
-    "title": "Users"
+    "title": "Users",
+    "userExplain": "This is the description",
+    "searchForUser": "Search user",
+    "username": "Username",
+    "email": "Email",
+    "lastName": "Last name",
+    "firstName": "First name",
+    "status": "Status",
+    "disabled": "Disabled",
+    "addUser": "Add user",
+    "deleteUser": "Delete user",
+    "userDeletedSuccess": "The user has been deleted",
+    "userDeletedError": "The user could not be deleted {error}"
   }
 }
