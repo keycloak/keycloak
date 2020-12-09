@@ -341,6 +341,9 @@ export const ClientScopes = ({ clientId, protocol }: ClientScopesProps) => {
                   dropdownItems={[
                     <DropdownItem
                       key="deleteAll"
+                      isDisabled={
+                        rows.filter((row) => row.selected).length === 0
+                      }
                       onClick={async () => {
                         try {
                           await Promise.all(
