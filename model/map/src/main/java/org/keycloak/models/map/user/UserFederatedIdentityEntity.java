@@ -18,10 +18,11 @@
 package org.keycloak.models.map.user;
 
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.map.common.UpdatableEntity;
 
 import java.util.Objects;
 
-public class UserFederatedIdentityEntity {
+public class UserFederatedIdentityEntity implements UpdatableEntity {
     private String token;
     private String userId;
     private String identityProvider;
@@ -82,6 +83,7 @@ public class UserFederatedIdentityEntity {
         this.userName = userName;
     }
 
+    @Override
     public boolean isUpdated() {
         return updated;
     }

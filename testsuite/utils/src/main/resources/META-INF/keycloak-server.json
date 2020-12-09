@@ -15,7 +15,7 @@
     },
 
     "realm": {
-        "provider": "${keycloak.realm.provider:}"
+        "provider": "${keycloak.realm.provider:jpa}"
     },
 
     "client": {

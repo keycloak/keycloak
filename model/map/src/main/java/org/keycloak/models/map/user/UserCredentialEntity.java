@@ -19,10 +19,11 @@ package org.keycloak.models.map.user;
 
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.map.common.UpdatableEntity;
 
 import java.util.Objects;
 
-public class UserCredentialEntity {
+public class UserCredentialEntity implements UpdatableEntity {
 
     private String id;
     private String type;
@@ -112,6 +113,7 @@ public class UserCredentialEntity {
         this.credentialData = credentialData;
     }
 
+    @Override
     public boolean isUpdated() {
         return updated;
     }

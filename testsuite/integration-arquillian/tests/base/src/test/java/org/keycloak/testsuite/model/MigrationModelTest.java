@@ -14,6 +14,7 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import javax.persistence.EntityManager;
 import java.util.List;
 import org.jboss.logging.Logger;
+import org.keycloak.models.ServerInfoProvider;
 
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
@@ -37,13 +38,13 @@ public class MigrationModelTest extends AbstractKeycloakTest {
             Assert.assertTrue(l.get(0).getId().matches("[\\da-z]{5}"));
             Assert.assertEquals(currentVersion, l.get(0).getVersion());
 
-            MigrationModel m = session.realms().getMigrationModel();
+            MigrationModel m = session.getProvider(ServerInfoProvider.class).getMigrationModel();
             Assert.assertEquals(currentVersion, m.getStoredVersion());
             Assert.assertEquals(m.getResourcesTag(), l.get(0).getId());
 
             Time.setOffset(-60000);
 
-            session.realms().getMigrationModel().setStoredVersion("6.0.0");
+            session.getProvider(ServerInfoProvider.class).getMigrationModel().setStoredVersion("6.0.0");
             em.flush();
 
             Time.setOffset(0);
@@ -58,7 +59,7 @@ public class MigrationModelTest extends AbstractKeycloakTest {
             Assert.assertTrue(l.get(1).getId().matches("[\\da-z]{5}"));
             Assert.assertEquals("6.0.0", l.get(1).getVersion());
 
-            m = session.realms().getMigrationModel();
+            m = session.getProvider(ServerInfoProvider.class).getMigrationModel();
             Assert.assertEquals(l.get(0).getId(), m.getResourcesTag());
             Assert.assertEquals(currentVersion, m.getStoredVersion());
 
