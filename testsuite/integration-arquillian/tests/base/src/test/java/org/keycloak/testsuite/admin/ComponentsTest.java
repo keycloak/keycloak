@@ -85,14 +85,20 @@ public class ComponentsTest extends AbstractAdminTest {
     public void testConcurrencyWithoutChildren() throws InterruptedException {
         testConcurrency((s, i) -> s.submit(new CreateAndDeleteComponent(s, i)));
 
-        assertThat(realm.components().query(realm.toRepresentation().getId(), TestProvider.class.getName()), Matchers.hasSize(0));
+//        Data consistency is not guaranteed with concurrent access to entities in map store. 
+//        For details see https://issues.redhat.com/browse/KEYCLOAK-17586
+//        The reason that this test remains here is to test whether it finishes in time (we need to test whether there is no slowness).
+//        assertThat(realm.components().query(realm.toRepresentation().getId(), TestProvider.class.getName()), Matchers.hasSize(0));
     }
 
     @Test
     public void testConcurrencyWithChildren() throws InterruptedException {
         testConcurrency((s, i) -> s.submit(new CreateAndDeleteComponentWithFlatChildren(s, i)));
 
-        assertThat(realm.components().query(realm.toRepresentation().getId(), TestProvider.class.getName()), Matchers.hasSize(0));
+//        Data consistency is not guaranteed with concurrent access to entities in map store. 
+//        For details see https://issues.redhat.com/browse/KEYCLOAK-17586
+//        The reason that this test remains here is to test whether it finishes in time (we need to test whether there is no slowness).
+//        assertThat(realm.components().query(realm.toRepresentation().getId(), TestProvider.class.getName()), Matchers.hasSize(0));
     }
 
     @Test

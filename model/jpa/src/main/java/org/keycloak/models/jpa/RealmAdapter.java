@@ -21,6 +21,7 @@ import org.keycloak.Config;
 import org.jboss.logging.Logger;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.*;
@@ -186,21 +187,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public void setAttribute(String name, Boolean value) {
-        setAttribute(name, value.toString());
-    }
-
-    @Override
-    public void setAttribute(String name, Integer value) {
-        setAttribute(name, value.toString());
-    }
-
-    @Override
-    public void setAttribute(String name, Long value) {
-        setAttribute(name, value.toString());
-    }
-
-    @Override
     public void removeAttribute(String name) {
         Iterator<RealmAttributeEntity> it = realm.getAttributes().iterator();
         while (it.hasNext()) {
@@ -220,27 +206,6 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
             }
         }
         return null;
-    }
-
-    @Override
-    public Integer getAttribute(String name, Integer defaultValue) {
-        String v = getAttribute(name);
-        return v != null ? Integer.parseInt(v) : defaultValue;
-
-    }
-
-    @Override
-    public Long getAttribute(String name, Long defaultValue) {
-        String v = getAttribute(name);
-        return v != null ? Long.parseLong(v) : defaultValue;
-
-    }
-
-    @Override
-    public Boolean getAttribute(String name, Boolean defaultValue) {
-        String v = getAttribute(name);
-        return v != null ? Boolean.parseBoolean(v) : defaultValue;
-
     }
 
     @Override
@@ -1566,9 +1531,10 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
 
     @Override
     public AuthenticationFlowModel getFlowByAlias(String alias) {
-        return getAuthenticationFlowsStream()
+        return realm.getAuthenticationFlows().stream()
                 .filter(flow -> Objects.equals(flow.getAlias(), alias))
                 .findFirst()
+                .map(this::entityToModel)
                 .orElse(null);
     }
 
@@ -2239,6 +2205,69 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
             return realm.getRealmLocalizationTexts().get(locale).getTexts();
         }
         return Collections.emptyMap();
+    }
+
+    @Override
+    public ClientInitialAccessModel createClientInitialAccessModel(int expiration, int count) {
+        RealmEntity realmEntity = em.find(RealmEntity.class, realm.getId());
+
+        ClientInitialAccessEntity entity = new ClientInitialAccessEntity();
+        entity.setId(KeycloakModelUtils.generateId());
+        entity.setRealm(realmEntity);
+
+        entity.setCount(count);
+        entity.setRemainingCount(count);
+
+        int currentTime = Time.currentTime();
+        entity.setTimestamp(currentTime);
+        entity.setExpiration(expiration);
+
+        em.persist(entity);
+
+        return entityToModel(entity);
+    }
+
+    @Override
+    public ClientInitialAccessModel getClientInitialAccessModel(String id) {
+        ClientInitialAccessEntity entity = em.find(ClientInitialAccessEntity.class, id);
+        if (entity == null) return null;
+        if (!entity.getRealm().getId().equals(realm.getId())) return null;
+        return entityToModel(entity);
+    }
+
+    @Override
+    public void removeClientInitialAccessModel(String id) {
+        ClientInitialAccessEntity entity = em.find(ClientInitialAccessEntity.class, id, LockModeType.PESSIMISTIC_WRITE);
+        if (entity == null) return;
+        if (!entity.getRealm().getId().equals(realm.getId())) return;
+        em.remove(entity);
+        em.flush();
+    }
+
+    @Override
+    public Stream<ClientInitialAccessModel> getClientInitialAccesses() {
+        RealmEntity realmEntity = em.find(RealmEntity.class, realm.getId());
+
+        TypedQuery<ClientInitialAccessEntity> query = em.createNamedQuery("findClientInitialAccessByRealm", ClientInitialAccessEntity.class);
+        query.setParameter("realm", realmEntity);
+        return closing(query.getResultStream().map(this::entityToModel));
+    }
+
+    @Override
+    public void decreaseRemainingCount(ClientInitialAccessModel clientInitialAccess) {
+        em.createNamedQuery("decreaseClientInitialAccessRemainingCount")
+                .setParameter("id", clientInitialAccess.getId())
+                .executeUpdate();
+    }
+
+    private ClientInitialAccessModel entityToModel(ClientInitialAccessEntity entity) {
+        ClientInitialAccessModel model = new ClientInitialAccessModel();
+        model.setId(entity.getId());
+        model.setCount(entity.getCount());
+        model.setRemainingCount(entity.getRemainingCount());
+        model.setExpiration(entity.getExpiration());
+        model.setTimestamp(entity.getTimestamp());
+        return model;
     }
 
     @Override

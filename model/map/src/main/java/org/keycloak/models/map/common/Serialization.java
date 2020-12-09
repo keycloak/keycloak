@@ -44,7 +44,7 @@ public class Serialization {
       .setSerializationInclusion(JsonInclude.Include.NON_NULL)
       .setVisibility(PropertyAccessor.ALL, Visibility.NONE)
       .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
-      .addMixIn(AbstractEntity.class, IgnoreUpdatedMixIn.class);
+      .addMixIn(UpdatableEntity.class, IgnoreUpdatedMixIn.class);
 
     public static final ConcurrentHashMap<Class<?>, ObjectReader> READERS = new ConcurrentHashMap<>();
     public static final ConcurrentHashMap<Class<?>, ObjectWriter> WRITERS = new ConcurrentHashMap<>();
