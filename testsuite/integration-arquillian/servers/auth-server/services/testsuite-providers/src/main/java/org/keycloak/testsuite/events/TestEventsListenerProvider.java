@@ -48,7 +48,7 @@ public class TestEventsListenerProvider implements EventListenerProvider {
     public void onEvent(AdminEvent event, boolean includeRepresentation) {
         tx.addAdminEvent(event, includeRepresentation);
     }
-    
+
     @Override
     public void close() {
 

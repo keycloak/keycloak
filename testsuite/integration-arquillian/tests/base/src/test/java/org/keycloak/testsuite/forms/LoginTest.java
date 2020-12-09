@@ -90,7 +90,7 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class LoginTest extends AbstractTestRealmKeycloakTest {
-    
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         UserRepresentation user = UserBuilder.create()
