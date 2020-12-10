@@ -24,7 +24,7 @@ You can give specific users a role that allows account deletion.
 . Select a user.
 . Click the *Role Mappings* tab.
 . From the *Client Roles* list, select *account*.
-. Under *Available Roles, select *delete-account*.
+. Under *Available Roles*, select *delete-account*.
 . Click *Add selected*.
 +
 .delete-account role
