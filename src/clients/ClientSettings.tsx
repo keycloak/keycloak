@@ -87,7 +87,7 @@ export const ClientSettings = ({ form, save }: ClientSettingsProps) => {
             hasNoPaddingTop
           >
             <Controller
-              name="alwaysDisplayInConsole"
+              name="attributes.display_on_consent_screen"
               defaultValue={false}
               control={form.control}
               render={({ onChange, value }) => (
@@ -107,7 +107,7 @@ export const ClientSettings = ({ form, save }: ClientSettingsProps) => {
           >
             <TextArea
               id="kc-consent-screen-text"
-              name="consentText"
+              name="attributes.consent_screen_text"
               ref={form.register}
             />
           </FormGroup>
