@@ -87,12 +87,25 @@ public interface UserProvider extends Provider,
         return value != null ? value.stream() : Stream.empty();
     }
 
+    /**
+     *
+     * @param realm
+     * @param userId
+     * @param consent
+     * @throws ModelException when consent doesn't exist for the userId
+     */
     void updateConsent(RealmModel realm, String userId, UserConsentModel consent);
     boolean revokeConsentForClient(RealmModel realm, String userId, String clientInternalId);
 
     void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore);
     int getNotBeforeOfUser(RealmModel realm, UserModel user);
 
+    /**
+     *
+     * @param client
+     * @throws IllegalArgumentException when there are more service accounts associated with the given clientId
+     * @return
+     */
     UserModel getServiceAccount(ClientModel client);
 
     /**
@@ -114,7 +127,7 @@ public interface UserProvider extends Provider,
     }
 
     /**
-     * @deprecated Use {@link #getUsersStream(RealmModel, int, int, boolean) getUsersStream} instead.
+     * @deprecated Use {@link #getUsersStream(RealmModel, Integer, Integer, boolean) getUsersStream} instead.
      */
     @Deprecated
     List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts);
@@ -128,8 +141,8 @@ public interface UserProvider extends Provider,
      * @param includeServiceAccounts {@code true} if service accounts should be included in the result; {@code false} otherwise.
      * @return a non-null {@link Stream} of users associated withe the realm.
      */
-    default Stream<UserModel> getUsersStream(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts) {
-        List<UserModel> value = this.getUsers(realm, firstResult, maxResults, includeServiceAccounts);
+    default Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults, boolean includeServiceAccounts) {
+        List<UserModel> value = this.getUsers(realm, firstResult == null ? -1 : firstResult, maxResults == null ? -1 : maxResults, includeServiceAccounts);
         return value != null ? value.stream() : Stream.empty();
     }
 
@@ -204,6 +217,6 @@ public interface UserProvider extends Provider,
         }
 
         @Override
-        Stream<UserModel> getUsersStream(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts);
+        Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults, boolean includeServiceAccounts);
     }
 }
