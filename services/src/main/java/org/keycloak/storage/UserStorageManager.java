@@ -128,13 +128,25 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (userCache != null) {
             userCache.evict(realm, user);
         }
+
+        // This needs to be running in separate transaction because removing the user may end up with throwing
+        // PessimisticLockException which also rollbacks Jpa transaction, hence when it is running in current transaction
+        // it will become not usable for all consequent jpa calls. It will end up with Transaction is in rolled back
+        // state error
         runJobInTransaction(session.getKeycloakSessionFactory(), session -> {
             RealmModel realmModel = session.realms().getRealm(realm.getId());
             if (realmModel == null) return;
             UserModel deletedUser = session.userLocalStorage().getUserById(userId, realmModel);
             if (deletedUser != null) {
-                new UserManager(session).removeUser(realmModel, deletedUser, session.userLocalStorage());
-                logger.debugf("Removed invalid user '%s'", userName);
+                try {
+                    new UserManager(session).removeUser(realmModel, deletedUser, session.userLocalStorage());
+                    logger.debugf("Removed invalid user '%s'", userName);
+                } catch (ModelException ex) {
+                    // Ignore exception, possible cause may be concurrent deleteInvalidUser calls which means
+                    // ModelException exception may be ignored because users will be removed with next call or is
+                    // already removed
+                    logger.debugf(ex, "ModelException thrown during deleteInvalidUser with username '%s'", userName);
+                }
             }
         });
     }
@@ -268,7 +280,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public Stream<UserModel> getGroupMembersStream(final RealmModel realm, final GroupModel group, int firstResult, int maxResults) {
+    public Stream<UserModel> getGroupMembersStream(final RealmModel realm, final GroupModel group, Integer firstResult, Integer maxResults) {
         Stream<UserModel> results = query((provider) -> {
             if (provider instanceof UserQueryProvider) {
                 return ((UserQueryProvider)provider).getGroupMembersStream(realm, group);
@@ -289,7 +301,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public Stream<UserModel> getRoleMembersStream(final RealmModel realm, final RoleModel role, int firstResult, int maxResults) {
+    public Stream<UserModel> getRoleMembersStream(final RealmModel realm, final RoleModel role, Integer firstResult, Integer maxResults) {
         Stream<UserModel> results = query((provider) -> {
             if (provider instanceof UserQueryProvider) {
                 return ((UserQueryProvider)provider).getRoleMembersStream(realm, role);
@@ -316,7 +328,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public Stream<UserModel> getUsersStream(final RealmModel realm, int firstResult, int maxResults, final boolean includeServiceAccounts) {
+    public Stream<UserModel> getUsersStream(final RealmModel realm, Integer firstResult, Integer maxResults, final boolean includeServiceAccounts) {
         Stream<UserModel> results =  query((provider) -> {
             if (provider instanceof UserProvider) { // it is local storage
                 return ((UserProvider) provider).getUsersStream(realm, includeServiceAccounts);
@@ -375,7 +387,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public Stream<UserModel> searchForUserStream(String search, RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> searchForUserStream(String search, RealmModel realm, Integer firstResult, Integer maxResults) {
         Stream<UserModel> results = query((provider) -> {
             if (provider instanceof UserQueryProvider) {
                 return ((UserQueryProvider)provider).searchForUserStream(search, realm);
@@ -391,7 +403,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public Stream<UserModel> searchForUserStream(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> searchForUserStream(Map<String, String> attributes, RealmModel realm, Integer firstResult, Integer maxResults) {
         Stream<UserModel> results = query((provider) -> {
             if (provider instanceof UserQueryProvider) {
                 if (attributes.containsKey(UserModel.SEARCH)) {

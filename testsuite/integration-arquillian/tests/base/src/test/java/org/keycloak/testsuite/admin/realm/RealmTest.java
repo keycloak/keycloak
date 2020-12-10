@@ -51,7 +51,7 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.events.EventsListenerProviderFactory;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.AdminEventPaths;
@@ -358,7 +358,7 @@ public class RealmTest extends AbstractAdminTest {
         RealmEventsConfigRepresentation repOrig = copyRealmEventsConfigRepresentation(rep);
 
         // the "event-queue" listener should be enabled by default
-        assertTrue("event-queue should be enabled initially", rep.getEventsListeners().contains(EventsListenerProviderFactory.PROVIDER_ID));
+        assertTrue("event-queue should be enabled initially", rep.getEventsListeners().contains(TestEventsListenerProviderFactory.PROVIDER_ID));
 
         // first modification => remove "event-queue", should be sent to the queue
         rep.setEnabledEventTypes(Arrays.asList(EventType.LOGIN.name(), EventType.LOGIN_ERROR.name()));

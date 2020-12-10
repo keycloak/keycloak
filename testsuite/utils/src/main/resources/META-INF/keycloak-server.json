@@ -42,7 +42,7 @@
     },
 
     "user": {
-        "provider": "${keycloak.user.provider:}"
+        "provider": "${keycloak.user.provider:jpa}"
     },
 
     "userFederatedStorage": {

@@ -31,5 +31,12 @@ public interface UserLookupProvider {
 
     UserModel getUserByUsername(String username, RealmModel realm);
 
+    /**
+     * 
+     * @param email
+     * @param realm
+     * @throws org.keycloak.models.ModelDuplicateException when there are more users with same email
+     * @return
+     */
     UserModel getUserByEmail(String email, RealmModel realm);
 }

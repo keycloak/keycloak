@@ -19,6 +19,7 @@ package org.keycloak.models;
 
 import org.keycloak.provider.ProviderEvent;
 
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,8 @@ public interface UserModel extends RoleMapperModel {
     String SEARCH = "keycloak.session.realm.users.query.search";
     String EXACT = "keycloak.session.realm.users.query.exact";
 
+    Comparator<UserModel> COMPARE_BY_USERNAME = Comparator.comparing(UserModel::getUsername, String.CASE_INSENSITIVE_ORDER);
+
     interface UserRemovedEvent extends ProviderEvent {
         RealmModel getRealm();
         UserModel getUser();
@@ -56,7 +59,13 @@ public interface UserModel extends RoleMapperModel {
     // No default method here to allow Abstract subclasses where the username is provided in a different manner
     String getUsername();
 
-    // No default method here to allow Abstract subclasses where the username is provided in a different manner
+    /**
+     * Sets username for this user.
+     *
+     * No default method here to allow Abstract subclasses where the username is provided in a different manner
+     *
+     * @param username username string
+     */
     void setUsername(String username);
 
     /**
@@ -129,9 +138,17 @@ public interface UserModel extends RoleMapperModel {
 
     void removeRequiredAction(String action);
 
-    void addRequiredAction(RequiredAction action);
+    default void addRequiredAction(RequiredAction action) {
+        if (action == null) return;
+        String actionName = action.name();
+        addRequiredAction(actionName);
+    }
 
-    void removeRequiredAction(RequiredAction action);
+    default void removeRequiredAction(RequiredAction action) {
+        if (action == null) return;
+        String actionName = action.name();
+        removeRequiredAction(actionName);
+    }
 
     String getFirstName();
 
@@ -143,6 +160,11 @@ public interface UserModel extends RoleMapperModel {
 
     String getEmail();
 
+    /**
+     * Sets email for this user.
+     *
+     * @param email the email
+     */
     void setEmail(String email);
 
     boolean isEmailVerified();

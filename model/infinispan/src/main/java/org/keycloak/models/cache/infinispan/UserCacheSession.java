@@ -454,7 +454,7 @@ public class UserCacheSession implements UserCache.Streams {
     }
 
     @Override
-    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
         return getDelegate().getGroupMembersStream(realm, group, firstResult, maxResults);
     }
 
@@ -464,7 +464,7 @@ public class UserCacheSession implements UserCache.Streams {
     }
 
     @Override
-    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
+    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
         return getDelegate().getRoleMembersStream(realm, role, firstResult, maxResults);
     }
 
@@ -472,7 +472,7 @@ public class UserCacheSession implements UserCache.Streams {
     public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role) {
         return getDelegate().getRoleMembersStream(realm, role);
     }    
-    
+
     @Override
     public UserModel getServiceAccount(ClientModel client) {
         // Just an attempt to find the user from cache by default serviceAccount username
@@ -576,7 +576,7 @@ public class UserCacheSession implements UserCache.Streams {
     }
 
     @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts) {
+    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults, boolean includeServiceAccounts) {
         return getDelegate().getUsersStream(realm, firstResult, maxResults, includeServiceAccounts);
     }
 
@@ -596,7 +596,7 @@ public class UserCacheSession implements UserCache.Streams {
     }
 
     @Override
-    public Stream<UserModel> searchForUserStream(String search, RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> searchForUserStream(String search, RealmModel realm, Integer firstResult, Integer maxResults) {
         return getDelegate().searchForUserStream(search, realm, firstResult, maxResults);
     }
 
@@ -606,7 +606,7 @@ public class UserCacheSession implements UserCache.Streams {
     }
 
     @Override
-    public Stream<UserModel> searchForUserStream(Map<String, String> attributes, RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> searchForUserStream(Map<String, String> attributes, RealmModel realm, Integer firstResult, Integer maxResults) {
         return getDelegate().searchForUserStream(attributes, realm, firstResult, maxResults);
     }
 

@@ -46,6 +46,7 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -1847,9 +1848,7 @@ public class UserTest extends AbstractAdminTest {
         } catch (ClientErrorException e) {
             assertEquals(409, e.getResponse().getStatus());
 
-            // TODO adminEvents: Event queue should be empty, but it's not because of bug in UsersResource.updateUser, which sends event earlier than transaction commit.
-            // assertAdminEvents.assertEmpty();
-            assertAdminEvents.poll();
+            assertAdminEvents.assertEmpty();
         } finally {
             enableBruteForce(false);
             switchEditUsernameAllowedOn(false);

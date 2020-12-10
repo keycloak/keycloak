@@ -37,10 +37,12 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.hamcrest.Matchers;
 import org.junit.Test;
+
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeThat;
@@ -97,6 +99,7 @@ public class UserModelTest extends KeycloakModelTest {
 
         assertTrue(session.users().removeUser(realm, user));
         assertFalse(session.users().removeUser(realm, user));
+        assertNull(session.users().getUserByUsername(user.getUsername(), realm));
     }
 
     @Test
@@ -191,6 +194,7 @@ public class UserModelTest extends KeycloakModelTest {
             final RealmModel realm = session.realms().getRealm(realmId);
             final UserModel user = session.users().addUser(realm, "user-" + i);
             user.joinGroup(session.groups().getGroupById(realm, groupId));
+            log.infof("Created user with id: %s", user.getId());
             userIds.add(user.getId());
         }));
 
@@ -205,11 +209,11 @@ public class UserModelTest extends KeycloakModelTest {
             });
         });
 
-        inComittedTransaction(1, (session, i) -> {
+        IntStream.range(0, 7).parallel().forEach(index -> inComittedTransaction(index, (session, i) -> {
             final RealmModel realm = session.realms().getRealm(realmId);
             final GroupModel group = session.groups().getGroupById(realm, groupId);
             assertThat(session.users().getGroupMembersStream(realm, group).count(), is(100L - DELETED_USER_COUNT));
-        });
+        }));
 
         // Now delete the users, and count those that were not found to be deleted. This should be equal to the number
         // of users removed directly in the user federation.

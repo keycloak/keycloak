@@ -101,10 +101,11 @@ public class ClientScopeResource {
 
         try {
             RepresentationToModel.updateClientScope(rep, clientScope);
+            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
+
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().commit();
             }
-            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             return ErrorResponse.exists("Client Scope " + rep.getName() + " already exists");

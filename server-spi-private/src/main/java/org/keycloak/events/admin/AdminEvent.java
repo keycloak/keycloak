@@ -41,6 +41,20 @@ public class AdminEvent {
 
     private String error;
     
+    public AdminEvent() {}
+    public AdminEvent(AdminEvent toCopy) {
+        this.time = toCopy.getTime();
+        this.realmId = toCopy.getRealmId();
+        this.authDetails = new AuthDetails(toCopy.getAuthDetails());
+        this.resourceType = toCopy.getResourceTypeAsString();
+        this.operationType = toCopy.getOperationType();
+        this.resourcePath = toCopy.getResourcePath();
+        this.representation = toCopy.getRepresentation();
+        this.error = toCopy.getError();
+    }
+
+
+    
     /**
      * Returns the time of the event
      *

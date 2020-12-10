@@ -62,7 +62,7 @@ import org.keycloak.services.util.CookieHelper;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.components.TestProvider;
 import org.keycloak.testsuite.components.TestProviderFactory;
-import org.keycloak.testsuite.events.EventsListenerProvider;
+import org.keycloak.testsuite.events.TestEventsListenerProvider;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.forms.PassThroughAuthenticator;
 import org.keycloak.testsuite.forms.PassThroughClientAuthenticator;
@@ -227,7 +227,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/poll-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
     public EventRepresentation getEvent() {
-        Event event = EventsListenerProvider.poll();
+        Event event = TestEventsListenerProvider.poll();
         if (event != null) {
             return ModelToRepresentation.toRepresentation(event);
         } else {
@@ -239,7 +239,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/poll-admin-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
     public AdminEventRepresentation getAdminEvent() {
-        AdminEvent adminEvent = EventsListenerProvider.pollAdminEvent();
+        AdminEvent adminEvent = TestEventsListenerProvider.pollAdminEvent();
         if (adminEvent != null) {
             return ModelToRepresentation.toRepresentation(adminEvent);
         } else {
@@ -251,7 +251,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/clear-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearEventQueue() {
-        EventsListenerProvider.clear();
+        TestEventsListenerProvider.clear();
         return Response.noContent().build();
     }
 
@@ -259,7 +259,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/clear-admin-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearAdminEventQueue() {
-        EventsListenerProvider.clearAdminEvents();
+        TestEventsListenerProvider.clearAdminEvents();
         return Response.noContent().build();
     }
 

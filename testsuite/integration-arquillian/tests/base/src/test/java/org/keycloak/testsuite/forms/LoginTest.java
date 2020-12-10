@@ -69,6 +69,7 @@ import javax.ws.rs.core.UriBuilder;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -93,7 +94,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         UserRepresentation user = UserBuilder.create()
-                                             .id("login-test")
+                                             .id(UUID.randomUUID().toString())
                                              .username("login-test")
                                              .email("login@test.com")
                                              .enabled(true)
@@ -102,7 +103,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         userId = user.getId();
 
         UserRepresentation user2 = UserBuilder.create()
-                                              .id("login-test2")
+                                              .id(UUID.randomUUID().toString())
                                               .username("login-test2")
                                               .email("login2@test.com")
                                               .enabled(true)
@@ -299,15 +300,15 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
                 .assertEvent();
     }
 
-    private void setUserEnabled(String userName, boolean enabled) {
-        UserRepresentation rep = adminClient.realm("test").users().get(userName).toRepresentation();
+    private void setUserEnabled(String id, boolean enabled) {
+        UserRepresentation rep = adminClient.realm("test").users().get(id).toRepresentation();
         rep.setEnabled(enabled);
-        adminClient.realm("test").users().get(userName).update(rep);
+        adminClient.realm("test").users().get(id).update(rep);
     }
 
     @Test
     public void loginInvalidPasswordDisabledUser() {
-        setUserEnabled("login-test", false);
+        setUserEnabled(userId, false);
 
         try {
             loginPage.open();
@@ -327,13 +328,13 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
         } finally {
-            setUserEnabled("login-test", true);
+            setUserEnabled(userId, true);
         }
     }
 
     @Test
     public void loginDisabledUser() {
-        setUserEnabled("login-test", false);
+        setUserEnabled(userId, false);
 
         try {
             loginPage.open();
@@ -353,7 +354,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
         } finally {
-            setUserEnabled("login-test", true);
+            setUserEnabled(userId, true);
         }
     }
 
@@ -548,7 +549,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
         } finally {
             setPasswordPolicy(null);
-            UserResource userRsc = adminClient.realm("test").users().get("login-test");
+            UserResource userRsc = adminClient.realm("test").users().get(userId);
             ApiUtil.resetUserPassword(userRsc, "password", false);
         }
     }
