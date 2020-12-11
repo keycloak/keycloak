@@ -1,5 +1,13 @@
 {
   "events": {
-    "title": "Events"
+    "title": "Events",
+    "eventExplain": "If you want to configure user events, Admin events or Event listeners, please enter Event configs page realm settings to configure.",
+    "searchForEvent": "Search user event",
+    "refresh": "Refresh",
+    "time": "Time",
+    "user": "User",
+    "eventType": "Event type",
+    "ipAddress": "IP address",
+    "client": "Client"
   }
 }
