@@ -4,6 +4,9 @@ import {
   Button,
   Label,
   PageSection,
+  Tab,
+  Tabs,
+  TabTitleText,
   ToolbarItem,
 } from "@patternfly/react-core";
 import moment from "moment";
@@ -14,11 +17,15 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { DataList } from "../components/table-toolbar/DataList";
 import { RealmContext } from "../context/realm-context/RealmContext";
 import { InfoCircleIcon } from "@patternfly/react-icons";
+import { AdminEvents } from "./AdminEvents";
+import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 
 export const EventsSection = () => {
   const { t } = useTranslation("events");
   const adminClient = useAdminClient();
   const { realm } = useContext(RealmContext);
+
+  const [activeTab, setActiveTab] = useState(0);
   const [key, setKey] = useState("");
   const refresh = () => setKey(`${new Date().getTime()}`);
 
@@ -48,44 +55,67 @@ export const EventsSection = () => {
     <>
       <ViewHeader titleKey="events:title" subKey="events:eventExplain" />
       <PageSection variant="light">
-        <DataList
-          key={key}
-          loader={loader}
-          isPaginated
-          ariaLabelKey="events:title"
-          searchPlaceholderKey="events:searchForEvent"
-          toolbarItem={
-            <>
-              <ToolbarItem>
-                <Button onClick={refresh}>{t("refresh")}</Button>
-              </ToolbarItem>
-            </>
-          }
-          columns={[
-            {
-              name: "time",
-              displayKey: "events:time",
-              cellRenderer: (row) => moment(row.time).fromNow(),
-            },
-            {
-              name: "userId",
-              displayKey: "events:user",
-            },
-            {
-              name: "type",
-              displayKey: "events:eventType",
-              cellRenderer: StatusRow,
-            },
-            {
-              name: "ipAddress",
-              displayKey: "events:ipAddress",
-            },
-            {
-              name: "clientId",
-              displayKey: "events:client",
-            },
-          ]}
-        />
+        <Tabs
+          activeKey={activeTab}
+          onSelect={(_, key) => setActiveTab(key as number)}
+          isBox
+        >
+          <Tab
+            eventKey={0}
+            title={<TabTitleText>{t("userEvents")}</TabTitleText>}
+          >
+            <DataList
+              key={key}
+              loader={loader}
+              isPaginated
+              ariaLabelKey="events:title"
+              searchPlaceholderKey="events:searchForEvent"
+              toolbarItem={
+                <>
+                  <ToolbarItem>
+                    <Button onClick={refresh}>{t("refresh")}</Button>
+                  </ToolbarItem>
+                </>
+              }
+              columns={[
+                {
+                  name: "time",
+                  displayKey: "events:time",
+                  cellRenderer: (row) => moment(row.time).fromNow(),
+                },
+                {
+                  name: "userId",
+                  displayKey: "events:user",
+                },
+                {
+                  name: "type",
+                  displayKey: "events:eventType",
+                  cellRenderer: StatusRow,
+                },
+                {
+                  name: "ipAddress",
+                  displayKey: "events:ipAddress",
+                },
+                {
+                  name: "clientId",
+                  displayKey: "events:client",
+                },
+              ]}
+              emptyState={
+                <ListEmptyState
+                  message={t("emptyEvents")}
+                  instructions={t("emptyEventsInstructions")}
+                />
+              }
+            />
+          </Tab>
+          <Tab
+            eventKey={1}
+            title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
+          >
+            <AdminEvents />
+          </Tab>
+        </Tabs>
       </PageSection>
     </>
   );
