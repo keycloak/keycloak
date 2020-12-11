@@ -10,7 +10,7 @@ import {
 
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient } from "../context/auth/AdminClient";
-import { DataList } from "../components/table-toolbar/DataList";
+import { KeycloakDataTable } from "../components/table-toolbar/DataList";
 import { IFormatter, IFormatterValueType } from "@patternfly/react-table";
 import { exportClient } from "../util";
 import { useAlerts } from "../components/alert/Alerts";
@@ -64,7 +64,7 @@ export const ClientsSection = () => {
         subKey="clients:clientsExplain"
       />
       <PageSection variant="light">
-        <DataList
+        <KeycloakDataTable
           loader={loader}
           isPaginated
           ariaLabelKey="clients:clientList"
