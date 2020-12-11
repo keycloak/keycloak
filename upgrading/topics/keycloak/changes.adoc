@@ -441,7 +441,7 @@ or `resourceAccess` properties, you may need to increase the priority of your ma
 
 Audiences of all the clients, for which authenticated user has at least one client role in the token, are automatically added
 to the `aud` claim in the access token now. On the other hand, an access token may not automatically contain the audience of the
-frontend client, for which it was issued. Read the link:{adminguide_link}#_audience[{adminguide_name}] for more details.
+frontend client, for which it was issued. Read the link:{adminguide_link}#audience-support[{adminguide_name}] for more details.
 
 ==== JavaScript Adapter Promise
 

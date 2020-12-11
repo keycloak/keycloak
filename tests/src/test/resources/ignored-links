@@ -8,6 +8,7 @@ http://localhost:8181*
 http://127.0.0.1:3000*
 https://myhost.com/myapp/k_jwks
 https://myhost.com/myapp
+http://host.com/*
 http://host:port*
 https://host:port*
 http://broker-keycloak:8180*

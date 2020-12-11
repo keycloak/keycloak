@@ -19,7 +19,7 @@ The workflow in the cluster environment with the public frontend load balancer a
 but can be chosen according to some other criterias (client IP address etc). It all depends on the implementation and configuration of underlying load balancer (reverse proxy).
 * {project_name} creates authentication session with random ID (eg. 123) and saves it to the Infinispan cache.
 * Infinispan distributed cache assigns the primary owner of the session based on the hash of session ID.
-See link:https://infinispan.org/docs/stable/titles/configuring/configuring.html#distribution-configuring[Infinispan documentation] for more details around this.
+See link:https://infinispan.org/docs/10.1.x/titles/configuring/configuring.html#clustered_caches[Infinispan documentation] for more details around this.
 Let's assume that Infinispan assigned `node2` to be the owner of this session.
 * {project_name} creates the cookie `AUTH_SESSION_ID` with the format like `<session-id>.<owner-node-id>` . In our example case, it will be `123.node2` .
 * Response is returned to the user with the {project_name} login screen and the AUTH_SESSION_ID cookie in the browser

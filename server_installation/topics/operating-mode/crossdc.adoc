@@ -137,10 +137,9 @@ For more detail about how caches can be configured see <<tuningcache>>.
 [[communication]]
 ==== Communication details
 
-{project_name} uses multiple, separate clusters of Infinispan caches. Every {project_name} node is in the cluster with the other {project_name} nodes in same data center, but not with the {project_name} nodes in different data centers. A {project_name} node does not communicate directly with the {project_name} nodes from different data centers. {project_name} nodes use external {jdgserver_name} servers for communication across data centers. This is done using the link:https://infinispan.org/docs/11.0.x/titles/hotrod_java/hotrod_java.html[Infinispan Hot Rod protocol].
+{project_name} uses multiple, separate clusters of Infinispan caches. Every {project_name} node is in the cluster with the other {project_name} nodes in same data center, but not with the {project_name} nodes in different data centers. A {project_name} node does not communicate directly with the {project_name} nodes from different data centers. {project_name} nodes use external JDG (actually {jdgserver_name} servers) for communication across data centers. This is done using the link:https://infinispan.org/docs/10.1.x/titles/server/server.html#hot_rod[Infinispan HotRod protocol].
 
-The Infinispan caches on the {project_name} side use link:https://infinispan.org/docs/stable/titles/configuring/configuring.html#remote_cache_store[`remoteStore`] configuration to offload data to a remote {jdgserver_name} cluster.
-{jdgserver_name} clusters in separate data centers then replicate that data to ensure it is backed up.
+The Infinispan caches on the {project_name} side must be configured with the link:https://infinispan.org/docs/10.1.x/titles/configuring/configuring.html#remote_cache_store[remoteStore] to ensure that data are saved to the remote cache. There is separate Infinispan cluster between JDG servers, so the data saved on JDG1 on `site1` are replicated to JDG2 on `site2` .
 
 The receiving {jdgserver_name} server notifies the {project_name} servers in its cluster through Client Listeners, which are a feature of the Hot Rod protocol. {project_name} nodes on `site2` then update their Infinispan caches and the particular user session is also visible on {project_name} nodes on `site2`.
 

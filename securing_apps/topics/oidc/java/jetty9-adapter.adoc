@@ -12,7 +12,7 @@ Let's go over these steps.
 Adapters are no longer included with the appliance or war distribution. Each adapter is a separate download on the Keycloak download site.
 They are also available as a maven artifact.
 
-You must unzip the Jetty 9.x  distro into Jetty 9.x's link:https://www.eclipse.org/jetty/documentation/jetty-9/index.html#startup-base-and-home[base directory].
+You must unzip the Jetty 9.x  distro into Jetty 9.x's link:https://www.eclipse.org/jetty/documentation/current/#quickstart-common-config[base directory].
 Including adapter's jars within your WEB-INF/lib directory will not work!
 In the example below, the Jetty base is named `your-base`:
 
