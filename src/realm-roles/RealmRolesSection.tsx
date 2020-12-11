@@ -13,7 +13,7 @@ import { useAdminClient } from "../context/auth/AdminClient";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { DataList } from "../components/table-toolbar/DataList";
+import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ExternalLink } from "../components/external-link/ExternalLink";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -87,7 +87,7 @@ export const RealmRolesSection = () => {
       <ViewHeader titleKey="roles:title" subKey="roles:roleExplain" />
       <PageSection variant="light">
         <DeleteConfirm />
-        <DataList
+        <KeycloakDataTable
           key={selectedRole ? selectedRole.id : "roleList"}
           loader={loader}
           ariaLabelKey="roles:roleList"

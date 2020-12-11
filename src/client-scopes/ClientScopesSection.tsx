@@ -6,7 +6,7 @@ import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepres
 
 import { useAdminClient } from "../context/auth/AdminClient";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { DataList } from "../components/table-toolbar/DataList";
+import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 
 export const ClientScopesSection = () => {
   const { t } = useTranslation("client-scopes");
@@ -30,7 +30,7 @@ export const ClientScopesSection = () => {
         subKey="client-scopes:clientScopeExplain"
       />
       <PageSection variant="light">
-        <DataList
+        <KeycloakDataTable
           loader={loader}
           ariaLabelKey="client-scopes:clientScopeList"
           searchPlaceholderKey="client-scopes:searchFor"

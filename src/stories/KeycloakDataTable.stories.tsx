@@ -4,17 +4,22 @@ import { Meta, Story } from "@storybook/react";
 
 import clients from "../clients/__tests__/mock-clients.json";
 
-import { DataList, DataListProps } from "../components/table-toolbar/DataList";
+import {
+  KeycloakDataTable,
+  DataListProps,
+} from "../components/table-toolbar/KeycloakDataTable";
 
 export default {
-  title: "Data list",
-  component: DataList,
+  title: "Keycloak Data Table",
+  component: KeycloakDataTable,
 } as Meta;
 
 const wait = (ms: number, value: any) =>
   new Promise((resolve) => setTimeout(resolve, ms, value));
 
-const Template: Story<DataListProps<any>> = (args) => <DataList {...args} />;
+const Template: Story<DataListProps<any>> = (args) => (
+  <KeycloakDataTable {...args} />
+);
 
 export const SimpleList = Template.bind({});
 SimpleList.args = {
