@@ -239,6 +239,12 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                 }
 
                 @Override
+                public void setEnabled(boolean enabled) {
+                    setLDAPAttribute(UserModel.ENABLED, Boolean.toString(enabled));
+                    super.setEnabled(enabled);
+                }
+
+                @Override
                 public void setLastName(String lastName) {
                     setLDAPAttribute(UserModel.LAST_NAME, lastName);
                     super.setLastName(lastName);
@@ -383,6 +389,15 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                         return ldapUser.getAttributeAsString(ldapAttrName);
                     } else {
                         return super.getEmail();
+                    }
+                }
+
+                @Override
+                public boolean isEnabled() {
+                    if (UserModel.ENABLED.equalsIgnoreCase(userModelAttrName)) {
+                        return Boolean.parseBoolean(ldapUser.getAttributeAsString(ldapAttrName));
+                    } else {
+                        return super.isEnabled();
                     }
                 }
 
