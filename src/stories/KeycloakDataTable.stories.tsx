@@ -7,10 +7,10 @@ import clients from "../clients/__tests__/mock-clients.json";
 import {
   KeycloakDataTable,
   DataListProps,
-} from "../components/table-toolbar/DataList";
+} from "../components/table-toolbar/KeycloakDataTable";
 
 export default {
-  title: "Data list",
+  title: "Keycloak Data Table",
   component: KeycloakDataTable,
 } as Meta;
 

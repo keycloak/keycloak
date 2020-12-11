@@ -13,7 +13,7 @@ import UserRepresentation from "keycloak-admin/lib/defs/userRepresentation";
 
 import { useAdminClient } from "../context/auth/AdminClient";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { KeycloakDataTable } from "../components/table-toolbar/DataList";
+import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAlerts } from "../components/alert/Alerts";
 
 export const UsersSection = () => {
