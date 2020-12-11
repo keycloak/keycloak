@@ -5,40 +5,43 @@ import {
   GridItem,
   JumpLinks,
   JumpLinksItem,
-  Title,
+  PageSection,
 } from "@patternfly/react-core";
 
 import { FormPanel } from "./FormPanel";
-import style from "./scroll-form.module.css";
+import "./scroll-form.css";
 
 type ScrollFormProps = {
   sections: string[];
   children: React.ReactNode;
 };
 
+// This must match the page id created in App.tsx unless another page section has been given hasScrollableContent
+const mainPageContentId = "#kc-main-content-page-container";
+
+let spacesToHyphens = (string: string): string => {
+  return string.replace(/\s+/g, "-");
+};
+
 export const ScrollForm = ({ sections, children }: ScrollFormProps) => {
   const { t } = useTranslation("common");
-  const [active, setActive] = useState(sections[0]);
 
   const Nav = () => (
-    <div className={style.sticky}>
-      <Title headingLevel="h5" size="lg">
-        {t("jumpToSection")}
-      </Title>
-
-      <JumpLinks isVertical>
+    <PageSection className="kc-scroll-form--sticky">
+      <JumpLinks
+        isVertical
+        // scrollableSelector has to point to the id of the element whose scrollTop changes
+        // to scroll the entire main section, it has to be the pf-c-page__main
+        scrollableSelector={mainPageContentId}
+        label={t("jumpToSection")}
+        offset={76}
+      >
         {sections.map((cat) => (
-          <JumpLinksItem
-            isActive={active === cat}
-            key={cat}
-            href={`#${cat}`}
-            onClick={() => setActive(cat)}
-          >
-            {cat}
-          </JumpLinksItem>
+          // note that JumpLinks currently does not work with spaces in the href
+          <JumpLinksItem href={`#${spacesToHyphens(cat)}`}>{cat}</JumpLinksItem>
         ))}
       </JumpLinks>
-    </div>
+    </PageSection>
   );
 
   const nodes = Children.toArray(children);
@@ -46,7 +49,8 @@ export const ScrollForm = ({ sections, children }: ScrollFormProps) => {
     <Grid hasGutter>
       <GridItem span={8}>
         {sections.map((cat, index) => (
-          <FormPanel id={cat} key={cat} title={cat}>
+          <FormPanel scrollId={spacesToHyphens(cat)} key={cat} title={cat}>
+            {/* <FormPanel scrollId={cat.replace(/\s+/g, "-")} key={cat} title={cat}> */}
             {nodes[index]}
           </FormPanel>
         ))}

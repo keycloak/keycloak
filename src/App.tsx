@@ -14,6 +14,9 @@ import { routes, RouteDef } from "./route-config";
 import { PageBreadCrumbs } from "./components/bread-crumb/PageBreadCrumbs";
 import { ForbiddenSection } from "./ForbiddenSection";
 
+// This must match the id given as scrollableSelector in scroll-form
+const mainPageContentId = "kc-main-content-page-container";
+
 const AppContexts = ({ children }: { children: ReactNode }) => (
   <AccessContextProvider>
     <Help>
@@ -44,6 +47,7 @@ export const App = () => {
           isManagedSidebar
           sidebar={<PageNav />}
           breadcrumb={<PageBreadCrumbs />}
+          mainContainerId={mainPageContentId}
         >
           <Switch>
             {routes(() => {}).map((route, i) => (

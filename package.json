@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@patternfly/patternfly": "^4.65.6",
-    "@patternfly/react-core": "4.79.2",
+    "@patternfly/react-core": "4.83.3",
     "@patternfly/react-icons": "4.7.18",
     "@patternfly/react-table": "4.19.24",
     "file-saver": "^2.0.2",
