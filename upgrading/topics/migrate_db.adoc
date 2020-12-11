@@ -32,6 +32,34 @@ Or run this CLI command:
 When you start the server with this setting your database is automatically migrated if the database schema has changed
 in the new version.
 
+Creating an index on huge tables with millions of records can easily take a huge amount of time
+and potentially cause major service disruption on upgrades.
+For those cases, we added a threshold (the number of records) for automated index creation.
+By default, this threshold is `100000` records.
+When the number of records is higher than the threshold, the index is not created automatically,
+and there will be a warning message in server logs including SQL commands which can be applied later manually.
+
+To change the threshold, set the `indexCreationThreshold` property, value for the default `connectionsLiquibase` provider:
+
+[source,xml]
+----
+<spi name="connectionsLiquibase">
+    <provider name="default" enabled="true">
+        <properties>
+            <property name="indexCreationThreshold" value="100000"/>
+        </properties>
+    </provider>
+</spi>
+----
+
+Or run this CLI command:
+
+[source,bash]
+----
+/subsystem=keycloak-server/spi=connectionsLiquibase/:add(default-provider=default)
+/subsystem=keycloak-server/spi=connectionsLiquibase/provider=default/:add(properties={indexCreationThreshold => "100000"},enabled=true)
+----
+
 === Manual Relational Database Migration
 
 To enable manual upgrading of the database schema, set the migrationStrategy property value to "manual" for the default
