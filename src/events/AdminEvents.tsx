@@ -92,7 +92,7 @@ export const AdminEvents = () => {
         key={key}
         loader={loader}
         isPaginated
-        ariaLabelKey="events:title"
+        ariaLabelKey="events:adminEvents"
         searchPlaceholderKey="events:searchForEvent"
         toolbarItem={
           <>
