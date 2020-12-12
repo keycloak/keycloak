@@ -100,4 +100,7 @@ public interface Errors {
     String INVALID_SAML_DOCUMENT = "invalid_saml_document";
     String UNSUPPORTED_NAMEID_FORMAT = "unsupported_nameid_format";
 
+    String INVALID_PERMISSION_TICKET = "invalid_permission_ticket";
+    String ACCESS_DENIED = "access_denied";
+
 }
