@@ -76,7 +76,8 @@ public class UsernameTemplateMapper extends AbstractIdentityProviderMapper {
         property.setName(TEMPLATE);
         property.setLabel("Template");
         property.setHelpText("Template to use to format the username to import.  Substitutions are enclosed in ${}.  For example: '${ALIAS}.${NAMEID}'.  ALIAS is the provider alias.  NAMEID is that SAML name id assertion.  ATTRIBUTE.<NAME> references a SAML attribute where name is the attribute name or friendly name. \n"
-          + "The substitution can be converted to upper or lower case by appending |uppercase or |lowercase to the substituted value, e.g. '${NAMEID | lowercase}");
+          + "The substitution can be converted to upper or lower case by appending |uppercase or |lowercase to the substituted value, e.g. '${NAMEID | lowercase} \n"
+          + "Local part of email can be extracted by appending |localpart to the substituted value, e.g. ${CLAIM.email | localpart}. If \"@\" is not part of the string, this conversion leaves the substitution untouched.");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setDefaultValue("${ALIAS}.${NAMEID}");
         configProperties.add(property);
@@ -92,9 +93,19 @@ public class UsernameTemplateMapper extends AbstractIdentityProviderMapper {
 
         TRANSFORMERS.put("uppercase", String::toUpperCase);
         TRANSFORMERS.put("lowercase", String::toLowerCase);
+        TRANSFORMERS.put("localpart", UsernameTemplateMapper::getEmailLocalPart);
     }
 
     public static final String PROVIDER_ID = "saml-username-idp-mapper";
+
+    public static String getEmailLocalPart(String email) {
+        int index = email == null ? -1 : email.lastIndexOf('@');
+        if (index >= 0) {
+            return email.substring(0, index);
+        } else {
+            return email;
+        }
+    }
 
     @Override
     public boolean supportsSyncMode(IdentityProviderSyncMode syncMode) {
