@@ -9,7 +9,7 @@ import {
 import moment from "moment";
 
 import { useAdminClient } from "../context/auth/AdminClient";
-import { DataList } from "../components/table-toolbar/DataList";
+import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { RealmContext } from "../context/realm-context/RealmContext";
 import {
   Table,
@@ -88,7 +88,7 @@ export const AdminEvents = () => {
           some json from the changed values
         </DisplayDialog>
       )}
-      <DataList
+      <KeycloakDataTable
         key={key}
         loader={loader}
         isPaginated

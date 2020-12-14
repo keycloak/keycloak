@@ -14,7 +14,7 @@ import EventRepresentation from "keycloak-admin/lib/defs/eventRepresentation";
 
 import { useAdminClient } from "../context/auth/AdminClient";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { DataList } from "../components/table-toolbar/DataList";
+import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { RealmContext } from "../context/realm-context/RealmContext";
 import { InfoCircleIcon } from "@patternfly/react-icons";
 import { AdminEvents } from "./AdminEvents";
@@ -64,7 +64,7 @@ export const EventsSection = () => {
             eventKey={0}
             title={<TabTitleText>{t("userEvents")}</TabTitleText>}
           >
-            <DataList
+            <KeycloakDataTable
               key={key}
               loader={loader}
               isPaginated

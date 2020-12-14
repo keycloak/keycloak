@@ -21,10 +21,10 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { ConfigPropertyRepresentation } from "keycloak-admin/lib/defs/configPropertyRepresentation";
+import ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
 
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAdminClient } from "../../context/auth/AdminClient";
-import { ProtocolMapperRepresentation } from "../models/client-scope";
 import { Controller, useForm } from "react-hook-form";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../../components/alert/Alerts";

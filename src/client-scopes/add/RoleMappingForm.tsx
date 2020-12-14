@@ -21,13 +21,13 @@ import {
 
 import RoleRepresentation from "keycloak-admin/lib/defs/roleRepresentation";
 import ClientRepresentation from "keycloak-admin/lib/defs/clientRepresentation";
+import ProtocolMapperRepresentation from "keycloak-admin/lib/defs/protocolMapperRepresentation";
 import { useAlerts } from "../../components/alert/Alerts";
 import { RealmContext } from "../../context/realm-context/RealmContext";
 import { useAdminClient } from "../../context/auth/AdminClient";
 
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { ProtocolMapperRepresentation } from "../models/client-scope";
 
 export const RoleMappingForm = () => {
   const { realm } = useContext(RealmContext);

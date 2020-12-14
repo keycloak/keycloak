@@ -19,7 +19,8 @@
     "noSearchResultsInstructions": "Click on the search bar above to search for groups",
     "noGroupsInThisRealm": "No groups in this realm",
     "noGroupsInThisRealmInstructions": "You haven't created any groups in this realm. Create a group to get started.",
+    "groupDelete": "Group deleted",
     "groupsDeleted": "Groups deleted",
-    "groupDeleteError": "Error deleting group"
+    "groupDeleteError": "Error deleting group {error}"
   }
 }

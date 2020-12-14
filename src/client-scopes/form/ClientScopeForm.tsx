@@ -19,8 +19,8 @@ import {
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
+import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
 
-import { ClientScopeRepresentation } from "../models/client-scope";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
