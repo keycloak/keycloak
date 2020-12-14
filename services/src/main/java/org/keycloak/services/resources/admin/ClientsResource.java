@@ -54,13 +54,10 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.stream.Stream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 import static java.lang.Boolean.TRUE;
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
 /**
  * Base resource class for managing a realm's clients.
@@ -141,12 +138,7 @@ public class ClientsResource {
                 .filter(Objects::nonNull);
 
         if (!canView) {
-            if (firstResult != null && firstResult > 0) {
-                s = s.skip(firstResult);
-            }
-            if (maxResults != null && maxResults > 0) {
-                s = s.limit(maxResults);
-            }
+            s = paginatedStream(s, firstResult, maxResults);
         }
 
         return s;

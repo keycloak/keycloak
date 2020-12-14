@@ -28,7 +28,11 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.UriInfo;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**

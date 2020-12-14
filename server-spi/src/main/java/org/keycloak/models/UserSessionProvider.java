@@ -78,7 +78,7 @@ public interface UserSessionProvider extends Provider {
     Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, ClientModel client);
 
     /**
-     * @deprecated Use {@link #getUserSessionsStream(RealmModel, ClientModel, int, int) getUserSessionsStream} instead.
+     * @deprecated Use {@link #getUserSessionsStream(RealmModel, ClientModel, Integer, Integer) getUserSessionsStream} instead.
      */
     @Deprecated
     default List<UserSessionModel> getUserSessions(RealmModel realm, ClientModel client, int firstResult, int maxResults) {
@@ -91,11 +91,11 @@ public interface UserSessionProvider extends Provider {
      *
      * @param realm a reference tot he realm.
      * @param client the client whose user sessions are being searched.
-     * @param firstResult first result to return. Ignored if negative.
-     * @param maxResults maximum number of results to return. Ignored if negative.
+     * @param firstResult first result to return. Ignored if negative or {@code null}.
+     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
      * @return a non-null {@link Stream} of user sessions.
      */
-    Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, ClientModel client, int firstResult, int maxResults);
+    Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults);
 
     /**
      * @deprecated Use {@link #getUserSessionByBrokerUserIdStream(RealmModel, String) getUserSessionByBrokerUserIdStream}
@@ -200,7 +200,7 @@ public interface UserSessionProvider extends Provider {
     long getOfflineSessionsCount(RealmModel realm, ClientModel client);
 
     /**
-     * @deprecated use {@link #getOfflineUserSessionsStream(RealmModel, ClientModel, int, int) getOfflineUserSessionsStream}
+     * @deprecated use {@link #getOfflineUserSessionsStream(RealmModel, ClientModel, Integer, Integer) getOfflineUserSessionsStream}
      * instead.
      */
     @Deprecated
@@ -214,11 +214,11 @@ public interface UserSessionProvider extends Provider {
      *
      * @param realm a reference tot he realm.
      * @param client the client whose user sessions are being searched.
-     * @param firstResult first result to return. Ignored if negative.
-     * @param maxResults maximum number of results to return. Ignored if negative.
+     * @param firstResult first result to return. Ignored if negative or {@code null}.
+     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
      * @return a non-null {@link Stream} of offline user sessions.
      */
-    Stream<UserSessionModel> getOfflineUserSessionsStream(RealmModel realm, ClientModel client, int firstResult, int maxResults);
+    Stream<UserSessionModel> getOfflineUserSessionsStream(RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults);
 
     /** Triggered by persister during pre-load. It imports authenticatedClientSessions too **/
     void importUserSessions(Collection<UserSessionModel> persistentUserSessions, boolean offline);

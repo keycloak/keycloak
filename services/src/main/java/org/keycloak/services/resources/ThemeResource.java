@@ -16,7 +16,6 @@
  */
 package org.keycloak.services.resources;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.encoding.ResourceEncodingHelper;

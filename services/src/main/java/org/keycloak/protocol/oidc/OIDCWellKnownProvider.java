@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc;
 
+import com.google.common.collect.Streams;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
@@ -31,6 +32,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.IDToken;
 import org.keycloak.services.Urls;
@@ -45,10 +47,11 @@ import javax.ws.rs.core.UriInfo;
 
 import java.net.URI;
 import java.util.Arrays;
-import java.util.LinkedList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -167,58 +170,36 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     }
 
     private List<String> getClientAuthMethodsSupported() {
-        List<String> result = new LinkedList<>();
+        return session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientAuthenticator.class)
+                .map(ClientAuthenticatorFactory.class::cast)
+                .map(caf -> caf.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL))
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+    }
 
-        List<ProviderFactory> providerFactories = session.getKeycloakSessionFactory().getProviderFactories(ClientAuthenticator.class);
-        for (ProviderFactory factory : providerFactories) {
-            ClientAuthenticatorFactory clientAuthFactory = (ClientAuthenticatorFactory) factory;
-            result.addAll(clientAuthFactory.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL));
+    private List<String> getSupportedAlgorithms(Class<? extends Provider> clazz, boolean includeNone) {
+        Stream<String> supportedAlgorithms = session.getKeycloakSessionFactory().getProviderFactoriesStream(clazz)
+                .map(ProviderFactory::getId);
+
+        if (includeNone) {
+            supportedAlgorithms = Streams.concat(supportedAlgorithms, Stream.of("none"));
         }
-
-        return result;
+        return supportedAlgorithms.collect(Collectors.toList());
     }
 
     private List<String> getSupportedSigningAlgorithms(boolean includeNone) {
-        List<String> result = new LinkedList<>();
-        for (ProviderFactory s : session.getKeycloakSessionFactory().getProviderFactories(SignatureProvider.class)) {
-            result.add(s.getId());
-        }
-        if (includeNone) {
-            result.add("none");
-        }
-        return result;
+        return getSupportedAlgorithms(SignatureProvider.class, includeNone);
     }
 
     private List<String> getSupportedClientSigningAlgorithms(boolean includeNone) {
-        List<String> result = new LinkedList<>();
-        for (ProviderFactory s : session.getKeycloakSessionFactory().getProviderFactories(ClientSignatureVerifierProvider.class)) {
-            result.add(s.getId());
-        }
-        if (includeNone) {
-            result.add("none");
-        }
-        return result;
+        return getSupportedAlgorithms(ClientSignatureVerifierProvider.class, includeNone);
     }
 
     private List<String> getSupportedIdTokenEncryptionAlg(boolean includeNone) {
-        List<String> result = new LinkedList<>();
-        for (ProviderFactory s : session.getKeycloakSessionFactory().getProviderFactories(CekManagementProvider.class)) {
-            result.add(s.getId());
-        }
-        if (includeNone) {
-            result.add("none");
-        }
-        return result;
+        return getSupportedAlgorithms(CekManagementProvider.class, includeNone);
     }
 
     private List<String> getSupportedIdTokenEncryptionEnc(boolean includeNone) {
-        List<String> result = new LinkedList<>();
-        for (ProviderFactory s : session.getKeycloakSessionFactory().getProviderFactories(ContentEncryptionProvider.class)) {
-            result.add(s.getId());
-        }
-        if (includeNone) {
-            result.add("none");
-        }
-        return result;
+        return getSupportedAlgorithms(ContentEncryptionProvider.class, includeNone);
     }
 }

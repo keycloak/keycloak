@@ -46,7 +46,7 @@ public interface UserFederatedStorageProvider extends Provider,
         UserFederatedUserCredentialStore {
 
     /**
-     * @deprecated Use {@link #getStoredUsersStream(RealmModel, int, int) getStoredUsersStream} instead.
+     * @deprecated Use {@link #getStoredUsersStream(RealmModel, Integer, Integer) getStoredUsersStream} instead.
      */
     @Deprecated
     List<String> getStoredUsers(RealmModel realm, int first, int max);
@@ -55,11 +55,11 @@ public interface UserFederatedStorageProvider extends Provider,
      * Obtains the ids of all federated users in the realm.
      *
      * @param realm a reference to the realm.
-     * @param first first result to return. Ignored if negative.
-     * @param max maximum number of results to return. Ignored if negative.
+     * @param first first result to return. Ignored if negative or {@code null}.
+     * @param max maximum number of results to return. Ignored if negative or {@code null}.
      * @return a non-null {@link Stream} of federated user ids.
      */
-    default Stream<String> getStoredUsersStream(RealmModel realm, int first, int max) {
+    default Stream<String> getStoredUsersStream(RealmModel realm, Integer first, Integer max) {
         List<String> value = this.getStoredUsers(realm, first, max);
         return value != null ? value.stream() : Stream.empty();
     }
@@ -105,6 +105,6 @@ public interface UserFederatedStorageProvider extends Provider,
         }
 
         @Override
-        Stream<String> getStoredUsersStream(RealmModel realm, int first, int max);
+        Stream<String> getStoredUsersStream(RealmModel realm, Integer first, Integer max);
     }
 }

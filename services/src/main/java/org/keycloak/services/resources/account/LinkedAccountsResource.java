@@ -19,8 +19,6 @@ package org.keycloak.services.resources.account;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
@@ -107,13 +105,9 @@ public class LinkedAccountsResource {
     }
     
     private Set<String> findSocialIds() {
-       Set<String> socialIds = new HashSet();
-       List<ProviderFactory> providerFactories = session.getKeycloakSessionFactory().getProviderFactories(SocialIdentityProvider.class);
-       for (ProviderFactory factory: providerFactories) {
-           socialIds.add(factory.getId());
-       }
-       
-       return socialIds;
+       return session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class)
+               .map(ProviderFactory::getId)
+               .collect(Collectors.toSet());
     }
 
     public SortedSet<LinkedAccountRepresentation> getLinkedAccounts(KeycloakSession session, RealmModel realm, UserModel user) {

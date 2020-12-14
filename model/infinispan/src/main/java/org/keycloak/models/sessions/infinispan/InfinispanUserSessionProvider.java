@@ -80,6 +80,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -316,18 +318,18 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, ClientModel client, int firstResult, int maxResults) {
+    public Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults) {
         return getUserSessionsStream(realm, client, firstResult, maxResults, false);
     }
 
-    protected Stream<UserSessionModel> getUserSessionsStream(final RealmModel realm, ClientModel client, int firstResult, int maxResults, final boolean offline) {
+    protected Stream<UserSessionModel> getUserSessionsStream(final RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults, final boolean offline) {
         final String clientUuid = client.getId();
         UserSessionPredicate predicate = UserSessionPredicate.create(realm.getId()).client(clientUuid);
 
         return getUserSessionModels(realm, firstResult, maxResults, offline, predicate);
     }
 
-    protected Stream<UserSessionModel> getUserSessionModels(RealmModel realm, int firstResult, int maxResults, boolean offline, UserSessionPredicate predicate) {
+    protected Stream<UserSessionModel> getUserSessionModels(RealmModel realm, Integer firstResult, Integer maxResults, boolean offline, UserSessionPredicate predicate) {
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
         cache = CacheDecorators.skipCacheLoaders(cache);
 
@@ -338,15 +340,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                 .map(Mappers.userSessionEntity())
                 .sorted(Comparators.userSessionLastSessionRefresh());
 
-        if (firstResult > 0) {
-            stream = stream.skip(firstResult);
-        }
-
-        if (maxResults > 0) {
-            stream = stream.limit(maxResults);
-        }
-
-        return stream.map(entity -> this.wrap(realm, entity, offline));
+        return paginatedStream(stream, firstResult, maxResults).map(entity -> this.wrap(realm, entity, offline));
     }
 
     @Override
@@ -862,7 +856,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public Stream<UserSessionModel> getOfflineUserSessionsStream(RealmModel realm, ClientModel client, int first, int max) {
+    public Stream<UserSessionModel> getOfflineUserSessionsStream(RealmModel realm, ClientModel client, Integer first, Integer max) {
         return getUserSessionsStream(realm, client, first, max, true);
     }
 

@@ -389,7 +389,7 @@ public class UserMapStorage implements UserLookupProvider.Streams, UserStoragePr
     }
 
     @Override
-    public Stream<String> getMembershipStream(RealmModel realm, GroupModel group, int firstResult, int max) {
+    public Stream<String> getMembershipStream(RealmModel realm, GroupModel group, Integer firstResult, Integer max) {
         Stream<String> userStream = paginatedStream(userGroups.entrySet().stream(), firstResult, max)
           .filter(me -> me.getValue().contains(group.getId()))
           .map(Map.Entry::getKey)

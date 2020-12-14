@@ -29,14 +29,14 @@ public interface RoleMapperModel {
     /**
      * Returns set of realm roles that are directly set to this object.
      * @return see description
-     * @deprecated Use {@link #getRealmRoleMappingsStream()} getRealmRoleMappingsStream} instead.
+     * @deprecated Use {@link #getRealmRoleMappingsStream() getRealmRoleMappingsStream} instead.
      */
     @Deprecated
     Set<RoleModel> getRealmRoleMappings();
 
     /**
      * Returns stream of realm roles that are directly set to this object.
-     * @return stream of {@link RoleModel}
+     * @return Stream of {@link RoleModel}. Never returns {@code null}.
      */
     default Stream<RoleModel> getRealmRoleMappingsStream() {
         Set<RoleModel> value = this.getRealmRoleMappings();
@@ -47,15 +47,15 @@ public interface RoleMapperModel {
      * Returns set of client roles that are directly set to this object for the given client.
      * @param app Client to get the roles for
      * @return see description
-     * @deprecated Use {@link #getClientRoleMappingsStream(ClientModel)} getClientRoleMappingsStream} instead.
+     * @deprecated Use {@link #getClientRoleMappingsStream(ClientModel) getClientRoleMappingsStream} instead.
      */
     @Deprecated
     Set<RoleModel> getClientRoleMappings(ClientModel app);
 
     /**
      * Returns stream of client roles that are directly set to this object for the given client.
-     * @param app Client to get the roles for
-     * @return stream of {@link RoleModel}
+     * @param app {@link ClientModel} Client to get the roles for.
+     * @return Stream of {@link RoleModel}. Never returns {@code null}.
      */
     default Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
         Set<RoleModel> value = this.getClientRoleMappings(app);
@@ -85,14 +85,14 @@ public interface RoleMapperModel {
     /**
      * Returns set of all role (both realm all client) that are directly set to this object.
      * @return
-     * @deprecated Use {@link #getRoleMappingsStream()} getRoleMappingsStream} instead.
+     * @deprecated Use {@link #getRoleMappingsStream() getRoleMappingsStream} instead.
      */
     @Deprecated
     Set<RoleModel> getRoleMappings();
 
     /**
      * Returns stream of all role (both realm all client) that are directly set to this object.
-     * @return stream of {@link RoleModel}
+     * @return Stream of {@link RoleModel}. Never returns {@code null}.
      */
     default Stream<RoleModel> getRoleMappingsStream() {
         Set<RoleModel> value = this.getRoleMappings();

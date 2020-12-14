@@ -201,8 +201,8 @@ public interface UserQueryProvider {
      * Searches all users in the realm, starting from the {@code firstResult} and containing at most {@code maxResults}.
      *
      * @param realm a reference to the realm.
-     * @param firstResult first result to return. Ignored if negative or zero.
-     * @param maxResults maximum number of results to return. Ignored if negative.
+     * @param firstResult first result to return. Ignored if negative or {@code null}.
+     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
      * @return a non-null {@link Stream} of users.
      */
     default Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults) {
@@ -500,8 +500,8 @@ public interface UserQueryProvider {
      *
      * @param realm a reference to the realm.
      * @param role a reference to the role.
-     * @param firstResult first result to return. Ignored if negative.
-     * @param maxResults maximum number of results to return. Ignored if negative.
+     * @param firstResult first result to return. Ignored if negative or {@code null}.
+     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
      * @return a non-null {@link Stream} of users that have the specified role.
      */
     default Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {

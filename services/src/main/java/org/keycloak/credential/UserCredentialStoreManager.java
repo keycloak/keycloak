@@ -34,7 +34,7 @@ import org.keycloak.storage.UserStorageProviderModel;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -113,16 +113,13 @@ public class UserCredentialStoreManager extends AbstractStorageManager<UserStora
     @Override
     public CredentialModel createCredentialThroughProvider(RealmModel realm, UserModel user, CredentialModel model){
         throwExceptionIfInvalidUser(user);
-        List <CredentialProvider> credentialProviders = session.getKeycloakSessionFactory().getProviderFactories(CredentialProvider.class)
-                .stream()
+        return session.getKeycloakSessionFactory()
+                .getProviderFactoriesStream(CredentialProvider.class)
                 .map(f -> session.getProvider(CredentialProvider.class, f.getId()))
-                .filter(provider -> provider.getType().equals(model.getType()))
-                .collect(Collectors.toList());
-        if (credentialProviders.isEmpty()) {
-            return null;
-        } else {
-            return credentialProviders.get(0).createCredential(realm, user, credentialProviders.get(0).getCredentialFromModel(model));
-        }
+                .filter(provider -> Objects.equals(provider.getType(), model.getType()))
+                .map(cp -> cp.createCredential(realm, user, cp.getCredentialFromModel(model)))
+                .findFirst()
+                .orElse(null);
     }
 
     @Override
@@ -168,8 +165,7 @@ public class UserCredentialStoreManager extends AbstractStorageManager<UserStora
     }
 
     public static <T> Stream<T> getCredentialProviders(KeycloakSession session, Class<T> type) {
-        return session.getKeycloakSessionFactory().getProviderFactories(CredentialProvider.class)
-                .stream()
+        return session.getKeycloakSessionFactory().getProviderFactoriesStream(CredentialProvider.class)
                 .filter(f -> Types.supports(type, f, CredentialProviderFactory.class))
                 .map(f -> (T) session.getProvider(CredentialProvider.class, f.getId()));
     }

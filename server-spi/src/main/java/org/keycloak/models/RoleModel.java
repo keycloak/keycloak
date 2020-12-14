@@ -44,11 +44,18 @@ public interface RoleModel {
 
     void removeCompositeRole(RoleModel role);
 
+    /**
+     * @deprecated Use {@link #getCompositesStream() getCompositesStream} instead.
+     */
     @Deprecated
     default Set<RoleModel> getComposites() {
         return getCompositesStream().collect(Collectors.toSet());
     }
 
+    /**
+     * Returns all composite roles as a stream.
+     * @return Stream of {@link RoleModel}. Never returns {@code null}.
+     */
     Stream<RoleModel> getCompositesStream();
 
     boolean isClientRole();
@@ -69,11 +76,19 @@ public interface RoleModel {
         return getAttributeStream(name).findFirst().orElse(null);
     }
 
+    /**
+     * @deprecated Use {@link #getAttributeStream(String) getAttributeStream} instead.
+     */
     @Deprecated
     default List<String> getAttribute(String name) {
         return getAttributeStream(name).collect(Collectors.toList());
     }
 
+    /**
+     * Returns all role's attributes that match the given name as a stream.
+     * @param name {@code String} Name of an attribute to be used as a filter.
+     * @return Stream of {@code String}. Never returns {@code null}.
+     */
     Stream<String> getAttributeStream(String name);
 
     Map<String, List<String>> getAttributes();

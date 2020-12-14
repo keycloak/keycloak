@@ -28,7 +28,6 @@ import java.util.function.Consumer;
 import javax.persistence.EntityManager;
 import javax.persistence.FlushModeType;
 import javax.persistence.NoResultException;
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -44,6 +43,9 @@ import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import javax.persistence.LockModeType;
+
+import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
+import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -176,16 +178,9 @@ public class JPAPolicyStore implements PolicyStore {
 
         querybuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.asc(root.get("name")));
 
-        Query query = entityManager.createQuery(querybuilder);
+        TypedQuery query = entityManager.createQuery(querybuilder);
 
-        if (firstResult != -1) {
-            query.setFirstResult(firstResult);
-        }
-        if (maxResult != -1) {
-            query.setMaxResults(maxResult);
-        }
-
-        List<String> result = query.getResultList();
+        List<String> result = paginateQuery(query, firstResult, maxResult).getResultList();
         List<Policy> list = new LinkedList<>();
         for (String id : result) {
             Policy policy = provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId);
@@ -215,9 +210,9 @@ public class JPAPolicyStore implements PolicyStore {
 
         PolicyStore storeFactory = provider.getStoreFactory().getPolicyStore();
 
-        query.getResultStream()
+        closing(query.getResultStream()
                 .map(entity -> storeFactory.findById(entity.getId(), resourceServerId))
-                .filter(Objects::nonNull)
+                .filter(Objects::nonNull))
                 .forEach(consumer::accept);
     }
 
@@ -238,9 +233,9 @@ public class JPAPolicyStore implements PolicyStore {
         query.setParameter("type", resourceType);
         query.setParameter("serverId", resourceServerId);
 
-        query.getResultStream()
+        closing(query.getResultStream()
                 .map(id -> new PolicyAdapter(id, entityManager, provider.getStoreFactory()))
-                .filter(Objects::nonNull)
+                .filter(Objects::nonNull))
                 .forEach(consumer::accept);
     }
 
@@ -294,9 +289,9 @@ public class JPAPolicyStore implements PolicyStore {
 
         StoreFactory storeFactory = provider.getStoreFactory();
 
-        query.getResultStream()
+        closing(query.getResultStream()
                 .map(id -> new PolicyAdapter(id, entityManager, storeFactory))
-                .filter(Objects::nonNull)
+                .filter(Objects::nonNull))
                 .forEach(consumer::accept);
     }
 

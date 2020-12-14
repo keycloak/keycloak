@@ -25,7 +25,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -49,7 +48,8 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static org.keycloak.utils.StreamsUtil.throwIfEmpty;
@@ -150,12 +150,10 @@ public class RealmsAdminResource {
             return;
         }
 
-        RealmModel adminRealm = new RealmManager(session).getKeycloakAdminstrationRealm();
         ClientModel realmAdminApp = realm.getMasterAdminClient();
-        for (String r : AdminRoles.ALL_REALM_ROLES) {
-            RoleModel role = realmAdminApp.getRole(r);
-            auth.getUser().grantRole(role);
-        }
+        Arrays.stream(AdminRoles.ALL_REALM_ROLES)
+                .map(realmAdminApp::getRole)
+                .forEach(auth.getUser()::grantRole);
     }
 
     /**
