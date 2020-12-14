@@ -55,7 +55,7 @@ public interface KeyManager {
     /**
      * Returns all {@code KeyWrapper} for the given realm.
      * @param realm {@code RealmModel}.
-     * @return Stream of all {@code KeyWrapper} in the realm.
+     * @return Stream of all {@code KeyWrapper} in the realm. Never returns {@code null}.
      */
     Stream<KeyWrapper> getKeysStream(RealmModel realm);
 
@@ -77,7 +77,7 @@ public interface KeyManager {
      * @param realm {@code RealmModel}.
      * @param use {@code KeyUse}.
      * @param algorithm {@code String}.
-     * @return Stream of all {@code KeyWrapper} in the realm.
+     * @return Stream of all {@code KeyWrapper} in the realm. Never returns {@code null}.
      */
     Stream<KeyWrapper> getKeysStream(RealmModel realm, KeyUse use, String algorithm);
 

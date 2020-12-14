@@ -37,7 +37,7 @@ public interface ProtocolMapperContainerModel {
 
     /**
      * Returns protocol mappers as a stream.
-     * @return Stream of protocol mapper.
+     * @return Stream of protocol mapper. Never returns {@code null}.
      */
     Stream<ProtocolMapperModel> getProtocolMappersStream();
 

@@ -62,20 +62,22 @@ public class DefaultKeyManager implements KeyManager {
             return activeKey;
         }
 
-        logger.debugv("Failed to find active key for realm, trying fallback: realm={0} algorithm={1} use={2}", realm.getName(), algorithm, use.name());
+        logger.debugv("Failed to find active key for realm, trying fallback: realm={0} algorithm={1} use={2}",
+                realm.getName(), algorithm, use.name());
 
-        for (ProviderFactory f : session.getKeycloakSessionFactory().getProviderFactories(KeyProvider.class)) {
-            KeyProviderFactory kf = (KeyProviderFactory) f;
-            if (kf.createFallbackKeys(session, use, algorithm)) {
-                providersMap.remove(realm.getId());
-                List<KeyProvider> providers = getProviders(realm);
-                activeKey = getActiveKey(providers, realm, use, algorithm);
-                if (activeKey != null) {
-                    logger.infov("No keys found for realm={0} and algorithm={1} for use={2}. Generating keys.", realm.getName(), algorithm, use.name());
-                    return activeKey;
-                } else {
-                    break;
-                }
+        Optional<KeyProviderFactory> keyProviderFactory = session.getKeycloakSessionFactory()
+                .getProviderFactoriesStream(KeyProvider.class)
+                .map(KeyProviderFactory.class::cast)
+                .filter(kf -> kf.createFallbackKeys(session, use, algorithm))
+                .findFirst();
+        if (keyProviderFactory.isPresent()) {
+            providersMap.remove(realm.getId());
+            List<KeyProvider> providers = getProviders(realm);
+            activeKey = getActiveKey(providers, realm, use, algorithm);
+            if (activeKey != null) {
+                logger.infov("No keys found for realm={0} and algorithm={1} for use={2}. Generating keys.",
+                        realm.getName(), algorithm, use.name());
+                return activeKey;
             }
         }
 

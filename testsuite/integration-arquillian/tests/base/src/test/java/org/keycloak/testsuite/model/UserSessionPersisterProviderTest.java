@@ -45,6 +45,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -412,8 +413,8 @@ public class UserSessionPersisterProviderTest extends AbstractTestRealmKeycloakT
     public void testNoSessions(KeycloakSession session) {
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionNS) -> {
             UserSessionPersisterProvider persister = sessionNS.getProvider(UserSessionPersisterProvider.class);
-            List<UserSessionModel> sessions = persister.loadUserSessions(0, 1, true, 0, "abc");
-            Assert.assertEquals(0, sessions.size());
+            Stream<UserSessionModel> sessions = persister.loadUserSessionsStream(0, 1, true, 0, "abc");
+            Assert.assertEquals(0, sessions.count());
         });
     }
 
@@ -579,7 +580,9 @@ public class UserSessionPersisterProviderTest extends AbstractTestRealmKeycloakT
         String lastSessionId = "abc";
 
         while (next) {
-            List<UserSessionModel> sess = persister.loadUserSessions(0, sessionsPerPage, offline, lastCreatedOn, lastSessionId);
+            List<UserSessionModel> sess = persister
+                    .loadUserSessionsStream(0, sessionsPerPage, offline, lastCreatedOn, lastSessionId)
+                    .collect(Collectors.toList());
 
             if (sess.size() < sessionsPerPage) {
                 next = false;

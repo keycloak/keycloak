@@ -52,7 +52,7 @@ public interface UserGroupMembershipFederatedStorage {
     void leaveGroup(RealmModel realm, String userId, GroupModel group);
 
     /**
-     * @deprecated Use {@link #getMembershipStream(RealmModel, GroupModel, int, int) getMembershipStream} instead.
+     * @deprecated Use {@link #getMembershipStream(RealmModel, GroupModel, Integer, Integer) getMembershipStream} instead.
      */
     @Deprecated
     List<String> getMembership(RealmModel realm, GroupModel group, int firstResult, int max);
@@ -62,11 +62,11 @@ public interface UserGroupMembershipFederatedStorage {
      *
      * @param realm a reference to the realm.
      * @param group a reference to the group whose federated members are being searched.
-     * @param firstResult first result to return. Ignored if negative.
-     * @param max maximum number of results to return. Ignored if negative.
+     * @param firstResult first result to return. Ignored if negative or {@code null}.
+     * @param max maximum number of results to return. Ignored if negative or {@code null}.
      * @return a non-null {@code Stream} of federated user ids that are members of the group in the realm.
      */
-    default Stream<String> getMembershipStream(RealmModel realm, GroupModel group, int firstResult, int max) {
+    default Stream<String> getMembershipStream(RealmModel realm, GroupModel group, Integer firstResult, Integer max) {
         List<String> value = this.getMembership(realm, group, firstResult, max);
         return value != null ? value.stream() : Stream.empty();
     }
@@ -94,6 +94,6 @@ public interface UserGroupMembershipFederatedStorage {
         }
 
         @Override
-        Stream<String> getMembershipStream(RealmModel realm, GroupModel group, int firstResult, int max);
+        Stream<String> getMembershipStream(RealmModel realm, GroupModel group, Integer firstResult, Integer max);
     }
 }

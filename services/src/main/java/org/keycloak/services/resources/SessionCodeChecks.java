@@ -18,11 +18,6 @@
 package org.keycloak.services.resources;
 
 import java.net.URI;
-import java.util.AbstractMap.SimpleEntry;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;

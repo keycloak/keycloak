@@ -210,7 +210,7 @@ public interface UserModel extends RoleMapperModel {
      * @param search Case insensitive string which will be searched for. Ignored if null.
      * @param first Index of first group to return. Ignored if negative or {@code null}.
      * @param max Maximum number of records to return. Ignored if negative or {@code null}.
-     * @return Stream of desired groups.
+     * @return Stream of desired groups. Never returns {@code null}.
      */
     default Stream<GroupModel> getGroupsStream(String search, Integer first, Integer max) {
         if (search != null) search = search.toLowerCase();

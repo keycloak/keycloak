@@ -43,11 +43,12 @@ public interface ClientSessionContext {
 
     /**
      * Returns client scopes as a stream.
-     * @return Stream of client scopes.
+     * @return Stream of client scopes. Never returns {@code null}.
      */
     Stream<ClientScopeModel> getClientScopesStream();
 
     /**
+     * @deprecated Use {@link #getRolesStream() getRolesStream} instead.
      * @return expanded roles (composite roles already applied)
      */
     @Deprecated
@@ -55,6 +56,10 @@ public interface ClientSessionContext {
         return getRolesStream().collect(Collectors.toSet());
     }
 
+    /**
+     * Returns all roles including composite ones as a stream.
+     * @return Stream of {@link RoleModel}. Never returns {@code null}.
+     */
     Stream<RoleModel> getRolesStream();
 
     /**
@@ -68,7 +73,7 @@ public interface ClientSessionContext {
 
     /**
      * Returns protocol mappers as a stream.
-     * @return Stream of protocol mappers.
+     * @return Stream of protocol mappers. Never returns {@code null}.
      */
     Stream<ProtocolMapperModel> getProtocolMappersStream();
 

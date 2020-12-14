@@ -50,7 +50,11 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
 import javax.persistence.criteria.Root;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -310,14 +314,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, GroupPro
     }
 
     protected Stream<RoleModel> searchForRoles(TypedQuery<RoleEntity> query, RealmModel realm, String search, Integer first, Integer max) {
-
         query.setParameter("search", "%" + search.trim().toLowerCase() + "%");
-        if(Objects.nonNull(first) && Objects.nonNull(max)
-                && first >= 0 && max >= 0) {
-            query= query.setFirstResult(first).setMaxResults(max);
-        }
-
-        Stream<RoleEntity> results = query.getResultStream();
+        Stream<RoleEntity> results = paginateQuery(query, first, max).getResultStream();
 
         return closing(results.map(role -> new RoleAdapter(session, realm, em, role)));
     }

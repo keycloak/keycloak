@@ -474,7 +474,7 @@ public class ExportImportUtil {
 
     // Workaround for KEYCLOAK-3104.  For this realm, search() only works if username is null.
     private static UserRepresentation findByUsername(RealmResource realmRsc, String username) {
-        for (UserRepresentation user : realmRsc.users().search(null, 0, Integer.MAX_VALUE)) {
+        for (UserRepresentation user : realmRsc.users().search(null, 0, -1)) {
             if (user.getUsername().equalsIgnoreCase(username)) return user;
         }
         return null;

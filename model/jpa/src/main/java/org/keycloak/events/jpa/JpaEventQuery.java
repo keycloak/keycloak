@@ -33,6 +33,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
@@ -47,8 +48,6 @@ public class JpaEventQuery implements EventQuery {
     private final ArrayList<Predicate> predicates;
     private Integer firstResult;
     private Integer maxResults;
-
-    public static final int DEFAULT_MAX_RESULTS = Integer.MAX_VALUE >> 1;
 
     public JpaEventQuery(EntityManager em) {
         this.em = em;
@@ -127,18 +126,7 @@ public class JpaEventQuery implements EventQuery {
 
         TypedQuery<EventEntity> query = em.createQuery(cq);
 
-        if (firstResult != null) {
-            query.setFirstResult(firstResult);
-        }
-
-        if (maxResults != null) {
-            query.setMaxResults(maxResults);
-        } else {
-            // to workaround https://hibernate.atlassian.net/browse/HHH-14295
-            query.setMaxResults(DEFAULT_MAX_RESULTS);
-        }
-
-        return closing(query.getResultStream().map(JpaEventStoreProvider::convertEvent));
+        return closing(paginateQuery(query, firstResult, maxResults).getResultStream().map(JpaEventStoreProvider::convertEvent));
     }
 
 }

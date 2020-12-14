@@ -66,10 +66,16 @@ public interface GroupModel extends RoleMapperModel {
     /**
      * @param name
      * @return list of all attribute values or empty list if there are not any values. Never return null
+     * @deprecated Use {@link #getAttributeStream(String) getAttributeStream} instead.
      */
     @Deprecated
     List<String> getAttribute(String name);
 
+    /**
+     * Returns group attributes that match the given name as a stream.
+     * @param name {@code String} Name of the attribute to be used as a filter.
+     * @return Stream of all attribute values or empty stream if there are not any values. Never return {@code null}.
+     */
     default Stream<String> getAttributeStream(String name) {
         List<String> value = this.getAttribute(name);
         return value != null ? value.stream() : Stream.empty();
@@ -80,9 +86,16 @@ public interface GroupModel extends RoleMapperModel {
     GroupModel getParent();
     String getParentId();
 
+    /**
+     * @deprecated Use {@link #getSubGroupsStream() getSubGroupsStream} instead.
+     */
     @Deprecated
     Set<GroupModel> getSubGroups();
 
+    /**
+     * Returns all sub groups for the parent group as a stream.
+     * @return Stream of {@link GroupModel}. Never returns {@code null}.
+     */
     default Stream<GroupModel> getSubGroupsStream() {
         Set<GroupModel> value = this.getSubGroups();
         return value != null ? value.stream() : Stream.empty();

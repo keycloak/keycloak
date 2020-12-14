@@ -20,12 +20,12 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.provider.ExceptionConverter;
-import org.keycloak.provider.ProviderFactory;
 
 import javax.transaction.RollbackException;
 import javax.transaction.Status;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -59,26 +59,24 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
         if (e instanceof RollbackException) {
             e = e.getCause() != null ? e.getCause() : e;
         }
+        final Throwable finalE = e;
 
-        for (ProviderFactory factory : this.factory.getProviderFactories(ExceptionConverter.class)) {
-            ExceptionConverter converter = (ExceptionConverter)factory;
-            Throwable throwable = converter.convert(e);
-            if (throwable == null) continue;
-            if (throwable instanceof RuntimeException) {
-                throw (RuntimeException)throwable;
-            } else {
-                throw new RuntimeException(throwable);
-            }
-        }
+        factory.getProviderFactoriesStream(ExceptionConverter.class)
+                .map(factory -> ((ExceptionConverter) factory).convert(finalE))
+                .filter(Objects::nonNull)
+                .forEach(throwable -> {
+                    if (throwable instanceof RuntimeException) {
+                        throw (RuntimeException)throwable;
+                    } else {
+                        throw new RuntimeException(throwable);
+                    }
+                });
 
         if (e instanceof RuntimeException) {
             throw (RuntimeException)e;
         } else {
             throw new RuntimeException(e);
         }
-
-
-
     }
 
     @Override

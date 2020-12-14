@@ -26,7 +26,6 @@ import java.util.Objects;
 
 import javax.persistence.EntityManager;
 import javax.persistence.FlushModeType;
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -42,6 +41,8 @@ import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import javax.persistence.LockModeType;
+
+import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -220,17 +221,9 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
 
         querybuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.asc(root.get("id")));
 
-        Query query = entityManager.createQuery(querybuilder);
+        TypedQuery query = entityManager.createQuery(querybuilder);
 
-        if (firstResult != -1) {
-            query.setFirstResult(firstResult);
-        }
-
-        if (maxResult != -1) {
-            query.setMaxResults(maxResult);
-        }
-
-        List<String> result = query.getResultList();
+        List<String> result = paginateQuery(query, firstResult, maxResult).getResultList();
         List<PermissionTicket> list = new LinkedList<>();
         PermissionTicketStore ticketStore = provider.getStoreFactory().getPermissionTicketStore();
 
@@ -277,13 +270,8 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
         if (name != null) {
             query.setParameter("resourceName", "%" + name.toLowerCase() + "%");
         }
-        
-        if (first > -1 && max > -1) {
-            query.setFirstResult(first);
-            query.setMaxResults(max);
-        }
 
-        List<String> result = query.getResultList();
+        List<String> result = paginateQuery(query, first, max).getResultList();
         List<Resource> list = new LinkedList<>();
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
@@ -305,12 +293,7 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("owner", owner);
 
-        if (first > -1 && max > -1) {
-            query.setFirstResult(first);
-            query.setMaxResults(max);
-        }
-
-        List<String> result = query.getResultList();
+        List<String> result = paginateQuery(query, first, max).getResultList();
         List<Resource> list = new LinkedList<>();
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 

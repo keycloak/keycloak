@@ -425,7 +425,7 @@ public class UserStorageTest extends AbstractAuthTest {
         Assert.assertTrue(usernames.contains("danny"));
 
         // test searchForUser
-        List<UserRepresentation> users = testRealmResource().users().search("tbrady", 0, Integer.MAX_VALUE);
+        List<UserRepresentation> users = testRealmResource().users().search("tbrady", 0, -1);
         assertThat(users, hasSize(1));
         assertThat(users.get(0).getUsername(), equalTo("tbrady"));
 
