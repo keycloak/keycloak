@@ -386,6 +386,9 @@ public class TokenManager {
 
             int currentCount = clientSession.getCurrentRefreshTokenUseCount();
             if (currentCount > realm.getRefreshTokenMaxReuse()) {
+                // KEYCLOAK-16627
+                // https://tools.ietf.org/html/draft-ietf-oauth-security-topics-16#section-4.13.2
+                clientSession.detachFromUserSession();
                 throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Maximum allowed refresh token reuse exceeded",
                         "Maximum allowed refresh token reuse exceeded");
             }

@@ -358,9 +358,12 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             events.expectRefresh(refreshToken1.getId(), sessionId).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
 
             setTimeOffset(6);
-            oauth.doRefreshTokenRequest(response2.getRefreshToken(), "password");
+            OAuthClient.AccessTokenResponse response4 = oauth.doRefreshTokenRequest(response2.getRefreshToken(), "password");
 
-            events.expectRefresh(refreshToken2.getId(), sessionId).assertEvent();
+            assertEquals(400, response4.getStatusCode());
+
+            events.expectRefresh(refreshToken2.getId(), sessionId).removeDetail(Details.TOKEN_ID).removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
+
         } finally {
             setTimeOffset(0);
             RealmManager.realm(adminClient.realm("test")).revokeRefreshToken(false);
@@ -428,13 +431,15 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
                     .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
 
             setTimeOffset(10);
-            // Refresh token from reuse is still valid.
-            OAuthClient.AccessTokenResponse responseUseOfValidRefreshToken =
+            // Refresh token from reuse is no longer valid, despite not having reached the use limits,
+            // due to the potential abuse detected with reuse of a later refresh token
+            OAuthClient.AccessTokenResponse responseUseOfPreviouslyValidRefreshToken =
                     oauth.doRefreshTokenRequest(responseFirstReuse.getRefreshToken(), "password");
 
-            assertEquals(200, responseUseOfValidRefreshToken.getStatusCode());
+            assertEquals(400, responseUseOfPreviouslyValidRefreshToken.getStatusCode());
 
-            events.expectRefresh(newTokenFirstReuse.getId(), sessionId).assertEvent();
+            events.expectRefresh(newTokenFirstReuse.getId(), sessionId).removeDetail(Details.TOKEN_ID)
+                    .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
         } finally {
             setTimeOffset(0);
             RealmManager.realm(adminClient.realm("test"))
@@ -520,10 +525,14 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
             RealmManager.realm(adminClient.realm("test")).revokeRefreshToken(false);
 
-            // Config changed, token can be reused again
-            processExpectedValidRefresh(sessionId, initialRefreshToken, initialResponse.getRefreshToken());
-            processExpectedValidRefresh(sessionId, initialRefreshToken, initialResponse.getRefreshToken());
-            processExpectedValidRefresh(sessionId, initialRefreshToken, initialResponse.getRefreshToken());
+            // Config changed, but token still cannot be reused since potential abuse was detected
+            OAuthClient.AccessTokenResponse responseUseOfPreviouslyValidRefreshToken =
+                    oauth.doRefreshTokenRequest(initialResponse.getRefreshToken(), "password");
+
+            assertEquals(400, responseUseOfPreviouslyValidRefreshToken.getStatusCode());
+
+            events.expectRefresh(initialRefreshToken.getId(), sessionId).removeDetail(Details.TOKEN_ID)
+                    .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID).error("invalid_token").assertEvent();
         } finally {
             setTimeOffset(0);
             RealmManager.realm(adminClient.realm("test"))
