@@ -20,7 +20,7 @@ import org.keycloak.testsuite.model.KeycloakModelParameters;
 import org.keycloak.models.map.client.MapClientProviderFactory;
 import org.keycloak.models.map.group.MapGroupProviderFactory;
 import org.keycloak.models.map.role.MapRoleProviderFactory;
-import org.keycloak.models.map.storage.ConcurrentHashMapStorageProvider;
+import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageSpi;
 import org.keycloak.provider.ProviderFactory;

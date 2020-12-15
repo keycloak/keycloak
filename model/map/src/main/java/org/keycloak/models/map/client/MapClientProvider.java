@@ -87,8 +87,8 @@ public class MapClientProvider implements ClientProvider {
     }
 
     private MapClientEntity registerEntityForChanges(MapClientEntity origEntity) {
-        final MapClientEntity res = tx.get(origEntity.getId(), id -> Serialization.from(origEntity));
-        tx.putIfChanged(origEntity.getId(), res, MapClientEntity::isUpdated);
+        final MapClientEntity res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
+        tx.updateIfChanged(origEntity.getId(), res, MapClientEntity::isUpdated);
         return res;
     }
 
@@ -165,10 +165,10 @@ public class MapClientProvider implements ClientProvider {
         entity.setClientId(clientId);
         entity.setEnabled(true);
         entity.setStandardFlowEnabled(true);
-        if (tx.get(entity.getId(), clientStore::get) != null) {
+        if (tx.read(entity.getId(), clientStore::read) != null) {
             throw new ModelDuplicateException("Client exists: " + id);
         }
-        tx.putIfAbsent(entity.getId(), entity);
+        tx.create(entity.getId(), entity);
         final ClientModel resource = entityToAdapterFunc(realm).apply(entity);
 
         // TODO: Sending an event should be extracted to store layer
@@ -221,7 +221,7 @@ public class MapClientProvider implements ClientProvider {
         });
         // TODO: ^^^^^^^ Up to here
 
-        tx.remove(UUID.fromString(id));
+        tx.delete(UUID.fromString(id));
 
         return true;
     }
@@ -241,7 +241,7 @@ public class MapClientProvider implements ClientProvider {
 
         LOG.tracef("getClientById(%s, %s)%s", realm, id, getShortStackTrace());
 
-        MapClientEntity entity = tx.get(UUID.fromString(id), clientStore::get);
+        MapClientEntity entity = tx.read(UUID.fromString(id), clientStore::read);
         return (entity == null || ! entityRealmFilter(realm).test(entity))
           ? null
           : entityToAdapterFunc(realm).apply(entity);

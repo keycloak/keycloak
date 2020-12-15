@@ -105,7 +105,7 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
             if (entity.getAuthenticationSessions().isEmpty()) {
                 MapRootAuthenticationSessionProvider authenticationSessionProvider =
                         (MapRootAuthenticationSessionProvider) session.authenticationSessions();
-                authenticationSessionProvider.tx.remove(entity.getId());
+                authenticationSessionProvider.tx.delete(entity.getId());
             } else {
                 entity.setTimestamp(Time.currentTime());
             }
