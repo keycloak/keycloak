@@ -22,6 +22,8 @@ import org.keycloak.models.UserModel;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -102,7 +104,7 @@ public class UserUpdateProfileContext implements UpdateProfileContext {
     }
 
     @Override
-    public List<String> getAttribute(String key) {
-        return user.getAttribute(key);
+    public Stream<String> getAttributeStream(String key) {
+        return user.getAttributeStream(key);
     }
 }

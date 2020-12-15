@@ -31,14 +31,16 @@
     <packaging>pom</packaging>
 
     <properties>
-        <quarkus.version>999-SNAPSHOT</quarkus.version>
-        <resteasy.version>4.5.5.Final</resteasy.version>
-        <jackson.version>2.10.4</jackson.version>
+        <quarkus.version>1.10.0.CR1</quarkus.version>
+        <resteasy.version>4.5.8.Final</resteasy.version>
+        <jackson.version>2.11.3</jackson.version>
         <jackson.databind.version>${jackson.version}</jackson.databind.version>
-        <hibernate.version>5.4.18.Final</hibernate.version>
-        <snakeyaml.version>1.20</snakeyaml.version>
+        <hibernate.version>5.4.23.Final</hibernate.version>
+        <mysql-connector-java.version>8.0.22</mysql-connector-java.version>
+        <picocli.version>4.5.2</picocli.version>
+        <snakeyaml.version>1.27</snakeyaml.version>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
-        <wildfly.common.format.version>1.5.0.Final-format-001</wildfly.common.format.version>
+        <wildfly.common.format.version>1.5.4.Final-format-001</wildfly.common.format.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -54,6 +56,8 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            
+            <!-- Override the dependencies below to use the versions used by Quarkus -->
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-core</artifactId>
@@ -90,68 +94,18 @@
                 <artifactId>snakeyaml</artifactId>
                 <version>${snakeyaml.version}</version>
             </dependency>
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${mysql-connector-java.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     
-    <dependencies>
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-commons</artifactId>
-        </dependency>
-    </dependencies>
-    
-    <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.jboss.jandex</groupId>
-                    <artifactId>jandex-maven-plugin</artifactId>
-                    <version>1.0.8</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-    </build>
-
     <modules>
         <module>deployment</module>
         <module>runtime</module>
         <module>server</module>
     </modules>
     
-    <!-- Temporary definition while Quarkus 1.7.0.Final is not released -->
-    <repositories>
-        <repository>
-            <id>dependency-snapshots-repo</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-
-    <!-- Temporary definition while Quarkus 1.7.0.Final is not released -->
-    <pluginRepositories>
-        <pluginRepository>
-            <id>dependency-snapshots-repo</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </pluginRepository>
-    </pluginRepositories>
-
 </project>

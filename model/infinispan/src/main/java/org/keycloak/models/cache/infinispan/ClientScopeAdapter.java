@@ -20,14 +20,12 @@ package org.keycloak.models.cache.infinispan;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.infinispan.entities.CachedClientScope;
+import org.keycloak.models.utils.RoleUtils;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -80,9 +78,9 @@ public class ClientScopeAdapter implements ClientScopeModel {
     }
 
     @Override
-    public Set<ProtocolMapperModel> getProtocolMappers() {
-        if (isUpdated()) return updated.getProtocolMappers();
-        return cached.getProtocolMappers();
+    public Stream<ProtocolMapperModel> getProtocolMappersStream() {
+        if (isUpdated()) return updated.getProtocolMappersStream();
+        return cached.getProtocolMappers().stream();
     }
 
     @Override
@@ -173,20 +171,8 @@ public class ClientScopeAdapter implements ClientScopeModel {
         updated.deleteScopeMapping(role);
     }
 
-    public Set<RoleModel> getRealmScopeMappings() {
-        Set<RoleModel> roleMappings = getScopeMappings();
-
-        Set<RoleModel> appRoles = new HashSet<>();
-        for (RoleModel role : roleMappings) {
-            RoleContainerModel container = role.getContainer();
-            if (container instanceof RealmModel) {
-                if (((RealmModel) container).getId().equals(cachedRealm.getId())) {
-                    appRoles.add(role);
-                }
-            }
-        }
-
-        return appRoles;
+    public Stream<RoleModel> getRealmScopeMappingsStream() {
+        return getScopeMappingsStream().filter(r -> RoleUtils.isRealmRole(r, cachedRealm));
     }
 
     @Override
@@ -194,12 +180,7 @@ public class ClientScopeAdapter implements ClientScopeModel {
         if (isUpdated()) return updated.hasScope(role);
         if (cached.getScope().contains(role.getId())) return true;
 
-        Set<RoleModel> roles = getScopeMappings();
-
-        for (RoleModel mapping : roles) {
-            if (mapping.hasRole(role)) return true;
-        }
-       return false;
+        return RoleUtils.hasRole(getScopeMappingsStream(), role);
     }
 
 

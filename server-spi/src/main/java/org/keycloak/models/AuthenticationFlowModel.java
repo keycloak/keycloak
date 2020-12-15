@@ -18,6 +18,7 @@
 package org.keycloak.models;
 
 import java.io.Serializable;
+import java.util.Comparator;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -78,5 +79,18 @@ public class AuthenticationFlowModel implements Serializable {
 
     public void setBuiltIn(boolean builtIn) {
         this.builtIn = builtIn;
+    }
+
+    public static class AuthenticationFlowComparator implements Comparator<AuthenticationFlowModel> {
+        public static final AuthenticationFlowModel.AuthenticationFlowComparator SINGLETON =
+                new AuthenticationFlowModel.AuthenticationFlowComparator();
+
+        @Override
+        public int compare(AuthenticationFlowModel left, AuthenticationFlowModel right) {
+            //ensure consistent ordering of authenticationFlows.
+            String l = left.getAlias() != null ? left.getAlias() : "\0";
+            String r = right.getAlias() != null ? right.getAlias() : "\0";
+            return l.compareTo(r);
+        }
     }
 }

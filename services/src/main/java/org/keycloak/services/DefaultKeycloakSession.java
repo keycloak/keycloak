@@ -22,6 +22,7 @@ import org.keycloak.credential.UserCredentialStoreManager;
 import org.keycloak.jose.jws.DefaultTokenManager;
 import org.keycloak.keys.DefaultKeyManager;
 import org.keycloak.models.ClientProvider;
+import org.keycloak.models.GroupProvider;
 import org.keycloak.models.TokenManager;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -42,6 +43,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.services.clientpolicy.DefaultClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.ClientStorageManager;
+import org.keycloak.storage.GroupStorageManager;
 import org.keycloak.storage.RoleStorageManager;
 import org.keycloak.storage.UserStorageManager;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
@@ -69,10 +71,12 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private final Map<String, Object> attributes = new HashMap<>();
     private RealmProvider model;
     private ClientProvider clientProvider;
+    private GroupProvider groupProvider;
     private RoleProvider roleProvider;
     private UserStorageManager userStorageManager;
     private ClientStorageManager clientStorageManager;
     private RoleStorageManager roleStorageManager;
+    private GroupStorageManager groupStorageManager;
     private UserCredentialStoreManager userCredentialStorageManager;
     private UserSessionProvider sessionProvider;
     private AuthenticationSessionProvider authenticationSessionProvider;
@@ -111,6 +115,16 @@ public class DefaultKeycloakSession implements KeycloakSession {
             return cache;
         } else {
             return clientStorageManager();
+        }
+    }
+
+    private GroupProvider getGroupProvider() {
+        // TODO: Extract GroupProvider from CacheRealmProvider and use that instead
+        GroupProvider cache = getProvider(CacheRealmProvider.class);
+        if (cache != null) {
+            return cache;
+        } else {
+            return groupStorageManager();
         }
     }
 
@@ -191,6 +205,11 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    public GroupProvider groupLocalStorage() {
+        return getProvider(GroupProvider.class);
+    }
+
+    @Override
     public ClientProvider clientStorageManager() {
         if (clientStorageManager == null) {
             clientStorageManager = new ClientStorageManager(this, factory.getClientStorageProviderTimeout());
@@ -209,6 +228,14 @@ public class DefaultKeycloakSession implements KeycloakSession {
             roleStorageManager = new RoleStorageManager(this, factory.getRoleStorageProviderTimeout());
         }
         return roleStorageManager;
+    }
+
+    @Override
+    public GroupProvider groupStorageManager() {
+        if (groupStorageManager == null) {
+            groupStorageManager = new GroupStorageManager(this);
+        }
+        return groupStorageManager;
     }
 
 
@@ -321,6 +348,14 @@ public class DefaultKeycloakSession implements KeycloakSession {
             clientProvider = getClientProvider();
         }
         return clientProvider;
+    }
+
+    @Override
+    public GroupProvider groups() {
+        if (groupProvider == null) {
+            groupProvider = getGroupProvider();
+        }
+        return groupProvider;
     }
 
     @Override

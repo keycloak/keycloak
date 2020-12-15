@@ -21,11 +21,8 @@ import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -33,12 +30,11 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -117,34 +113,36 @@ public class RoleListMapper extends AbstractSAMLProtocolMapper implements SAMLRo
         boolean singleAttribute = Boolean.parseBoolean(single);
 
         List<SamlProtocol.ProtocolMapperProcessor<SAMLRoleNameMapper>> roleNameMappers = new LinkedList<>();
-        AttributeType singleAttributeType = null;
+        AtomicReference<AttributeType> singleAttributeType = new AtomicReference<>(null);
 
-        for (Map.Entry<ProtocolMapperModel, ProtocolMapper> entry : ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)) {
-            ProtocolMapperModel mapping = entry.getKey();
-            ProtocolMapper mapper = entry.getValue();
+        ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)
+                .forEach(entry -> {
+                    ProtocolMapperModel mapping = entry.getKey();
+                    ProtocolMapper mapper = entry.getValue();
 
-            if (mapper instanceof SAMLRoleNameMapper) {
-                roleNameMappers.add(new SamlProtocol.ProtocolMapperProcessor<>((SAMLRoleNameMapper) mapper,mapping));
-            }
-
-            if (mapper instanceof HardcodedRole) {
-                AttributeType attributeType;
-                if (singleAttribute) {
-                    if (singleAttributeType == null) {
-                        singleAttributeType = AttributeStatementHelper.createAttributeType(mappingModel);
-                        roleAttributeStatement.addAttribute(new AttributeStatementType.ASTChoiceType(singleAttributeType));
+                    if (mapper instanceof SAMLRoleNameMapper) {
+                        roleNameMappers.add(new SamlProtocol.ProtocolMapperProcessor<>((SAMLRoleNameMapper) mapper,mapping));
                     }
-                    attributeType = singleAttributeType;
-                } else {
-                    attributeType = AttributeStatementHelper.createAttributeType(mappingModel);
-                    roleAttributeStatement.addAttribute(new AttributeStatementType.ASTChoiceType(attributeType));
-                }
 
-                attributeType.addAttributeValue(mapping.getConfig().get(HardcodedRole.ROLE_ATTRIBUTE));
-            }
-        }
+                    if (mapper instanceof HardcodedRole) {
+                        AttributeType attributeType;
+                        if (singleAttribute) {
+                            if (singleAttributeType.get() == null) {
+                                singleAttributeType.set(AttributeStatementHelper.createAttributeType(mappingModel));
+                                roleAttributeStatement.addAttribute(new AttributeStatementType.ASTChoiceType(singleAttributeType.get()));
+                            }
+                            attributeType = singleAttributeType.get();
+                        } else {
+                            attributeType = AttributeStatementHelper.createAttributeType(mappingModel);
+                            roleAttributeStatement.addAttribute(new AttributeStatementType.ASTChoiceType(attributeType));
+                        }
 
-        List<String> allRoleNames = clientSessionCtx.getRoles().stream()
+                        attributeType.addAttributeValue(mapping.getConfig().get(HardcodedRole.ROLE_ATTRIBUTE));
+                    }
+                });
+
+
+        List<String> allRoleNames = clientSessionCtx.getRolesStream()
           // todo need a role mapping
           .map(roleModel -> roleNameMappers.stream()
             .map(entry -> entry.mapper.mapName(entry.model, roleModel))
@@ -156,11 +154,11 @@ public class RoleListMapper extends AbstractSAMLProtocolMapper implements SAMLRo
         for (String roleName : allRoleNames) {
             AttributeType attributeType;
             if (singleAttribute) {
-                if (singleAttributeType == null) {
-                    singleAttributeType = AttributeStatementHelper.createAttributeType(mappingModel);
-                    roleAttributeStatement.addAttribute(new AttributeStatementType.ASTChoiceType(singleAttributeType));
+                if (singleAttributeType.get() == null) {
+                    singleAttributeType.set(AttributeStatementHelper.createAttributeType(mappingModel));
+                    roleAttributeStatement.addAttribute(new AttributeStatementType.ASTChoiceType(singleAttributeType.get()));
                 }
-                attributeType = singleAttributeType;
+                attributeType = singleAttributeType.get();
             } else {
                 attributeType = AttributeStatementHelper.createAttributeType(mappingModel);
                 roleAttributeStatement.addAttribute(new AttributeStatementType.ASTChoiceType(attributeType));

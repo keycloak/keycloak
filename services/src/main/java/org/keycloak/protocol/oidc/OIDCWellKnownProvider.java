@@ -47,6 +47,8 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -94,7 +96,14 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setIntrospectionEndpoint(backendUriBuilder.clone().path(OIDCLoginProtocolService.class, "token").path(TokenEndpoint.class, "introspect").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
         config.setUserinfoEndpoint(backendUriBuilder.clone().path(OIDCLoginProtocolService.class, "issueUserInfo").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
         config.setLogoutEndpoint(frontendUriBuilder.clone().path(OIDCLoginProtocolService.class, "logout").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
-        config.setJwksUri(backendUriBuilder.clone().path(OIDCLoginProtocolService.class, "certs").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
+        URI jwksUri = backendUriBuilder.clone().path(OIDCLoginProtocolService.class, "certs").build(realm.getName(),
+            OIDCLoginProtocol.LOGIN_PROTOCOL);
+
+        // NOTE: Don't hardcode HTTPS checks here. JWKS URI is exposed just in the development/testing environment. For the production environment, the OIDCWellKnownProvider
+        // is not exposed over "http" at all.
+        //if (isHttps(jwksUri)) {
+        config.setJwksUri(jwksUri.toString());
+
         config.setCheckSessionIframe(frontendUriBuilder.clone().path(OIDCLoginProtocolService.class, "getLoginStatusIframe").build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
         config.setRegistrationEndpoint(RealmsResource.clientRegistrationUrl(backendUriInfo).path(ClientRegistrationService.class, "provider").build(realm.getName(), OIDCClientRegistrationProviderFactory.ID).toString());
 
@@ -115,13 +124,10 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setClaimTypesSupported(DEFAULT_CLAIM_TYPES_SUPPORTED);
         config.setClaimsParameterSupported(true);
 
-        List<ClientScopeModel> scopes = realm.getClientScopes();
-        List<String> scopeNames = new LinkedList<>();
-        for (ClientScopeModel clientScope : scopes) {
-            if (OIDCLoginProtocol.LOGIN_PROTOCOL.equals(clientScope.getProtocol())) {
-                scopeNames.add(clientScope.getName());
-            }
-        }
+        List<String> scopeNames = realm.getClientScopesStream()
+                .filter(clientScope -> Objects.equals(OIDCLoginProtocol.LOGIN_PROTOCOL, clientScope.getProtocol()))
+                .map(ClientScopeModel::getName)
+                .collect(Collectors.toList());
         scopeNames.add(0, OAuth2Constants.SCOPE_OPENID);
         config.setScopesSupported(scopeNames);
 
@@ -137,11 +143,16 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
         URI revocationEndpoint = frontendUriBuilder.clone().path(OIDCLoginProtocolService.class, "revoke")
             .build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL);
-        if (isHttps(revocationEndpoint)) {
-            config.setRevocationEndpoint(revocationEndpoint.toString());
-            config.setRevocationEndpointAuthMethodsSupported(getClientAuthMethodsSupported());
-            config.setRevocationEndpointAuthSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(false));
-        }
+
+        // NOTE: Don't hardcode HTTPS checks here. JWKS URI is exposed just in the development/testing environment. For the production environment, the OIDCWellKnownProvider
+        // is not exposed over "http" at all.
+        //if (isHttps(jwksUri)) {
+        config.setRevocationEndpoint(revocationEndpoint.toString());
+        config.setRevocationEndpointAuthMethodsSupported(getClientAuthMethodsSupported());
+        config.setRevocationEndpointAuthSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(false));
+
+        config.setBackchannelLogoutSupported(true);
+        config.setBackchannelLogoutSessionSupported(true);
 
         return config;
     }
@@ -208,9 +219,5 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
             result.add("none");
         }
         return result;
-    }
-
-    private boolean isHttps(URI uri) {
-        return uri.getScheme().equals("https");
     }
 }

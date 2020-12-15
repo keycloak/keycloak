@@ -30,8 +30,7 @@ import org.keycloak.storage.client.ClientStorageProviderFactory;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 import org.keycloak.utils.ServicesUtils;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -68,8 +67,18 @@ public class ClientStorageManager implements ClientProvider {
     }
 
 
-    public static List<ClientStorageProviderModel> getStorageProviders(RealmModel realm) {
-        return realm.getClientStorageProviders();
+    private static <T> Stream<ClientStorageProviderModel> getStorageProviders(RealmModel realm, KeycloakSession session, Class<T> type) {
+        return realm.getClientStorageProvidersStream()
+                .filter(model -> {
+                    ClientStorageProviderFactory factory = getClientStorageProviderFactory(model, session);
+                    if (factory == null) {
+                        logger.warnv("Configured ClientStorageProvider {0} of provider id {1} does not exist in realm {2}",
+                                model.getName(), model.getProviderId(), realm.getName());
+                        return false;
+                    } else {
+                        return Types.supports(type, factory, ClientStorageProviderFactory.class);
+                    }
+                });
     }
 
     public static ClientStorageProvider getStorageProviderInstance(KeycloakSession session, ClientStorageProviderModel model, ClientStorageProviderFactory factory) {
@@ -85,40 +94,21 @@ public class ClientStorageManager implements ClientProvider {
     }
 
 
-    public static <T> List<T> getStorageProviders(KeycloakSession session, RealmModel realm, Class<T> type) {
-        List<T> list = new LinkedList<>();
-        for (ClientStorageProviderModel model : getStorageProviders(realm)) {
-            ClientStorageProviderFactory factory = (ClientStorageProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientStorageProvider.class, model.getProviderId());
-            if (factory == null) {
-                logger.warnv("Configured ClientStorageProvider {0} of provider id {1} does not exist in realm {2}", model.getName(), model.getProviderId(), realm.getName());
-                continue;
-            }
-            if (Types.supports(type, factory, ClientStorageProviderFactory.class)) {
-                list.add(type.cast(getStorageProviderInstance(session, model, factory)));
-            }
+    public static <T> Stream<T> getStorageProviders(KeycloakSession session, RealmModel realm, Class<T> type) {
+        return getStorageProviders(realm, session, type)
+                .map(model -> type.cast(getStorageProviderInstance(session, model, getClientStorageProviderFactory(model, session))));
+    }
 
-
-        }
-        return list;
+    private static ClientStorageProviderFactory getClientStorageProviderFactory(ClientStorageProviderModel model, KeycloakSession session) {
+        return (ClientStorageProviderFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(ClientStorageProvider.class, model.getProviderId());
     }
 
 
-    public static <T> List<T> getEnabledStorageProviders(KeycloakSession session, RealmModel realm, Class<T> type) {
-        List<T> list = new LinkedList<>();
-        for (ClientStorageProviderModel model : getStorageProviders(realm)) {
-            if (!model.isEnabled()) continue;
-            ClientStorageProviderFactory factory = (ClientStorageProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientStorageProvider.class, model.getProviderId());
-            if (factory == null) {
-                logger.warnv("Configured ClientStorageProvider {0} of provider id {1} does not exist in realm {2}", model.getName(), model.getProviderId(), realm.getName());
-                continue;
-            }
-            if (Types.supports(type, factory, ClientStorageProviderFactory.class)) {
-                list.add(type.cast(getStorageProviderInstance(session, model, factory)));
-            }
-
-
-        }
-        return list;
+    public static <T> Stream<T> getEnabledStorageProviders(KeycloakSession session, RealmModel realm, Class<T> type) {
+        return getStorageProviders(realm, session, type)
+                .filter(ClientStorageProviderModel::isEnabled)
+                .map(model -> type.cast(getStorageProviderInstance(session, model, getClientStorageProviderFactory(model, session))));
     }
 
 
@@ -145,11 +135,11 @@ public class ClientStorageManager implements ClientProvider {
         if (client != null) {
             return client;
         }
-        for (ClientLookupProvider provider : getEnabledStorageProviders(session, realm, ClientLookupProvider.class)) {
-            client = provider.getClientByClientId(realm, clientId);
-            if (client != null) return client;
-        }
-        return null;
+        return getEnabledStorageProviders(session, realm, ClientLookupProvider.class)
+                .map(provider -> provider.getClientByClientId(realm, clientId))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
 
     /**
@@ -162,7 +152,7 @@ public class ClientStorageManager implements ClientProvider {
     @Override
     public Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults) {
         Stream<ClientModel> local = session.clientLocalStorage().searchClientsByClientIdStream(realm, clientId,  firstResult, maxResults);
-        Stream<ClientModel> ext = getEnabledStorageProviders(session, realm, ClientLookupProvider.class).stream()
+        Stream<ClientModel> ext = getEnabledStorageProviders(session, realm, ClientLookupProvider.class)
                 .flatMap(ServicesUtils.timeBound(session,
                         clientStorageProviderTimeout,
                         p -> ((ClientLookupProvider) p).searchClientsByClientIdStream(realm, clientId, firstResult, maxResults)));

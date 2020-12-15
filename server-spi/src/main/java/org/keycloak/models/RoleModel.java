@@ -17,10 +17,11 @@
 
 package org.keycloak.models;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -43,7 +44,12 @@ public interface RoleModel {
 
     void removeCompositeRole(RoleModel role);
 
-    Set<RoleModel> getComposites();
+    @Deprecated
+    default Set<RoleModel> getComposites() {
+        return getCompositesStream().collect(Collectors.toSet());
+    }
+
+    Stream<RoleModel> getCompositesStream();
 
     boolean isClientRole();
 
@@ -55,13 +61,20 @@ public interface RoleModel {
 
     void setSingleAttribute(String name, String value);
 
-    void setAttribute(String name, Collection<String> values);
+    void setAttribute(String name, List<String> values);
 
     void removeAttribute(String name);
 
-    String getFirstAttribute(String name);
+    default String getFirstAttribute(String name) {
+        return getAttributeStream(name).findFirst().orElse(null);
+    }
 
-    List<String> getAttribute(String name);
+    @Deprecated
+    default List<String> getAttribute(String name) {
+        return getAttributeStream(name).collect(Collectors.toList());
+    }
+
+    Stream<String> getAttributeStream(String name);
 
     Map<String, List<String>> getAttributes();
 }

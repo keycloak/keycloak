@@ -22,6 +22,7 @@ import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.common.util.SecurityActions;
+import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.common.util.SystemPropertiesUtil;
 import org.w3c.dom.Node;
 import org.xml.sax.ErrorHandler;
@@ -37,6 +38,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
+import javax.xml.XMLConstants;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.stax.StAXSource;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
+import static org.keycloak.saml.common.util.DocumentUtil.feature_disallow_doctype_decl;
+import static org.keycloak.saml.common.util.DocumentUtil.feature_external_general_entities;
+import static org.keycloak.saml.common.util.DocumentUtil.feature_external_parameter_entities;
 
 /**
  * Utility class associated with JAXP Validation
@@ -52,12 +61,12 @@ public class JAXPValidationUtil {
 
     protected static SchemaFactory schemaFactory;
 
-    public static void validate(String str) throws SAXException, IOException {
-        validator().validate(new StreamSource(str));
-    }
-
     public static void validate(InputStream stream) throws SAXException, IOException {
-        validator().validate(new StreamSource(stream));
+        try {
+            validator().validate(new StAXSource(StaxParserUtil.getXMLEventReader(stream)));
+        } catch (XMLStreamException ex) {
+            throw new IOException(ex);
+        }
     }
 
     /**
@@ -86,9 +95,40 @@ public class JAXPValidationUtil {
                 throw logger.nullValueError("schema");
 
             validator = schema.newValidator();
+            // Do not optimize the following into setProperty(...) && setProperty(...).
+            // This way if it fails in the first setProperty, it will try the subsequent setProperty anyway
+            // which it would not due to short-circuiting in case of an && expression.
+            boolean successful1 = setProperty(validator, XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            successful1 &= setProperty(validator, XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+            boolean successful2 = setFeature(validator, feature_disallow_doctype_decl, true);
+            successful2 &= setFeature(validator, feature_external_general_entities, false);
+            successful2 &= setFeature(validator, feature_external_parameter_entities, false);
+            if (! successful1 && ! successful2) {
+                logger.warn("Cannot disable external access in XML validator");
+            }
             validator.setErrorHandler(new CustomErrorHandler());
         }
         return validator;
+    }
+
+    private static boolean setProperty(Validator v, String property, String value) {
+        try {
+            v.setProperty(property, value);
+        } catch (SAXNotRecognizedException | SAXNotSupportedException ex) {
+            logger.debug("Cannot set " + property);
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean setFeature(Validator v, String feature, boolean value) {
+        try {
+            v.setFeature(feature, value);
+        } catch (SAXNotRecognizedException | SAXNotSupportedException ex) {
+            logger.debug("Cannot set " + feature);
+            return false;
+        }
+        return true;
     }
 
     private static Schema getSchema() throws IOException {
@@ -99,7 +139,7 @@ public class JAXPValidationUtil {
             if (tccl_jaxp) {
                 SecurityActions.setTCCL(JAXPValidationUtil.class.getClassLoader());
             }
-            schemaFactory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
+            schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 
             schemaFactory.setResourceResolver(new IDFedLSInputResolver());
             schemaFactory.setErrorHandler(new CustomErrorHandler());

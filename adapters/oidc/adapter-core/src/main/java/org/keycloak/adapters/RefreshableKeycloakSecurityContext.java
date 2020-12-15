@@ -63,6 +63,18 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
         return super.getTokenString();
     }
 
+    @Override
+    public IDToken getIdToken() {
+        refreshExpiredToken(true);
+        return super.getIdToken();
+    }
+
+    @Override
+    public String getIdTokenString() {
+        refreshExpiredToken(true);
+        return super.getIdTokenString();
+    }
+
     public String getRefreshToken() {
         return refreshToken;
     }
@@ -131,7 +143,8 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
                 log.error("Refresh token failure", e);
                 return false;
             } catch (ServerRequest.HttpFailure httpFailure) {
-                log.error("Refresh token failure status: " + httpFailure.getStatus() + " " + httpFailure.getError());
+                final Logger.Level logLevel = httpFailure.getError().contains("Refresh token expired") ? Logger.Level.WARN : Logger.Level.ERROR;
+                log.log(logLevel, "Refresh token failure status: " + httpFailure.getStatus() + " " + httpFailure.getError());
                 return false;
             }
             if (log.isTraceEnabled()) {
@@ -139,25 +152,28 @@ public class RefreshableKeycloakSecurityContext extends KeycloakSecurityContext 
             }
             String tokenString = response.getToken();
             AccessToken token = null;
+            IDToken idToken = null;
             try {
                 AdapterTokenVerifier.VerifiedTokens tokens = AdapterTokenVerifier.verifyTokens(tokenString, response.getIdToken(), deployment);
                 token = tokens.getAccessToken();
+                idToken = tokens.getIdToken();
                 log.debug("Token Verification succeeded!");
             } catch (VerificationException e) {
                 log.error("failed verification of token");
                 return false;
             }
-
             // If the TTL is greater-or-equal to the expire time on the refreshed token, have to abort or go into an infinite refresh loop
             if (!isTokenTimeToLiveSufficient(token)) {
                 log.error("failed to refresh the token with a longer time-to-live than the minimum");
                 return false;
             }
-
             if (response.getNotBeforePolicy() > deployment.getNotBefore()) {
                 deployment.updateNotBefore(response.getNotBeforePolicy());
             }
-
+            if (idToken != null) {
+                this.idToken = idToken;
+                this.idTokenString = response.getIdToken();
+            }
             this.token = token;
             if (response.getRefreshToken() != null) {
                 if (log.isTraceEnabled()) {

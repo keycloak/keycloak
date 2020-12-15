@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -162,7 +163,7 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
             config.put("groupsClaim", groupsClaim);
         }
 
-        List<GroupModel> topLevelGroups = authorization.getRealm().getTopLevelGroups();
+        List<GroupModel> topLevelGroups = authorization.getRealm().getTopLevelGroupsStream().collect(Collectors.toList());
 
         for (GroupPolicyRepresentation.GroupDefinition definition : groups) {
             GroupModel group = null;
@@ -184,7 +185,7 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
                         if (parent == null) {
                             parent = topLevelGroups.stream().filter(groupModel -> groupModel.getName().equals(part)).findFirst().orElseThrow(() -> new RuntimeException("Top level group with name [" + part + "] not found"));
                         } else {
-                            group = parent.getSubGroups().stream().filter(groupModel -> groupModel.getName().equals(part)).findFirst().orElseThrow(() -> new RuntimeException("Group with name [" + part + "] not found"));
+                            group = parent.getSubGroupsStream().filter(groupModel -> groupModel.getName().equals(part)).findFirst().orElseThrow(() -> new RuntimeException("Group with name [" + part + "] not found"));
                             parent = group;
                         }
                     }

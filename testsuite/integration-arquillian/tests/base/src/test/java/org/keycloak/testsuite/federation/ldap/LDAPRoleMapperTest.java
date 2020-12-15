@@ -30,7 +30,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleMapperConfig;
-import static org.keycloak.testsuite.federation.ldap.AbstractLDAPTest.TEST_REALM_NAME;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
@@ -63,29 +62,29 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
             // check users
             UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
             Assert.assertNotNull(john);
-            Assert.assertThat(john.getRealmRoleMappings().stream().map(RoleModel::getName).collect(Collectors.toSet()), Matchers.containsInAnyOrder("group1", "group2"));
+            Assert.assertThat(john.getRealmRoleMappingsStream().map(RoleModel::getName).collect(Collectors.toSet()), Matchers.containsInAnyOrder("group1", "group2"));
             UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
             Assert.assertNotNull(mary);
-            Assert.assertThat(mary.getRealmRoleMappings().stream().map(RoleModel::getName).collect(Collectors.toSet()), Matchers.containsInAnyOrder("group1", "group2"));
+            Assert.assertThat(mary.getRealmRoleMappingsStream().map(RoleModel::getName).collect(Collectors.toSet()), Matchers.containsInAnyOrder("group1", "group2"));
             UserModel rob = session.users().getUserByUsername("robkeycloak", appRealm);
             Assert.assertNotNull(rob);
-            Assert.assertThat(rob.getRealmRoleMappings().stream().map(RoleModel::getName).collect(Collectors.toSet()), Matchers.containsInAnyOrder("group1"));
+            Assert.assertThat(rob.getRealmRoleMappingsStream().map(RoleModel::getName).collect(Collectors.toSet()), Matchers.containsInAnyOrder("group1"));
             UserModel james = session.users().getUserByUsername("jameskeycloak", appRealm);
             Assert.assertNotNull(james);
-            Assert.assertThat(james.getRealmRoleMappings(), Matchers.empty());
+            Assert.assertThat(james.getRealmRoleMappingsStream().collect(Collectors.toSet()), Matchers.empty());
 
             // check groups
             RoleModel group1 = appRealm.getRole("group1");
             Assert.assertNotNull(group1);
-            Assert.assertThat(session.users().getRoleMembers(appRealm, group1).stream().map(UserModel::getUsername).collect(Collectors.toSet()),
+            Assert.assertThat(session.users().getRoleMembersStream(appRealm, group1).map(UserModel::getUsername).collect(Collectors.toSet()),
                     Matchers.containsInAnyOrder("johnkeycloak", "marykeycloak", "robkeycloak"));
             RoleModel group2 = appRealm.getRole("group2");
             Assert.assertNotNull(group2);
-            Assert.assertThat(session.users().getRoleMembers(appRealm, group2).stream().map(UserModel::getUsername).collect(Collectors.toSet()),
+            Assert.assertThat(session.users().getRoleMembersStream(appRealm, group2).map(UserModel::getUsername).collect(Collectors.toSet()),
                     Matchers.containsInAnyOrder("johnkeycloak", "marykeycloak"));
             RoleModel group3 = appRealm.getRole("group3");
             Assert.assertNotNull(group3);
-            Assert.assertThat(session.users().getRoleMembers(appRealm, group3), Matchers.empty());
+            Assert.assertThat(session.users().getRoleMembersStream(appRealm, group3).collect(Collectors.toSet()), Matchers.empty());
         });
     }
 
@@ -96,7 +95,7 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             // create a client to set the roles in it
-            ClientModel rolesClient = appRealm.addClient("role-mapper-client", "role-mapper-client");
+            ClientModel rolesClient = session.clients().addClient(appRealm, "role-mapper-client");
 
             try {
                 ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "rolesMapper");
@@ -111,32 +110,32 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
                 // check users
                 UserModel john = session.users().getUserByUsername("johnkeycloak", appRealm);
                 Assert.assertNotNull(john);
-                Assert.assertThat(john.getClientRoleMappings(rolesClient).stream().map(RoleModel::getName).collect(Collectors.toSet()), Matchers.containsInAnyOrder("group1", "group2"));
+                Assert.assertThat(john.getClientRoleMappingsStream(rolesClient).map(RoleModel::getName).collect(Collectors.toSet()), Matchers.containsInAnyOrder("group1", "group2"));
                 UserModel mary = session.users().getUserByUsername("marykeycloak", appRealm);
                 Assert.assertNotNull(mary);
-                Assert.assertThat(mary.getClientRoleMappings(rolesClient).stream().map(RoleModel::getName).collect(Collectors.toSet()), Matchers.containsInAnyOrder("group1", "group2"));
+                Assert.assertThat(mary.getClientRoleMappingsStream(rolesClient).map(RoleModel::getName).collect(Collectors.toSet()), Matchers.containsInAnyOrder("group1", "group2"));
                 UserModel rob = session.users().getUserByUsername("robkeycloak", appRealm);
                 Assert.assertNotNull(rob);
-                Assert.assertThat(rob.getClientRoleMappings(rolesClient).stream().map(RoleModel::getName).collect(Collectors.toSet()), Matchers.containsInAnyOrder("group1"));
+                Assert.assertThat(rob.getClientRoleMappingsStream(rolesClient).map(RoleModel::getName).collect(Collectors.toSet()), Matchers.containsInAnyOrder("group1"));
                 UserModel james = session.users().getUserByUsername("jameskeycloak", appRealm);
                 Assert.assertNotNull(james);
-                Assert.assertThat(james.getClientRoleMappings(rolesClient).stream().map(RoleModel::getName).collect(Collectors.toSet()), Matchers.empty());
+                Assert.assertThat(james.getClientRoleMappingsStream(rolesClient).map(RoleModel::getName).collect(Collectors.toSet()), Matchers.empty());
 
                 // check groups
                 RoleModel group1 = rolesClient.getRole("group1");
                 Assert.assertNotNull(group1);
-                Assert.assertThat(session.users().getRoleMembers(appRealm, group1).stream().map(UserModel::getUsername).collect(Collectors.toSet()),
+                Assert.assertThat(session.users().getRoleMembersStream(appRealm, group1).map(UserModel::getUsername).collect(Collectors.toSet()),
                         Matchers.containsInAnyOrder("johnkeycloak", "marykeycloak", "robkeycloak"));
                 RoleModel group2 = rolesClient.getRole("group2");
                 Assert.assertNotNull(group2);
-                Assert.assertThat(session.users().getRoleMembers(appRealm, group2).stream().map(UserModel::getUsername).collect(Collectors.toSet()),
+                Assert.assertThat(session.users().getRoleMembersStream(appRealm, group2).map(UserModel::getUsername).collect(Collectors.toSet()),
                         Matchers.containsInAnyOrder("johnkeycloak", "marykeycloak"));
                 RoleModel group3 = rolesClient.getRole("group3");
                 Assert.assertNotNull(group3);
-                Assert.assertThat(session.users().getRoleMembers(appRealm, group3), Matchers.empty());
+                Assert.assertThat(session.users().getRoleMembersStream(appRealm, group3).collect(Collectors.toSet()), Matchers.empty());
 
             } finally {
-                appRealm.removeClient(rolesClient.getClientId());
+                appRealm.removeClient(rolesClient.getId());
             }
         });
     }

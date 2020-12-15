@@ -1056,7 +1056,9 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     $scope.signatureAlgorithms = [
         "RSA_SHA1",
         "RSA_SHA256",
+        "RSA_SHA256_MGF1",
         "RSA_SHA512",
+        "RSA_SHA512_MGF1",
         "DSA_SHA1"
     ];
     $scope.nameIdFormats = [
@@ -1155,10 +1157,14 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.signatureAlgorithm = $scope.signatureAlgorithms[0];
         } else if ($scope.client.attributes['saml.signature.algorithm'] == 'RSA_SHA256') {
             $scope.signatureAlgorithm = $scope.signatureAlgorithms[1];
-        } else if ($scope.client.attributes['saml.signature.algorithm'] == 'RSA_SHA512') {
+        } else if ($scope.client.attributes['saml.signature.algorithm'] == 'RSA_SHA256_MGF1') {
             $scope.signatureAlgorithm = $scope.signatureAlgorithms[2];
-        } else if ($scope.client.attributes['saml.signature.algorithm'] == 'DSA_SHA1') {
+        } else if ($scope.client.attributes['saml.signature.algorithm'] == 'RSA_SHA512') {
             $scope.signatureAlgorithm = $scope.signatureAlgorithms[3];
+        } else if ($scope.client.attributes['saml.signature.algorithm'] == 'RSA_SHA512_MGF1') {
+            $scope.signatureAlgorithm = $scope.signatureAlgorithms[4];
+        } else if ($scope.client.attributes['saml.signature.algorithm'] == 'DSA_SHA1') {
+            $scope.signatureAlgorithm = $scope.signatureAlgorithms[5];
         }
         if ($scope.client.attributes['saml_name_id_format'] == 'username') {
             $scope.nameIdFormat = $scope.nameIdFormats[0];
@@ -1283,11 +1289,34 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
            }
        }
 
+        var useRefreshToken = $scope.client.attributes["client_credentials.use_refresh_token"];
+        if (useRefreshToken === "true") {
+            $scope.useRefreshTokenForClientCredentialsGrant = true;
+        } else {
+            $scope.useRefreshTokenForClientCredentialsGrant = false;
+        }
+
         if ($scope.client.attributes["display.on.consent.screen"]) {
             if ($scope.client.attributes["display.on.consent.screen"] == "true") {
                 $scope.displayOnConsentScreen = true;
             } else {
                 $scope.displayOnConsentScreen = false;
+            }
+        }
+
+        if ($scope.client.attributes["backchannel.logout.session.required"]) {
+            if ($scope.client.attributes["backchannel.logout.session.required"] == "true") {
+                $scope.backchannelLogoutSessionRequired = true;
+            } else {
+                $scope.backchannelLogoutSessionRequired = false;
+            }
+        }
+
+        if ($scope.client.attributes["backchannel.logout.revoke.offline.tokens"]) {
+            if ($scope.client.attributes["backchannel.logout.revoke.offline.tokens"] == "true") {
+                $scope.backchannelLogoutRevokeOfflineSessions = true;
+            } else {
+                $scope.backchannelLogoutRevokeOfflineSessions = false;
             }
         }
     }
@@ -1612,10 +1641,30 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.clientEdit.attributes["tls.client.certificate.bound.access.tokens"] = "false";
         }
 
+        // KEYCLOAK-9551 Client Credentials Grant generates refresh token
+        // https://tools.ietf.org/html/rfc6749#section-4.4.3
+        if ($scope.useRefreshTokenForClientCredentialsGrant === true) {
+            $scope.clientEdit.attributes["client_credentials.use_refresh_token"] = "true";
+        } else {
+            $scope.clientEdit.attributes["client_credentials.use_refresh_token"] = "false";
+        }
+
         if ($scope.displayOnConsentScreen == true) {
             $scope.clientEdit.attributes["display.on.consent.screen"] = "true";
         } else {
             $scope.clientEdit.attributes["display.on.consent.screen"] = "false";
+        }
+
+        if ($scope.backchannelLogoutSessionRequired == true) {
+            $scope.clientEdit.attributes["backchannel.logout.session.required"] = "true";
+        } else {
+            $scope.clientEdit.attributes["backchannel.logout.session.required"] = "false";
+        }
+
+        if ($scope.backchannelLogoutRevokeOfflineSessions == true) {
+            $scope.clientEdit.attributes["backchannel.logout.revoke.offline.tokens"] = "true";
+        } else {
+            $scope.clientEdit.attributes["backchannel.logout.revoke.offline.tokens"] = "false";
         }
 
         $scope.clientEdit.protocol = $scope.protocol;

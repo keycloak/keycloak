@@ -30,7 +30,7 @@ angular.element(document).ready(function ($http) {
     var keycloakAuth = new Keycloak('keycloak.json');
     auth.loggedIn = false;
 
-    keycloakAuth.init({ onLoad: 'login-required' }).success(function () {
+    keycloakAuth.init({ onLoad: 'login-required' }).then(function () {
         auth.loggedIn = true;
         auth.authz = keycloakAuth;
         auth.logoutUrl = keycloakAuth.authServerUrl + "/realms/demo/protocol/openid-connect/logout?redirect_uri=/angular-product/index.html";
@@ -38,7 +38,7 @@ angular.element(document).ready(function ($http) {
             return auth;
         });
         angular.bootstrap(document, ["product"]);
-    }).error(function () {
+    }).catch(function () {
             window.location.reload();
         });
 
@@ -62,12 +62,12 @@ module.factory('authInterceptor', function($q, Auth) {
         request: function (config) {
             var deferred = $q.defer();
             if (Auth.authz.token) {
-                Auth.authz.updateToken(5).success(function() {
+                Auth.authz.updateToken(5).then(function() {
                     config.headers = config.headers || {};
                     config.headers.Authorization = 'Bearer ' + Auth.authz.token;
 
                     deferred.resolve(config);
-                }).error(function() {
+                }).catch(function() {
                         deferred.reject('Failed to refresh token');
                     });
             }

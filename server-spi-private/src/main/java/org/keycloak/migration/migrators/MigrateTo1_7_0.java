@@ -21,13 +21,10 @@ import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.RealmRepresentation;
-
-import java.util.List;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -41,11 +38,7 @@ public class MigrateTo1_7_0 implements Migration {
     }
 
     public void migrate(KeycloakSession session) {
-        List<RealmModel> realms = session.realms().getRealms();
-        for (RealmModel realm : realms) {
-            migrateRealm(session, realm);
-
-        }
+        session.realms().getRealmsStream().forEach(realm -> migrateRealm(session, realm));
     }
 
     @Override
@@ -65,12 +58,11 @@ public class MigrateTo1_7_0 implements Migration {
         DefaultAuthenticationFlows.migrateFlows(realm);
         AuthenticationFlowModel firstBrokerLoginFlow = realm.getFlowByAlias(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW);
 
-        List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
-        for (IdentityProviderModel identityProvider : identityProviders) {
-            if (identityProvider.getFirstBrokerLoginFlowId() == null) {
-                identityProvider.setFirstBrokerLoginFlowId(firstBrokerLoginFlow.getId());
-                realm.updateIdentityProvider(identityProvider);
-            }
-        }
+        realm.getIdentityProvidersStream()
+                .filter(provider -> provider.getFirstBrokerLoginFlowId() == null)
+                .forEach(provider -> {
+                    provider.setFirstBrokerLoginFlowId(firstBrokerLoginFlow.getId());
+                    realm.updateIdentityProvider(provider);
+                });
     }
 }

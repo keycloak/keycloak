@@ -29,6 +29,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
@@ -51,6 +52,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -136,6 +138,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
                 .redirectUris(offlineClientAppUri)
                 .directAccessGrants()
                 .serviceAccountsEnabled(true)
+                .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
                 .secret("secret1").build();
 
         realm.client(app);
@@ -510,6 +513,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
     // KEYCLOAK-4525
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void offlineTokenRemoveClientWithTokens() throws Exception {
         // Create new client
         RealmResource appRealm = adminClient.realm("test");

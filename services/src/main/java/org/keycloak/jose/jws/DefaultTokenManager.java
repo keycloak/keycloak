@@ -16,9 +16,6 @@
  */
 package org.keycloak.jose.jws;
 
-import java.io.UnsupportedEncodingException;
-import java.security.Key;
-
 import org.jboss.logging.Logger;
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
@@ -35,12 +32,22 @@ import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.keys.loader.PublicKeyStorageManager;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.TokenManager;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.LogoutToken;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
+
+import java.io.UnsupportedEncodingException;
+import java.security.Key;
 
 public class DefaultTokenManager implements TokenManager {
 
@@ -129,6 +136,7 @@ public class DefaultTokenManager implements TokenManager {
             case ACCESS:
                 return getSignatureAlgorithm(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG);
             case ID:
+            case LOGOUT:
                 return getSignatureAlgorithm(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_ALG);
             case USERINFO:
                 return getSignatureAlgorithm(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG);
@@ -202,6 +210,7 @@ public class DefaultTokenManager implements TokenManager {
         if (category == null) return null;
         switch (category) {
             case ID:
+            case LOGOUT:
                 return getCekManagementAlgorithm(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ALG);
             default:
                 return null;
@@ -222,6 +231,7 @@ public class DefaultTokenManager implements TokenManager {
         if (category == null) return null;
         switch (category) {
             case ID:
+            case LOGOUT:
                 return getEncryptAlgorithm(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC);
             default:
                 return null;
@@ -235,5 +245,26 @@ public class DefaultTokenManager implements TokenManager {
             return algorithm;
         }
         return null;
+    }
+
+    public LogoutToken initLogoutToken(ClientModel client, UserModel user,
+                                       AuthenticatedClientSessionModel clientSession) {
+        LogoutToken token = new LogoutToken();
+        token.id(KeycloakModelUtils.generateId());
+        token.issuedNow();
+        token.issuer(clientSession.getNote(OIDCLoginProtocol.ISSUER));
+        token.putEvents(TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT, JsonSerialization.createObjectNode());
+        token.addAudience(client.getClientId());
+
+        OIDCAdvancedConfigWrapper oidcAdvancedConfigWrapper = OIDCAdvancedConfigWrapper.fromClientModel(client);
+        if (oidcAdvancedConfigWrapper.isBackchannelLogoutSessionRequired()){
+            token.setSid(clientSession.getUserSession().getId());
+        }
+        if (oidcAdvancedConfigWrapper.getBackchannelLogoutRevokeOfflineTokens()){
+            token.putEvents(TokenUtil.TOKEN_BACKCHANNEL_LOGOUT_EVENT_REVOKE_OFFLINE_TOKENS, true);
+        }
+        token.setSubject(user.getId());
+
+        return token;
     }
 }

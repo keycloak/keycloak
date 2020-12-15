@@ -77,7 +77,6 @@ public class AuthorizationEndpointRequestParserProcessor {
             } else if (requestUriParam != null) {
                 try (InputStream is = session.getProvider(HttpClientProvider.class).get(requestUriParam)) {
                     String retrievedRequest = StreamUtil.readString(is);
-
                     new AuthzEndpointRequestObjectParser(session, retrievedRequest, client).parseRequest(request);
                 }
             }

@@ -37,12 +37,13 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -121,13 +122,13 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         } else {
 
             // we don't have java property. Let's set attribute
-            List<String> attrValues = localUser.getAttribute(userModelAttrName);
+            List<String> attrValues = localUser.getAttributeStream(userModelAttrName).collect(Collectors.toList());
 
-            if (attrValues.size() == 0) {
+            if (attrValues.isEmpty()) {
                 if (isMandatoryInLdap) {
                     ldapUser.setSingleAttribute(ldapAttrName, LDAPConstants.EMPTY_ATTRIBUTE_VALUE);
                 } else {
-                    ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<String>());
+                    ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<>());
                 }
             } else {
                 ldapUser.setAttribute(ldapAttrName, new LinkedHashSet<>(attrValues));
@@ -212,8 +213,11 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
                 @Override
                 public void removeAttribute(String name) {
-                    if (setLDAPAttribute(name, null)) {
-                        super.removeAttribute(name);
+                    if(!UserModel.USERNAME.equals(name)){
+                        //do not remove username
+                        if (setLDAPAttribute(name, null)) {
+                            super.removeAttribute(name);
+                        }
                     }
                 }
 
@@ -338,16 +342,16 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                 }
 
                 @Override
-                public List<String> getAttribute(String name) {
+                public Stream<String> getAttributeStream(String name) {
                     if (name.equalsIgnoreCase(userModelAttrName)) {
                         Collection<String> ldapAttrValue = ldapUser.getAttributeAsSet(ldapAttrName);
                         if (ldapAttrValue == null) {
-                            return Collections.emptyList();
+                            return Stream.empty();
                         } else {
-                            return new ArrayList<>(ldapAttrValue);
+                            return ldapAttrValue.stream();
                         }
                     } else {
-                        return super.getAttribute(name);
+                        return super.getAttributeStream(name);
                     }
                 }
 

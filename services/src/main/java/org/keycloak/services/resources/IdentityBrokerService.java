@@ -22,7 +22,6 @@ import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.broker.util.PostBrokerLoginConstants;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
@@ -52,8 +51,8 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
-import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -95,6 +94,7 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -120,6 +120,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * <p></p>
@@ -276,7 +278,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
             // Ensure user has role and client has "role scope" for this role
             ClientSessionContext ctx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSession, session);
-            Set<RoleModel> userAccountRoles = ctx.getRoles();
+            Set<RoleModel> userAccountRoles = ctx.getRolesStream().collect(Collectors.toSet());
 
             if (!userAccountRoles.contains(manageAccountRole)) {
                 RoleModel linkRole = accountService.getRole(AccountRoles.MANAGE_ACCOUNT_LINKS);
@@ -308,7 +310,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         // Auth session with ID corresponding to our userSession may already exists in some rare cases (EG. if some client tried to login in another browser tab with "prompt=login")
         RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realmModel, userSession.getId());
         if (rootAuthSession == null) {
-            rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(userSession.getId(), realmModel);
+            rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realmModel, userSession.getId());
         }
 
         AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
@@ -413,13 +415,17 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     @Path("{provider_id}/endpoint")
     public Object getEndpoint(@PathParam("provider_id") String providerId) {
-        IdentityProvider identityProvider = getIdentityProvider(session, realmModel, providerId);
+        IdentityProvider identityProvider;
+
+        try {
+            identityProvider = getIdentityProvider(session, realmModel, providerId);
+        } catch (IdentityBrokerException e) {
+            throw new NotFoundException(e.getMessage());
+        }
+
         Object callback = identityProvider.callback(realmModel, this, event);
         ResteasyProviderFactory.getInstance().injectProperties(callback);
-        //resourceContext.initResource(brokerService);
         return callback;
-
-
     }
 
     @Path("{provider_id}/token")
@@ -445,8 +451,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         this.event.event(EventType.IDENTITY_PROVIDER_RETRIEVE_TOKEN);
 
         try {
-            AppAuthManager authManager = new AppAuthManager();
-            AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(this.session, this.realmModel, this.session.getContext().getUri(), this.clientConnection, this.request.getHttpHeaders());
+            AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
+                    .setRealm(realmModel)
+                    .setConnection(clientConnection)
+                    .setHeaders(request.getHttpHeaders())
+                    .authenticate();
 
             if (authResult != null) {
                 AccessToken token = authResult.getToken();
@@ -533,14 +542,12 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         session.getContext().setClient(authenticationSession.getClient());
 
         context.getIdp().preprocessFederatedIdentity(session, realmModel, context);
-        Set<IdentityProviderMapperModel> mappers = realmModel.getIdentityProviderMappersByAlias(context.getIdpConfig().getAlias());
-        if (mappers != null) {
-            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-            for (IdentityProviderMapperModel mapper : mappers) {
-                IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
-                target.preprocessFederatedIdentity(session, realmModel, mapper, context);
-            }
-        }
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        realmModel.getIdentityProviderMappersByAliasStream(context.getIdpConfig().getAlias()).forEach(mapper -> {
+            IdentityProviderMapper target = (IdentityProviderMapper) sessionFactory
+                    .getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+            target.preprocessFederatedIdentity(session, realmModel, mapper, context);
+        });
 
         FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(providerId, context.getId(),
                 context.getUsername(), context.getToken());
@@ -712,14 +719,12 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 logger.debugf("Registered new user '%s' after first login with identity provider '%s'. Identity provider username is '%s' . ", federatedUser.getUsername(), providerId, context.getUsername());
 
                 context.getIdp().importNewUser(session, realmModel, federatedUser, context);
-                Set<IdentityProviderMapperModel> mappers = realmModel.getIdentityProviderMappersByAlias(providerId);
-                if (mappers != null) {
-                    KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-                    for (IdentityProviderMapperModel mapper : mappers) {
-                        IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
-                        target.importNewUser(session, realmModel, federatedUser, mapper, context);
-                    }
-                }
+                KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+                realmModel.getIdentityProviderMappersByAliasStream(providerId).forEach(mapper -> {
+                    IdentityProviderMapper target = (IdentityProviderMapper) sessionFactory
+                            .getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+                    target.importNewUser(session, realmModel, federatedUser, mapper, context);
+                });
 
                 if (context.getIdpConfig().isTrustEmail() && !Validation.isBlank(federatedUser.getEmail()) && !Boolean.parseBoolean(authSession.getAuthNote(AbstractIdpAuthenticator.UPDATE_PROFILE_EMAIL_CHANGED))) {
                     logger.debugf("Email verified automatically after registration of user '%s' through Identity provider '%s' ", federatedUser.getUsername(), context.getIdpConfig().getAlias());
@@ -856,7 +861,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         AuthenticationManager.setClientScopesInSession(authSession);
 
-        String nextRequiredAction = AuthenticationManager.nextRequiredAction(session, authSession, clientConnection, request, session.getContext().getUri(), event);
+        String nextRequiredAction = AuthenticationManager.nextRequiredAction(session, authSession, request, event);
         if (nextRequiredAction != null) {
             if ("true".equals(authSession.getAuthNote(AuthenticationProcessor.FORWARDED_PASSIVE_LOGIN))) {
                 logger.errorf("Required action %s found. Auth requests using prompt=none are incompatible with required actions", nextRequiredAction);
@@ -1007,18 +1012,32 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     private void updateFederatedIdentity(BrokeredIdentityContext context, UserModel federatedUser) {
         FederatedIdentityModel federatedIdentityModel = this.session.users().getFederatedIdentity(federatedUser, context.getIdpConfig().getAlias(), this.realmModel);
 
+        if (context.getIdpConfig().getSyncMode() == IdentityProviderSyncMode.FORCE) {
+            setBasicUserAttributes(context, federatedUser);
+        }
+
         // Skip DB write if tokens are null or equal
         updateToken(context, federatedUser, federatedIdentityModel);
         context.getIdp().updateBrokeredUser(session, realmModel, federatedUser, context);
-        Set<IdentityProviderMapperModel> mappers = realmModel.getIdentityProviderMappersByAlias(context.getIdpConfig().getAlias());
-        if (mappers != null) {
-            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-            for (IdentityProviderMapperModel mapper : mappers) {
-                IdentityProviderMapper target = (IdentityProviderMapper)sessionFactory.getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
-                IdentityProviderMapperSyncModeDelegate.delegateUpdateBrokeredUser(session, realmModel, federatedUser, mapper, context, target);
-            }
-        }
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        realmModel.getIdentityProviderMappersByAliasStream(context.getIdpConfig().getAlias()).forEach(mapper -> {
+            IdentityProviderMapper target = (IdentityProviderMapper) sessionFactory
+                    .getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
+            IdentityProviderMapperSyncModeDelegate.delegateUpdateBrokeredUser(session, realmModel, federatedUser, mapper, context, target);
+        });
+    }
 
+    private void setBasicUserAttributes(BrokeredIdentityContext context, UserModel federatedUser) {
+        setDiffAttrToConsumer(federatedUser.getEmail(), context.getEmail(), federatedUser::setEmail);
+        setDiffAttrToConsumer(federatedUser.getFirstName(), context.getFirstName(), federatedUser::setFirstName);
+        setDiffAttrToConsumer(federatedUser.getLastName(), context.getLastName(), federatedUser::setLastName);
+    }
+
+    private void setDiffAttrToConsumer(String actualValue, String newValue, Consumer<String> consumer) {
+        String actualValueNotNull = Optional.ofNullable(actualValue).orElse("");
+        if (newValue != null && !newValue.equals(actualValueNotNull)) {
+            consumer.accept(newValue);
+        }
     }
 
     private void migrateFederatedIdentityId(BrokeredIdentityContext context, UserModel federatedUser) {
@@ -1099,7 +1118,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     private ParsedCodeContext samlIdpInitiatedSSO(final String clientUrlName) {
         event.event(EventType.LOGIN);
         CacheControlUtil.noBackButtonCacheControlHeader();
-        Optional<ClientModel> oClient = this.realmModel.getClients().stream()
+        Optional<ClientModel> oClient = this.realmModel.getClientsStream()
           .filter(c -> Objects.equals(c.getAttribute(SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME), clientUrlName))
           .findFirst();
 

@@ -26,6 +26,7 @@ import org.infinispan.client.hotrod.annotation.ClientCacheEntryRemoved;
 import org.infinispan.client.hotrod.annotation.ClientListener;
 import org.infinispan.client.hotrod.event.ClientCacheEntryCreatedEvent;
 import org.infinispan.client.hotrod.event.ClientCacheEntryRemovedEvent;
+import org.infinispan.context.Flag;
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachelistener.annotation.*;
 import org.infinispan.notifications.cachelistener.event.*;
@@ -206,6 +207,7 @@ public class SsoSessionCacheListener {
             @Override
             public void run() {
                 idMapper.removeSession((String) event.getKey());
+                ssoCache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE).remove((String) event.getKey());
             }
         });
     }

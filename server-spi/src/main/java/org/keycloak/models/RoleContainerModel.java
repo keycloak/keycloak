@@ -49,7 +49,6 @@ public interface RoleContainerModel {
 
     boolean removeRole(RoleModel role);
 
-    // TODO switch all usages to the stream variant
     @Deprecated
     default Set<RoleModel> getRoles() {
         return getRolesStream().collect(Collectors.toSet());
@@ -57,7 +56,6 @@ public interface RoleContainerModel {
 
     Stream<RoleModel> getRolesStream();
 
-    // TODO switch all usages to the stream variant
     @Deprecated
     default Set<RoleModel> getRoles(Integer firstResult, Integer maxResults) {
         return getRolesStream(firstResult, maxResults).collect(Collectors.toSet());
@@ -65,7 +63,6 @@ public interface RoleContainerModel {
 
     Stream<RoleModel> getRolesStream(Integer firstResult, Integer maxResults);
 
-    // TODO switch all usages to the stream variant
     @Deprecated
     default Set<RoleModel> searchForRoles(String search, Integer first, Integer max) {
         return searchForRolesStream(search, first, max).collect(Collectors.toSet());
@@ -73,13 +70,39 @@ public interface RoleContainerModel {
 
     Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max);
 
-    List<String> getDefaultRoles();
+    /**
+     * Returns all the default role names of this object.
+     * @return List of the default role names of this object. Never returns {@code null}.
+     * @deprecated use the stream variant instead
+     */
+    @Deprecated
+    default List<String> getDefaultRoles() {
+        return getDefaultRolesStream().collect(Collectors.toList());
+    }
 
+    /**
+     * Returns all default role names of this object as a stream.
+     * @return stream of default role names of this object. Never returns {@code null}.
+     */
+    Stream<String> getDefaultRolesStream();
+
+    /**
+     * Adds a role with given name to default roles of this object. If the role
+     * doesn't exist a new role is created.
+     * @param name of the role to be (created and ) added
+     */
     void addDefaultRole(String name);
 
+    /**
+     * Updates default roles of this object. It removes all default roles which
+     * are not specified by {@code defaultRoles} and adds all which weren't
+     * present in original default roles. In other words it's the same as calling 
+     * {@code Set.retainAll} and {@code Set.addAll}.
+     * @param defaultRoles Array of realm roles to be updated
+     */
     default void updateDefaultRoles(String... defaultRoles) {
         List<String> defaultRolesArray = Arrays.asList(defaultRoles);
-        Collection<String> entities = getDefaultRoles();
+        Collection<String> entities = getDefaultRolesStream().collect(Collectors.toList());
         Set<String> already = new HashSet<>();
         ArrayList<String> remove = new ArrayList<>();
         for (String rel : entities) {
@@ -98,6 +121,10 @@ public interface RoleContainerModel {
         }
     }
 
+    /**
+     * Removes default roles from this object according to {@code defaultRoles}.
+     * @param defaultRoles Role names to be removed from default roles of this object.
+     */
     void removeDefaultRoles(String... defaultRoles);
 
 }

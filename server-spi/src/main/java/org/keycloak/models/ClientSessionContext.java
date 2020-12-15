@@ -18,6 +18,8 @@
 package org.keycloak.models;
 
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Request-scoped context object
@@ -30,14 +32,45 @@ public interface ClientSessionContext {
 
     Set<String> getClientScopeIds();
 
-    Set<ClientScopeModel> getClientScopes();
+    /**
+     * @deprecated Use {@link #getClientScopesStream() getClientScopesStream} instead.
+     * @return Set of protocol mappers
+     */
+    @Deprecated
+    default Set<ClientScopeModel> getClientScopes() {
+        return getClientScopesStream().collect(Collectors.toSet());
+    }
+
+    /**
+     * Returns client scopes as a stream.
+     * @return Stream of client scopes.
+     */
+    Stream<ClientScopeModel> getClientScopesStream();
 
     /**
      * @return expanded roles (composite roles already applied)
      */
-    Set<RoleModel> getRoles();
+    @Deprecated
+    default Set<RoleModel> getRoles() {
+        return getRolesStream().collect(Collectors.toSet());
+    }
 
-    Set<ProtocolMapperModel> getProtocolMappers();
+    Stream<RoleModel> getRolesStream();
+
+    /**
+     * @deprecated Use {@link #getProtocolMappersStream() getProtocolMappersStream} instead.
+     * @return Set of protocol mappers
+     */
+    @Deprecated
+    default Set<ProtocolMapperModel> getProtocolMappers() {
+        return getProtocolMappersStream().collect(Collectors.toSet());
+    }
+
+    /**
+     * Returns protocol mappers as a stream.
+     * @return Stream of protocol mappers.
+     */
+    Stream<ProtocolMapperModel> getProtocolMappersStream();
 
     String getScopeString();
 

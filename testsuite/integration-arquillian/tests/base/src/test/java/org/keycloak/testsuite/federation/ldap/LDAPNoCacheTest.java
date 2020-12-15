@@ -20,6 +20,7 @@ package org.keycloak.testsuite.federation.ldap;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
@@ -30,7 +31,6 @@ import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
@@ -89,11 +89,9 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
             appRealm.updateComponent(ctx.getLdapModel());
 
             // Switch mappers to "Always read value from LDAP". Changed attributes in LDAP should be immediately visible on Keycloak side
-            List<ComponentModel> ldapMappers = appRealm.getComponents(ctx.getLdapModel().getId());
-            ldapMappers.stream()
+            appRealm.getComponentsStream(ctx.getLdapModel().getId())
                     .filter(mapper -> UserAttributeLDAPStorageMapperFactory.PROVIDER_ID.equals(mapper.getProviderId()))
                     .forEach(mapper -> {
-
                         mapper.put(UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, true);
                         appRealm.updateComponent(mapper);
 
@@ -234,7 +232,8 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
             assumeThat(user, is(nullValue()));
 
             // trigger import
-            List<UserModel> byEmail = ldapProvider.searchForUserByUserAttribute("email", "john_old@email.org", realm);
+            List<UserModel> byEmail = ldapProvider.searchForUserByUserAttributeStream("email", "john_old@email.org", realm)
+                    .collect(Collectors.toList());
             assumeThat(byEmail, hasSize(1));
 
             // assume that user has been imported
@@ -242,7 +241,8 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
             assumeThat(user, is(not(nullValue())));
 
             // search a second time
-            byEmail = ldapProvider.searchForUserByUserAttribute("email", "john_old@email.org", realm);
+            byEmail = ldapProvider.searchForUserByUserAttributeStream("email", "john_old@email.org", realm)
+                    .collect(Collectors.toList());
             assertThat(byEmail, hasSize(1));
         });
     }

@@ -16,10 +16,7 @@
  */
 package org.keycloak.testsuite.federation;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 import java.util.List;
 import java.util.stream.Stream;
 import org.jboss.logging.Logger;
@@ -66,6 +63,7 @@ public class HardcodedRoleStorageProvider implements RoleStorageProvider {
             Thread.sleep(5000l);
         } catch (InterruptedException ex) {
             Logger.getLogger(HardcodedClientStorageProvider.class).warn(ex.getCause());
+            return Stream.empty();
         }
         if (search != null && this.roleName.toLowerCase().contains(search.toLowerCase())) {
             return Stream.of(new HardcodedRoleAdapter(realm));
@@ -116,8 +114,8 @@ public class HardcodedRoleStorageProvider implements RoleStorageProvider {
         }
 
         @Override
-        public Set<RoleModel> getComposites() {
-            return Collections.EMPTY_SET;
+        public Stream<RoleModel> getCompositesStream() {
+            return Stream.empty();
         }
 
         @Override
@@ -146,7 +144,7 @@ public class HardcodedRoleStorageProvider implements RoleStorageProvider {
         }
 
         @Override
-        public List<String> getAttribute(String name) {
+        public Stream<String> getAttributeStream(String name) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -181,7 +179,7 @@ public class HardcodedRoleStorageProvider implements RoleStorageProvider {
         }
 
         @Override
-        public void setAttribute(String name, Collection<String> values) {
+        public void setAttribute(String name, List<String> values) {
             throw new ReadOnlyException("role is read only");
         }
 

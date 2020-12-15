@@ -56,6 +56,8 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.authorization.util.Tokens;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -65,8 +67,10 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder;
@@ -279,10 +283,18 @@ public class AuthorizationTokenService {
         AccessToken accessToken = identity.getAccessToken();
         RealmModel realm = request.getRealm();
         UserSessionProvider sessions = keycloakSession.sessions();
-        UserSessionModel userSessionModel = sessions.getUserSession(realm, accessToken.getSessionState());
+        UserSessionModel userSessionModel;
+        if (accessToken.getSessionState() == null) {
+            // Create temporary (request-scoped) transient session
+            UserModel user = TokenManager.lookupUserFromStatelessToken(keycloakSession, realm, accessToken);
+            userSessionModel = sessions.createUserSession(KeycloakModelUtils.generateId(), realm, user, user.getUsername(), request.getClientConnection().getRemoteAddr(),
+                    ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
+        } else {
+            userSessionModel = sessions.getUserSession(realm, accessToken.getSessionState());
 
-        if (userSessionModel == null) {
-            userSessionModel = sessions.getOfflineUserSession(realm, accessToken.getSessionState());
+            if (userSessionModel == null) {
+                userSessionModel = sessions.getOfflineUserSession(realm, accessToken.getSessionState());
+            }
         }
 
         ClientModel client = realm.getClientByClientId(accessToken.getIssuedFor());
@@ -294,7 +306,7 @@ public class AuthorizationTokenService {
 
             if (rootAuthSession == null) {
                 if (userSessionModel.getUser().getServiceAccountClientLink() == null) {
-                    rootAuthSession = keycloakSession.authenticationSessions().createRootAuthenticationSession(userSessionModel.getId(), realm);
+                    rootAuthSession = keycloakSession.authenticationSessions().createRootAuthenticationSession(realm, userSessionModel.getId());
                 } else {
                     // if the user session is associated with a service account
                     rootAuthSession = new AuthenticationSessionManager(keycloakSession).createAuthenticationSession(realm, false);
@@ -316,8 +328,8 @@ public class AuthorizationTokenService {
         TokenManager tokenManager = request.getTokenManager();
         EventBuilder event = request.getEvent();
         AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, keycloakSession, userSessionModel, clientSessionCtx)
-                .generateAccessToken()
-                .generateRefreshToken();
+                .generateAccessToken();
+
         AccessToken rpt = responseBuilder.getAccessToken();
         Authorization authorization = new Authorization();
 
@@ -325,10 +337,16 @@ public class AuthorizationTokenService {
 
         rpt.setAuthorization(authorization);
 
-        RefreshToken refreshToken = responseBuilder.getRefreshToken();
+        if (accessToken.getSessionState() == null) {
+            // Skip generating refresh token for accessToken without sessionState claim. This is "stateless" accessToken not pointing to any real persistent userSession
+            rpt.setSessionState(null);
+        } else {
+            responseBuilder.generateRefreshToken();
+            RefreshToken refreshToken = responseBuilder.getRefreshToken();
 
-        refreshToken.issuedFor(client.getClientId());
-        refreshToken.setAuthorization(authorization);
+            refreshToken.issuedFor(client.getClientId());
+            refreshToken.setAuthorization(authorization);
+        }
 
         if (!rpt.hasAudience(targetClient.getClientId())) {
             rpt.audience(targetClient.getClientId());
@@ -700,13 +718,15 @@ public class AuthorizationTokenService {
         private final EventBuilder event;
         private final HttpRequest httpRequest;
         private final Cors cors;
+        private final ClientConnection clientConnection;
 
-        public KeycloakAuthorizationRequest(AuthorizationProvider authorization, TokenManager tokenManager, EventBuilder event, HttpRequest request, Cors cors) {
+        public KeycloakAuthorizationRequest(AuthorizationProvider authorization, TokenManager tokenManager, EventBuilder event, HttpRequest request, Cors cors, ClientConnection clientConnection) {
             this.authorization = authorization;
             this.tokenManager = tokenManager;
             this.event = event;
             httpRequest = request;
             this.cors = cors;
+            this.clientConnection = clientConnection;
         }
 
         TokenManager getTokenManager() {
@@ -735,6 +755,10 @@ public class AuthorizationTokenService {
 
         RealmModel getRealm() {
             return getKeycloakSession().getContext().getRealm();
+        }
+
+        ClientConnection getClientConnection() {
+            return clientConnection;
         }
     }
 }

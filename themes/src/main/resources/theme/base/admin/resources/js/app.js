@@ -7,6 +7,8 @@ var locale = 'en';
 var module = angular.module('keycloak', [ 'keycloak.services', 'keycloak.loaders', 'ui.bootstrap', 'ui.select2', 'angularFileUpload', 'angularTreeview', 'pascalprecht.translate', 'ngCookies', 'ngSanitize', 'ui.ace']);
 var resourceRequests = 0;
 var loadingTimer = -1;
+var translateProvider = null;
+var currentRealm = null;
 
 angular.element(document).ready(function () {
     var keycloakAuth = new Keycloak(consoleBaseUrl + 'config');
@@ -96,7 +98,7 @@ angular.element(document).ready(function () {
         return auth;
     });
 
-    keycloakAuth.init({ onLoad: 'login-required', pkceMethod: 'S256' }).success(function () {
+    keycloakAuth.init({ onLoad: 'login-required', pkceMethod: 'S256' }).then(function () {
         auth.authz = keycloakAuth;
 
         whoAmI(function(data) {
@@ -117,7 +119,7 @@ angular.element(document).ready(function () {
         });
 
         loadSelect2Localization();
-    }).error(function () {
+    }).catch(function () {
         window.location.reload();
     });
 });
@@ -128,12 +130,12 @@ module.factory('authInterceptor', function($q, Auth) {
             if (!config.url.match(/.html$/)) {
                 var deferred = $q.defer();
                 if (Auth.authz.token) {
-                    Auth.authz.updateToken(5).success(function () {
+                    Auth.authz.updateToken(5).then(function () {
                         config.headers = config.headers || {};
                         config.headers.Authorization = 'Bearer ' + Auth.authz.token;
 
                         deferred.resolve(config);
-                    }).error(function () {
+                    }).catch(function () {
                         location.reload();
                     });
                 }
@@ -146,6 +148,7 @@ module.factory('authInterceptor', function($q, Auth) {
 });
 
 module.config(['$translateProvider', function($translateProvider) {
+    translateProvider = $translateProvider;
     $translateProvider.useSanitizeValueStrategy('sanitizeParameters');
     $translateProvider.preferredLanguage(locale);
     $translateProvider.translations(locale, resourceBundle);
@@ -177,6 +180,33 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'RealmDetailCtrl'
+        })
+        .when('/realms/:realm/localization', {
+            templateUrl : resourceUrl + '/partials/realm-localization.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                },
+                realmSpecificLocales : function(RealmSpecificLocalesLoader) {
+                    return RealmSpecificLocalesLoader();
+                }
+            },
+            controller : 'RealmLocalizationCtrl'
+        })
+        .when('/realms/:realm/localization/upload', {
+            templateUrl : resourceUrl + '/partials/realm-localization-upload.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                serverInfo : function(ServerInfoLoader) {
+                    return ServerInfoLoader();
+                }
+            },
+            controller : 'RealmLocalizationUploadCtrl'
         })
         .when('/realms/:realm/login-settings', {
             templateUrl : resourceUrl + '/partials/realm-login-settings.html',
@@ -2084,6 +2114,42 @@ module.config([ '$routeProvider', function($routeProvider) {
                 }
             },
             controller : 'AuthenticationConfigCreateCtrl'
+        })
+        .when('/create/localization/:realm/:locale', {
+            templateUrl : resourceUrl + '/partials/realm-localization-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                locale: function($route) {
+                    return $route.current.params.locale;
+                },
+                key: function() {
+                    return null
+                },
+                localizationText : function() {
+                    return null;
+                }
+            },
+            controller : 'RealmLocalizationDetailCtrl'
+        })
+        .when('/realms/:realm/localization/:locale/:key', {
+            templateUrl : resourceUrl + '/partials/realm-localization-detail.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                },
+                locale: function($route) {
+                    return $route.current.params.locale;
+                },
+                key: function($route) {
+                    return $route.current.params.key;
+                },
+                localizationText : function(RealmSpecificlocalizationTextLoader) {
+                    return RealmSpecificlocalizationTextLoader();
+                }
+            },
+            controller : 'RealmLocalizationDetailCtrl'
         })
         .when('/server-info', {
             templateUrl : resourceUrl + '/partials/server-info.html',

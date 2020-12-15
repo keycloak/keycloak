@@ -42,13 +42,13 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
@@ -58,7 +58,6 @@ import java.net.URI;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -101,7 +100,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void testDiscovery() {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
         try {
             OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
 
@@ -162,6 +161,9 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.2
             Assert.assertTrue(oidcConfig.getTlsClientCertificateBoundAccessTokens());
 
+            Assert.assertTrue(oidcConfig.getBackchannelLogoutSupported());
+            Assert.assertTrue(oidcConfig.getBackchannelLogoutSessionSupported());
+
             // Token Revocation
             assertEquals(oidcConfig.getRevocationEndpoint(), oauth.getTokenRevocationUrl());
             Assert.assertNames(oidcConfig.getRevocationEndpointAuthMethodsSupported(), "client_secret_basic",
@@ -176,14 +178,16 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void testHttpDiscovery() {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
         try {
             OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryRepresentation(client, "http://localhost:8180/auth");
 
+            Assert.assertNotNull(oidcConfig.getJwksUri());
+
             // Token Revocation
-            assertNull(oidcConfig.getRevocationEndpoint());
-            Assert.assertNull(oidcConfig.getRevocationEndpointAuthMethodsSupported());
-            Assert.assertNull(oidcConfig.getRevocationEndpointAuthSigningAlgValuesSupported());
+            Assert.assertNotNull(oidcConfig.getRevocationEndpoint());
+            Assert.assertNotNull(oidcConfig.getRevocationEndpointAuthMethodsSupported());
+            Assert.assertNotNull(oidcConfig.getRevocationEndpointAuthSigningAlgValuesSupported());
         } finally {
             client.close();
         }
@@ -196,7 +200,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
         assertEquals(200, response.getStatusCode());
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
         try {
             OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
 
@@ -209,7 +213,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void corsTest() {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
         UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
         URI oidcDiscoveryUri = RealmsResource.wellKnownProviderUrl(builder).build("test", OIDCWellKnownProviderFactory.PROVIDER_ID);
         WebTarget oidcDiscoveryTarget = client.target(oidcDiscoveryUri);
@@ -235,7 +239,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
 
     @Test
     public void testIntrospectionEndpointClaim() throws IOException {
-        Client client = ClientBuilder.newClient();
+        Client client = AdminClientUtil.createResteasyClient();
         try {
             ObjectNode oidcConfig = JsonSerialization
                 .readValue(getOIDCDiscoveryConfiguration(client, OAuthClient.AUTH_SERVER_ROOT), ObjectNode.class);

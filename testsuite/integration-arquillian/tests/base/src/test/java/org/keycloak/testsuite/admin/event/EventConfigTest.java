@@ -77,7 +77,7 @@ public class EventConfigTest extends AbstractEventTest {
 
         int defaultEventCount = configRep.getEnabledEventTypes().size();
 
-        configRep.setEnabledEventTypes(Arrays.asList("CLIENT_DELETE", "CLEINT_DELETE_ERROR"));
+        configRep.setEnabledEventTypes(Arrays.asList("CLIENT_DELETE", "CLIENT_DELETE_ERROR"));
         saveConfig();
 
         List<String> enabledEventTypes = configRep.getEnabledEventTypes();

@@ -18,6 +18,7 @@
 package org.keycloak.exportimport.singlefile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.jboss.logging.Logger;
 import org.keycloak.exportimport.ExportProvider;
 import org.keycloak.exportimport.util.ExportImportSessionTask;
@@ -27,13 +28,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.services.util.ObjectMapperResolver;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -59,15 +59,11 @@ public class SingleFileExportProvider implements ExportProvider {
 
             @Override
             protected void runExportImportTask(KeycloakSession session) throws IOException {
-                List<RealmModel> realms = session.realms().getRealms();
-                List<RealmRepresentation> reps = new ArrayList<>();
-                for (RealmModel realm : realms) {
-                    reps.add(ExportUtils.exportRealm(session, realm, true, true));
-                }
+                Stream<RealmRepresentation> realms = session.realms().getRealmsStream()
+                        .map(realm -> ExportUtils.exportRealm(session, realm, true, true));
 
-                writeToFile(reps);
+                writeToFile(realms);
             }
-
         });
 
     }
@@ -92,7 +88,10 @@ public class SingleFileExportProvider implements ExportProvider {
     }
 
     private ObjectMapper getObjectMapper() {
-        return JsonSerialization.prettyMapper;
+        ObjectMapper streamSerializer = ObjectMapperResolver.createStreamSerializer();
+        streamSerializer.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        streamSerializer.enable(SerializationFeature.INDENT_OUTPUT);
+        return streamSerializer;
     }
 
     private void writeToFile(Object reps) throws IOException {

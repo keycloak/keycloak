@@ -30,18 +30,17 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.storage.ReadOnlyException;
 
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class InMemoryUserAdapter extends UserModelDefaultMethods {
+public class InMemoryUserAdapter extends UserModelDefaultMethods.Streams {
     private Long createdTimestamp = Time.currentTimeMillis();
     private boolean emailVerified;
     private boolean enabled;
@@ -79,10 +78,7 @@ public class InMemoryUserAdapter extends UserModelDefaultMethods {
     public void addDefaults() {
         DefaultRoles.addDefaultRoles(realm, this);
 
-        for (GroupModel g : realm.getDefaultGroups()) {
-            joinGroup(g);
-        }
-
+        realm.getDefaultGroupsStream().forEach(this::joinGroup);
     }
 
     public void setReadonly(boolean flag) {
@@ -155,12 +151,9 @@ public class InMemoryUserAdapter extends UserModelDefaultMethods {
     }
 
     @Override
-    public List<String> getAttribute(String name) {
-        List<String> value = attributes.get(name);
-        if (value == null) {
-            return new LinkedList<>();
-        }
-        return value;
+    public Stream<String> getAttributeStream(String name) {
+        List<String> value = this.attributes.get(name);
+        return value != null ? value.stream() : Stream.empty();
     }
 
     @Override
@@ -169,8 +162,8 @@ public class InMemoryUserAdapter extends UserModelDefaultMethods {
     }
 
     @Override
-    public Set<String> getRequiredActions() {
-        return requiredActions;
+    public Stream<String> getRequiredActionsStream() {
+        return this.requiredActions.stream();
     }
 
     @Override
@@ -213,13 +206,8 @@ public class InMemoryUserAdapter extends UserModelDefaultMethods {
     }
 
     @Override
-    public Set<GroupModel> getGroups() {
-        if (groupIds.isEmpty()) return new HashSet<>();
-        Set<GroupModel> groups = new HashSet<>();
-        for (String id : groupIds) {
-            groups.add(realm.getGroupById(id));
-        }
-        return groups;
+    public Stream<GroupModel> getGroupsStream() {
+        return groupIds.stream().map(realm::getGroupById);
     }
 
     @Override
@@ -240,8 +228,7 @@ public class InMemoryUserAdapter extends UserModelDefaultMethods {
     public boolean isMemberOf(GroupModel group) {
         if (groupIds == null) return false;
         if (groupIds.contains(group.getId())) return true;
-        Set<GroupModel> groups = getGroups();
-        return RoleUtils.isMember(groups, group);
+        return RoleUtils.isMember(getGroupsStream(), group);
     }
 
     @Override
@@ -269,37 +256,19 @@ public class InMemoryUserAdapter extends UserModelDefaultMethods {
     }
 
     @Override
-    public Set<RoleModel> getRealmRoleMappings() {
-        Set<RoleModel> allRoles = getRoleMappings();
-
-        // Filter to retrieve just realm roles
-        Set<RoleModel> realmRoles = new HashSet<>();
-        for (RoleModel role : allRoles) {
-            if (role.getContainer() instanceof RealmModel) {
-                realmRoles.add(role);
-            }
-        }
-        return realmRoles;
+    public Stream<RoleModel> getRealmRoleMappingsStream() {
+        return getRoleMappingsStream().filter(RoleUtils::isRealmRole);
     }
 
     @Override
-    public Set<RoleModel> getClientRoleMappings(ClientModel app) {
-        Set<RoleModel> result = new HashSet<>();
-        Set<RoleModel> roles = getRoleMappings();
-
-        for (RoleModel role : roles) {
-            if (app.equals(role.getContainer())) {
-                result.add(role);
-            }
-        }
-        return result;
+    public Stream<RoleModel> getClientRoleMappingsStream(ClientModel app) {
+        return getRoleMappingsStream().filter(r -> RoleUtils.isClientRole(r, app));
     }
 
     @Override
     public boolean hasRole(RoleModel role) {
-        Set<RoleModel> roles = getRoleMappings();
-        return RoleUtils.hasRole(roles, role)
-                || RoleUtils.hasRoleFromGroup(getGroups(), role, true);
+        return RoleUtils.hasRole(getRoleMappingsStream(), role)
+                || RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
     }
 
     @Override
@@ -309,13 +278,8 @@ public class InMemoryUserAdapter extends UserModelDefaultMethods {
     }
 
     @Override
-    public Set<RoleModel> getRoleMappings() {
-        if (roleIds.isEmpty()) return new HashSet<>();
-        Set<RoleModel> roles = new HashSet<>();
-        for (String id : roleIds) {
-            roles.add(realm.getRoleById(id));
-        }
-        return roles;
+    public Stream<RoleModel> getRoleMappingsStream() {
+        return roleIds.stream().map(realm::getRoleById);
     }
 
     @Override

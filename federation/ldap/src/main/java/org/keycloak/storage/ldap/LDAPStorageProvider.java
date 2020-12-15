@@ -18,13 +18,14 @@
 package org.keycloak.storage.ldap;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import javax.naming.AuthenticationException;
 
@@ -37,7 +38,18 @@ import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
-import org.keycloak.models.*;
+import org.keycloak.models.CredentialValidationOutput;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserManager;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.DefaultRoles;
@@ -58,10 +70,11 @@ import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
+import org.keycloak.storage.ldap.mappers.LDAPMappersComparator;
+import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapperManager;
 import org.keycloak.storage.ldap.mappers.PasswordUpdateCallback;
-import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
@@ -74,11 +87,11 @@ import org.keycloak.storage.user.UserRegistrationProvider;
  */
 public class LDAPStorageProvider implements UserStorageProvider,
         CredentialInputValidator,
-        CredentialInputUpdater,
+        CredentialInputUpdater.Streams,
         CredentialAuthentication,
         UserLookupProvider,
         UserRegistrationProvider,
-        UserQueryProvider,
+        UserQueryProvider.Streams,
         ImportedUserValidation {
     private static final Logger logger = Logger.getLogger(LDAPStorageProvider.class);
 
@@ -91,6 +104,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
     protected PasswordUpdateCallback updater;
     protected LDAPStorageMapperManager mapperManager;
     protected LDAPStorageUserManager userManager;
+    private LDAPMappersComparator ldapMappersComparator;
 
     // these exist to make sure that we only hit ldap once per transaction
     //protected Map<String, UserModel> noImportSessionCache = new HashMap<>();
@@ -112,6 +126,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
         if (kerberosConfig.isAllowKerberosAuthentication()) {
             supportedCredentialTypes.add(UserCredentialModel.KERBEROS);
         }
+
+        ldapMappersComparator = new LDAPMappersComparator(getLdapIdentityStore().getConfig());
     }
 
     public void setUpdater(PasswordUpdateCallback updater) {
@@ -175,7 +191,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
         switch (editMode) {
             case READ_ONLY:
+                if (model.isImportEnabled()) {
+                    proxied = new ReadonlyLDAPUserModelDelegate(local);
+                } else {
                     proxied = new ReadOnlyUserModelDelegate(local);
+                }
                 break;
             case WRITABLE:
             case UNSYNCED:
@@ -188,12 +208,14 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 break;
         }
 
-        List<ComponentModel> mappers = realm.getComponents(model.getId(), LDAPStorageMapper.class.getName());
-        List<ComponentModel> sortedMappers = mapperManager.sortMappersAsc(mappers);
-        for (ComponentModel mapperModel : sortedMappers) {
-            LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
-            proxied = ldapMapper.proxy(ldapObject, proxied, realm);
-        }
+        AtomicReference<UserModel> proxy = new AtomicReference<>(proxied);
+        realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
+                .sorted(ldapMappersComparator.sortAsc())
+                .forEachOrdered(mapperModel -> {
+                    LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
+                    proxy.set(ldapMapper.proxy(ldapObject, proxy.get(), realm));
+                });
+        proxied = proxy.get();
 
         if (!model.isImportEnabled()) {
             proxied = new UpdateOnlyChangeUserModelDelegate(proxied);
@@ -224,7 +246,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     @Override
-    public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
+    public Stream<UserModel> searchForUserByUserAttributeStream(String attrName, String attrValue, RealmModel realm) {
     	 try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
              LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
 
@@ -233,24 +255,15 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
              List<LDAPObject> ldapObjects = ldapQuery.getResultList();
 
-             if (ldapObjects == null || ldapObjects.isEmpty()) {
-                 return Collections.emptyList();
-             }
-
-             List<UserModel> searchResults = new LinkedList<UserModel>();
-
-             for (LDAPObject ldapUser : ldapObjects) {
+             return ldapObjects.stream().map(ldapUser -> {
                  String ldapUsername = LDAPUtils.getUsername(ldapUser, this.ldapIdentityStore.getConfig());
                  UserModel localUser = session.userLocalStorage().getUserByUsername(ldapUsername, realm);
                  if (localUser == null) {
-                     UserModel imported = importUserFromLDAP(session, realm, ldapUser);
-                     searchResults.add(imported);
+                     return importUserFromLDAP(session, realm, ldapUser);
                  } else {
-                     searchResults.add(proxy(realm, localUser, ldapUser, false));
+                     return proxy(realm, localUser, ldapUser, false);
                  }
-             }
-
-             return searchResults;
+             });
          }
     }
 
@@ -280,14 +293,13 @@ public class LDAPStorageProvider implements UserStorageProvider,
         UserModel proxy = proxy(realm, user, ldapUser, true);
         DefaultRoles.addDefaultRoles(realm, proxy);
 
-        for (GroupModel g : realm.getDefaultGroups()) {
-            proxy.joinGroup(g);
-        }
-        for (RequiredActionProviderModel r : realm.getRequiredActionProviders()) {
-            if (r.isEnabled() && r.isDefaultAction()) {
-                proxy.addRequiredAction(r.getAlias());
-            }
-        }
+        realm.getDefaultGroupsStream().forEach(proxy::joinGroup);
+
+        realm.getRequiredActionProvidersStream()
+                .filter(RequiredActionProviderModel::isEnabled)
+                .filter(RequiredActionProviderModel::isDefaultAction)
+                .map(RequiredActionProviderModel::getAlias)
+                .forEachOrdered(proxy::addRequiredAction);
 
         return proxy;
     }
@@ -326,34 +338,34 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm) {
-        return Collections.EMPTY_LIST;
+    public Stream<UserModel> getUsersStream(RealmModel realm) {
+        return Stream.empty();
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
-        return Collections.EMPTY_LIST;
+    public Stream<UserModel> getUsersStream(RealmModel realm, int firstResult, int maxResults) {
+        return Stream.empty();
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return searchForUser(search, realm, 0, Integer.MAX_VALUE - 1);
+    public Stream<UserModel> searchForUserStream(String search, RealmModel realm) {
+        return searchForUserStream(search, realm, 0, Integer.MAX_VALUE - 1);
     }
 
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> searchForUserStream(String search, RealmModel realm, Integer firstResult, Integer maxResults) {
         Map<String, String> attributes = new HashMap<String, String>();
         attributes.put(UserModel.SEARCH,search);
-        return searchForUser(attributes, realm, firstResult, maxResults);
+        return searchForUserStream(attributes, realm, firstResult, maxResults);
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm) {
-        return searchForUser(params, realm, 0, Integer.MAX_VALUE - 1);
+    public Stream<UserModel> searchForUserStream(Map<String, String> params, RealmModel realm) {
+        return searchForUserStream(params, realm, 0, Integer.MAX_VALUE - 1);
     }
 
     @Override
-    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> searchForUserStream(Map<String, String> params, RealmModel realm, Integer firstResult, Integer maxResults) {
         String search = params.get(UserModel.SEARCH);
         if(search!=null) {
             int spaceIndex = search.lastIndexOf(' ');
@@ -371,62 +383,47 @@ public class LDAPStorageProvider implements UserStorageProvider,
             }
         }
 
-        List<UserModel> searchResults =new LinkedList<UserModel>();
-
-        List<LDAPObject> ldapUsers = searchLDAP(realm, params, maxResults + firstResult);
-        int counter = 0;
-        for (LDAPObject ldapUser : ldapUsers) {
-            if (counter++ < firstResult) continue;
-            String ldapUsername = LDAPUtils.getUsername(ldapUser, this.ldapIdentityStore.getConfig());
-            if (session.userLocalStorage().getUserByUsername(ldapUsername, realm) == null) {
-                UserModel imported = importUserFromLDAP(session, realm, ldapUser);
-                searchResults.add(imported);
-            }
-        }
-
-        return searchResults;
+        Stream<LDAPObject> stream = searchLDAP(realm, params).stream()
+            .filter(ldapObject -> {
+                String ldapUsername = LDAPUtils.getUsername(ldapObject, this.ldapIdentityStore.getConfig());
+                return (session.userLocalStorage().getUserByUsername(ldapUsername, realm) == null);
+            });
+        if (firstResult > 0)
+            stream = stream.skip(firstResult);
+        if (maxResults >= 0)
+            stream = stream.limit(maxResults);
+        return stream.map(ldapObject -> importUserFromLDAP(session, realm, ldapObject));
     }
 
     @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
-        return getGroupMembers(realm, group, 0, Integer.MAX_VALUE - 1);
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group) {
+        return getGroupMembersStream(realm, group, 0, Integer.MAX_VALUE - 1);
     }
 
     @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
-        List<ComponentModel> mappers = realm.getComponents(model.getId(), LDAPStorageMapper.class.getName());
-        List<ComponentModel> sortedMappers = mapperManager.sortMappersAsc(mappers);
-        for (ComponentModel mapperModel : sortedMappers) {
-            LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
-            List<UserModel> users = ldapMapper.getGroupMembers(realm, group, firstResult, maxResults);
-
-            // Sufficient for now
-            if (users.size() > 0) {
-                return users;
-            }
-        }
-        return Collections.emptyList();
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
+        return realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
+            .sorted(ldapMappersComparator.sortAsc())
+            .map(mapperModel ->
+                mapperManager.getMapper(mapperModel).getGroupMembers(realm, group, firstResult, maxResults))
+            .filter(((Predicate<List>) List::isEmpty).negate())
+            .map(List::stream)
+            .findFirst().orElse(Stream.empty());
     }
 
     @Override
-    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role) {
-        return getRoleMembers(realm, role, 0, Integer.MAX_VALUE - 1);
+    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role) {
+        return getRoleMembersStream(realm, role, 0, Integer.MAX_VALUE - 1);
     }
 
     @Override
-    public List<UserModel> getRoleMembers(RealmModel realm, RoleModel role, int firstResult, int maxResults) {
-        List<ComponentModel> mappers = realm.getComponents(model.getId(), LDAPStorageMapper.class.getName());
-        List<ComponentModel> sortedMappers = mapperManager.sortMappersAsc(mappers);
-        for (ComponentModel mapperModel : sortedMappers) {
-            LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
-            List<UserModel> users = ldapMapper.getRoleMembers(realm, role, firstResult, maxResults);
-
-            // Sufficient for now
-            if (users.size() > 0) {
-                return users;
-            }
-        }
-        return Collections.emptyList();
+    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
+        return realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
+                .sorted(ldapMappersComparator.sortAsc())
+                .map(mapperModel -> mapperManager.getMapper(mapperModel).getRoleMembers(realm, role, firstResult, maxResults))
+                .filter(((Predicate<List>) List::isEmpty).negate())
+                .map(List::stream)
+                .findFirst().orElse(Stream.empty());
     }
 
     public List<UserModel> loadUsersByUsernames(List<String> usernames, RealmModel realm) {
@@ -444,7 +441,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         return result;
     }
 
-    protected List<LDAPObject> searchLDAP(RealmModel realm, Map<String, String> attributes, int maxResults) {
+    protected List<LDAPObject> searchLDAP(RealmModel realm, Map<String, String> attributes) {
 
         List<LDAPObject> results = new ArrayList<LDAPObject>();
         if (attributes.containsKey(UserModel.USERNAME)) {
@@ -541,15 +538,16 @@ public class LDAPStorageProvider implements UserStorageProvider,
         }
         imported.setEnabled(true);
 
-        List<ComponentModel> mappers = realm.getComponents(model.getId(), LDAPStorageMapper.class.getName());
-        List<ComponentModel> sortedMappers = mapperManager.sortMappersDesc(mappers);
-        for (ComponentModel mapperModel : sortedMappers) {
-            if (logger.isTraceEnabled()) {
-                logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
-            }
-            LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
-            ldapMapper.onImportUserFromLDAP(ldapUser, imported, realm, true);
-        }
+        UserModel finalImported = imported;
+        realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
+                .sorted(ldapMappersComparator.sortDesc())
+                .forEachOrdered(mapperModel -> {
+                    if (logger.isTraceEnabled()) {
+                        logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
+                    }
+                    LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
+                    ldapMapper.onImportUserFromLDAP(ldapUser, finalImported, realm, true);
+                });
 
         String userDN = ldapUser.getDn().toString();
         if (model.isImportEnabled()) imported.setFederationLink(model.getId());
@@ -628,17 +626,17 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 ldapIdentityStore.validatePassword(ldapUser, password);
                 return true;
             } catch (AuthenticationException ae) {
-                boolean processed = false;
-                List<ComponentModel> mappers = realm.getComponents(model.getId(), LDAPStorageMapper.class.getName());
-                List<ComponentModel> sortedMappers = mapperManager.sortMappersDesc(mappers);
-                for (ComponentModel mapperModel : sortedMappers) {
-                    if (logger.isTraceEnabled()) {
-                        logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
-                    }
-                    LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
-                    processed = processed || ldapMapper.onAuthenticationFailure(ldapUser, user, ae, realm);
-                }
-                return processed;
+                AtomicReference<Boolean> processed = new AtomicReference<>(false);
+                realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
+                        .sorted(ldapMappersComparator.sortDesc())
+                        .forEachOrdered(mapperModel -> {
+                            if (logger.isTraceEnabled()) {
+                                logger.tracef("Using mapper %s during import user from LDAP", mapperModel);
+                            }
+                            LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
+                            processed.set(processed.get() || ldapMapper.onAuthenticationFailure(ldapUser, user, ae, realm));
+                        });
+                return processed.get();
             }
         }
     }
@@ -688,8 +686,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     @Override
-    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
-        return Collections.EMPTY_SET;
+    public Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user) {
+        return Stream.empty();
     }
 
     public Set<String> getSupportedCredentialTypes() {

@@ -83,7 +83,7 @@ function getAccessObject(Auth, Current) {
 }
 
 
-module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location, Notifications, ServerInfo) {
+module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location, Notifications, ServerInfo, RealmSpecificLocalizationTexts) {
     $scope.authUrl = authUrl;
     $scope.resourceUrl = resourceUrl;
     $scope.auth = Auth;
@@ -97,6 +97,18 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
         $scope.fragment = $location.path();
         $scope.path = $location.path().substring(1).split("/");
     });
+
+    $scope.$watch(function() {
+        return Current.realm;
+    }, function() {
+        if(Current.realm !== null && currentRealm !== Current.realm.id) {
+            currentRealm = Current.realm.id;
+            translateProvider.translations(locale, resourceBundle);
+            RealmSpecificLocalizationTexts.get({id: currentRealm, locale: locale}, function (localizationTexts) {
+                translateProvider.translations(locale, localizationTexts.toJSON());
+            })
+        }
+    })
 });
 
 module.controller('HomeCtrl', function(Realm, Auth, Current, $location) {
@@ -499,6 +511,131 @@ module.controller('RealmThemeCtrl', function($scope, Current, Realm, realm, serv
     $scope.$watch('realm.internationalizationEnabled', updateSupported);
 });
 
+module.controller('RealmLocalizationCtrl', function($scope, Current, $location, Realm, realm, serverInfo, Notifications, RealmSpecificLocales, realmSpecificLocales, RealmSpecificLocalizationTexts, RealmSpecificLocalizationText, Dialog, $translate){
+    $scope.realm = realm;
+    $scope.realmSpecificLocales = realmSpecificLocales;
+    $scope.newLocale = null;
+    $scope.selectedRealmSpecificLocales = null;
+    $scope.localizationTexts = null;
+
+    $scope.createLocale = function() {
+        if(!$scope.newLocale) {
+            Notifications.error($translate.instant('missing-locale'));
+            return;
+        }
+        $scope.realmSpecificLocales.push($scope.newLocale)
+        $scope.selectedRealmSpecificLocales = $scope.newLocale;
+        $scope.newLocale = null;
+        $location.url('/create/localization/' + realm.realm + '/' + $scope.selectedRealmSpecificLocales);
+    }
+
+    $scope.$watch(function() {
+        return $scope.selectedRealmSpecificLocales;
+    }, function() {
+        if($scope.selectedRealmSpecificLocales != null) {
+            $scope.updateRealmSpecificLocalizationTexts();
+        }
+    })
+
+    $scope.updateRealmSpecificLocales = function() {
+        RealmSpecificLocales.get({id: realm.realm}, function (updated) {
+            $scope.realmSpecificLocales = updated;
+        })
+    }
+
+    $scope.updateRealmSpecificLocalizationTexts = function() {
+        RealmSpecificLocalizationTexts.get({id: realm.realm, locale: $scope.selectedRealmSpecificLocales }, function (updated) {
+            $scope.localizationTexts = updated;
+        })
+    }
+
+    $scope.removeLocalizationText = function(key) {
+        Dialog.confirmDelete(key, 'localization text', function() {
+            RealmSpecificLocalizationText.remove({
+                realm: realm.realm,
+                locale: $scope.selectedRealmSpecificLocales,
+                key: key
+            }, function () {
+                $scope.updateRealmSpecificLocalizationTexts();
+                Notifications.success($translate.instant('localization-text.remove.success'));
+            });
+        });
+    }
+});
+
+module.controller('RealmLocalizationUploadCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, $upload, $translate){
+    $scope.realm = realm;
+    $scope.locale = null;
+    $scope.files = [];
+
+    $scope.onFileSelect = function($files) {
+        $scope.files = $files;
+    };
+
+    $scope.reset = function() {
+        $scope.locale = null;
+        $scope.files = null;
+    };
+
+    $scope.save = function() {
+
+        if(!$scope.files || $scope.files.length === 0) {
+            Notifications.error($translate.instant('missing-file'));
+            return;
+        }
+        //$files: an array of files selected, each file has name, size, and type.
+        for (var i = 0; i < $scope.files.length; i++) {
+            var $file = $scope.files[i];
+            $scope.upload = $upload.upload({
+                url: authUrl + '/admin/realms/' + realm.realm + '/localization/' + $scope.locale,
+                file: $file
+            }).then(function(response) {
+                $scope.reset();
+                Notifications.success($translate.instant('localization-file.upload.success'));
+            }).catch(function() {
+                Notifications.error($translate.instant('localization-file.upload.error'));
+            });
+        }
+    };
+
+});
+
+module.controller('RealmLocalizationDetailCtrl', function($scope, Current, $location, Realm, realm, Notifications, locale, key, RealmSpecificLocalizationText, localizationText, $translate){
+    $scope.realm = realm;
+    $scope.locale = locale;
+    $scope.key = key;
+    $scope.value = ((localizationText)? localizationText.content : null);
+
+    $scope.create = !key;
+
+    $scope.save = function() {
+        if ($scope.create) {
+            RealmSpecificLocalizationText.save({
+                realm: realm.realm,
+                locale: $scope.locale,
+                key: $scope.key
+            }, $scope.value, function (data, headers) {
+                $location.url("/realms/" + realm.realm + "/localization");
+                Notifications.success($translate.instant('localization-text.create.success'));
+            });
+        } else {
+            RealmSpecificLocalizationText.save({
+                realm: realm.realm,
+                locale: $scope.locale,
+                key: $scope.key
+            }, $scope.value, function (data, headers) {
+                $location.url("/realms/" + realm.realm + "/localization");
+                Notifications.success($translate.instant('localization-text.update.success'));
+            });
+        }
+    };
+
+    $scope.cancel = function () {
+        $location.url("/realms/" + realm.realm + "/localization");
+    };
+
+});
+
 module.controller('RealmCacheCtrl', function($scope, realm, RealmClearUserCache, RealmClearRealmCache, RealmClearKeysCache, Notifications) {
     $scope.realm = angular.copy(realm);
 
@@ -840,7 +977,9 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         $scope.signatureAlgorithms = [
             "RSA_SHA1",
             "RSA_SHA256",
+            "RSA_SHA256_MGF1",
             "RSA_SHA512",
+            "RSA_SHA512_MGF1",
             "DSA_SHA1"
         ];
         $scope.xmlKeyNameTranformers = [
@@ -873,6 +1012,7 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
             $scope.identityProvider.config.signatureAlgorithm = $scope.signatureAlgorithms[1];
             $scope.identityProvider.config.xmlSigKeyInfoKeyNameTransformer = $scope.xmlKeyNameTranformers[1];
         }
+        $scope.identityProvider.config.entityId = $scope.identityProvider.config.entityId || (authUrl + '/realms/' + realm.realm);
     }
 
     $scope.hidePassword = true;
@@ -962,9 +1102,14 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
     };
 
     var setConfig = function(data) {
+    	if (data["enabledFromMetadata"] !== undefined ) {
+             $scope.identityProvider.enabled = data["enabledFromMetadata"] == "true";
+             delete data["enabledFromMetadata"];
+        }
         for (var key in data) {
             $scope.identityProvider.config[key] = data[key];
         }
+       
     }
 
     $scope.uploadFile = function() {
@@ -1120,30 +1265,35 @@ module.controller('RealmIdentityProviderCtrl', function($scope, $filter, $upload
         }
     };
 
-});
-
-module.controller('RealmIdentityProviderExportCtrl', function(realm, identityProvider, $scope, $http, IdentityProviderExport) {
-    $scope.realm = realm;
-    $scope.identityProvider = identityProvider;
-    $scope.download = null;
-    $scope.exported = "";
-    $scope.exportedType = "";
-
-    var url = IdentityProviderExport.url({realm: realm.realm, alias: identityProvider.alias}) ;
-    $http.get(url).then(function(response) {
-        $scope.exportedType = response.headers('Content-Type');
-        $scope.exported = response.data;
-    });
-
-    $scope.download = function() {
-        var suffix = "txt";
-        if ($scope.exportedType == 'application/xml') {
-            suffix = 'xml';
-        } else if ($scope.exportedType == 'application/json') {
-            suffix = 'json';
-        }
-        saveAs(new Blob([$scope.exported], { type: $scope.exportedType }), 'keycloak.' + suffix);
+    if (instance && instance.alias) {
+        try { $scope.authnContextClassRefs = JSON.parse($scope.identityProvider.config.authnContextClassRefs || '[]'); } catch (e) { $scope.authnContextClassRefs = []; }
+        try { $scope.authnContextDeclRefs = JSON.parse($scope.identityProvider.config.authnContextDeclRefs || '[]'); } catch (e) { $scope.authnContextDeclRefs = []; }
+    } else {
+        $scope.authnContextClassRefs = [];
+        $scope.authnContextDeclRefs = [];
     }
+
+    $scope.deleteAuthnContextClassRef = function(index) {
+        $scope.authnContextClassRefs.splice(index, 1);
+        $scope.identityProvider.config.authnContextClassRefs = JSON.stringify($scope.authnContextClassRefs);
+    };
+
+    $scope.addAuthnContextClassRef = function() {
+        $scope.authnContextClassRefs.push($scope.newAuthnContextClassRef);
+        $scope.identityProvider.config.authnContextClassRefs = JSON.stringify($scope.authnContextClassRefs);
+        $scope.newAuthnContextClassRef = "";
+    };
+
+    $scope.deleteAuthnContextDeclRef = function(index) {
+        $scope.authnContextDeclRefs.splice(index, 1);
+        $scope.identityProvider.config.authnContextDeclRefs = JSON.stringify($scope.authnContextDeclRefs);
+    };
+
+    $scope.addAuthnContextDeclRef = function() {
+        $scope.authnContextDeclRefs.push($scope.newAuthnContextDeclRef);
+        $scope.identityProvider.config.authnContextDeclRefs = JSON.stringify($scope.authnContextDeclRefs);
+        $scope.newAuthnContextDeclRef = "";
+    };
 });
 
 module.controller('RealmTokenDetailCtrl', function($scope, Realm, realm, $http, $location, $route, Dialog, Notifications, TimeUnit, TimeUnit2, serverInfo) {

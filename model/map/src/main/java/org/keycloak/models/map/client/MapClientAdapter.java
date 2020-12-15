@@ -26,13 +26,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import com.google.common.base.Functions;
 import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -454,17 +448,14 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
             return true;
         }
 
-        Set<RoleModel> roles = getRoles();
-        if (roles.contains(role)) return true;
-
-        return roles.stream().anyMatch(r -> r.hasRole(role));
+        return getRolesStream().anyMatch(r -> (Objects.equals(r, role) || r.hasRole(role)));
     }
 
     /*************** Default roles ****************/
 
     @Override
-    public List<String> getDefaultRoles() {
-        return entity.getDefaultRoles();
+    public Stream<String> getDefaultRolesStream() {
+        return entity.getDefaultRoles().stream();
     }
 
     @Override
@@ -484,8 +475,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
     /*************** Protocol mappers ****************/
 
     @Override
-    public Set<ProtocolMapperModel> getProtocolMappers() {
-        return Collections.unmodifiableSet(new HashSet<>(entity.getProtocolMappers()));
+    public Stream<ProtocolMapperModel> getProtocolMappersStream() {
+        return entity.getProtocolMappers().stream().distinct();
     }
 
     @Override

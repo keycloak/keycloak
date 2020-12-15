@@ -226,9 +226,9 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
         Map<String, String> extraParams = new HashMap<>();
 
-        oauth.addCustomerParameter(OAuth2Constants.SCOPE, "read_write")
-            .addCustomerParameter(OAuth2Constants.STATE, "abcdefg")
-            .addCustomerParameter(OAuth2Constants.SCOPE, "pop push");
+        oauth.addCustomParameter(OAuth2Constants.SCOPE, "read_write")
+            .addCustomParameter(OAuth2Constants.STATE, "abcdefg")
+            .addCustomParameter(OAuth2Constants.SCOPE, "pop push");
 
         oauth.openLoginForm();
 
@@ -242,11 +242,11 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     public void authorizationRequestClientParamsMoreThanOnce() throws IOException {
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
 
-        oauth.addCustomerParameter(OAuth2Constants.SCOPE, "read_write")
-                .addCustomerParameter(OAuth2Constants.CLIENT_ID, "client2client")
-                .addCustomerParameter(OAuth2Constants.REDIRECT_URI, "https://www.example.com")
-                .addCustomerParameter(OAuth2Constants.STATE, "abcdefg")
-                .addCustomerParameter(OAuth2Constants.SCOPE, "pop push");
+        oauth.addCustomParameter(OAuth2Constants.SCOPE, "read_write")
+                .addCustomParameter(OAuth2Constants.CLIENT_ID, "client2client")
+                .addCustomParameter(OAuth2Constants.REDIRECT_URI, "https://www.example.com")
+                .addCustomParameter(OAuth2Constants.STATE, "abcdefg")
+                .addCustomParameter(OAuth2Constants.SCOPE, "pop push");
 
         oauth.openLoginForm();
 

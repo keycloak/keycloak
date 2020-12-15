@@ -23,7 +23,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.events.EventsListenerProviderFactory;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.util.JsonSerialization;
@@ -73,7 +73,7 @@ public abstract class AbstractAdminTest extends AbstractTestRealmKeycloakTest {
 
         List<String> eventListeners = new ArrayList<>();
         eventListeners.add(JBossLoggingEventListenerProviderFactory.ID);
-        eventListeners.add(EventsListenerProviderFactory.PROVIDER_ID);
+        eventListeners.add(TestEventsListenerProviderFactory.PROVIDER_ID);
         adminRealmRep.setEventsListeners(eventListeners);
 
         testRealms.add(adminRealmRep);

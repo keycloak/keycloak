@@ -35,7 +35,6 @@ import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.WebAuthnPolicy;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,6 +42,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -112,14 +113,14 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected List<RequiredCredentialModel> requiredCredentials;
     protected MultivaluedHashMap<String, ComponentModel> componentsByParent = new MultivaluedHashMap<>();
     protected MultivaluedHashMap<String, ComponentModel> componentsByParentAndType = new MultivaluedHashMap<>();
-    protected Map<String, ComponentModel> components = new HashMap<>();
+    protected Map<String, ComponentModel> components;
     protected List<IdentityProviderModel> identityProviders;
 
     protected Map<String, String> browserSecurityHeaders;
     protected Map<String, String> smtpConfig;
     protected Map<String, AuthenticationFlowModel> authenticationFlows = new HashMap<>();
     protected List<AuthenticationFlowModel> authenticationFlowList;
-    protected Map<String, AuthenticatorConfigModel> authenticatorConfigs = new HashMap<>();
+    protected Map<String, AuthenticatorConfigModel> authenticatorConfigs;
     protected Map<String, RequiredActionProviderModel> requiredActionProviders = new HashMap<>();
     protected List<RequiredActionProviderModel> requiredActionProviderList;
     protected Map<String, RequiredActionProviderModel> requiredActionProvidersByAlias = new HashMap<>();
@@ -148,7 +149,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return identityProviderMapperSet;
     }
 
-    protected List<String> defaultGroups = new LinkedList<>();
+    protected List<String> defaultGroups;
     protected List<String> clientScopes = new LinkedList<>();
     protected List<String> defaultDefaultClientScopes = new LinkedList<>();
     protected List<String> optionalDefaultClientScopes = new LinkedList<>();
@@ -161,6 +162,8 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected Map<String, String> attributes;
 
     private Map<String, Integer> userActionTokenLifespans;
+
+    protected Map<String, Map<String,String>> realmLocalizationTexts;
 
     public CachedRealm(Long revision, RealmModel model) {
         super(revision, model.getId());
@@ -223,17 +226,14 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         adminTheme = model.getAdminTheme();
         emailTheme = model.getEmailTheme();
 
-        requiredCredentials = model.getRequiredCredentials();
+        requiredCredentials = model.getRequiredCredentialsStream().collect(Collectors.toList());
         userActionTokenLifespans = Collections.unmodifiableMap(new HashMap<>(model.getUserActionTokenLifespans()));
 
-        this.identityProviders = new ArrayList<>();
-
-        for (IdentityProviderModel identityProviderModel : model.getIdentityProviders()) {
-            this.identityProviders.add(new IdentityProviderModel(identityProviderModel));
-        }
+        this.identityProviders = model.getIdentityProvidersStream().map(IdentityProviderModel::new)
+                .collect(Collectors.toList());
         this.identityProviders = Collections.unmodifiableList(this.identityProviders);
 
-        this.identityProviderMapperSet = model.getIdentityProviderMappers();
+        this.identityProviderMapperSet = model.getIdentityProviderMappersStream().collect(Collectors.toSet());
         for (IdentityProviderMapperModel mapper : identityProviderMapperSet) {
             identityProviderMappers.add(mapper.getIdentityProviderAlias(), mapper);
         }
@@ -245,46 +245,43 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
         eventsEnabled = model.isEventsEnabled();
         eventsExpiration = model.getEventsExpiration();
-        eventsListeners = model.getEventsListeners();
-        enabledEventTypes = model.getEnabledEventTypes();
+        eventsListeners = model.getEventsListenersStream().collect(Collectors.toSet());
+        enabledEventTypes = model.getEnabledEventTypesStream().collect(Collectors.toSet());
 
         adminEventsEnabled = model.isAdminEventsEnabled();
         adminEventsDetailsEnabled = model.isAdminEventsDetailsEnabled();
 
-        defaultRoles = model.getDefaultRoles();
+        defaultRoles = model.getDefaultRolesStream().collect(Collectors.toList());
         ClientModel masterAdminClient = model.getMasterAdminClient();
         this.masterAdminClient = (masterAdminClient != null) ? masterAdminClient.getId() : null;
 
         cacheClientScopes(model);
 
         internationalizationEnabled = model.isInternationalizationEnabled();
-        supportedLocales = model.getSupportedLocales();
+        supportedLocales = model.getSupportedLocalesStream().collect(Collectors.toSet());
         defaultLocale = model.getDefaultLocale();
-        authenticationFlowList = model.getAuthenticationFlows();
+        authenticationFlowList = model.getAuthenticationFlowsStream().collect(Collectors.toList());
         for (AuthenticationFlowModel flow : authenticationFlowList) {
             this.authenticationFlows.put(flow.getId(), flow);
             authenticationExecutions.put(flow.getId(), new LinkedList<>());
-            for (AuthenticationExecutionModel execution : model.getAuthenticationExecutions(flow.getId())) {
+            model.getAuthenticationExecutionsStream(flow.getId()).forEachOrdered(execution -> {
                 authenticationExecutions.add(flow.getId(), execution);
                 executionsById.put(execution.getId(), execution);
                 if (execution.getFlowId() != null) {
                     executionsByFlowId.put(execution.getFlowId(), execution);
                 }
-            }
+            });
         }
 
-        for (AuthenticatorConfigModel authenticator : model.getAuthenticatorConfigs()) {
-            authenticatorConfigs.put(authenticator.getId(), authenticator);
-        }
-        requiredActionProviderList = model.getRequiredActionProviders();
+        authenticatorConfigs = model.getAuthenticatorConfigsStream()
+                .collect(Collectors.toMap(AuthenticatorConfigModel::getId, Function.identity()));
+        requiredActionProviderList = model.getRequiredActionProvidersStream().collect(Collectors.toList());
         for (RequiredActionProviderModel action : requiredActionProviderList) {
             this.requiredActionProviders.put(action.getId(), action);
             requiredActionProvidersByAlias.put(action.getAlias(), action);
         }
 
-        for (GroupModel group : model.getDefaultGroups()) {
-            defaultGroups.add(group.getId());
-        }
+        defaultGroups = model.getDefaultGroupsStream().map(GroupModel::getId).collect(Collectors.toList());
 
         browserFlow = model.getBrowserFlow();
         registrationFlow = model.getRegistrationFlow();
@@ -293,33 +290,28 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         clientAuthenticationFlow = model.getClientAuthenticationFlow();
         dockerAuthenticationFlow = model.getDockerAuthenticationFlow();
 
-        for (ComponentModel component : model.getComponents()) {
-            componentsByParentAndType.add(component.getParentId() + component.getProviderType(), component);
-        }
-        for (ComponentModel component : model.getComponents()) {
-            componentsByParent.add(component.getParentId(), component);
-        }
-        for (ComponentModel component : model.getComponents()) {
-            components.put(component.getId(), component);
-        }
+        model.getComponentsStream().forEach(component ->
+            componentsByParentAndType.add(component.getParentId() + component.getProviderType(), component)
+        );
+        model.getComponentsStream().forEach(component ->
+            componentsByParent.add(component.getParentId(), component)
+        );
+        components = model.getComponentsStream().collect(Collectors.toMap(component -> component.getId(), Function.identity()));
 
         try {
             attributes = model.getAttributes();
         } catch (UnsupportedOperationException ex) {
         }
 
+        realmLocalizationTexts = model.getRealmLocalizationTexts();
     }
 
     protected void cacheClientScopes(RealmModel model) {
-        for (ClientScopeModel clientScope : model.getClientScopes()) {
-            clientScopes.add(clientScope.getId());
-        }
-        for (ClientScopeModel clientScope : model.getDefaultClientScopes(true)) {
-            defaultDefaultClientScopes.add(clientScope.getId());
-        }
-        for (ClientScopeModel clientScope : model.getDefaultClientScopes(false)) {
-            optionalDefaultClientScopes.add(clientScope.getId());
-        }
+        clientScopes = model.getClientScopesStream().map(ClientScopeModel::getId).collect(Collectors.toList());
+        defaultDefaultClientScopes = model.getDefaultClientScopesStream(true).map(ClientScopeModel::getId)
+                .collect(Collectors.toList());
+        optionalDefaultClientScopes = model.getDefaultClientScopesStream(false).map(ClientScopeModel::getId)
+                .collect(Collectors.toList());
     }
 
     public String getMasterAdminClient() {
@@ -728,5 +720,9 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public boolean isAllowUserManagedAccess() {
         return allowUserManagedAccess;
+    }
+
+    public Map<String, Map<String, String>> getRealmLocalizationTexts() {
+        return realmLocalizationTexts;
     }
 }

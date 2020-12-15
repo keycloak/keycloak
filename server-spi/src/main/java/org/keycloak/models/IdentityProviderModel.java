@@ -32,6 +32,8 @@ public class IdentityProviderModel implements Serializable {
     public static final String LOGIN_HINT = "loginHint";
 
     public static final String SYNC_MODE = "syncMode";
+    
+    public static final String HIDE_ON_LOGIN = "hideOnLoginPage";
 
     private String internalId;
 
@@ -226,5 +228,14 @@ public class IdentityProviderModel implements Serializable {
 
     public void setLoginHint(boolean loginHint) {
         getConfig().put(LOGIN_HINT, String.valueOf(loginHint));
+    }
+
+     
+    public boolean isHideOnLogin() {
+        return Boolean.valueOf(getConfig().get(HIDE_ON_LOGIN));
+    }
+
+    public void setHideOnLogin(boolean hideOnLogin) {
+        getConfig().put(HIDE_ON_LOGIN, String.valueOf(hideOnLogin));
     }
 }

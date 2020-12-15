@@ -41,6 +41,7 @@ import org.keycloak.testsuite.util.LDAPTestUtils;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.keycloak.testsuite.util.LDAPTestUtils.getGroupDescriptionLDAPAttrName;
 
@@ -121,11 +122,11 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
         // Fail login with wildcard
         loginPage.open();
         loginPage.login("john*", "Password1");
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         // Fail login with wildcard
         loginPage.login("j*", "Password1");
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         // Success login as username exactly match
         loginPage.login("jamees,key*cložak)ppp", "Password1");
@@ -162,17 +163,19 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
 
             // 2 - Check that group mappings are in LDAP and hence available through federation
 
-            Set<GroupModel> userGroups = specialUser.getGroups();
+            Set<GroupModel> userGroups = specialUser.getGroupsStream().collect(Collectors.toSet());
             Assert.assertEquals(2, userGroups.size());
             Assert.assertTrue(userGroups.contains(specialGroup));
 
             // 3 - Check through userProvider
-            List<UserModel> groupMembers = session.users().getGroupMembers(appRealm, specialGroup, 0, 10);
+            List<UserModel> groupMembers = session.users().getGroupMembersStream(appRealm, specialGroup, 0, 10)
+                    .collect(Collectors.toList());
 
             Assert.assertEquals(1, groupMembers.size());
             Assert.assertEquals("jamees,key*cložak)ppp", groupMembers.get(0).getUsername());
 
-            groupMembers = session.users().getGroupMembers(appRealm, groupWithSlashes, 0, 10);
+            groupMembers = session.users().getGroupMembersStream(appRealm, groupWithSlashes, 0, 10)
+                    .collect(Collectors.toList());
 
             Assert.assertEquals(1, groupMembers.size());
             Assert.assertEquals("jamees,key*cložak)ppp", groupMembers.get(0).getUsername());
@@ -182,8 +185,7 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
             specialUser.leaveGroup(specialGroup);
             specialUser.leaveGroup(groupWithSlashes);
 
-            userGroups = specialUser.getGroups();
-            Assert.assertEquals(0, userGroups.size());
+            Assert.assertEquals(0, specialUser.getGroupsStream().count());
 
         });
     }

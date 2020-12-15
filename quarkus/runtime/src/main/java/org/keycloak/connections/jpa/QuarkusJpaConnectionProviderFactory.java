@@ -41,6 +41,7 @@ import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import io.quarkus.runtime.Quarkus;
 import org.hibernate.internal.SessionFactoryImpl;
 import org.hibernate.internal.SessionImpl;
 import org.jboss.logging.Logger;
@@ -168,7 +169,7 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
             operationalInfo.put("databaseProduct", md.getDatabaseProductName() + " " + md.getDatabaseProductVersion());
             operationalInfo.put("databaseDriver", md.getDriverName() + " " + md.getDriverVersion());
 
-            logger.debugf("Database info: %s", operationalInfo.toString());
+            logger.infof("Database info: %s", operationalInfo.toString());
         } catch (SQLException e) {
             logger.warn("Unable to prepare operational info due database exception: " + e.getMessage());
         }
@@ -254,6 +255,7 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
 
         if (exportImportManager.isRunExport()) {
             exportImportManager.runExport();
+            Quarkus.asyncExit();
         }
     }
 
@@ -395,6 +397,7 @@ public class QuarkusJpaConnectionProviderFactory implements JpaConnectionProvide
 
         if (exportImportManager.isRunImport()) {
             exportImportManager.runImport();
+            Quarkus.asyncExit();
         } else {
             importRealms();
         }

@@ -49,7 +49,6 @@ import org.keycloak.testsuite.federation.ldap.LDAPProvidersIntegrationTest;
 import org.keycloak.testsuite.federation.ldap.LDAPTestAsserts;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
 import org.keycloak.testsuite.util.LDAPTestUtils;
-import org.keycloak.testsuite.util.WaitUtils;
 
 
 /**
@@ -98,19 +97,19 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username4", "John4", "Doel4", "user4@email.org", null, "124");
 
             // search by username
-            UserModel user = session.users().searchForUser("username1", appRealm).get(0);
+            UserModel user = session.users().searchForUserStream("username1", appRealm).findFirst().get();
             LDAPTestAsserts.assertLoaded(user, "username1", "John1", "Doel1", "user1@email.org", "121");
 
             // search by email
-            user = session.users().searchForUser("user2@email.org", appRealm).get(0);
+            user = session.users().searchForUserStream("user2@email.org", appRealm).findFirst().get();
             LDAPTestAsserts.assertLoaded(user, "username2", "John2", "Doel2", "user2@email.org", "122");
 
             // search by lastName
-            user = session.users().searchForUser("Doel3", appRealm).get(0);
+            user = session.users().searchForUserStream("Doel3", appRealm).findFirst().get();
             LDAPTestAsserts.assertLoaded(user, "username3", "John3", "Doel3", "user3@email.org", "123");
 
             // search by firstName + lastName
-            user = session.users().searchForUser("John4 Doel4", appRealm).get(0);
+            user = session.users().searchForUserStream("John4 Doel4", appRealm).findFirst().get();
             LDAPTestAsserts.assertLoaded(user, "username4", "John4", "Doel4", "user4@email.org", "124");
         });
     }
@@ -145,14 +144,14 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "username7", "John7", "Doel7", "user7@email.org", null, "127");
 
             // search by email
-            UserModel user = session.users().searchForUser("user5@email.org", appRealm).get(0);
+            UserModel user = session.users().searchForUserStream("user5@email.org", appRealm).findFirst().get();
             LDAPTestAsserts.assertLoaded(user, "username5", "John5", "Doel5", "user5@email.org", "125");
 
-            user = session.users().searchForUser("John6 Doel6", appRealm).get(0);
+            user = session.users().searchForUserStream("John6 Doel6", appRealm).findFirst().get();
             LDAPTestAsserts.assertLoaded(user, "username6", "John6", "Doel6", "user6@email.org", "126");
 
-            Assert.assertTrue(session.users().searchForUser("user7@email.org", appRealm).isEmpty());
-            Assert.assertTrue(session.users().searchForUser("John7 Doel7", appRealm).isEmpty());
+            Assert.assertEquals(0, session.users().searchForUserStream("user7@email.org", appRealm).count());
+            Assert.assertEquals(0, session.users().searchForUserStream("John7 Doel7", appRealm).count());
 
             // Remove custom filter
             ctx.getLdapModel().getConfig().remove(LDAPConstants.CUSTOM_USER_SEARCH_FILTER);
@@ -202,7 +201,7 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             Assert.assertNull(session.users().getUserByUsername("fullname", appRealm));
 
             // Add the user with some fullName into LDAP directly. Ensure that fullName is saved into "cn" attribute in LDAP (currently mapped to model firstName)
-            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(session, appRealm);
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(appRealm);
             LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
             LDAPTestUtils.addLDAPUser(ldapFedProvider, appRealm, "fullname", "James Dee", "Dee", "fullname@email.org", null, "4578");
 
@@ -275,6 +274,7 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
         UserRepresentation johnRep = john.toRepresentation();
         String firstNameOrig = johnRep.getFirstName();
         String lastNameOrig = johnRep.getLastName();
+        String emailOrig = johnRep.getEmail();
         String postalCodeOrig = johnRep.getAttributes().get("postal_code").get(0);
 
         try {
@@ -327,6 +327,10 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
             johnRep.setLastName(lastNameOrig);
             johnRep.singleAttribute("postal_code", postalCodeOrig);
             john.update(johnRep);
+            Assert.assertEquals(firstNameOrig, johnRep.getFirstName());
+            Assert.assertEquals(lastNameOrig, johnRep.getLastName());
+            Assert.assertEquals(emailOrig, johnRep.getEmail());
+            Assert.assertEquals(postalCodeOrig, johnRep.getAttributes().get("postal_code").get(0));
         }
     }
 

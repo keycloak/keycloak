@@ -855,7 +855,8 @@ public class LoginActionsService {
     @Path("consent")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response processConsent(final MultivaluedMap<String, String> formData) {
+    public Response processConsent() {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
         event.event(EventType.LOGIN);
         String code = formData.getFirst(SESSION_CODE);
         String clientId = session.getContext().getUri().getQueryParameters().getFirst(Constants.CLIENT_ID);

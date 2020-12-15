@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -78,7 +79,8 @@ public class ClientModelTest extends AbstractKeycloakTest {
         assertThat(expected.getDescription(), is(actual.getDescription()));
         assertThat(expected.getBaseUrl(), is(actual.getBaseUrl()));
         assertThat(expected.getManagementUrl(), is(actual.getManagementUrl()));
-        assertThat(expected.getDefaultRoles(), is(actual.getDefaultRoles()));
+        assertThat(expected.getDefaultRolesStream().collect(Collectors.toSet()),
+                is(actual.getDefaultRolesStream().collect(Collectors.toSet())));
 
         assertThat(expected.getRedirectUris().containsAll(actual.getRedirectUris()), is(true));
         assertThat(expected.getWebOrigins().containsAll(actual.getWebOrigins()), is(true));
@@ -151,10 +153,9 @@ public class ClientModelTest extends AbstractKeycloakTest {
 
             assertThat("Realm Model 'original' is NULL !!", realm, notNullValue());
             ClientModel scoped = realm.getClientByClientId("scoped");
-            Set<RoleModel> scopeMappings = scoped.getScopeMappings();
 
             // used to throw an NPE
-            assertThat("Scope Mappings must be 0", scopeMappings.size(), is(0));
+            assertThat("Scope Mappings must be 0", scoped.getScopeMappingsStream().count(), is(0L));
             currentSession.clients().removeClient(realm, scoped.getId());
         });
 
@@ -187,10 +188,9 @@ public class ClientModelTest extends AbstractKeycloakTest {
             ClientModel from = realm.getClientByClientId("from");
             RoleModel role = currentSession.roles().getRoleById(realm, roleId);
             from.removeRole(role);
-            Set<RoleModel> scopeMappings = scoped.getScopeMappings();
 
             // used to throw an NPE
-            assertThat("Scope Mappings is not 0", scopeMappings.size(), is(0));
+            assertThat("Scope Mappings is not 0", scoped.getScopeMappingsStream().count(), is(0L));
             currentSession.clients().removeClient(realm, scoped.getId());
             currentSession.clients().removeClient(realm, from.getId());
 
@@ -224,9 +224,8 @@ public class ClientModelTest extends AbstractKeycloakTest {
             currentSession = sessionRealmRoleRemove3;
             RealmModel realm = currentSession.realms().getRealmByName(realmName);
             ClientModel scoped = realm.getClientByClientId("scoped");
-            Set<RoleModel> scopeMappings = scoped.getScopeMappings();
             // used to throw an NPE
-            assertThat("Scope Mappings is not 0", scopeMappings.size(), is(0));
+            assertThat("Scope Mappings is not 0", scoped.getScopeMappingsStream().count(), is(0L));
             currentSession.clients().removeClient(realm, scoped.getId());
         });
     }

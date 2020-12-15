@@ -39,6 +39,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -57,6 +58,9 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     private final BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions;
     private final BlockingQueue<TestAvailabilityAction> adminTestAvailabilityAction;
     private final TestApplicationResourceProviderFactory.OIDCClientData oidcClientData;
+
+    @Context
+    HttpRequest request;
 
     public TestApplicationResourceProvider(KeycloakSession session, BlockingQueue<LogoutAction> adminLogoutActions,
             BlockingQueue<PushNotBeforeAction> adminPushNotBeforeActions,
@@ -122,7 +126,11 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     @Consumes(javax.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_HTML_UTF_8)
     @Path("/{action}")
-    public String post(@PathParam("action") String action, MultivaluedMap<String, String> formParams) {
+    public Response post(@PathParam("action") String action) {
+        if ("clear-admin-actions".equals(action)) {
+            return clearAdminActions();
+        }
+        MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
         String title = "APP_REQUEST";
         if (action.equals("auth")) {
             title = "AUTH_RESPONSE";
@@ -146,7 +154,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
         sb.append("<a href=\"" + RealmsResource.accountUrl(base).build("test").toString() + "\" id=\"account\">account</a>");
 
         sb.append("</body></html>");
-        return sb.toString();
+        return Response.ok(sb.toString()).build();
     }
 
     @GET

@@ -2,6 +2,7 @@
 
 The module holds the codebase to run Keycloak on top of [Quarkus](https://quarkus.io/):
 
+```
 ├── deployment
 │   ├── Build-time codebase with all the necessary steps to build and configure the server
 │
@@ -10,7 +11,7 @@ The module holds the codebase to run Keycloak on top of [Quarkus](https://quarku
 │
 └── server
     ├── The server itself, only responsible for generating the server artifacts
-    
+``` 
 
 ## Activating the Module
 
@@ -32,8 +33,11 @@ The distribution packages (ZIP and TAR) should be available at [../distribution/
 
 ## Running
 
-    java -jar server/target/lib/quarkus-run.jar
-    
+By default, the HTTP port is disabled and you need to provide the key material to configure HTTPS. If you want to enable
+the HTTP port, run the server in development mode as follows:
+
+    java -jar server/target/lib/quarkus-run.jar --profile=dev
+
 ## Contributing
 
 ### Development Mode

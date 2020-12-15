@@ -30,6 +30,7 @@ import org.ietf.jgss.GSSCredential;
 import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.KerberosSerializationUtils;
 import org.keycloak.events.Details;
@@ -44,6 +45,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 
@@ -52,6 +54,7 @@ import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTest {
 
     @Test
@@ -95,7 +98,7 @@ public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTe
             String context = spnegoResponse.readEntity(String.class);
             spnegoResponse.close();
 
-            org.junit.Assert.assertTrue(context.contains("Log in to test"));
+            org.junit.Assert.assertTrue(context.contains("Sign in to test"));
 
             events.clear();
         } finally {

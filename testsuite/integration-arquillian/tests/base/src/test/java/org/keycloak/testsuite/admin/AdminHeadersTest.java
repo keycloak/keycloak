@@ -1,22 +1,20 @@
 package org.keycloak.testsuite.admin;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.models.BrowserSecurityHeaders;
-import org.keycloak.services.resources.Cors;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class AdminHeadersTest extends AbstractAdminTest {
 
@@ -42,12 +40,17 @@ public class AdminHeadersTest extends AbstractAdminTest {
         Response response = realm.users().create(UserBuilder.create().username("headers-user").build());
         MultivaluedMap<String, Object> h = response.getHeaders();
 
-        assertEquals(BrowserSecurityHeaders.STRICT_TRANSPORT_SECURITY_DEFAULT, h.getFirst(BrowserSecurityHeaders.STRICT_TRANSPORT_SECURITY));
-        assertEquals(BrowserSecurityHeaders.X_FRAME_OPTIONS_DEFAULT, h.getFirst(BrowserSecurityHeaders.X_FRAME_OPTIONS));
-        assertEquals(BrowserSecurityHeaders.X_CONTENT_TYPE_OPTIONS_DEFAULT, h.getFirst(BrowserSecurityHeaders.X_CONTENT_TYPE_OPTIONS));
-        assertEquals(BrowserSecurityHeaders.X_XSS_PROTECTION_DEFAULT, h.getFirst(BrowserSecurityHeaders.X_XSS_PROTECTION));
+        assertDefaultValue(BrowserSecurityHeaders.STRICT_TRANSPORT_SECURITY, h);
+        assertDefaultValue(BrowserSecurityHeaders.X_FRAME_OPTIONS, h);
+        assertDefaultValue(BrowserSecurityHeaders.X_CONTENT_TYPE_OPTIONS, h);
+        assertDefaultValue(BrowserSecurityHeaders.X_XSS_PROTECTION, h);
+        assertDefaultValue(BrowserSecurityHeaders.REFERRER_POLICY, h);
 
         response.close();
+    }
+
+    private void assertDefaultValue(BrowserSecurityHeaders header, MultivaluedMap<String, Object> h) {
+        assertThat(h.getFirst(header.getHeaderName()), is(equalTo(header.getDefaultValue())));
     }
 
     private String getAdminUrl(String resource) {

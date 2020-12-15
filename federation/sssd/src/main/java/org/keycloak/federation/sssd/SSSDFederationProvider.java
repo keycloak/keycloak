@@ -21,7 +21,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
-import org.keycloak.credential.CredentialModel;
 import org.keycloak.federation.sssd.api.Sssd;
 import org.keycloak.federation.sssd.api.Sssd.User;
 import org.keycloak.federation.sssd.impl.PAMAuthenticator;
@@ -32,11 +31,10 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
-import sun.security.util.Password;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * SPI provider implementation to retrieve data from SSSD and authenticate
@@ -47,7 +45,7 @@ import java.util.Set;
  */
 public class SSSDFederationProvider implements UserStorageProvider,
         UserLookupProvider,
-        CredentialInputUpdater,
+        CredentialInputUpdater.Streams,
         CredentialInputValidator,
         ImportedUserValidation {
 
@@ -123,7 +121,7 @@ public class SSSDFederationProvider implements UserStorageProvider,
         for (String s : sssd.getGroups()) {
             GroupModel group = KeycloakModelUtils.findGroupByPath(realm, "/" + s);
             if (group == null) {
-                group = session.realms().createGroup(realm, s);
+                group = session.groups().createGroup(realm, s);
             }
             user.joinGroup(group);
         }
@@ -205,7 +203,7 @@ public class SSSDFederationProvider implements UserStorageProvider,
     }
 
     @Override
-    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
-        return Collections.EMPTY_SET;
+    public Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user) {
+        return Stream.empty();
     }
 }

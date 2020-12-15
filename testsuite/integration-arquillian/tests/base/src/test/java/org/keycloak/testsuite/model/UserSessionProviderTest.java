@@ -397,6 +397,38 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    @Test
+    @ModelTest
+    public  void testTransientUserSession(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName("test");
+        ClientModel client = realm.getClientByClientId("test-app");
+
+        // create an user session, but don't persist it to infinispan
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session1) -> {
+            long sessionsBefore = session1.sessions().getActiveUserSessions(realm, client);
+
+            UserSessionModel userSession = session1.sessions().createUserSession("123", realm, session1.users().getUserByUsername("user1", realm),
+                    "user1", "127.0.0.1", "form", true, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
+            AuthenticatedClientSessionModel clientSession = session1.sessions().createClientSession(realm, client, userSession);
+            assertEquals(userSession, clientSession.getUserSession());
+
+            assertSession(userSession, session.users().getUserByUsername("user1", realm), "127.0.0.1", userSession.getStarted(), userSession.getStarted(), "test-app");
+
+            // Can find session by ID in current transaction
+            UserSessionModel foundSession = session1.sessions().getUserSession(realm, "123");
+            Assert.assertEquals(userSession, foundSession);
+
+            // Count of sessions should be still the same
+            Assert.assertEquals(sessionsBefore, session1.sessions().getActiveUserSessions(realm, client));
+        });
+
+        // create an user session whose last refresh exceeds the max session idle timeout.
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session1) -> {
+            UserSessionModel userSession = session1.sessions().getUserSession(realm, "123");
+            Assert.assertNull(userSession);
+        });
+    }
+
     /**
      * Tests the removal of expired sessions with remember-me enabled. It differs from the non remember me scenario by
      * taking into consideration the specific remember-me timeout values.

@@ -28,8 +28,10 @@ import org.apache.http.util.EntityUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ContainerAssume;
@@ -59,6 +61,7 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLo
  * @author hmlnarik
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class CookieTest extends AbstractKeycloakTest {
 
     @Page
@@ -118,7 +121,7 @@ public class CookieTest extends AbstractKeycloakTest {
                 assertThat(pageContent, not(containsString("Last name")));
 
                 // ... but were redirected to login page
-                assertThat(pageContent, containsString("Log In"));
+                assertThat(pageContent, containsString("Sign In"));
                 assertThat(pageContent, containsString("Forgot Password?"));
             }
         }
@@ -156,7 +159,7 @@ public class CookieTest extends AbstractKeycloakTest {
                 assertThat(pageContent, not(containsString("Last name")));
 
                 // ... but were redirected to login page
-                assertThat(pageContent, containsString("Log In"));
+                assertThat(pageContent, containsString("Sign In"));
                 assertThat(pageContent, containsString("Forgot Password?"));
             }
         }

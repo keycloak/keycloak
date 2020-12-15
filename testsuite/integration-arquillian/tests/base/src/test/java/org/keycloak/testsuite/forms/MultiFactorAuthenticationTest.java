@@ -134,7 +134,7 @@ public class MultiFactorAuthenticationTest extends AbstractTestRealmKeycloakTest
             Assert.assertEquals(Arrays.asList(SelectAuthenticatorPage.PASSWORD, SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION), selectAuthenticatorPage.getAvailableLoginMethods());
 
             // Assert help texts
-            Assert.assertEquals("Log in by entering your password.", selectAuthenticatorPage.getLoginMethodHelpText(SelectAuthenticatorPage.PASSWORD));
+            Assert.assertEquals("Sign in by entering your password.", selectAuthenticatorPage.getLoginMethodHelpText(SelectAuthenticatorPage.PASSWORD));
             Assert.assertEquals("Enter a verification code from authenticator application.", selectAuthenticatorPage.getLoginMethodHelpText(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION));
 
             // Select OTP and see that just single OTP is available for this user

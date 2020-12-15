@@ -192,8 +192,12 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx = getClientSessionTransaction(false);
         AuthenticatedClientSessionAdapter adapter = new AuthenticatedClientSessionAdapter(session, this, entity, client, userSession, userSessionUpdateTx, clientSessionUpdateTx, false);
 
+        // For now, the clientSession is considered transient in case that userSession was transient
+        UserSessionModel.SessionPersistenceState persistenceState = (userSession instanceof UserSessionAdapter && ((UserSessionAdapter) userSession).getPersistenceState() != null) ?
+                ((UserSessionAdapter) userSession).getPersistenceState() : UserSessionModel.SessionPersistenceState.PERSISTENT;
+
         SessionUpdateTask<AuthenticatedClientSessionEntity> createClientSessionTask = Tasks.addIfAbsentSync();
-        clientSessionUpdateTx.addTask(clientSessionId, createClientSessionTask, entity);
+        clientSessionUpdateTx.addTask(clientSessionId, createClientSessionTask, entity, persistenceState);
 
         SessionUpdateTask registerClientSessionTask = new RegisterClientSessionTask(client.getId(), clientSessionId);
         userSessionUpdateTx.addTask(userSession.getId(), registerClientSessionTask);
@@ -204,19 +208,21 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     @Override
     public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
         final String userSessionId = keyGenerator.generateKeyString(session, sessionCache);
-        return createUserSession(userSessionId, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
+        return createUserSession(userSessionId, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId, UserSessionModel.SessionPersistenceState.PERSISTENT);
     }
 
     @Override
-    public UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+    public UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress,
+                                              String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId, UserSessionModel.SessionPersistenceState persistenceState) {
         UserSessionEntity entity = new UserSessionEntity();
         entity.setId(id);
         updateSessionEntity(entity, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId, brokerUserId);
 
         SessionUpdateTask<UserSessionEntity> createSessionTask = Tasks.addIfAbsentSync();
-        sessionTx.addTask(id, createSessionTask, entity);
+        sessionTx.addTask(id, createSessionTask, entity, persistenceState);
 
         UserSessionAdapter adapter = wrap(realm, entity, false);
+        adapter.setPersistenceState(persistenceState);
         
         if (adapter != null) {
             DeviceActivityManager.attachDevice(adapter, session);
@@ -694,7 +700,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         entity.setUserId(userId);
 
         SessionUpdateTask<LoginFailureEntity> createLoginFailureTask = Tasks.addIfAbsentSync();
-        loginFailuresTx.addTask(key, createLoginFailureTask, entity);
+        loginFailuresTx.addTask(key, createLoginFailureTask, entity, UserSessionModel.SessionPersistenceState.PERSISTENT);
 
         return wrap(key, entity);
     }
@@ -829,6 +835,17 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     @Override
     public UserSessionAdapter getOfflineUserSession(RealmModel realm, String userSessionId) {
         return getUserSession(realm, userSessionId, true);
+    }
+
+    @Override
+    public UserSessionModel getOfflineUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId) {
+        List<UserSessionModel> userSessions = getUserSessions(realm, UserSessionPredicate.create(realm.getId()).brokerSessionId(brokerSessionId), true);
+        return userSessions.isEmpty() ? null : userSessions.get(0);
+    }
+
+    @Override
+    public List<UserSessionModel> getOfflineUserSessionByBrokerUserId(RealmModel realm, String brokerUserId) {
+        return getUserSessions(realm, UserSessionPredicate.create(realm.getId()).brokerUserId(brokerUserId), true);
     }
 
     @Override
@@ -988,7 +1005,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx = getClientSessionTransaction(offline);
 
         SessionUpdateTask<UserSessionEntity> importTask = Tasks.addIfAbsentSync();
-        userSessionUpdateTx.addTask(userSession.getId(), importTask, entity);
+        userSessionUpdateTx.addTask(userSession.getId(), importTask, entity, UserSessionModel.SessionPersistenceState.PERSISTENT);
 
         UserSessionAdapter importedSession = wrap(userSession.getRealm(), entity, offline);
 
@@ -1037,7 +1054,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         final UUID clientSessionId = entity.getId();
 
         SessionUpdateTask<AuthenticatedClientSessionEntity> createClientSessionTask = Tasks.addIfAbsentSync();
-        clientSessionUpdateTx.addTask(entity.getId(), createClientSessionTask, entity);
+        clientSessionUpdateTx.addTask(entity.getId(), createClientSessionTask, entity, UserSessionModel.SessionPersistenceState.PERSISTENT);
 
         AuthenticatedClientSessionStore clientSessions = sessionToImportInto.getEntity().getAuthenticatedClientSessions();
         clientSessions.put(clientSession.getClient().getId(), clientSessionId);

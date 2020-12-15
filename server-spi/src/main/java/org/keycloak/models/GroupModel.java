@@ -19,9 +19,12 @@ package org.keycloak.models;
 
 import org.keycloak.provider.ProviderEvent;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -33,6 +36,9 @@ public interface GroupModel extends RoleMapperModel {
         GroupModel getGroup();
         KeycloakSession getKeycloakSession();
     }
+    
+    Comparator<GroupModel> COMPARE_BY_NAME = Comparator.comparing(GroupModel::getName);
+
     String getId();
 
     String getName();
@@ -61,13 +67,26 @@ public interface GroupModel extends RoleMapperModel {
      * @param name
      * @return list of all attribute values or empty list if there are not any values. Never return null
      */
+    @Deprecated
     List<String> getAttribute(String name);
+
+    default Stream<String> getAttributeStream(String name) {
+        List<String> value = this.getAttribute(name);
+        return value != null ? value.stream() : Stream.empty();
+    }
 
     Map<String, List<String>> getAttributes();
 
     GroupModel getParent();
     String getParentId();
+
+    @Deprecated
     Set<GroupModel> getSubGroups();
+
+    default Stream<GroupModel> getSubGroupsStream() {
+        Set<GroupModel> value = this.getSubGroups();
+        return value != null ? value.stream() : Stream.empty();
+    }
 
     /**
      * You must also call addChild on the parent group, addChild on RealmModel if there is no parent group
@@ -89,4 +108,29 @@ public interface GroupModel extends RoleMapperModel {
      * @param subGroup
      */
     void removeChild(GroupModel subGroup);
+
+    /**
+     * The {@link GroupModel.Streams} interface makes all collection-based methods in {@link GroupModel} default by providing
+     * implementations that delegate to the {@link Stream}-based variants instead of the other way around.
+     * <p/>
+     * It allows for implementations to focus on the {@link Stream}-based approach for processing sets of data and benefit
+     * from the potential memory and performance optimizations of that approach.
+     */
+    interface Streams extends GroupModel, RoleMapperModel.Streams {
+        @Override
+        default List<String> getAttribute(String name) {
+            return this.getAttributeStream(name).collect(Collectors.toList());
+        }
+
+        @Override
+        Stream<String> getAttributeStream(String name);
+
+        @Override
+        default Set<GroupModel> getSubGroups() {
+            return this.getSubGroupsStream().collect(Collectors.toSet());
+        }
+
+        @Override
+        Stream<GroupModel> getSubGroupsStream();
+    }
 }

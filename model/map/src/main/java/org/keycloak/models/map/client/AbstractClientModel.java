@@ -22,9 +22,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.utils.RoleUtils;
+
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -54,11 +55,8 @@ public abstract class AbstractClientModel<E extends AbstractEntity> implements C
     }
 
     @Override
-    public Set<RoleModel> getRealmScopeMappings() {
-        String realmId = realm.getId();
-        return getScopeMappingsStream()
-          .filter(rm -> Objects.equals(rm.getContainerId(), realmId))
-          .collect(Collectors.toSet());
+    public Stream<RoleModel> getRealmScopeMappingsStream() {
+        return getScopeMappingsStream().filter(r -> RoleUtils.isRealmRole(r, realm));
     }
 
     @Override

@@ -25,6 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.naming.directory.SearchControls;
 
@@ -43,6 +44,7 @@ import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
+import org.keycloak.storage.ldap.mappers.LDAPMappersComparator;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 
@@ -67,12 +69,13 @@ public class LDAPUtils {
         ldapUser.setRdnAttributeName(ldapConfig.getRdnLdapAttribute());
         ldapUser.setObjectClasses(ldapConfig.getUserObjectClasses());
 
-        List<ComponentModel> federationMappers = realm.getComponents(ldapProvider.getModel().getId(), LDAPStorageMapper.class.getName());
-        List<ComponentModel> sortedMappers = ldapProvider.getMapperManager().sortMappersAsc(federationMappers);
-        for (ComponentModel mapperModel : sortedMappers) {
-            LDAPStorageMapper ldapMapper = ldapProvider.getMapperManager().getMapper(mapperModel);
-            ldapMapper.onRegisterUserToLDAP(ldapUser, user, realm);
-        }
+        LDAPMappersComparator ldapMappersComparator = new LDAPMappersComparator(ldapConfig);
+        realm.getComponentsStream(ldapProvider.getModel().getId(), LDAPStorageMapper.class.getName())
+                .sorted(ldapMappersComparator.sortAsc())
+                .forEachOrdered(mapperModel -> {
+                    LDAPStorageMapper ldapMapper = ldapProvider.getMapperManager().getMapper(mapperModel);
+                    ldapMapper.onRegisterUserToLDAP(ldapUser, user, realm);
+                });
 
         LDAPUtils.computeAndSetDn(ldapConfig, ldapUser);
         ldapStore.add(ldapUser);
@@ -92,7 +95,9 @@ public class LDAPUtils {
             ldapQuery.addWhereCondition(customFilterCondition);
         }
 
-        List<ComponentModel> mapperModels = realm.getComponents(ldapProvider.getModel().getId(), LDAPStorageMapper.class.getName());
+        List<ComponentModel> mapperModels = realm
+                .getComponentsStream(ldapProvider.getModel().getId(), LDAPStorageMapper.class.getName())
+                .collect(Collectors.toList());
         ldapQuery.addMappers(mapperModels);
 
         return ldapQuery;

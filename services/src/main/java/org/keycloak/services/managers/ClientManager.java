@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -85,8 +86,7 @@ public class ClientManager {
 
         // remove default mappers if there is a template
         if (rep.getProtocolMappers() == null && rep.getClientTemplate() != null) {
-            Set<ProtocolMapperModel> mappers = client.getProtocolMappers();
-            for (ProtocolMapperModel mapper : mappers) client.removeProtocolMapper(mapper);
+            client.getProtocolMappersStream().collect(Collectors.toList()).forEach(client::removeProtocolMapper);
         }
         return client;
 
@@ -292,7 +292,7 @@ public class ClientManager {
 
         if (clientModel.isPublicClient() && !clientModel.isBearerOnly()) rep.setPublicClient(true);
         if (clientModel.isBearerOnly()) rep.setBearerOnly(true);
-        if (clientModel.getRoles().size() > 0) rep.setUseResourceRoleMappings(true);
+        if (clientModel.getRolesStream().count() > 0) rep.setUseResourceRoleMappings(true);
 
         rep.setResource(clientModel.getClientId());
 
@@ -336,7 +336,7 @@ public class ClientManager {
                 }
             }
         }
-        if (clientModel.getRoles().size() > 0) {
+        if (clientModel.getRolesStream().count() > 0) {
             buffer.append("    <use-resource-role-mappings>true</use-resource-role-mappings>\n");
         }
         buffer.append("</secure-deployment>\n");

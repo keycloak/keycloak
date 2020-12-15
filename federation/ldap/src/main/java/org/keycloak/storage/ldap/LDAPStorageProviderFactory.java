@@ -52,8 +52,8 @@ import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapper;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPConfigDecorator;
+import org.keycloak.storage.ldap.mappers.LDAPMappersComparator;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
-import org.keycloak.storage.ldap.mappers.LDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapperFactory;
@@ -62,9 +62,10 @@ import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.utils.CredentialHelper;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -241,17 +242,12 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     // Check if it's some performance overhead to create this map in every request. But probably not...
     protected Map<ComponentModel, LDAPConfigDecorator> getLDAPConfigDecorators(KeycloakSession session, ComponentModel ldapModel) {
         RealmModel realm = session.realms().getRealm(ldapModel.getParentId());
-        List<ComponentModel> mapperComponents = realm.getComponents(ldapModel.getId(), LDAPStorageMapper.class.getName());
-
-        Map<ComponentModel, LDAPConfigDecorator> result = new HashMap<>();
-        for (ComponentModel mapperModel : mapperComponents) {
-            LDAPStorageMapperFactory mapperFactory = (LDAPStorageMapperFactory) session.getKeycloakSessionFactory().getProviderFactory(LDAPStorageMapper.class, mapperModel.getProviderId());
-            if (mapperFactory instanceof LDAPConfigDecorator) {
-                result.put(mapperModel, (LDAPConfigDecorator) mapperFactory);
-            }
-        }
-
-        return result;
+        return realm.getComponentsStream(ldapModel.getId(), LDAPStorageMapper.class.getName())
+                .filter(mapperModel -> session.getKeycloakSessionFactory()
+                        .getProviderFactory(LDAPStorageMapper.class, mapperModel.getProviderId()) instanceof LDAPConfigDecorator)
+                .collect(Collectors.toMap(Function.identity(), mapperModel ->
+                        (LDAPConfigDecorator) session.getKeycloakSessionFactory()
+                                .getProviderFactory(LDAPStorageMapper.class, mapperModel.getProviderId())));
     }
 
 
@@ -504,14 +500,15 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 RealmModel realm = session.realms().getRealm(realmId);
                 session.getContext().setRealm(realm);
                 session.getProvider(UserStorageProvider.class, model);
-                List<ComponentModel> mappers = realm.getComponents(model.getId(), LDAPStorageMapper.class.getName());
-                for (ComponentModel mapperModel : mappers) {
-                    LDAPStorageMapper ldapMapper = session.getProvider(LDAPStorageMapper.class, mapperModel);
-                    SynchronizationResult syncResult = ldapMapper.syncDataFromFederationProviderToKeycloak(realm);
-                    if (syncResult.getAdded() > 0 || syncResult.getUpdated() > 0 || syncResult.getRemoved() > 0 || syncResult.getFailed() > 0) {
-                        logger.infof("Sync of federation mapper '%s' finished. Status: %s", mapperModel.getName(), syncResult.toString());
-                    }
-                }
+                realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
+                        .forEach(mapperModel -> {
+                            SynchronizationResult syncResult = session.getProvider(LDAPStorageMapper.class, mapperModel)
+                                    .syncDataFromFederationProviderToKeycloak(realm);
+                            if (syncResult.getAdded() > 0 || syncResult.getUpdated() > 0 || syncResult.getRemoved() > 0
+                                    || syncResult.getFailed() > 0) {
+                                logger.infof("Sync of federation mapper '%s' finished. Status: %s", mapperModel.getName(), syncResult.toString());
+                            }
+                        });
             }
 
         });
@@ -609,12 +606,14 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                             if ((fedModel.getId().equals(currentUser.getFederationLink())) && (ldapUser.getUuid().equals(currentUser.getFirstAttribute(LDAPConstants.LDAP_ID)))) {
 
                                 // Update keycloak user
-                                List<ComponentModel> federationMappers = currentRealm.getComponents(fedModel.getId(), LDAPStorageMapper.class.getName());
-                                List<ComponentModel> sortedMappers = ldapFedProvider.getMapperManager().sortMappersDesc(federationMappers);
-                                for (ComponentModel mapperModel : sortedMappers) {
-                                    LDAPStorageMapper ldapMapper = ldapFedProvider.getMapperManager().getMapper(mapperModel);
-                                    ldapMapper.onImportUserFromLDAP(ldapUser, currentUser, currentRealm, false);
-                                }
+                                LDAPMappersComparator ldapMappersComparator = new LDAPMappersComparator(ldapFedProvider.getLdapIdentityStore().getConfig());
+                                currentRealm.getComponentsStream(fedModel.getId(), LDAPStorageMapper.class.getName())
+                                        .sorted(ldapMappersComparator.sortDesc())
+                                        .forEachOrdered(mapperModel -> {
+                                            LDAPStorageMapper ldapMapper = ldapFedProvider.getMapperManager().getMapper(mapperModel);
+                                            ldapMapper.onImportUserFromLDAP(ldapUser, currentUser, currentRealm, false);
+                                        });
+
                                 UserCache userCache = session.userCache();
                                 if (userCache != null) {
                                     userCache.evict(currentRealm, currentUser);

@@ -39,6 +39,7 @@ import org.keycloak.representations.idm.*;
 import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.adapter.page.EmployeeServletDistributable;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
@@ -190,5 +191,44 @@ public abstract class AbstractSAMLAdapterClusteredTest extends AbstractAdapterCl
               .processSamlResponse(Binding.POST).build()    // logout response
             ;
         });
+    }
+
+    @Test
+    public void testNodeRestartResiliency(@ArquillianResource
+      @OperateOnDeployment(value = EmployeeServletDistributable.DEPLOYMENT_NAME) URL employeeUrl) throws Exception {
+        ContainerInfo containerInfo = testContext.getAppServerBackendsInfo().get(0);
+
+        setPasswordFor(bburkeUser, CredentialRepresentation.PASSWORD);
+
+        String employeeUrlString = getProxiedUrl(employeeUrl);
+        SamlClient samlClient = new SamlClientBuilder()
+          // Go to employee URL at reverse proxy which is set to forward to first node
+          .navigateTo(employeeUrlString)
+
+          // process redirection to login page
+          .processSamlResponse(Binding.POST).build()
+          .login().user(bburkeUser).build()
+          .processSamlResponse(Binding.POST).build()
+
+          // Returned to the page
+          .assertResponse(Matchers.bodyHC(containsString("principal=bburke")))
+
+          .execute();
+
+        controller.stop(containerInfo.getQualifier());
+        updateProxy(NODE_2_NAME, NODE_2_URI, NODE_1_URI);   // Update the proxy to forward to the second node.
+        samlClient.execute(new SamlClientBuilder()
+          .navigateTo(employeeUrlString)
+          .doNotFollowRedirects()
+          .assertResponse(Matchers.bodyHC(containsString("principal=bburke")))
+          .getSteps());
+
+        controller.start(containerInfo.getQualifier());
+        updateProxy(NODE_1_NAME, NODE_1_URI, NODE_2_URI);   // Update the proxy to forward to the first node.
+        samlClient.execute(new SamlClientBuilder()
+          .navigateTo(employeeUrlString)
+          .doNotFollowRedirects()
+          .assertResponse(Matchers.bodyHC(containsString("principal=bburke")))
+          .getSteps());
     }
 }

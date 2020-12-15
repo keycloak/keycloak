@@ -151,7 +151,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 page = LoginFormsPages.LOGIN_UPDATE_PROFILE;
                 break;
             case UPDATE_PASSWORD:
-                boolean isRequestedByAdmin = user.getRequiredActions().stream().filter(Objects::nonNull).anyMatch(UPDATE_PASSWORD.toString()::contains);
+                boolean isRequestedByAdmin = user.getRequiredActionsStream().filter(Objects::nonNull).anyMatch(UPDATE_PASSWORD.toString()::contains);
                 actionMessage = isRequestedByAdmin ? Messages.UPDATE_PASSWORD : Messages.RESET_PASSWORD;
                 page = LoginFormsPages.LOGIN_UPDATE_PASSWORD;
                 break;
@@ -182,6 +182,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         Locale locale = session.getContext().resolveLocale(user);
         Properties messagesBundle = handleThemeResources(theme, locale);
+        Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag());
+        messagesBundle.putAll(localizationTexts);
 
         handleMessages(locale, messagesBundle);
 
@@ -248,6 +250,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         Locale locale = session.getContext().resolveLocale(user);
         Properties messagesBundle = handleThemeResources(theme, locale);
+        Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.getCountry());
+        messagesBundle.putAll(localizationTexts);
 
         handleMessages(locale, messagesBundle);
 
@@ -353,6 +357,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         Locale locale = session.getContext().resolveLocale(user);
         Properties messagesBundle = handleThemeResources(theme, locale);
+        Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.getCountry());
+        messagesBundle.putAll(localizationTexts);
         FormMessage msg = new FormMessage(null, message);
         return formatMessage(msg, messagesBundle, locale);
     }
@@ -369,6 +375,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         Locale locale = session.getContext().resolveLocale(user);
         Properties messagesBundle = handleThemeResources(theme, locale);
+        Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.getCountry());
+        messagesBundle.putAll(localizationTexts);
         FormMessage msg = new FormMessage(message, (Object[]) parameters);
         return formatMessage(msg, messagesBundle, locale);
     }
@@ -398,8 +406,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         if (realm != null) {
             attributes.put("realm", new RealmBean(realm));
 
-            List<IdentityProviderModel> identityProviders = realm.getIdentityProviders();
-            identityProviders = LoginFormsUtil.filterIdentityProviders(identityProviders, session, realm, attributes, formData, context);
+            List<IdentityProviderModel> identityProviders = LoginFormsUtil
+                    .filterIdentityProviders(realm.getIdentityProvidersStream(), session, context);
             attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUriWithCodeAndClientId));
 
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));

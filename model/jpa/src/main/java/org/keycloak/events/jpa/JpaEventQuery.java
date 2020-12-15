@@ -31,6 +31,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Stream;
+
+import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -44,6 +47,8 @@ public class JpaEventQuery implements EventQuery {
     private final ArrayList<Predicate> predicates;
     private Integer firstResult;
     private Integer maxResults;
+
+    public static final int DEFAULT_MAX_RESULTS = Integer.MAX_VALUE >> 1;
 
     public JpaEventQuery(EntityManager em) {
         this.em = em;
@@ -113,7 +118,7 @@ public class JpaEventQuery implements EventQuery {
     }
 
     @Override
-    public List<Event> getResultList() {
+    public Stream<Event> getResultStream() {
         if (!predicates.isEmpty()) {
             cq.where(cb.and(predicates.toArray(new Predicate[predicates.size()])));
         }
@@ -128,14 +133,12 @@ public class JpaEventQuery implements EventQuery {
 
         if (maxResults != null) {
             query.setMaxResults(maxResults);
+        } else {
+            // to workaround https://hibernate.atlassian.net/browse/HHH-14295
+            query.setMaxResults(DEFAULT_MAX_RESULTS);
         }
 
-        List<Event> events = new LinkedList<Event>();
-        for (EventEntity e : query.getResultList()) {
-            events.add(JpaEventStoreProvider.convertEvent(e));
-        }
-
-        return events;
+        return closing(query.getResultStream().map(JpaEventStoreProvider::convertEvent));
     }
 
 }

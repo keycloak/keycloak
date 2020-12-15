@@ -97,7 +97,7 @@ public class TimeBasedOTP extends HmacOTP {
         this.clock.setCalendar(calendar);
     }
 
-    private class Clock {
+    private static class Clock {
 
         private final int interval;
         private Calendar calendar;

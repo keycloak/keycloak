@@ -103,13 +103,13 @@ public class PreAuthActionsHandler {
         if (!facade.getRequest().getMethod().equalsIgnoreCase("OPTIONS")) {
             return false;
         }
-        if (facade.getRequest().getHeader(CorsHeaders.ORIGIN) == null) {
+        String origin = facade.getRequest().getHeader(CorsHeaders.ORIGIN);
+        if (origin == null || origin.equals("null")) {
             log.debug("checkCorsPreflight: no origin header");
             return false;
         }
         log.debug("Preflight request returning");
         facade.getResponse().setStatus(200);
-        String origin = facade.getRequest().getHeader(CorsHeaders.ORIGIN);
         facade.getResponse().setHeader(CorsHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
         facade.getResponse().setHeader(CorsHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
         String requestMethods = facade.getRequest().getHeader(CorsHeaders.ACCESS_CONTROL_REQUEST_METHOD);

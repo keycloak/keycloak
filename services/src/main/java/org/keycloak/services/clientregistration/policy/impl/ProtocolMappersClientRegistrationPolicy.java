@@ -18,13 +18,12 @@
 package org.keycloak.services.clientregistration.policy.impl;
 
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientregistration.ClientRegistrationContext;
@@ -75,19 +74,12 @@ public class ProtocolMappersClientRegistrationPolicy implements ClientRegistrati
     public void afterRegister(ClientRegistrationContext context, ClientModel clientModel) {
         // Remove mappers of unsupported type, which were added "automatically"
         List<String> allowedMapperProviders = getAllowedMapperProviders();
-        Set<ProtocolMapperModel> createdMappers = clientModel.getProtocolMappers();
-
-        createdMappers.stream().filter((ProtocolMapperModel mapper) -> {
-
-            return !allowedMapperProviders.contains(mapper.getProtocolMapper());
-
-        }).forEach((ProtocolMapperModel mapperToRemove) -> {
-
-            logger.debugf("Removing builtin mapper '%s' of type '%s' as type is not permitted", mapperToRemove.getName(), mapperToRemove.getProtocolMapper());
-            clientModel.removeProtocolMapper(mapperToRemove);
-
-        });
-
+        clientModel.getProtocolMappersStream()
+                .filter(mapper -> !allowedMapperProviders.contains(mapper.getProtocolMapper()))
+                .peek(mapperToRemove -> logger.debugf("Removing builtin mapper '%s' of type '%s' as type is not permitted",
+                        mapperToRemove.getName(), mapperToRemove.getProtocolMapper()))
+                .collect(Collectors.toList())
+                .forEach(clientModel::removeProtocolMapper);
     }
 
     // We don't take already existing protocolMappers into consideration for now

@@ -17,8 +17,9 @@
 
 package org.keycloak.provider.quarkus;
 
+import java.util.function.Predicate;
+
 import org.keycloak.common.ClientConnection;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.filters.AbstractRequestFilter;
 
 import io.vertx.core.AsyncResult;

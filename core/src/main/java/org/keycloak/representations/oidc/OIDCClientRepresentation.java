@@ -119,6 +119,12 @@ public class OIDCClientRepresentation {
 
     private String registration_access_token;
 
+    private String backchannel_logout_uri;
+
+    private Boolean backchannel_logout_session_required;
+    
+    private Boolean backchannel_logout_revoke_offline_tokens;
+
     public List<String> getRedirectUris() {
         return redirect_uris;
     }
@@ -447,6 +453,30 @@ public class OIDCClientRepresentation {
 
     public void setTlsClientCertificateBoundAccessTokens(Boolean tls_client_certificate_bound_access_tokens) {
         this.tls_client_certificate_bound_access_tokens = tls_client_certificate_bound_access_tokens;
+    }
+
+    public String getBackchannelLogoutUri() {
+        return backchannel_logout_uri;
+    }
+
+    public void setBackchannelLogoutUri(String backchannel_logout_uri) {
+        this.backchannel_logout_uri = backchannel_logout_uri;
+    }
+
+    public Boolean getBackchannelLogoutSessionRequired() {
+        return backchannel_logout_session_required;
+    }
+
+    public void setBackchannelLogoutSessionRequired(Boolean backchannel_logout_session_required) {
+        this.backchannel_logout_session_required = backchannel_logout_session_required;
+    }
+
+    public Boolean getBackchannelLogoutRevokeOfflineTokens() {
+        return backchannel_logout_revoke_offline_tokens;
+    }
+
+    public void setBackchannelLogoutRevokeOfflineTokens(Boolean backchannel_logout_revoke_offline_tokens) {
+        this.backchannel_logout_revoke_offline_tokens = backchannel_logout_revoke_offline_tokens;
     }
 
     public String getTlsClientAuthSubjectDn() {

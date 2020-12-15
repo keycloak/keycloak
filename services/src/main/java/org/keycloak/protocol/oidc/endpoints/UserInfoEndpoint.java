@@ -66,6 +66,7 @@ import javax.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author pedroigor
@@ -214,16 +215,29 @@ public class UserInfoEndpoint {
 
         AccessToken userInfo = new AccessToken();
         
-        userInfo.subject(userModel.getId());
-        
         tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
 
         Map<String, Object> claims = new HashMap<>();
+        claims.put("sub", userModel.getId());
         claims.putAll(userInfo.getOtherClaims());
-        // we always set the subject to the correct value and ignore any mapper (not directly related to subject mapping such as 
-        // pseudo-subjects). the endpoint should always return a valid subject identifier.
-        // any attempt to customize the value of this field should be done through a different claim
-        claims.put("sub", userInfo.getSubject());
+
+        if (userInfo.getRealmAccess() != null) {
+            Map<String, Set<String>> realmAccess = new HashMap<>();
+            realmAccess.put("roles", userInfo.getRealmAccess().getRoles());
+            claims.put("realm_access", realmAccess);
+        }
+
+        if (userInfo.getResourceAccess() != null && !userInfo.getResourceAccess().isEmpty()) {
+            Map<String, Map<String, Set<String>>> resourceAccessMap = new HashMap<>();
+
+            for (Map.Entry<String, AccessToken.Access> resourceAccessMapEntry : userInfo.getResourceAccess()
+                    .entrySet()) {
+                Map<String, Set<String>> resourceAccess = new HashMap<>();
+                resourceAccess.put("roles", resourceAccessMapEntry.getValue().getRoles());
+                resourceAccessMap.put(resourceAccessMapEntry.getKey(), resourceAccess);
+            }
+            claims.put("resource_access", resourceAccessMap);
+        }
 
         Response.ResponseBuilder responseBuilder;
         OIDCAdvancedConfigWrapper cfg = OIDCAdvancedConfigWrapper.fromClientModel(clientModel);

@@ -52,6 +52,14 @@ public final class OIDCConfigAttributes {
 
     public static final String TOKEN_ENDPOINT_AUTH_SIGNING_ALG = "token.endpoint.auth.signing.alg";
 
+    public static final String BACKCHANNEL_LOGOUT_URL = "backchannel.logout.url";
+
+    public static final String BACKCHANNEL_LOGOUT_SESSION_REQUIRED = "backchannel.logout.session.required";
+    
+    public static final String BACKCHANNEL_LOGOUT_REVOKE_OFFLINE_TOKENS = "backchannel.logout.revoke.offline.tokens";
+
+    public static final String USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT = "client_credentials.use_refresh_token";
+
     private OIDCConfigAttributes() {
     }
 

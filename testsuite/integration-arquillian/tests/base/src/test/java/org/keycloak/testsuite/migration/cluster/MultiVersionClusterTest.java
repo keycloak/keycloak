@@ -204,7 +204,7 @@ public class MultiVersionClusterTest extends AbstractClusterTest {
             oauth.realm(MASTER).clientId("account").redirectUri(legacyNode.getContextRoot().toString() + "/auth/realms/master/account/");
             
             oauth.openLoginForm();
-            assertThat(DroneUtils.getCurrentDriver().getTitle(), containsString("Log in to "));
+            assertThat(DroneUtils.getCurrentDriver().getTitle(), containsString("Sign in to "));
             loginPage.login("admin", "admin");
 
             assertThat("Login was not successful.", oauth.getCurrentQuery().get(OAuth2Constants.CODE), notNullValue());

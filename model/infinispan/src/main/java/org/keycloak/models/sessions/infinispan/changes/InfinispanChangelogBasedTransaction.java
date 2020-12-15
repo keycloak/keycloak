@@ -27,6 +27,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.CacheDecorators;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
@@ -77,14 +78,14 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
 
     // Create entity and new version for it
-    public void addTask(K key, SessionUpdateTask<V> task, V entity) {
+    public void addTask(K key, SessionUpdateTask<V> task, V entity, UserSessionModel.SessionPersistenceState persistenceState) {
         if (entity == null) {
             throw new IllegalArgumentException("Null entity not allowed");
         }
 
         RealmModel realm = kcSession.realms().getRealm(entity.getRealmId());
         SessionEntityWrapper<V> wrappedEntity = new SessionEntityWrapper<>(entity);
-        SessionUpdatesList<V> myUpdates = new SessionUpdatesList<>(realm, wrappedEntity);
+        SessionUpdatesList<V> myUpdates = new SessionUpdatesList<>(realm, wrappedEntity, persistenceState);
         updates.put(key, myUpdates);
 
         // Run the update now, so reader in same transaction can see it
@@ -148,6 +149,9 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
         for (Map.Entry<K, SessionUpdatesList<V>> entry : updates.entrySet()) {
             SessionUpdatesList<V> sessionUpdates = entry.getValue();
             SessionEntityWrapper<V> sessionWrapper = sessionUpdates.getEntityWrapper();
+
+            // Don't save transient entities to infinispan. They are valid just for current transaction
+            if (sessionUpdates.getPersistenceState() == UserSessionModel.SessionPersistenceState.TRANSIENT) continue;
 
             RealmModel realm = sessionUpdates.getRealm();
 

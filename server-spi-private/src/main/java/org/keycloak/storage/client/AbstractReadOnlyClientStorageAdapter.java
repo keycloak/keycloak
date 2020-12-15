@@ -23,7 +23,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.storage.ReadOnlyException;
 
-import java.util.List;
 import java.util.Set;
 
 /**

@@ -18,19 +18,19 @@
 
 package org.keycloak.cluster.infinispan;
 
+import org.infinispan.commons.marshall.Externalizer;
+import org.infinispan.commons.marshall.MarshallUtil;
+import org.infinispan.commons.marshall.SerializeWith;
+import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
+
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
-
-import org.infinispan.commons.marshall.Externalizer;
-import org.infinispan.commons.marshall.MarshallUtil;
-import org.infinispan.commons.marshall.SerializeWith;
-import org.infinispan.commons.util.concurrent.ConcurrentHashSet;
-import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -77,7 +77,7 @@ public class LockEntryPredicate implements Predicate<Map.Entry<String, Serializa
 
         public LockEntryPredicate readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
             return new LockEntryPredicate(
-                    KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashSet<>())
+                    KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, ConcurrentHashMap::newKeySet)
             );
         }
     }

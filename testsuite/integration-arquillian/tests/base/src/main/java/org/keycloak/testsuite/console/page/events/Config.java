@@ -45,7 +45,7 @@ public class Config extends Events {
         return form;
     }
 
-    public class ConfigForm extends Form {
+    public static class ConfigForm extends Form {
         @FindBy(id = "s2id_autogen1")
         private WebElement eventListenersInput;
 

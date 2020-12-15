@@ -29,10 +29,10 @@ import org.keycloak.provider.ProviderFactory;
 import java.lang.reflect.Method;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -123,27 +123,22 @@ public class ProtocolMapperUtils {
     }
 
 
-    public static List<Map.Entry<ProtocolMapperModel, ProtocolMapper>> getSortedProtocolMappers(KeycloakSession session, ClientSessionContext ctx) {
-        Set<ProtocolMapperModel> mapperModels = ctx.getProtocolMappers();
-        Map<ProtocolMapperModel, ProtocolMapper> result = new HashMap<>();
-
+    public static Stream<Entry<ProtocolMapperModel, ProtocolMapper>> getSortedProtocolMappers(KeycloakSession session, ClientSessionContext ctx) {
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-        for (ProtocolMapperModel mapperModel : mapperModels) {
-            ProtocolMapper mapper = (ProtocolMapper) sessionFactory.getProviderFactory(ProtocolMapper.class, mapperModel.getProtocolMapper());
-            if (mapper == null) {
-                continue;
-            }
-
-            result.put(mapperModel, mapper);
-        }
-
-        return result.entrySet()
-                .stream()
-                .sorted(Comparator.comparing(ProtocolMapperUtils::compare))
-                .collect(Collectors.toList());
+        return ctx.getProtocolMappersStream()
+                .flatMap(mapperModel -> {
+                    ProtocolMapper mapper = (ProtocolMapper) sessionFactory.getProviderFactory(ProtocolMapper.class, mapperModel.getProtocolMapper());
+                    if (mapper == null)
+                        return null;
+                    Map<ProtocolMapperModel, ProtocolMapper> protocolMapperMap = new HashMap<>();
+                    protocolMapperMap.put(mapperModel, mapper);
+                    return protocolMapperMap.entrySet().stream();
+                })
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(ProtocolMapperUtils::compare));
     }
 
-    public static int compare(Map.Entry<ProtocolMapperModel, ProtocolMapper> entry) {
+    public static int compare(Entry<ProtocolMapperModel, ProtocolMapper> entry) {
         int priority = entry.getValue().getPriority();
         return priority;
     }

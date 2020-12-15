@@ -19,17 +19,15 @@ package org.keycloak.testsuite.util.cli;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -219,23 +217,22 @@ public class UserCommands {
             if (user == null) {
                 log.infof("User '%s' doesn't exist in realm '%s'", username, realmName);
             } else {
-                List<String> roleMappings = getRoleMappings(session, realm, user);
+                List<String> roleMappings = getRoleMappings(user);
                 log.infof("User: ID: '%s', username: '%s', mail: '%s', roles: '%s'", user.getId(), user.getUsername(), user.getEmail(), roleMappings.toString());
             }
         }
 
-        private List<String> getRoleMappings(KeycloakSession session, RealmModel realm, UserModel user) {
-            Set<RoleModel> roles = user.getRoleMappings();
-            List<String> result = new LinkedList<>();
-            for (RoleModel role : roles) {
-                if (role.getContainer() instanceof RealmModel) {
-                    result.add(role.getName());
-                } else {
-                    ClientModel client = (ClientModel) role.getContainer();
-                    result.add(client.getClientId() + "/" + role.getName());
-                }
-            }
-            return result;
+        private List<String> getRoleMappings(UserModel user) {
+            return user.getRoleMappingsStream()
+                    .map(role -> {
+                        if (role.getContainer() instanceof RealmModel)
+                            return role.getName();
+                        else {
+                            ClientModel client = (ClientModel) role.getContainer();
+                            return  client.getClientId() + "/" + role.getName();
+                        }
+                    })
+                    .collect(Collectors.toList());
         }
 
         @Override

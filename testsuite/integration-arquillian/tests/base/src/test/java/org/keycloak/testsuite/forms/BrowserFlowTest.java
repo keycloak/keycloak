@@ -31,6 +31,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
 import org.keycloak.testsuite.broker.SocialLoginTest;
@@ -153,7 +154,7 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
 
         // Use 7 digits instead 6 to have 100% probability of failure
         oneTimeCodePage.sendCode("1234567");
-        Assert.assertEquals(INVALID_AUTH_CODE, oneTimeCodePage.getError());
+        Assert.assertEquals(INVALID_AUTH_CODE, oneTimeCodePage.getInputError());
         Assert.assertTrue(oneTimeCodePage.isOtpLabelPresent());
     }
 
@@ -183,12 +184,12 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
         // Select "second" factor (which is unnamed as it doesn't have userLabel) but try to connect with the OTP code from the "first" one
         loginTotpPage.selectOtpCredential(OTPFormAuthenticator.UNNAMED);
         loginTotpPage.login(getOtpCode(USER_WITH_TWO_OTPS_OTP1_SECRET));
-        Assert.assertEquals(INVALID_AUTH_CODE, oneTimeCodePage.getError());
+        Assert.assertEquals(INVALID_AUTH_CODE, oneTimeCodePage.getInputError());
 
         // Select "first" factor but try to connect with the OTP code from the "second" one
         loginTotpPage.selectOtpCredential("first");
         loginTotpPage.login(getOtpCode(USER_WITH_TWO_OTPS_OTP2_SECRET));
-        Assert.assertEquals(INVALID_AUTH_CODE, oneTimeCodePage.getError());
+        Assert.assertEquals(INVALID_AUTH_CODE, oneTimeCodePage.getInputError());
 
         // Select "second" factor and try to connect with its OTP code
         loginTotpPage.selectOtpCredential(OTPFormAuthenticator.UNNAMED);
@@ -538,6 +539,7 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     @AuthServerContainerExclude(REMOTE)
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void testAlternativeNonInteractiveExecutorInSubflow() {
         final String newFlowAlias = "browser - alternative non-interactive executor";
         testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
@@ -1086,7 +1088,7 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
         loginPage.login(user.getUsername(), "wrong_password");
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
         events.clear();
 
         loginPage.assertCurrent();
@@ -1117,18 +1119,21 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
             loginUsernameOnlyPage.open();
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login("non_existing_user");
-            Assert.assertEquals("Invalid username.", loginUsernameOnlyPage.getError());
+            Assert.assertEquals("Invalid username.", loginUsernameOnlyPage.getUsernameError());
+            Assert.assertEquals("Invalid username.", loginUsernameOnlyPage.getUsernameError());
 
             realm.setLoginWithEmailAllowed(true);
             testRealm().update(realm);
             loginUsernameOnlyPage.login("non_existing_user");
-            Assert.assertEquals("Invalid username or email.", loginUsernameOnlyPage.getError());
+            Assert.assertEquals("Invalid username or email.", loginUsernameOnlyPage.getUsernameError());
+            Assert.assertEquals("Invalid username or email.", loginUsernameOnlyPage.getUsernameError());
 
             loginUsernameOnlyPage.login(user.getUsername());
 
             passwordPage.assertCurrent();
             passwordPage.login("wrong_password");
-            Assert.assertEquals("Invalid password.", passwordPage.getError());
+            Assert.assertEquals("Invalid password.", passwordPage.getPasswordError());
+            Assert.assertEquals("Invalid password.", passwordPage.getPasswordError());
 
             passwordPage.assertCurrent();
             events.clear();

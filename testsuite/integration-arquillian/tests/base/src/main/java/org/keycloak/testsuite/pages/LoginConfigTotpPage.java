@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.pages;
 
+import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
@@ -48,7 +49,13 @@ public class LoginConfigTotpPage extends AbstractPage {
     private WebElement manualLink;
 
     @FindBy(className = "alert-error")
-    private WebElement loginErrorMessage;
+    private WebElement loginAlertErrorMessage;
+
+    @FindBy(id = "input-error-otp-code")
+    private WebElement totpInputCodeError;
+
+    @FindBy(id = "input-error-otp-label")
+    private WebElement totpInputLabelError;
 
     public void configure(String totp) {
         totpInput.sendKeys(totp);
@@ -94,8 +101,28 @@ public class LoginConfigTotpPage extends AbstractPage {
         barcodeLink.click();
     }
 
-    public String getError() {
-        return loginErrorMessage.getText();
+    public String getInputCodeError() {
+        try {
+            return UIUtils.getTextFromElement(totpInputCodeError);
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
+    public String getInputLabelError() {
+        try {
+            return UIUtils.getTextFromElement(totpInputLabelError);
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
+    public String getAlertError() {
+        try {
+            return UIUtils.getTextFromElement(loginAlertErrorMessage);
+        } catch (NoSuchElementException e) {
+            return null;
+        }
     }
 
     public boolean isCancelDisplayed() {

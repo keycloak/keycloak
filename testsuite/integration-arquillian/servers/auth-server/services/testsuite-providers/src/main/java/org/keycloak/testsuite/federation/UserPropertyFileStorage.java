@@ -71,7 +71,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
 
     private UserModel createUser(RealmModel realm, String username) {
         if (federatedStorageEnabled) {
-            return new AbstractUserAdapterFederatedStorage(session, realm,  model) {
+            return new AbstractUserAdapterFederatedStorage.Streams(session, realm,  model) {
                 @Override
                 public String getUsername() {
                     return username;
@@ -83,7 +83,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
                 }
             };
         } else {
-            return new AbstractUserAdapter(session, realm, model) {
+            return new AbstractUserAdapter.Streams(session, realm, model) {
                 @Override
                 public String getUsername() {
                     return username;
@@ -92,7 +92,6 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
         }
     }
 
-    @Override
     public UserModel getUserByUsername(String username, RealmModel realm) {
         if (!userPasswords.containsKey(username)) return null;
 
@@ -156,7 +155,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
 
     @Override
     public List<UserModel> searchForUser(Map<String, String> attributes, RealmModel realm) {
-        return Collections.EMPTY_LIST;
+        return searchForUser(attributes, realm, 0, Integer.MAX_VALUE - 1);
     }
 
     @Override
@@ -184,8 +183,8 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
                 .orElseGet(()-> attributes.get(UserModel.SEARCH));
         if (search == null) return Collections.EMPTY_LIST;
         Predicate<String> p = Boolean.valueOf(attributes.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()))
-            ? username -> username.equals(search)
-            : username -> username.contains(search);
+                ? username -> username.equals(search)
+                : username -> username.contains(search);
         return searchForUser(search, realm, firstResult, maxResults, p);
     }
 
@@ -201,7 +200,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
 
     @Override
     public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return getUsers(realm, 0, Integer.MAX_VALUE - 1);
+        return searchForUser(search, realm, 0, Integer.MAX_VALUE - 1);
     }
 
     @Override

@@ -85,12 +85,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
     public void componentsTest(KeycloakSession session1) {
         doTest(session1,
             // Get ID of some component from realm1
-            ((session, realm1) -> {
-
-                List<ComponentModel> components = realm1.getComponents();
-                return components.get(0).getId();
-
-            }),
+            ((session, realm1) -> realm1.getComponentsStream().findFirst().get().getId()),
             // Test lookup realm1 component in realm2 should not work
             ((session, realm2, realm1ComponentId) -> {
 
@@ -135,12 +130,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
     public void requiredActionProvidersTest(KeycloakSession session1) {
         doTest(session1,
                 // Get ID of some object from realm1
-                ((session, realm1) -> {
-
-                    List<RequiredActionProviderModel> reqActions = realm1.getRequiredActionProviders();
-                    return reqActions.get(0).getId();
-
-                }),
+                ((session, realm1) -> realm1.getRequiredActionProvidersStream().findFirst().get().getId()),
                 // Test lookup realm1 object in realm2 should not work
                 ((session, realm2, realm1ReqActionId) -> {
 
@@ -240,8 +230,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm1) -> {
 
                     AuthenticationFlowModel flow = realm1.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
-                    List<AuthenticationExecutionModel> executions = realm1.getAuthenticationExecutions(flow.getId());
-                    return executions.get(0).getId();
+                    return realm1.getAuthenticationExecutionsStream(flow.getId()).findFirst().get().getId();
 
                 }),
                 // Test lookup realm1 object in realm2 should not work
@@ -289,12 +278,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
     public void authenticationConfigsTest(KeycloakSession session1) {
         doTest(session1,
                 // Get ID of some object from realm1
-                ((session, realm1) -> {
-
-                    List<AuthenticatorConfigModel> configs = realm1.getAuthenticatorConfigs();
-                    return configs.get(0).getId();
-
-                }),
+                ((session, realm1) -> realm1.getAuthenticatorConfigsStream().findFirst().get().getId()),
                 // Test lookup realm1 object in realm2 should not work
                 ((session, realm2, realm1AuthConfigId) -> {
 

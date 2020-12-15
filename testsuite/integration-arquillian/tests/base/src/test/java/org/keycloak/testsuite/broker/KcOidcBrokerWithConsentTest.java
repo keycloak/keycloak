@@ -49,7 +49,7 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
         driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
-        waitForPage(driver, "log in to", true);
+        waitForPage(driver, "sign in to", true);
         log.debug("Logging in");
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
@@ -155,7 +155,7 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
         grantPage.assertCurrent();
         grantPage.cancel();
 
-        assertEquals("Log in to " + bc.consumerRealmName(), driver.getTitle());
+        assertEquals("Sign in to " + bc.consumerRealmName(), driver.getTitle());
     }
 
     /**

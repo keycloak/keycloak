@@ -216,6 +216,13 @@
         </profile>
 
         <profile>
+            <id>springboot23</id>
+            <properties>
+                <springboot.version.option>2.3</springboot.version.option>
+            </properties>
+        </profile>
+
+        <profile>
             <id>turn-on-repo-url</id>
             <activation>
                 <property>

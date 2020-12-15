@@ -39,6 +39,7 @@
         <module>adapters</module>
         <module>saml-adapters</module>
         <module>feature-packs</module>
+        <module>galleon-feature-packs</module>
         <module>licenses-common</module>
         <module>maven-plugins</module>
         <module>server-dist</module>
@@ -67,9 +68,14 @@
             </modules>
         </profile>
         <profile>
-            <id>quarkus</id>
+            <id>community</id>
+            <activation>
+                <property>
+                    <name>!product</name>
+                </property>
+            </activation>
             <modules>
-                <module>server-x</module>
+                <module>server-x-dist</module>
             </modules>
         </profile>
     </profiles>

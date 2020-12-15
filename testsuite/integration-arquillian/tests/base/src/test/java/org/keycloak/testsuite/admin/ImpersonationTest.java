@@ -245,7 +245,7 @@ public class ImpersonationTest extends AbstractKeycloakTest {
     protected Set<Cookie> testSuccessfulImpersonation(String admin, String adminRealm) {
         ResteasyClientBuilder resteasyClientBuilder = new ResteasyClientBuilder();
         resteasyClientBuilder.connectionPoolSize(10);
-        resteasyClientBuilder.httpEngine(AdminClientUtil.getCustomClientHttpEngine(resteasyClientBuilder, 10));
+        resteasyClientBuilder.httpEngine(AdminClientUtil.getCustomClientHttpEngine(resteasyClientBuilder, 10, null));
         ResteasyClient resteasyClient = resteasyClientBuilder.build();
 
         // Login adminClient

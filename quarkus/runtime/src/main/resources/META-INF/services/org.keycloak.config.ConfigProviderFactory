@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.provider.quarkus.MicroProfileConfigProviderFactory
+org.keycloak.configuration.MicroProfileConfigProviderFactory

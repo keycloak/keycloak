@@ -284,7 +284,7 @@ public class DeploymentBuilder {
         } catch (KeyStoreException e) {
             throw new RuntimeException(e);
         }
-        InputStream is = null;
+        InputStream is;
         if (key.getKeystore().getFile() != null) {
             File fp = new File(key.getKeystore().getFile());
             if (!fp.exists()) {
@@ -301,8 +301,8 @@ public class DeploymentBuilder {
                 throw new RuntimeException("KeyStore " + key.getKeystore().getResource() + " does not exist");
             }
         }
-        try {
-            keyStore.load(is, key.getKeystore().getPassword().toCharArray());
+        try (InputStream stream = is) {
+            keyStore.load(stream, key.getKeystore().getPassword().toCharArray());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

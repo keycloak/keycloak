@@ -218,6 +218,7 @@
                                     <directory>src/test/resources</directory>
                                     <includes>
                                         <include>arquillian.xml</include>
+                                        <include>wildfly-config.xml</include>
                                         <include>password-blacklists/**</include>
                                         <include>log4j.properties</include>
                                         <include>vault/**</include>

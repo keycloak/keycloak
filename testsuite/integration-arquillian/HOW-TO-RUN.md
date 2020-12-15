@@ -11,6 +11,38 @@ It's recommended to build the workspace including distribution.
     cd distribution
     mvn clean install
 
+### Running tests in the development mode (Keycloak on embedded undertow)
+
+After build sources and distribution, it is possible to run the base testsuite
+
+    mvn -f testsuite/integration-arquillian/pom.xml clean install
+
+Running single test can be achieved for example like this
+
+    mvn -f testsuite/integration-arquillian/pom.xml clean install -Dtest=LoginTest
+
+By default, the development setup is used with the Keycloak server deployed on
+embedded undertow server. That setup doesn't even require to build the distribution or re-build
+the distribution after doing changes in the code.
+
+For example when you do some fix in some class in the `services` module, you can re-build just that module
+
+    mvn -f services/pom.xml clean install
+
+And then re-run the LoginTest (or any other test you wish) and the changes should be applied when running the tests.
+
+If you use Intellij Idea, you don't even need to re-build anything with the maven. After doing any
+change in the codebase, the change is immediately effective when running the test with Junit runner. 
+
+### Running tests in the production mode (Keycloak on Wildfly)
+
+For the "production" testing, it is possible to run the Keycloak server deployed on real Wildfly server.
+This can be achieved by add the `auth-server-wildfly` profile when running the testsuite.
+
+    mvn -f testsuite/integration-arquillian/pom.xml -Pauth-server-wildfly clean install
+
+Unlike the "development" setup described above, this requires re-build the whole distribution
+after doing any change in the code.
 
 ## Debugging - tips & tricks
 
@@ -106,6 +138,10 @@ unzip prepared server:
 
     unzip -q testsuite/integration-arquillian/servers/auth-server/jboss/wildfly/target/integration-arquillian-servers-auth-server-wildfly-*.zip
 
+create admin user:
+
+    sh auth-server-wildfly/bin/add-user-keycloak.sh -r master -u admin -p admin
+
 start the server:
 
     sh auth-server-wildfly/bin/standalone.sh \
@@ -130,6 +166,10 @@ unzip prepared servers:
 
     unzip -q keycloak/testsuite/integration-arquillian/servers/auth-server/jboss/wildfly/target/integration-arquillian-servers-auth-server-wildfly-*.zip
     unzip -q keycloak/testsuite/integration-arquillian/servers/app-server/jboss/wildfly/target/integration-arquillian-servers-app-server-wildfly-*.zip
+
+create admin user:
+
+    sh auth-server-wildfly/bin/add-user-keycloak.sh -r master -u admin -p admin
 
 start both servers:
 
@@ -465,6 +505,8 @@ The WebAuthN tests, in Keycloak, can be only executed with Chrome browser, becau
 which simulate hardware authentication device. For automated WebAuthN testing, this approach seems like the best choice so far.
 To enabling the feature you have to add flag to _chromeArguments_. In each WebAuthN test should be method with ``@Before`` annotation
 to verify the browser properties.
+
+**Note:** The testing feature is only available for Chrome version 68-80.
 
 #### Example of verifying the browser properties
 ```

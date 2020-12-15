@@ -39,6 +39,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.descriptor.api.Descriptor;
@@ -82,6 +83,9 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
 
         // RESTEASY-2034
         deployment.setProperty(ResteasyContextParameters.RESTEASY_DISABLE_HTML_SANITIZER, true);
+
+        // Prevent double gzip encoding of resources
+        deployment.getDisabledProviderClasses().add("org.jboss.resteasy.plugins.interceptors.encoding.GZIPEncodingInterceptor");
 
         DeploymentInfo di = undertow.undertowDeployment(deployment);
         di.setClassLoader(getClass().getClassLoader());

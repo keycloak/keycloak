@@ -17,9 +17,73 @@
 
 package org.keycloak.util;
 
+import java.util.Optional;
+
+import org.apache.commons.lang3.SystemUtils;
+import org.keycloak.configuration.Configuration;
+
 public final class Environment {
 
     public static Boolean isRebuild() {
         return Boolean.valueOf(System.getProperty("quarkus.launch.rebuild"));
+    }
+
+    public static String getHomeDir() {
+        return System.getProperty("kc.home.dir");
+    }
+
+    public static String getCommand() {
+        String homeDir = getHomeDir();
+
+        if (homeDir == null) {
+            return "java -jar $KEYCLOAK_HOME/lib/quarkus-run.jar";
+        }
+
+        if (isWindows()) {
+            return "kc.bat";
+        }
+        return "kc.sh";
+    }
+    
+    public static String getConfigArgs() {
+        return System.getProperty("kc.config.args");
+    }
+
+    public static String getProfile() {
+        String profile = System.getProperty("kc.profile");
+        
+        if (profile == null) {
+            profile = System.getenv("KC_PROFILE");
+        }
+
+        return profile;
+    }
+
+    public static String getProfileOrDefault(String defaultProfile) {
+        String profile = getProfile();
+
+        if (profile == null) {
+            profile = defaultProfile;
+        }
+        
+        return profile;
+    }
+
+    public static Optional<String> getBuiltTimeProperty(String name) {
+        String value = Configuration.getBuiltTimeProperty(name);
+
+        if (value == null) {
+            return Optional.empty();
+        }
+        
+        return Optional.of(value);
+    }
+
+    public static boolean isDevMode() {
+        return "dev".equalsIgnoreCase(getProfile());
+    }
+
+    public static boolean isWindows() {
+        return SystemUtils.IS_OS_WINDOWS;
     }
 }

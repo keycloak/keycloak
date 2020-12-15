@@ -17,22 +17,20 @@
 package org.keycloak.testsuite.actions;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.arquillian.junit.InSequence;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
-import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
@@ -40,6 +38,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AccountTotpPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -51,21 +50,18 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
 
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
     @Override
@@ -236,7 +232,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         assertFalse(pageSource.contains("Unable to scan?"));
         assertTrue(pageSource.contains("Scan barcode?"));
 
-        assertEquals("Please specify authenticator code.", totpPage.getError());
+        assertEquals("Please specify authenticator code.", totpPage.getInputCodeError());
     }
 
     // KEYCLOAK-7081
@@ -258,7 +254,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         assertTrue(pageSource.contains("Unable to scan?"));
         assertFalse(pageSource.contains("Scan barcode?"));
 
-        assertEquals("Please specify authenticator code.", totpPage.getError());
+        assertEquals("Please specify authenticator code.", totpPage.getInputCodeError());
 
         totpPage.clickManual();
 
@@ -329,6 +325,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void setupTotpExisting() {
         loginPage.open();
+
         loginPage.login("test-user@localhost", "password");
 
         totpPage.assertCurrent();
@@ -358,7 +355,29 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().assertEvent();
     }
 
+    //KEYCLOAK-15511
+    @Test
+    public void setupTotpEnforcedBySessionNotForUserInGeneral() {
+        String username = "test-user@localhost";
+        String configureTotp = UserModel.RequiredAction.CONFIGURE_TOTP.name();
 
+        // Remove required action from the user
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        UserRepresentation userRepresentation = user.toRepresentation();
+        userRepresentation.getRequiredActions().remove(configureTotp);
+        user.update(userRepresentation);
+
+        // login
+        loginPage.open();
+        loginPage.login(username, "password");
+
+        // ensure TOTP configuration is enforced for current authentication session
+        totpPage.assertCurrent();
+
+        // ensure TOTP configuration it is not enforced for the user in general
+        userRepresentation = user.toRepresentation();
+        assertFalse(userRepresentation.getRequiredActions().contains(configureTotp));
+    }
 
     @Test
     public void setupTotpRegisteredAfterTotpRemoval() {

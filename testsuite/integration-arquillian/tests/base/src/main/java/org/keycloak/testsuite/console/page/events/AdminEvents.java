@@ -42,7 +42,7 @@ public class AdminEvents extends Events {
         return table;
     }
 
-    public class AdminEventsTable extends DataTable {
+    public static class AdminEventsTable extends DataTable {
 
         @FindBy(xpath = "//button[text()[contains(.,'Filter')]]")
         private WebElement filterButton;

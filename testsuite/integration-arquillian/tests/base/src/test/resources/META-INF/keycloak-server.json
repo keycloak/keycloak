@@ -48,8 +48,16 @@
         "provider": "${keycloak.client.provider:jpa}"
     },
 
+    "group": {
+        "provider": "${keycloak.group.provider:jpa}"
+    },
+
     "role": {
         "provider": "${keycloak.role.provider:jpa}"
+    },
+
+    "authenticationSessions": {
+        "provider": "${keycloak.authSession.provider:infinispan}"
     },
 
     "mapStorage": {

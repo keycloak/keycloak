@@ -19,11 +19,13 @@ package org.keycloak.models;
 
 import org.keycloak.provider.ProviderEvent;
 
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -34,12 +36,17 @@ public interface UserModel extends RoleMapperModel {
     String FIRST_NAME = "firstName";
     String LAST_NAME = "lastName";
     String EMAIL = "email";
+    String EMAIL_VERIFIED = "emailVerified";
     String LOCALE = "locale";
     String ENABLED = "enabled";
+    String IDP_ALIAS = "keycloak.session.realm.users.query.idp_alias";
+    String IDP_USER_ID = "keycloak.session.realm.users.query.idp_user_id";
     String INCLUDE_SERVICE_ACCOUNT = "keycloak.session.realm.users.query.include_service_account";
     String GROUPS = "keycloak.session.realm.users.query.groups";
     String SEARCH = "keycloak.session.realm.users.query.search";
     String EXACT = "keycloak.session.realm.users.query.exact";
+
+    Comparator<UserModel> COMPARE_BY_USERNAME = Comparator.comparing(UserModel::getUsername, String.CASE_INSENSITIVE_ORDER);
 
     interface UserRemovedEvent extends ProviderEvent {
         RealmModel getRealm();
@@ -52,7 +59,13 @@ public interface UserModel extends RoleMapperModel {
     // No default method here to allow Abstract subclasses where the username is provided in a different manner
     String getUsername();
 
-    // No default method here to allow Abstract subclasses where the username is provided in a different manner
+    /**
+     * Sets username for this user.
+     *
+     * No default method here to allow Abstract subclasses where the username is provided in a different manner
+     *
+     * @param username username string
+     */
     void setUsername(String username);
 
     /**
@@ -87,20 +100,55 @@ public interface UserModel extends RoleMapperModel {
     /**
      * @param name
      * @return list of all attribute values or empty list if there are not any values. Never return null
+     * @deprecated Use {@link #getAttributeStream(String) getAttributeStream} instead.
      */
+    @Deprecated
     List<String> getAttribute(String name);
+
+    /**
+     * Obtains all values associated with the specified attribute name.
+     *
+     * @param name the name of the attribute.
+     * @return a non-null {@link Stream} of attribute values.
+     */
+    default Stream<String> getAttributeStream(final String name) {
+        List<String> value = this.getAttribute(name);
+        return value != null ? value.stream() : Stream.empty();
+    }
 
     Map<String, List<String>> getAttributes();
 
+    /**
+     * @deprecated Use {@link #getRequiredActionsStream() getRequiredActionsStream} instead.
+     */
+    @Deprecated
     Set<String> getRequiredActions();
+
+    /**
+     * Obtains the names of required actions associated with the user.
+     *
+     * @return a non-null {@link Stream} of required action names.
+     */
+    default Stream<String> getRequiredActionsStream() {
+        Set<String> value = this.getRequiredActions();
+        return value != null ? value.stream() : Stream.empty();
+    }
 
     void addRequiredAction(String action);
 
     void removeRequiredAction(String action);
 
-    void addRequiredAction(RequiredAction action);
+    default void addRequiredAction(RequiredAction action) {
+        if (action == null) return;
+        String actionName = action.name();
+        addRequiredAction(actionName);
+    }
 
-    void removeRequiredAction(RequiredAction action);
+    default void removeRequiredAction(RequiredAction action) {
+        if (action == null) return;
+        String actionName = action.name();
+        removeRequiredAction(actionName);
+    }
 
     String getFirstName();
 
@@ -112,24 +160,73 @@ public interface UserModel extends RoleMapperModel {
 
     String getEmail();
 
+    /**
+     * Sets email for this user.
+     *
+     * @param email the email
+     */
     void setEmail(String email);
 
     boolean isEmailVerified();
 
     void setEmailVerified(boolean verified);
 
+    /**
+     * @deprecated Use {@link #getGroupsStream() getGroupsStream} instead.
+     */
+    @Deprecated
     Set<GroupModel> getGroups();
 
-    default Set<GroupModel> getGroups(int first, int max) {
-        return getGroups(null, first, max);
+    /**
+     * Obtains the groups associated with the user.
+     *
+     * @return a non-null {@link Stream} of groups.
+     */
+    default Stream<GroupModel> getGroupsStream() {
+        Set<GroupModel> value = this.getGroups();
+        return value != null ? value.stream() : Stream.empty();
     }
 
+    /**
+     * @deprecated Use {@link #getGroupsStream(String, Integer, Integer) getGroupsStream} instead.
+     */
+    @Deprecated
+    default Set<GroupModel> getGroups(int first, int max) {
+        return getGroupsStream(null, first, max).collect(Collectors.toSet());
+    }
+
+    /**
+     * @deprecated Use {@link #getGroupsStream(String, Integer, Integer) getGroupsStream} instead.
+     */
+    @Deprecated
     default Set<GroupModel> getGroups(String search, int first, int max) {
-        return getGroups().stream()
-                .filter(group -> search == null || group.getName().toLowerCase().contains(search.toLowerCase()))
-                .skip(first)
-                .limit(max)
+        return getGroupsStream(search, first, max)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    /**
+     * Returns a paginated stream of groups within this realm with search in the name
+     *
+     * @param search Case insensitive string which will be searched for. Ignored if null.
+     * @param first Index of first group to return. Ignored if negative or {@code null}.
+     * @param max Maximum number of records to return. Ignored if negative or {@code null}.
+     * @return Stream of desired groups.
+     */
+    default Stream<GroupModel> getGroupsStream(String search, Integer first, Integer max) {
+        if (search != null) search = search.toLowerCase();
+        final String finalSearch = search;
+        Stream<GroupModel> groupModelStream = getGroupsStream()
+                .filter(group -> finalSearch == null || group.getName().toLowerCase().contains(finalSearch));
+
+        if (first != null && first > 0) {
+            groupModelStream = groupModelStream.skip(first);
+        }
+
+        if (max != null && max >= 0) {
+            groupModelStream = groupModelStream.limit(max);
+        }
+
+        return groupModelStream;
     }
 
     default long getGroupsCount() {
@@ -138,11 +235,11 @@ public interface UserModel extends RoleMapperModel {
     
     default long getGroupsCountByNameContaining(String search) {
         if (search == null) {
-            return getGroups().size();
+            return getGroupsStream().count();
         }
 
         String s = search.toLowerCase();
-        return getGroups().stream().filter(group -> group.getName().toLowerCase().contains(s)).count();
+        return getGroupsStream().filter(group -> group.getName().toLowerCase().contains(s)).count();
     }
 
     void joinGroup(GroupModel group);
@@ -157,5 +254,38 @@ public interface UserModel extends RoleMapperModel {
 
     enum RequiredAction {
         VERIFY_EMAIL, UPDATE_PROFILE, CONFIGURE_TOTP, UPDATE_PASSWORD, TERMS_AND_CONDITIONS
+    }
+
+    /**
+     * The {@link UserModel.Streams} interface makes all collection-based methods in {@link UserModel} default by providing
+     * implementations that delegate to the {@link Stream}-based variants instead of the other way around.
+     * <p/>
+     * It allows for implementations to focus on the {@link Stream}-based approach for processing sets of data and benefit
+     * from the potential memory and performance optimizations of that approach.
+     */
+    interface Streams extends UserModel, RoleMapperModel.Streams {
+        @Override
+        default List<String> getAttribute(String name) {
+            return this.getAttributeStream(name).collect(Collectors.toList());
+        }
+
+        @Override
+        Stream<String> getAttributeStream(final String name);
+
+        @Override
+        default Set<String> getRequiredActions() {
+            return this.getRequiredActionsStream().collect(Collectors.toSet());
+        }
+
+        @Override
+        Stream<String> getRequiredActionsStream();
+
+        @Override
+        default Set<GroupModel> getGroups() {
+            return this.getGroupsStream().collect(Collectors.toSet());
+        }
+
+        @Override
+        Stream<GroupModel> getGroupsStream();
     }
 }

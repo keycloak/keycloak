@@ -23,6 +23,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 
 import org.jboss.logging.Logger;
+import org.keycloak.util.Environment;
 
 public class BuildClassLoader extends URLClassLoader {
 
@@ -30,7 +31,7 @@ public class BuildClassLoader extends URLClassLoader {
 
     public BuildClassLoader() {
         super(new URL[] {}, Thread.currentThread().getContextClassLoader());
-        String homeDir = System.getProperty("keycloak.home.dir");
+        String homeDir = Environment.getHomeDir();
 
         if (homeDir == null) {
             return;

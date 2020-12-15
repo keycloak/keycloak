@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2020 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,7 +37,7 @@ import org.jboss.modules.ModuleLoader;
  */
 public abstract class KeycloakDependencyProcessor implements DeploymentUnitProcessor {
 
-    private static final ModuleIdentifier KEYCLOAK_JBOSS_CORE_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-jboss-adapter-core");
+    private static final ModuleIdentifier KEYCLOAK_JBOSS_CORE_ADAPTER = KeycloakSubsystemDefinition.KEYCLOAK_JBOSS_CORE_ADAPTER;
     private static final ModuleIdentifier KEYCLOAK_CORE_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-adapter-core");
     private static final ModuleIdentifier KEYCLOAK_CORE = ModuleIdentifier.create("org.keycloak.keycloak-core");
     private static final ModuleIdentifier KEYCLOAK_COMMON = ModuleIdentifier.create("org.keycloak.keycloak-common");

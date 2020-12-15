@@ -75,6 +75,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.util.AdminClientUtil;
 
 /**
  * Test that clients can override auth flows
@@ -132,6 +133,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test(timeout = 4000)
+    @AuthServerContainerExclude(AuthServer.REMOTE) // testingClient doesn't work with remote
     public void testSearchTimeout() {
         String hardcodedClient = HardcodedClientStorageProviderFactory.PROVIDER_ID;
         String delayedSearch = HardcodedClientStorageProviderFactory.DELAYED_SEARCH;
@@ -231,7 +233,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void testDirectGrant(String clientId) {
-        Client httpClient = javax.ws.rs.client.ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         String grantUri = oauth.getResourceOwnerPasswordCredentialGrantUrl();
         WebTarget grantTarget = httpClient.target(grantUri);
 
@@ -283,7 +285,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
 
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            ClientStorageProviderModel model = realm.getClientStorageProviders().get(0);
+            ClientStorageProviderModel model = realm.getClientStorageProvidersStream().findFirst().get();
             Calendar eviction = Calendar.getInstance();
             eviction.add(Calendar.HOUR, 1);
             model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.EVICT_DAILY);
@@ -306,7 +308,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
 
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            ClientStorageProviderModel model = realm.getClientStorageProviders().get(0);
+            ClientStorageProviderModel model = realm.getClientStorageProvidersStream().findAny().get();
             Calendar eviction = Calendar.getInstance();
             eviction.add(Calendar.HOUR, 4 * 24);
             model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.EVICT_WEEKLY);
@@ -332,7 +334,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
 
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            ClientStorageProviderModel model = realm.getClientStorageProviders().get(0);
+            ClientStorageProviderModel model = realm.getClientStorageProvidersStream().findFirst().get();
             model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.MAX_LIFESPAN);
             model.setMaxLifespan(1 * 60 * 60 * 1000);
             realm.updateComponent(model);
@@ -380,7 +382,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
 
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            ClientStorageProviderModel model = realm.getClientStorageProviders().get(0);
+            ClientStorageProviderModel model = realm.getClientStorageProvidersStream().findFirst().get();
             model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.NO_CACHE);
             realm.updateComponent(model);
         });
@@ -400,7 +402,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
     private void setDefaultCachePolicy() {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            ClientStorageProviderModel model = realm.getClientStorageProviders().get(0);
+            ClientStorageProviderModel model = realm.getClientStorageProvidersStream().findFirst().get();
             model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.DEFAULT);
             realm.updateComponent(model);
         });

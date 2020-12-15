@@ -263,7 +263,7 @@ public class KerberosEmbeddedServer extends LDAPEmbeddedServer {
      *
      * @author Dominik Pospisil <dpospisi@redhat.com>
      */
-    class NoReplayKdcServer extends KdcServer {
+    static class NoReplayKdcServer extends KdcServer {
 
         NoReplayKdcServer(KerberosConfig kdcConfig) {
             super(kdcConfig);

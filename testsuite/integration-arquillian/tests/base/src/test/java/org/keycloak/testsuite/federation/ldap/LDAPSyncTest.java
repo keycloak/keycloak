@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
+import java.util.stream.Collectors;
+
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -35,7 +37,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.SynchronizationResultRepresentation;
 import org.keycloak.services.managers.UserStorageSyncManager;
-import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.LDAPUtils;
@@ -77,7 +78,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             LDAPTestUtils.addOrUpdateGroupMapper(appRealm, ctx.getLdapModel(), LDAPGroupMapperMode.LDAP_ONLY, descriptionAttrName);
             // Remove all LDAP groups
             LDAPTestUtils.removeAllLDAPGroups(session, appRealm, ctx.getLdapModel(), "groupsMapper");
-            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(session, appRealm);
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(appRealm);
             ldapModel.put(LDAPConstants.SYNC_REGISTRATIONS, "false");
             appRealm.updateComponent(ldapModel);
         });
@@ -88,7 +89,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
 
             LDAPTestUtils.addLocalUser(session, appRealm, "marykeycloak", "mary@test.com", "password-app");
 
-            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(session, appRealm);
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(appRealm);
 
             LDAPTestUtils.addZipCodeLDAPMapper(appRealm, ldapModel);
 
@@ -139,14 +140,14 @@ public class LDAPSyncTest extends AbstractLDAPTest {
 
             // Assert lastSync time updated
             Assert.assertTrue(ctx.getLdapModel().getLastSync() > 0);
-            for (UserStorageProviderModel persistentFedModel : testRealm.getUserStorageProviders()) {
+            testRealm.getUserStorageProvidersStream().forEachOrdered(persistentFedModel -> {
                 if (LDAPStorageProviderFactory.PROVIDER_NAME.equals(persistentFedModel.getProviderId())) {
                     Assert.assertTrue(persistentFedModel.getLastSync() > 0);
                 } else {
                     // Dummy provider has still 0
                     Assert.assertEquals(0, persistentFedModel.getLastSync());
                 }
-            }
+            });
         });
 
         // wait a bit
@@ -247,9 +248,9 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
 
             // Remove all users from model
-            for (UserModel user : session.userLocalStorage().getUsers(ctx.getRealm(), true)) {
-                session.userLocalStorage().removeUser(ctx.getRealm(), user);
-            }
+            session.userLocalStorage().getUsersStream(ctx.getRealm(), true)
+                    .collect(Collectors.toList())
+                    .forEach(user -> session.userLocalStorage().removeUser(ctx.getRealm(), user));
 
             // Change name of UUID attribute to same like usernameAttribute
             String uidAttrName = ctx.getLdapProvider().getLdapIdentityStore().getConfig().getUsernameLdapAttribute();
@@ -297,14 +298,16 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
 
             // Remove all users from model
-            for (UserModel user : session.userLocalStorage().getUsers(ctx.getRealm(), true)) {
-                System.out.println("trying to delete user: " + user.getUsername());
-                UserCache userCache = session.userCache();
-                if (userCache != null) {
-                    userCache.evict(ctx.getRealm(), user);
-                }
-                session.userLocalStorage().removeUser(ctx.getRealm(), user);
-            }
+            session.userLocalStorage().getUsersStream(ctx.getRealm(), true)
+                    .peek(user -> System.out.println("trying to delete user: " + user.getUsername()))
+                    .collect(Collectors.toList())
+                    .forEach(user -> {
+                        UserCache userCache = session.userCache();
+                        if (userCache != null) {
+                            userCache.evict(ctx.getRealm(), user);
+                        }
+                        session.userLocalStorage().removeUser(ctx.getRealm(), user);
+                    });
 
             // Add street mapper and add some user including street
             ComponentModel streetMapper = LDAPTestUtils.addUserAttributeMapper(ctx.getRealm(), ctx.getLdapModel(), "streetMapper", "street", LDAPConstants.STREET);

@@ -19,9 +19,8 @@ package org.keycloak.services.resources.admin;
 
 import static org.keycloak.protocol.ProtocolMapperUtils.isEnabled;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
@@ -36,12 +35,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
@@ -116,43 +113,36 @@ public class ClientScopeEvaluateResource {
     @Path("protocol-mappers")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<ProtocolMapperEvaluationRepresentation> getGrantedProtocolMappers(@QueryParam("scope") String scopeParam) {
+    public Stream<ProtocolMapperEvaluationRepresentation> getGrantedProtocolMappers(@QueryParam("scope") String scopeParam) {
         auth.clients().requireView(client);
 
-        List<ProtocolMapperEvaluationRepresentation> protocolMappers = new LinkedList<>();
-
-        Set<ClientScopeModel> clientScopes = TokenManager.getRequestedClientScopes(scopeParam, client);
-
-        for (ClientScopeModel mapperContainer : clientScopes) {
-            Set<ProtocolMapperModel> currentMappers = mapperContainer.getProtocolMappers();
-            for (ProtocolMapperModel current : currentMappers) {
-                if (isEnabled(session, current) && current.getProtocol().equals(client.getProtocol())) {
-                    ProtocolMapperEvaluationRepresentation rep = new ProtocolMapperEvaluationRepresentation();
-                    rep.setMapperId(current.getId());
-                    rep.setMapperName(current.getName());
-                    rep.setProtocolMapper(current.getProtocolMapper());
-
-                    if (mapperContainer.getId().equals(client.getId())) {
-                        // Must be this client
-                        rep.setContainerId(client.getId());
-                        rep.setContainerName("");
-                        rep.setContainerType("client");
-                    } else {
-                        ClientScopeModel clientScope = (ClientScopeModel) mapperContainer;
-                        rep.setContainerId(clientScope.getId());
-                        rep.setContainerName(clientScope.getName());
-                        rep.setContainerType("client-scope");
-                    }
-
-                    protocolMappers.add(rep);
-                }
-            }
-        }
-
-        return protocolMappers;
+        return TokenManager.getRequestedClientScopes(scopeParam, client)
+                .flatMap(mapperContainer -> mapperContainer.getProtocolMappersStream()
+                    .filter(current -> isEnabled(session, current) && Objects.equals(current.getProtocol(), client.getProtocol()))
+                    .map(current -> toProtocolMapperEvaluationRepresentation(current, mapperContainer)));
     }
 
 
+    private ProtocolMapperEvaluationRepresentation toProtocolMapperEvaluationRepresentation(ProtocolMapperModel mapper,
+                                                                                            ClientScopeModel mapperContainer) {
+        ProtocolMapperEvaluationRepresentation rep = new ProtocolMapperEvaluationRepresentation();
+        rep.setMapperId(mapper.getId());
+        rep.setMapperName(mapper.getName());
+        rep.setProtocolMapper(mapper.getProtocolMapper());
+
+        if (mapperContainer.getId().equals(client.getId())) {
+            // Must be this client
+            rep.setContainerId(client.getId());
+            rep.setContainerName("");
+            rep.setContainerType("client");
+        } else {
+            ClientScopeModel clientScope = mapperContainer;
+            rep.setContainerId(clientScope.getId());
+            rep.setContainerName(clientScope.getName());
+            rep.setContainerType("client-scope");
+        }
+        return rep;
+    }
 
     /**
      * Create JSON with payload of example access token
@@ -197,7 +187,7 @@ public class ClientScopeEvaluateResource {
             authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scopeParam);
 
             userSession = session.sessions().createUserSession(authSession.getParentSession().getId(), realm, user, user.getUsername(),
-                    clientConnection.getRemoteAddr(), "example-auth", false, null, null);
+                    clientConnection.getRemoteAddr(), "example-auth", false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
 
             AuthenticationManager.setClientScopesInSession(authSession);
             ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
@@ -212,9 +202,6 @@ public class ClientScopeEvaluateResource {
         } finally {
             if (authSession != null) {
                 authSessionManager.removeAuthenticationSession(realm, authSession, false);
-            }
-            if (userSession != null) {
-                session.sessions().removeUserSession(realm, userSession);
             }
         }
     }

@@ -359,6 +359,27 @@
 
                 <kc-tooltip>{{:: 'web-origins.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="backchannelLogoutUrl">{{:: 'backchannel-logout-url' | translate}}</label>
+                <div class="col-sm-6">
+                    <input class="form-control" type="text" name="backchannelLogoutUrl" id="backchannelLogoutUrl" data-ng-model="clientEdit.attributes['backchannel.logout.url']">
+                </div>
+                <kc-tooltip>{{:: 'backchannel-logout-url.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="backchannelLogoutSessionRequired">{{:: 'backchannel-logout-session-required' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="backchannelLogoutSessionRequired" name="backchannelLogoutSessionRequired" id="backchannelLogoutSessionRequired" onoffswitch ng-click="switchChange()" on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'backchannel-logout-session-required.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="backchannelLogoutRevokeOfflineSessions">{{:: 'backchannel-logout-revoke-offline-sessions' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="backchannelLogoutRevokeOfflineSessions" name="backchannelLogoutRevokeOfflineSessions" id="backchannelLogoutRevokeOfflineSessions" onoffswitch ng-click="switchChange()" on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'backchannel-logout-revoke-offline-sessions.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
         <fieldset data-ng-show="protocol == 'saml'">
             <legend collapsed><span class="text">{{:: 'fine-saml-endpoint-conf' | translate}}</span>  <kc-tooltip>{{:: 'fine-saml-endpoint-conf.tooltip' | translate}}</kc-tooltip></legend>
@@ -507,6 +528,13 @@
                     <input ng-model="excludeSessionStateFromAuthResponse" ng-click="switchChange()" name="excludeSessionStateFromAuthResponse" id="excludeSessionStateFromAuthResponse" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
                 <kc-tooltip>{{:: 'exclude-session-state-from-auth-response.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
+                <label class="col-md-2 control-label" for="useRefreshTokenForClientCredentialsGrant">{{:: 'use-refresh-token-for-client-credentials-grant' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="useRefreshTokenForClientCredentialsGrant" ng-click="switchChange()" name="useRefreshTokenForClientCredentialsGrant" id="useRefreshTokenForClientCredentialsGrant" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'use-refresh-token-for-client-credentials-grant.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
 

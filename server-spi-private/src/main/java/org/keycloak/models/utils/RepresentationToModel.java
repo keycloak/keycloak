@@ -136,7 +136,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.validation.ClientValidationUtil;
+import org.keycloak.validation.ValidationUtil;
 
 public class RepresentationToModel {
 
@@ -294,6 +294,7 @@ public class RepresentationToModel {
 
                 newRealm.addRequiredActionProvider(model);
             }
+            DefaultRequiredActions.addDeleteAccountAction(newRealm);
         } else {
             DefaultRequiredActions.addActions(newRealm);
         }
@@ -326,8 +327,9 @@ public class RepresentationToModel {
             }
         }
 
+        Map<String, ClientModel> createdClients = new HashMap<>();
         if (rep.getClients() != null) {
-            createClients(session, rep, newRealm, mappedFlows);
+            createdClients = createClients(session, rep, newRealm, mappedFlows);
         }
 
         importRoles(rep.getRoles(), newRealm);
@@ -342,20 +344,19 @@ public class RepresentationToModel {
         if (rep.getClients() != null) {
             for (ClientRepresentation resourceRep : rep.getClients()) {
                 if (resourceRep.getDefaultRoles() != null) {
-                    ClientModel clientModel = newRealm.getClientByClientId(resourceRep.getClientId());
+                    ClientModel clientModel = createdClients.computeIfAbsent(resourceRep.getClientId(), k -> newRealm.getClientByClientId(resourceRep.getClientId()));
                     clientModel.updateDefaultRoles(resourceRep.getDefaultRoles());
+                    createdClients.put(clientModel.getClientId(), clientModel);
                 }
             }
         }
 
         // Now that all possible roles and clients are created, create scope mappings
 
-        //Map<String, ClientModel> appMap = newRealm.getClientNameMap();
-
         if (rep.getClientScopeMappings() != null) {
 
             for (Map.Entry<String, List<ScopeMappingRepresentation>> entry : rep.getClientScopeMappings().entrySet()) {
-                ClientModel app = newRealm.getClientByClientId(entry.getKey());
+                ClientModel app = createdClients.computeIfAbsent(entry.getKey(), k -> newRealm.getClientByClientId(entry.getKey()));
                 if (app == null) {
                     throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
                 }
@@ -364,17 +365,19 @@ public class RepresentationToModel {
         }
 
         if (rep.getScopeMappings() != null) {
+            Map<String, RoleModel> roleModelMap = newRealm.getRolesStream().collect(Collectors.toMap(RoleModel::getId, Function.identity()));
+
             for (ScopeMappingRepresentation scope : rep.getScopeMappings()) {
                 ScopeContainerModel scopeContainer = getScopeContainerHavingScope(newRealm, scope);
-
                 for (String roleString : scope.getRoles()) {
-                    RoleModel role = newRealm.getRole(roleString.trim());
+                    final String roleStringTrimmed = roleString.trim();
+                    RoleModel role = roleModelMap.computeIfAbsent(roleStringTrimmed, k -> newRealm.getRole(roleStringTrimmed));
                     if (role == null) {
-                        role = newRealm.addRole(roleString.trim());
+                        role = newRealm.addRole(roleString);
+                        roleModelMap.put(role.getId(), role);
                     }
                     scopeContainer.addScopeMapping(role);
                 }
-
             }
         }
 
@@ -385,7 +388,7 @@ public class RepresentationToModel {
         if (rep.getBrowserSecurityHeaders() != null) {
             newRealm.setBrowserSecurityHeaders(rep.getBrowserSecurityHeaders());
         } else {
-            newRealm.setBrowserSecurityHeaders(BrowserSecurityHeaders.defaultHeaders);
+            newRealm.setBrowserSecurityHeaders(BrowserSecurityHeaders.realmDefaultHeaders);
         }
 
         if (rep.getComponents() != null) {
@@ -412,14 +415,13 @@ public class RepresentationToModel {
 
         if (rep.getUsers() != null) {
             for (UserRepresentation userRep : rep.getUsers()) {
-                UserModel user = createUser(session, newRealm, userRep);
+                createUser(session, newRealm, userRep);
             }
         }
 
         if (rep.getFederatedUsers() != null) {
             for (UserRepresentation userRep : rep.getFederatedUsers()) {
                 importFederatedUser(session, newRealm, userRep);
-
             }
         }
 
@@ -445,7 +447,7 @@ public class RepresentationToModel {
             }
         }
 
-        if (newRealm.getComponents(newRealm.getId(), KeyProvider.class.getName()).isEmpty()) {
+        if (newRealm.getComponentsStream(newRealm.getId(), KeyProvider.class.getName()).count() == 0) {
             if (rep.getPrivateKey() != null) {
                 DefaultKeyProviders.createProviders(newRealm, rep.getPrivateKey(), rep.getCertificate());
             } else {
@@ -1265,8 +1267,8 @@ public class RepresentationToModel {
             ClientModel app = createClient(session, realm, resourceRep, false, mappedFlows);
             appMap.put(app.getClientId(), app);
 
-            ClientValidationUtil.validate(session, app, false, c -> {
-                throw new RuntimeException("Invalid client " + app.getClientId() + ": " + c.getError());
+            ValidationUtil.validateClient(session, app, false, r -> {
+                throw new RuntimeException("Invalid client " + app.getClientId() + ": " + r.getAllErrorsAsString());
             });
         }
         return appMap;
@@ -1413,8 +1415,7 @@ public class RepresentationToModel {
 
         if (resourceRep.getProtocolMappers() != null) {
             // first, remove all default/built in mappers
-            Set<ProtocolMapperModel> mappers = client.getProtocolMappers();
-            for (ProtocolMapperModel mapper : mappers) client.removeProtocolMapper(mapper);
+            client.getProtocolMappersStream().collect(Collectors.toList()).forEach(client::removeProtocolMapper);
 
             for (ProtocolMapperRepresentation mapper : resourceRep.getProtocolMappers()) {
                 client.addProtocolMapper(toModel(mapper));
@@ -1555,10 +1556,10 @@ public class RepresentationToModel {
     public static void updateClientProtocolMappers(ClientRepresentation rep, ClientModel resource) {
 
         if (rep.getProtocolMappers() != null) {
-            Map<String,ProtocolMapperModel> existingProtocolMappers = new HashMap<>();
-            for (ProtocolMapperModel existingProtocolMapper : resource.getProtocolMappers()) {
-                existingProtocolMappers.put(generateProtocolNameKey(existingProtocolMapper.getProtocol(), existingProtocolMapper.getName()), existingProtocolMapper);
-            }
+            Map<String,ProtocolMapperModel> existingProtocolMappers =
+                    resource.getProtocolMappersStream().collect(Collectors.toMap(mapper ->
+                            generateProtocolNameKey(mapper.getProtocol(), mapper.getName()), Function.identity()));
+
 
             for (ProtocolMapperRepresentation protocolMapperRepresentation : rep.getProtocolMappers()) {
                 String protocolNameKey = generateProtocolNameKey(protocolMapperRepresentation.getProtocol(), protocolMapperRepresentation.getName());
@@ -1605,8 +1606,7 @@ public class RepresentationToModel {
         if (resourceRep.getProtocol() != null) clientScope.setProtocol(resourceRep.getProtocol());
         if (resourceRep.getProtocolMappers() != null) {
             // first, remove all default/built in mappers
-            Set<ProtocolMapperModel> mappers = clientScope.getProtocolMappers();
-            for (ProtocolMapperModel mapper : mappers) clientScope.removeProtocolMapper(mapper);
+            clientScope.getProtocolMappersStream().collect(Collectors.toList()).forEach(clientScope::removeProtocolMapper);
 
             for (ProtocolMapperRepresentation mapper : resourceRep.getProtocolMappers()) {
                 clientScope.addProtocolMapper(toModel(mapper));

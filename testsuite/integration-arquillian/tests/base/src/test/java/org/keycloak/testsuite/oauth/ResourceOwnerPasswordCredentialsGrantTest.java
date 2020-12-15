@@ -31,6 +31,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -152,7 +153,12 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
     @Test
     public void grantAccessTokenUsername() throws Exception {
+        int authSessionsBefore = getAuthenticationSessionsCount();
+
         grantAccessToken("direct-login", "resource-owner");
+
+        // Check that count of authSessions is same as before authentication (as authentication session was removed)
+        Assert.assertEquals(authSessionsBefore, getAuthenticationSessionsCount());
     }
 
     @Test
@@ -204,6 +210,8 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
     @Test
     public void grantAccessTokenInvalidTotp() throws Exception {
+        int authSessionsBefore = getAuthenticationSessionsCount();
+
         oauth.clientId("resource-owner");
 
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "direct-login-otp", "password", totp.generateTOTP("totpSecret2"));
@@ -219,6 +227,9 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                 .error(Errors.INVALID_USER_CREDENTIALS)
                 .user(userId2)
                 .assertEvent();
+
+        // Check that count of authSessions is same as before authentication (as authentication session was removed)
+        Assert.assertEquals(authSessionsBefore, getAuthenticationSessionsCount());
     }
 
     private void grantAccessToken(String login, String clientId) throws Exception {
@@ -438,6 +449,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
     @Test
     public void grantAccessTokenVerifyEmail() throws Exception {
+        int authSessionsBefore = getAuthenticationSessionsCount();
 
         RealmResource realmResource = adminClient.realm("test");
         RealmManager.realm(realmResource).verifyEmail(true);
@@ -462,6 +474,8 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         RealmManager.realm(realmResource).verifyEmail(false);
         UserManager.realm(realmResource).username("test-user@localhost").removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL.toString());
 
+        // Check that count of authSessions is same as before authentication (as authentication session was removed)
+        Assert.assertEquals(authSessionsBefore, getAuthenticationSessionsCount());
     }
     
     @Test
@@ -645,5 +659,9 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
             assertEquals(OAuthErrorException.UNSUPPORTED_GRANT_TYPE, response.getError());
             assertEquals("Unsupported grant_type", response.getErrorDescription());
         }
+    }
+
+    private int getAuthenticationSessionsCount() {
+        return testingClient.testing().cache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME).size();
     }
 }

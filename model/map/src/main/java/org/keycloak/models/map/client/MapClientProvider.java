@@ -19,14 +19,12 @@ package org.keycloak.models.map.client;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientModel.ClientUpdatedEvent;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 
-import org.keycloak.models.RealmModel.ClientUpdatedEvent;
-import org.keycloak.models.RealmProvider;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.common.Serialization;
 import java.util.Comparator;
@@ -41,7 +39,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.keycloak.models.map.storage.MapStorage;
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import org.keycloak.models.RoleProvider;
 
 public class MapClientProvider implements ClientProvider {
 
@@ -70,11 +67,11 @@ public class MapClientProvider implements ClientProvider {
         this.clientStore = clientStore;
         this.clientRegisteredNodesStore = clientRegisteredNodesStore;
         this.tx = new MapKeycloakTransaction<>(clientStore);
-        session.getTransactionManager().enlistAfterCompletion(tx);
+        session.getTransactionManager().enlist(tx);
     }
 
     private ClientUpdatedEvent clientUpdatedEvent(ClientModel c) {
-        return new RealmModel.ClientUpdatedEvent() {
+        return new ClientModel.ClientUpdatedEvent() {
             @Override
             public ClientModel getUpdatedClient() {
                 return c;
@@ -88,7 +85,7 @@ public class MapClientProvider implements ClientProvider {
     }
 
     private MapClientEntity registerEntityForChanges(MapClientEntity origEntity) {
-        final MapClientEntity res = Serialization.from(origEntity);
+        final MapClientEntity res = tx.get(origEntity.getId(), id -> Serialization.from(origEntity));
         tx.putIfChanged(origEntity.getId(), res, MapClientEntity::isUpdated);
         return res;
     }
@@ -99,8 +96,7 @@ public class MapClientProvider implements ClientProvider {
         return origEntity -> new MapClientAdapter(session, realm, registerEntityForChanges(origEntity)) {
             @Override
             public void updateClient() {
-                // commit
-                MapClientProvider.this.tx.replace(entity.getId(), this.entity);
+                LOG.tracef("updateClient(%s)%s", realm, origEntity.getId(), getShortStackTrace());
                 session.getKeycloakSessionFactory().publish(clientUpdatedEvent(this));
             }
 
@@ -148,7 +144,7 @@ public class MapClientProvider implements ClientProvider {
         Stream<MapClientEntity> updatedAndNotRemovedClientsStream = clientStore.entrySet().stream()
           .map(tx::getUpdated)    // If the client has been removed, tx.get will return null, otherwise it will return me.getValue()
           .filter(Objects::nonNull);
-        return Stream.concat(tx.createdValuesStream(clientStore.keySet()), updatedAndNotRemovedClientsStream);
+        return Stream.concat(tx.createdValuesStream(), updatedAndNotRemovedClientsStream);
     }
 
     @Override
@@ -181,7 +177,7 @@ public class MapClientProvider implements ClientProvider {
         final ClientModel resource = entityToAdapterFunc(realm).apply(entity);
 
         // TODO: Sending an event should be extracted to store layer
-        session.getKeycloakSessionFactory().publish((RealmModel.ClientCreationEvent) () -> resource);
+        session.getKeycloakSessionFactory().publish((ClientModel.ClientCreationEvent) () -> resource);
         resource.updateClient();        // This is actualy strange contract - it should be the store code to call updateClient
 
         return resource;
@@ -217,7 +213,7 @@ public class MapClientProvider implements ClientProvider {
         session.users().preRemove(realm, client);
         session.roles().removeRoles(client);
 
-        session.getKeycloakSessionFactory().publish(new RealmModel.ClientRemovedEvent() {
+        session.getKeycloakSessionFactory().publish(new ClientModel.ClientRemovedEvent() {
             @Override
             public ClientModel getClient() {
                 return client;

@@ -25,6 +25,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
@@ -43,6 +44,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Sometimes its easier to just interact with roles by their ID instead of container/role-name
@@ -165,12 +167,12 @@ public class RoleByIdResource extends RoleResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Set<RoleRepresentation> getRoleComposites(final @PathParam("role-id") String id) {
+    public Stream<RoleRepresentation> getRoleComposites(final @PathParam("role-id") String id) {
 
         if (logger.isDebugEnabled()) logger.debug("*** getRoleComposites: '" + id + "'");
         RoleModel role = getRoleModel(id);
         auth.roles().requireView(role);
-        return getRoleComposites(role);
+        return role.getCompositesStream().map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**
@@ -183,9 +185,8 @@ public class RoleByIdResource extends RoleResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Set<RoleRepresentation> getRealmRoleComposites(final @PathParam("role-id") String id) {
+    public Stream<RoleRepresentation> getRealmRoleComposites(final @PathParam("role-id") String id) {
         RoleModel role = getRoleModel(id);
-        auth.roles().requireView(role);
         auth.roles().requireView(role);
         return getRealmRoleComposites(role);
     }
@@ -201,7 +202,7 @@ public class RoleByIdResource extends RoleResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Set<RoleRepresentation> getClientRoleComposites(final @PathParam("role-id") String id,
+    public Stream<RoleRepresentation> getClientRoleComposites(final @PathParam("role-id") String id,
                                                                 final @PathParam("clientUuid") String clientUuid) {
 
         RoleModel role = getRoleModel(id);

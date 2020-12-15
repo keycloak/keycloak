@@ -84,6 +84,7 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
             Thread.sleep(5000l);
         } catch (InterruptedException ex) {
             Logger.getLogger(HardcodedClientStorageProvider.class).warn(ex.getCause());
+            return Stream.empty();
         }
         if (clientId != null && this.clientId.toLowerCase().contains(clientId.toLowerCase())) {
             return Stream.of(new ClientAdapter(realm));
@@ -260,8 +261,8 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
         }
 
         @Override
-        public Set<ProtocolMapperModel> getProtocolMappers() {
-            return Collections.EMPTY_SET;
+        public Stream<ProtocolMapperModel> getProtocolMappersStream() {
+            return Stream.empty();
         }
 
         @Override
@@ -285,8 +286,8 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
         }
 
         @Override
-        public Set<RoleModel> getRealmScopeMappings() {
-            return Collections.EMPTY_SET;
+        public Stream<RoleModel> getRealmScopeMappingsStream() {
+            return Stream.empty();
         }
 
         @Override

@@ -16,7 +16,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -31,6 +30,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionManageme
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.login.UpdateAccount;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -57,7 +57,6 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
@@ -74,6 +73,7 @@ import static org.junit.Assume.assumeTrue;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
+import org.keycloak.testsuite.util.AdminClientUtil;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.BITBUCKET;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.FACEBOOK;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.FACEBOOK_INCLUDE_BIRTHDAY;
@@ -99,6 +99,7 @@ import com.google.common.collect.ImmutableMap;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 @AuthServerContainerExclude(AuthServer.REMOTE)
+@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class SocialLoginTest extends AbstractKeycloakTest {
 
     public static final String SOCIAL_CONFIG = "social.config";
@@ -228,11 +229,10 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(clientPolicyRep, server);
         management.users().adminImpersonatingPermission().addAssociatedPolicy(clientPolicy);
         management.users().adminImpersonatingPermission().setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
-        for (IdentityProviderModel idp : realm.getIdentityProviders()) {
+        realm.getIdentityProvidersStream().forEach(idp -> {
             management.idps().setPermissionsEnabled(idp, true);
             management.idps().exchangeToPermission(idp).addAssociatedPolicy(clientPolicy);
-        }
-
+        });
     }
 
     @Test
@@ -537,7 +537,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     private AccessTokenResponse checkFeature(int expectedStatusCode, String username) {
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
         Response response = null;
         try {
             testingClient.server().run(SocialLoginTest::setupClientExchangePermissions);
@@ -575,7 +575,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         assertEquals(200, tokenResp.getStatus());
 
         ProfileAssume.assumeFeatureEnabled(Profile.Feature.TOKEN_EXCHANGE);
-        Client httpClient = ClientBuilder.newClient();
+        Client httpClient = AdminClientUtil.createResteasyClient();
 
         try {
             AccessTokenResponse tokenResponse = checkFeature(200, username);
