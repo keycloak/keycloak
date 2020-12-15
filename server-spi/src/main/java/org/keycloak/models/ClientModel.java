@@ -23,6 +23,7 @@ import java.util.Set;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventManager;
+import org.keycloak.storage.SearchableModelField;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -35,6 +36,12 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
     String PRIVATE_KEY = "privateKey";
     String PUBLIC_KEY = "publicKey";
     String X509CERTIFICATE = "X509Certificate";
+
+    public static class SearchableFields {
+        public static final SearchableModelField<ClientModel> ID                = new SearchableModelField<>("id", String.class);
+        public static final SearchableModelField<ClientModel> REALM_ID          = new SearchableModelField<>("realmId", String.class);
+        public static final SearchableModelField<ClientModel> CLIENT_ID         = new SearchableModelField<>("clientId", String.class);
+    }
 
     interface ClientCreationEvent extends ProviderEvent {
         ClientModel getCreatedClient();

@@ -541,4 +541,9 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
           .findAny()
           .orElse(null);
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s@%08x", getClientId(), System.identityHashCode(this));
+    }
 }

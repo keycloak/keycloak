@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.storage.SearchableModelField;
 
 /**
  * Represents usually one browser session with potentially many browser tabs. Every browser tab is represented by
@@ -29,6 +30,12 @@ import org.keycloak.models.RealmModel;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public interface RootAuthenticationSessionModel {
+
+    public static class SearchableFields {
+        public static final SearchableModelField<RootAuthenticationSessionModel> ID              = new SearchableModelField<>("id", String.class);
+        public static final SearchableModelField<RootAuthenticationSessionModel> REALM_ID        = new SearchableModelField<>("realmId", String.class);
+        public static final SearchableModelField<RootAuthenticationSessionModel> TIMESTAMP       = new SearchableModelField<>("timestamp", Long.class);
+    }
 
     /**
      * Returns id of the root authentication session.

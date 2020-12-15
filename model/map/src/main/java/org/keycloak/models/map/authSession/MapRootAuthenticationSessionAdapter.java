@@ -23,7 +23,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.sessions.AuthenticationSessionProvider;
 
 import java.util.Map;
 import java.util.Objects;
