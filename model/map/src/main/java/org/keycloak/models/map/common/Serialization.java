@@ -21,8 +21,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.IOException;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *
@@ -31,6 +34,8 @@ import java.io.IOException;
 public class Serialization {
 
     public static final ObjectMapper MAPPER = new ObjectMapper();
+    public static final ConcurrentHashMap<Class<?>, ObjectReader> READERS = new ConcurrentHashMap<>();
+    public static final ConcurrentHashMap<Class<?>, ObjectWriter> WRITERS = new ConcurrentHashMap<>();
 
     abstract class IgnoreUpdatedMixIn { @JsonIgnore public abstract boolean isUpdated(); }
 
@@ -49,10 +54,14 @@ public class Serialization {
         if (orig == null) {
             return null;
         }
+        @SuppressWarnings("unchecked")
+        final Class<T> origClass = (Class<T>) orig.getClass();
+
+        // Naive solution but will do.
         try {
-            // Naive solution but will do.
-            @SuppressWarnings("unchecked")
-            final T res = MAPPER.readValue(MAPPER.writeValueAsBytes(orig), (Class<T>) orig.getClass());
+            ObjectReader reader = READERS.computeIfAbsent(origClass, MAPPER::readerFor);
+            ObjectWriter writer = WRITERS.computeIfAbsent(origClass, MAPPER::writerFor);
+            final T res = reader.readValue(writer.writeValueAsBytes(orig));
             return res;
         } catch (IOException ex) {
             throw new IllegalStateException(ex);

@@ -77,7 +77,7 @@ public class MapRoleProvider implements RoleProvider {
 
     private MapRoleEntity registerEntityForChanges(MapRoleEntity origEntity) {
         final MapRoleEntity res = Serialization.from(origEntity);
-        tx.putIfChanged(origEntity.getId(), res, MapRoleEntity::isUpdated);
+        tx.updateIfChanged(origEntity.getId(), res, MapRoleEntity::isUpdated);
         return res;
     }
 
@@ -119,10 +119,10 @@ public class MapRoleProvider implements RoleProvider {
         MapRoleEntity entity = new MapRoleEntity(entityId, realm.getId());
         entity.setName(name);
         entity.setRealmId(realm.getId());
-        if (tx.get(entity.getId(), roleStore::get) != null) {
+        if (tx.read(entity.getId(), roleStore::read) != null) {
             throw new ModelDuplicateException("Role exists: " + id);
         }
-        tx.putIfAbsent(entity.getId(), entity);
+        tx.create(entity.getId(), entity);
         return entityToAdapterFunc(realm).apply(entity);
     }
 
@@ -157,10 +157,10 @@ public class MapRoleProvider implements RoleProvider {
         entity.setName(name);
         entity.setClientRole(true);
         entity.setClientId(client.getId());
-        if (tx.get(entity.getId(), roleStore::get) != null) {
+        if (tx.read(entity.getId(), roleStore::read) != null) {
             throw new ModelDuplicateException("Role exists: " + id);
         }
-        tx.putIfAbsent(entity.getId(), entity);
+        tx.create(entity.getId(), entity);
         return entityToAdapterFunc(client.getRealm()).apply(entity);
     }
 
@@ -233,7 +233,7 @@ public class MapRoleProvider implements RoleProvider {
         });
         // TODO: ^^^^^^^ Up to here
 
-        tx.remove(UUID.fromString(role.getId()));
+        tx.delete(UUID.fromString(role.getId()));
 
         return true;
     }
@@ -295,7 +295,7 @@ public class MapRoleProvider implements RoleProvider {
 
         LOG.tracef("getRoleById(%s, %s)%s", realm.getName(), id, getShortStackTrace());
 
-        MapRoleEntity entity = tx.get(UUID.fromString(id), roleStore::get);
+        MapRoleEntity entity = tx.read(UUID.fromString(id), roleStore::read);
         return (entity == null || ! entityRealmFilter(realm).test(entity))
           ? null
           : entityToAdapterFunc(realm).apply(entity);

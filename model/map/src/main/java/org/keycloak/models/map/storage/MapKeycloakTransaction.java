@@ -35,7 +35,7 @@ public class MapKeycloakTransaction<K, V> implements KeycloakTransaction {
             @Override
             protected <K, V> MapTaskWithValue<K, V> taskFor(K key, V value) {
                 return new MapTaskWithValue<K, V>(value) {
-                    @Override public void execute(MapStorage<K, V> map) { map.putIfAbsent(key, getValue()); }
+                    @Override public void execute(MapStorage<K, V> map) { map.create(key, getValue()); }
                     @Override public MapOperation getOperation() { return CREATE; }
                 };
             }
@@ -44,7 +44,7 @@ public class MapKeycloakTransaction<K, V> implements KeycloakTransaction {
             @Override
             protected <K, V> MapTaskWithValue<K, V> taskFor(K key, V value) {
                 return new MapTaskWithValue<K, V>(value) {
-                    @Override public void execute(MapStorage<K, V> map) { map.put(key, getValue()); }
+                    @Override public void execute(MapStorage<K, V> map) { map.update(key, getValue()); }
                     @Override public MapOperation getOperation() { return UPDATE; }
                 };
             }
@@ -53,7 +53,7 @@ public class MapKeycloakTransaction<K, V> implements KeycloakTransaction {
             @Override
             protected <K, V> MapTaskWithValue<K, V> taskFor(K key, V value) {
                 return new MapTaskWithValue<K, V>(null) {
-                    @Override public void execute(MapStorage<K, V> map) { map.remove(key); }
+                    @Override public void execute(MapStorage<K, V> map) { map.delete(key); }
                     @Override public MapOperation getOperation() { return DELETE; }
                 };
             }
@@ -115,14 +115,14 @@ public class MapKeycloakTransaction<K, V> implements KeycloakTransaction {
      * Adds a given task if not exists for the given key
      */
     private void addTask(MapOperation op, K key, V value) {
-        log.tracef("Adding operation %s for %s  @ %08x", op, key, System.identityHashCode(value));
+        log.tracef("Adding operation %s for %s @ %08x", op, key, System.identityHashCode(value));
 
         K taskKey = key;
         tasks.merge(taskKey, op.taskFor(key, value), MapTaskCompose::new);
     }
 
     // This is for possibility to lookup for session by id, which was created in this transaction
-    public V get(K key, Function<K, V> defaultValueFunc) {
+    public V read(K key, Function<K, V> defaultValueFunc) {
         MapTaskWithValue<K, V> current = tasks.get(key);
         if (current != null) {
             return current.getValue();
@@ -140,23 +140,23 @@ public class MapKeycloakTransaction<K, V> implements KeycloakTransaction {
         return keyDefaultValue.getValue();
     }
 
-    public void put(K key, V value) {
+    public void update(K key, V value) {
         addTask(MapOperation.UPDATE, key, value);
     }
 
-    public void putIfAbsent(K key, V value) {
+    public void create(K key, V value) {
         addTask(MapOperation.CREATE, key, value);
     }
 
-    public void putIfChanged(K key, V value, Predicate<V> shouldPut) {
-        log.tracef("Adding operation UPDATE_IF_CHANGED for %s  @ %08x", key, System.identityHashCode(value));
+    public void updateIfChanged(K key, V value, Predicate<V> shouldPut) {
+        log.tracef("Adding operation UPDATE_IF_CHANGED for %s @ %08x", key, System.identityHashCode(value));
 
         K taskKey = key;
         MapTaskWithValue<K, V> op = new MapTaskWithValue<K, V>(value) {
             @Override
             public void execute(MapStorage<K, V> map) {
                 if (shouldPut.test(getValue())) {
-                    map.put(key, getValue());
+                    map.update(key, getValue());
                 }
             }
             @Override public MapOperation getOperation() { return MapOperation.UPDATE; }
@@ -164,7 +164,7 @@ public class MapKeycloakTransaction<K, V> implements KeycloakTransaction {
         tasks.merge(taskKey, op, MapKeycloakTransaction::merge);
     }
 
-    public void remove(K key) {
+    public void delete(K key) {
         addTask(MapOperation.DELETE, key, null);
     }
 

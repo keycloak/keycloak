@@ -55,7 +55,7 @@ public class MapGroupProvider implements GroupProvider {
 
     private MapGroupEntity registerEntityForChanges(MapGroupEntity origEntity) {
         final MapGroupEntity res = Serialization.from(origEntity);
-        tx.putIfChanged(origEntity.getId(), res, MapGroupEntity::isUpdated);
+        tx.updateIfChanged(origEntity.getId(), res, MapGroupEntity::isUpdated);
         return res;
     }
 
@@ -88,7 +88,7 @@ public class MapGroupProvider implements GroupProvider {
             return null;
         }
         
-        MapGroupEntity entity = tx.get(uid, groupStore::get);
+        MapGroupEntity entity = tx.read(uid, groupStore::read);
         return (entity == null || ! entityRealmFilter(realm).test(entity))
                 ? null
                 : entityToAdapterFunc(realm).apply(entity);
@@ -194,10 +194,10 @@ public class MapGroupProvider implements GroupProvider {
         MapGroupEntity entity = new MapGroupEntity(entityId, realm.getId());
         entity.setName(name);
         entity.setParentId(toParent == null ? null : toParent.getId());
-        if (tx.get(entity.getId(), groupStore::get) != null) {
+        if (tx.read(entity.getId(), groupStore::read) != null) {
             throw new ModelDuplicateException("Group exists: " + entityId);
         }
-        tx.putIfAbsent(entity.getId(), entity);
+        tx.create(entity.getId(), entity);
 
         return entityToAdapterFunc(realm).apply(entity);
     }
@@ -233,7 +233,7 @@ public class MapGroupProvider implements GroupProvider {
 
         // TODO: ^^^^^^^ Up to here
 
-        tx.remove(UUID.fromString(group.getId()));
+        tx.delete(UUID.fromString(group.getId()));
         
         return true;
     }

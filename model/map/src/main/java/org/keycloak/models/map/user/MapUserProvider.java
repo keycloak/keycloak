@@ -86,8 +86,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     private MapUserEntity registerEntityForChanges(MapUserEntity origEntity) {
-        MapUserEntity res = tx.get(origEntity.getId(), id -> Serialization.from(origEntity));
-        tx.putIfChanged(origEntity.getId(), res, MapUserEntity::isUpdated);
+        MapUserEntity res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
+        tx.updateIfChanged(origEntity.getId(), res, MapUserEntity::isUpdated);
         return res;
     }
 
@@ -134,7 +134,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     private Optional<MapUserEntity> getEntityById(RealmModel realm, UUID id) {
-        MapUserEntity mapUserEntity = tx.get(id, userStore::get);
+        MapUserEntity mapUserEntity = tx.read(id, userStore::read);
         if (mapUserEntity != null && entityRealmFilter(realm).test(mapUserEntity)) {
             return Optional.of(mapUserEntity);
         }
@@ -148,7 +148,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
 
     private Stream<MapUserEntity> getNotRemovedUpdatedUsersStream() {
         Stream<MapUserEntity> updatedAndNotRemovedUsersStream = userStore.entrySet().stream()
-                .map(tx::getUpdated)    // If the group has been removed, tx.get will return null, otherwise it will return me.getValue()
+                .map(tx::getUpdated)    // If the group has been removed, tx.read will return null, otherwise it will return me.getValue()
                 .filter(Objects::nonNull);
         return Stream.concat(tx.createdValuesStream(), updatedAndNotRemovedUsersStream);
     }
@@ -328,7 +328,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         
         final UUID entityId = id == null ? UUID.randomUUID() : UUID.fromString(id);
 
-        if (tx.get(entityId, userStore::get) != null) {
+        if (tx.read(entityId, userStore::read) != null) {
             throw new ModelDuplicateException("User exists: " + entityId);
         }
 
@@ -336,7 +336,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         entity.setUsername(username.toLowerCase());
         entity.setCreatedTimestamp(Time.currentTimeMillis());
 
-        tx.putIfAbsent(entityId, entity);
+        tx.create(entityId, entity);
         final UserModel userModel = entityToAdapterFunc(realm).apply(entity);
 
         if (addDefaultRoles) {
@@ -362,7 +362,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         LOG.tracef("preRemove[RealmModel](%s)%s", realm, getShortStackTrace());
         getUnsortedUserEntitiesStream(realm)
                 .map(MapUserEntity::getId)
-                .forEach(tx::remove);
+                .forEach(tx::delete);
     }
 
     @Override
@@ -371,7 +371,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         getUnsortedUserEntitiesStream(realm)
                 .filter(userEntity -> Objects.equals(userEntity.getFederationLink(), storageProviderId))
                 .map(MapUserEntity::getId)
-                .forEach(tx::remove);
+                .forEach(tx::delete);
     }
 
     @Override
@@ -712,7 +712,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         String userId = user.getId();
         Optional<MapUserEntity> userById = getEntityById(realm, userId);
         if (userById.isPresent()) {
-            tx.remove(UUID.fromString(userId));
+            tx.delete(UUID.fromString(userId));
             return true;
         }
 

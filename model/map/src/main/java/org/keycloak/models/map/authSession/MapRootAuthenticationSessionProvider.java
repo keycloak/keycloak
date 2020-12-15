@@ -69,8 +69,8 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
     }
 
     private MapRootAuthenticationSessionEntity registerEntityForChanges(MapRootAuthenticationSessionEntity origEntity) {
-        MapRootAuthenticationSessionEntity res = tx.get(origEntity.getId(), id -> Serialization.from(origEntity));
-        tx.putIfChanged(origEntity.getId(), res, MapRootAuthenticationSessionEntity::isUpdated);
+        MapRootAuthenticationSessionEntity res = tx.read(origEntity.getId(), id -> Serialization.from(origEntity));
+        tx.updateIfChanged(origEntity.getId(), res, MapRootAuthenticationSessionEntity::isUpdated);
         return res;
     }
 
@@ -100,11 +100,11 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
         entity.setRealmId(realm.getId());
         entity.setTimestamp(Time.currentTime());
 
-        if (tx.get(entity.getId(), sessionStore::get) != null) {
+        if (tx.read(entity.getId(), sessionStore::read) != null) {
             throw new ModelDuplicateException("Root authentication session exists: " + entity.getId());
         }
 
-        tx.putIfAbsent(entity.getId(), entity);
+        tx.create(entity.getId(), entity);
 
         return entityToAdapterFunc(realm).apply(entity);
     }
@@ -118,7 +118,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
 
         LOG.tracef("getRootAuthenticationSession(%s, %s)%s", realm.getName(), authenticationSessionId, getShortStackTrace());
 
-        MapRootAuthenticationSessionEntity entity = tx.get(UUID.fromString(authenticationSessionId), sessionStore::get);
+        MapRootAuthenticationSessionEntity entity = tx.read(UUID.fromString(authenticationSessionId), sessionStore::read);
         return (entity == null || !entityRealmFilter(realm.getId()).test(entity))
                 ? null
                 : entityToAdapterFunc(realm).apply(entity);
@@ -127,7 +127,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
     @Override
     public void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession) {
         Objects.requireNonNull(authenticationSession, "The provided root authentication session can't be null!");
-        tx.remove(UUID.fromString(authenticationSession.getId()));
+        tx.delete(UUID.fromString(authenticationSession.getId()));
     }
 
     @Override
@@ -145,7 +145,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
 
         LOG.debugf("Removed %d expired authentication sessions for realm '%s'", sessionIds.size(), realm.getName());
 
-        sessionIds.forEach(tx::remove);
+        sessionIds.forEach(tx::delete);
     }
 
     @Override
@@ -155,7 +155,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
                 .filter(entity -> entityRealmFilter(realm.getId()).test(entity.getValue()))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList())
-                .forEach(tx::remove);
+                .forEach(tx::delete);
     }
 
     @Override

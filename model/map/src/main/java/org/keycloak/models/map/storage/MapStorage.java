@@ -18,6 +18,7 @@ package org.keycloak.models.map.storage;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  *
@@ -25,14 +26,60 @@ import java.util.Set;
  */
 public interface MapStorage<K, V> {
 
-    V get(K key);
+    /**
+     * Creates an object in the store identified by given {@code key}.
+     * @param key Key of the object as seen in the logical level
+     * @param value Entity
+     * @return Reference to the entity created in the store
+     * @throws NullPointerException if object or its {@code id} is {@code null}
+     */
+    V create(K key, V value);
 
-    V put(K key, V value);
+    /**
+     * Returns object with the given {@code key} from the storage or {@code null} if object does not exist.
+     * @param key Must not be {@code null}.
+     * @return See description
+     */
+    V read(K key);
 
-    V putIfAbsent(K key, V value);
+    /**
+     * Returns stream of objects satisfying given {@code criteria} from the storage.
+     * The criteria are specified in the given criteria builder based on model properties.
+     *
+     * @param criteria
+     * @return Stream of objects. Never returns {@code null}.
+     */
+    Stream<V> read(ModelCriteriaBuilder criteria);
 
-    V remove(K key);
+    /**
+     * Updates the object with the given {@code id} in the storage if it already exists.
+     * @param id
+     * @throws NullPointerException if object or its {@code id} is {@code null}
+     */
+    V update(K key, V value);
 
+    /**
+     * Deletes object with the given {@code key} from the storage, if exists, no-op otherwise.
+     * @param key
+     */
+    V delete(K key);
+
+    /**
+     * Returns criteria builder for the storage engine.
+     * The criteria are specified in the given criteria builder based on model properties.
+     * <br>
+     * <b>Note:</b> While the criteria are formulated in terms of model properties,
+     * the storage engine may in turn process them into the best form that suits the
+     * underlying storage engine query language, e.g. to conditions on storage
+     * attributes or REST query parameters.
+     * If possible, do <i>not</i> delay filtering after the models are reconstructed from
+     * storage entities, in most cases this would be highly inefficient.
+     *
+     * @return See description
+     */
+    ModelCriteriaBuilder createCriteriaBuilder();
+
+    @Deprecated
     Set<Map.Entry<K,V>> entrySet();
 
 }
