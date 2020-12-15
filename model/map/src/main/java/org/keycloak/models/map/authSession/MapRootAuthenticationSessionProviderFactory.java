@@ -24,6 +24,7 @@ import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.AuthenticationSessionProviderFactory;
 
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import java.util.UUID;
 
 /**
@@ -32,12 +33,12 @@ import java.util.UUID;
 public class MapRootAuthenticationSessionProviderFactory extends AbstractMapProviderFactory<AuthenticationSessionProvider>
         implements AuthenticationSessionProviderFactory {
 
-    private MapStorage<UUID, MapRootAuthenticationSessionEntity> store;
+    private MapStorage<UUID, MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> store;
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         MapStorageProvider sp = (MapStorageProvider) factory.getProviderFactory(MapStorageProvider.class);
-        this.store = sp.getStorage("sessions", UUID.class, MapRootAuthenticationSessionEntity.class);
+        this.store = sp.getStorage("sessions", UUID.class, MapRootAuthenticationSessionEntity.class, RootAuthenticationSessionModel.class);
     }
 
     @Override

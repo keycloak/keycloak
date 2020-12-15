@@ -19,6 +19,7 @@ package org.keycloak.models.map.user;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserProviderFactory;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
@@ -33,12 +34,12 @@ import java.util.UUID;
  */
 public class MapUserProviderFactory extends AbstractMapProviderFactory<UserProvider> implements UserProviderFactory {
 
-    private MapStorage<UUID, MapUserEntity> store;
+    private MapStorage<UUID, MapUserEntity, UserModel> store;
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         MapStorageProvider sp = (MapStorageProvider) factory.getProviderFactory(MapStorageProvider.class);
-        this.store = sp.getStorage("users", UUID.class, MapUserEntity.class);
+        this.store = sp.getStorage("users", UUID.class, MapUserEntity.class, UserModel.class);
     }
 
 

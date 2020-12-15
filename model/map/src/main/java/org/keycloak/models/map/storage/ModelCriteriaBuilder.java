@@ -51,7 +51,7 @@ import org.keycloak.storage.SearchableModelField;
  *
  * @author hmlnarik
  */
-public interface ModelCriteriaBuilder {
+public interface ModelCriteriaBuilder<M> {
 
     /**
      * The operators are very basic ones for this use case. In the real scenario,
@@ -94,8 +94,15 @@ public interface ModelCriteriaBuilder {
          * </ul>
          */
         ILIKE,
-        /** Operator for belonging into a set of values */
-        IN
+        /**
+         * Operator for belonging into a collection of values. Operand in {@code value}
+         * can be an array (via an implicit conversion of the vararg), a {@link Collection} or a {@link Stream}.
+         */
+        IN,
+        /** Is not null */
+        EXISTS,
+        /** Is null */
+        NOT_EXISTS,
     }
 
     /**
@@ -108,8 +115,9 @@ public interface ModelCriteriaBuilder {
      * @param op Operator
      * @param value Additional operands of the operator.
      * @return
+     * @throws CriterionNotSupported If the operator is not supported for the given field.
      */
-    ModelCriteriaBuilder compare(SearchableModelField modelField, Operator op, Object... value);
+    ModelCriteriaBuilder<M> compare(SearchableModelField<M> modelField, Operator op, Object... value);
 
     /**
      * Creates and returns a new instance of {@code ModelCriteriaBuilder} that
@@ -126,8 +134,9 @@ public interface ModelCriteriaBuilder {
      *   );
      * </pre>
      *
+     * @throws CriterionNotSupported If the operator is not supported for the given field.
      */
-    ModelCriteriaBuilder and(ModelCriteriaBuilder... builders);
+    ModelCriteriaBuilder<M> and(ModelCriteriaBuilder<M>... builders);
 
     /**
      * Creates and returns a new instance of {@code ModelCriteriaBuilder} that
@@ -143,8 +152,10 @@ public interface ModelCriteriaBuilder {
      *     cb.compare(FIELD1, EQ, 3).compare(FIELD2, EQ, 4)
      *   );
      * </pre>
+     *
+     * @throws CriterionNotSupported If the operator is not supported for the given field.
      */
-    ModelCriteriaBuilder or(ModelCriteriaBuilder... builders);
+    ModelCriteriaBuilder<M> or(ModelCriteriaBuilder<M>... builders);
 
     /**
      * Creates and returns a new instance of {@code ModelCriteriaBuilder} that
@@ -155,21 +166,21 @@ public interface ModelCriteriaBuilder {
      *
      * @param builder
      * @return
+     * @throws CriterionNotSupported If the operator is not supported for the given field.
      */
-    ModelCriteriaBuilder not(ModelCriteriaBuilder builder);
+    ModelCriteriaBuilder<M> not(ModelCriteriaBuilder<M> builder);
 
     /**
-     * Returns this object cast to the given class.
+     * Returns this object cast to the given class, or {@code null} if the class cannot be cast to that {@code clazz}.
      * @param <T>
      * @param clazz
      * @return
-     * @throws ClassCastException When this instance cannot be converted to the given {@code clazz}.
      */
     default <T extends ModelCriteriaBuilder> T unwrap(Class<T> clazz) {
         if (clazz.isInstance(this)) {
             return clazz.cast(this);
         } else {
-            throw new ClassCastException("Incompatible class: " + clazz);
+            return null;
         }
     }
 

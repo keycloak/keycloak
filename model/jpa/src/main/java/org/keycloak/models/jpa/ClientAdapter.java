@@ -753,8 +753,9 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
         return getId().hashCode();
     }
 
+    @Override
     public String toString() {
-        return getClientId();
+        return String.format("%s@%08x", getClientId(), System.identityHashCode(this));
     }
 
 }

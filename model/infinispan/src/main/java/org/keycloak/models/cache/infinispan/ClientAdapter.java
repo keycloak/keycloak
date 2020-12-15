@@ -668,4 +668,9 @@ public class ClientAdapter implements ClientModel, CachedObject {
     public int hashCode() {
         return getId().hashCode();
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s@%08x", getClientId(), System.identityHashCode(this));
+    }
 }
