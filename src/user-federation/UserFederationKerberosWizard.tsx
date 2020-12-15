@@ -9,7 +9,11 @@ export const UserFederationKerberosWizard = () => {
 
   const steps = [
     { name: "Required settings", component: <KerberosSettingsRequired /> },
-    { name: "Cache settings", component: <KerberosSettingsCache /> },
+    {
+      name: "Cache settings",
+      component: <KerberosSettingsCache />,
+      nextButtonText: "Finish", // TODO: needs to disable until cache policy is valid
+    },
   ];
   const title = "Add Kerberos user federation provider";
 

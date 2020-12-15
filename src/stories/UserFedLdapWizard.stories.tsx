@@ -1,17 +1,17 @@
 import React from "react";
 import { Meta } from "@storybook/react";
 import { Page } from "@patternfly/react-core";
-import { UserFederationKerberosWizard } from "../user-federation/UserFederationKerberosWizard";
+import { UserFederationLdapWizard } from "../user-federation/UserFederationLdapWizard";
 
 export default {
-  title: "User Federation Wizard",
-  component: UserFederationKerberosWizard,
+  title: "User Federation LDAP Wizard",
+  component: UserFederationLdapWizard,
 } as Meta;
 
 export const view = () => {
   return (
     <Page>
-      <UserFederationKerberosWizard />
+      <UserFederationLdapWizard />
     </Page>
   );
 };
