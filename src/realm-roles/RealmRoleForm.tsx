@@ -26,20 +26,21 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { RoleAttributes } from "./RoleAttributes";
 
 type RoleFormType = {
-  form: UseFormMethods;
-  save: SubmitHandler<RoleRepresentation>;
-  editMode: boolean;
+  form?: UseFormMethods;
+  save?: SubmitHandler<RoleRepresentation>;
+  editMode?: boolean;
 };
 
-const RoleForm = ({ form, save, editMode }: RoleFormType) => {
+export const RoleForm = ({ form, save, editMode }: RoleFormType) => {
   const { t } = useTranslation("roles");
   const history = useHistory();
   return (
     <FormAccess
       isHorizontal
-      onSubmit={form.handleSubmit(save)}
+      onSubmit={form!.handleSubmit(save!)}
       role="manage-realm"
       className="pf-u-mt-lg"
     >
@@ -47,11 +48,11 @@ const RoleForm = ({ form, save, editMode }: RoleFormType) => {
         label={t("roleName")}
         fieldId="kc-name"
         isRequired
-        validated={form.errors.name ? "error" : "default"}
+        validated={form!.errors.name ? "error" : "default"}
         helperTextInvalid={t("common:required")}
       >
         <TextInput
-          ref={form.register({ required: true })}
+          ref={form!.register({ required: true })}
           type="text"
           id="kc-name"
           name="name"
@@ -62,15 +63,15 @@ const RoleForm = ({ form, save, editMode }: RoleFormType) => {
         label={t("description")}
         fieldId="kc-description"
         validated={
-          form.errors.description
+          form!.errors.description
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
-        helperTextInvalid={form.errors.description?.message}
+        helperTextInvalid={form!.errors.description?.message}
       >
         <TextArea
           name="description"
-          ref={form.register({
+          ref={form!.register({
             maxLength: {
               value: 255,
               message: t("common:maxLength", { length: 255 }),
@@ -78,7 +79,7 @@ const RoleForm = ({ form, save, editMode }: RoleFormType) => {
           })}
           type="text"
           validated={
-            form.errors.description
+            form!.errors.description
               ? ValidatedOptions.error
               : ValidatedOptions.default
           }
@@ -195,6 +196,12 @@ export const RealmRolesForm = () => {
               title={<TabTitleText>{t("details")}</TabTitleText>}
             >
               <RoleForm form={form} save={save} editMode={true} />
+            </Tab>
+            <Tab
+              eventKey={1}
+              title={<TabTitleText>{t("attributes")}</TabTitleText>}
+            >
+              <RoleAttributes />
             </Tab>
           </Tabs>
         )}
