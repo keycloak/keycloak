@@ -21,7 +21,3 @@ Verify Email::
 Update Profile::
    The user must update profile information, such as name, address, email, and phone number.
 
-
-include::proc-setting-required-actions.adoc[leveloffset=3]
-include::proc-setting-default-required-actions.adoc[leveloffset=3]
-include::proc-enabling-terms-conditions.adoc[leveloffset=3]

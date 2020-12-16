@@ -1,5 +1,5 @@
-[id="con-oidc-auth-flows_{context}"]
 
+[id="con-oidc-auth-flows_{context}"]
 ==== OIDC Auth Flows
 [role="_abstract"]
 OIDC has several methods, or flows, that clients or applications can use to authenticate users and receive _identity_ and _access_ tokens.  The method depends on the type of application or client requesting access.
