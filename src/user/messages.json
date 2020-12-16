@@ -9,6 +9,7 @@
     "firstName": "First name",
     "status": "Status",
     "disabled": "Disabled",
+    "temporaryDisabled": "Temporarily disabled",
     "addUser": "Add user",
     "deleteUser": "Delete user",
     "userDeletedSuccess": "The user has been deleted",
