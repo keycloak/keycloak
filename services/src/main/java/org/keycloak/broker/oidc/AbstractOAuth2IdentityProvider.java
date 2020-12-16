@@ -438,14 +438,16 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         if (getConfig().getClientAuthMethod().equals(OIDCLoginProtocol.CLIENT_SECRET_JWT)) {
             try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
                 KeyWrapper key = new KeyWrapper();
-                key.setAlgorithm(Algorithm.HS256);
+                String alg = getConfig().getClientAssertionSigningAlg() != null ? getConfig().getClientAssertionSigningAlg() : Algorithm.HS256;
+                key.setAlgorithm(alg);
                 byte[] decodedSecret = vaultStringSecret.get().orElse(getConfig().getClientSecret()).getBytes();
-                SecretKey secret = new SecretKeySpec(decodedSecret, 0, decodedSecret.length, Algorithm.HS256);
+                SecretKey secret = new SecretKeySpec(decodedSecret, 0, decodedSecret.length, alg);
                 key.setSecretKey(secret);
                 return new MacSignatureSignerContext(key);
             }
         }
-        return new AsymmetricSignatureProvider(session, Algorithm.RS256).signer();
+        String alg = getConfig().getClientAssertionSigningAlg() != null ? getConfig().getClientAssertionSigningAlg() : Algorithm.RS256;
+        return new AsymmetricSignatureProvider(session, alg).signer();
     }
 
     protected class Endpoint {

@@ -147,6 +147,14 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
         return getConfig().put(PKCE_METHOD, method);
     }
 
+    public String getClientAssertionSigningAlg() {
+        return getConfig().get("clientAssertionSigningAlg");
+    }
+    
+    public void setClientAssertionSigningAlg(String signingAlg) {
+        getConfig().put("clientAssertionSigningAlg", signingAlg);
+    }
+    
     @Override
     public void validate(RealmModel realm) {
         SslRequired sslRequired = realm.getSslRequired();
