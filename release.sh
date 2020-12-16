@@ -16,7 +16,7 @@ echo "--------------------------------------------------------------------------
 echo "Deploying:"
 echo ""
 
-mvn -Pjboss-release,nexus-staging -DretryFailedDeploymentCount=10 -DskipTests -DskipTestsuite -DskipExamples -DautoReleaseAfterClose=true deploy
+mvn -Pjboss-release,nexus-staging -DretryFailedDeploymentCount=10 -Dmaven.install.skip=true -DskipTests -DskipTestsuite -DskipExamples -DautoReleaseAfterClose=true deploy
 
 
 echo "------------------------------------------------------------------------------------------------------------"
