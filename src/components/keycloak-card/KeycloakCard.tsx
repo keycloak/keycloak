@@ -28,11 +28,12 @@ export type KeycloakCardProps = {
 
 export const KeycloakCard = ({
   id,
-  dropdownItems,
   title,
+  dropdownItems,
   labelText,
   labelColor,
   footerText,
+  providerId,
 }: KeycloakCardProps) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -47,7 +48,11 @@ export const KeycloakCard = ({
   };
 
   const openSettings = () => {
-    history.push(`/user-federation/${id}`);
+    if (providerId === "kerberos") {
+      history.push(`/user-federation/Kerberos/${id}`);
+    } else {
+      history.push(`/user-federation/LDAP/${id}`);
+    }
   };
 
   return (

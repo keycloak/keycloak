@@ -6,15 +6,68 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import React, { useState } from "react";
-import { HelpItem } from "../components/help-enabler/HelpItem";
+import React, { useEffect, useState } from "react";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useForm, Controller } from "react-hook-form";
+import { convertToFormValues } from "../../util";
 import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
-import { FormAccess } from "../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form-access/FormAccess";
+import { useAdminClient } from "../../context/auth/AdminClient";
+import { useParams } from "react-router-dom";
 
 export const LdapSettingsCache = () => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
+
+  const adminClient = useAdminClient();
+  const { control, setValue, register } = useForm<ComponentRepresentation>();
+  const { id } = useParams<{ id: string }>();
+
+  const convertToDays = (num: string) => {
+    switch (num) {
+      case "1":
+        return t("common:Sunday");
+      case "2":
+        return t("common:Monday");
+      case "3":
+        return t("common:Tuesday");
+      case "4":
+        return t("common:Wednesday");
+      case "5":
+        return t("common:Thursday");
+      case "6":
+        return t("common:Friday");
+      case "7":
+        return t("common:Saturday");
+      default:
+        return t("common:selectOne");
+    }
+  };
+
+  const setupForm = (component: ComponentRepresentation) => {
+    Object.entries(component).map((entry) => {
+      if (entry[0] === "config") {
+        convertToFormValues(entry[1], "config", setValue);
+        if (entry[1].evictionDay) {
+          setValue(
+            "config.evictionDay",
+            convertToDays(entry[1].evictionDay[0])
+          );
+        }
+      } else {
+        setValue(entry[0], entry[1]);
+      }
+    });
+  };
+
+  useEffect(() => {
+    (async () => {
+      const fetchedComponent = await adminClient.components.findOne({ id });
+      if (fetchedComponent) {
+        setupForm(fetchedComponent);
+      }
+    })();
+  }, []);
 
   const [isCachePolicyDropdownOpen, setIsCachePolicyDropdownOpen] = useState(
     false
@@ -23,6 +76,7 @@ export const LdapSettingsCache = () => {
   const [isEvictionHourDropdownOpen, setIsEvictionHourDropdownOpen] = useState(
     false
   );
+
   const [
     isEvictionMinuteDropdownOpen,
     setIsEvictionMinuteDropdownOpen,
@@ -46,8 +100,6 @@ export const LdapSettingsCache = () => {
     minuteOptions.push(<SelectOption key={index + 1} value={index} />);
   }
 
-  const { control, register } = useForm<ComponentRepresentation>();
-
   return (
     <>
       {/* Cache settings */}
@@ -64,7 +116,7 @@ export const LdapSettingsCache = () => {
           fieldId="kc-cache-policy"
         >
           <Controller
-            name="cachePolicy"
+            name="config.cachePolicy"
             defaultValue=""
             control={control}
             render={({ onChange, value }) => (
@@ -81,8 +133,6 @@ export const LdapSettingsCache = () => {
                 }}
                 selections={value}
                 variant={SelectVariant.single}
-                // aria-label="Other"
-                // isDisabled
               >
                 <SelectOption key={0} value="Choose..." isPlaceholder />
                 <SelectOption key={1} value="DEFAULT" />
@@ -108,7 +158,7 @@ export const LdapSettingsCache = () => {
           fieldId="kc-eviction-day"
         >
           <Controller
-            name="evictionDay"
+            name="config.evictionDay"
             defaultValue=""
             control={control}
             render={({ onChange, value }) => (
@@ -157,7 +207,7 @@ export const LdapSettingsCache = () => {
           fieldId="kc-eviction-hour"
         >
           <Controller
-            name="evictionHour"
+            name="config.evictionHour"
             defaultValue=""
             control={control}
             render={({ onChange, value }) => (
@@ -194,7 +244,7 @@ export const LdapSettingsCache = () => {
           fieldId="kc-eviction-minute"
         >
           <Controller
-            name="evictionMinute"
+            name="config.evictionMinute"
             defaultValue=""
             control={control}
             render={({ onChange, value }) => (
@@ -233,7 +283,7 @@ export const LdapSettingsCache = () => {
             isRequired
             type="text"
             id="kc-max-lifespan"
-            name="maxLifespan"
+            name="config.maxLifespan"
             ref={register}
           />
         </FormGroup>

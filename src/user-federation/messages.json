@@ -20,7 +20,7 @@
 
     "connectionAndAuthenticationSettings": "Connection and authentication settings",
     "connectionURL": "Connection URL",
-    "enableStarttls": "Enable StartTLS",
+    "enableStartTls": "Enable StartTLS",
     "useTruststoreSpi": "Use Truststore SPI",
     "connectionPooling": "Connection pooling",
     "connectionTimeout": "Connection timeout",
@@ -69,6 +69,12 @@
     "debug": "Debug",
     "allowPasswordAuthentication": "Allow password authentication",
     "updateFirstLogin": "Update first login",
+
+    "always": "Always",
+    "never": "Never",
+    "onlyLdaps": "Only for ldaps",
+    "oneLevel": "One Level",
+    "subtree": "Subtree",
 
     "learnMore": "Learn more",
     "addNewProvider": "Add new provider",

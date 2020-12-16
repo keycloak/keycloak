@@ -21,6 +21,7 @@ import { UsersSection } from "./user/UsersSection";
 import { MappingDetails } from "./client-scopes/details/MappingDetails";
 import { ClientDetails } from "./clients/ClientDetails";
 import { UserFederationKerberosSettings } from "./user-federation/UserFederationKerberosSettings";
+import { UserFederationLdapSettings } from "./user-federation/UserFederationLdapSettings";
 import { RoleMappingForm } from "./client-scopes/add/RoleMappingForm";
 
 export type RouteDef = {
@@ -32,7 +33,7 @@ export type RouteDef = {
 
 type RoutesFn = (t: TFunction) => RouteDef[];
 
-export const routes: RoutesFn = (t: TFunction) => [
+export const routes: RoutesFn = (t: any) => [
   {
     path: "/add-realm",
     component: NewRealmForm,
@@ -166,8 +167,26 @@ export const routes: RoutesFn = (t: TFunction) => [
     access: "view-realm",
   },
   {
-    path: "/user-federation/:id",
+    path: "/user-federation/kerberos",
+    component: UserFederationSection,
+    breadcrumb: null,
+    access: "view-realm",
+  },
+  {
+    path: "/user-federation/ldap",
+    component: UserFederationSection,
+    breadcrumb: null,
+    access: "view-realm",
+  },
+  {
+    path: "/user-federation/kerberos/:id",
     component: UserFederationKerberosSettings,
+    breadcrumb: t("common:settings"),
+    access: "view-realm",
+  },
+  {
+    path: "/user-federation/ldap/:id",
+    component: UserFederationLdapSettings,
     breadcrumb: t("common:settings"),
     access: "view-realm",
   },

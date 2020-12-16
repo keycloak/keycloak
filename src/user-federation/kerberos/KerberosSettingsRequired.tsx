@@ -8,13 +8,13 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "../components/help-enabler/HelpItem";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useForm, Controller } from "react-hook-form";
 import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
-import { FormAccess } from "../components/form-access/FormAccess";
-import { useAdminClient } from "../context/auth/AdminClient";
+import { FormAccess } from "../../components/form-access/FormAccess";
+import { useAdminClient } from "../../context/auth/AdminClient";
 import { useParams } from "react-router-dom";
-import { convertToFormValues } from "../util";
+import { convertToFormValues } from "../../util";
 
 export const KerberosSettingsRequired = () => {
   const { t } = useTranslation("user-federation");
@@ -28,9 +28,8 @@ export const KerberosSettingsRequired = () => {
     Object.entries(component).map((entry) => {
       if (entry[0] === "config") {
         convertToFormValues(entry[1], "config", setValue);
-      } else {
-        setValue(entry[0], entry[1]);
       }
+      setValue(entry[0], entry[1]);
     });
   };
 
@@ -153,7 +152,7 @@ export const KerberosSettingsRequired = () => {
                 id={"kc-debug"}
                 isDisabled={false}
                 onChange={onChange}
-                isChecked={value}
+                isChecked={value[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
               />
@@ -182,7 +181,7 @@ export const KerberosSettingsRequired = () => {
                 id={"kc-allow-password-authentication"}
                 isDisabled={false}
                 onChange={onChange}
-                isChecked={value}
+                isChecked={value[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
               />
@@ -255,7 +254,7 @@ export const KerberosSettingsRequired = () => {
                 id={"kc-update-first-login"}
                 isDisabled={false}
                 onChange={onChange}
-                isChecked={value}
+                isChecked={value[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
               />

@@ -6,13 +6,13 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { HelpItem } from "../components/help-enabler/HelpItem";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
 import React, { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { convertToFormValues } from "../util";
+import { convertToFormValues } from "../../util";
 import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
-import { FormAccess } from "../components/form-access/FormAccess";
-import { useAdminClient } from "../context/auth/AdminClient";
+import { FormAccess } from "../../components/form-access/FormAccess";
+import { useAdminClient } from "../../context/auth/AdminClient";
 import { useParams } from "react-router-dom";
 
 export const KerberosSettingsCache = () => {
@@ -48,7 +48,12 @@ export const KerberosSettingsCache = () => {
     Object.entries(component).map((entry) => {
       if (entry[0] === "config") {
         convertToFormValues(entry[1], "config", setValue);
-        setValue("config.evictionDay", convertToDays(entry[1].evictionDay[0]));
+        if (entry[1].evictionDay) {
+          setValue(
+            "config.evictionDay",
+            convertToDays(entry[1].evictionDay[0])
+          );
+        }
       } else {
         setValue(entry[0], entry[1]);
       }

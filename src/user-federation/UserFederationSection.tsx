@@ -103,6 +103,7 @@ export const UserFederationSection = () => {
           <KeycloakCard
             id={userFederation.id!}
             dropdownItems={ufCardDropdownItems}
+            providerId={userFederation.providerId!}
             title={userFederation.name!}
             footerText={
               userFederation.providerId === "ldap" ? "LDAP" : "Kerberos"

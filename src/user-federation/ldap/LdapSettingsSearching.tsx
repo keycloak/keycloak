@@ -7,32 +7,63 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import React, { useState } from "react";
-import { HelpItem } from "../components/help-enabler/HelpItem";
+import React, { useEffect, useState } from "react";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useForm, Controller } from "react-hook-form";
 import ComponentRepresentation from "keycloak-admin/lib/defs/componentRepresentation";
-import { FormAccess } from "../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form-access/FormAccess";
+import { useAdminClient } from "../../context/auth/AdminClient";
+import { useParams } from "react-router-dom";
+import { convertToFormValues } from "../../util";
 
 export const LdapSettingsSearching = () => {
   const { t } = useTranslation("user-federation");
+  const adminClient = useAdminClient();
   const helpText = useTranslation("user-federation-help").t;
-
   const [isEditModeDropdownOpen, setIsEditModeDropdownOpen] = useState(false);
-
-  const [
-    isUserLdapFilterModeDropdownOpen,
-    setIsUserLdapFilterModeDropdownOpen,
-  ] = useState(false);
-
+  const { id } = useParams<{ id: string }>();
   const [isSearchScopeDropdownOpen, setIsSearchScopeDropdownOpen] = useState(
     false
   );
+  const { register, control, setValue } = useForm<ComponentRepresentation>();
 
-  const { register, control } = useForm<ComponentRepresentation>();
+  const convertSearchScopes = (scope: string) => {
+    switch (scope) {
+      case "1":
+      default:
+        return `${t("oneLevel")}`;
+      case "2":
+        return `${t("subtree")}`;
+    }
+  };
+
+  const setupForm = (component: ComponentRepresentation) => {
+    Object.entries(component).map((entry) => {
+      if (entry[0] === "config") {
+        convertToFormValues(entry[1], "config", setValue);
+        if (entry[1].searchScope) {
+          setValue(
+            "config.searchScope",
+            convertSearchScopes(entry[1].searchScope[0])
+          );
+        }
+      } else {
+        setValue(entry[0], entry[1]);
+      }
+    });
+  };
+
+  useEffect(() => {
+    (async () => {
+      const fetchedComponent = await adminClient.components.findOne({ id });
+      if (fetchedComponent) {
+        setupForm(fetchedComponent);
+      }
+    })();
+  }, []);
 
   return (
     <>
-      {/* Cache settings */}
       <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
           label={t("editMode")}
@@ -46,7 +77,7 @@ export const LdapSettingsSearching = () => {
           fieldId="kc-edit-mode"
         >
           <Controller
-            name="editMode"
+            name="config.editMode"
             defaultValue=""
             control={control}
             render={({ onChange, value }) => (
@@ -63,10 +94,12 @@ export const LdapSettingsSearching = () => {
                 }}
                 selections={value}
                 variant={SelectVariant.single}
-                // aria-label="Other"
-                // isDisabled
               >
-                <SelectOption key={0} value="Choose..." isPlaceholder />
+                <SelectOption
+                  key={0}
+                  value={t("common:choose")}
+                  isPlaceholder
+                />
                 <SelectOption key={1} value="RACT_ONLY" />
                 <SelectOption key={2} value="WRITABLE" />
                 <SelectOption key={3} value="UNSYNCED" />
@@ -74,7 +107,6 @@ export const LdapSettingsSearching = () => {
             )}
           ></Controller>
         </FormGroup>
-
         <FormGroup
           label={t("usersDN")}
           labelIcon={
@@ -91,11 +123,10 @@ export const LdapSettingsSearching = () => {
             isRequired
             type="text"
             id="kc-console-users-dn"
-            name="usersDn"
+            name="config.usersDn"
             ref={register}
           />
         </FormGroup>
-
         <FormGroup
           label={t("usernameLdapAttribute")}
           labelIcon={
@@ -112,11 +143,10 @@ export const LdapSettingsSearching = () => {
             isRequired
             type="text"
             id="kc-username-ldap-attribute"
-            name="usernameLdapAttribute"
+            name="config.usernameLDAPAttribute"
             ref={register}
           />
         </FormGroup>
-
         <FormGroup
           label={t("rdnLdapAttribute")}
           labelIcon={
@@ -133,11 +163,10 @@ export const LdapSettingsSearching = () => {
             isRequired
             type="text"
             id="kc-rdn-ldap-attribute"
-            name="rdnLdapAttribute"
+            name="config.rdnLDAPAttribute"
             ref={register}
           />
         </FormGroup>
-
         <FormGroup
           label={t("uuidLdapAttribute")}
           labelIcon={
@@ -154,11 +183,10 @@ export const LdapSettingsSearching = () => {
             isRequired
             type="text"
             id="kc-uuid-ldap-attribute"
-            name="uuidLdapAttribute"
+            name="config.uuidLDAPAttribute"
             ref={register}
           />
         </FormGroup>
-
         <FormGroup
           label={t("userObjectClasses")}
           labelIcon={
@@ -175,11 +203,10 @@ export const LdapSettingsSearching = () => {
             isRequired
             type="text"
             id="kc-user-object-classes"
-            name="userObjectClasses"
+            name="config.userObjectClasses"
             ref={register}
           />
         </FormGroup>
-
         <FormGroup
           label={t("userLdapFilter")}
           labelIcon={
@@ -191,34 +218,13 @@ export const LdapSettingsSearching = () => {
           }
           fieldId="kc-user-ldap-filter"
         >
-          <Controller
-            name="userLdapFilter"
-            defaultValue=""
-            control={control}
-            render={({ onChange, value }) => (
-              <Select
-                toggleId="kc-user-ldap-filter"
-                required
-                onToggle={() =>
-                  setIsUserLdapFilterModeDropdownOpen(
-                    !isUserLdapFilterModeDropdownOpen
-                  )
-                }
-                isOpen={isUserLdapFilterModeDropdownOpen}
-                onSelect={(_, value) => {
-                  onChange(value as string);
-                  setIsUserLdapFilterModeDropdownOpen(false);
-                }}
-                selections={value}
-                variant={SelectVariant.single}
-              >
-                <SelectOption key={0} value="Choose..." isPlaceholder />
-                <SelectOption key={1} value="to do " />
-              </Select>
-            )}
-          ></Controller>
+          <TextInput
+            type="text"
+            id="kc-user-ldap-filter"
+            name="config.customUserSearchFilter"
+            ref={register}
+          />
         </FormGroup>
-
         <FormGroup
           label={t("searchScope")}
           labelIcon={
@@ -231,7 +237,7 @@ export const LdapSettingsSearching = () => {
           fieldId="kc-search-scope"
         >
           <Controller
-            name="searchScope"
+            name="config.searchScope"
             defaultValue=""
             control={control}
             render={({ onChange, value }) => (
@@ -249,15 +255,17 @@ export const LdapSettingsSearching = () => {
                 selections={value}
                 variant={SelectVariant.single}
               >
-                <SelectOption key={0} value="Choose..." isPlaceholder />
-                <SelectOption key={1} value="simple" />
-                <SelectOption key={2} value="none" />
-                <SelectOption key={5} value="Other" />
+                <SelectOption
+                  key={0}
+                  value={t("common:choose")}
+                  isPlaceholder
+                />
+                <SelectOption key={1} value={t("oneLevel")} />
+                <SelectOption key={2} value={t("subtree")} />
               </Select>
             )}
           ></Controller>
         </FormGroup>
-
         <FormGroup
           label={t("readTimeout")}
           labelIcon={
@@ -272,11 +280,10 @@ export const LdapSettingsSearching = () => {
           <TextInput
             type="text"
             id="kc-read-timeout"
-            name="readTimeout"
+            name="config.readTimeout"
             ref={register}
           />
         </FormGroup>
-
         <FormGroup
           label={t("pagination")}
           labelIcon={
@@ -290,13 +297,13 @@ export const LdapSettingsSearching = () => {
           hasNoPaddingTop
         >
           <Controller
-            name="pagination"
+            name="config.pagination"
             defaultValue={false}
             control={control}
             render={({ onChange, value }) => (
               <Switch
                 id={"kc-console-pagination"}
-                isChecked={value}
+                isChecked={value[0] === "true"}
                 isDisabled={false}
                 onChange={onChange}
                 label={t("common:on")}

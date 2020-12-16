@@ -1,8 +1,8 @@
 import { PageSection, Title } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import React from "react";
-import { KerberosSettingsRequired } from "./KerberosSettingsRequired";
-import { KerberosSettingsCache } from "./KerberosSettingsCache";
+import { KerberosSettingsRequired } from "./kerberos/KerberosSettingsRequired";
+import { KerberosSettingsCache } from "./kerberos/KerberosSettingsCache";
 
 export const UserFederationKerberosSettings = () => {
   const { t } = useTranslation("user-federation");
