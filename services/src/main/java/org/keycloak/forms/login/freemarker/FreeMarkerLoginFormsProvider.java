@@ -209,9 +209,14 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) this.attributes.get(IDENTITY_PROVIDER_BROKER_CONTEXT);
                 String idpAlias = brokerContext.getIdpConfig().getAlias();
                 idpAlias = ObjectUtil.capitalize(idpAlias);
+                String displayName = idpAlias;
+                if (!ObjectUtil.isBlank(brokerContext.getIdpConfig().getDisplayName())) {
+                    displayName = brokerContext.getIdpConfig().getDisplayName();
+                }
 
                 attributes.put("brokerContext", brokerContext);
                 attributes.put("idpAlias", idpAlias);
+                attributes.put("idpDisplayName", displayName);
                 break;
             case LOGIN_TOTP:
                 attributes.put("otpLogin", new TotpLoginBean(session, realm, user, (String) this.attributes.get(OTPFormAuthenticator.SELECTED_OTP_CREDENTIAL_ID)));
@@ -542,7 +547,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) this.attributes.get(IDENTITY_PROVIDER_BROKER_CONTEXT);
         String idpAlias = brokerContext.getIdpConfig().getAlias();
         idpAlias = ObjectUtil.capitalize(idpAlias);
-        setMessage(MessageType.WARNING, Messages.LINK_IDP, idpAlias);
+        String displayName = idpAlias;
+        if (!ObjectUtil.isBlank(brokerContext.getIdpConfig().getDisplayName())) {
+            displayName = brokerContext.getIdpConfig().getDisplayName();
+        }
+
+        setMessage(MessageType.WARNING, Messages.LINK_IDP, displayName);
 
         return createResponse(LoginFormsPages.LOGIN_IDP_LINK_EMAIL);
     }
