@@ -1,5 +1,12 @@
 
 == SSO Protocols
+[role="_abstract"]
+This section discusses authentication protocols, the {project_name} authentication server and how applications, secured by the {project_name} authentication server, interact with these protocols.
 
-The chapter gives a brief overview of the authentication protocols and how the {project_name} authentication server
-and the applications it secures interact with these protocols.
+include::sso-protocols/con-oidc.adoc[]
+include::sso-protocols/con-oidc-auth-flows.adoc[]
+include::sso-protocols/con-server-oidc-uri-endpoints.adoc[]
+include::sso-protocols/con-saml.adoc[]
+include::sso-protocols/con-saml-bindings.adoc[]
+include::sso-protocols/ref-saml-vs-oidc.adoc[]
+include::sso-protocols/con-sso-docker.adoc[]

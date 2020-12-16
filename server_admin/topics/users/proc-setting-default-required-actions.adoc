@@ -1,6 +1,5 @@
-// Module included in the following assemblies:
-//
-// con-required-actions.adoc
+[id="proc-setting-default-required-actions_{context}"]
+= Setting default required actions
 
 [id="proc-setting-default-required-actions_{context}"]
 = Setting required actions for all users

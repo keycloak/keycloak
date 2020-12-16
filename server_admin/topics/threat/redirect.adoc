@@ -2,8 +2,7 @@
 [id="unspecific-redirect-uris_{context}"]
 === Unspecific Redirect URIs
 
-For the <<_oidc-auth-flows,Authorization Code Flow>>, if you register redirect URIs that
+For the xref:con-oidc-auth-flows_{context}[Authorization Code Flow], if you register redirect URIs that
 are too general, then it would be possible for a rogue client to impersonate a different client that has a broader scope
 of access.  This could happen for instance if two clients live under the same domain.  So, it's a good idea to make your
 registered redirect URIs as specific as feasible.
-

@@ -1,0 +1,73 @@
+[id="con-oidc-auth-flows_{context}"]
+
+==== OIDC Auth Flows
+[role="_abstract"]
+OIDC has several methods, or flows, that clients or applications can use to authenticate users and receive _identity_ and _access_ tokens.  The method depends on the type of application or client requesting access.
+
+[[_oidc-auth-flows-authorization]]
+
+===== Authorization Code Flow
+
+The Authorization Code Flow is a browser-based protocol and suits authenticating and authorizing browser-based applications. It uses browser redirects to obtain _identity_ and _access_ tokens.
+
+. A user connects to an application using a browser. The application detects the user is not logged into the application.
+. The application redirects the browser to {project_name} for authentication.
+. The application passes a callback URL as a query parameter in the browser redirect. {project_name} uses the parameter upon successful authentication.
+. {project_name} authenticates the user and creates a one-time, short lived, temporary code.
+. {project_name} redirects to the application using the callback URL and adds the temporary code as a query parameter in the callback URL.
+. The application extracts the temporary code and makes a background REST invocation to {project_name}
+to exchange the code for an _identity_ and _access_ and _refresh_ token.  To prevent replay attacks, the temporary code cannot be used more than once.
+
+[NOTE]
+====
+A system is vulnerable to a stolen token for the lifetime of that token. For security and scalability reasons, access_ tokens are generally set to expire quickly so subsequent token requests fail. If a token expires, an application can obtain a new access token using the additional _refresh_ token sent by the login protocol. 
+====
+
+[[_confidential-clients]]
+_Confidential_ clients provide client secrets when they exchange the temporary codes for tokens. _Public_ clients are not required to provide client secrets.
+_Public_ clients are secure when HTTPS is strictly enforced and redirect URIs registered for the client are strictly controlled.  HTML5/JavaScript clients have to be _public_ clients because there is no way to securely transmit the client secret to HTML5/JavaScript clients. For more details, see the xref:assembly-managing-clients_{context}[Managing Clients] chapter.
+
+{project_name} also supports the https://tools.ietf.org/html/rfc7636[Proof Key for Code Exchange] specification.
+
+[[_oidc-auth-flows-implicit]]
+
+===== Implicit Flow
+
+The Implicit Flow is a browser-based protocol. It is similar to the Authorization Code Flow but with fewer requests and no refresh tokens. 
+
+[NOTE]
+====
+The possibility exists of _access_ tokens leaking in the browser history when tokens are transmitted via redirect URIs (see below).
+
+Also, this flow does not provide clients with refresh tokens. Therefore, access tokens have to be long-lived or users  have to re-authenticate when they expire.  
+
+We do not advise using this flow. This flow is supported because it is in the OIDC and OAuth 2.0 specification.
+====
+
+The protocol works as follows:
+
+. A user connects to an application using a browser. The application detects the user is not logged into the application.
+. The application redirects the browser to {project_name} for authentication.
+. The application passes a callback URL as a query parameter in the browser redirect. {project_name} uses the query parameter upon successful authentication.
+. {project_name} authenticates the user and creates an _identity_ and _access_ token. {project_name}
+redirects to the application using the callback URL and additionally adds the _identity_ and _access_ tokens as a query parameter in the callback URL.
+. The application extracts the _identity_ and _access_ tokens from the callback URL.
+
+[[_oidc-auth-flows-direct]]
+
+===== Resource Owner Password Credentials Grant (Direct Access Grants)
+
+_Direct Access Grants_ are used by REST clients to obtain tokens on behalf of users.  It is a HTTP POST request that contains:
+
+* The credentials of the user. The credentials are sent within form parameters.
+* The id of the client.
+* The clients secret (if it is a confidential client).
+
+The HTTP response contains the _identity_, _access_, and _refresh_ tokens.
+
+[[_client_credentials_grant]]
+===== Client Credentials Grant
+
+The _Client Credentials Grant_ creates a token based on the metadata and permissions of a service account associated with the client instead of obtaining a token that works on behalf of an external user. _Client Credentials Grants_ are used by REST clients.
+
+See the <<_service_accounts,Service Accounts>> chapter for more information.

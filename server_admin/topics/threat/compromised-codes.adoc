@@ -1,11 +1,10 @@
 
 === Compromised Authorization Code
 
-For the <<_oidc-auth-flows, OIDC Auth Code Flow>>, it would be very hard for an attacker to compromise {project_name} authorization codes.
+For the xref:con-oidc-auth-flows_{context}[OIDC Auth Code Flow], it would be very hard for an attacker to compromise {project_name} authorization codes.
 {project_name} generates a cryptographically strong random value for its authorization codes so it would be very hard to guess an access token.
 An authorization code can only be used once to obtain an access token.
 In the admin console you can specify how long an authorization code is valid for on the <<_timeouts, timeouts page>>.
 This value should be really short, as short as a few seconds and just long enough for the client to make the request to obtain a token from the code.
 
 You can also mitigate against leaked autorization codes by applying PKCE to clients. See <<_proof-key-for-code-exchange, Proof Key for Code Exchange (PKCE)>> to learn how.
-

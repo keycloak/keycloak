@@ -3,7 +3,7 @@
 // con-required-actions.adoc
 
 [id="proc-enabling-terms-conditions_{context}"]
-= Enabling terms and conditions
+= Enabling terms and conditions as a required action
 
 You can enable a required action that new users must accept the terms and conditions before logging in to {project_name} for the first time.    
 

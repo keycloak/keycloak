@@ -1,0 +1,30 @@
+[id="con-sso-docker_{context}"]
+
+[[_docker]]
+
+=== Docker Registry v2 Authentication
+
+[NOTE]
+====
+Docker authentication is disabled by default. To enable docker authentication, see link:{installguide_profile_link}[{installguide_profile_name}].
+====
+[role="_abstract"]
+link:https://docs.docker.com/registry/spec/auth/[Docker Registry V2 Authentication] is a protocol, similar to OIDC, that authenticates users against Docker registries.  {project_name}'s implementation of this protocol lets Docker clients use a {project_name} authentication server authenticate against a registry. This protocol uses standard token and signature mechanisms but it does deviate from a true OIDC implementation. It deviates by using a very specific JSON format for requests and responses as well as mapping repository names and permissions to the OAuth scope mechanism.
+
+==== Docker Authentication Flow
+The authentication flow is described in the link:https://docs.docker.com/registry/spec/auth/token/[Docker API documentation]. The following is a summary from the perspective of the {project_name} authentication server:
+
+* Perform a `docker login`.
+* The Docker client requests a resource from the Docker registry.  If the resource is protected and no authentication token is in the request, the Docker registry server responds with a 401 HTTP message with some information on the permissions that are required and the location of the authorization server.
+* The Docker client constructs an authentication request based on the 401 HTTP message from the Docker registry. The client uses the locally cached credentials (from the `docker login` command) as part of the link:https://tools.ietf.org/html/rfc2617[HTTP Basic Authentication] request to the {project_name} authentication server.
+* The {project_name} authentication server attempts to authenticate the user and return a JSON body containing an OAuth-style Bearer token.
+* The Docker client receives a bearer token from the JSON response and uses it in the authorization header to request the protected resource.
+* The Docker registry receives the new request for the protected resource with the token from the {project_name} server. The registry validates the token and grants access to the requested resource (if appropriate).
+
+NOTE: {project_name} does not create a browser SSO session after successful authentication with the Docker protocol. The browser SSO session does not use the Docker protocol as it cannot refresh tokens or obtain the status of a token or session from the {project_name} server; therefore a browser SSO session is not necessary. For more details, see the <<_transient-session, transient session>> section.
+
+====  {project_name} Docker Registry v2 Authentication Server URI Endpoints
+
+{project_name} has one endpoint for all Docker auth v2 requests.
+
+`http(s)://authserver.host/auth/realms/{realm-name}/protocol/docker-v2`

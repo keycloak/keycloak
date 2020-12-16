@@ -1,0 +1,21 @@
+[id="ref-saml-vs-oidc_{context}"]
+
+=== OpenID Connect vs. SAML
+[role="_abstract"]
+The following lists a number of factors to consider when choosing a protocol.
+
+For most purposes, {project_name} recommends using OIDC.
+
+*OIDC*
+
+* OIDC is specifically designed to work with the web.  
+* OIDC is suited for HTML5/JavaScript applications because it is easier to implement on the client side than SAML.
+* OIDC tokens are in the JSON format which makes them easier for Javascript to consume. 
+* OIDC has features to make security implementation easier. For example, see the link:https://openid.net/specs/openid-connect-session-1_0.html#ChangeNotification[iframe trick] that the specification uses to determine a users login status.
+
+*SAML*
+
+* SAML is designed as a layer to work on top of the web.
+* SAML can be more verbose than OIDC.
+* Users pick SAML over OIDC because there is a perception that it is mature.
+* Users pick SAML over OIDC existing applications that are secured with it.

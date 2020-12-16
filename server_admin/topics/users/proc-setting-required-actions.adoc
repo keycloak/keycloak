@@ -1,6 +1,7 @@
-// Module included in the following assemblies:
-//
-// con-required-actions.adoc
+[id="proc-setting-required-actions_{context}"]
+= Setting required actions
+
+You can add and remove the required actions for existing users in the admin console. 
 
 [id="proc-setting-required-actions_{context}"]
 = Setting required actions for one user

@@ -1,0 +1,25 @@
+[id="con-server-oidc-uri-endpoints_{context}"]
+
+====  {project_name} Server OIDC URI Endpoints
+[role="_abstract"]
+The following is a list of OIDC endpoints that {project_name} publishes. These endpoints can be used when a non-{project_name} client adapter uses OIDC to communicate with the authentication server. They are all relative URLs. The root of the URL consists of the HTTP(S) protocol, hostname, and the path, which is usually prefixed with _/auth_:  For example 
+
+[source, subs="attributes"]
+----
+https://localhost:8080/auth
+----
+
+/realms/{realm-name}/protocol/openid-connect/auth::
+  Used for obtaining a temporary code in the Authorization Code Flow or obtaining tokens using the Implicit Flow, Direct Grants, or Client Grants.
+
+/realms/{realm-name}/protocol/openid-connect/token::
+  Used by the Authorization Code Flow to convert a temporary code into a token.
+
+/realms/{realm-name}/protocol/openid-connect/logout::
+  Used for performing logouts.
+
+/realms/{realm-name}/protocol/openid-connect/userinfo::
+  Used for the User Info service described in the OIDC specification.
+
+/realms/{realm-name}/protocol/openid-connect/revoke::
+  Used for OAuth 2.0 Token Revocation described in https://tools.ietf.org/html/rfc7009[RFC7009].
