@@ -60,14 +60,6 @@
 
     <profiles>
         <profile>
-            <id>distribution-downloads</id>
-            <modules>
-                <module>api-docs-dist</module>
-                <module>examples-dist</module>
-                <module>downloads</module>
-            </modules>
-        </profile>
-        <profile>
             <id>community</id>
             <activation>
                 <property>
@@ -76,6 +68,14 @@
             </activation>
             <modules>
                 <module>server-x-dist</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>distribution-downloads</id>
+            <modules>
+                <module>api-docs-dist</module>
+                <module>examples-dist</module>
+                <module>downloads</module>
             </modules>
         </profile>
     </profiles>
