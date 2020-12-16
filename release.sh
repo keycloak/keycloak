@@ -9,14 +9,7 @@ echo "--------------------------------------------------------------------------
 echo "Building:"
 echo ""
 
-mvn -Pjboss-release,distribution-downloads -DskipTests -DskipTestsuite clean install
-
-
-echo "------------------------------------------------------------------------------------------------------------"
-echo "Deploying:"
-echo ""
-
-mvn -Pjboss-release,nexus-staging -DretryFailedDeploymentCount=10 -Dmaven.install.skip=true -DskipTests -DskipTestsuite -DskipExamples -DautoReleaseAfterClose=true deploy
+mvn -Pjboss-release,distribution-downloads,nexus-staging -DskipTests -DskipTestsuite -DretryFailedDeploymentCount=10 -DautoReleaseAfterClose=true clean deploy
 
 
 echo "------------------------------------------------------------------------------------------------------------"
