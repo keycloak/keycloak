@@ -95,7 +95,7 @@
                         <div class="row">
                             <div class="col-md-12">
                                 <dl class="dl-horizontal">
-                                    <dt>Dependent Policies</dt>
+                                    <dt>Dependent Permissions</dt>
                                     <dd>
                                         <span data-ng-show="policy.dependentPolicies && !policy.dependentPolicies.length">{{:: 'authz-no-policies-available' | translate}}</span>
                                         <span ng-repeat="dep in policy.dependentPolicies" data-ng-show="policy.dependentPolicies.length > 0"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/authz/resource-server/{{dep.type == 'scope' || dep.type == 'resource' ? 'permission' : 'policy'}}/{{dep.type}}/{{dep.id}}">{{dep.name}}</a>{{$last ? '' : ', '}}</span>
