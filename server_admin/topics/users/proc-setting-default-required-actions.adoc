@@ -1,7 +1,4 @@
 [id="proc-setting-default-required-actions_{context}"]
-= Setting default required actions
-
-[id="proc-setting-default-required-actions_{context}"]
 = Setting required actions for all users
 
 You can specify what actions are required before the first login of all new users. The requirements apply to a user created by the *Add User* button on the *Users* page or the *Register* link on the login page.
