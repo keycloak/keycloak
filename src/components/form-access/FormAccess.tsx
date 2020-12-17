@@ -69,8 +69,7 @@ export const FormAccess = ({
             render: (props: any) => {
               const renderElement = element.props.render(props);
               return cloneElement(renderElement, {
-                value: props.value,
-                onChange: props.onChange,
+                ...renderElement.props,
                 ...newProps,
               });
             },
