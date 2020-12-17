@@ -130,7 +130,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
               <DataListItemCells
                 dataListCells={[
                   <DataListCell key='applications-list-client-id-header' width={2}>
-                    <strong><Msg msgKey='applicaitonName' /></strong>
+                    <strong><Msg msgKey='applicationName' /></strong>
                   </DataListCell>,
                   <DataListCell key='applications-list-app-type-header' width={2}>
                     <strong><Msg msgKey='applicationType' /></strong>
