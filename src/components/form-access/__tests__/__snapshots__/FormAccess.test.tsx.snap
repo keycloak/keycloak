@@ -194,7 +194,6 @@ exports[`<FormAccess /> render normal form 1`] = `
               label="on"
               labelOff="off"
               onChange={[Function]}
-              value={false}
             >
               <label
                 className="pf-c-switch"
@@ -212,7 +211,6 @@ exports[`<FormAccess /> render normal form 1`] = `
                   id="kc-consent"
                   onChange={[Function]}
                   type="checkbox"
-                  value={false}
                 />
                 <span
                   className="pf-c-switch__toggle"
