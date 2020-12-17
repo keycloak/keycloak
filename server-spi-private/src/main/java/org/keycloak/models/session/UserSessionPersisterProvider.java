@@ -26,6 +26,7 @@ import org.keycloak.provider.Provider;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -57,6 +58,37 @@ public interface UserSessionPersisterProvider extends Provider {
     void removeExpired(RealmModel realm);
 
     /**
+     * Loads the user session with the given userSessionId.
+     * @param userSessionId
+     * @param offline
+     * @return
+     */
+    UserSessionModel loadUserSession(RealmModel realm, String userSessionId, boolean offline);
+
+    /**
+     * Loads the user sessions for the given {@link UserModel} in the given {@link RealmModel} if present.
+     * @param realm
+     * @param user
+     * @param offline
+     * @param firstResult
+     * @param maxResults
+     * @return
+     */
+    Stream<UserSessionModel> loadUserSessionsStream(RealmModel realm, UserModel user, boolean offline, Integer firstResult, Integer maxResults);
+
+    /**
+     * Loads the user sessions for the given {@link ClientModel} in the given {@link RealmModel} if present.
+     *
+     * @param realm
+     * @param client
+     * @param offline
+     * @param firstResult
+     * @param maxResults
+     * @return
+     */
+    Stream<UserSessionModel> loadUserSessionsStream(RealmModel realm, ClientModel client, boolean offline, Integer firstResult, Integer maxResults);
+
+    /**
      * Called during startup. For each userSession, it loads also clientSessions
      * @deprecated Use {@link #loadUserSessionsStream(Integer, Integer, boolean, Integer, String) loadUserSessionsStream} instead.
      */
@@ -78,6 +110,53 @@ public interface UserSessionPersisterProvider extends Provider {
     Stream<UserSessionModel> loadUserSessionsStream(Integer firstResult, Integer maxResults, boolean offline,
                                                     Integer lastCreatedOn, String lastUserSessionId);
 
-    int getUserSessionsCount(boolean offline);
+    /**
+     * Retrieves the count of user sessions for a given realm.
+     *
+     * If {@code realm} is {@literal null}, then all sessions are counted.
+     *
+     * @param realm
+     * @param offline
+     * @return
+     */
+    int getUserSessionsCount(RealmModel realm, boolean offline);
 
+    /**
+     * Retrieves the count of user sessions for all realms.
+     *
+     * @param offline
+     * @return
+     * 
+     * @see #getUserSessionsCount(RealmModel, boolean)
+     */
+    default int getUserSessionsCount(boolean offline) {
+        return getUserSessionsCount(null, offline);
+    }
+
+    /**
+     * Retrieves the count of user client-sessions for the given client
+     *
+     * @param realm
+     * @param clientModel
+     * @param offline
+     * @return
+     */
+    int getUserSessionsCount(RealmModel realm, ClientModel clientModel, boolean offline);
+
+    /**
+     * Returns a {@link Map} containing the number of user-sessions aggregated by client id for the given realm.
+     * @param realm
+     * @param offline
+     * @return the count {@link Map} with clientId as key and session count as value
+     */
+    Map<String, Long> getUserSessionsCountsByClients(RealmModel realm, boolean offline);
+
+
+    /**
+     * Removes the sessions from the given realm.
+     * @param realm
+     * @param offline
+     * @return
+     */
+    int removeUserSessions(RealmModel realm, Boolean offline);
 }

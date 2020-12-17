@@ -108,6 +108,22 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
         return this;
     }
 
+    /**
+     * Returns the user id.
+     * @return
+     */
+    public String getUser() {
+        return user;
+    }
+
+    public String getBrokerSessionId() {
+        return brokerSessionId;
+    }
+
+    public String getBrokerUserId() {
+        return brokerUserId;
+    }
+
     @Override
     public boolean test(Map.Entry<String, SessionEntityWrapper<UserSessionEntity>> entry) {
         UserSessionEntity entity = entry.getValue().getEntity();
