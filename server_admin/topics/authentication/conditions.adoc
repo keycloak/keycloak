@@ -41,3 +41,45 @@ Expected value in the attribute.
 Negate output:::
 You can negate the output.
 In other words, the attribute should not be present.
+
+==== Explicitly deny/allow access in conditional flows
+
+You can allow or deny access to resources in a conditional flow.
+The two authenticators `Deny Access` and `Allow Access` control access to the resources by conditions.
+
+`Allow Access`::
+Authenticator will always successfully authenticate.
+This authenticator is not configurable.
+
+`Deny Access`::
+Access will always be denied.
+You can define an error message, which will be shown to the user.
+You can provide these fields:
+
+Alias:::
+Describes a name of the execution, which will be shown in the authentication flow.
+
+Error message:::
+Error message which will be shown to the user.
+The error message could be provided as a particular message or as a property in order to use it with localization.
+(i.e "_You do not have the role 'admin'._", _my-property-deny_ in messages properties)
+Leave blank for the default message defined as property `access-denied`.
+
+Here is an example how to deny access to all users who do not have the role `role1` and show an error message defined by a property `deny-role1`.
+This example includes `Condition - User Role` and `Deny Access` executions.
+
+.Browser flow
+image:images/deny-access-flow.png[]
+
+.Condition - User Role configuration
+image:images/deny-access-role-condition.png[]
+
+.Configuration of the `Deny Access` is really easy. You can specify an arbitrary alias and required message like this:
+image:images/deny-access-execution-cond.png[]
+
+The last thing is defining the property with an error message in the login theme `messages_en.properties` (for English):
+
+[source]
+----
+deny-role1 = You do not have required role!
+----
