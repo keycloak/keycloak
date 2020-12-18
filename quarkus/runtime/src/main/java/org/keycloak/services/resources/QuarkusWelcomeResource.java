@@ -17,6 +17,7 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
@@ -70,10 +71,13 @@ public class QuarkusWelcomeResource {
     private AtomicBoolean shouldBootstrap;
 
     @Context
-    protected HttpHeaders headers;
+    HttpHeaders headers;
 
     @Context
-    private KeycloakSession session;
+    HttpRequest request;
+
+    @Context
+    KeycloakSession session;
 
     /**
      * Welcome page of Keycloak
@@ -95,7 +99,9 @@ public class QuarkusWelcomeResource {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_HTML_UTF_8)
-    public Response createUser(final MultivaluedMap<String, String> formData) {
+    public Response createUser() {
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
+
         if (!shouldBootstrap()) {
             return createWelcomePage(null, null);
         } else {
