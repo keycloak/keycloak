@@ -13,10 +13,24 @@ mvn -Pjboss-release,distribution-downloads,nexus-staging -DskipTests -DskipTests
 
 
 echo "------------------------------------------------------------------------------------------------------------"
-echo "Upload to jboss.org:"
+echo "Create tag:"
 echo ""
 
-rsync -rv --protocol=28 distribution/downloads/target/$VERSION keycloak@filemgmt.jboss.org:/downloads_htdocs/keycloak
+git tag $VERSION
+git push origin $VERSION
+
+
+echo "------------------------------------------------------------------------------------------------------------"
+echo "Upload to GitHub releases:"
+echo ""
+
+hub release create -m "$VERSION" $VERSION
+cd distribution/downloads/target/$VERSION
+
+for i in *; do
+  echo "Uploading $i"
+  hub release edit -a $i -m "" $VERSION
+done
 
 
 echo "------------------------------------------------------------------------------------------------------------"
