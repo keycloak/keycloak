@@ -45,6 +45,10 @@ You must define the OpenID Connect configuration options as well.  They basicall
 |Client Secret
 |This realm will need a client secret to use when using the Authorization Code Flow. The value of this field can refer a value from an external <<_vault-administration,vault>>.
 
+|Client Assertion Signature Algorithm
+|Signature algorithm to create JWT assertion as client authentication.
+In the case of JWT signed with private key or Client secret as jwt, it is required. If no algorithm is specified, the following algorithm is adapted. `RS256` is adapted the in the case of JWT signed with private key.  `HS256` is adapted the in the case of Client secret as jwt.
+
 |Issuer
 |Responses from the IDP may contain an issuer claim.  This config value is optional.  If specified, this claim will be validated against the value you provide.
 
