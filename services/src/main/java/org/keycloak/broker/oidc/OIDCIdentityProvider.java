@@ -86,8 +86,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public static final String ACCESS_TOKEN_EXPIRATION = "accessTokenExpiration";
     public static final String EXCHANGE_PROVIDER = "EXCHANGE_PROVIDER";
     private static final String BROKER_NONCE_PARAM = "BROKER_NONCE";
-    private static final String BROKER_CODE_CHALLENGE_PARAM = "BROKER_CODE_CHALLENGE";
-    private static final String BROKER_CODE_CHALLENGE_METHOD_PARAM = "BROKER_CODE_CHALLENGE_METHOD";
 
     public OIDCIdentityProvider(KeycloakSession session, OIDCIdentityProviderConfig config) {
         super(session, config);
@@ -324,34 +322,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         @Override
         public SimpleHttp generateTokenRequest(String authorizationCode) {
             SimpleHttp simpleHttp = super.generateTokenRequest(authorizationCode);
-
-            if (getConfig().isPkceEnabled()) {
-
-                // reconstruct the original code verifier that was used to generate the code challenge.
-                String stateParam = httpRequest.getUri().getQueryParameters().getFirst(OAuth2Constants.STATE);
-                if (stateParam == null) {
-                    logger.warn("Cannot lookup PKCE code_verifier: state param is missing.");
-                    return simpleHttp;
-                }
-
-                IdentityBrokerState idpBrokerState = IdentityBrokerState.encoded(stateParam);
-                ClientModel client = realm.getClientByClientId(idpBrokerState.getClientId());
-                AuthenticationSessionModel authSession = ClientSessionCode.getClientSession(idpBrokerState.getEncoded(), idpBrokerState.getTabId(), session, realm, client, event, AuthenticationSessionModel.class);
-                if (authSession == null) {
-                    logger.warnf("Cannot lookup PKCE code_verifier: authSession not found. state=%s", stateParam);
-                    return simpleHttp;
-                }
-
-                String brokerCodeChallenge = authSession.getClientNote(BROKER_CODE_CHALLENGE_PARAM);
-                if (brokerCodeChallenge == null) {
-                    logger.warnf("Cannot lookup PKCE code_verifier: brokerCodeChallenge not found. state=%s", stateParam);
-                    return simpleHttp;
-                }
-
-                simpleHttp.param(OAuth2Constants.CODE_VERIFIER, brokerCodeChallenge);
-                simpleHttp.param(OAuth2Constants.CODE_CHALLENGE_METHOD, getConfig().getPkceMethod());
-            }
-
             return simpleHttp;
         }
 
@@ -797,17 +767,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         authenticationSession.setClientNote(BROKER_NONCE_PARAM, nonce);
         uriBuilder.queryParam(OIDCLoginProtocol.NONCE_PARAM, nonce);
-
-        if (getConfig().isPkceEnabled()) {
-            String codeVerifier = PkceUtils.generateCodeVerifier();
-            String codeChallengeMethod = getConfig().getPkceMethod();
-            authenticationSession.setClientNote(BROKER_CODE_CHALLENGE_PARAM, codeVerifier);
-            authenticationSession.setClientNote(BROKER_CODE_CHALLENGE_METHOD_PARAM, codeChallengeMethod);
-
-            String codeChallenge = PkceUtils.encodeCodeChallenge(codeVerifier, codeChallengeMethod);
-            uriBuilder.queryParam(OAuth2Constants.CODE_CHALLENGE, codeChallenge);
-            uriBuilder.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
-        }
 
         return uriBuilder;
     }
