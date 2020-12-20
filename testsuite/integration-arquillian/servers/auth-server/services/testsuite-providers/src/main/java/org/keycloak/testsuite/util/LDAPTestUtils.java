@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -66,6 +67,18 @@ public class LDAPTestUtils {
 
         session.userCredentialManager().updateCredential(realm, user, creds);
         return user;
+    }
+
+    public static void addLdapUser(KeycloakSession session, RealmModel appRealm, LDAPStorageProvider ldapFedProvider, String username, String password, Consumer<UserModel> userCustomizer) {
+
+        UserModel user = ldapFedProvider.addUser(appRealm, username);
+
+        userCustomizer.accept(user);
+
+        if (password == null) {
+            return;
+        }
+        session.userCredentialManager().updateCredential(appRealm, user, (UserCredentialModel) UserCredentialModel.password(username));
     }
 
     public static LDAPObject addLDAPUser(LDAPStorageProvider ldapProvider, RealmModel realm, final String username,
