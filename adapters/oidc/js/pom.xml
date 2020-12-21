@@ -67,8 +67,8 @@
 					</execution>
 				</executions>
 				<configuration>
-					<nodeVersion>v12.18.3</nodeVersion>
-					<yarnVersion>v1.22.5</yarnVersion>
+					<nodeVersion>v14.15.3</nodeVersion>
+					<yarnVersion>v1.22.10</yarnVersion>
 				</configuration>
 			</plugin>
 		</plugins>

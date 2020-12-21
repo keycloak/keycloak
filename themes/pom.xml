@@ -72,7 +72,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <nodeVersion>v12.18.3</nodeVersion>
+                    <nodeVersion>v14.15.3</nodeVersion>
                     <installDirectory>${project.basedir}</installDirectory>
                 </configuration>
             </plugin>
