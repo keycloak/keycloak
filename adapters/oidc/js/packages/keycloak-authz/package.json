@@ -1,6 +1,6 @@
 {
   "name": "keycloak-authz",
-  "version": "12.0.0-SNAPSHOT",
+  "version": "13.0.0-SNAPSHOT",
   "description": "Keycloak Authz",
   "main": "lib/index.js",
   "module": "es/index.js",
@@ -31,6 +31,6 @@
     "authentication"
   ],
   "dependencies": {
-    "keycloak-js": "12.0.0-SNAPSHOT"
+    "keycloak-js": "13.0.0-SNAPSHOT"
   }
 }

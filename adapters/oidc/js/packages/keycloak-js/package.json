@@ -1,6 +1,6 @@
 {
   "name": "keycloak-js",
-  "version": "12.0.0-SNAPSHOT",
+  "version": "13.0.0-SNAPSHOT",
   "description": "Keycloak Adapter",
   "main": "lib/index.js",
   "module": "es/index.js",
