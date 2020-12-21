@@ -8,13 +8,15 @@
     "node": "^14"
   },
   "scripts": {
-    "bundle": "cross-env TS_NODE_PROJECT=\"tsconfig.webpack.json\" webpack"
+    "bundle": "rimraf target/classes && cross-env TS_NODE_PROJECT=\"tsconfig.webpack.json\" webpack"
   },
   "devDependencies": {
     "@types/node": "^14.14.14",
+    "@types/terser-webpack-plugin": "^5.0.2",
     "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3",
     "rimraf": "^3.0.2",
+    "terser-webpack-plugin": "^5.0.3",
     "ts-node": "^9.1.1",
     "typescript": "^4.1.3",
     "webpack": "^5.11.0",
