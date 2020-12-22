@@ -14,10 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {KeycloakLoginOptions} from "../../../../../../../../../../adapters/oidc/js/src/main/resources/keycloak";
-
 declare const baseUrl: string;
-export type KeycloakClient = Keycloak.KeycloakInstance;
+export type KeycloakClient = Keycloak.default.KeycloakInstance;
 
 export class KeycloakService {
     private keycloakAuth: KeycloakClient;
@@ -30,7 +28,7 @@ export class KeycloakService {
         return this.keycloakAuth.authenticated ? this.keycloakAuth.authenticated : false;
     }
 
-    public login(options?: KeycloakLoginOptions): void {
+    public login(options?: Keycloak.default.KeycloakLoginOptions): void {
         this.keycloakAuth.login(options);
     }
 
