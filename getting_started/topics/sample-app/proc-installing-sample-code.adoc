@@ -38,7 +38,7 @@ $ cd {quickstartRepo_dir}/app-profile-jee-vanilla/config
 $ mvn clean wildfly:deploy
 ----
 
-. Confirm that the application installationt succeeded. Go to http://localhost:8080/vanilla where a login page is displayed.
+. Confirm that the application installation succeeded. Go to http://localhost:8080/vanilla where a login page is displayed.
 +
 .Login page confirming success
 image:images/vanilla.png[Login page confirming success]
