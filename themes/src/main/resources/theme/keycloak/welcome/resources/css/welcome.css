@@ -1,5 +1,5 @@
 body {
-	background: #fff url(../bg.png) no-repeat center bottom fixed;
+	background: #fff url(../welcome-bg.png) no-repeat center bottom fixed;
 	background-size: cover;
 }
 .welcome-header {
