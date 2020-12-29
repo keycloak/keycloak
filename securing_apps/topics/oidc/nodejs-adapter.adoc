@@ -196,7 +196,7 @@ If `response_mode` is set to `token`, permissions are obtained from the server o
 [source,javascript]
 ----
     app.get('/apis/me', keycloak.enforcer('user:profile', {response_mode: 'token'}), function (req, res) {
-        var token = var token = req.kauth.grant.access_token.content;
+        var token = req.kauth.grant.access_token.content;
         var permissions = token.authorization ? token.authorization.permissions : undefined;
 
         // show user profile
