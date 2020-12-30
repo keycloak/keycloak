@@ -800,11 +800,11 @@ The cross DC requires setting a profile specifying used cache server by specifyi
 `cache-server-infinispan` or `cache-server-jdg` profile in maven.
 
 Since JDG does not distribute `infinispan-server` zip artifact anymore, for `cache-server-jdg` profile it is
-necessary to download the artifact and install it to local Maven repository. For JDG 7.3.0, the command is the following:
+necessary to download the artifact and install it to local Maven repository. For JDG 7.3.8, the command is the following:
 
     mvn install:install-file \
     -DgroupId=org.infinispan.server -DartifactId=infinispan-server -Dpackaging=zip -Dclassifier=bin -DgeneratePom=true \
-    -Dversion=9.4.6.Final-redhat-00002 -Dfile=jboss-datagrid-7.3.0-server.zip
+    -Dversion=9.4.21.Final-redhat-00002 -Dfile=jboss-datagrid-7.3.8-server.zip
 
 #### Run Cross-DC Tests from Maven
 
