@@ -27,7 +27,7 @@
         <version>13.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    
+
     <groupId>org.keycloak.testsuite</groupId>
     <artifactId>server-config-migration</artifactId>
 
@@ -37,11 +37,12 @@
         <skip.add.user.json>true</skip.add.user.json>
         <skip.copy.example.wars>true</skip.copy.example.wars>
         <skip.rename.configs>false</skip.rename.configs>
-        
+        <skip.remove.warnings>false</skip.remove.warnings>
+
         <jbossHome>${project.build.directory}/keycloak-${project.version}</jbossHome>
         <migrated.version>1.8.1</migrated.version>
         <master.version>${project.version}</master.version>
-        
+
         <!-- example how to test 'product' config migration
         <jbossHome>${project.build.directory}/rh-sso-7.1</jbossHome>
         <migrated.version>1.9.8.Final-redhat-1</migrated.version>
@@ -108,13 +109,13 @@
                         <configuration>
                             <overwrite>true</overwrite>
                             <outputDirectory>${jbossHome}/standalone/configuration</outputDirectory>
-                            <resources>          
+                            <resources>
                                 <resource>
                                     <directory>src/test/resources/standalone</directory>
                                     <filtering>false</filtering>
                                 </resource>
-                            </resources>              
-                        </configuration>            
+                            </resources>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>copy-domain-resources</id>
@@ -125,13 +126,13 @@
                         <configuration>
                             <overwrite>true</overwrite>
                             <outputDirectory>${jbossHome}/domain/configuration</outputDirectory>
-                            <resources>          
+                            <resources>
                                 <resource>
                                     <directory>src/test/resources/domain</directory>
                                     <filtering>false</filtering>
                                 </resource>
-                            </resources>              
-                        </configuration>            
+                            </resources>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -169,6 +170,39 @@
                                 <move file="${jbossHome}/domain/configuration/host-master-${migrated.version}.xml"
                                       tofile="${jbossHome}/domain/configuration/host-master.xml"
                                       verbose="true"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- KEYCLOAK-17156: Remove com.sun.net.ssl.internal.ssl.Provider.isFIPS() illegal reflective access warnings
+                                             possibly present in "master-standalone*.txt" and "migrated-standalone*.txt" files -->
+                        <id>remove-illegal-reflective-access-warnings-from-txt-files</id>
+                        <!-- Needs to be called after 'process-test-resources' phase, but before the 'test' phase itself! -->
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skip.remove.warnings}</skip>
+                            <target>
+                                <copy todir="${project.build.directory}">
+                                    <fileset dir="${project.build.directory}">
+                                        <include name="**/master-standalone*.txt"/>
+                                        <include name="**/migrated-standalone*.txt"/>
+                                    </fileset>
+                                    <mapper type="glob" from="*" to="*.unfiltered"/>
+                                </copy>
+                                <move todir="${project.build.directory}" overwrite="true">
+                                    <fileset dir="${project.build.directory}">
+                                        <include name="**/*.unfiltered"/>
+                                    </fileset>
+                                    <filterchain>
+                                        <linecontains negate="true">
+                                            <contains value="WARNING:"/>
+                                        </linecontains>
+                                    </filterchain>
+                                    <mapper type="regexp" from="^(.*)\.unfiltered$" to="\1"/>
+                                </move>
                             </target>
                         </configuration>
                     </execution>
@@ -377,7 +411,7 @@
                             </arguments>
                         </configuration>
                     </execution>
-                    
+
                     <execution>
                         <id>read-migrated-standalone</id>
                         <phase>process-test-resources</phase>

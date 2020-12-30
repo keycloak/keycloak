@@ -811,6 +811,7 @@ _wildflyCoreProperties = [
     "apache.httpcomponents.version",
     "apache.httpcomponents.httpcore.version",
     "jboss.dmr.version",
+    "bouncycastle.version",
     "jboss.logging.version",
     "jboss.logging.tools.version",
     "log4j.version",
@@ -886,6 +887,7 @@ def performMainKeycloakPomFileUpdateTask(wildflyPomFile, wildflyCorePomFile, for
                 "Unable to locate element with name: '%s' in '%s' or '%s'" %
                 (wildflyElemName, wildflyPomFile, wildflyCorePomFile)
             )
+            sys.exit(1)
 
     lxml.etree.ElementTree(keycloakXmlTreeRoot).write(mainKeycloakPomPath, encoding = "UTF-8", pretty_print = True, xml_declaration = True)
     stepLogger.info("Done syncing artifact version changes to: '%s'!" % mainKeycloakPomPath.replace(getKeycloakGitRepositoryRoot(), '.'))
@@ -921,6 +923,30 @@ def updateAdapterLicenseFile(gavDictionary, xPathPrefix, nameSpace, licenseFile,
             groupIdElem is None or artifactIdElem is None or versionElem is None,
             logger = stepLogger
         )
+        # KEYCLOAK-16202 Per:
+        #
+        # * https://github.com/keycloak/keycloak/pull/7463#discussion_r517346730 and
+        # * https://github.com/keycloak/keycloak/pull/7463#discussion_r517346766
+        #
+        # skip automated updates of versions of "org.apache.httpcomponents:httpclient"
+        # and "org.apache.httpcomponents:httpcore" dependencies in the Fuse adapter
+        # license file(s) as part of the upgrade script run
+        if (
+                'fuse-adapter-zip' in licenseFile and
+                groupIdElem.text == 'org.apache.httpcomponents' and
+                artifactIdElem.text in ['httpclient', 'httpcore']
+        ):
+
+            httpComponentsFuseAdapterSpecificMessage = (
+                "Not updating version of '%s:%s' artifact in the Fuse adapter license file," %
+                 (groupIdElem.text, artifactIdElem.text),
+                " since this adapter can work properly only with a specific,\n\t\tpreviously approved version!"
+                " See '<apache.httpcomponents.fuse.version>' and '<apache.httpcomponents.httpcore.fuse.version>'",
+                " properties in the main Keycloak pom.xml file\n\t\tfor further details."
+            )
+            stepLogger.info(_empty_string.join(httpComponentsFuseAdapterSpecificMessage))
+            continue
+
         currentArtifactVersion = versionElem.text
         gavDictKey = groupIdElem.text + _gav_delimiter + artifactIdElem.text
         try:
@@ -1017,8 +1043,26 @@ def updateAdapterLicenseFile(gavDictionary, xPathPrefix, nameSpace, licenseFile,
                 stepLogger.debug(artifactVersionAlreadyHigherMessage)
 
         except KeyError:
+            # Cover the case when particular Keycloak / RH-SSO dependency isn't present in the GAV
+            # file created from the list of all Maven artifacts used by Wildfly (Core) / JBoss EAP
+            if 'keycloak' in licenseFile:
+                productName = 'Keycloak'
+                parentProductName = 'Wildfly (Core)'
+            elif 'rh-sso' in licenseFile:
+                productName = 'RH-SSO'
+                parentProductName = 'JBoss EAP'
+            else:
+                productName = parentProductName = None
+            _logErrorAndExitIf(
+                "Failed to determine the product name while updating the '%s' license file!" % licenseFile,
+                productName is None,
+                logger = stepLogger
+            )
             # Ignore artifacts not found in the Gav dictionary
-            stepLogger.debug("Skipping '%s' artifact not present in GAV dictionary." % gavDictKey)
+            stepLogger.debug(
+                "Skipping '%s' specific '%s' license dependency since not present in '%s' list of all Maven artifacts!" %
+                (productName, gavDictKey, parentProductName)
+            )
             pass
 
     lxml.etree.ElementTree(licenseFileXmlTreeRoot).write(licenseFile, encoding = "UTF-8", pretty_print = True, xml_declaration = True)
