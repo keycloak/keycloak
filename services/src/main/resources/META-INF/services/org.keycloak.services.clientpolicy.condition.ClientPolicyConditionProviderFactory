@@ -5,3 +5,4 @@ org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory
 org.keycloak.services.clientpolicy.condition.ClientUpdateSourceHostsConditionFactory
 org.keycloak.services.clientpolicy.condition.ClientUpdateSourceGroupsConditionFactory
 org.keycloak.services.clientpolicy.condition.ClientUpdateSourceRolesConditionFactory
+org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory
