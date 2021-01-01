@@ -114,6 +114,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyProvider;
 import org.keycloak.services.clientpolicy.DefaultClientPolicyProviderFactory;
+import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
 import org.keycloak.services.clientpolicy.condition.ClientUpdateContextConditionFactory;
@@ -1307,6 +1308,46 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
             successfulLoginAndLogoutWithSignedJWT(clientAlphaId, privateKey, publicKey);
         } finally {
             deleteClientByAdmin(cAlphaId);
+        }
+    }
+
+    @Test
+    public void testAnyClientCondition() throws ClientRegistrationException, ClientPolicyException {
+        String policyName = "MyPolicy";
+        createPolicy(policyName, DefaultClientPolicyProviderFactory.PROVIDER_ID, null, null, null);
+        logger.info("... Created Policy : " + policyName);
+        createCondition("AnyClientCondition", AnyClientConditionFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+        });
+        registerCondition("AnyClientCondition", policyName);
+        logger.info("... Registered Condition : " + "AnyClientCondition");
+
+        createExecutor("SecureSessionEnforceExecutor", SecureSessionEnforceExecutorFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+        });
+        registerExecutor("SecureSessionEnforceExecutor", policyName);
+        logger.info("... Registered Executor : SecureSessionEnforceExecutor-beta");
+
+        String clientAlphaId = "Alpha-App";
+        String clientAlphaSecret = "secretAlpha";
+        String cAlphaId = createClientByAdmin(clientAlphaId, (ClientRepresentation clientRep) -> {
+            clientRep.setDefaultRoles((String[]) Arrays.asList("sample-client-role-alpha").toArray(new String[1]));
+            clientRep.setSecret(clientAlphaSecret);
+        });
+
+        String clientBetaId = "Beta-App";
+        String clientBetaSecret = "secretBeta";
+        String cBetaId = createClientByAdmin(clientBetaId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientBetaSecret);
+        });
+
+        try {
+            failLoginWithoutSecureSessionParameter(clientBetaId, "Missing parameter: nonce");
+            oauth.nonce("yesitisnonce");
+            successfulLoginAndLogout(clientAlphaId, clientAlphaSecret);
+        } catch (Exception e) {
+            fail();
+        } finally {
+            deleteClientByAdmin(cAlphaId);
+            deleteClientByAdmin(cBetaId);
         }
     }
 
