@@ -212,7 +212,7 @@ public class LogoutEndpoint {
         try {
             session.clientPolicy().triggerOnEvent(new LogoutRequestContext(form));
         } catch (ClientPolicyException cpe) {
-            throw new ErrorResponseException(Errors.INVALID_REQUEST, cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
 
         RefreshToken token = null;

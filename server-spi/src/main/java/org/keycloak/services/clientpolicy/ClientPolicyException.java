@@ -17,10 +17,16 @@
 
 package org.keycloak.services.clientpolicy;
 
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+
+import org.keycloak.OAuthErrorException;
+
 public class ClientPolicyException extends Exception {
 
-    private String error;
+    private String error = OAuthErrorException.INVALID_REQUEST;
     private String errorDetail;
+    private Status errorStatus = Response.Status.BAD_REQUEST;
 
     public ClientPolicyException(String error, String errorDetail) {
         super(error);
@@ -28,10 +34,24 @@ public class ClientPolicyException extends Exception {
         setErrorDetail(errorDetail);
     }
 
+    public ClientPolicyException(String error, String errorDetail, Status errorStatus) {
+        super(error);
+        setError(error);
+        setErrorDetail(errorDetail);
+        setErrorStatus(errorStatus);
+    }
+
     public ClientPolicyException(String error, String errorDetail, Throwable throwable) {
         super(throwable);
         setError(error);
         setErrorDetail(errorDetail);
+    }
+
+    public ClientPolicyException(String error, String errorDetail, Status errorStatus, Throwable throwable) {
+        super(throwable);
+        setError(error);
+        setErrorDetail(errorDetail);
+        setErrorStatus(errorStatus);
     }
 
     public String getError() {
@@ -48,6 +68,14 @@ public class ClientPolicyException extends Exception {
 
     public void setErrorDetail(String errorDetail) {
         this.errorDetail = errorDetail;
+    }
+
+    public Status getErrorStatus() {
+        return errorStatus;
+    }
+
+    public void setErrorStatus(Status errorStatus) {
+        this.errorStatus = errorStatus;
     }
 
     /**
