@@ -52,6 +52,7 @@ import org.keycloak.services.clientpolicy.TokenRevokeContext;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.util.TokenUtil;
 
 /**
@@ -102,7 +103,7 @@ public class TokenRevocationEndpoint {
             session.clientPolicy().triggerOnEvent(new TokenRevokeContext(formParams));
         } catch (ClientPolicyException cpe) {
             event.error(cpe.getError());
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+            throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
 
         checkToken();

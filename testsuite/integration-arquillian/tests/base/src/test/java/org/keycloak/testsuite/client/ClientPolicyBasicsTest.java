@@ -124,6 +124,7 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdateSourceRolesCondi
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
+import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureRedirectUriEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforceExecutorFactory;
@@ -144,6 +145,7 @@ import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResou
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject;
 import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExeptionConditionFactory;
+import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -1348,6 +1350,162 @@ public class ClientPolicyBasicsTest extends AbstractKeycloakTest {
         } finally {
             deleteClientByAdmin(cAlphaId);
             deleteClientByAdmin(cBetaId);
+        }
+    }
+
+    @Test
+    public void testHolderOfKeyEnforceExecutor() throws Exception {
+        String policyName = "MyPolicy";
+        createPolicy(policyName, DefaultClientPolicyProviderFactory.PROVIDER_ID, null, null, null);
+        logger.info("... Created Policy : " + policyName);
+
+        createCondition("ClientRolesCondition", ClientRolesConditionFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+            setConditionClientRoles(provider, Collections.singletonList("sample-client-role"));
+        });
+        registerCondition("ClientRolesCondition", policyName);
+        logger.info("... Registered Condition : ClientRolesCondition");
+
+        createExecutor("HolderOfKeyEnforceExecutor", HolderOfKeyEnforceExecutorFactory.PROVIDER_ID, null, (ComponentRepresentation provider) -> {
+            setExecutorAugmentActivate(provider);
+        });
+        registerExecutor("HolderOfKeyEnforceExecutor", policyName);
+        logger.info("... Registered Executor : HolderOfKeyEnforceExecutor");
+
+        String clientName = "Zahlungs-App";
+        String userPassword = "password";
+        String clientId = createClientDynamically(clientName, (OIDCClientRepresentation clientRep) -> {
+            clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.TLS_CLIENT_AUTH);
+        });
+
+        try {
+            checkMtlsFlow(userPassword);
+        } finally {
+            deleteClientByAdmin(clientId);
+        }
+    }
+
+    private void checkMtlsFlow(String password) throws IOException {
+        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), "test-app");
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        clientRep.setDefaultRoles(new String[]{"sample-client-role"});
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(true);
+
+        clientResource.update(clientRep);
+
+        // Check login.
+        OAuthClient.AuthorizationEndpointResponse loginResponse = oauth.doLogin("test-user@localhost", password);
+        Assert.assertNull(loginResponse.getError());
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        // Check token obtaining.
+        OAuthClient.AccessTokenResponse accessTokenResponse;
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
+            accessTokenResponse = oauth.doAccessTokenRequest(code, password, client);
+        }  catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+        assertEquals(200, accessTokenResponse.getStatusCode());
+
+        // Check token refresh.
+        OAuthClient.AccessTokenResponse accessTokenResponseRefreshed;
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
+            accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), password, client);
+        }  catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+        assertEquals(200, accessTokenResponseRefreshed.getStatusCode());
+
+        // Check token introspection.
+        String tokenResponse;
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
+            tokenResponse = oauth.introspectTokenWithClientCredential(TEST_CLIENT, password, "access_token", accessTokenResponse.getAccessToken(), client);
+        }  catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+        Assert.assertNotNull(tokenResponse);
+        TokenMetadataRepresentation tokenMetadataRepresentation = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        Assert.assertTrue(tokenMetadataRepresentation.isActive());
+
+        // Check token revoke.
+        CloseableHttpResponse tokenRevokeResponse;
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
+            tokenRevokeResponse = oauth.doTokenRevoke(accessTokenResponse.getRefreshToken(), "refresh_token", password, client);
+        }  catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+        assertEquals(200, tokenRevokeResponse.getStatusLine().getStatusCode());
+
+        // Check logout.
+        CloseableHttpResponse logoutResponse;
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
+            logoutResponse = oauth.doLogout(accessTokenResponse.getRefreshToken(), password, client);
+        }  catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+
+        assertEquals(204, logoutResponse.getStatusLine().getStatusCode());
+
+        // Check login.
+        loginResponse = oauth.doLogin("test-user@localhost", password);
+        Assert.assertNull(loginResponse.getError());
+
+        code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        // Check token obtaining without certificate
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore()) {
+            accessTokenResponse = oauth.doAccessTokenRequest(code, password, client);
+        }  catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+        assertEquals(400, accessTokenResponse.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, accessTokenResponse.getError());
+
+        // Check frontchannel logout and login.
+        oauth.openLogout();
+        loginResponse = oauth.doLogin("test-user@localhost", password);
+        Assert.assertNull(loginResponse.getError());
+
+        code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        // Check token obtaining.
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
+            accessTokenResponse = oauth.doAccessTokenRequest(code, password, client);
+        }  catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+        assertEquals(200, accessTokenResponse.getStatusCode());
+
+        // Check token refresh with other certificate
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithOtherKeyStoreAndTrustStore()) {
+            accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), password, client);
+        }  catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+        assertEquals(401, accessTokenResponseRefreshed.getStatusCode());
+        assertEquals(Errors.NOT_ALLOWED, accessTokenResponseRefreshed.getError());
+
+        // Check token revoke with other certificate
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithOtherKeyStoreAndTrustStore()) {
+            tokenRevokeResponse = oauth.doTokenRevoke(accessTokenResponse.getRefreshToken(), "refresh_token", password, client);
+        }  catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+        assertEquals(401, tokenRevokeResponse.getStatusLine().getStatusCode());
+
+        // Check logout without certificate
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore()) {
+            logoutResponse = oauth.doLogout(accessTokenResponse.getRefreshToken(), password, client);
+        }  catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+        assertEquals(401, logoutResponse.getStatusLine().getStatusCode());
+
+        // Check logout.
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
+            logoutResponse = oauth.doLogout(accessTokenResponse.getRefreshToken(), password, client);
+        }  catch (IOException ioe) {
+            throw new RuntimeException(ioe);
         }
     }
 
