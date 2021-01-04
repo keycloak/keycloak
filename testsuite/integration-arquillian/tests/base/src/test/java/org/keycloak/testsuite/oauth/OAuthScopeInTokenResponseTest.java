@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -17,6 +18,8 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -90,11 +93,15 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
         
         oauth.scope("user openid phone");
         oauth.openLoginForm();
-        assertTrue(driver.getCurrentUrl().contains("error_description=Invalid+scopes"));
+        MultivaluedHashMap<String, String> queryParams = UriUtils.decodeQueryString(new URL(driver.getCurrentUrl()).getQuery());
+        assertEquals("invalid_scope", queryParams.getFirst("error"));
+        assertTrue(queryParams.getFirst("error_description").startsWith("Invalid scopes"));
 
         oauth.scope("user");
         oauth.openLoginForm();
-        assertTrue(driver.getCurrentUrl().contains("error_description=Invalid+scopes"));
+        queryParams = UriUtils.decodeQueryString(new URL(driver.getCurrentUrl()).getQuery());
+        assertEquals("invalid_scope", queryParams.getFirst("error"));
+        assertTrue(queryParams.getFirst("error_description").startsWith("Invalid scopes"));
 
         oauth.scope("phone");
         oauth.doLogin(loginUser, loginPassword);

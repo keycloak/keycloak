@@ -143,7 +143,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         if (!TokenManager.isValidScope(request.getScope(), client)) {
             ServicesLogger.LOGGER.invalidParameter(OIDCLoginProtocol.SCOPE_PARAM);
             event.error(Errors.INVALID_REQUEST);
-            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_REQUEST, "Invalid scopes: " + request.getScope());
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_SCOPE, "Invalid scopes: " + request.getScope());
         }
 
         errorResponse = checkOIDCParams();
