@@ -22,38 +22,38 @@ import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 
 public class MigrateTo12_0_0 implements Migration {
 
-  public static final ModelVersion VERSION = new ModelVersion("12.0.0");
+    public static final ModelVersion VERSION = new ModelVersion("12.0.0");
 
-  public static final RequiredActionProviderModel deleteAccount = new RequiredActionProviderModel();
+    private static void addDeleteAccountAction(RealmModel realm) {
+        RequiredActionProviderModel deleteAccount = new RequiredActionProviderModel();
+        deleteAccount.setEnabled(false);
+        deleteAccount.setAlias("delete_account");
+        deleteAccount.setName("Delete Account");
+        deleteAccount.setProviderId("delete_account");
+        deleteAccount.setDefaultAction(false);
+        deleteAccount.setPriority(60);
+        realm.addRequiredActionProvider(deleteAccount);
+    }
 
-  static {
-    deleteAccount.setEnabled(false);
-    deleteAccount.setAlias("delete_account");
-    deleteAccount.setName("Delete Account");
-    deleteAccount.setProviderId("delete_account");
-    deleteAccount.setDefaultAction(false);
-    deleteAccount.setPriority(60);
-  }
+    @Override
+    public void migrate(KeycloakSession session) {
+        session.realms()
+          .getRealmsStream()
+          .map(realm -> realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID))
+          .filter(client -> Objects.isNull(client.getRole(AccountRoles.DELETE_ACCOUNT)))
+          .forEach(client -> client.addRole(AccountRoles.DELETE_ACCOUNT)
+          .setDescription("${role_" + AccountRoles.DELETE_ACCOUNT + "}"));
 
+        session.realms().getRealmsStream().filter(realm -> Objects.isNull(realm.getRequiredActionProviderByAlias("delete_account"))).forEach(MigrateTo12_0_0::addDeleteAccountAction);
+    }
 
-  @Override
-  public void migrate(KeycloakSession session) {
-    session.realms()
-        .getRealmsStream()
-        .map(realm -> realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID))
-        .filter(client -> Objects.isNull(client.getRole(AccountRoles.DELETE_ACCOUNT)))
-        .forEach(client -> client.addRole(AccountRoles.DELETE_ACCOUNT)
-            .setDescription("${role_"+AccountRoles.DELETE_ACCOUNT+"}"));
-
-    session.realms().getRealmsStream().filter(realm -> Objects.isNull(realm.getRequiredActionProviderByAlias("delete_account"))).forEach(realm -> realm.addRequiredActionProvider(deleteAccount));
-  }
-
-  @Override
-  public ModelVersion getVersion() {
-    return VERSION;
-  }
+    @Override
+    public ModelVersion getVersion() {
+        return VERSION;
+    }
 }
