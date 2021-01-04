@@ -2296,6 +2296,81 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         assertNull(response.getRefreshToken());
     }
 
+    @Test
+    public void testPermissionOrder() throws Exception {
+        ClientResource client = getClient(getRealm(), RESOURCE_SERVER_TEST);
+        AuthorizationResource authorization = client.authorization();
+        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+
+        policy.setName(KeycloakModelUtils.generateId());
+        policy.setCode("$evaluation.grant();");
+
+        authorization.policies().js().create(policy).close();
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("my_resource");
+        resource.addScope("entity:read");
+
+        try (Response response = authorization.resources().create(resource)) {
+            resource = response.readEntity(ResourceRepresentation.class);
+        }
+
+        ScopeRepresentation featureAccessScope = new ScopeRepresentation("feature:access");
+        authorization.scopes().create(featureAccessScope);
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.addPolicy(policy.getName());
+        permission.addResource(resource.getId());
+
+        authorization.permissions().resource().create(permission).close();
+
+        ScopePermissionRepresentation scopePermission = new ScopePermissionRepresentation();
+
+        scopePermission.setName(KeycloakModelUtils.generateId());
+        scopePermission.addPolicy(policy.getName());
+        scopePermission.addScope(featureAccessScope.getName());
+
+        authorization.permissions().scope().create(scopePermission).close();
+
+        AuthorizationRequest request = new AuthorizationRequest();
+
+        request.addPermission(null, "entity:read");
+        request.addPermission(null, "feature:access");
+
+        AuthzClient authzClient = getAuthzClient(AUTHZ_CLIENT_CONFIG);
+
+        AuthorizationResponse response = authzClient.authorization().authorize(request);
+        AccessToken token = toAccessToken(response.getToken());
+        Authorization result = token.getAuthorization();
+
+        assertEquals(2, result.getPermissions().size());
+        assertTrue(result.getPermissions().stream().anyMatch(p ->
+                p.getResourceId() == null && p.getScopes().contains(featureAccessScope.getName())));
+        String resourceId = resource.getId();
+        assertTrue(result.getPermissions().stream().anyMatch(p ->
+                p.getResourceId() != null && p.getResourceId().equals(resourceId) && p
+                .getScopes().contains("entity:read")));
+
+        request = new AuthorizationRequest();
+
+        request.addPermission(null, "feature:access");
+        request.addPermission(null, "entity:read");
+
+        response = authzClient.authorization().authorize(request);
+        token = toAccessToken(response.getToken());
+        result = token.getAuthorization();
+
+        assertEquals(2, result.getPermissions().size());
+        assertTrue(result.getPermissions().stream().anyMatch(p ->
+                p.getResourceId() == null && p.getScopes().contains(featureAccessScope.getName())));
+        assertTrue(result.getPermissions().stream().anyMatch(p ->
+                p.getResourceId() != null && p.getResourceId().equals(resourceId) && p
+                        .getScopes().contains("entity:read")));
+    }
+
     private void testRptRequestWithResourceName(String configFile) {
         Metadata metadata = new Metadata();
 
