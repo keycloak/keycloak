@@ -370,6 +370,7 @@ public class AuthServerTestEnricher {
         if (suiteContext.isAuthServerMigrationEnabled()) {
             log.info("\n\n### Starting keycloak " + System.getProperty("migrated.auth.server.version", "- previous") + " ###\n\n");
             startContainerEvent.fire(new StartContainer(suiteContext.getMigratedAuthServerInfo().getArquillianContainer()));
+            initializeTLS(suiteContext.getMigratedAuthServerInfo());
         }
     }
 
@@ -410,8 +411,6 @@ public class AuthServerTestEnricher {
     public void startAuthContainer(@Observes(precedence = 0) StartSuiteContainers event) {
         //frontend-only (either load-balancer or auth-server)
         log.debug("Starting auth server before suite");
-
-        setJsseSecurityProviderForOutboundSslConnectionsOfElytronClient();
 
         try {
             startContainerEvent.fire(new StartContainer(suiteContext.getAuthServerInfo().getArquillianContainer()));
@@ -550,10 +549,8 @@ public class AuthServerTestEnricher {
     public static void initializeTLS(ContainerInfo containerInfo) {
         if (ServerURLs.AUTH_SERVER_SSL_REQUIRED && containerInfo.isJBossBased()) {
             log.infof("\n\n### Setting up TLS for %s ##\n\n", containerInfo);
-            try {
-                OnlineManagementClient client = getManagementClient(containerInfo);
+            try (OnlineManagementClient client = getManagementClient(containerInfo)) {
                 AuthServerTestEnricher.enableTLS(client);
-                client.close();
             } catch (Exception e) {
                 log.warn("Failed to set up TLS for container '" + containerInfo.getQualifier() + "'. This may lead to unexpected behavior unless the test" +
                         " sets it up manually", e);
@@ -584,7 +581,7 @@ public class AuthServerTestEnricher {
      *  the platform providers for respective property.
      *
      */
-    public static void setJsseSecurityProviderForOutboundSslConnectionsOfElytronClient() {
+    public static void setJsseSecurityProviderForOutboundSslConnectionsOfElytronClient(@Observes(precedence = 100) StartSuiteContainers event) {
         log.info(
             "Determining the JSSE security provider to use for outbound " +
             "SSL/TLS connections of the Elytron client..."
