@@ -8,7 +8,7 @@ A typical workflow is as follows:
 
 - A client sends an authentication request over SSL/TLS channel
 - During SSL/TLS handshake, the server and the client exchange their x.509/v3 certificates
-- The container ({appserver_name}) validates the certificate PKIX path and the certificate expiration
+- The web container (either the reverse proxy or {appserver_name} where {project_name} is deployed) validates the certificate PKIX path and the certificate expiration
 - The x.509 client certificate authenticator validates the client certificate as follows:
 * Optionally checks the certificate revocation status using CRL and/or CRL Distribution Points
 * Optionally checks the Certificate revocation status using OCSP (Online Certificate Status Protocol)
@@ -19,6 +19,12 @@ A typical workflow is as follows:
 - Once the certificate is mapped to an existing user, the behavior diverges depending on the authentication flow:
 * In the Browser Flow, the server prompts the user to confirm identity or to ignore it and instead sign in with username/password 
 * In the case of the Direct Grant Flow, the server signs in the user
+
+IMPORTANT: Note that it is the responsibility of the web container to validate certificate PKIX path. X.509 authenticator on the
+{project_name} side provides just the additional support for check the certificate expiration, certificate revocation status and key usage. If you are
+using {project_name} deployed behind reverse proxy, make sure that your reverse proxy is configured to validate PKIX path. If you
+do not use reverse proxy and users directly access the {appserver_name}, you should be fine as {appserver_name} makes sure that PKIX path is validated as long
+as it is configured as described below.
 
 ==== Features
 
