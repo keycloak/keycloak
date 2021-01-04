@@ -11,7 +11,7 @@
   {
     "id": "security",
     "icon": "pf-icon-security",
-    "label": "Account Security",
+    "label": "accountSecurityTitle",
     "descriptionLabel": "accountSecurityIntroMessage",
     "content": [
       {
