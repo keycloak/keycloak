@@ -6,6 +6,7 @@ import {
   SelectVariant,
   Switch,
   TextInput,
+  Title,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
@@ -16,8 +17,17 @@ import { useAdminClient } from "../../context/auth/AdminClient";
 import { useParams } from "react-router-dom";
 import { convertToFormValues } from "../../util";
 import _ from "lodash";
+import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
-export const KerberosSettingsRequired = () => {
+export type KerberosSettingsRequiredProps = {
+  showSectionHeading?: boolean;
+  showSectionDescription?: boolean;
+};
+
+export const KerberosSettingsRequired = ({
+  showSectionHeading = false,
+  showSectionDescription = false,
+}: KerberosSettingsRequiredProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
   const adminClient = useAdminClient();
@@ -54,6 +64,14 @@ export const KerberosSettingsRequired = () => {
 
   return (
     <>
+      {showSectionHeading && (
+        <WizardSectionHeader
+          title={t("requiredSettings")}
+          description={helpText("kerberosRequiredSettingsDescription")}
+          showDescription={showSectionDescription}
+        />
+      )}
+
       {/* Required settings */}
       <FormAccess role="manage-realm" isHorizontal>
         <FormGroup

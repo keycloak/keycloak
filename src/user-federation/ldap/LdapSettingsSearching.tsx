@@ -18,8 +18,17 @@ import {
 } from "../../context/auth/AdminClient";
 import { useParams } from "react-router-dom";
 import { convertToFormValues } from "../../util";
+import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
-export const LdapSettingsSearching = () => {
+export type LdapSettingsSearchingProps = {
+  showSectionHeading?: boolean;
+  showSectionDescription?: boolean;
+};
+
+export const LdapSettingsSearching = ({
+  showSectionHeading = false,
+  showSectionDescription = false,
+}: LdapSettingsSearchingProps) => {
   const { t } = useTranslation("user-federation");
   const adminClient = useAdminClient();
   const helpText = useTranslation("user-federation-help").t;
@@ -65,6 +74,14 @@ export const LdapSettingsSearching = () => {
 
   return (
     <>
+      {showSectionHeading && (
+        <WizardSectionHeader
+          title={t("ldapSearchingAndUpdatingSettings")}
+          description={helpText("ldapSearchingAndUpdatingSettingsDescription")}
+          showDescription={showSectionDescription}
+        />
+      )}
+
       <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
           label={t("editMode")}

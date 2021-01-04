@@ -16,6 +16,8 @@
     "search": "Search",
     "next": "Next",
     "back": "Back",
+    "finish": "Finish",
+    "skipCustomizationAndFinish": "Skip customization and finish",
     "export": "Export",
     "action": "Action",
     "download": "Download",
@@ -36,6 +38,7 @@
     "documentation": "Documentation",
     "enableHelpMode": "Enable help mode",
     "learnMore": "Learn more",
+    "test": "Test",
 
     "home": "Home",
     "manage": "Manage",

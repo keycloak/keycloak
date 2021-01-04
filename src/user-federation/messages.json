@@ -7,6 +7,8 @@
     "providers": "Add providers",
     "addKerberos": "Add Kerberos providers",
     "addLdap": "Add LDAP providers",
+    "addKerberosWizardTitle": "Add Kerberos user federation provider",
+    "addLdapWizardTitle": "Add LDAP user federation provider",
 
     "syncChangedUsers": "Sync changed users",
     "syncAllUsers": "Sync all users",

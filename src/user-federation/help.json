@@ -1,9 +1,13 @@
 {
   "user-federation-help": {
-    "generalOptions": "General options",
+    "addKerberosWizardDescription": "Text needed here",
+    "addLdapWizardDescription": "Text needed here",
+
+    "ldapGeneralOptionsSettingsDescription": "This section contains a few basic options common to all user storage providers.",
     "consoleDisplayNameHelp": "Display name of provider when linked in admin console",
     "vendorHelp": "LDAP vendor (provider)",
 
+    "ldapConnectionAndAuthorizationSettingsDescription": "This section contains options related to the configuration of the connection to the LDAP server. It also contains options related to authentication of the LDAP connection to the LDAP server.",
     "consoleDisplayConnectionUrlHelp": "Connection URL to your LDAP server",
     "enableStarttlsHelp": "Encrypts the connection to LDAP using STARTTLS, which will disable connection pooling",
     "useTruststoreSpiHelp": "Specifies whether LDAP connection will use the Truststore SPI with the truststore configured in standalone.xml/domain.sml. 'Always' means that it will always use it. 'Never' means that it will not use it. 'Only for ldaps' means that it will use it if your connection URL use ldaps. Note even if standalone.xml/domain.xml is not configured, the default java cacerts or certificate specified by 'javax.net.ssl.trustStore' property will be used.",
@@ -13,6 +17,7 @@
     "bindDnHelp": "DN of the LDAP admin, which will be used by Keycloak to access LDAP server",
     "bindCredentialsHelp": "Password of LDAP admin. This field is able to obtain its value from vault, use ${vault.ID} format.",
 
+    "ldapSearchingAndUpdatingSettingsDescription": "This section contains options related to searching the LDAP server for the available users.",
     "editModeLdapHelp": "READ_ONLY is a read-only LDAP store. WRITABLE means data will be synced back to LDAP on demand. UNSYNCED means user data will be imported, but not synced back to LDAP.",
     "usersDNHelp": "Full DN of LDAP tree where your users are. This DN is the parent of LDAP users. It could be for example 'ou=users,dc=example,dc=com' assuming that your typical user will have DN like 'uid='john',ou=users,dc=example,dc=com'",
     "usernameLdapAttributeHelp": "Name of LDAP attribute, which is mapped as Keycloak username. For many LDAP server vendors it can be 'uid'. For Active directory it can be 'sAMAccountName' or 'cn'. The attribute should be filled for all LDAP user records you want to import from LDAP to Keycloak.",
@@ -24,33 +29,41 @@
     "readTimeoutHelp": "LDAP read timeout in milliseconds. This timeout applies for LDAP read operations.",
     "paginationHelp": "Does the LDAP server support pagination",
 
+    "ldapSynchronizationSettingsDescription": "This section contains options related to synchronization of users from LDAP to the Keycloak database.",
     "importUsersHelp": "Import users",
     "batchSizeHelp": "Count of LDAP users to be imported from LDAP to Keycloak within a single transaction",
     "periodicFullSyncHelp": "Whether periodic full synchronization of LDAP users to Keycloak should be enabled or not",
     "periodicChangedUsersSyncHelp": "Whether periodic synchronization of changed or newly created LDAP users to Keycloak should be enabled or not",
 
+    "ldapKerberosSettingsDescription": "This section contains options useful for the Kerberos integraion. This is used just when the LDAP server is used together with Kerberos/SPNEGO for user authentication.",
     "allowKerberosAuthenticationHelp": "Enable/disable HTTP authentication of users with SPNEGO/Kerberos tokens. The data about authenticated users will be provisioned from this LDAP server",
     "useKerberosForPasswordAuthenticationHelp": "User Kerberos login module for authenticate username/password against Kerberos server instead of authenticating against LDAP server with Directory Service API",
 
+    "ldapCacheSettingsDescription": "This section contains options useful for caching users, which were loaded from this user storage provider",
     "cachePolicyHelp": "Cache Policy for this storage provider. 'DEFAULT' is whatever the default settings are for the global cache. 'EVICT_DAILY' is a time of day every day that the cache will be invalidated. 'EVICT_WEEKLY' is a day of the week and time the cache will be invalidated. 'MAX_LIFESPAN' is the time in milliseconds that will be the lifespan of a cache entry.",
     "evictionDayHelp": "Day of the week the entry will become invalid",
     "evictionHourHelp": "Hour of the day the entry will become invalid",
     "evictionMinuteHelp": "Minute of the hour the entry will become invalid",
     "maxLifespanHelp": "Max lifespan of cache entry in milliseconds",
 
+    "ldapAdvancedSettingsDescription": "This section contains all the other options for more fine-grained configuration of the LDAP storage provider.",
     "enableLdapv3PasswordHelp": "Use the LDAPv3 Password Modify Extended Operation (RFC-3062). The password modify extended operation usually requires that LDAP user already has password in the LDAP server. So when this is used with 'Sync Registrations', it can be good to add also 'Hardcoded LDAP attribute mapper' with randomly generated initial password.",
     "validatePasswordPolicyHelp": "Determines if Keycloak should validate the password with the realm password policy before updating it",
     "trustEmailHelp": "If enabled, email provided by this provider is not verified even if verification is enabled for the realm.",
 
     "IDK-periodicChangedUsersSyncHelp": "Should newly created users be created within LDAP store? Priority affects which provider is chosen to sync the new user.",
 
-    "requiredSettingsHelp": "Required Settings",
+    "kerberosWizardDescription": "Text needed here",
+
+    "kerberosRequiredSettingsDescription": "This section contains a few basic options common to all user storage providers.",
     "kerberosRealmHelp": "Name of kerberos realm. For example, FOO.ORG",
     "serverPrincipalHelp": "Full name of server principal for HTTP service including server and domain name. For example, HTTP/host.foo.org@FOO.ORG",
     "keyTabHelp": "Location of Kerberos KeyTab file containing the credentials of server principal. For example, /etc/krb5.keytab",
     "debugHelp": "Enable/disable debug logging to standard output for Krb5LoginModule",
     "allowPasswordAuthenticationHelp": "Enable/disable possibility of username/password authentication against Kerberos database",
     "editModeKerberosHelp": "READ_ONLY means that password updates are not allowed and user always authenticates with Kerberos password. UNSYNCED means that the user can change the password in the Keycloak database and this one will be used instead of the Kerberos password",
-    "updateFirstLoginHelp": "Update profile on first login"
+    "updateFirstLoginHelp": "Update profile on first login",
+
+    "kerberosCacheSettingsDescription": "This section contains a few basic options common to all user storage providers"
   }
 }

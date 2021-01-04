@@ -2,6 +2,7 @@ import React from "react";
 import { Meta } from "@storybook/react";
 import { Page } from "@patternfly/react-core";
 import { UserFederationLdapWizard } from "../user-federation/UserFederationLdapWizard";
+import { MockAdminClient } from "./MockAdminClient";
 
 export default {
   title: "User Federation LDAP Wizard",
@@ -10,8 +11,10 @@ export default {
 
 export const view = () => {
   return (
-    <Page>
-      <UserFederationLdapWizard />
+    <Page style={{ height: "80vh" }}>
+      <MockAdminClient>
+        <UserFederationLdapWizard />
+      </MockAdminClient>{" "}
     </Page>
   );
 };

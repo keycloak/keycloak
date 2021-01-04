@@ -44,7 +44,7 @@ export const ScrollForm = ({ sections, children }: ScrollFormProps) => {
             // to scroll the entire main section, it has to be the pf-c-page__main
             scrollableSelector={mainPageContentId}
             label={t("jumpToSection")}
-            offset={76}
+            offset={100}
           >
             {sections.map((cat) => (
               // note that JumpLinks currently does not work with spaces in the href

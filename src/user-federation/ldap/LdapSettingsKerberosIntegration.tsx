@@ -11,8 +11,17 @@ import {
   asyncStateFetch,
 } from "../../context/auth/AdminClient";
 import { useParams } from "react-router-dom";
+import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
-export const LdapSettingsKerberosIntegration = () => {
+export type LdapSettingsKerberosIntegrationProps = {
+  showSectionHeading?: boolean;
+  showSectionDescription?: boolean;
+};
+
+export const LdapSettingsKerberosIntegration = ({
+  showSectionHeading = false,
+  showSectionDescription = false,
+}: LdapSettingsKerberosIntegrationProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
 
@@ -39,6 +48,14 @@ export const LdapSettingsKerberosIntegration = () => {
 
   return (
     <>
+      {showSectionHeading && (
+        <WizardSectionHeader
+          title={t("kerberosIntegration")}
+          description={helpText("ldapKerberosSettingsDescription")}
+          showDescription={showSectionDescription}
+        />
+      )}
+
       <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
           label={t("allowKerberosAuthentication")}

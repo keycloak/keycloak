@@ -1,29 +1,34 @@
-import { Button, Wizard } from "@patternfly/react-core";
+import { Wizard } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import React from "react";
-import { KerberosSettingsRequired } from "./KerberosSettingsRequired";
-import { KerberosSettingsCache } from "./KerberosSettingsCache";
+import { KerberosSettingsRequired } from "./kerberos/KerberosSettingsRequired";
+import { KerberosSettingsCache } from "./kerberos/KerberosSettingsCache";
 
 export const UserFederationKerberosWizard = () => {
   const { t } = useTranslation("user-federation");
+  const helpText = useTranslation("user-federation-help").t;
 
   const steps = [
-    { name: "Required settings", component: <KerberosSettingsRequired /> },
     {
-      name: "Cache settings",
-      component: <KerberosSettingsCache />,
-      nextButtonText: "Finish", // TODO: needs to disable until cache policy is valid
+      name: t("requiredSettings"),
+      component: (
+        <KerberosSettingsRequired showSectionHeading showSectionDescription />
+      ),
+    },
+    {
+      name: t("cacheSettings"),
+      component: (
+        <KerberosSettingsCache showSectionHeading showSectionDescription />
+      ),
+      nextButtonText: t("common:finish"), // TODO: needs to disable until cache policy is valid
     },
   ];
-  const title = "Add Kerberos user federation provider";
 
   return (
     <Wizard
-      title={title}
-      description="Text needed here"
+      title={t("addKerberosWizardTitle")}
+      description={helpText("addKerberosWizardDescription")}
       steps={steps}
-      // onClose={handleModalToggle}
-      // isOpen={isOpen}
     />
   );
 };

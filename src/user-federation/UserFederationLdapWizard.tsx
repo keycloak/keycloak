@@ -4,86 +4,101 @@ import {
   WizardContextConsumer,
   WizardFooter,
 } from "@patternfly/react-core";
-import { useTranslation } from "react-i18next";
 import React from "react";
-import { LdapSettingsGeneral } from "./LdapSettingsGeneral";
-import { LdapSettingsConnection } from "./LdapSettingsConnection";
-import { LdapSettingsSearching } from "./LdapSettingsSearching";
-import { LdapSettingsSynchronization } from "./LdapSettingsSynchronization";
-import { LdapSettingsKerberosIntegration } from "./LdapSettingsKerberosIntegration";
-import { LdapSettingsCache } from "./LdapSettingsCache";
-import { LdapSettingsAdvanced } from "./LdapSettingsAdvanced";
+import { LdapSettingsGeneral } from "./ldap/LdapSettingsGeneral";
+import { LdapSettingsConnection } from "./ldap/LdapSettingsConnection";
+import { LdapSettingsSearching } from "./ldap/LdapSettingsSearching";
+import { LdapSettingsSynchronization } from "./ldap/LdapSettingsSynchronization";
+import { LdapSettingsKerberosIntegration } from "./ldap/LdapSettingsKerberosIntegration";
+import { LdapSettingsCache } from "./ldap/LdapSettingsCache";
+import { LdapSettingsAdvanced } from "./ldap/LdapSettingsAdvanced";
+import { useTranslation } from "react-i18next";
 
 export const UserFederationLdapWizard = () => {
   const { t } = useTranslation("user-federation");
+  const helpText = useTranslation("user-federation-help").t;
 
   const steps = [
     {
-      name: "Required settings",
+      name: t("requiredSettings"),
       id: "ldapRequiredSettingsStep",
-      component: <LdapSettingsGeneral />,
+      component: (
+        <LdapSettingsGeneral showSectionHeading showSectionDescription />
+      ),
     },
     {
-      name: "Connection settings",
+      name: t("connectionAndAuthenticationSettings"),
       id: "ldapConnectionSettingsStep",
-      component: <LdapSettingsConnection />,
+      component: (
+        <LdapSettingsConnection showSectionHeading showSectionDescription />
+      ),
     },
     {
-      name: "Searching settings",
+      name: t("ldapSearchingAndUpdatingSettings"),
       id: "ldapSearchingSettingsStep",
-      component: <LdapSettingsSearching />,
+      component: (
+        <LdapSettingsSearching showSectionHeading showSectionDescription />
+      ),
     },
     {
-      name: "Synchronization settings",
+      name: t("synchronizationSettings"),
       id: "ldapSynchronizationSettingsStep",
-      component: <LdapSettingsSynchronization />,
+      component: (
+        <LdapSettingsSynchronization
+          showSectionHeading
+          showSectionDescription
+        />
+      ),
     },
     {
-      name: "KerberosIntegration settings",
+      name: t("kerberosIntegration"),
       id: "ldapKerberosIntegrationSettingsStep",
-      component: <LdapSettingsKerberosIntegration />,
+      component: (
+        <LdapSettingsKerberosIntegration
+          showSectionHeading
+          showSectionDescription
+        />
+      ),
     },
     {
-      name: "Cache settings",
+      name: t("cacheSettings"),
       id: "ldapCacheSettingsStep",
-      component: <LdapSettingsCache />,
+      component: (
+        <LdapSettingsCache showSectionHeading showSectionDescription />
+      ),
     },
     {
-      name: "Advanced settings",
+      name: t("advancedSettings"),
       id: "ldapAdvancedSettingsStep",
-      component: <LdapSettingsAdvanced />,
+      component: (
+        <LdapSettingsAdvanced showSectionHeading showSectionDescription />
+      ),
     },
   ];
 
-  const title = "Add LDAP user federation provider";
+  const title = t("addLdapWizardTitle");
+  const description = helpText("addLdapWizardDescription");
 
   const footer = (
     <WizardFooter>
       <WizardContextConsumer>
-        {({
-          activeStep,
-          goToStepByName,
-          goToStepById,
-          onNext,
-          onBack,
-          onClose,
-        }) => {
+        {({ activeStep, onNext, onBack, onClose }) => {
           // First step buttons
           if (activeStep.id == "ldapRequiredSettingsStep") {
             return (
               <>
                 <Button variant="primary" type="submit" onClick={onNext}>
-                  Next
+                  {t("common:next")}
                 </Button>
                 <Button
                   variant="secondary"
                   onClick={onBack}
                   className="pf-m-disabled"
                 >
-                  Back
+                  {t("common:back")}
                 </Button>
                 <Button variant="link" onClick={onClose}>
-                  Cancel
+                  {t("common:cancel")}
                 </Button>
               </>
             );
@@ -96,13 +111,13 @@ export const UserFederationLdapWizard = () => {
             return (
               <>
                 <Button variant="primary" type="submit" onClick={onNext}>
-                  Next
+                  {t("common:next")}
                 </Button>
                 <Button variant="secondary" onClick={onBack}>
-                  Back
+                  {t("common:back")}
                 </Button>
                 <Button variant="link" onClick={onClose}>
-                  Cancel
+                  {t("common:cancel")}
                 </Button>
               </>
             );
@@ -111,12 +126,16 @@ export const UserFederationLdapWizard = () => {
           else if (activeStep.id == "ldapAdvancedSettingsStep") {
             return (
               <>
-                <Button onClick={() => this.closeWizard}>Finish</Button>
+                <Button onClick={() => {}}>
+                  {" "}
+                  //TODO: close the wizard and finish
+                  {t("common:finish")}
+                </Button>
                 <Button variant="secondary" onClick={onBack}>
-                  Back
+                  {t("common:back")}
                 </Button>
                 <Button variant="link" onClick={onClose}>
-                  Cancel
+                  {t("common:cancel")}
                 </Button>
               </>
             );
@@ -130,12 +149,12 @@ export const UserFederationLdapWizard = () => {
               </Button>
               <Button
                 variant="link"
-                onClick={() => this.validateLastStep(onNext)}
+                onClick={() => {}} //TODO: validate last step and finish
               >
-                Skip customization and finish
+                {t("common:skipCustomizationAndFinish")}
               </Button>
               <Button variant="link" onClick={onClose}>
-                Cancel
+                {t("common:cancel")}
               </Button>
             </>
           );
@@ -147,7 +166,7 @@ export const UserFederationLdapWizard = () => {
   return (
     <Wizard
       title={title}
-      description="Text needed here"
+      description={description}
       height="100%"
       steps={steps}
       footer={footer}

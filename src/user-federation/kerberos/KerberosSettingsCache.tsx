@@ -18,8 +18,17 @@ import {
 } from "../../context/auth/AdminClient";
 import { useParams } from "react-router-dom";
 import _ from "lodash";
+import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
-export const KerberosSettingsCache = () => {
+export type KerberosSettingsCacheProps = {
+  showSectionHeading?: boolean;
+  showSectionDescription?: boolean;
+};
+
+export const KerberosSettingsCache = ({
+  showSectionHeading = false,
+  showSectionDescription = false,
+}: KerberosSettingsCacheProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
 
@@ -80,6 +89,14 @@ export const KerberosSettingsCache = () => {
 
   return (
     <>
+      {showSectionHeading && (
+        <WizardSectionHeader
+          title={t("cacheSettings")}
+          description={helpText("kerberosCacheSettingsDescription")}
+          showDescription={showSectionDescription}
+        />
+      )}
+
       {/* Cache settings */}
       <FormAccess role="manage-realm" isHorizontal>
         <FormGroup

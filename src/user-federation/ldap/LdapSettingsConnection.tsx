@@ -21,8 +21,17 @@ import {
   asyncStateFetch,
 } from "../../context/auth/AdminClient";
 import { useParams } from "react-router-dom";
+import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
-export const LdapSettingsConnection = () => {
+export type LdapSettingsConnectionProps = {
+  showSectionHeading?: boolean;
+  showSectionDescription?: boolean;
+};
+
+export const LdapSettingsConnection = ({
+  showSectionHeading = false,
+  showSectionDescription = false,
+}: LdapSettingsConnectionProps) => {
   const { t } = useTranslation("user-federation");
   const helpText = useTranslation("user-federation-help").t;
   const adminClient = useAdminClient();
@@ -73,6 +82,16 @@ export const LdapSettingsConnection = () => {
 
   return (
     <>
+      {showSectionHeading && (
+        <WizardSectionHeader
+          title={t("connectionAndAuthenticationSettings")}
+          description={helpText(
+            "ldapConnectionAndAuthorizationSettingsDescription"
+          )}
+          showDescription={showSectionDescription}
+        />
+      )}
+
       <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
           label={t("connectionURL")}
@@ -293,7 +312,7 @@ export const LdapSettingsConnection = () => {
           {" "}
           {/* TODO: whatever this button is supposed to do */}
           <Button variant="secondary" id="kc-test-button">
-            Test
+            {t("common:test")}
           </Button>
         </FormGroup>
       </FormAccess>
