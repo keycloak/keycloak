@@ -1,4 +1,4 @@
-import React from "react";
+import React, { FormEvent } from "react";
 import {
   AlertVariant,
   Button,
@@ -41,7 +41,8 @@ export const GroupsCreateModal = ({
     setCreateGroupName(createGroupName);
   };
 
-  const submitForm = async () => {
+  const submitForm = async (e: FormEvent) => {
+    e.preventDefault();
     if (await form.trigger()) {
       try {
         await adminClient.groups.create({ name: createGroupName });
@@ -66,12 +67,12 @@ export const GroupsCreateModal = ({
         isOpen={isCreateModalOpen}
         onClose={handleModalToggle}
         actions={[
-          <Button key="confirm" variant="primary" onClick={() => submitForm()}>
+          <Button key="confirm" variant="primary" onClick={submitForm}>
             {t("create")}
           </Button>,
         ]}
       >
-        <Form isHorizontal>
+        <Form isHorizontal onSubmit={submitForm}>
           <FormGroup
             name="create-modal-group"
             label={t("name")}
@@ -84,6 +85,7 @@ export const GroupsCreateModal = ({
           >
             <TextInput
               ref={register({ required: true })}
+              autoFocus
               type="text"
               id="create-group-name"
               name="name"
