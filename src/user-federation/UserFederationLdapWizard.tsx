@@ -76,9 +76,6 @@ export const UserFederationLdapWizard = () => {
     },
   ];
 
-  const title = t("addLdapWizardTitle");
-  const description = helpText("addLdapWizardDescription");
-
   const footer = (
     <WizardFooter>
       <WizardContextConsumer>
@@ -165,8 +162,9 @@ export const UserFederationLdapWizard = () => {
 
   return (
     <Wizard
-      title={title}
-      description={description}
+      // Because this is an inline wizard, this title and description should be put into the page. Specifying them here causes the wizard component to make a header that would be used on a modal.
+      // title={t("addLdapWizardTitle")}
+      // description={helpText("addLdapWizardDescription")}
       height="100%"
       steps={steps}
       footer={footer}

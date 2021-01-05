@@ -26,8 +26,9 @@ export const UserFederationKerberosWizard = () => {
 
   return (
     <Wizard
-      title={t("addKerberosWizardTitle")}
-      description={helpText("addKerberosWizardDescription")}
+      // Because this is an inline wizard, this title and description should be put into the page. Specifying them here causes the wizard component to make a header that would be used on a modal.
+      // title={t("addKerberosWizardTitle")}
+      // description={helpText("addKerberosWizardDescription")}
       steps={steps}
     />
   );
