@@ -17,6 +17,7 @@ import {
   DropdownPosition,
   Title,
 } from "@patternfly/react-core";
+import "./wizard-section-header.css";
 
 export type WizardSectionHeaderProps = {
   title: string;
@@ -34,12 +35,16 @@ export const WizardSectionHeader = ({
       <Title
         size={"xl"}
         headingLevel={"h2"}
-        className={showDescription ? "pf-u-mb-sm" : "pf-u-mb-lg"}
+        className={
+          showDescription
+            ? "kc-wizard-section-header__title--has-description"
+            : "kc-wizard-section-header__title"
+        }
       >
         {title}
       </Title>
       {showDescription && (
-        <TextContent className="pf-u-mb-lg">
+        <TextContent className="kc-wizard-section-header__description">
           <Text>{description}</Text>
         </TextContent>
       )}
